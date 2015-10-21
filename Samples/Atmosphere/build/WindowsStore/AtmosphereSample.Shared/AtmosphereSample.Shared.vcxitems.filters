@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{86a1a4ce-4b60-4509-9200-fb7f86e09f92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{430d5fbb-ae29-43e4-abc9-768bbd65c734}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{56d6c475-9d6d-4e4f-9999-6f0948231bfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders">
+      <UniqueIdentifier>{7b04a3e9-88e3-4f9b-b17f-f0123465c21a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders\Atmosphere">
+      <UniqueIdentifier>{e85f74b0-aa98-45bb-9043-37c407196463}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders\Terrain">
+      <UniqueIdentifier>{ad279db3-f48c-4bd4-9cf7-2908f0b8868d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\Terrain">
+      <UniqueIdentifier>{b682c5c1-7576-4486-860b-cb0646715087}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\Terrain\Tiles">
+      <UniqueIdentifier>{b7f4b514-67f6-4d82-b666-035e5d9cf82c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\AtmosphereSample.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\LightSctrPostProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\Terrain\DynamicQuadTreeNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\Terrain\EarthHemisphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\Terrain\ElevationDataSource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\Terrain\HierarchyArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Src\AtmosphereSample.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Src\LightSctrPostProcess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Src\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Src\Terrain\EarthHemisphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Src\Terrain\ElevationDataSource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ScatteringIntegrals.fxh">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ToneMapping.fxh">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UnshadowedScattering.fxh">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\AtmosphereShadersCommon.fxh">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\LookUpTables.fxh">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\TerrainShadersCommon.fxh">
+      <Filter>assets\shaders\Terrain</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\GenerateNormalMapPS.fx">
+      <Filter>assets\shaders\Terrain</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\HemispherePS.fx">
+      <Filter>assets\shaders\Terrain</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\HemisphereVS.fx">
+      <Filter>assets\shaders\Terrain</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\HemisphereZOnlyVS.fx">
+      <Filter>assets\shaders\Terrain</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\ScreenSizeQuadVS.fx">
+      <Filter>assets\shaders\Terrain</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\CoarseInsctr.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\InterpolateIrradiance.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\MarkRayMarchingSamples.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\MinMaxBinTree.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\Precomputation.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RayMarch.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ReconstructCameraSpaceZ.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RefineSampleLocations.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RenderCoordinateTexture.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RenderSampling.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RenderSliceEndPoints.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ScreenSizeQuadVS.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\Sun.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UnwarpEpipolarScattering.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UpdateAverageLuminance.fx">
+      <Filter>assets\shaders\Atmosphere</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Common.fxh">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\HostSharedTerrainStructs.fxh">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\LightScattering.lua">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Structures.fxh">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Terrain.lua">
+      <Filter>assets\shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\HeightMap.tif">
+      <Filter>assets\Terrain</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Mask.png">
+      <Filter>assets\Terrain</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\cliff_DM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\cliff_NM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\grass_DM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\grass_NM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\grassDark_DM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\gravel_DM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\gravel_NM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\snow_DM.dds">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\Snow_NM.jpg">
+      <Filter>assets\Terrain\Tiles</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

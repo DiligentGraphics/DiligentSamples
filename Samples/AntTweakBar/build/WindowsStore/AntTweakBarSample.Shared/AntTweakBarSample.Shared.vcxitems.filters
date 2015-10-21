@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{c8b2817b-474c-4084-89e1-6e79260fbf11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{038e521a-1981-43c0-a93a-5dcb35a59f70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{51bcbcd8-e6ce-445a-813e-dff40d84e13e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders">
+      <UniqueIdentifier>{5e965672-5aa5-4b6a-9d81-608e25d57e16}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\Src\MengerSponge.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\Src\MengerSpongeSample.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainPS_GL.glsl">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainVS_GL.glsl">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\MengerSponge.lua">
+      <Filter>assets</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainPS_DX.hlsl">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainVS_DX.hlsl">
+      <Filter>assets\shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>

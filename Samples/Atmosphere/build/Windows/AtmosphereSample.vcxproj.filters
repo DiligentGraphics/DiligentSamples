@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Windows">
+      <UniqueIdentifier>{d373c970-cf28-4373-8b46-815c9411c72a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="android_src">
+      <UniqueIdentifier>{ae9a0393-f467-4730-95ff-b4bd157cd16e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="android_src\res">
+      <UniqueIdentifier>{c3cf6ecf-25ad-4b42-b238-bea3a2637320}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="android_src\res\values">
+      <UniqueIdentifier>{a51ae93f-3055-49b9-a269-67dce28ba78e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="android_src\jni">
+      <UniqueIdentifier>{cd80a81f-81ce-45e0-a041-ad1424d39aef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Windows\DLLs">
+      <UniqueIdentifier>{77159e1c-7b62-4be1-bb6c-72822237596e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="jni\Application.mk">
+      <Filter>android_src\jni</Filter>
+    </None>
+    <None Include="jni\Android.mk">
+      <Filter>android_src\jni</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Src\AndroidMain.cpp">
+      <Filter>android_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\AtmosphereSample.cpp">
+      <Filter>android_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\Terrain\EarthHemisphere.cpp">
+      <Filter>android_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\Terrain\ElevationDataSource.cpp">
+      <Filter>android_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\LightSctrPostProcess.cpp">
+      <Filter>android_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\pch.cpp">
+      <Filter>android_src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="res\values\strings.xml">
+      <Filter>android_src\res\values</Filter>
+    </Xml>
+    <Xml Include="res\values\styles.xml">
+      <Filter>android_src\res\values</Filter>
+    </Xml>
+    <Xml Include="AndroidManifest.xml">
+      <Filter>android_src</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineD3D11_32d.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineD3D11_32r.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineD3D11_64d.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineD3D11_64r.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineOpenGL_32d.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineOpenGL_32r.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineOpenGL_64d.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineOpenGL_64r.dll">
+      <Filter>Windows\DLLs</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

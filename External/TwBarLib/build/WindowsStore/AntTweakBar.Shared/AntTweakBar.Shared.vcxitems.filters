@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Private Header Files">
+      <UniqueIdentifier>{4a7247a2-3d5d-45ff-9f85-6a1eff0b2c04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public Header Files">
+      <UniqueIdentifier>{df40c038-1472-4f94-9c9d-8db1af72ff91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{295d25ba-7624-4f14-9aaa-3c658477227b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{281f56c6-0b85-4113-8a2c-7641a8acce53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DX">
+      <UniqueIdentifier>{68972d44-cf65-4cd3-b257-32dfb5ee852c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\GL">
+      <UniqueIdentifier>{7a30b65e-4d52-464e-b887-c3cc5e14823d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\LineRectCstColorVS.glsl">
+      <Filter>Shaders\GL</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\LineRectPS.glsl">
+      <Filter>Shaders\GL</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\LineRectVS.glsl">
+      <Filter>Shaders\GL</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\TextCstColorVS.glsl">
+      <Filter>Shaders\GL</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\TextPS.glsl">
+      <Filter>Shaders\GL</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\TextVS.glsl">
+      <Filter>Shaders\GL</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\LineRectCstColorVS.hlsl">
+      <Filter>Shaders\DX</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\LineRectPS.hlsl">
+      <Filter>Shaders\DX</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\LineRectVS.hlsl">
+      <Filter>Shaders\DX</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\TextCstColorVS.hlsl">
+      <Filter>Shaders\DX</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\TextPS.hlsl">
+      <Filter>Shaders\DX</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\Shaders\TextVS.hlsl">
+      <Filter>Shaders\DX</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\..\src\TwDirect3D11.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TwFonts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TwGraphImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TwMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TwPrecomp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TwBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TwColors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\include\AntTweakBar.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwFonts.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwGraph.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwGraphImpl.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwMgr.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwPrecomp.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\AntPerfTimer.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\MiniSDL12.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\MiniSDL13.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\MiniSFML16.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwBar.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwColors.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TwPlatformStubs.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

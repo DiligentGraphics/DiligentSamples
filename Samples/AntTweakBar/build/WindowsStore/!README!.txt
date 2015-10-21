@@ -1,0 +1,1 @@
+To build the sample for Windows Store platform, open .\diligentsamles\build\WindowsStore\Samples.sln or .\build\WindowsStore\EngineAll.sln
