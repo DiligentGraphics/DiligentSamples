@@ -111,8 +111,8 @@ Global
 		..\..\Samples\Atmosphere\build\WindowsStore\AtmosphereSample.Shared\AtmosphereSample.Shared.vcxitems*{ae83b976-c8ca-4621-9269-bf47c5789018}*SharedItemsImports = 9
 		..\..\..\diligenttools\External\zlib-1.2.8\build\WindowsStore\zlib.Shared\zlib.Shared.vcxitems*{40ccced6-03e5-4ca9-a235-990c055dfe70}*SharedItemsImports = 9
 		..\..\External\TwBarLib\build\WindowsStore\AntTweakBar.Shared\AntTweakBar.Shared.vcxitems*{b99e1fa1-c30a-45f2-9d57-9e9c21b2df42}*SharedItemsImports = 4
-		..\..\..\diligentcore\Platforms\Basic\build\WindowsStore\BasicPlatform.Shared\BasicPlatform.Shared.vcxitems*{8ada5f93-7a38-4ad8-b8f5-1ffd4d4f630c}*SharedItemsImports = 4
 		..\..\..\diligentcore\Platforms\interface\build\WindowsStore\PlatformInterface.Shared.vcxitems*{8ada5f93-7a38-4ad8-b8f5-1ffd4d4f630c}*SharedItemsImports = 4
+		..\..\..\diligentcore\Platforms\Basic\build\WindowsStore\BasicPlatform.Shared\BasicPlatform.Shared.vcxitems*{8ada5f93-7a38-4ad8-b8f5-1ffd4d4f630c}*SharedItemsImports = 4
 		..\..\..\diligenttools\External\libtiff-4.0.3\build\WindowsStore\LibTiff.Shared\LibTiff.Shared.vcxitems*{97d592a8-5afe-4e72-8da9-3c3ef98948b1}*SharedItemsImports = 4
 		..\..\..\diligentcore\Graphics\GraphicsEngine\build\WindowsStore\GraphicsEngine.Shared\GraphicsEngine.Shared.vcxitems*{052dd700-477c-4512-a7f4-b05ebef5c80e}*SharedItemsImports = 4
 		..\..\..\diligenttools\External\lpng-1.6.17\build\WindowsStore\LibPng.Shared\LibPng.Shared.vcxitems*{8c6b12d1-7972-451f-a612-e7ac3443cb72}*SharedItemsImports = 9
@@ -357,10 +357,10 @@ Global
 		{3DE4FDB9-DF4D-4B57-9FFE-616704D4FE2F}.Release|Win32.Build.0 = Release|Win32
 		{3DE4FDB9-DF4D-4B57-9FFE-616704D4FE2F}.Release|x64.ActiveCfg = Release|x64
 		{3DE4FDB9-DF4D-4B57-9FFE-616704D4FE2F}.Release|x64.Build.0 = Release|x64
-		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|ARM.ActiveCfg = Release|ARM
-		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|ARM.Build.0 = Release|ARM
-		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|Win32.ActiveCfg = Release|Win32
-		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|Win32.Build.0 = Release|Win32
+		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|ARM.ActiveCfg = Debug|ARM
+		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|ARM.Build.0 = Debug|ARM
+		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|Win32.Build.0 = Debug|Win32
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|x64.ActiveCfg = Debug|x64
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Debug|x64.Build.0 = Debug|x64
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Release|ARM.ActiveCfg = Release|ARM
