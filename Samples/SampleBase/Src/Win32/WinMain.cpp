@@ -141,8 +141,9 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     }
     else
     {
-        LOG_INFO_MESSAGE("Device type is not specified. Using OpenGL device");
-        DevType = DeviceType::OpenGL;
+        LOG_INFO_MESSAGE("Device type is not specified. Using D3D11 device");
+        DevType = DeviceType::D3D11;
+        Title.append( L" (D3D11)" );
     }
     // Register our window class
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX), CS_HREDRAW|CS_VREDRAW, MessageProc,
