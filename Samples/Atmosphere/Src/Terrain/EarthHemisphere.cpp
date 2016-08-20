@@ -1,4 +1,4 @@
-/*     Copyright 2015 Egor Yusov
+/*     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -547,7 +547,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
 {
     TextureDesc HeightMapDesc;
     HeightMapDesc.Name = "Height map texture";
-    HeightMapDesc.Type = TEXTURE_TYPE_2D;
+    HeightMapDesc.Type = RESOURCE_DIM_TEX_2D;
     HeightMapDesc.Width = iHeightMapDim;
     HeightMapDesc.Height = iHeightMapDim;
     HeightMapDesc.Format = TEX_FORMAT_R16_UINT;
@@ -659,7 +659,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
 
     TextureDesc NormalMapDesc;
     NormalMapDesc.Name = "Normal map texture";
-    NormalMapDesc.Type = TEXTURE_TYPE_2D;
+    NormalMapDesc.Type = RESOURCE_DIM_TEX_2D;
     NormalMapDesc.Width = iHeightMapDim;
     NormalMapDesc.Height = iHeightMapDim;
     NormalMapDesc.Format = TEX_FORMAT_RG8_UNORM;
@@ -693,26 +693,28 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     pResMapping->AddResource("g_tex2DMtrlMap", ptex2DMtrlMaskSRV, true);
 
     // Load tiles
+    IDeviceObject* ptex2DTileDiffuseSRV[NUM_TILE_TEXTURES] = {};
+    RefCntAutoPtr<ITexture> ptex2DTileDiffuse[NUM_TILE_TEXTURES];
+    IDeviceObject* ptex2DTileNMSRV[NUM_TILE_TEXTURES] = {};
+    RefCntAutoPtr<ITexture> ptex2DTileNM[NUM_TILE_TEXTURES];
 	for(int iTileTex = 0; iTileTex < (int)NUM_TILE_TEXTURES; iTileTex++)
     {
         {
-            RefCntAutoPtr<ITexture> ptex2DTileDiffuse;
-            CreateTextureFromFile(TileTexturePath[iTileTex], TextureLoadInfo(), pDevice, &ptex2DTileDiffuse);
-            auto ptex2DTileDiffuseSRV = ptex2DTileDiffuse->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-            std::stringstream  ShaderNameSS;
-            ShaderNameSS << "g_tex2DTileDiffuse" << iTileTex;
-            pResMapping->AddResource(ShaderNameSS.str().c_str(), ptex2DTileDiffuseSRV, true);
+            TextureLoadInfo DiffMapLoadInfo;
+            DiffMapLoadInfo.IsSRGB = false;
+            CreateTextureFromFile(TileTexturePath[iTileTex], DiffMapLoadInfo, pDevice, &ptex2DTileDiffuse[iTileTex]);
+            ptex2DTileDiffuseSRV[iTileTex] = ptex2DTileDiffuse[iTileTex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         }
-
+        
         {
-            RefCntAutoPtr<ITexture> ptex2DTileNM;
-            CreateTextureFromFile(TileNormalMapPath[iTileTex], TextureLoadInfo(), pDevice, &ptex2DTileNM);
-            auto ptex2DTileNMSRV = ptex2DTileNM->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-            std::stringstream  ShaderNameSS;
-            ShaderNameSS << "g_tex2DTileNM" << iTileTex;
-            pResMapping->AddResource(ShaderNameSS.str().c_str(), ptex2DTileNMSRV, true);
+            
+            CreateTextureFromFile(TileNormalMapPath[iTileTex], TextureLoadInfo(), pDevice, &ptex2DTileNM[iTileTex]);
+            ptex2DTileNMSRV[iTileTex] = ptex2DTileNM[iTileTex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         }
 	}
+    pResMapping->AddResourceArray("g_tex2DTileDiffuse", 0,  ptex2DTileDiffuseSRV, NUM_TILE_TEXTURES, true);
+    pResMapping->AddResourceArray("g_tex2DTileNM", 0, ptex2DTileNMSRV, NUM_TILE_TEXTURES, true);
+
 
     m_pTerrainScript = CreateRenderScriptFromFile( "shaders\\Terrain.lua", pDevice, pContext, [&]( ScriptParser *pScriptParser )
     {
@@ -764,7 +766,8 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
 {
     if( m_Params.m_iNumShadowCascades != NewParams.m_iNumShadowCascades    ||
         m_Params.m_bBestCascadeSearch != NewParams.m_bBestCascadeSearch    || 
-        m_Params.m_bSmoothShadows     != NewParams.m_bSmoothShadows )
+        m_Params.m_bSmoothShadows     != NewParams.m_bSmoothShadows ||
+        m_Params.DstRTVFormat         != NewParams.DstRTVFormat )
     {
         m_pHemispherePS.Release();
     }
@@ -786,9 +789,48 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Attrs.SearchDirectories = "shaders;shaders\\terrain;";
         Attrs.Desc.ShaderType = SHADER_TYPE_PIXEL;
         Attrs.Desc.Name = "HemispherePS";
+        ShaderVariableDesc ShaderVars[] = 
+        {
+            {"g_TerrainAttribs", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_CameraAttribs", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_LightAttribs", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_tex2DElevationMap", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_tex2DNormalMap", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_tex2DMtrlMap", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_tex2DShadowMap", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_tex2DTileDiffuse", SHADER_VARIABLE_TYPE_STATIC},
+            {"g_tex2DTileNM", SHADER_VARIABLE_TYPE_STATIC}
+        };
         Attrs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
         BasicShaderSourceStreamFactory BasicSSSFactory(Attrs.SearchDirectories);
         Attrs.pShaderSourceStreamFactory = &BasicSSSFactory;
+
+        StaticSamplerDesc StaticSamplers[5];
+        StaticSamplers[0].TextureName = "g_tex2DTileDiffuse";
+        StaticSamplers[0].Desc.AddressU = TEXTURE_ADDRESS_WRAP;
+        StaticSamplers[0].Desc.AddressV = TEXTURE_ADDRESS_WRAP;
+        StaticSamplers[0].Desc.AddressW = TEXTURE_ADDRESS_WRAP;
+
+        StaticSamplers[1].TextureName = "g_tex2DTileNM";
+        StaticSamplers[1].Desc = StaticSamplers[0].Desc;
+
+        StaticSamplers[2].TextureName = "g_tex2DNormalMap";
+        StaticSamplers[2].Desc.AddressU = TEXTURE_ADDRESS_MIRROR;
+        StaticSamplers[2].Desc.AddressV = TEXTURE_ADDRESS_MIRROR;
+        StaticSamplers[2].Desc.AddressW = TEXTURE_ADDRESS_MIRROR;
+
+        StaticSamplers[3].TextureName = "g_tex2DMtrlMap";
+        StaticSamplers[3].Desc = StaticSamplers[2].Desc;
+
+        StaticSamplers[4].TextureName = "g_tex2DShadowMap";
+        StaticSamplers[4].Desc.MinFilter = FILTER_TYPE_COMPARISON_LINEAR;
+        StaticSamplers[4].Desc.MagFilter = FILTER_TYPE_COMPARISON_LINEAR;
+        StaticSamplers[4].Desc.MipFilter = FILTER_TYPE_COMPARISON_LINEAR;
+        StaticSamplers[4].Desc.ComparisonFunc = COMPARISON_FUNC_LESS;
+
+
+        Attrs.Desc.StaticSamplers = StaticSamplers;
+        Attrs.Desc.NumStaticSamplers = _countof(StaticSamplers);
 
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro("TEXTURING_MODE", m_Params.m_TexturingMode);
@@ -800,12 +842,13 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Attrs.Macros = Macros;
 
         m_pDevice->CreateShader( Attrs, &m_pHemispherePS );
-        m_pTerrainScript->Run( "SetHemispherePS", m_pHemispherePS );
+        m_pTerrainScript->Run( "SetHemispherePS", m_pHemispherePS, GetTextureFormatAttribs(m_Params.DstRTVFormat).Name );
     }
 
 
     ViewFrustum ViewFrustum;
-    ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, m_pDevice->GetDeviceCaps().DevType == DeviceType::DirectX);
+    auto DevType = m_pDevice->GetDeviceCaps().DevType;
+    ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, DevType == DeviceType::D3D11 || DevType == DeviceType::D3D12);
 
     {
         MapHelper<TerrainAttribs> TerrainAttribs( pContext, m_pcbTerrainAttribs, MAP_WRITE_DISCARD, 0 );

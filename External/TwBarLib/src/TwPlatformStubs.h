@@ -11,7 +11,7 @@
 #if !defined ANT_TW_PLATFORM_STUBS
 #define ANT_TW_PLATFORM_STUBS
 
-#ifdef ANT_WINDOWS_STORE
+#ifdef ANT_UNIVERSAL_WINDOWS
 
 inline int MessageBox( HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType )
 {

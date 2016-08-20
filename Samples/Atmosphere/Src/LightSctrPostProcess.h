@@ -1,4 +1,4 @@
-/*     Copyright 2015 Egor Yusov
+/*     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -70,7 +70,10 @@ class LightSctrPostProcess
 {
 public:
     LightSctrPostProcess(IRenderDevice* in_pDevice, 
-                          IDeviceContext *in_pContext);
+                         IDeviceContext *in_pContext,
+                         TEXTURE_FORMAT BackBufferFmt,
+                         TEXTURE_FORMAT DepthBufferFmt,
+                         TEXTURE_FORMAT OffscreenBackBuffer);
     ~LightSctrPostProcess();
 
 
@@ -156,11 +159,13 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pRendedSliceEndpointsPS;
     Diligent::RefCntAutoPtr<IShader> m_pRendedCoordTexPS;
     Diligent::RefCntAutoPtr<IShader> m_pRefineSampleLocationsCS;
+    Diligent::RefCntAutoPtr<IPipelineState> m_pRefineSampleLocationsPSO;
     Diligent::RefCntAutoPtr<IShader> m_pRenderCoarseUnshadowedInsctrPS;
     Diligent::RefCntAutoPtr<IShader> m_pMarkRayMarchingSamplesInStencilPS;
     Diligent::RefCntAutoPtr<IShader> m_pRenderSliceUVDirInSMPS;
     Diligent::RefCntAutoPtr<IShader> m_pInitializeMinMaxShadowMapPS;
     Diligent::RefCntAutoPtr<IShader> m_pComputeMinMaxSMLevelPS;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeMinMaxSMLevelSRB[2];
     Diligent::RefCntAutoPtr<IShader> m_pDoRayMarchPS[2]; // 0 - min/max optimization disabled; 1 - min/max optimization enabled
     Diligent::RefCntAutoPtr<IShader> m_pInterpolateIrradiancePS;
     Diligent::RefCntAutoPtr<IShader> m_pUnwarpEpipolarSctrImgPS;
@@ -183,6 +188,14 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pInitHighOrderScatteringCS, m_pUpdateHighOrderScatteringCS;
     Diligent::RefCntAutoPtr<IShader> m_pCombineScatteringOrdersCS;
     Diligent::RefCntAutoPtr<IShader> m_pPrecomputeAmbientSkyLightPS;
+
+    Diligent::RefCntAutoPtr<IPipelineState> m_pPrecomputeSingleSctrPSO;
+    Diligent::RefCntAutoPtr<IPipelineState> m_pComputeSctrRadiancePSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeSctrRadianceSRB;
+    Diligent::RefCntAutoPtr<IPipelineState> m_pComputeScatteringOrderPSO;
+    Diligent::RefCntAutoPtr<IPipelineState> m_pInitHighOrderScatteringPSO, m_pUpdateHighOrderScatteringPSO;
+    Diligent::RefCntAutoPtr<IPipelineState> m_pCombineScatteringOrdersPSO;
+
 
     Diligent::RefCntAutoPtr<IBuffer> m_pcbPostProcessingAttribs;
     Diligent::RefCntAutoPtr<IBuffer> m_pcbMediaAttribs;

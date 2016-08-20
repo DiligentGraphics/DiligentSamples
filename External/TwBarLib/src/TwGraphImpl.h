@@ -26,7 +26,7 @@
 class CTwGraphImpl : public ITwGraph
 {
 public:
-    virtual int                 Init();
+    virtual int                 Init(int BackBufferFormat);
     virtual int                 Shut();
     virtual void                BeginDraw(int _WndWidth, int _WndHeight);
     virtual void                EndDraw();
@@ -92,13 +92,21 @@ protected:
         bool                    m_LineBgColors;
     };
 
-    Diligent::RefCntAutoPtr<Diligent::IDepthStencilState> m_pDepthStencilState;
-    Diligent::RefCntAutoPtr<Diligent::IBlendState>        m_pBlendState;
-    Diligent::RefCntAutoPtr<Diligent::IRasterizerState>   m_pRasterState;
-    Diligent::RefCntAutoPtr<Diligent::IRasterizerState>   m_pRasterStateAntialiased;
-    Diligent::RefCntAutoPtr<Diligent::IRasterizerState>   m_pRasterStateMultisample;
-    Diligent::RefCntAutoPtr<Diligent::IRasterizerState>   m_pRasterStateCullCW;
-    Diligent::RefCntAutoPtr<Diligent::IRasterizerState>   m_pRasterStateCullCCW;
+    enum class PSO_ID
+    {
+        Text = 0,
+        TextCstColor,
+        Line,
+        LineAA,
+        Triangle_CullNone,
+        Triangle_CullCW,
+        Triangle_CullCCW,
+        Triangle_Multisample,
+        Triangle_CstColor,
+        NumIDs
+    };
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState>  m_pPSO[static_cast<int>(PSO_ID::NumIDs)];
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pTextSRB, m_pTextCstColorSRB;
 
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pLineRectVS;
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pLineRectCstColorVS;
@@ -106,10 +114,6 @@ protected:
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pTextVS;
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pTextCstColorVS;
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pTextPS;
-    Diligent::RefCntAutoPtr<Diligent::IShaderVariable> m_psvFont;
-
-    Diligent::RefCntAutoPtr<Diligent::IVertexDescription> m_pLineRectVertexLayout;
-    Diligent::RefCntAutoPtr<Diligent::IVertexDescription> m_pTextVertexLayout;
 
     Diligent::RefCntAutoPtr<Diligent::IBuffer>     m_pLineVertexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>     m_pRectVertexBuffer;
@@ -118,6 +122,9 @@ protected:
     Diligent::RefCntAutoPtr<Diligent::IBuffer>     m_pConstantBuffer;
     Diligent::RefCntAutoPtr<Diligent::IResourceMapping> m_pResourceMapping;
     Diligent::RefCntAutoPtr<Diligent::ISampler>    m_pSamplerState;
+
+    std::vector<CLineRectVtx> m_mappedVertices;
+    std::vector<CTextVtx> m_textVtxBuffer;
 };
 
 //  ---------------------------------------------------------------------------

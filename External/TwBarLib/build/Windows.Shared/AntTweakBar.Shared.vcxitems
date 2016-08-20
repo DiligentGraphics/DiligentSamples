@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{6c31c3ee-1521-4dc1-a79e-cedd5167ddab}</ItemsProjectGuid>
+    <ItemsRootNamespace>AntTweakBar</ItemsRootNamespace>
+    <ItemsProjectName>AntTweakBar.Shared</ItemsProjectName>
+    <CodeSharingProject>248F659F-DAC5-46E8-AC09-60EC9FC95053</CodeSharingProject>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\LineRectCstColorVS.glsl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\LineRectPS.glsl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\LineRectVS.glsl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\TextCstColorVS.glsl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\TextPS.glsl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\TextVS.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\LineRectCstColorVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\LineRectPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\LineRectVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\TextCstColorVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\TextPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\Shaders\TextVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\src\TwBar.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\src\TwColors.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\src\TwFonts.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\src\TwGraphImpl.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\src\TwMgr.cpp">
+      <DisableSpecificWarnings>4456; 4302</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\src\TwPrecomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\include\AntTweakBar.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\AntPerfTimer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\MiniSDL12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\MiniSDL13.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\MiniSFML16.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwBar.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwColors.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwFonts.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwGraph.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwGraphImpl.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwMgr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwPlatformStubs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\src\TwPrecomp.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\src\TwDirect3D11.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="$(MSBuildThisFileDirectory)..\..\CMakeLists.txt">
+      <DeploymentContent>false</DeploymentContent>
+    </Text>
+  </ItemGroup>
+</Project>

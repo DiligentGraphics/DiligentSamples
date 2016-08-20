@@ -283,10 +283,10 @@ struct CTwMgr
     bool                m_IsRepeatingMousePressed;
     double              m_LastDrawTime;
 
-    #if defined(ANT_WINDOWS)
+    #if defined(ANT_WIN32)
         typedef HCURSOR CCursor;
         CCursor         PixmapCursor(int _CurIdx);
-    #elif defined(ANT_WINDOWS_STORE)
+    #elif defined(ANT_UNIVERSAL_WINDOWS)
         typedef void* CCursor; // Temporary stub
         CCursor         PixmapCursor(int _CurIdx);
     #elif defined(ANT_UNIX)
@@ -497,7 +497,7 @@ struct CTwFPU
 {
     CTwFPU()    
     { 
-    #if defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+    #if defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
         state0 = _controlfp(0, 0); 
         if( (state0&MCW_PC)==_PC_24 )   // we need at least _PC_53
             _controlfp(_PC_53, MCW_PC);
@@ -507,7 +507,7 @@ struct CTwFPU
     }
     ~CTwFPU()
     {
-    #if  defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+    #if  defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
         if( (state0&MCW_PC)==_PC_24 )
             _controlfp(_PC_24, MCW_PC);
     #else

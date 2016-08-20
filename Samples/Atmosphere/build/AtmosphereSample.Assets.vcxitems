@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{A443A4F8-4652-4628-8CA1-F64B6F12A037}</ItemsProjectGuid>
+    <ItemsRootNamespace>GraphicsEngineD3D11</ItemsRootNamespace>
+    <ItemsProjectName>AtmosphereSample.Assets</ItemsProjectName>
+    <CodeSharingProject>248F659F-DAC5-46E8-AC09-60EC9FC95053</CodeSharingProject>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\AtmosphereShadersCommon.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\LookUpTables.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ScatteringIntegrals.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ToneMapping.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UnshadowedScattering.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Common.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\HostSharedTerrainStructs.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\LightScattering.lua">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Structures.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Terrain.lua">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\TerrainShadersCommon.fxh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\CoarseInsctr.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\InterpolateIrradiance.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\MarkRayMarchingSamples.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\MinMaxBinTree.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\Precomputation.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RayMarch.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ReconstructCameraSpaceZ.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RefineSampleLocations.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RenderCoordinateTexture.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RenderSampling.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\RenderSliceEndPoints.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\ScreenSizeQuadVS.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\Sun.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UnwarpEpipolarScattering.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UpdateAverageLuminance.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\GenerateNormalMapPS.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\HemispherePS.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\HemisphereVS.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\HemisphereZOnlyVS.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\terrain\ScreenSizeQuadVS.fx">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\HeightMap.tif" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Mask.png" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\cliff_DM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\cliff_NM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\grassDark_DM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\grass_DM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\grass_NM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\gravel_DM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\gravel_NM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\snow_DM.dds" />
+    <Image Include="$(MSBuildThisFileDirectory)assets\Terrain\Tiles\Snow_NM.jpg" />
+  </ItemGroup>
+</Project>

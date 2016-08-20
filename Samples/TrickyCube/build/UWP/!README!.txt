@@ -1,0 +1,1 @@
+To build the sample for Unviersal Windows platform, open .\build\UWP\EngineAll.sln solution

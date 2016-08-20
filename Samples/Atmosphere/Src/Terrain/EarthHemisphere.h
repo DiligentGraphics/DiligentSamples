@@ -1,4 +1,4 @@
-/*     Copyright 2015 Egor Yusov
+/*     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ struct RenderingParams
     int m_bBestCascadeSearch;
     int m_bSmoothShadows;
     int m_iColOffset, m_iRowOffset;
+    TEXTURE_FORMAT DstRTVFormat;
 
     RenderingParams() : 
 		m_TexturingMode(TM_MATERIAL_MASK_NM),
@@ -75,7 +76,8 @@ struct RenderingParams
         m_bBestCascadeSearch(TRUE),
         m_bSmoothShadows(TRUE),
         m_iColOffset(1356), 
-        m_iRowOffset(924)
+        m_iRowOffset(924),
+        DstRTVFormat(TEX_FORMAT_R11G11B10_FLOAT)
 	{}
 };
 
@@ -134,7 +136,6 @@ private:
     Diligent::RefCntAutoPtr<IRenderDevice> m_pDevice;
 
     Diligent::RefCntAutoPtr<IBuffer> m_pVertBuff;
-    Diligent::RefCntAutoPtr<IVertexDescription> m_pInputLayout;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DNormalMapSRV, m_ptex2DMtrlMaskSRV;
     Diligent::RefCntAutoPtr<IBuffer> m_pcbTerrainAttribs;
     

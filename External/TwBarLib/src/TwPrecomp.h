@@ -56,8 +56,8 @@
 #   undef _WIN64
 #   undef WIN64
 #   undef _WINDOWS
-#   undef ANT_WINDOWS
-#   undef ANT_WINDOWS_STORE
+#   undef ANT_WIN32
+#   undef ANT_UNIVERSAL_WINDOWS
 #   undef ANT_OSX
 #   undef ANT_ANDROID
 #elif defined(_MACOSX)
@@ -71,8 +71,8 @@
 #   undef _WIN64
 #   undef WIN64
 #   undef _WINDOWS
-#   undef ANT_WINDOWS
-#   undef ANT_WINDOWS_STORE
+#   undef ANT_WIN32
+#   undef ANT_UNIVERSAL_WINDOWS
 #   undef ANT_UNIX
 #   undef ANT_ANDROID
 #elif defined(ANDROID)
@@ -84,15 +84,15 @@
 #   undef _WIN64
 #   undef WIN64
 #   undef _WINDOWS
-#   undef ANT_WINDOWS
-#   undef ANT_WINDOWS_STORE
+#   undef ANT_WIN32
+#   undef ANT_UNIVERSAL_WINDOWS
 #   undef ANT_UNIX
 #   undef ANT_OSX
-#elif defined(_WINDOWS_STORE)
-#   define ANT_WINDOWS_STORE
+#elif defined(PLATFORM_UNIVERSAL_WINDOWS)
+#   define ANT_UNIVERSAL_WINDOWS
 #   include <windows.h>
 #elif defined(_WINDOWS) || defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
-#   define ANT_WINDOWS
+#   define ANT_WIN32
 #   ifndef WIN32_LEAN_AND_MEAN
 #       define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #   endif

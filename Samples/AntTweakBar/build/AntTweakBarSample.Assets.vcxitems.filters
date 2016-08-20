@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{e5ff4d8e-5106-442e-848b-f56d1baa2645}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainPS_GL.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainVS_GL.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainPS_DX.hlsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\shaders\MainVS_DX.hlsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)assets\MengerSponge.lua" />
+  </ItemGroup>
+</Project>

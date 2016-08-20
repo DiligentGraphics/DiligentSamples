@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\App.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\SampleAppMain.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\TwEventUWP.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\Common\DeviceResources.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\include\SampleBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\App.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\pch2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\SampleAppMain.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\TwEventUWP.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\Common\DirectXHelper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\Common\StepTimer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Src\UWP\Common\DeviceResources.h" />
+  </ItemGroup>
+</Project>

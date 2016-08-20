@@ -200,7 +200,7 @@ typedef enum ETwGraphAPI
     TW_OPENGL_CORE      = 5
 } TwGraphAPI;
 
-TW_API int      TW_CALL TwInit(TwGraphAPI graphAPI, void *device, void *immediateContext);
+TW_API int      TW_CALL TwInit(TwGraphAPI graphAPI, void *device, void *immediateContext, int BackBufferFormat);
 TW_API int      TW_CALL TwTerminate();
 
 TW_API int      TW_CALL TwDraw();

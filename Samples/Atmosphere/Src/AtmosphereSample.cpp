@@ -1,4 +1,4 @@
-/*     Copyright 2015 Egor Yusov
+/*     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@
 
 SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
 {
-#ifdef PLATFORM_WINDOWS_STORE
+#ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
     return new AtmosphereSample( pDevice, pImmediateContext, pSwapChain );
@@ -83,7 +83,7 @@ AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImme
     m_bEnableLightScattering(true),
     m_fScatteringScale(0.5f),
     m_fElapsedTime(0.f),
-    m_bIsDXDevice(pDevice->GetDeviceCaps().DevType == DeviceType::DirectX )
+    m_bIsDXDevice(pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 ||  pDevice->GetDeviceCaps().DevType == DeviceType::D3D12)
 {
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )
     {
@@ -134,7 +134,8 @@ AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImme
     CreateUniformBuffer( pDevice, sizeof( CameraAttribs ), &m_pcbCameraAttribs );
     CreateUniformBuffer( pDevice, sizeof( LightAttribs ), &m_pcbLightAttribs );
 
-    m_pLightSctrPP.reset( new LightSctrPostProcess(m_pDevice, m_pDeviceContext) );
+    const auto &SCDesc = pSwapChain->GetDesc();
+    m_pLightSctrPP.reset( new LightSctrPostProcess(m_pDevice, m_pDeviceContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT) );
     auto *pcMediaScatteringParams = m_pLightSctrPP->GetMediaAttribsCB();
 
     m_EarthHemisphere.Create(m_pElevDataSource.get(), 
@@ -467,7 +468,7 @@ void AtmosphereSample::CreateShadowMap()
 	//ShadowMap
     TextureDesc ShadowMapDesc;
     ShadowMapDesc.Name = "Shadow map";
-    ShadowMapDesc.Type = TEXTURE_TYPE_2D_ARRAY;
+    ShadowMapDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
     ShadowMapDesc.Width  = m_uiShadowMapResolution;
     ShadowMapDesc.Height = m_uiShadowMapResolution;
     ShadowMapDesc.MipLevels = 1;
@@ -750,6 +751,7 @@ void AtmosphereSample::Render()
 
     // Render terrain
     auto *pPrecomputedNetDensitySRV = m_pLightSctrPP->GetPrecomputedNetDensitySRV();
+    m_TerrainRenderParams.DstRTVFormat = m_bEnableLightScattering ? m_pOffscreenColorBuffer->GetDesc().Format : m_pSwapChain->GetDesc().ColorBufferFormat;
     m_EarthHemisphere.Render( m_pDeviceContext, 
                               m_TerrainRenderParams, 
                               m_f3CameraPos, 
@@ -971,7 +973,7 @@ void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
 
     TextureDesc ColorBuffDesc;
     ColorBuffDesc.Name = "Offscreen color buffer";
-    ColorBuffDesc.Type = TEXTURE_TYPE_2D;
+    ColorBuffDesc.Type = RESOURCE_DIM_TEX_2D;
     ColorBuffDesc.Width  = Width;
     ColorBuffDesc.Height = Height;
     ColorBuffDesc.MipLevels = 1;

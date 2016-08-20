@@ -27,7 +27,7 @@
 class ITwGraph
 {
 public:
-    virtual int         Init() = 0;
+    virtual int         Init(int BackBufferFormat) = 0;
     virtual int         Shut() = 0;
     virtual void        BeginDraw(int _WndWidth, int _WndHeight) = 0;
     virtual void        EndDraw() = 0;

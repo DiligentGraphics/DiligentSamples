@@ -1,4 +1,4 @@
-/*     Copyright 2015 Egor Yusov
+/*     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public:
 		{
 			for(size_t level = numLevelsInHierarchy; level--; )
 			{
-				size_t numElementsInLevel = 1 << level;
+				size_t numElementsInLevel = (size_t)1 << level;
 				m_data[level].resize(numElementsInLevel*numElementsInLevel);
 			}
 		}

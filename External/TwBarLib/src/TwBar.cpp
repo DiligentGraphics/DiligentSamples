@@ -34,7 +34,7 @@ PerfTimer g_BarTimer;
 #define ANT_SET_CURSOR(_Name)       g_TwMgr->SetCursor(g_TwMgr->m_Cursor##_Name)
 #define ANT_SET_ROTO_CURSOR(_Num)   g_TwMgr->SetCursor(g_TwMgr->m_RotoCursors[_Num])
 
-#if !(defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE))
+#if !(defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS))
 #   define _stricmp strcasecmp
 #   define _strdup  strdup
 #endif
@@ -5593,7 +5593,7 @@ bool CTwBar::MouseMotion(int X, int Y)
             else if( InBar && m_NbDisplayedLines<m_NbHierLines && X>=m_PosX+m_VarX2+2 && X<m_PosX+m_Width-2 && Y>=m_ScrollY0 && Y<m_ScrollY1 )
             {
                 m_HighlightScroll = true;
-              #ifdef ANT_WINDOWS
+              #ifdef ANT_WIN32
                 ANT_SET_CURSOR(NS);
               #else
                 ANT_SET_CURSOR(Arrow);
@@ -5736,7 +5736,7 @@ bool CTwBar::MouseMotion(int X, int Y)
                         m_FirstLine = m_FirstLine0+dl;
                     NotUpToDate();
                 }
-              #ifdef ANT_WINDOWS
+              #ifdef ANT_WIN32
                 ANT_SET_CURSOR(NS);
               #else
                 ANT_SET_CURSOR(Arrow);
@@ -5938,7 +5938,7 @@ bool CTwBar::MouseMotion(int X, int Y)
             if( !m_IsHelpBar )
                 ANT_SET_CURSOR(Arrow);
             else
-              #ifdef ANT_WINDOWS
+              #ifdef ANT_WIN32
                 ANT_SET_CURSOR(Help);
               #else
                 ANT_SET_CURSOR(Arrow);
@@ -5993,7 +5993,7 @@ bool CTwBar::MouseMotion(int X, int Y)
 
 //  ---------------------------------------------------------------------------
 
-#if defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+#if defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
 #   pragma optimize("", off)
 //  disable optimizations because the conversion of Enum from unsigned int to double is not always exact if optimized and GraphAPI=DirectX !
 #endif
@@ -6018,7 +6018,7 @@ static void ANT_CALL PopupCallback(void *_ClientData)
         g_TwMgr->m_PopupBar = NULL;
     }
 }
-#if defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+#if defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
 #   pragma optimize("", on)
 #endif
 
@@ -6273,7 +6273,7 @@ bool CTwBar::MouseButton(ETwMouseButtonID _Button, bool _Pressed, int X, int Y)
             m_MouseOriginX = X;
             m_MouseOriginY = Y;
             m_FirstLine0 = m_FirstLine;
-          #ifdef ANT_WINDOWS
+          #ifdef ANT_WIN32
             ANT_SET_CURSOR(NS);
           #else
             ANT_SET_CURSOR(Arrow);
@@ -6423,7 +6423,7 @@ bool CTwBar::MouseButton(ETwMouseButtonID _Button, bool _Pressed, int X, int Y)
         {
             /*
             const char *WebPage = "http://";
-            #if defined ANT_WINDOWS
+            #if defined ANT_WIN32
                 ShellExecute(NULL, "open", WebPage, NULL, NULL, SW_SHOWNORMAL);
             #elif defined ANT_UNIX
                 // brute force: try all the possible browsers (I don't know how to find the default one; someone?)
@@ -7680,7 +7680,7 @@ bool CTwBar::EditInPlaceGetClipboard(std::string *_OutString)
     assert( _OutString!=NULL );
     *_OutString = m_EditInPlace.m_Clipboard; // default implementation
 
-#if defined ANT_WINDOWS
+#if defined ANT_WIN32
 
     if( !IsClipboardFormatAvailable(CF_TEXT) )
         return false;
@@ -7730,7 +7730,7 @@ bool CTwBar::EditInPlaceSetClipboard(const std::string& _String)
         return false;   // keep last clipboard
     m_EditInPlace.m_Clipboard = _String; // default implementation
 
-#if defined ANT_WINDOWS
+#if defined ANT_WIN32
 
     if( !OpenClipboard(NULL) )
         return false;

@@ -1,4 +1,4 @@
-/*     Copyright 2015 Egor Yusov
+/*     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ int Engine::InitDisplay()
         // odd offsets which distorts everything
         // Latest OpenGL works very much like Direct3D11, and 
         // Tweak Bar will never know if D3D or OpenGL is actually used
-        if (!TwInit(TW_DIRECT3D11, pRenderDevice_.RawPtr(), pDeviceContext_.RawPtr()))
+        if (!TwInit(TW_DIRECT3D11, pRenderDevice_.RawPtr(), pDeviceContext_.RawPtr(), SwapChainDesc.ColorBufferFormat))
         {
             LOGE( "Failed to Init Ant tweak bar" );
             return 0;

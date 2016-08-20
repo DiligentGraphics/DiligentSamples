@@ -14,15 +14,15 @@
 #include "TwBar.h"
 #include "TwFonts.h"
 #include "TwGraph.h"
-#ifdef ANT_WINDOWS
+#ifdef ANT_WIN32
 #   include <debugapi.h>
 #   include "resource.h"
 #   ifdef _DEBUG
 #       include <crtdbg.h>
 #   endif // _DEBUG
-#endif // ANT_WINDOWS
+#endif // ANT_WIN32
 
-#if !(defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE))
+#if !(defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS))
 #   define _snprintf snprintf
 #endif
 
@@ -80,7 +80,7 @@ void ANT_CALL TwGlobalError(const char *_ErrorMessage);
 #define _strdup strdup
 #endif
 
-#ifdef ANT_WINDOWS
+#ifdef ANT_WIN32
     bool g_UseCurRsc = true;    // use dll resources for rotoslider cursors
 #endif
 
@@ -1736,7 +1736,7 @@ std::string& CTwMgr::CLibStdString::ToLib()
 //  ---------------------------------------------------------------------------
 
 
-static int TwCreateGraph()
+static int TwCreateGraph(int BackBufferFormat)
 {
     assert( g_TwMgr!=NULL && g_TwMgr->m_Graph==NULL );
 
@@ -1754,7 +1754,7 @@ static int TwCreateGraph()
         return 0;
     }
     else
-        return g_TwMgr->m_Graph->Init();
+        return g_TwMgr->m_Graph->Init(BackBufferFormat);
 }
 
 //  ---------------------------------------------------------------------------
@@ -1767,7 +1767,7 @@ static inline int TwFreeAsyncDrawing()
         PerfTimer timer;
         while( g_TwMgr->m_Graph->IsDrawing() && timer.GetTime()<SLEEP_MAX )
         {
-            #if defined(ANT_WINDOWS)
+            #if defined(ANT_WIN32)
                 Sleep(1); // milliseconds
             #elif defined(ANT_UNIX) || defined(ANT_OSX) || defined(ANT_ANDROID)
                 usleep(1000); // microseconds
@@ -1793,7 +1793,7 @@ static inline int TwFreeAsyncProcessing()
         PerfTimer timer;
         while( g_TwMgr->IsProcessing() && timer.GetTime()<SLEEP_MAX )
         {
-            #if defined(ANT_WINDOWS)
+            #if defined(ANT_WIN32)
                 Sleep(1); // milliseconds
             #elif defined(ANT_UNIX) 
                 usleep(1000); // microseconds
@@ -1860,9 +1860,9 @@ static int TwInitMgr()
 }
 
 
-int ANT_CALL TwInit(ETwGraphAPI _GraphAPI, void *_Device, void *_ImmediateContext)
+int ANT_CALL TwInit(ETwGraphAPI _GraphAPI, void *_Device, void *_ImmediateContext, int BackBufferFormat)
 {
-#if defined(_DEBUG) && (defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE))
+#if defined(_DEBUG) && (defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS))
     _CrtSetDbgFlag(_CRTDBG_LEAK_CHECK_DF|_CrtSetDbgFlag(_CRTDBG_LEAK_CHECK_DF));
 #endif
 
@@ -1881,7 +1881,7 @@ int ANT_CALL TwInit(ETwGraphAPI _GraphAPI, void *_Device, void *_ImmediateContex
     TwGenerateDefaultFonts(g_FontScaling);
     g_TwMgr->m_CurrentFont = g_DefaultNormalFont;
 
-    int Res = TwCreateGraph();
+    int Res = TwCreateGraph(BackBufferFormat);
     if( Res )
         Res = TwInitMgr();
     
@@ -2039,7 +2039,7 @@ int ANT_CALL TwDraw()
         return 0;
 
     // Create cursors
-    #if defined(ANT_WINDOWS) || defined(ANT_OSX)
+    #if defined(ANT_WIN32) || defined(ANT_OSX)
         if( !g_TwMgr->m_CursorsCreated )
             g_TwMgr->CreateCursors();
     #elif defined(ANT_UNIX)
@@ -2831,7 +2831,7 @@ void ANT_CALL TwGlobalError(const char *_ErrorMessage)  // to be called when g_T
     if( g_ErrorHandler==NULL )
     {
         fprintf(stderr, "ERROR(AntTweakBar) >> %s\n", _ErrorMessage);
-    #if defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+    #if defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
         OutputDebugStringA("ERROR(AntTweakBar) >> ");
         OutputDebugStringA(_ErrorMessage);
         OutputDebugStringA("\n");
@@ -2862,7 +2862,7 @@ void CTwMgr::SetLastError(const char *_ErrorMessage)    // _ErrorMessage must be
         if( m_CurrentDbgFile!=NULL && strlen(m_CurrentDbgFile)>0 && m_CurrentDbgLine>0 )
             fprintf(stderr, "%s(%d): ", m_CurrentDbgFile, m_CurrentDbgLine);
         fprintf(stderr, "ERROR(AntTweakBar) >> %s\n", m_LastError);
-    #if defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+    #if defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
         if( m_CurrentDbgFile!=NULL && strlen(m_CurrentDbgFile)>0 && m_CurrentDbgLine>0 )
         {
             OutputDebugStringA(m_CurrentDbgFile);
@@ -2873,7 +2873,7 @@ void CTwMgr::SetLastError(const char *_ErrorMessage)    // _ErrorMessage must be
         OutputDebugStringA("ERROR(AntTweakBar) >> ");
         OutputDebugStringA(m_LastError);
         OutputDebugStringA("\n");
-    #endif // defined(ANT_WINDOWS) || defined(ANT_WINDOWS_STORE)
+    #endif // defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS)
     }
     else
         g_ErrorHandler(_ErrorMessage);
@@ -6175,7 +6175,7 @@ void CTwMgr::UpdateHelpBar()
 
 //  ---------------------------------------------------------------------------
 
-#if defined(ANT_WINDOWS)
+#if defined(ANT_WIN32)
 
 #include "res/TwXCursors.h"
 
@@ -6685,7 +6685,7 @@ void CTwMgr::SetCursor(CTwMgr::CCursor _Cursor)
     //}
 }
 
-#elif defined (ANT_WINDOWS_STORE)
+#elif defined (ANT_UNIVERSAL_WINDOWS)
 
 CTwMgr::CCursor CTwMgr::PixmapCursor(int _CurIdx)
 { 
