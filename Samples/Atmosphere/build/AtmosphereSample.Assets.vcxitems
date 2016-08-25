@@ -32,9 +32,6 @@
     <None Include="$(MSBuildThisFileDirectory)assets\shaders\atmosphere\UnshadowedScattering.fxh">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)assets\shaders\Common.fxh">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <None Include="$(MSBuildThisFileDirectory)assets\shaders\HostSharedTerrainStructs.fxh">
       <DeploymentContent>true</DeploymentContent>
     </None>

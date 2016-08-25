@@ -231,12 +231,13 @@ function SetRenderNormalMapShadersAndStates()
 	Context.CommitShaderResources("COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 end
 
-function RenderHemisphere(PrecomputedNetDensitySRV, AmbientSkylightSRV)
+function RenderHemisphere(PrecomputedNetDensitySRV, AmbientSkylightSRV, ShadowMapSRV)
 	Context.SetPipelineState(RenderHemispherePSO)
 	
 	RenderHemisphereSRB:GetVariable("SHADER_TYPE_VERTEX", "g_tex2DOccludedNetDensityToAtmTop"):Set(PrecomputedNetDensitySRV)
 	RenderHemisphereSRB:GetVariable("SHADER_TYPE_VERTEX", "g_tex2DAmbientSkylight"):Set(AmbientSkylightSRV)
-
+	RenderHemisphereSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DShadowMap"):Set(ShadowMapSRV)
+	
 	Context.CommitShaderResources(RenderHemisphereSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 end
 

@@ -72,7 +72,7 @@ struct RenderingParams
 		m_TexturingMode(TM_MATERIAL_MASK_NM),
         m_iRingDimension(65),
         m_iNumRings(15),
-        m_iNumShadowCascades(4),
+        m_iNumShadowCascades(6),
         m_bBestCascadeSearch(TRUE),
         m_bSmoothShadows(TRUE),
         m_iColOffset(1356), 

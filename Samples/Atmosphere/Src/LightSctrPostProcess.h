@@ -160,6 +160,7 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pRendedCoordTexPS;
     Diligent::RefCntAutoPtr<IShader> m_pRefineSampleLocationsCS;
     Diligent::RefCntAutoPtr<IPipelineState> m_pRefineSampleLocationsPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRefineSampleLocationsSRB;
     Diligent::RefCntAutoPtr<IShader> m_pRenderCoarseUnshadowedInsctrPS;
     Diligent::RefCntAutoPtr<IShader> m_pMarkRayMarchingSamplesInStencilPS;
     Diligent::RefCntAutoPtr<IShader> m_pRenderSliceUVDirInSMPS;
@@ -190,12 +191,17 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pPrecomputeAmbientSkyLightPS;
 
     Diligent::RefCntAutoPtr<IPipelineState> m_pPrecomputeSingleSctrPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pPrecomputeSingleSctrSRB;
     Diligent::RefCntAutoPtr<IPipelineState> m_pComputeSctrRadiancePSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeSctrRadianceSRB;
     Diligent::RefCntAutoPtr<IPipelineState> m_pComputeScatteringOrderPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeScatteringOrderSRB;
     Diligent::RefCntAutoPtr<IPipelineState> m_pInitHighOrderScatteringPSO, m_pUpdateHighOrderScatteringPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pInitHighOrderScatteringSRB, m_pUpdateHighOrderScatteringSRB;
     Diligent::RefCntAutoPtr<IPipelineState> m_pCombineScatteringOrdersPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pCombineScatteringOrdersSRB;
 
+    Diligent::RefCntAutoPtr<ITexture> m_ptex3DHighOrderSctr, m_ptex3DHighOrderSctr2;
 
     Diligent::RefCntAutoPtr<IBuffer> m_pcbPostProcessingAttribs;
     Diligent::RefCntAutoPtr<IBuffer> m_pcbMediaAttribs;
@@ -213,8 +219,9 @@ private:
         SliceUVDirAndOriginTex      = 0x004,
         PrecomputedOpticaLDepthTex  = 0x008,
         LowResLuminamceTex          = 0x010,
-        AmbientSkyLightTex          = 0x020
+        AmbientSkyLightTex          = 0x020,
+        PrecomputedIntegralsTex     = 0x040
     };
     Uint32 m_uiUpToDateResourceFlags;
-
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DShadowMapSRV;
 };

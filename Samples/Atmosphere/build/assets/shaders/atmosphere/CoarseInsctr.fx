@@ -20,16 +20,6 @@ cbuffer cbLightParams
     LightAttribs g_LightAttribs;
 }
 
-cbuffer cbPostProcessingAttribs
-{
-    PostProcessingAttribs g_PPAttribs;
-};
-
-cbuffer cbMiscDynamicParams
-{
-    MiscDynamicParams g_MiscParams;
-}
-
 Texture2D<float2> g_tex2DOccludedNetDensityToAtmTop;
 SamplerState g_tex2DOccludedNetDensityToAtmTop_sampler;
 

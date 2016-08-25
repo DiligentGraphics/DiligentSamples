@@ -791,15 +791,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Attrs.Desc.Name = "HemispherePS";
         ShaderVariableDesc ShaderVars[] = 
         {
-            {"g_TerrainAttribs", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_CameraAttribs", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_LightAttribs", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_tex2DElevationMap", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_tex2DNormalMap", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_tex2DMtrlMap", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_tex2DShadowMap", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_tex2DTileDiffuse", SHADER_VARIABLE_TYPE_STATIC},
-            {"g_tex2DTileNM", SHADER_VARIABLE_TYPE_STATIC}
+            {"g_tex2DShadowMap", SHADER_VARIABLE_TYPE_DYNAMIC},
         };
         Attrs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
         BasicShaderSourceStreamFactory BasicSSSFactory(Attrs.SearchDirectories);
@@ -840,6 +832,9 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Macros.AddShaderMacro("SMOOTH_SHADOWS", m_Params.m_bSmoothShadows ? true : false);
         Macros.Finalize();
         Attrs.Macros = Macros;
+
+        Attrs.Desc.VariableDesc = ShaderVars;
+        Attrs.Desc.NumVariables = _countof(ShaderVars);
 
         m_pDevice->CreateShader( Attrs, &m_pHemispherePS );
         m_pTerrainScript->Run( "SetHemispherePS", m_pHemispherePS, GetTextureFormatAttribs(m_Params.DstRTVFormat).Name );
@@ -887,8 +882,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
     else
     {
         pShadowMapSRV->SetSampler( m_pComparisonSampler );
-        m_pHemispherePS->GetShaderVariable( "g_tex2DShadowMap" )->Set( pShadowMapSRV );
-        m_pTerrainScript->Run( pContext, "RenderHemisphere", pPrecomputedNetDensitySRV, pAmbientSkylightSRV );
+        m_pTerrainScript->Run( pContext, "RenderHemisphere", pPrecomputedNetDensitySRV, pAmbientSkylightSRV, pShadowMapSRV );
     }
 
     for(auto MeshIt = m_SphereMeshes.begin();  MeshIt != m_SphereMeshes.end(); ++MeshIt)

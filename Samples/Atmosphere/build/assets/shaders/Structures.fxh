@@ -243,7 +243,7 @@ struct PostProcessingAttribs
         m_fMiddleGray(0.18f),
         m_uiLightSctrTechnique(LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING),
         m_iNumCascades(0),
-        m_iFirstCascade(1),
+        m_iFirstCascade(2),
         m_fNumCascades(0),
         m_fFirstCascade(1),
         m_uiCascadeProcessingMode(CASCADE_PROCESSING_MODE_SINGLE_PASS),

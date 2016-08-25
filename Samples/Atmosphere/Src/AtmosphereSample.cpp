@@ -90,6 +90,7 @@ AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImme
         m_uiShadowMapResolution = 512;
         m_PPAttribs.m_iFirstCascade = 2;
         m_PPAttribs.m_uiSingleScatteringMode = SINGLE_SCTR_MODE_LUT;
+        m_TerrainRenderParams.m_iNumShadowCascades = 4;
         m_TerrainRenderParams.m_iNumRings = 10;
         m_TerrainRenderParams.m_TexturingMode = RenderingParams::TM_MATERIAL_MASK;
     }
@@ -967,6 +968,12 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
 void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
 {
     m_pLightSctrPP->OnWindowResize( m_pDevice, Width, Height );
+    // Flush is required because Intel driver does not release resources until
+    // command buffer is flushed. When window is resized, WindowResize() is called for
+    // every intermediate window size, and light scattering object creates resources
+    // for the new size. This resources are then released by the light scattering object, but 
+    // not by Intel driver, which results in memory exhaustion.
+    m_pDeviceContext->Flush();
 
     m_pOffscreenColorBuffer.Release();
     m_pOffscreenDepthBuffer.Release();
