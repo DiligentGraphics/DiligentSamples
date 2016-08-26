@@ -203,89 +203,89 @@
   <ItemGroup>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineD3D11_64d.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineD3D11_64r.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineD3D12_64d.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"
       </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineD3D12_64r.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"
       </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineOpenGL_64d.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x64\GraphicsEngineOpenGL_64r.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineD3D11_32d.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineD3D11_32r.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineD3D12_32d.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"
       </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineD3D12_32r.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"
       </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineOpenGL_32d.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
     <CustomBuild Include="$(SolutionDir)\bin\DLLs\x86\GraphicsEngineOpenGL_32r.dll">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(RelativeDir)%(Filename).dll $(TargetDir)
-copy %(RelativeDir)%(Filename).pdb $(TargetDir)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(RelativeDir)%(Filename).dll" "$(TargetDir)"
+copy "%(RelativeDir)%(Filename).pdb" "$(TargetDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename).dll and %(Filename).pdb</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(TargetDir)%(Filename).dll</Outputs>
     </CustomBuild>
