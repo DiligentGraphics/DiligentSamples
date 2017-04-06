@@ -45,6 +45,8 @@ void FindCascade(float3 f3PosInLightViewSpace,
                  out float3 f3CascadeLightSpaceScale,
                  out int Cascade)
 {
+    f3PosInCascadeProjSpace = float3(0.0, 0.0, 0.0);
+    f3CascadeLightSpaceScale = float3(0.0, 0.0, 0.0);
     Cascade = 0;
 #if BEST_CASCADE_SEARCH
     while(Cascade < NUM_SHADOW_CASCADES)
@@ -235,7 +237,7 @@ void HemispherePS(in float4 f4Pos : SV_Position,
                   // arguments must have the exact same name as vertex shader 
                   // outputs and must go in the same order.
                   
-                  out float3 f3outColor : SV_Target)
+                  out float4 f4OutColor : SV_Target)
 {
     float3 EarthNormal = normalize(VSOut.f3Normal);
     float3 EarthTangent = normalize(VSOut.f3Tangent);
@@ -281,5 +283,6 @@ void HemispherePS(in float4 f4Pos : SV_Position,
         f3CascadeColor = (Cascade < NUM_SHADOW_CASCADES ? g_TerrainAttribs.f4CascadeColors[Cascade].rgb : float3(1.0, 1.0, 1.0)) / 8.0;
     }
     
-    f3outColor = f3CascadeColor +  SurfaceReflectance * (fLightAmount*DiffuseIllumination*f3SunLight + f3AmbientSkyLight);
+    f4OutColor.rgb = f3CascadeColor +  SurfaceReflectance * (fLightAmount*DiffuseIllumination*f3SunLight + f3AmbientSkyLight);
+    f4OutColor.a = 1.0;
 }

@@ -14,7 +14,7 @@ void InterpolateIrradiancePS(ScreenSizeQuadVSOutput VSOut,
                              // it still must be declared.
 
                              in float4 f4Pos : SV_Position,
-                             out float3 f3InterpolatedIrradiance : SV_Target)
+                             out float4 f4InterpolatedIrradiance : SV_Target)
 {
     int iSampleInd = int(f4Pos.x);
     int iSliceInd = int(f4Pos.y);
@@ -26,5 +26,6 @@ void InterpolateIrradiancePS(ScreenSizeQuadVSOutput VSOut,
     float3 f3SrcInsctr1 = g_tex2DInitialInsctrIrradiance.Load( int3(ui2InterpolationSources.y, iSliceInd, 0));
 
     // Ray marching samples are interpolated from themselves
-    f3InterpolatedIrradiance = lerp(f3SrcInsctr0, f3SrcInsctr1, fInterpolationPos);
+    f4InterpolatedIrradiance.rgb = lerp(f3SrcInsctr0, f3SrcInsctr1, fInterpolationPos);
+    f4InterpolatedIrradiance.a = 1.0;
 }

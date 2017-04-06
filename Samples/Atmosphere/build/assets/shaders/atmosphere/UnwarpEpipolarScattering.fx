@@ -286,7 +286,7 @@ void ApplyInscatteredRadiancePS(ScreenSizeQuadVSOutput VSOut,
                                 // Moreover, even if the shader is not using the argument,
                                 // it still must be declared.
 
-                                out float3 f3Color : SV_Target)
+                                out float4 f4Color : SV_Target)
 {
     float2 f2UV = NormalizedDeviceXYToTexUV(VSOut.m_f2PosPS);
     float fCamSpaceZ = g_tex2DCamSpaceZ.SampleLevel(g_tex2DCamSpaceZ_sampler, f2UV, 0);
@@ -310,9 +310,10 @@ void ApplyInscatteredRadiancePS(ScreenSizeQuadVSOutput VSOut,
     }
 
 #if PERFORM_TONE_MAPPING
-    f3Color = ToneMap(f3BackgroundColor + f3Inscttering);
+    f4Color.rgb = ToneMap(f3BackgroundColor + f3Inscttering);
 #else
     const float DELTA = 0.00001;
-    f3Color = log( max(DELTA, dot(f3BackgroundColor + f3Inscttering, RGB_TO_LUMINANCE)) ) * F3ONE;
+    f4Color.rgb = log( max(DELTA, dot(f3BackgroundColor + f3Inscttering, RGB_TO_LUMINANCE)) ) * F3ONE;
 #endif
+    f4Color.a = 1.0;
 }

@@ -344,17 +344,14 @@ void PrecomputeAmbientSkyLightPS(ScreenSizeQuadVSOutput VSOut,
                                  // arguments must have the exact same name as vertex shader 
                                  // outputs and must go in the same order.
 
-                                 out float3 f3SkyLight : SV_Target)
+                                 out float4 f4SkyLight : SV_Target)
 {
-        f3SkyLight = float3(0.0, 0.0, 0.0); // To fix bug on latest NV driver
-        return;
-
     float fU = NormalizedDeviceXYToTexUV(VSOut.m_f2PosPS).x;
     float3 f3RayStart = float3(0.0, 20.0, 0.0);
     float3 f3EarthCentre =  -float3(0.0, 1.0, 0.0) * EARTH_RADIUS;
     float fCosZenithAngle = clamp(fU * 2.0 - 1.0, -1.0, +1.0);
     float3 f3DirOnLight = float3(sqrt(saturate(1.0 - fCosZenithAngle*fCosZenithAngle)), fCosZenithAngle, 0.0);
-    f3SkyLight = F3ZERO;
+    f4SkyLight = F4ZERO;
     // Go through a number of random directions on the sphere
     for(int iSample = 0; iSample < NUM_RANDOM_SPHERE_SAMPLES; ++iSample)
     {
@@ -366,9 +363,9 @@ void PrecomputeAmbientSkyLightPS(ScreenSizeQuadVSOutput VSOut,
         float4 f4UVWQ = -F4ONE;
         float3 f3Sctr = LookUpPrecomputedScattering(f3RayStart, f3RandomDir, f3EarthCentre, f3DirOnLight.xyz, g_tex3DMultipleSctrLUT, g_tex3DMultipleSctrLUT_sampler, f4UVWQ); 
         // Accumulate ambient irradiance through the horizontal plane
-        f3SkyLight += f3Sctr * dot(f3RandomDir, float3(0.0, 1.0, 0.0));
+        f4SkyLight.rgb += f3Sctr * dot(f3RandomDir, float3(0.0, 1.0, 0.0));
     }
     // Each sample covers 2 * PI / NUM_RANDOM_SPHERE_SAMPLES solid angle (integration is performed over
     // upper hemisphere)
-    f3SkyLight *= 2.0 * PI / float(NUM_RANDOM_SPHERE_SAMPLES);
+    f4SkyLight.rgb *= 2.0 * PI / float(NUM_RANDOM_SPHERE_SAMPLES);
 }

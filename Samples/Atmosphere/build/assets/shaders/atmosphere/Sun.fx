@@ -46,10 +46,11 @@ void SunVS(in uint VertexId : SV_VertexID,
 }
 
 void SunPS(SunVSOutput VSOut,
-           out float3 f3Color : SV_Target)
+           out float4 f4Color : SV_Target)
 {
     float2 fCotanHalfFOV = float2( MATRIX_ELEMENT(g_CameraAttribs.mProj, 0, 0), MATRIX_ELEMENT(g_CameraAttribs.mProj, 1, 1) );
     float2 f2SunScreenSize = fTanSunAngularRadius * fCotanHalfFOV;
     float2 f2dXY = (VSOut.f2PosPS - g_LightAttribs.f4LightScreenPos.xy) / f2SunScreenSize;
-    f3Color = sqrt(saturate(1.0 - dot(f2dXY, f2dXY))) * F3ONE;
+    f4Color.rgb = sqrt(saturate(1.0 - dot(f2dXY, f2dXY))) * F3ONE;
+    f4Color.a = 1.0;
 }

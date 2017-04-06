@@ -585,7 +585,7 @@ float3 ComputeShadowedInscattering( in float2 f2RayMarchingSampleLocation,
 
 void RayMarchPS(in ScreenSizeQuadVSOutput VSOut,
                 in float4 f4PosPS : SV_Position,
-                out float3 f3Inscattering : SV_TARGET)
+                out float4 f4Inscattering : SV_TARGET)
 {
     uint2 ui2SamplePosSliceInd = uint2(f4PosPS.xy);
     float2 f2SampleLocation = g_tex2DCoordinates.Load( int3(ui2SamplePosSliceInd, 0) );
@@ -594,21 +594,21 @@ void RayMarchPS(in ScreenSizeQuadVSOutput VSOut,
     [branch]
     if( any( Greater( abs( f2SampleLocation ), (1.0 + 1e-3) * F2ONE) ) )
     {
-        f3Inscattering = F3ZERO;
+        f4Inscattering = F4ZERO;
         return;
     }
-    f3Inscattering = F3ONE;
+    f4Inscattering = F4ONE;
 #if ENABLE_LIGHT_SHAFTS
     float fCascade = g_MiscParams.fCascadeInd + VSOut.m_fInstID;
-    f3Inscattering = 
+    f4Inscattering.rgb = 
         ComputeShadowedInscattering(f2SampleLocation, 
                                     fRayEndCamSpaceZ,
                                     fCascade,
                                     ui2SamplePosSliceInd.y);
 #else
     float3 f3Extinction;
-    ComputeUnshadowedInscattering(f2SampleLocation, fRayEndCamSpaceZ, float(g_PPAttribs.m_uiInstrIntegralSteps), f3Inscattering, f3Extinction);
-    f3Inscattering *= g_LightAttribs.f4ExtraterrestrialSunColor.rgb;
+    ComputeUnshadowedInscattering(f2SampleLocation, fRayEndCamSpaceZ, float(g_PPAttribs.m_uiInstrIntegralSteps), f4Inscattering.rgb, f3Extinction);
+    f4Inscattering.rgb *= g_LightAttribs.f4ExtraterrestrialSunColor.rgb;
 #endif
 }
 
@@ -640,9 +640,9 @@ void RayMarchPS(in ScreenSizeQuadVSOutput VSOut,
 
 void FixAndApplyInscatteredRadiancePS(ScreenSizeQuadVSOutput VSOut,
                                       in float4 f4PosPS : SV_Position,
-                                      out float3 f3Color : SV_Target)
+                                      out float4 f4Color : SV_Target)
 {
-    f3Color = float3(0.0, 1.0, 0.0);
+    f4Color = float4(0.0, 1.0, 0.0, 1.0);
     if( g_PPAttribs.m_bShowDepthBreaks )
         return;
 
@@ -673,11 +673,11 @@ void FixAndApplyInscatteredRadiancePS(ScreenSizeQuadVSOutput VSOut,
     f3InsctrColor *= g_LightAttribs.f4ExtraterrestrialSunColor.rgb;
 #endif
 
-    f3Color = (f3BackgroundColor + f3InsctrColor);
+    f4Color.rgb = (f3BackgroundColor + f3InsctrColor);
 #if PERFORM_TONE_MAPPING
-    f3Color = ToneMap(f3BackgroundColor + f3InsctrColor);
+    f4Color.rgb = ToneMap(f3BackgroundColor + f3InsctrColor);
 #else
     const float DELTA = 0.00001;
-    f3Color = log( max(DELTA, dot(f3BackgroundColor + f3InsctrColor, RGB_TO_LUMINANCE)) ) * F3ONE;
+    f4Color.rgb = log( max(DELTA, dot(f3BackgroundColor + f3InsctrColor, RGB_TO_LUMINANCE)) ) * F3ONE;
 #endif
 }
