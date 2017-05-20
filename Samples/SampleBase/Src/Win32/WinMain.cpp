@@ -1,4 +1,4 @@
-/*     Copyright 2015-2016 Egor Yusov
+/*     Copyright 2015-2017 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,6 +74,11 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppIm
 #endif
 
             EngineD3D12Attribs EngD3D12Attribs;
+			EngD3D12Attribs.GPUDescriptorHeapDynamicSize[0] = 32768;
+			EngD3D12Attribs.GPUDescriptorHeapSize[1] = 128;
+			EngD3D12Attribs.GPUDescriptorHeapDynamicSize[1] = 2048-128;
+			EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[0] = 32;
+			EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[1] = 8; // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
             CreateDeviceAndContextsD3D12( EngD3D12Attribs, ppRenderDevice, ppImmediateContext, 0);
             CreateSwapChainD3D12( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
         }
@@ -215,6 +220,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     
     TwTerminate();
 
+	//pDeviceContext->Flush();
     g_pSample.reset();
     pRenderDevice.Release();
 

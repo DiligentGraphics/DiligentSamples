@@ -1,4 +1,4 @@
-/*     Copyright 2015-2016 Egor Yusov
+/*     Copyright 2015-2017 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -761,7 +761,7 @@ void AtmosphereSample::Render()
                               pPrecomputedNetDensitySRV, 
                               pAmbientSkyLightSRV, 
                               false);
-
+	
     if( m_bEnableLightScattering )
     {
         FrameAttribs FrameAttribs;
@@ -989,6 +989,7 @@ void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
     m_pDevice->CreateTexture( ColorBuffDesc, TextureData(), &m_pOffscreenColorBuffer );
 
     TextureDesc DepthBuffDesc = ColorBuffDesc;
+	DepthBuffDesc.Name = "Offscreen depth buffer";
     DepthBuffDesc.Format = TEX_FORMAT_D32_FLOAT;
     DepthBuffDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
     m_pDevice->CreateTexture( DepthBuffDesc, TextureData(), &m_pOffscreenDepthBuffer );
