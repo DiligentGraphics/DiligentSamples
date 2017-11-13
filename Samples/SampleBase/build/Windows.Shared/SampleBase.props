@@ -9,7 +9,7 @@
     <ToolsRoot>$(EngineRoot)\diligenttools</ToolsRoot>
   </PropertyGroup>
   <PropertyGroup>
-    <IncludePath>$(SamplesRoot)\External\TwBarLib\include;$(CoreRoot)\Graphics\GraphicsEngine\interface;$(CoreRoot)\Graphics\GraphicsEngineD3D12\interface;$(CoreRoot)\Graphics\GraphicsEngineD3D11\interface;$(CoreRoot)\Graphics\GraphicsEngineOpenGL\interface;$(CoreRoot)\Common\include;$(CoreRoot)\Common\interface;$(ToolsRoot)\RenderScript\include;$(SamplesRoot)\Samples\SampleBase\include;$(CoreRoot)\Platforms\interface;$(CoreRoot)\Graphics\GraphicsTools\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SamplesRoot)\External\TwBarLib\include;$(CoreRoot)\Graphics\GraphicsEngine\interface;$(CoreRoot)\Graphics\GraphicsEngineD3D12\interface;$(CoreRoot)\Graphics\GraphicsEngineD3D11\interface;$(CoreRoot)\Graphics\GraphicsEngineOpenGL\interface;$(CoreRoot)\Common\include;$(CoreRoot)\Common\interface;$(ToolsRoot)\RenderScript\include;$(SamplesRoot)\Samples\SampleBase\include;$(CoreRoot)\Platforms\interface;$(CoreRoot)\Graphics\GraphicsTools\include;$(CoreRoot)\Graphics\HLSL2GLSLConverterLib\interface;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <PostBuildEvent />

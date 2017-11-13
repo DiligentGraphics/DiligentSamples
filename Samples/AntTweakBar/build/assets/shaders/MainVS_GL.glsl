@@ -24,10 +24,7 @@ out gl_PerVertex
 };
 #endif
 
-out VertexData
-{
-    vec4 Color;
-}OutData;
+layout(location = 0) out vec4 out_Color;
 
 vec4 mul( in vec4 v, in mat4 m )
 {
@@ -39,6 +36,6 @@ void main()
 {
     gl_Position = mul( vec4(in_Position.xyz, 1.f), g_Constants.WorldViewProj);
     vec3 n = normalize(mul(vec4(in_Normal, 0.f), g_Constants.WorldNorm).xyz);
-    OutData.Color.rgb = in_Color.rgb * ((1.f - g_Constants.LightCoeff) + g_Constants.LightCoeff * dot(n, -g_Constants.LightDir));
-    OutData.Color.a  = in_Color.a;
+    out_Color.rgb = in_Color.rgb * ((1.f - g_Constants.LightCoeff) + g_Constants.LightCoeff * dot(n, -g_Constants.LightDir));
+    out_Color.a  = in_Color.a;
 }

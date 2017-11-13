@@ -79,7 +79,7 @@ private:
     Diligent::String m_strNormalMapTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];
 
     float m_fMinElevation, m_fMaxElevation;
-	std::auto_ptr<ElevationDataSource> m_pElevDataSource;
+	std::unique_ptr<ElevationDataSource> m_pElevDataSource;
     EarthHemsiphere m_EarthHemisphere;
     bool m_bIsDXDevice;
 

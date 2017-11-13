@@ -66,14 +66,13 @@ void CreateShader(IRenderDevice *pDevice,
     Attribs.EntryPoint = EntryPoint;
     Attribs.FilePath = FileName;
     Attribs.Macros = Macros;
-    Attribs.SearchDirectories = "shaders;shaders\\atmosphere";
     Attribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     Attribs.Desc.ShaderType = Type;
     Attribs.Desc.Name = EntryPoint;
     Attribs.Desc.VariableDesc = pVarDesc;
     Attribs.Desc.NumVariables = NumVars;
     Attribs.Desc.DefaultVariableType = DefaultVarType;
-    BasicShaderSourceStreamFactory BasicSSSFactory(Attribs.SearchDirectories);
+    BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\atmosphere");
     Attribs.pShaderSourceStreamFactory = &BasicSSSFactory;
     pDevice->CreateShader( Attribs, ppShader );
 }
@@ -92,8 +91,8 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice,
 {
     pDevice->CreateResourceMapping(ResourceMappingDesc(), &m_pResMapping);
     
-    CreateUniformBuffer( pDevice, sizeof( PostProcessingAttribs ), &m_pcbPostProcessingAttribs);
-    CreateUniformBuffer( pDevice, sizeof( MiscDynamicParams ), &m_pcbMiscParams);
+    CreateUniformBuffer( pDevice, sizeof( PostProcessingAttribs ), "Postprocessing Attribs CB", &m_pcbPostProcessingAttribs);
+    CreateUniformBuffer( pDevice, sizeof( MiscDynamicParams ), "Misc Dynamic Params CB", &m_pcbMiscParams);
 
     BufferDesc CBDesc;
     CBDesc.Usage = USAGE_DEFAULT;
@@ -758,7 +757,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
     auto pShadowSampler = FrameAttribs.ptex2DShadowMapSRV->GetSampler();
     FrameAttribs.ptex2DShadowMapSRV->SetSampler( m_pLinearClampSampler );
 
-    int iMinMaxTexHeight = m_PostProcessingAttribs.m_uiNumEpipolarSlices;
+    auto iMinMaxTexHeight = m_PostProcessingAttribs.m_uiNumEpipolarSlices;
     if( m_bUseCombinedMinMaxTexture )
         iMinMaxTexHeight *= (m_PostProcessingAttribs.m_iNumCascades - m_PostProcessingAttribs.m_iFirstCascade);
 
@@ -792,7 +791,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
 
         // Set source and destination min/max data offsets:
         {
-            MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE_DISCARD, 0 );
+            MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE, MAP_FLAG_DISCARD );
             pMiscDynamicParams->ui4SrcMinMaxLevelXOffset = uiPrevXOffset;
             pMiscDynamicParams->ui4DstMinMaxLevelXOffset = uiXOffset;
             pMiscDynamicParams->fCascadeInd = static_cast<float>(iCascadeIndex);
@@ -860,7 +859,7 @@ void LightSctrPostProcess :: DoRayMarching(FrameAttribs &FrameAttribs,
     }
 
     {
-        MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE_DISCARD, 0 );
+        MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE, MAP_FLAG_DISCARD );
         pMiscDynamicParams->fMaxStepsAlongRay = static_cast<float>( uiMaxStepsAlongRay );
         pMiscDynamicParams->fCascadeInd = static_cast<float>(iCascadeIndex);
     }
@@ -986,7 +985,7 @@ void LightSctrPostProcess :: UpdateAverageLuminance(FrameAttribs &FrameAttribs)
     }
 
     {
-        MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE_DISCARD, 0 );
+        MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE, MAP_FLAG_DISCARD );
         pMiscDynamicParams->fElapsedTime = (float)FrameAttribs.dElapsedTime;
     }
     m_pRenderScript->Run( FrameAttribs.pDeviceContext, "UpdateAverageLuminance" );
@@ -997,7 +996,7 @@ void LightSctrPostProcess :: FixInscatteringAtDepthBreaks(FrameAttribs &FrameAtt
                                                            Uint32 uiMaxStepsAlongRay, 
                                                            EFixInscatteringMode Mode)
 {
-    bool bRenderLuminance = Mode == EFixInscatteringMode::LuminanceOnly;
+    //bool bRenderLuminance = Mode == EFixInscatteringMode::LuminanceOnly;
     
     if( !m_pFixInsctrAtDepthBreaksPS[0] )
     {
@@ -1030,7 +1029,7 @@ void LightSctrPostProcess :: FixInscatteringAtDepthBreaks(FrameAttribs &FrameAtt
     }
     
     {
-        MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE_DISCARD, 0 );
+        MapHelper<MiscDynamicParams> pMiscDynamicParams( FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE, MAP_FLAG_DISCARD );
         pMiscDynamicParams->fMaxStepsAlongRay = static_cast<float>(uiMaxStepsAlongRay);
         pMiscDynamicParams->fCascadeInd = static_cast<float>(m_PostProcessingAttribs.m_iFirstCascade);
     }
@@ -1147,9 +1146,9 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         PPAttribs.m_bUse1DMinMaxTree != m_PostProcessingAttribs.m_bUse1DMinMaxTree ||
         PPAttribs.m_bIs32BitMinMaxMipMap != m_PostProcessingAttribs.m_bIs32BitMinMaxMipMap ||
         bUseCombinedMinMaxTexture != m_bUseCombinedMinMaxTexture ||
-        bUseCombinedMinMaxTexture && 
+        (bUseCombinedMinMaxTexture && 
             (PPAttribs.m_iFirstCascade != m_PostProcessingAttribs.m_iFirstCascade || 
-             PPAttribs.m_iNumCascades  != m_PostProcessingAttribs.m_iNumCascades) )
+             PPAttribs.m_iNumCascades  != m_PostProcessingAttribs.m_iNumCascades)) )
     {
         for(int i=0; i < _countof(m_ptex2DMinMaxShadowMapSRV); ++i)
             m_ptex2DMinMaxShadowMapSRV[i].Release();
@@ -1188,9 +1187,9 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
     bool bRecomputeSctrCoeffs = m_PostProcessingAttribs.m_bUseCustomSctrCoeffs != PPAttribs.m_bUseCustomSctrCoeffs ||
                                 m_PostProcessingAttribs.m_fAerosolDensityScale != PPAttribs.m_fAerosolDensityScale ||
                                 m_PostProcessingAttribs.m_fAerosolAbsorbtionScale != PPAttribs.m_fAerosolAbsorbtionScale ||
-                                PPAttribs.m_bUseCustomSctrCoeffs && 
-                                    ( m_PostProcessingAttribs.m_f4CustomRlghBeta != PPAttribs.m_f4CustomRlghBeta ||
-                                      m_PostProcessingAttribs.m_f4CustomMieBeta  != PPAttribs.m_f4CustomMieBeta );
+                                (PPAttribs.m_bUseCustomSctrCoeffs && 
+                                    (m_PostProcessingAttribs.m_f4CustomRlghBeta != PPAttribs.m_f4CustomRlghBeta ||
+                                     m_PostProcessingAttribs.m_f4CustomMieBeta  != PPAttribs.m_f4CustomMieBeta) );
 
     m_PostProcessingAttribs = PPAttribs;
     m_bUseCombinedMinMaxTexture = bUseCombinedMinMaxTexture;
@@ -1249,7 +1248,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
 #endif
 
     {
-        MapHelper<PostProcessingAttribs> pPPAttribsBuffData( FrameAttribs.pDeviceContext, m_pcbPostProcessingAttribs, MAP_WRITE_DISCARD, 0 );
+        MapHelper<PostProcessingAttribs> pPPAttribsBuffData( FrameAttribs.pDeviceContext, m_pcbPostProcessingAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
         memcpy(pPPAttribsBuffData, &m_PostProcessingAttribs, sizeof(m_PostProcessingAttribs));
     }
 
@@ -1288,9 +1287,11 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
     m_pResMapping->AddResource("cbCameraAttribs", FrameAttribs.pcbCameraAttribs, false);
     m_pResMapping->AddResource("cbLightParams", FrameAttribs.pcbLightAttribs, false);
 
-    ITextureView *pRTVs[] = { FrameAttribs.ptex2DSrcColorBufferRTV };
-    FrameAttribs.pDeviceContext->SetRenderTargets( _countof( pRTVs ), pRTVs, FrameAttribs.ptex2DSrcDepthBufferDSV );
-    RenderSun(FrameAttribs);
+    {
+        ITextureView *pRTVs[] = { FrameAttribs.ptex2DSrcColorBufferRTV };
+        FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, FrameAttribs.ptex2DSrcDepthBufferDSV);
+        RenderSun(FrameAttribs);
+    }
 
     ReconstructCameraSpaceZ(FrameAttribs);
 

@@ -56,8 +56,8 @@ struct QuadTreeNodeLocation
 		, vertOrder(v)
 		, level(l)
 	{
-		assert(h < (1 << l));
-		assert(v < (1 << l));
+		VERIFY_EXPR(h < (1 << l));
+		VERIFY_EXPR(v < (1 << l));
 	}
 	QuadTreeNodeLocation()
 		: horzOrder(0)
@@ -69,6 +69,7 @@ struct QuadTreeNodeLocation
 	inline friend QuadTreeNodeLocation GetChildLocation(const QuadTreeNodeLocation &parent,
 		unsigned int siblingOrder)
 	{
+        VERIFY_EXPR(siblingOrder >= 0 && siblingOrder < 4);
 		return QuadTreeNodeLocation(parent.horzOrder * 2 + (siblingOrder&1),
 			parent.vertOrder * 2 + (siblingOrder>>1),
 			parent.level + 1);

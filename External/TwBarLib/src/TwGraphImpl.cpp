@@ -475,7 +475,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
     float y1 = ToNormScreenY(_Y1 + m_OffsetY, m_WndHeight);
  
     // Dynamic buffers must be mapped in every frame in D3D12, which is not the case here
-    //MapHelper<CLineRectVtx> mappedVertices(m_pDevImmContext, m_pLineVertexBuffer, MAP_WRITE_DISCARD, 0);
+    //MapHelper<CLineRectVtx> mappedVertices(m_pDevImmContext, m_pLineVertexBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
     //if( mappedVertices )
     {
         //CLineRectVtx *vertices = mappedVertices;
@@ -494,7 +494,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
 
 
         // Reset shader constants
-        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE_DISCARD, 0);
+        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         if( mappedConstBuffer )
         {
             CConstants *constants = mappedConstBuffer;
@@ -551,7 +551,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
     float y1 = ToNormScreenY(_Y1 + m_OffsetY, m_WndHeight);
  
     // Dynamic buffers must be mapped in every frame in D3D12, which is not the case here
-    //MapHelper<CLineRectVtx> mappedVertices( m_pDevImmContext, m_pRectVertexBuffer, MAP_WRITE_DISCARD, 0 );
+    //MapHelper<CLineRectVtx> mappedVertices( m_pDevImmContext, m_pRectVertexBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
     //if( mappedVertices )
     {
         //CLineRectVtx *vertices = mappedVertices;
@@ -577,7 +577,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         m_pRectVertexBuffer->UpdateData(m_pDevImmContext, 0, sizeof(vertices), vertices);
 
         // Reset shader constants
-        MapHelper<CConstants> mappedConstBuffer( m_pDevImmContext, m_pConstantBuffer, MAP_WRITE_DISCARD, 0 );
+        MapHelper<CConstants> mappedConstBuffer( m_pDevImmContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
         if( mappedConstBuffer )
         {
             CConstants *constants = mappedConstBuffer;
@@ -701,7 +701,7 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
         {
             m_textVtxBuffer.resize(textObj->m_TextVertexBufferSize);
             //PVoid pData;
-            //textObj->m_pTextVertexBuffer->Map( m_pDevImmContext, MAP_WRITE_DISCARD, 0, pData );
+            //textObj->m_pTextVertexBuffer->Map( m_pDevImmContext, MAP_WRITE, MAP_FLAG_DISCARD, pData );
             //textVerts = (CTextVtx *)pData;
             textVerts = m_textVtxBuffer.data();
         }
@@ -730,7 +730,7 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
         {
             m_mappedVertices.resize(textObj->m_BgVertexBufferSize);
             //PVoid pData;
-            //textObj->m_pBgVertexBuffer->Map( m_pDevImmContext, MAP_WRITE_DISCARD, 0, pData );
+            //textObj->m_pBgVertexBuffer->Map( m_pDevImmContext, MAP_WRITE, MAP_FLAG_DISCARD, pData );
             //bgVerts = (CLineRectVtx *)pData;
             bgVerts = m_mappedVertices.data();
         }
@@ -877,7 +877,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
     if( textObj->m_NbBgVerts>=4 && textObj->m_pBgVertexBuffer!=nullptr )
     {
         // Set offset and constant color
-        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE_DISCARD, 0);
+        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         if( mappedConstBuffer )
         {
             CConstants *constants = mappedConstBuffer;
@@ -915,7 +915,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
     if( textObj->m_NbTextVerts>=4 && textObj->m_pTextVertexBuffer!=nullptr )
     {
         // Set offset and constant color
-        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE_DISCARD, 0);
+        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         if( mappedConstBuffer )
         {
             CConstants *constants = mappedConstBuffer;
@@ -1062,7 +1062,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
     assert( m_pTrianglesVertexBuffer );
 
     // Dynamic buffers must be mapped in every frame in D3D12, which is not the case here
-    //MapHelper<CLineRectVtx> mappedVertices( m_pDevImmContext, m_pTrianglesVertexBuffer, MAP_WRITE_DISCARD, 0);
+    //MapHelper<CLineRectVtx> mappedVertices( m_pDevImmContext, m_pTrianglesVertexBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
     m_mappedVertices.resize(3*_NumTriangles);
     auto mappedVertices = m_mappedVertices.data();
     if( mappedVertices )
@@ -1081,7 +1081,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
 
         // Reset shader constants
         
-        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE_DISCARD, 0);
+        MapHelper<CConstants> mappedConstBuffer(m_pDevImmContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         if( mappedConstBuffer )
         {
             CConstants *constants = mappedConstBuffer;

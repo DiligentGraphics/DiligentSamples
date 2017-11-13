@@ -390,7 +390,7 @@ void MengerSpongeSample::BuildSponge(int levelMax, bool aoEnabled)
 // Copy world/view/proj matrices and light parameters to shader constants
 void MengerSpongeSample::SetShaderConstants(const float4x4& world, const float4x4& view, const float4x4& proj)
 {
-    MapHelper<ShaderConstants> MappedData( m_pDeviceContext, m_pConstantBuffer, MAP_WRITE_DISCARD, 0 );
+    MapHelper<ShaderConstants> MappedData( m_pDeviceContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
     ShaderConstants *cst = MappedData;
     cst->WorldViewProjT = transposeMatrix( world * view * proj );
     cst->WorldNormT = transposeMatrix( world );

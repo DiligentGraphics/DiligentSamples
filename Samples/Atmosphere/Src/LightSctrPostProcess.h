@@ -41,7 +41,7 @@
 
 #pragma once
 
-#include "structures.fxh"
+#include "Structures.fxh"
 #include "ScriptParser.h"
 #include "ShaderMacroHelper.h"
 

@@ -22,6 +22,7 @@
  */
 
 #include <memory>
+#include <iomanip>
 #include <Windows.h>
 #include "SampleBase.h"
 #include "RenderDeviceFactoryD3D11.h"
@@ -52,35 +53,33 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppIm
                                        (Uint32)EngineD3D11DebugFlags::VerifyCommittedResourceRelevance;
 
 #ifdef ENGINE_DLL
-            // Declare function pointers
-            CreateDeviceAndContextsD3D11Type CreateDeviceAndContextsD3D11 = nullptr;
-            CreateSwapChainD3D11Type CreateSwapChainD3D11 = nullptr;
-            // Load the dll and export functions
-            LoadGraphicsEngineD3D11(CreateDeviceAndContextsD3D11, CreateSwapChainD3D11);
+            GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
+            // Load the dll and import GetEngineFactoryD3D11() function
+            LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
-            CreateDeviceAndContextsD3D11( DeviceAttribs, ppRenderDevice, ppImmediateContext, 0 );
-            CreateSwapChainD3D11( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
+            auto *pFactoryD3D11 = GetEngineFactoryD3D11();
+            pFactoryD3D11->CreateDeviceAndContextsD3D11( DeviceAttribs, ppRenderDevice, ppImmediateContext, 0 );
+            pFactoryD3D11->CreateSwapChainD3D11( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
         }
         break;
 
         case DeviceType::D3D12:
         {
 #ifdef ENGINE_DLL
-            // Load the dll and export functions
-            CreateDeviceAndContextsD3D12Type CreateDeviceAndContextsD3D12 = nullptr;
-            CreateSwapChainD3D12Type CreateSwapChainD3D12 = nullptr;
-            // Load the dll and export functions
-            LoadGraphicsEngineD3D12(CreateDeviceAndContextsD3D12, CreateSwapChainD3D12);
+            GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
+            // Load the dll and import GetEngineFactoryD3D12() function
+            LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
 
+            auto *pFactoryD3D12 = GetEngineFactoryD3D12();
             EngineD3D12Attribs EngD3D12Attribs;
 			EngD3D12Attribs.GPUDescriptorHeapDynamicSize[0] = 32768;
 			EngD3D12Attribs.GPUDescriptorHeapSize[1] = 128;
 			EngD3D12Attribs.GPUDescriptorHeapDynamicSize[1] = 2048-128;
 			EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[0] = 32;
 			EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[1] = 8; // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
-            CreateDeviceAndContextsD3D12( EngD3D12Attribs, ppRenderDevice, ppImmediateContext, 0);
-            CreateSwapChainD3D12( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
+            pFactoryD3D12->CreateDeviceAndContextsD3D12( EngD3D12Attribs, ppRenderDevice, ppImmediateContext, 0);
+            pFactoryD3D12->CreateSwapChainD3D12( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
         }
         break;
 
@@ -88,12 +87,12 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppIm
         {
 #ifdef ENGINE_DLL
             // Declare function pointer
-            CreateDeviceAndSwapChainGLType CreateDeviceAndSwapChainGL = nullptr;
-            LoadGraphicsEngineOpenGL(CreateDeviceAndSwapChainGL);
+            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
+            // Load the dll and import GetEngineFactoryOpenGL() function
+            LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
             EngineCreationAttribs EngineCreationAttribs;
-            // Load the dll and export functions
-            CreateDeviceAndSwapChainGL(
+            GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
                 EngineCreationAttribs, ppRenderDevice, ppImmediateContext, SCDesc, hWnd, ppSwapChain );
         }
         break;
@@ -193,6 +192,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
 
     Timer Timer;
     auto PrevTime = Timer.GetElapsedTime();
+    double filteredFrameTime = 0.0;
 
     // Main message loop
     MSG msg = {0};
@@ -212,9 +212,18 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
             g_pSample->Render();
 
 	        // Draw tweak bars
+            // Restore default render target in case the sample has changed it
+            pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
             TwDraw();
 
             pSwapChain->Present();
+
+            double filterScale = 0.2;
+            filteredFrameTime = filteredFrameTime * (1.0 - filterScale) + filterScale * ElapsedTime;
+            std::wstringstream fpsCounterSS;
+            fpsCounterSS << " - " << std::fixed << std::setprecision(1) << filteredFrameTime * 1000;
+            fpsCounterSS << " ms (" << 1.0 / filteredFrameTime << " fps)";
+            SetWindowText(wnd, (Title + fpsCounterSS.str()).c_str());
         }
     }
     
@@ -258,6 +267,18 @@ LRESULT CALLBACK MessageProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lPara
             PostQuitMessage(0);
             return 0;
         default:
-            return DefWindowProc(wnd, message, wParam, lParam);
+        {
+            struct WindowMessageData
+            {
+                HWND hWnd;
+                UINT message;
+                WPARAM wParam;
+                LPARAM lParam;
+            }msg{wnd, message, wParam, lParam};
+            if (g_pSample != nullptr && g_pSample->HandleNativeMessage(&msg) )
+                return 0;
+            else
+                return DefWindowProc(wnd, message, wParam, lParam);
+        }
     }
 }

@@ -359,6 +359,9 @@ function CreateLowResLuminanceTexture(LowResLuminanceMips)
 	extResourceMapping["g_tex2DAverageLuminance"] = tex2DAverageLuminanceSRV
 
 	ResetShaderResourceBindings()
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function CreateSliceUVDirAndOriginTexture(NumEpipolarSlices, NumCascades)
@@ -399,6 +402,9 @@ function CreateAmbientSkyLightTexture(AmbientSkyLightTexDim)
 	tex2DAmbientSkyLightSRV:SetSampler(LinearClampSampler)
 
 	ResetShaderResourceBindings()
+	
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 -----------------------------------[ Screen Size Quad Rendering ]-----------------------------------
@@ -533,6 +539,9 @@ end
 function CreateReconstructCameraSpaceZPSO(ReconstructCameraSpaceZPS)
 	ReconstructCameraSpaceZPSO = CreateScreenSizeQuadPSO("ReconstructCameraSpaceZ", ReconstructCameraSpaceZPS, DisableDepthDesc, DefaultBlendDesc, CamSpaceZFmt)	
 	ReconstructCameraSpaceZSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function ReconstructCameraSpaceZ(DepthBufferSRV)
@@ -551,6 +560,9 @@ end
 
 function CreateRenderSliceEndPointsPSO(RenderSliceEndPointsPS)
 	RenderSliceEndPointsPSO = CreateScreenSizeQuadPSO("RenderSliceEndPoints", RenderSliceEndPointsPS, DisableDepthDesc, DefaultBlendDesc, SliceEndpointsFmt)	
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function RenderSliceEndPoints()
@@ -562,6 +574,9 @@ end
 function CreateRenderCoordinateTexturePSO(RenderCoordinateTexturePS)
 	RenderCoordinateTexturePSO = CreateScreenSizeQuadPSO("RenderCoordinateTexture", RenderCoordinateTexturePS, IncStencilAlwaysDSSDesc, DefaultBlendDesc, {CoordinateTexFmt, EpipolarCamSpaceZFmt}, EpipolarImageDepthFmt)	
 	RenderCoordinateTextureSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function RenderCoordinateTexture()
@@ -586,11 +601,17 @@ end
 function CreateRenderCoarseUnshadowedInsctrAndExtinctionPSO(RenderCoarseUnshadowedInctrPS)
 	RenderCoarseUnshadowedInctrPSO = CreateScreenSizeQuadPSO("RenderCoarseUnshadowedInsctrAndExtinction", RenderCoarseUnshadowedInctrPS, StencilEqKeepStencilDSSDesc, DefaultBlendDesc, {EpipolarInsctrTexFmt, EpipolarExtinctionFmt}, EpipolarImageDepthFmt)
 	RenderCoarseUnshadowedInctrSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function CreateRenderCoarseUnshadowedInsctrPSO(RenderCoarseUnshadowedInctrPS)
 	RenderCoarseUnshadowedInctrPSO = CreateScreenSizeQuadPSO("RenderCoarseUnshadowedInctr", RenderCoarseUnshadowedInctrPS, StencilEqKeepStencilDSSDesc, DefaultBlendDesc, EpipolarInsctrTexFmt, EpipolarImageDepthFmt)
 	RenderCoarseUnshadowedInctrSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function RenderCoarseUnshadowedInctr()
@@ -607,6 +628,9 @@ end
 function CreateMarkRayMarchingSamplesPSO(MarkRayMarchingSamplesPS)
 	MarkRayMarchingSamplesPSO = CreateScreenSizeQuadPSO("MarkRayMarchingSamples", MarkRayMarchingSamplesPS, StencilEqIncStencilDSSDesc, DefaultBlendDesc, {}, EpipolarImageDepthFmt)
 	MarkRayMarchingSamplesSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function MarkRayMarchingSamples()
@@ -624,6 +648,9 @@ end
 function CreateRenderSliceUVDirAndOriginPSO(RenderSliceUVDirAndOriginPS)
 	RenderSliceUVDirAndOriginPSO = CreateScreenSizeQuadPSO("RenderSliceUVDirAndOrigin", RenderSliceUVDirAndOriginPS, DisableDepthDesc, DefaultBlendDesc, SliceUVDirAndOriginTexFmt)	
 	RenderSliceUVDirAndOriginSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function RenderSliceUVDirAndOrigin()
@@ -640,6 +667,9 @@ end
 function CreateInitMinMaxShadowMapPSO(InitMinMaxShadowMapPS, MinMaxShadowMapFmt)
 	InitMinMaxShadowMapPSO = CreateScreenSizeQuadPSO("InitMinMaxShadowMap", InitMinMaxShadowMapPS, DisableDepthDesc, DefaultBlendDesc, MinMaxShadowMapFmt)
 	InitMinMaxShadowMapSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function InitMinMaxShadowMap(ShadowMapSRV)
@@ -657,6 +687,9 @@ end
 
 function CreateComputeMinMaxShadowMapLevelPSO(ComputeMinMaxShadowMapLevelPS, MinMaxShadowMapFmt)
 	ComputeMinMaxShadowMapLevelPSO = CreateScreenSizeQuadPSO("ComputeMinMaxShadowMapLevel", ComputeMinMaxShadowMapLevelPS, DisableDepthDesc, DefaultBlendDesc, MinMaxShadowMapFmt)
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function ComputeMinMaxShadowMapLevel(SRB)
@@ -677,6 +710,9 @@ RayMarchPSO = {}
 function CreateRayMarchPSO(RayMarchPS, Use1DMinMaxTree)
 	RayMarchPSO[Use1DMinMaxTree] = CreateScreenSizeQuadPSO("RayMarch", RayMarchPS, StencilEqKeepStencilDSSDesc, AdditiveBlendBSDesc, EpipolarInsctrTexFmt, EpipolarImageDepthFmt )
 	RayMarchSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function RayMarch(Use1DMinMaxTree, NumQuads)
@@ -696,6 +732,9 @@ end
 function CreateInterpolateIrradiancePSO(InterpolateIrradiancePS)
 	InterpolateIrradiancePSO = CreateScreenSizeQuadPSO("InterpolateIrradiance", InterpolateIrradiancePS, DisableDepthDesc, DefaultBlendDesc, EpipolarInsctrTexFmt)
 	InterpolateIrradianceSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function InterpolateIrradiance()
@@ -712,6 +751,9 @@ end
 function CreateUnwarpAndRenderLuminancePSO(UnwarpAndRenderLuminancePS)
 	UnwarpAndRenderLuminancePSO = CreateScreenSizeQuadPSO("UnwarpAndRenderLuminance", UnwarpAndRenderLuminancePS, DisableDepthDesc, DefaultBlendDesc, LuminanceTexFmt)
 	UnwarpAndRenderLuminanceSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function UnwarpAndRenderLuminance(SrcColorBufferSRV)
@@ -731,6 +773,9 @@ end
 function CreateUnwarpEpipolarScatteringPSO(UnwarpEpipolarScatteringPS)
 	UnwarpEpipolarScatteringPSO = CreateScreenSizeQuadPSO("UnwarpEpipolarScattering", UnwarpEpipolarScatteringPS, EnableDepthDesc, DefaultBlendDesc, MainBackBufferFmt, MainDepthBufferFmt)
 	UnwarpEpipolarScatteringSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function UnwarpEpipolarScattering(SrcColorBufferSRV)
@@ -767,6 +812,9 @@ function CreateFixInscatteringAtDepthBreaksPSO(FixInsctrAtDepthBreaksPS, FixInsc
 	-- Use default blend state - the rendering is always done in single pass
 	FixInscatteringAtDepthBreaksPSO[2] = CreateScreenSizeQuadPSO("FixInsctrAtDepthBreaks", FixInsctrAtDepthBreaksPS, DisableDepthDesc, DefaultBlendDesc, MainBackBufferFmt)
 	FixInscatteringAtDepthBreaksSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function FixInscatteringAtDepthBreaks(Mode, SrcColorBufferSRV)
@@ -787,6 +835,9 @@ end
 function CreateUpdateAverageLuminancePSO(UpdateAverageLuminancePS)
 	UpdateAverageLuminancePSO = CreateScreenSizeQuadPSO("UpdateAverageLuminance", UpdateAverageLuminancePS, DisableDepthDesc, AlphaBlendBSDesc, LuminanceTexFmt)
 	UpdateAverageLuminanceSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function UpdateAverageLuminance()
@@ -824,6 +875,9 @@ function CreateRenderSampleLocationsPSO(RenderSampleLocationsVS, RenderSampleLoc
 		}
 	}
 	RenderSampleLocationsSRB = nil
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function RenderSampleLocations(TotalSamples)
@@ -875,6 +929,9 @@ end
 
 function CreatePrecomputeAmbientSkyLightPSO(PrecomputeAmbientSkyLightPS)
 	PrecomputeAmbientSkyLightPSO = CreateScreenSizeQuadPSO("PrecomputeAmbientSkyLight", PrecomputeAmbientSkyLightPS, DisableDepthDesc, DefaultBlendDesc, AmbientSkyLightTexFmt)
+
+	-- Force garbage collection to make sure all graphics resources are released
+	collectgarbage()
 end
 
 function PrecomputeAmbientSkyLight()

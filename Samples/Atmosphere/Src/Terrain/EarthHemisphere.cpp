@@ -112,8 +112,8 @@ public:
             m_Indices.push_back( iFirstVertex );
         }
 
-        if(m_QuadTriangType != QUAD_TRIANG_TYPE_UNDEFINED && m_QuadTriangType != QuadTriangType || 
-           m_QuadTriangType == QUAD_TRIANG_TYPE_UNDEFINED && QuadTriangType == QUAD_TRIANG_TYPE_01_TO_10)
+        if( (m_QuadTriangType != QUAD_TRIANG_TYPE_UNDEFINED && m_QuadTriangType != QuadTriangType) || 
+            (m_QuadTriangType == QUAD_TRIANG_TYPE_UNDEFINED && QuadTriangType == QUAD_TRIANG_TYPE_01_TO_10) )
         {
             // If triangulation orientation changes, or if start strip orientation is 01 to 10, 
             // we also have to add one additional vertex to preserve winding order
@@ -597,7 +597,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     pResMapping->AddResource( "g_tex2DElevationMap", ptex2DHeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE), true );
     
     RefCntAutoPtr<IBuffer> pcbNMGenerationAttribs;
-    CreateUniformBuffer(pDevice, sizeof(NMGenerationAttribs), &pcbNMGenerationAttribs);
+    CreateUniformBuffer(pDevice, sizeof(NMGenerationAttribs), "NM Generation Attribs CB", &pcbNMGenerationAttribs);
 
     pResMapping->AddResource( "cbNMGenerationAttribs", pcbNMGenerationAttribs, true );
     m_pTerrainScript->Run( pContext, "CreateRenderNormalMapShaders" );
@@ -617,7 +617,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
         pContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr);
 
         {
-            MapHelper<NMGenerationAttribs> NMGenerationAttribs( pContext, pcbNMGenerationAttribs, MAP_WRITE_DISCARD, 0 );
+            MapHelper<NMGenerationAttribs> NMGenerationAttribs( pContext, pcbNMGenerationAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
             NMGenerationAttribs->m_fElevationScale = m_Params.m_TerrainAttribs.m_fElevationScale;
             NMGenerationAttribs->m_fSampleSpacingInterval = m_Params.m_TerrainAttribs.m_fElevationSamplingInterval;
             NMGenerationAttribs->m_iMIPLevel = static_cast<int>(uiMipLevel);
@@ -654,7 +654,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     const Uint16 *pHeightMap;
     size_t HeightMapPitch;
     pDataSource->GetDataPtr(pHeightMap, HeightMapPitch);
-    int iHeightMapDim = pDataSource->GetNumCols();
+    Uint32 iHeightMapDim = pDataSource->GetNumCols();
     VERIFY_EXPR(iHeightMapDim == pDataSource->GetNumRows() );
 
     TextureDesc NormalMapDesc;
@@ -669,9 +669,9 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
   
     RefCntAutoPtr<ITexture>  ptex2DNormalMap;
     pDevice->CreateTexture(NormalMapDesc, TextureData(), &ptex2DNormalMap);
-    RefCntAutoPtr<ITextureView> m_ptex2DNormalMapSRV( ptex2DNormalMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE) );
+    m_ptex2DNormalMapSRV = ptex2DNormalMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-    CreateUniformBuffer( pDevice, sizeof( TerrainAttribs ), &m_pcbTerrainAttribs );
+    CreateUniformBuffer( pDevice, sizeof( TerrainAttribs ), "Terrain Attribs CB", &m_pcbTerrainAttribs );
 
     RefCntAutoPtr<IResourceMapping> pResMapping;
     ResourceMappingDesc ResMappingDesc;
@@ -786,7 +786,6 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         ShaderCreationAttribs Attrs;
         Attrs.FilePath = "HemispherePS.fx";
         Attrs.EntryPoint = "HemispherePS";
-        Attrs.SearchDirectories = "shaders;shaders\\terrain;";
         Attrs.Desc.ShaderType = SHADER_TYPE_PIXEL;
         Attrs.Desc.Name = "HemispherePS";
         ShaderVariableDesc ShaderVars[] = 
@@ -794,7 +793,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
             {"g_tex2DShadowMap", SHADER_VARIABLE_TYPE_DYNAMIC},
         };
         Attrs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        BasicShaderSourceStreamFactory BasicSSSFactory(Attrs.SearchDirectories);
+        BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\terrain;");
         Attrs.pShaderSourceStreamFactory = &BasicSSSFactory;
 
         StaticSamplerDesc StaticSamplers[5];
@@ -841,12 +840,12 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
     }
 
 
-    ViewFrustum ViewFrustum;
+    ViewFrustumExt ViewFrustum;
     auto DevType = m_pDevice->GetDeviceCaps().DevType;
     ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, DevType == DeviceType::D3D11 || DevType == DeviceType::D3D12);
 
     {
-        MapHelper<TerrainAttribs> TerrainAttribs( pContext, m_pcbTerrainAttribs, MAP_WRITE_DISCARD, 0 );
+        MapHelper<TerrainAttribs> TerrainAttribs( pContext, m_pcbTerrainAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
         *TerrainAttribs = m_Params.m_TerrainAttribs;
     }
 
@@ -887,7 +886,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
 
     for(auto MeshIt = m_SphereMeshes.begin();  MeshIt != m_SphereMeshes.end(); ++MeshIt)
     {
-        if(IBoxVisible(ViewFrustum, MeshIt->BndBox))
+        if(GetBoxVisibility<false>(ViewFrustum, MeshIt->BndBox) != BoxVisibility::Invisible)
         {
             pContext->SetIndexBuffer(MeshIt->pIndBuff, 0);
             DrawAttribs DrawAttrs;

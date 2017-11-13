@@ -132,8 +132,8 @@ AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImme
         strNormalMapPaths[iTile] = m_strNormalMapTexPaths[iTile].c_str();
     }
     
-    CreateUniformBuffer( pDevice, sizeof( CameraAttribs ), &m_pcbCameraAttribs );
-    CreateUniformBuffer( pDevice, sizeof( LightAttribs ), &m_pcbLightAttribs );
+    CreateUniformBuffer( pDevice, sizeof( CameraAttribs ), "Camera Attribs CB", &m_pcbCameraAttribs );
+    CreateUniformBuffer( pDevice, sizeof( LightAttribs ), "Light Attribs CB", &m_pcbLightAttribs );
 
     const auto &SCDesc = pSwapChain->GetDesc();
     m_pLightSctrPP.reset( new LightSctrPostProcess(m_pDevice, m_pDeviceContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT) );
@@ -632,7 +632,6 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
 
         // Adjust the world to light space transformation matrix
         float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
-        const auto &DeviceCaps = m_pDevice->GetDeviceCaps();
         float4x4 ProjToUVScale, ProjToUVBias;
         if( m_bIsDXDevice )
         {
@@ -653,7 +652,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
 
         // Render terrain to shadow map
         {
-            MapHelper<CameraAttribs> CamAttribs( m_pDeviceContext, m_pcbCameraAttribs, MAP_WRITE_DISCARD, 0 );
+            MapHelper<CameraAttribs> CamAttribs( m_pDeviceContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
             CamAttribs->mViewProjT = transposeMatrix( WorldToLightProjSpaceMatr );
         }
 
@@ -706,7 +705,7 @@ void AtmosphereSample::Render()
                                     fabs(f4LightPosPS.y) <= 1.f - 1.f/(float)SCDesc.Height;
 
     {
-        MapHelper<LightAttribs> pLightAttribs( m_pDeviceContext, m_pcbLightAttribs, MAP_WRITE_DISCARD, 0 );
+        MapHelper<LightAttribs> pLightAttribs( m_pDeviceContext, m_pcbLightAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
         *pLightAttribs = LightAttrs;
     }
 
@@ -739,7 +738,7 @@ void AtmosphereSample::Render()
     m_pDeviceContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f);
 
     {
-        MapHelper<CameraAttribs> CamAttribs( m_pDeviceContext, m_pcbCameraAttribs, MAP_WRITE_DISCARD, 0 );
+        MapHelper<CameraAttribs> CamAttribs( m_pDeviceContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
         CamAttribs->mViewProjT = transposeMatrix( mViewProj );
         CamAttribs->mProjT = transposeMatrix( m_mCameraProj );
         CamAttribs->mViewProjInvT = transposeMatrix( inverseMatrix(mViewProj) );
@@ -895,8 +894,6 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
 
     m_fElapsedTime = static_cast<float>(ElapsedTime);
-
-    const auto &DeviceCaps = m_pDevice->GetDeviceCaps();
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
     // Set world/view/proj matrices and global shader constants

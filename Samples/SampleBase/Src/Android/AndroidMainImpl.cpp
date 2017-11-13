@@ -1,4 +1,4 @@
-/*     Copyright 2015-2017 Egor Yusov
+    /*     Copyright 2015-2017 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -161,9 +161,10 @@ int Engine::InitDisplay()
     {
         EngineCreationAttribs EngineCreationAttribs;
         EngineCreationAttribs.strShaderCachePath = "/tmp/ShaderCache";
-        RefCntAutoPtr<Diligent::IRenderDevice> pRenderDevice;
+        RefCntAutoPtr<IRenderDevice> pRenderDevice;
         SwapChainDesc SwapChainDesc;
-        CreateDeviceAndSwapChainGL( EngineCreationAttribs, &pRenderDevice, &pDeviceContext_, SwapChainDesc, app_->window, &pSwapChain_ );
+        auto pFactory = GetEngineFactoryOpenGL();
+        pFactory->CreateDeviceAndSwapChainGL( EngineCreationAttribs, &pRenderDevice, &pDeviceContext_, SwapChainDesc, app_->window, &pSwapChain_ );
 
         Diligent::IRenderDeviceGLES *pRenderDeviceOpenGLES;
         pRenderDevice->QueryInterface( Diligent::IID_RenderDeviceGLES, reinterpret_cast<IObject**>(&pRenderDeviceOpenGLES) );

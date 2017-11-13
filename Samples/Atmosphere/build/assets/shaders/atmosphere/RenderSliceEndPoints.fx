@@ -101,14 +101,12 @@ float2 GetEpipolarLineEntryPoint(float2 f2ExitPoint)
     return f2EntryPoint;
 }
 
-void GenerateSliceEndpointsPS(ScreenSizeQuadVSOutput VSOut,
-                              // IMPORTANT: non-system generated pixel shader input
-                              // arguments must have the exact same name as vertex shader 
-                              // outputs and must go in the same order.
-                              // Moreover, even if the shader is not using the argument,
-                              // it still must be declared.
-
-                              out float4 f4SliceEndPoints : SV_Target)
+float4 GenerateSliceEndpointsPS(ScreenSizeQuadVSOutput VSOut
+                                // IMPORTANT: non-system generated pixel shader input
+                                // arguments must go in the exact same order as VS outputs.
+                                // Moreover, even if the shader is not using the argument,
+                                // it still must be declared
+                                ) : SV_Target
 {
     float2 f2UV = NormalizedDeviceXYToTexUV(VSOut.m_f2PosPS);
 
@@ -154,8 +152,7 @@ void GenerateSliceEndpointsPS(ScreenSizeQuadVSOutput VSOut,
     bool4 b4IsInvalidBoundary = LessEqual( (g_LightAttribs.f4LightScreenPos.xyxy - f4OutermostScreenPixelCoords.xyzw) * float4(1,1,-1,-1),  F4ZERO );
     if( dot( BoolToFloat(b4IsInvalidBoundary), BoolToFloat(b4BoundaryFlags) ) != 0.0 )
     {
-        f4SliceEndPoints = INVALID_EPIPOLAR_LINE;
-        return;
+        return INVALID_EPIPOLAR_LINE;
     }
     // Additinal check above is required to eliminate false epipolar lines which can appear is shown below.
     // The reason is that we have to use some safety delta when performing check in IsValidScreenLocation() 
@@ -210,5 +207,5 @@ void GenerateSliceEndpointsPS(ScreenSizeQuadVSOutput VSOut,
     }
 #endif
 
-    f4SliceEndPoints = float4(f2EntryPoint, f2ExitPoint);
+    return float4(f2EntryPoint, f2ExitPoint);
 }

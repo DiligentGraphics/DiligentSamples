@@ -24,6 +24,7 @@ LOCAL_C_INCLUDES += $(CORE_ROOT)/Platforms/interface
 LOCAL_C_INCLUDES += $(SAMPLES_ROOT)/External/TwBarLib/include
 LOCAL_C_INCLUDES += $(CORE_ROOT)/Graphics/GraphicsEngine/interface
 LOCAL_C_INCLUDES += $(CORE_ROOT)/Graphics/GraphicsEngineOpenGL/interface
+LOCAL_C_INCLUDES += $(CORE_ROOT)/Graphics/HLSL2GLSLConverterLib/interface
 LOCAL_C_INCLUDES += $(TOOLS_ROOT)/Graphics/RenderScript/include
 LOCAL_C_INCLUDES += $(TOOLS_ROOT)/Graphics/External/lua-5.2.3/src
 LOCAL_C_INCLUDES += $(TOOLS_ROOT)/Graphics/GraphicsTools/include
@@ -34,7 +35,7 @@ LOCAL_SRC_FILES := ../../../Src/Android/AndroidMainImpl.cpp ../../../Src/Win32/W
 
 # Build instructions
 #VisualGDBAndroid: VSExcludeListLocation
-VISUALGDB_VS_EXCLUDED_FILES_Release := ../../../Src/Windows/WinMain.cpp
+VISUALGDB_VS_EXCLUDED_FILES_Release := ../../../Src/Win32/WinMain.cpp
 VISUALGDB_VS_EXCLUDED_FILES_Debug := ../../../Src/Win32/WinMain.cpp
 LOCAL_SRC_FILES := $(filter-out $(VISUALGDB_VS_EXCLUDED_FILES_$(VGDB_VSCONFIG)),$(LOCAL_SRC_FILES))
 

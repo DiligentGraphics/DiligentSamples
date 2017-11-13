@@ -91,7 +91,7 @@ void DX::DeviceResources::CreateDeviceResources()
     if(m_UseD3D12)
     {
         EngineD3D12Attribs D3D12Attribs;
-        CreateDeviceAndContextsD3D12( D3D12Attribs, &m_pRenderDevice, &m_pDeviceContext, 0);
+        GetEngineFactoryD3D12()->CreateDeviceAndContextsD3D12( D3D12Attribs, &m_pRenderDevice, &m_pDeviceContext, 0);
 
         // Store pointers to the Direct3D 11.1 API device and immediate context.
         IRenderDeviceD3D12 *pRenderDeviceD3D12 = nullptr;
@@ -105,7 +105,7 @@ void DX::DeviceResources::CreateDeviceResources()
     else
     {
         EngineD3D11Attribs D3D11Attribs;
-        CreateDeviceAndContextsD3D11( D3D11Attribs, &m_pRenderDevice, &m_pDeviceContext, 0);
+        GetEngineFactoryD3D11()->CreateDeviceAndContextsD3D11( D3D11Attribs, &m_pRenderDevice, &m_pDeviceContext, 0);
 
         // Store pointers to the Direct3D 11.1 API device and immediate context.
         IRenderDeviceD3D11 *pRenderDeviceD3D11 = nullptr;
@@ -166,9 +166,9 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
         SwapChainDesc.ColorBufferFormat = TEX_FORMAT_RGBA8_UNORM_SRGB;
         SwapChainDesc.DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
         if(m_UseD3D12)
-            CreateSwapChainD3D12( m_pRenderDevice, m_pDeviceContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
+            GetEngineFactoryD3D12()->CreateSwapChainD3D12( m_pRenderDevice, m_pDeviceContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
         else
-            CreateSwapChainD3D11( m_pRenderDevice, m_pDeviceContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
+            GetEngineFactoryD3D11()->CreateSwapChainD3D11( m_pRenderDevice, m_pDeviceContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
     }
 
     if(m_UseD3D12)
@@ -312,6 +312,8 @@ void DX::DeviceResources::ValidateDevice()
 	ComPtr<IDXGIDevice3> dxgiDevice;
     if(m_d3d11Device)
 	    DX::ThrowIfFailed(m_d3d11Device.As(&dxgiDevice));
+    else if(m_d3d12Device)
+        DX::ThrowIfFailed(m_d3d12Device.As(&dxgiDevice));
 
 	ComPtr<IDXGIAdapter> deviceAdapter;
 	DX::ThrowIfFailed(dxgiDevice->GetAdapter(&deviceAdapter));
