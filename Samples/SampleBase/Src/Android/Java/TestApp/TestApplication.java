@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.GrpahicsEngine.SampleApp;
+package com.GraphicsEngine.SampleApp;
 
 import javax.microedition.khronos.opengles.GL10;
 

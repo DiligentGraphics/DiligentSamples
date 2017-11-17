@@ -29,22 +29,8 @@ folder, select the desired platform, and build the solution.
 
 Option I:
 
-1. cd to Atmosphere\build\Win32 folder
-2. First time only, initialize the project (do not miss the dot at the end of the command):
-
-   *android update project -p .*
-   
-3. *ndk-build*
-
-4. Build the APK
-
-   *ant debug*
-   
-5. Install the APK
-
-   *adb install -r ./bin/EngineSampleNativeActivity-debug.apk*
-   
-6. Run the app on the device
+1. On Windows, cd to *Atmosphere\build\Win32* folder
+2. run **android_build.bat**
 
 Option II: instal [Visual GDB Plugin](https://visualgdb.com/), open **EngineAll.sln** solution 
 located in [DiligentGraphics/DiligentEngine/build/Win32](https://github.com/DiligentGraphics/DiligentEngine/tree/master/build/Win32) 

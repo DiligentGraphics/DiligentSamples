@@ -8,7 +8,7 @@ LOCAL_MODULE := SampleBase
 LOCAL_CFLAGS := -std=c++11
 LOCAL_CPP_FEATURES := exceptions
 
-LOCAL_STATIC_LIBRARIES := cpufeatures android_native_app_glue ndk_helper
+LOCAL_STATIC_LIBRARIES := cpufeatures android_native_app_glue 
 
 # Include paths
 PROJECT_ROOT := $(LOCAL_PATH)/../../..
@@ -25,6 +25,7 @@ LOCAL_C_INCLUDES += $(SAMPLES_ROOT)/External/TwBarLib/include
 LOCAL_C_INCLUDES += $(CORE_ROOT)/Graphics/GraphicsEngine/interface
 LOCAL_C_INCLUDES += $(CORE_ROOT)/Graphics/GraphicsEngineOpenGL/interface
 LOCAL_C_INCLUDES += $(CORE_ROOT)/Graphics/HLSL2GLSLConverterLib/interface
+LOCAL_C_INCLUDES += $(CORE_ROOT)/External/Android/ndk_helper/include
 LOCAL_C_INCLUDES += $(TOOLS_ROOT)/Graphics/RenderScript/include
 LOCAL_C_INCLUDES += $(TOOLS_ROOT)/Graphics/External/lua-5.2.3/src
 LOCAL_C_INCLUDES += $(TOOLS_ROOT)/Graphics/GraphicsTools/include
@@ -41,6 +42,5 @@ LOCAL_SRC_FILES := $(filter-out $(VISUALGDB_VS_EXCLUDED_FILES_$(VGDB_VSCONFIG)),
 
 include $(BUILD_STATIC_LIBRARY)
 
-$(call import-module,android/ndk_helper)
 $(call import-module,android/native_app_glue)
 $(call import-module,android/cpufeatures)

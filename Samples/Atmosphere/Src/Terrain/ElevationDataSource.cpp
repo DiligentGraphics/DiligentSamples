@@ -49,7 +49,6 @@
 #include "TextureUtilities.h"
 
 using namespace Diligent;
-using namespace Diligent;
 
 // Creates data source from the specified raw data file
 ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) : 

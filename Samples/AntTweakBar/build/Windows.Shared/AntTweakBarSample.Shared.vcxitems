@@ -33,4 +33,7 @@
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\README.md" />
+  </ItemGroup>
 </Project>

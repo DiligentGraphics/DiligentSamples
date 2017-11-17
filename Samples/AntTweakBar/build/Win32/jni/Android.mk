@@ -14,7 +14,7 @@ LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv3 -DENGINE_DLL
 # methods/functions required to resolve CURRENTLY OUTSTANDING dependencies and ignores the rest. 
 # If a subsequent library then uses methods/functions that were not originally required by the objects, you will 
 # have missing dependencies.
-LOCAL_STATIC_LIBRARIES := SampleBase-prebuilt AntTweakBar-prebuilt RenderScript-prebuilt GraphicsEngine-prebuilt GraphicsTools-prebuilt Lua-prebuilt cpufeatures android_native_app_glue ndk_helper
+LOCAL_STATIC_LIBRARIES := SampleBase-prebuilt AntTweakBar-prebuilt RenderScript-prebuilt GraphicsEngine-prebuilt GraphicsTools-prebuilt Lua-prebuilt cpufeatures android_native_app_glue NdkHelper-prebuilt
 # These libraries depend on each other
 LOCAL_WHOLE_STATIC_LIBRARIES := AndroidPlatform-prebuilt BasicPlatform-prebuilt Common-prebuilt
 LOCAL_SHARED_LIBRARIES := GraphicsEngineOpenGL-prebuilt
@@ -124,7 +124,12 @@ LOCAL_SRC_FILES := $(CORE_ROOT)/Graphics/GraphicsTools/build/Win32/obj/local/$(T
 LOCAL_EXPORT_C_INCLUDES := $(CORE_ROOT)/Graphics/GraphicsTools/include
 include $(PREBUILT_STATIC_LIBRARY)
 
-$(call import-module,android/ndk_helper)
+include $(CLEAR_VARS)
+LOCAL_MODULE := NdkHelper-prebuilt
+LOCAL_SRC_FILES := $(CORE_ROOT)/External/Android/ndk_helper/build/obj/local/$(TARGET_ARCH_ABI)/libNdkHelper.a
+LOCAL_EXPORT_C_INCLUDES := $(CORE_ROOT)/External/Android/ndk_helper/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+
 $(call import-module,android/native_app_glue)
 $(call import-module,android/cpufeatures)
-
