@@ -5,7 +5,7 @@ LOCAL_PATH := $(abspath $(DEPENDENCY_PATH))
 include $(CLEAR_VARS)
 # Project configuration
 LOCAL_MODULE := AntTweakBarSample
-LOCAL_CFLAGS := -std=c++11
+LOCAL_CFLAGS := -std=c++11 -fvisibility=hidden
 LOCAL_CPP_FEATURES := exceptions
 LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv3 -DENGINE_DLL
 
