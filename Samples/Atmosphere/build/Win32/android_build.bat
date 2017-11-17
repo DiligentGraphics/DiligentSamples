@@ -10,4 +10,4 @@ chdir /d %LOCAL_PATH%
 call android update project -p . --target android-19
 call ant debug
 call adb install -r ./bin/EngineSampleNativeActivity-debug.apk
-call adb shell am start -a android.intent.action.MAIN -n com.GrpahicsEngine.SampleApp/com.GrpahicsEngine.SampleApp.EngineSampleNativeActivity
+call adb shell am start -a android.intent.action.MAIN -n com.GraphicsEngine.SampleApp/com.GraphicsEngine.SampleApp.EngineSampleNativeActivity
