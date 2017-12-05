@@ -129,3 +129,7 @@ source_group("Shaders\\GL" FILES ${GL_SHADERS})
 if(WIN32)
 	source_group("Resource Files" FILES ${WIN32_RESOURCE_FILES})
 endif()
+
+set_target_properties(TwBarLib PROPERTIES
+	FOLDER Samples/External
+)

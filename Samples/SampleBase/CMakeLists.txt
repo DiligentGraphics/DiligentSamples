@@ -45,3 +45,7 @@ PUBLIC
 
 source_group("Source Files" FILES ${SOURCE})
 source_group("Header Files" FILES ${INCLUDE})
+
+set_target_properties(SampleBase PROPERTIES
+	FOLDER Samples
+)

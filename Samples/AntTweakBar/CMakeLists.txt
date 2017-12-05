@@ -47,3 +47,7 @@ PRIVATE
 	Lua
 	RenderScript
 )
+
+set_target_properties(AntTweakBarSample PROPERTIES
+	FOLDER Samples
+)

@@ -64,3 +64,7 @@ target_link_libraries(AtmosphereSample ${LINK_LIBRARIES})
 
 source_group("Source Files" FILES ${SOURCE})
 source_group("Header Files" FILES ${PRIVATE_HEADERS})
+
+set_target_properties(AtmosphereSample PROPERTIES
+	FOLDER Samples
+)
