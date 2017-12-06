@@ -2,11 +2,11 @@ cmake_minimum_required (VERSION 3.3)
 
 project(SampleBase)
 
-if(WIN32)
+if(PLATFORM_WIN32)
 	set(SOURCE 
 		src/Win32/WinMain.cpp
 	)
-elseif(ANDROID)
+elseif(PLATFORM_ANDROID)
 	set(SOURCE 
 		src/Android/AndroidMainImpl.cpp
 	)
@@ -31,7 +31,6 @@ endif()
 target_link_libraries(SampleBase 
 PRIVATE 
 	BuildSettings 
-	PlatformInterface
 PUBLIC
 	TwBarLib 
 	Common 

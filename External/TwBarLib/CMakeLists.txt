@@ -11,7 +11,7 @@ set(SOURCE
 	src/TwPrecomp.cpp
 )
 
-if(WIN32)
+if(PLATFORM_WIN32)
 	list(APPEND SOURCE src/TwEventGLFW.c)
 	list(APPEND SOURCE src/TwEventGLUT.c)
 	list(APPEND SOURCE src/TwEventSDL.c)
@@ -36,7 +36,7 @@ set(PRIVATE_HEADERS
 	src/TwPrecomp.h
 )
 
-if(WIN32)
+if(PLATFORM_WIN32)
 	list(APPEND PRIVATE_HEADERS src/resource.h)
 #	list(APPEND PRIVATE_HEADERS build/Win32/res/TwXCursors.h)
 endif()
@@ -88,10 +88,15 @@ set(GL_SHADERS
 )
 
 set(TW_BAR_ALL_SOURCE ${SOURCE} ${PRIVATE_HEADERS} ${PUBLIC_HEADERS} 
-	#${DX_SHADERS}  # DX Shaders are by default compiled by HLSL compiler. 
-					# I do not know how to make CMake exclude these files from the build
+	${DX_SHADERS}
 	${GL_SHADERS}
 )
+
+foreach(FILE ${DX_SHADERS})
+	set_source_files_properties(
+		${FILE} PROPERTIES HEADER_FILE_ONLY TRUE
+	)
+endforeach(FILE)
 
 if(WIN32)
 	list(APPEND TW_BAR_ALL_SOURCE ${WIN32_RESOURCE_FILES})
@@ -100,6 +105,10 @@ endif()
 add_library(
 	TwBarLib STATIC ${TW_BAR_ALL_SOURCE}
 )
+
+if(MSVC)
+	target_compile_options(TwBarLib PRIVATE /wd4302 /wd4456)
+endif()
 
 target_link_libraries(TwBarLib BuildSettings Common GraphicsEngine PlatformInterface)
 
@@ -110,13 +119,51 @@ PRIVATE
 	src
 )
 
-if(WIN32)
+if(PLATFORM_WIN32)
 	target_include_directories(TwBarLib
 	PRIVATE 
 		build/Win32
 	)
 endif()
 
+# Create custom target to convert HLSLDefinitions.fxh to HLSLDefinitions_inc.fxh
+add_custom_target(ProcessTwBarLibShaders
+SOURCES
+	#${DX_SHADERS}
+	${GL_SHADERS}
+)
+add_dependencies(ProcessTwBarLibShaders File2String)
+
+set(SHADER_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/ShadersInc)
+file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
+
+foreach(FILE ${DX_SHADERS})
+  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
+  add_custom_command(TARGET ProcessTwBarLibShaders 
+					 # Unfortunately it is not possible to set TARGET directly to GraphicsEngineD3D12-static/shared
+					 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
+					 # PRE_BUILD is treated as PRE_LINK.
+					 COMMAND $<TARGET_FILE:File2String> ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_DX.h
+                     MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
+                     COMMENT "Processing shader ${FILE}"
+                     VERBATIM
+  )
+endforeach(FILE)
+
+foreach(FILE ${GL_SHADERS})
+  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
+  add_custom_command(TARGET ProcessTwBarLibShaders 
+					 # Unfortunately it is not possible to set TARGET directly to GraphicsEngineD3D12-static/shared
+					 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
+					 # PRE_BUILD is treated as PRE_LINK.
+					 COMMAND $<TARGET_FILE:File2String> ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_GL.h
+                     MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
+                     COMMENT "Processing shader ${FILE}"
+                     VERBATIM
+  )
+endforeach(FILE)
+
+add_dependencies(TwBarLib ProcessTwBarLibShaders)
 
 target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
 
@@ -131,5 +178,8 @@ if(WIN32)
 endif()
 
 set_target_properties(TwBarLib PROPERTIES
+	FOLDER Samples/External
+)
+set_target_properties(ProcessTwBarLibShaders PROPERTIES
 	FOLDER Samples/External
 )

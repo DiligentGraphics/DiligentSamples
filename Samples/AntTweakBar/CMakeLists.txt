@@ -10,9 +10,23 @@ set(INCLUDE
 	src/MengerSpongeSample.h
 )
 
+set(SHADERS
+	build/assets/shaders/MainPS_DX.hlsl
+	build/assets/shaders/MainPS_GL.glsl
+	build/assets/shaders/MainVS_DX.hlsl
+	build/assets/shaders/MainVS_GL.glsl
+	build/assets/MengerSponge.lua
+)
+
+foreach(FILE ${SHADERS})
+	set_source_files_properties(
+		${FILE} PROPERTIES HEADER_FILE_ONLY TRUE
+	)
+endforeach(FILE)
+
 if(WIN32)
 	#add_definitions(-DNOMINMAX)
-	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE})
+	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE} ${SHADERS})
 	set_target_properties(AntTweakBarSample PROPERTIES 
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
 	)
@@ -48,6 +62,17 @@ PRIVATE
 	RenderScript
 )
 
+if(MSVC)
+	# Disable MSVC-specific warnings
+	# - w4201: nonstandard extension used: nameless struct/unio
+	target_compile_options(AntTweakBarSample PRIVATE /wd4201)
+endif()
+
+
 set_target_properties(AntTweakBarSample PROPERTIES
 	FOLDER Samples
 )
+
+source_group("src" FILES ${SOURCE})
+source_group("include" FILES ${INCLUDE})
+source_group("shaders" FILES ${SHADERS})
