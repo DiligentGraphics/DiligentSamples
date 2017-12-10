@@ -167,6 +167,17 @@ add_dependencies(TwBarLib ProcessTwBarLibShaders)
 
 target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
 
+if(MSVC)
+	# Enable link-time code generation for release builds (I was not able to 
+	# find any way to set these settings through interface library BuildSettings)
+	set_target_properties(TwBarLib PROPERTIES
+		STATIC_LIBRARY_FLAGS_RELEASE /LTCG
+		STATIC_LIBRARY_FLAGS_MINSIZEREL /LTCG
+		STATIC_LIBRARY_FLAGS_RELWITHDEBINFO /LTCG
+	)
+endif()
+
+
 source_group("Source Files" FILES ${SOURCE})
 source_group("Private Header Files" FILES ${PRIVATE_HEADERS})
 source_group("Public Header Files" FILES ${PUBLIC_HEADERS})

@@ -24,8 +24,16 @@ PUBLIC
 	include
 )
 
-if(WIN32)
-	target_compile_definitions(SampleBase PRIVATE -DUNICODE)
+if(MSVC)
+	target_compile_options(SampleBase PRIVATE -DUNICODE)
+
+	# Enable link-time code generation for release builds (I was not able to 
+	# find any way to set these settings through interface library BuildSettings)
+	set_target_properties(SampleBase PROPERTIES
+		STATIC_LIBRARY_FLAGS_RELEASE /LTCG
+		STATIC_LIBRARY_FLAGS_MINSIZEREL /LTCG
+		STATIC_LIBRARY_FLAGS_RELWITHDEBINFO /LTCG
+	)
 endif()
 
 target_link_libraries(SampleBase 
