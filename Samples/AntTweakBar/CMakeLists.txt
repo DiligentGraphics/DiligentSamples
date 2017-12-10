@@ -30,18 +30,8 @@ if(WIN32)
 	set_target_properties(AntTweakBarSample PROPERTIES 
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
 	)
-	add_custom_command(TARGET AntTweakBarSample POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:GraphicsEngineD3D11-shared>"
-			"$<TARGET_FILE_DIR:AntTweakBarSample>")
-	add_custom_command(TARGET AntTweakBarSample POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:GraphicsEngineD3D12-shared>"
-			"$<TARGET_FILE_DIR:AntTweakBarSample>")
-	add_custom_command(TARGET AntTweakBarSample POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:GraphicsEngineOpenGL-shared>"
-			"$<TARGET_FILE_DIR:AntTweakBarSample>")
+	copy_required_dlls(AntTweakBarSample)
+
 elseif(APPLE)
 	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)
 elseif(UNIX)

@@ -63,18 +63,8 @@ if(WIN32)
 	set_target_properties(AtmosphereSample PROPERTIES 
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/assets"
 	)
-	add_custom_command(TARGET AtmosphereSample POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:GraphicsEngineD3D11-shared>"
-			"$<TARGET_FILE_DIR:AtmosphereSample>")
-	add_custom_command(TARGET AtmosphereSample POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:GraphicsEngineD3D12-shared>"
-			"$<TARGET_FILE_DIR:AtmosphereSample>")
-	add_custom_command(TARGET AtmosphereSample POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:GraphicsEngineOpenGL-shared>"
-			"$<TARGET_FILE_DIR:AtmosphereSample>")
+	copy_required_dlls(AtmosphereSample)
+	
 elseif(APPLE)
 	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
 elseif(UNIX)
