@@ -50,8 +50,8 @@ PUBLIC
 	TargetPlatform
 )
 
-source_group("Source Files" FILES ${SOURCE})
-source_group("Header Files" FILES ${INCLUDE})
+source_group("src" FILES ${SOURCE})
+source_group("include" FILES ${INCLUDE})
 
 set_target_properties(SampleBase PROPERTIES
 	FOLDER Samples

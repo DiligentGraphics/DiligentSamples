@@ -58,17 +58,17 @@ set(SHADERS
 	build/assets/shaders/Terrain.lua
 )
 
-if(WIN32)
+if(PLATFORM_WIN32)
 	add_executable(AtmosphereSample WIN32 ${SOURCE} ${INCLUDE} ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
 	set_target_properties(AtmosphereSample PROPERTIES 
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/assets"
 	)
 	copy_required_dlls(AtmosphereSample)
 	
-elseif(APPLE)
-	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
-elseif(UNIX)
-	add_executable(AtmosphereSample Main.cpp)
+#elseif(APPLE)
+#	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
+#elseif(UNIX)
+#	add_executable(AtmosphereSample Main.cpp)
 else()
 	message(FATAL_ERROR "Unknown platform")
 endif()

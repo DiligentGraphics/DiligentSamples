@@ -98,7 +98,7 @@ foreach(FILE ${DX_SHADERS})
 	)
 endforeach(FILE)
 
-if(WIN32)
+if(PLATFORM_WIN32)
 	list(APPEND TW_BAR_ALL_SOURCE ${WIN32_RESOURCE_FILES})
 endif()
 
