@@ -99,18 +99,12 @@ PRIVATE
 )
 
 target_link_libraries(AtmosphereSample ${LINK_LIBRARIES})
+set_common_target_properties(AtmosphereSample)
 
 if(MSVC)
 	# Disable MSVC-specific warnings
 	# - w4201: nonstandard extension used: nameless struct/unio
 	target_compile_options(AtmosphereSample PRIVATE /wd4201)
-	# Enable link-time code generation for release builds (I was not able to 
-	# find any way to set these settings through interface library BuildSettings)
-	set_target_properties(AtmosphereSample PROPERTIES
-		LINK_FLAGS_RELEASE /LTCG
-		LINK_FLAGS_MINSIZEREL /LTCG
-		LINK_FLAGS_RELWITHDEBINFO /LTCG
-	)
 endif()
 
 source_group("src" FILES ${SOURCE})

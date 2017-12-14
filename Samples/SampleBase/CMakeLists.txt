@@ -55,6 +55,7 @@ list(APPEND INCLUDE include/SampleBase.h)
 
 
 add_library(SampleBase STATIC ${SOURCE} ${INCLUDE})
+set_common_target_properties(SampleBase)
 
 target_include_directories(SampleBase
 PUBLIC
@@ -70,15 +71,6 @@ if(MSVC)
 		# Disable w4063: case is not a valid value for switch of enum
 		target_compile_options(SampleBase INTERFACE /wd4189 /wd4063)
 	endif()
-
-	# Enable link-time code generation for release builds (I was not able to 
-	# find any way to set these settings through interface library BuildSettings)
-	set_target_properties(SampleBase PROPERTIES
-		STATIC_LIBRARY_FLAGS_RELEASE /LTCG
-		STATIC_LIBRARY_FLAGS_MINSIZEREL /LTCG
-		STATIC_LIBRARY_FLAGS_RELWITHDEBINFO /LTCG
-	)
-
 endif()
 
 if(PLATFORM_WIN32)
