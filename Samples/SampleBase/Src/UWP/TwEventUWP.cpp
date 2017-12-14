@@ -128,17 +128,20 @@ void TwEventUWPHelper::OnPointerPressed(
 #endif
 
 
-    if( m_bLMBPressed = pointProperties->IsLeftButtonPressed )
+    m_bLMBPressed = pointProperties->IsLeftButtonPressed;
+    if( m_bLMBPressed )
     {
         auto handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
     }
 
-    if( m_bRMBPressed = pointProperties->IsRightButtonPressed )
+    m_bRMBPressed = pointProperties->IsRightButtonPressed;
+    if(m_bRMBPressed)
     {
         auto handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_RIGHT);
     }
 
-    if( m_bMMBPressed = pointProperties->IsMiddleButtonPressed )
+    m_bMMBPressed = pointProperties->IsMiddleButtonPressed;
+    if(m_bMMBPressed)
     {
         auto handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_MIDDLE);
     }

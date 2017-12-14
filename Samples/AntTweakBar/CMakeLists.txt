@@ -10,6 +10,7 @@ set(INCLUDE
 	src/MengerSpongeSample.h
 )
 
+
 set(SHADERS
 	build/assets/shaders/MainPS_DX.hlsl
 	build/assets/shaders/MainPS_GL.glsl
@@ -31,7 +32,9 @@ if(PLATFORM_WIN32)
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
 	)
 	copy_required_dlls(AntTweakBarSample)
-
+elseif(PLATFORM_UNIVERSAL_WINDOWS)
+	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE} ${SHADERS})
+	#set_target_properties(AntTweakBarSample )
 #elseif(APPLE)
 #	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)
 #elseif(UNIX)
@@ -39,6 +42,15 @@ if(PLATFORM_WIN32)
 else()
 	message(FATAL_ERROR "Unknown platform")
 endif()
+
+if(PLATFORM_UNIVERSAL_WINDOWS)
+	get_sample_base_uwp_source(UWP_SOURCE UWP_INCLUDE UWP_INCLUDE_DIR)
+	source_group("UWP\\src" FILES ${UWP_SOURCE})
+	source_group("UWP\\include" FILES ${UWP_INCLUDE})
+	target_include_directories(AntTweakBarSample PRIVATE ${UWP_INCLUDE_DIR})
+	target_sources(AntTweakBarSample PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
+endif()
+
 
 target_include_directories(AntTweakBarSample
 PRIVATE	
@@ -56,6 +68,7 @@ if(MSVC)
 	# Disable MSVC-specific warnings
 	# - w4201: nonstandard extension used: nameless struct/unio
 	target_compile_options(AntTweakBarSample PRIVATE /wd4201)
+
 	# Enable link-time code generation for release builds (I was not able to 
 	# find any way to set these settings through interface library BuildSettings)
 	set_target_properties(AntTweakBarSample PROPERTIES

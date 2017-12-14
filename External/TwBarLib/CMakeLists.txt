@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.3)
+cmake_minimum_required (VERSION 3.8)
 
 project(TwBarLib CXX)
 
@@ -132,10 +132,18 @@ SOURCES
 	#${DX_SHADERS}
 	${GL_SHADERS}
 )
-add_dependencies(ProcessTwBarLibShaders File2String)
 
 set(SHADER_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/ShadersInc)
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
+
+if(PLATFORM_UNIVERSAL_WINDOWS)
+	# On Universal Windows Platform, we cannot run File2String utility and will use prebuilt Win32 version
+	get_target_property(FILE2STRING_SOURCE_DIR File2String SOURCE_DIR)
+	set(FILE2STRING_PATH "${FILE2STRING_SOURCE_DIR}/File2String.exe")
+else()
+	add_dependencies(ProcessTwBarLibShaders File2String)
+	set(FILE2STRING_PATH $<TARGET_FILE:File2String>)
+endif()
 
 foreach(FILE ${DX_SHADERS})
   get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
@@ -143,7 +151,7 @@ foreach(FILE ${DX_SHADERS})
 					 # Unfortunately it is not possible to set TARGET directly to GraphicsEngineD3D12-static/shared
 					 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
 					 # PRE_BUILD is treated as PRE_LINK.
-					 COMMAND $<TARGET_FILE:File2String> ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_DX.h
+					 COMMAND ${FILE2STRING_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_DX.h
                      MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
                      COMMENT "Processing shader ${FILE}"
                      VERBATIM
@@ -156,7 +164,7 @@ foreach(FILE ${GL_SHADERS})
 					 # Unfortunately it is not possible to set TARGET directly to GraphicsEngineD3D12-static/shared
 					 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
 					 # PRE_BUILD is treated as PRE_LINK.
-					 COMMAND $<TARGET_FILE:File2String> ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_GL.h
+					 COMMAND ${FILE2STRING_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_GL.h
                      MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
                      COMMENT "Processing shader ${FILE}"
                      VERBATIM

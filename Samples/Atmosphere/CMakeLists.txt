@@ -64,6 +64,8 @@ if(PLATFORM_WIN32)
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/assets"
 	)
 	copy_required_dlls(AtmosphereSample)
+elseif(PLATFORM_UNIVERSAL_WINDOWS)
+	add_executable(AtmosphereSample WIN32 ${SOURCE} ${INCLUDE} ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
 	
 #elseif(APPLE)
 #	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
@@ -71,6 +73,14 @@ if(PLATFORM_WIN32)
 #	add_executable(AtmosphereSample Main.cpp)
 else()
 	message(FATAL_ERROR "Unknown platform")
+endif()
+
+if(PLATFORM_UNIVERSAL_WINDOWS)
+	get_sample_base_uwp_source(UWP_SOURCE UWP_INCLUDE UWP_INCLUDE_DIR)
+	source_group("UWP\\src" FILES ${UWP_SOURCE})
+	source_group("UWP\\include" FILES ${UWP_INCLUDE})
+	target_include_directories(AtmosphereSample PRIVATE ${UWP_INCLUDE_DIR})
+	target_sources(AtmosphereSample PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
 endif()
 
 target_include_directories(AtmosphereSample
