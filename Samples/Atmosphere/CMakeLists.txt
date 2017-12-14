@@ -58,15 +58,16 @@ set(SHADERS
 	build/assets/shaders/Terrain.lua
 )
 
-if(PLATFORM_WIN32)
+if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 	add_executable(AtmosphereSample WIN32 ${SOURCE} ${INCLUDE} ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
-	set_target_properties(AtmosphereSample PROPERTIES 
-		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/assets"
-	)
-	copy_required_dlls(AtmosphereSample)
-elseif(PLATFORM_UNIVERSAL_WINDOWS)
-	add_executable(AtmosphereSample WIN32 ${SOURCE} ${INCLUDE} ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
-	
+
+	if(PLATFORM_WIN32)
+		set_target_properties(AtmosphereSample PROPERTIES 
+			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/assets"
+		)
+		copy_required_dlls(AtmosphereSample)
+	endif()
+
 #elseif(APPLE)
 #	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
 #elseif(UNIX)

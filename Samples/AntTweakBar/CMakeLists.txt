@@ -25,16 +25,16 @@ foreach(FILE ${SHADERS})
 	)
 endforeach(FILE)
 
-if(PLATFORM_WIN32)
-	#add_definitions(-DNOMINMAX)
+if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE} ${SHADERS})
-	set_target_properties(AntTweakBarSample PROPERTIES 
-		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
-	)
-	copy_required_dlls(AntTweakBarSample)
-elseif(PLATFORM_UNIVERSAL_WINDOWS)
-	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE} ${SHADERS})
-	#set_target_properties(AntTweakBarSample )
+
+	if(PLATFORM_WIN32)
+		set_target_properties(AntTweakBarSample PROPERTIES 
+			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
+		)
+		copy_required_dlls(AntTweakBarSample)
+	endif()
+
 #elseif(APPLE)
 #	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)
 #elseif(UNIX)

@@ -69,7 +69,8 @@ if(MSVC)
 	if(PLATFORM_UNIVERSAL_WINDOWS)
 		# Disable w4189: local variable is initialized but not referenced
 		# Disable w4063: case is not a valid value for switch of enum
-		target_compile_options(SampleBase INTERFACE /wd4189 /wd4063)
+		# Consume the windows runtime extensions (/ZW)
+		target_compile_options(SampleBase INTERFACE /wd4189 /wd4063 /ZW)
 	endif()
 endif()
 
