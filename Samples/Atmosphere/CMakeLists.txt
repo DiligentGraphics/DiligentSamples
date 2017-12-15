@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 project(AtmosphereSample CXX)
 
@@ -58,8 +58,27 @@ set(SHADERS
 	build/assets/shaders/Terrain.lua
 )
 
+set(TERRAIN_TEXTURES
+	build/assets/Terrain/HeightMap.tif
+	build/assets/Terrain/Mask.png
+)
+
+set(TERRAIN_TILES
+	build/assets/Terrain/Tiles/cliff_DM.dds
+	build/assets/Terrain/Tiles/cliff_NM.dds
+	build/assets/Terrain/Tiles/grass_DM.dds
+	build/assets/Terrain/Tiles/grass_NM.dds
+	build/assets/Terrain/Tiles/grassDark_DM.dds
+	build/assets/Terrain/Tiles/gravel_DM.dds
+	build/assets/Terrain/Tiles/gravel_NM.dds
+	build/assets/Terrain/Tiles/snow_DM.dds
+	build/assets/Terrain/Tiles/Snow_NM.jpg
+)
+
+set(ASSETS ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS} ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
+
 if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
-	add_executable(AtmosphereSample WIN32 ${SOURCE} ${INCLUDE} ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
+	add_executable(AtmosphereSample WIN32 ${SOURCE} ${INCLUDE} ${ASSETS})
 
 	if(PLATFORM_WIN32)
 		set_target_properties(AtmosphereSample PROPERTIES 
@@ -82,6 +101,14 @@ if(PLATFORM_UNIVERSAL_WINDOWS)
 	source_group("UWP\\include" FILES ${UWP_INCLUDE})
 	target_include_directories(AtmosphereSample PRIVATE ${UWP_INCLUDE_DIR})
 	target_sources(AtmosphereSample PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
+
+	set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_CONTENT 1)
+	set_property(SOURCE ${ATMOSPHERE_SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders")
+	set_property(SOURCE ${ATMOSPHERE_SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders/atmosphere")
+	set_property(SOURCE ${TERRAIN_SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders/terrain")
+	set_property(SOURCE ${SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders")
+	set_property(SOURCE ${TERRAIN_TEXTURES} PROPERTY VS_DEPLOYMENT_LOCATION "assets/Terrain")
+	set_property(SOURCE ${TERRAIN_TILES} PROPERTY VS_DEPLOYMENT_LOCATION "assets/Terrain/Tiles")
 endif()
 
 target_include_directories(AtmosphereSample
@@ -110,9 +137,11 @@ endif()
 
 source_group("src" FILES ${SOURCE})
 source_group("include" FILES ${INCLUDE})
-source_group("shaders\\atmosphere" FILES ${ATMOSPHERE_SHADERS})
-source_group("shaders\\terrain" FILES ${TERRAIN_SHADERS})
-source_group("shaders" FILES ${SHADERS})
+source_group("assets\\shaders\\atmosphere" FILES ${ATMOSPHERE_SHADERS})
+source_group("assets\\shaders\\terrain" FILES ${TERRAIN_SHADERS})
+source_group("assets\\shaders" FILES ${SHADERS})
+source_group("assets\\Terrain" FILES ${TERRAIN_TEXTURES})
+source_group("assets\\Terrain\\Tiles" FILES ${TERRAIN_TILES})
 
 set_target_properties(AtmosphereSample PROPERTIES
 	FOLDER Samples

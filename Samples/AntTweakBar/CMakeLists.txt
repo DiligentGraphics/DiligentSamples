@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 project(AntTweakBarSample CXX)
 
@@ -16,17 +16,17 @@ set(SHADERS
 	build/assets/shaders/MainPS_GL.glsl
 	build/assets/shaders/MainVS_DX.hlsl
 	build/assets/shaders/MainVS_GL.glsl
+)
+set_property(SOURCE build/assets/shaders/MainPS_DX.hlsl PROPERTY VS_TOOL_OVERRIDE "None")
+set_property(SOURCE build/assets/shaders/MainVS_DX.hlsl PROPERTY VS_TOOL_OVERRIDE "None")
+
+set(ASSETS
+	${SHADERS}
 	build/assets/MengerSponge.lua
 )
 
-foreach(FILE ${SHADERS})
-	set_source_files_properties(
-		${FILE} PROPERTIES HEADER_FILE_ONLY TRUE
-	)
-endforeach(FILE)
-
 if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
-	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE} ${SHADERS})
+	add_executable(AntTweakBarSample WIN32 ${SOURCE} ${INCLUDE} ${ASSETS})
 
 	if(PLATFORM_WIN32)
 		set_target_properties(AntTweakBarSample PROPERTIES 
@@ -49,6 +49,10 @@ if(PLATFORM_UNIVERSAL_WINDOWS)
 	source_group("UWP\\include" FILES ${UWP_INCLUDE})
 	target_include_directories(AntTweakBarSample PRIVATE ${UWP_INCLUDE_DIR})
 	target_sources(AntTweakBarSample PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
+
+	set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_CONTENT 1)
+	set_property(SOURCE ${SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders")
+	set_property(SOURCE build/assets/MengerSponge.lua PROPERTY VS_DEPLOYMENT_LOCATION "assets")
 endif()
 
 
@@ -78,4 +82,5 @@ set_target_properties(AntTweakBarSample PROPERTIES
 
 source_group("src" FILES ${SOURCE})
 source_group("include" FILES ${INCLUDE})
-source_group("shaders" FILES ${SHADERS})
+source_group("assets\\shaders" FILES ${SHADERS})
+source_group("assets" FILES build/assets/MengerSponge.lua)

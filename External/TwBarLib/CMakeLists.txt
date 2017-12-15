@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 project(TwBarLib CXX)
 
@@ -92,11 +92,7 @@ set(TW_BAR_ALL_SOURCE ${SOURCE} ${PRIVATE_HEADERS} ${PUBLIC_HEADERS}
 	${GL_SHADERS}
 )
 
-foreach(FILE ${DX_SHADERS})
-	set_source_files_properties(
-		${FILE} PROPERTIES HEADER_FILE_ONLY TRUE
-	)
-endforeach(FILE)
+set_property(SOURCE ${DX_SHADERS} PROPERTY VS_TOOL_OVERRIDE "None")
 
 if(PLATFORM_WIN32)
 	list(APPEND TW_BAR_ALL_SOURCE ${WIN32_RESOURCE_FILES})
@@ -130,7 +126,7 @@ endif()
 # Create custom target to convert HLSLDefinitions.fxh to HLSLDefinitions_inc.fxh
 add_custom_target(ProcessTwBarLibShaders
 SOURCES
-	#${DX_SHADERS}
+	${DX_SHADERS}
 	${GL_SHADERS}
 )
 
@@ -140,7 +136,7 @@ file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 if(PLATFORM_UNIVERSAL_WINDOWS)
 	# On Universal Windows Platform, we cannot run File2String utility and will use prebuilt Win32 version
 	get_target_property(FILE2STRING_SOURCE_DIR File2String SOURCE_DIR)
-	set(FILE2STRING_PATH "${FILE2STRING_SOURCE_DIR}/File2String.exe")
+	set(FILE2STRING_PATH "${FILE2STRING_SOURCE_DIR}/bin/Win32/File2String.exe")
 else()
 	add_dependencies(ProcessTwBarLibShaders File2String)
 	set(FILE2STRING_PATH $<TARGET_FILE:File2String>)
