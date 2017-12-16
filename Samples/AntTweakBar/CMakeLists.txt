@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.6)
 
 project(AntTweakBarSample CXX)
 
@@ -34,6 +34,11 @@ if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 		)
 		copy_required_dlls(AntTweakBarSample)
 	endif()
+
+elseif(PLATFORM_ANDROID)
+
+	list(APPEND ${SOURCE} src/AndroidMain.cpp)
+	add_library(AntTweakBarSample SHARED ${SOURCE} ${INCLUDE})
 
 #elseif(APPLE)
 #	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)

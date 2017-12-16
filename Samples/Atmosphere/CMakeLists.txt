@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.6)
 
 project(AtmosphereSample CXX)
 
@@ -86,6 +86,11 @@ if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 		)
 		copy_required_dlls(AtmosphereSample)
 	endif()
+
+elseif(PLATFORM_ANDROID)
+
+	list(APPEND ${SOURCE} src/AndroidMain.cpp)
+	add_library(AtmosphereSample SHARED ${SOURCE} ${INCLUDE})
 
 #elseif(APPLE)
 #	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)

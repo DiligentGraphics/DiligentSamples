@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.6)
 
 project(TwBarLib CXX)
 
@@ -9,16 +9,24 @@ set(SOURCE
 	src/TwGraphImpl.cpp
 	src/TwMgr.cpp
 	src/TwPrecomp.cpp
+	src/TwEventGLFW.c
+	src/TwEventSDL.c
+	src/TwEventSDL12.c
+	src/TwEventSDL13.c
+	src/TwEventSFML.cpp
 )
 
 if(PLATFORM_WIN32)
-	list(APPEND SOURCE src/TwEventGLFW.c)
 	list(APPEND SOURCE src/TwEventGLUT.c)
-	list(APPEND SOURCE src/TwEventSDL.c)
-	list(APPEND SOURCE src/TwEventSDL12.c)
-	list(APPEND SOURCE src/TwEventSDL13.c)
-	list(APPEND SOURCE src/TwEventSFML.cpp)
 	list(APPEND SOURCE src/TwEventWin.c)
+elseif(PLATFORM_ANDROID)
+	set_source_files_properties(
+		src/TwEventGLFW.c
+		src/TwEventSDL.c
+		src/TwEventSDL12.c
+		src/TwEventSDL13.c
+		PROPERTIES LANGUAGE CXX
+	)
 endif()
 
 set(PRIVATE_HEADERS 
@@ -130,45 +138,51 @@ SOURCES
 	${GL_SHADERS}
 )
 
-set(SHADER_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/ShadersInc)
-file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 
-if(PLATFORM_UNIVERSAL_WINDOWS)
-	# On Universal Windows Platform, we cannot run File2String utility and will use prebuilt Win32 version
-	get_target_property(FILE2STRING_SOURCE_DIR File2String SOURCE_DIR)
-	set(FILE2STRING_PATH "${FILE2STRING_SOURCE_DIR}/bin/Win32/File2String.exe")
-else()
-	add_dependencies(ProcessTwBarLibShaders File2String)
-	set(FILE2STRING_PATH $<TARGET_FILE:File2String>)
+	set(SHADER_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/ShadersInc)
+	file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
+
+	if(PLATFORM_WIN32)
+		add_dependencies(ProcessTwBarLibShaders File2String)
+		set(FILE2STRING_PATH $<TARGET_FILE:File2String>)
+	else()
+		# We cannot build File2String utility and will use prebuilt Win32 version
+		set(FILE2STRING_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentCore/Utilities/File2Include/bin/Win32/File2String.exe")
+	endif()
+
+	foreach(FILE ${DX_SHADERS})
+	  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
+	  add_custom_command(TARGET ProcessTwBarLibShaders 
+						 # Unfortunately it is not possible to set TARGET directly to TwBarLib
+						 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
+						 # PRE_BUILD is treated as PRE_LINK.
+						 COMMAND ${FILE2STRING_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_DX.h
+						 MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
+						 COMMENT "Processing shader ${FILE}"
+						 VERBATIM
+	  )
+	endforeach(FILE)
+
+	foreach(FILE ${GL_SHADERS})
+	  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
+	  add_custom_command(TARGET ProcessTwBarLibShaders 
+						 # Unfortunately it is not possible to set TARGET directly to TwBarLib
+						 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
+						 # PRE_BUILD is treated as PRE_LINK.
+						 COMMAND ${FILE2STRING_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_GL.h
+						 MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
+						 COMMENT "Processing shader ${FILE}"
+						 VERBATIM
+	  )
+	endforeach(FILE)
+
+	add_dependencies(TwBarLib ProcessTwBarLibShaders)
+	set_target_properties(ProcessTwBarLibShaders PROPERTIES
+		FOLDER Samples/External
+	)
+
 endif()
-
-foreach(FILE ${DX_SHADERS})
-  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
-  add_custom_command(TARGET ProcessTwBarLibShaders 
-					 # Unfortunately it is not possible to set TARGET directly to GraphicsEngineD3D12-static/shared
-					 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
-					 # PRE_BUILD is treated as PRE_LINK.
-					 COMMAND ${FILE2STRING_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_DX.h
-                     MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
-                     COMMENT "Processing shader ${FILE}"
-                     VERBATIM
-  )
-endforeach(FILE)
-
-foreach(FILE ${GL_SHADERS})
-  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
-  add_custom_command(TARGET ProcessTwBarLibShaders 
-					 # Unfortunately it is not possible to set TARGET directly to GraphicsEngineD3D12-static/shared
-					 # because PRE_BUILD is only supported on Visual Studio 8 or later. For all other generators 
-					 # PRE_BUILD is treated as PRE_LINK.
-					 COMMAND ${FILE2STRING_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE} ${SHADER_OUTPUT_DIR}/${FILE_NAME_WE}_GL.h
-                     MAIN_DEPENDENCY ${FILE} # the primary input source file to the command
-                     COMMENT "Processing shader ${FILE}"
-                     VERBATIM
-  )
-endforeach(FILE)
-
-add_dependencies(TwBarLib ProcessTwBarLibShaders)
 
 target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
 
@@ -183,8 +197,5 @@ if(WIN32)
 endif()
 
 set_target_properties(TwBarLib PROPERTIES
-	FOLDER Samples/External
-)
-set_target_properties(ProcessTwBarLibShaders PROPERTIES
 	FOLDER Samples/External
 )

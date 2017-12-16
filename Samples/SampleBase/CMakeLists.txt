@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.6)
 
 project(SampleBase)
 
@@ -80,7 +80,7 @@ if(PLATFORM_WIN32)
 		GraphicsEngineD3D12-shared 
 		GraphicsEngineOpenGL-shared
 	)
-elseif(PALTFORM_ANDROID)
+elseif(PLATFORM_ANDROID)
 	SET(ENGINE_LIBRARIES
 		GraphicsEngineOpenGL-shared
 	)
@@ -105,6 +105,11 @@ PUBLIC
 
 if(PLATFORM_UNIVERSAL_WINDOWS)
 	target_link_libraries(SampleBase PRIVATE dxguid.lib)
+elseif(PLATFORM_ANDROID)
+	target_link_libraries(SampleBase PRIVATE NDKHelper GLESv3 android)
+	target_include_directories(SampleBase PRIVATE
+		${ANDROID_NDK}/sources/android/cpufeatures
+	)
 endif()
 
 source_group("src" FILES ${SOURCE})
