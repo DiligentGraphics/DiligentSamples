@@ -106,7 +106,7 @@ PUBLIC
 if(PLATFORM_UNIVERSAL_WINDOWS)
 	target_link_libraries(SampleBase PRIVATE dxguid.lib)
 elseif(PLATFORM_ANDROID)
-	target_link_libraries(SampleBase PRIVATE NDKHelper GLESv3 android)
+	target_link_libraries(SampleBase PRIVATE NDKHelper GLESv3 android PUBLIC NativeAppGlue)
 	target_include_directories(SampleBase PRIVATE
 		${ANDROID_NDK}/sources/android/cpufeatures
 	)

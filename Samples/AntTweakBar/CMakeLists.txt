@@ -37,7 +37,7 @@ if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 
 elseif(PLATFORM_ANDROID)
 
-	list(APPEND ${SOURCE} src/AndroidMain.cpp)
+	list(APPEND SOURCE src/AndroidMain.cpp)
 	add_library(AntTweakBarSample SHARED ${SOURCE} ${INCLUDE})
 
 #elseif(APPLE)
