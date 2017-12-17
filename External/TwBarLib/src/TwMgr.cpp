@@ -217,7 +217,7 @@ void ANT_CALL CColorExt::CopyVarFromExtCB(void *_VarValue, const void *_ExtValue
             ext->m_HasAlpha = false;
 
         // Synchronize HLS and RGB
-        if( _ExtMemberIndex>=0 && _ExtMemberIndex<=2 )
+        if( /*_ExtMemberIndex>=0 &&*/ _ExtMemberIndex<=2 )
             ext->RGB2HLS();
         else if( _ExtMemberIndex>=3 && _ExtMemberIndex<=5 )
             ext->HLS2RGB();
@@ -4885,7 +4885,7 @@ void ANT_CALL CTwMgr::CStruct::DefaultSummary(char *_SummaryString, size_t _Summ
     size_t structIndex = (size_t)(_ClientData);
     if(    g_TwMgr && _SummaryString && _SummaryMaxLength>2
         && varGroup && static_cast<const CTwVar *>(varGroup)->IsGroup()
-        && structIndex>=0 && structIndex<=g_TwMgr->m_Structs.size() )
+        /*&& structIndex>=0*/ && structIndex<=g_TwMgr->m_Structs.size() )
     {
         // return g_TwMgr->m_Structs[structIndex].m_Name.c_str();
         CTwMgr::CStruct& s = g_TwMgr->m_Structs[structIndex];
@@ -5072,15 +5072,16 @@ bool TwGetKeyCode(int *_Code, int *_Modif, const char *_String)
     bool Ok = true;
     *_Modif = TW_KMOD_NONE;
     *_Code = 0;
-    size_t Start = strlen(_String)-1;
-    if( Start<0 )
+    auto len = strlen(_String);
+    if (len==0)
         return false;
+    size_t Start = len-1;
     while( Start>0 && _String[Start-1]!='+' )
         --Start;
     while( _String[Start]==' ' || _String[Start]=='\t' )
         ++Start;
     char *CodeStr = _strdup(_String+Start);
-    for( size_t i=strlen(CodeStr)-1; i>=0; ++i )
+    for( size_t i=strlen(CodeStr)-1; /*i>=0*/; ++i )
         if( CodeStr[i]==' ' || CodeStr[i]=='\t' )
             CodeStr[i] = '\0';
         else
