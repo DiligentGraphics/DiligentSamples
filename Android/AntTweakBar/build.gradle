@@ -26,14 +26,13 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path 'src/main/cpp/CMakeLists.txt'
-            path '../../../../../../CMakeLists.txt'
+            path '../../../CMakeLists.txt'
         }
     }
     sourceSets {
         main {
-            java.srcDirs = ['../../../../SampleBase/Src/Android/Java']
-            assets.srcDirs = ['../../assets']
+            java.srcDirs = ['../Common/Java']
+            assets.srcDirs = ['../../Samples/AntTweakBar/build/assets']
         }
     }
 }
