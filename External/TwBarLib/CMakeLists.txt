@@ -25,7 +25,10 @@ elseif(PLATFORM_ANDROID)
 		src/TwEventSDL.c
 		src/TwEventSDL12.c
 		src/TwEventSDL13.c
-		PROPERTIES LANGUAGE CXX
+		PROPERTIES 
+		LANGUAGE CXX
+		# Setting LANGUAGE to CXX is not enough for clang, so use -x c++ to compile c files as c++ and suppress the warning
+		COMPILE_FLAGS "-x c++"
 	)
 endif()
 
