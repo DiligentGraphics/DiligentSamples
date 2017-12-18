@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion = 25
+    compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
         applicationId = 'com.diligentengine.anttweakbarsample.TweakBarSampleApplication'
@@ -35,6 +35,8 @@ android {
         }
     }
 }
+
+buildDir '../build/AntTweakBar'
 
 dependencies {
     implementation project(":common")
