@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.GraphicsEngine.SampleApp;
+package com.diligentengine.samples.common;
 
 import android.app.NativeActivity;
 import android.os.Bundle;
@@ -28,7 +28,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.util.Log;
 
-public class EngineSampleNativeActivity extends NativeActivity {
+public class NativeActivityBase extends NativeActivity {
 
 	static
 	{
@@ -92,7 +92,7 @@ public class EngineSampleNativeActivity extends NativeActivity {
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
     }
 
-    EngineSampleNativeActivity _activity;
+    NativeActivityBase _activity;
     PopupWindow _popupWindow;
     TextView _label;
 

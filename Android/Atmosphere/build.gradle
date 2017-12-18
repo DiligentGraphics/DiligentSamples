@@ -4,7 +4,7 @@ android {
     compileSdkVersion = 25
 
     defaultConfig {
-        applicationId = 'com.GraphicsEngine.SampleApp.TestApplication'
+        applicationId = 'com.diligentengine.atmospheresample.AtmosphereSampleApplication'
         minSdkVersion 21
         targetSdkVersion 25
         ndk {
@@ -31,7 +31,6 @@ android {
     }
     sourceSets {
         main {
-            java.srcDirs = ['../Common/Java']
             assets.srcDirs = ['../../Samples/Atmosphere/build/assets']
         }
     }
