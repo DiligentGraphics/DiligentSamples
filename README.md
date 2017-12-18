@@ -23,19 +23,9 @@ and unordered access views, etc.
 
 Please visit [this page](http://diligentgraphics.com/diligent-engine/getting-started/#Build-Windows) for build instructions.
 
-To run a sample from Visual Studio, locate the sample’s project in the solution explorer, go to 
-Project->Properties->Debugging and set Working Directory to $(AssetsPath) (This variable is defined in the 
-EngineRoot.props property page file located in the sample’s build\Windows.Shared folder). Then set the project as 
+To run a sample from Visual Studio, locate the sample’s project in the solution explorer, set the project as 
 startup project and run it. By default the sample will run in D3D11 mode. To use D3D12 or OpenGL, use the following command 
 line option: mode={D3D11|D3D12|GL} (do not use spaces!).
-
-To run a sample from windows explorer or command line, navigate to the sample’s build/Win32 folder and execute the 
-appropriate run_*.bat file (you need to build the corresponding configuration first). Do not execute run.bat!
-
-### Build Specifics
-
-Win32 samples dynamically link with the engine. The dlls are included into the sample’s solution and are copied to 
-the sample’s output folder using the custom build tool.
 
 ## Universal Windows Platform
 
@@ -49,11 +39,7 @@ is available.
 
 Please visit [this page](http://diligentgraphics.com/diligent-engine/getting-started/#Build-Android) for build instructions.
 
-If you are building the sample using  Visual GDB plugin for Visual Studio, you can run the sample directly from the IDE. 
-You first need to go to project debugging settings and make sure that Debugger to launch is set to Local Windows Debugger. 
-If you are building the sample using the command line, you can use Android tools to deploy the project to device and run it.
-
-Android-19 or later is required to run the samples.
+You can use Android Studio to build, deploy and run samples.
 
 # Version History
 
