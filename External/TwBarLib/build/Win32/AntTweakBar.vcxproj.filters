@@ -15,9 +15,6 @@
     <Filter Include="Resource Files">
       <UniqueIdentifier>{d4d938bf-b5f6-43d3-896f-a3fff1885877}</UniqueIdentifier>
     </Filter>
-    <Filter Include="jni">
-      <UniqueIdentifier>{63c2ab77-3777-45c2-bfd7-0fcdd1a7108a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Android Source">
       <UniqueIdentifier>{8de4f4b9-60a2-41c1-be7f-e1be8fbdf0f4}</UniqueIdentifier>
     </Filter>
@@ -133,12 +130,6 @@
     </None>
     <None Include="FontSmall.pgm">
       <Filter>Resource Files</Filter>
-    </None>
-    <None Include="jni\Application.mk">
-      <Filter>jni</Filter>
-    </None>
-    <None Include="jni\Android.mk">
-      <Filter>jni</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
