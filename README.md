@@ -24,7 +24,7 @@ and unordered access views, etc.
 Please visit [this page](http://diligentgraphics.com/diligent-engine/getting-started/#Build-Windows) for build instructions.
 
 To run a sample from Visual Studio, locate the sample’s project in the solution explorer, set the project as 
-startup project and run it. By default the sample will run in D3D11 mode. To use D3D12 or OpenGL, use the following command 
+startup project and run it. For samples to run properly, the assets folder needs to be set up as a working directory (this is automatically configured by CMake). By default the sample will run in D3D11 mode. To use D3D12 or OpenGL, use the following command 
 line option: mode={D3D11|D3D12|GL} (do not use spaces!).
 
 ## Universal Windows Platform
