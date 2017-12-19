@@ -41,6 +41,8 @@
 
 #include "pch.h"
 
+#include <cmath>
+
 #include "ElevationDataSource.h"
 #include "FileWrapper.h"
 #include "DataBlobImpl.h"
@@ -146,7 +148,7 @@ Uint16 ElevationDataSource :: GetGlobalMaxElevation()const
 
 int MirrorCoord(int iCoord, int iDim)
 {
-    iCoord = abs(iCoord);
+    iCoord = std::abs(iCoord);
     int iPeriod = iCoord / iDim;
     iCoord = iCoord % iDim;
     if( iPeriod & 0x01 )

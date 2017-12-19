@@ -42,6 +42,7 @@
 #pragma once
 
 #include <memory>
+#include <cassert>
 
 // Structure describing quad tree node location
 struct QuadTreeNodeLocation

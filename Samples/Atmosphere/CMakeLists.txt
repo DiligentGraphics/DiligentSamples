@@ -118,8 +118,8 @@ endif()
 
 target_include_directories(AtmosphereSample
 PRIVATE
-	Src
-	Src/Terrain
+	src
+	src/Terrain
 	build/assets/shaders
 )
 

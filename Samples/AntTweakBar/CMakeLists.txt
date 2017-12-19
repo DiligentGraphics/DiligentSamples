@@ -63,7 +63,7 @@ endif()
 
 target_include_directories(AntTweakBarSample
 PRIVATE	
-	Src
+	src
 )
 
 target_link_libraries(AntTweakBarSample

@@ -29,51 +29,51 @@ const char *g_ErrCreateBuffer    = "Buffer creation failed";
 const char *g_ErrCreateSampler   = "Sampler state creation failed";
 
 static const char* g_LineRectVS_DX = 
-    #include "ShadersInc\LineRectVS_DX.h"
+    #include "ShadersInc/LineRectVS_DX.h"
 ;
 
 static const char* g_LineRectVS_GL = 
-    #include "ShadersInc\LineRectVS_GL.h"
+    #include "ShadersInc/LineRectVS_GL.h"
 ;
 
 static const char* g_LineRectCstColorVS_DX = 
-    #include "ShadersInc\LineRectCstColorVS_DX.h"
+    #include "ShadersInc/LineRectCstColorVS_DX.h"
 ;
 
 static const char* g_LineRectCstColorVS_GL = 
-    #include "ShadersInc\LineRectCstColorVS_GL.h"
+    #include "ShadersInc/LineRectCstColorVS_GL.h"
 ;
 
 static const char* g_LineRectPS_DX = 
-    #include "ShadersInc\LineRectPS_DX.h"
+    #include "ShadersInc/LineRectPS_DX.h"
 ;
 
 static const char* g_LineRectPS_GL = 
-    #include "ShadersInc\LineRectPS_GL.h"
+    #include "ShadersInc/LineRectPS_GL.h"
 ;
 
 static const char* g_TextVS_DX = 
-    #include "ShadersInc\TextVS_DX.h"
+    #include "ShadersInc/TextVS_DX.h"
 ;
 
 static const char* g_TextVS_GL = 
-    #include "ShadersInc\TextVS_GL.h"
+    #include "ShadersInc/TextVS_GL.h"
 ;
 
 static const char* g_TextCstColorVS_DX = 
-    #include "ShadersInc\TextCstColorVS_DX.h"
+    #include "ShadersInc/TextCstColorVS_DX.h"
 ;
 
 static const char* g_TextCstColorVS_GL = 
-    #include "ShadersInc\TextCstColorVS_GL.h"
+    #include "ShadersInc/TextCstColorVS_GL.h"
 ;
 
 static const char* g_TextPS_DX = 
-    #include "ShadersInc\TextPS_DX.h"
+    #include "ShadersInc/TextPS_DX.h"
 ;
 
 static const char* g_TextPS_GL = 
-    #include "ShadersInc\TextPS_GL.h"
+    #include "ShadersInc/TextPS_GL.h"
 ;
 
 
