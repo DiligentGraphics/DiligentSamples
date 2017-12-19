@@ -21,7 +21,7 @@ android {
     }
 }
 
-buildDir '../build/common'
+buildDir '../build/Common'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
