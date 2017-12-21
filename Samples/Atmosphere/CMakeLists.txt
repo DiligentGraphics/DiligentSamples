@@ -92,6 +92,11 @@ elseif(PLATFORM_ANDROID)
 	list(APPEND SOURCE src/AndroidMain.cpp)
 	add_library(AtmosphereSample SHARED ${SOURCE} ${INCLUDE})
 
+elseif(PLATFORM_LINUX)
+
+	list(APPEND SOURCE src/LinuxMain.cpp)
+	add_executable(AtmosphereSample ${SOURCE} ${INCLUDE})
+	
 #elseif(APPLE)
 #	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
 #elseif(UNIX)
@@ -125,6 +130,7 @@ PRIVATE
 
 target_link_libraries(AtmosphereSample
 PRIVATE
+	BuildSettings
 	SampleBase 
 	Lua
 	TextureLoader

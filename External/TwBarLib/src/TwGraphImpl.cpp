@@ -10,6 +10,20 @@
 
 
 #include "TwPrecomp.h"
+// On Linux, XLib contains the following #defines:
+// 	#define Bool int
+//  #define True 1
+//  #define False 0
+// which we need to #undefine to avoid conflicts with Diligent::Bool
+#ifdef Bool
+#   undef Bool 
+#endif
+#ifdef False
+#   undef False
+#endif
+#ifdef True
+#   undef True
+#endif
 #include "TwGraphImpl.h"
 #include "TwMgr.h"
 #include "TwColors.h"

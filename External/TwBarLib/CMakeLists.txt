@@ -30,6 +30,8 @@ elseif(PLATFORM_ANDROID)
 		# Setting LANGUAGE to CXX is not enough for clang, so use -x c++ to compile c files as c++ and suppress the warning
 		COMPILE_FLAGS "-x c++"
 	)
+elseif(PLATFORM_LINUX)
+	list(APPEND SOURCE src/TwEventX11.c)
 endif()
 
 set(PRIVATE_HEADERS 
@@ -118,7 +120,13 @@ if(MSVC)
 	target_compile_options(TwBarLib PRIVATE /wd4302 /wd4456)
 endif()
 
-target_link_libraries(TwBarLib BuildSettings Common GraphicsEngine PlatformInterface)
+target_link_libraries(TwBarLib 
+PRIVATE 
+	BuildSettings 
+	Common 
+	GraphicsEngine 
+	PlatformInterface
+)
 
 target_include_directories(TwBarLib
 PUBLIC
@@ -188,6 +196,11 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
+if(PLATFORM_LINUX)
+	target_compile_definitions(TwBarLib PRIVATE _UNIX __PLACEMENT_NEW_INLINE)
+	target_compile_options(TwBarLib PRIVATE -fno-strict-aliasing)
+	target_link_libraries(TwBarLib PRIVATE glew-static)
+endif()
 
 source_group("Source Files" FILES ${SOURCE})
 source_group("Private Header Files" FILES ${PRIVATE_HEADERS})

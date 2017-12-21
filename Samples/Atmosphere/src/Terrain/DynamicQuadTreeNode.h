@@ -184,7 +184,7 @@ public:
         RTDescendant = m_pRTDescendant.get();
     }
 
-    typedef std::auto_ptr<DynamicQuadTreeNode<NodeDataType> > AutoPtrType;
+    typedef std::unique_ptr<DynamicQuadTreeNode<NodeDataType> > AutoPtrType;
     // Attahes specified descendants to the tree
     void CreateDescendants(AutoPtrType pLBDescendant,
                            AutoPtrType pRBDescendant,
@@ -211,10 +211,10 @@ private:
 
     NodeDataType m_Data;
 
-    std::auto_ptr< DynamicQuadTreeNode > m_pLBDescendant;
-    std::auto_ptr< DynamicQuadTreeNode > m_pRBDescendant;
-    std::auto_ptr< DynamicQuadTreeNode > m_pLTDescendant;
-    std::auto_ptr< DynamicQuadTreeNode > m_pRTDescendant;
+    std::unique_ptr< DynamicQuadTreeNode > m_pLBDescendant;
+    std::unique_ptr< DynamicQuadTreeNode > m_pRBDescendant;
+    std::unique_ptr< DynamicQuadTreeNode > m_pLTDescendant;
+    std::unique_ptr< DynamicQuadTreeNode > m_pRTDescendant;
     DynamicQuadTreeNode *m_pAncestor;
 
     QuadTreeNodeLocation m_pos;

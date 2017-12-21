@@ -110,6 +110,8 @@ elseif(PLATFORM_ANDROID)
 	target_include_directories(SampleBase PRIVATE
 		${ANDROID_NDK}/sources/android/cpufeatures
 	)
+elseif(PLATFORM_LINUX)
+	target_link_libraries(SampleBase PRIVATE GL X11)
 endif()
 
 source_group("src" FILES ${SOURCE})

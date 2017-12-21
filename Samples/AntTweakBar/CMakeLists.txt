@@ -40,6 +40,11 @@ elseif(PLATFORM_ANDROID)
 	list(APPEND SOURCE src/AndroidMain.cpp)
 	add_library(AntTweakBarSample SHARED ${SOURCE} ${INCLUDE})
 
+elseif(PLATFORM_LINUX)
+
+	list(APPEND SOURCE src/LinuxMain.cpp)
+	add_executable(AntTweakBarSample ${SOURCE} ${INCLUDE})
+
 #elseif(APPLE)
 #	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)
 #elseif(UNIX)
@@ -68,6 +73,7 @@ PRIVATE
 
 target_link_libraries(AntTweakBarSample
 PRIVATE
+	BuildSettings
 	SampleBase 
 	Lua
 	RenderScript
