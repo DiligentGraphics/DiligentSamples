@@ -42,7 +42,6 @@ elseif(PLATFORM_ANDROID)
 
 elseif(PLATFORM_LINUX)
 
-	list(APPEND SOURCE src/LinuxMain.cpp)
 	add_executable(AntTweakBarSample ${SOURCE} ${INCLUDE})
 
 #elseif(APPLE)

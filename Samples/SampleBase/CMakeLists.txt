@@ -49,6 +49,10 @@ elseif(PLATFORM_ANDROID)
 	set(SOURCE 
 		src/Android/AndroidMainImpl.cpp
 	)
+elseif(PLATFORM_LINUX)
+	set(SOURCE 
+		src/Linux/LinuxMain.cpp
+	)
 endif()
 
 list(APPEND INCLUDE include/SampleBase.h)
@@ -89,6 +93,12 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 		GraphicsEngineD3D11-static
 		GraphicsEngineD3D12-static
 	)
+elseif(PLATFORM_LINUX)
+	SET(ENGINE_LIBRARIES
+		GraphicsEngineOpenGL-shared
+	)
+else()
+	message("Undefined platform")
 endif()
 
 target_link_libraries(SampleBase 
@@ -111,7 +121,7 @@ elseif(PLATFORM_ANDROID)
 		${ANDROID_NDK}/sources/android/cpufeatures
 	)
 elseif(PLATFORM_LINUX)
-	target_link_libraries(SampleBase PRIVATE GL X11)
+	target_link_libraries(SampleBase PRIVATE glew-static GL X11)
 endif()
 
 source_group("src" FILES ${SOURCE})

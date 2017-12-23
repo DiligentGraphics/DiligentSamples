@@ -46,6 +46,7 @@ public:
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
     virtual void WindowResize(Diligent::Uint32 Width, Diligent::Uint32 Height){}
     virtual bool HandleNativeMessage(const void *pNativeMsgData) { return false; }
+    virtual const Diligent::Char* GetSampleName()const{return "Diligent Engine Sample";}
 
 protected:
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;

@@ -94,7 +94,6 @@ elseif(PLATFORM_ANDROID)
 
 elseif(PLATFORM_LINUX)
 
-	list(APPEND SOURCE src/LinuxMain.cpp)
 	add_executable(AtmosphereSample ${SOURCE} ${INCLUDE})
 	
 #elseif(APPLE)
