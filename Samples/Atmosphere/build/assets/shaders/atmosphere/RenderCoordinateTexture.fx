@@ -58,4 +58,4 @@ void GenerateCoordinateTexturePS(ScreenSizeQuadVSOutput VSOut,
     // Compute camera space z for current location
     float2 f2ScreenSpaceUV = NormalizedDeviceXYToTexUV( f2XY );
     fCamSpaceZ = g_tex2DCamSpaceZ.SampleLevel(g_tex2DCamSpaceZ_sampler, f2ScreenSpaceUV, 0);
-};
+}

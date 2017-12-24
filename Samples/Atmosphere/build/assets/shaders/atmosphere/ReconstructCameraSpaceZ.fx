@@ -40,4 +40,4 @@ void ReconstructCameraSpaceZPS(ScreenSizeQuadVSOutput VSOut,
 {
     float fDepth = g_tex2DDepthBuffer.Load( int3(f4Pos.xy,0) );
     fCamSpaceZ = DepthToCameraZ(fDepth, g_CameraAttribs.mProj);
-};
+}

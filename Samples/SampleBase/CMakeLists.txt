@@ -121,7 +121,7 @@ elseif(PLATFORM_ANDROID)
 		${ANDROID_NDK}/sources/android/cpufeatures
 	)
 elseif(PLATFORM_LINUX)
-	target_link_libraries(SampleBase PRIVATE glew-static GL X11)
+	target_link_libraries(SampleBase PRIVATE GL X11)
 endif()
 
 source_group("src" FILES ${SOURCE})
