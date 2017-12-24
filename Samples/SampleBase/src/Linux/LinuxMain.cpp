@@ -26,12 +26,6 @@
 
 #include <GL/glx.h>
 #include <GL/gl.h>
-#include <unistd.h>
-#include <iostream>
- 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
  
  // Undef symbols defined by XLib
 #ifdef Bool
@@ -76,47 +70,53 @@ int main (int argc, char ** argv)
  
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
  
-    const char *extensions = glXQueryExtensionsString(display, DefaultScreen(display));
-    std::cout << extensions << std::endl;
+    //const char *extensions = glXQueryExtensionsString(display, DefaultScreen(display));
+    //std::cout << extensions << std::endl;
  
     static int visual_attribs[] =
     {
-        GLX_RENDER_TYPE, GLX_RGBA_BIT,
-        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-        GLX_DOUBLEBUFFER, true,
-        GLX_RED_SIZE, 1,
-        GLX_GREEN_SIZE, 1,
-        GLX_BLUE_SIZE, 1,
+        GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+        GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+        GLX_DOUBLEBUFFER,   true,
+
+        // The largest available total RGBA color buffer size (sum of GLX_RED_SIZE, 
+        // GLX_GREEN_SIZE, GLX_BLUE_SIZE, and GLX_ALPHA_SIZE) of at least the minimum
+        // size specified for each color component is preferred.
+        GLX_RED_SIZE,       8,
+        GLX_GREEN_SIZE,     8,
+        GLX_BLUE_SIZE,      8,
+        GLX_ALPHA_SIZE,     8,
+
+        // The largest available depth buffer of at least GLX_DEPTH_SIZE size is preferred
+        GLX_DEPTH_SIZE,     24,
+
+        //GLX_SAMPLE_BUFFERS, 1,
+        GLX_SAMPLES, 1,
         None
      };
  
-    std::cout << "Getting framebuffer config" << std::endl;
-    int fbcount;
+    int fbcount = 0;
     GLXFBConfig *fbc = glXChooseFBConfig(display, DefaultScreen(display), visual_attribs, &fbcount);
     if (!fbc)
     {
-        std::cout << "Failed to retrieve a framebuffer config" << std::endl;
+        LOG_ERROR_MESSAGE("Failed to retrieve a framebuffer config");
         return 1;
     }
  
-    std::cout << "Getting XVisualInfo" << std::endl;
     XVisualInfo *vi = glXGetVisualFromFBConfig(display, fbc[0]);
  
     XSetWindowAttributes swa;
-    std::cout << "Creating colormap" << std::endl;
     swa.colormap = XCreateColormap(display, RootWindow(display, vi->screen), vi->visual, AllocNone);
     swa.border_pixel = 0;
-    swa.event_mask = StructureNotifyMask;
+    swa.event_mask = StructureNotifyMask |  ExposureMask | KeyPressMask;
  
-    std::cout << "Creating window" << std::endl;
     Window win = XCreateWindow(display, RootWindow(display, vi->screen), 0, 0, 1024, 768, 0, vi->depth, InputOutput, vi->visual, CWBorderPixel|CWColormap|CWEventMask, &swa);
     if (!win)
     {
-        std::cout << "Failed to create window." << std::endl;
+        LOG_ERROR_MESSAGE("Failed to create window.");
         return 1;
     }
  
-    std::cout << "Mapping window" << std::endl;
     XMapWindow(display, win);
  
     // Create an oldstyle context first, to get the correct function pointer for glXCreateContextAttribsARB
@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
  
     if (glXCreateContextAttribsARB == NULL)
     {
-        std::cout << "glXCreateContextAttribsARB entry point not found. Aborting." << std::endl;
+        LOG_ERROR("glXCreateContextAttribsARB entry point not found. Aborting.");
         return false;
     }
  
@@ -138,15 +138,14 @@ int main (int argc, char ** argv)
         None
     };
  
-    std::cout << "Creating context" << std::endl;
     GLXContext ctx = glXCreateContextAttribsARB(display, fbc[0], NULL, true, context_attribs);
     if (!ctx)
     {
-        std::cout << "Failed to create GL3 context." << std::endl;
+        LOG_ERROR("Failed to create GL context.");
         return 1;
     }
- 
-    std::cout << "Making context current" << std::endl;
+    XFree(fbc);
+    
     glXMakeCurrent(display, win, ctx);
  
     RefCntAutoPtr<IRenderDevice> pRenderDevice;
@@ -175,41 +174,36 @@ int main (int argc, char ** argv)
     auto PrevTime = Timer.GetElapsedTime();
     double filteredFrameTime = 0.0;
  
-while (1) {
-        XEvent xev;
-        XNextEvent(display, &xev);
-
-        //if (xev.type == GraphicsExpose) {
-        pDeviceContext->InvalidateState();
-        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
-
+    while (true) 
+    {
         auto CurrTime = Timer.GetElapsedTime();
         auto ElapsedTime = CurrTime - PrevTime;
         PrevTime = CurrTime;
-        
-        g_pSample->Update(CurrTime, ElapsedTime);
-        g_pSample->Render();
+    
+        XEvent xev;
+        XNextEvent(display, &xev);
 
-        // Draw tweak bars
-        // Restore default render target in case the sample has changed it
-        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
-        TwDraw();
+        if (xev.type == Expose) 
+        {
+            pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+            
+            g_pSample->Update(CurrTime, ElapsedTime);
+            g_pSample->Render();
 
-            // XWindowAttributes gwa;
-            // XGetWindowAttributes(display, win, &gwa);
-            //     glViewport(0, 0, gwa.width, gwa.height);
-            //     glClearColor(0.2f, 0.5f, 0.6f, 1.f);
-            //     glClear(GL_COLOR_BUFFER_BIT);
-       
-        glXSwapBuffers(display, win);
-        //pSwapChain->Present();
-
-        /*}
-        else*/ if (xev.type == KeyPress) {
-            glXMakeCurrent(display, None, NULL);
-            //glXDestroyContext(display, glc);
-            //XDestroyWindow(display, wnd);
-            XCloseDisplay(display);
+                XWindowAttributes gwa;
+                XGetWindowAttributes(display, win, &gwa);
+                TwWindowSize(gwa.width, gwa.height);
+                
+            // Draw tweak bars
+            // Restore default render target in case the sample has changed it
+            pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+            TwDraw();
+            
+            glXSwapBuffers(display, win);
+            //pSwapChain->Present();
+        }
+        else if (xev.type == KeyPress) 
+        {
             break;
         }
 
@@ -222,13 +216,16 @@ while (1) {
     }
  
     g_pSample.reset();
+    TwTerminate();
     pSwapChain.Release();
     pDeviceContext.Release();
     pRenderDevice.Release();
  
     ctx = glXGetCurrentContext();
-    glXMakeCurrent(display, 0, 0);
+    glXMakeCurrent(display, None, NULL);
     glXDestroyContext(display, ctx);
+    XDestroyWindow(display, win);
+    XCloseDisplay(display);
 }
 
 #if 0
