@@ -197,7 +197,7 @@ endif()
 
 target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
 if(PLATFORM_LINUX)
-	target_compile_definitions(TwBarLib PRIVATE _UNIX __PLACEMENT_NEW_INLINE)
+	target_compile_definitions(TwBarLib PUBLIC _UNIX PRIVATE __PLACEMENT_NEW_INLINE)
 	target_compile_options(TwBarLib PRIVATE -fno-strict-aliasing)
 	target_link_libraries(TwBarLib PRIVATE glew-static)
 endif()

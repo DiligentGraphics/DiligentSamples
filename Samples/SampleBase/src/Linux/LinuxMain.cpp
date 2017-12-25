@@ -26,6 +26,9 @@
 
 #include <GL/glx.h>
 #include <GL/gl.h>
+
+#define TW_STATIC
+#include "AntTweakBar.h"
  
  // Undef symbols defined by XLib
 #ifdef Bool
@@ -42,8 +45,6 @@
 #include "RenderDeviceFactoryOpenGL.h"
 #include "Timer.h"
 
-#define TW_STATIC
-#include "AntTweakBar.h"
 #include "Errors.h"
 
 using namespace Diligent;
@@ -108,7 +109,14 @@ int main (int argc, char ** argv)
     XSetWindowAttributes swa;
     swa.colormap = XCreateColormap(display, RootWindow(display, vi->screen), vi->visual, AllocNone);
     swa.border_pixel = 0;
-    swa.event_mask = StructureNotifyMask |  ExposureMask | KeyPressMask;
+    swa.event_mask = 
+        StructureNotifyMask |  
+        ExposureMask |  
+        KeyPressMask | 
+        KeyReleaseMask |
+        ButtonPressMask | 
+        ButtonReleaseMask | 
+        PointerMotionMask;
  
     Window win = XCreateWindow(display, RootWindow(display, vi->screen), 0, 0, 1024, 768, 0, vi->depth, InputOutput, vi->visual, CWBorderPixel|CWColormap|CWEventMask, &swa);
     if (!win)
@@ -174,38 +182,55 @@ int main (int argc, char ** argv)
     auto PrevTime = Timer.GetElapsedTime();
     double filteredFrameTime = 0.0;
  
+
     while (true) 
     {
+        bool exit = false;
+        XEvent xev;
+        // Handle all events in the queue
+        while(XCheckMaskEvent(display, 0xFFFFFFFF, &xev))
+        {
+            TwEventX11(&xev);
+            switch(xev.type)
+            {
+                case KeyPress:
+                {
+                    KeySym keysym;
+                    char buffer[80];
+                    int num_char = XLookupString((XKeyEvent *)&xev, buffer, _countof(buffer), &keysym, 0);
+                    exit = (keysym==XK_Escape);
+                }
+                
+                case ConfigureNotify:
+                {
+                    XConfigureEvent &xce = reinterpret_cast<XConfigureEvent &>(xev);
+                    pSwapChain->Resize(static_cast<Uint32>(xce.width), static_cast<Uint32>(xce.height));
+                    g_pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
+                    break;
+                }
+            }
+        }
+
+        if(exit)
+            break;
+
+        // Render the scene
         auto CurrTime = Timer.GetElapsedTime();
         auto ElapsedTime = CurrTime - PrevTime;
         PrevTime = CurrTime;
-    
-        XEvent xev;
-        XNextEvent(display, &xev);
 
-        if (xev.type == Expose) 
-        {
-            pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
-            
-            g_pSample->Update(CurrTime, ElapsedTime);
-            g_pSample->Render();
+        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+        
+        g_pSample->Update(CurrTime, ElapsedTime);
+        g_pSample->Render();
 
-                XWindowAttributes gwa;
-                XGetWindowAttributes(display, win, &gwa);
-                TwWindowSize(gwa.width, gwa.height);
-                
-            // Draw tweak bars
-            // Restore default render target in case the sample has changed it
-            pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
-            TwDraw();
-            
-            glXSwapBuffers(display, win);
-            //pSwapChain->Present();
-        }
-        else if (xev.type == KeyPress) 
-        {
-            break;
-        }
+        // Draw tweak bars
+        // Restore default render target in case the sample has changed it
+        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+        TwDraw();
+        
+        glXSwapBuffers(display, win);
+        //pSwapChain->Present();
 
         double filterScale = 0.2;
         filteredFrameTime = filteredFrameTime * (1.0 - filterScale) + filterScale * ElapsedTime;
@@ -227,6 +252,10 @@ int main (int argc, char ** argv)
     XDestroyWindow(display, win);
     XCloseDisplay(display);
 }
+
+
+
+
 
 #if 0
 #if 0
