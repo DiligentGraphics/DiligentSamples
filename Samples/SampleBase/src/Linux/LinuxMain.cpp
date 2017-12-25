@@ -49,30 +49,28 @@
 
 using namespace Diligent;
 
-#define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
-#define GLX_CONTEXT_MINOR_VERSION_ARB       0x2092
+#ifndef GLX_CONTEXT_MAJOR_VERSION_ARB
+#   define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
+#endif
+
+#ifndef GLX_CONTEXT_MINOR_VERSION_ARB
+#   define GLX_CONTEXT_MINOR_VERSION_ARB       0x2092
+#endif
+
+#ifndef GLX_CONTEXT_FLAGS_ARB
+#   define GLX_CONTEXT_FLAGS_ARB               0x2094
+#endif
+
+#ifndef GLX_CONTEXT_DEBUG_BIT_ARB
+#   define GLX_CONTEXT_DEBUG_BIT_ARB           0x0001
+#endif
+
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
  
- // Create Direct3D device and swap chain
-void InitDevice(Window Wnd, Display *pDisplay, IRenderDevice **ppRenderDevice, IDeviceContext **ppImmediateContext, ISwapChain **ppSwapChain)
-{
-    SwapChainDesc SCDesc;
-    SCDesc.SamplesCount = 1;
-
-    EngineCreationAttribs EngineCreationAttribs;
-    GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
-        EngineCreationAttribs, ppRenderDevice, ppImmediateContext, SCDesc, reinterpret_cast<void*>(static_cast<size_t>(Wnd)), pDisplay, ppSwapChain );
-}
-
 int main (int argc, char ** argv)
 {
     Display *display = XOpenDisplay(0);
- 
-    glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
- 
-    //const char *extensions = glXQueryExtensionsString(display, DefaultScreen(display));
-    //std::cout << extensions << std::endl;
- 
+  
     static int visual_attribs[] =
     {
         GLX_RENDER_TYPE,    GLX_RGBA_BIT,
@@ -100,7 +98,7 @@ int main (int argc, char ** argv)
     if (!fbc)
     {
         LOG_ERROR_MESSAGE("Failed to retrieve a framebuffer config");
-        return 1;
+        return -1;
     }
  
     XVisualInfo *vi = glXGetVisualFromFBConfig(display, fbc[0]);
@@ -121,35 +119,44 @@ int main (int argc, char ** argv)
     if (!win)
     {
         LOG_ERROR_MESSAGE("Failed to create window.");
-        return 1;
+        return -1;
     }
  
     XMapWindow(display, win);
  
-    // Create an oldstyle context first, to get the correct function pointer for glXCreateContextAttribsARB
-    GLXContext ctx_old = glXCreateContext(display, vi, 0, GL_TRUE);
-    glXCreateContextAttribsARB =  (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
-    glXMakeCurrent(display, 0, 0);
-    glXDestroyContext(display, ctx_old);
- 
-    if (glXCreateContextAttribsARB == NULL)
+    glXCreateContextAttribsARBProc glXCreateContextAttribsARB = nullptr;
     {
-        LOG_ERROR("glXCreateContextAttribsARB entry point not found. Aborting.");
-        return false;
+        // Create an oldstyle context first, to get the correct function pointer for glXCreateContextAttribsARB
+        GLXContext ctx_old = glXCreateContext(display, vi, 0, GL_TRUE);
+        glXCreateContextAttribsARB =  (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+        glXMakeCurrent(display, None, NULL);
+        glXDestroyContext(display, ctx_old);
     }
  
+    if (glXCreateContextAttribsARB == nullptr)
+    {
+        LOG_ERROR("glXCreateContextAttribsARB entry point not found. Aborting.");
+        return -1;
+    }
+ 
+    int Flags = GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+#ifdef _DEBUG
+     Flags |= GLX_CONTEXT_DEBUG_BIT_ARB;
+#endif 
+    
     static int context_attribs[] =
     {
         GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
         GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+        GLX_CONTEXT_FLAGS_ARB, Flags,
         None
     };
- 
+  
     GLXContext ctx = glXCreateContextAttribsARB(display, fbc[0], NULL, true, context_attribs);
     if (!ctx)
     {
         LOG_ERROR("Failed to create GL context.");
-        return 1;
+        return -1;
     }
     XFree(fbc);
     
@@ -158,7 +165,11 @@ int main (int argc, char ** argv)
     RefCntAutoPtr<IRenderDevice> pRenderDevice;
     RefCntAutoPtr<IDeviceContext> pDeviceContext;
     Diligent::RefCntAutoPtr<ISwapChain> pSwapChain;
-    InitDevice( win, display, &pRenderDevice, &pDeviceContext, &pSwapChain );
+    
+    SwapChainDesc SCDesc;
+    EngineCreationAttribs EngineCreationAttribs;
+    GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
+        EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, reinterpret_cast<void*>(static_cast<size_t>(win)), display, &pSwapChain );
 
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
@@ -180,10 +191,9 @@ int main (int argc, char ** argv)
     auto PrevTime = Timer.GetElapsedTime();
     double filteredFrameTime = 0.0;
  
-
     while (true) 
     {
-        bool exit = false;
+        bool EscPressed = false;
         XEvent xev;
         // Handle all events in the queue
         while(XCheckMaskEvent(display, 0xFFFFFFFF, &xev))
@@ -196,7 +206,7 @@ int main (int argc, char ** argv)
                     KeySym keysym;
                     char buffer[80];
                     int num_char = XLookupString((XKeyEvent *)&xev, buffer, _countof(buffer), &keysym, 0);
-                    exit = (keysym==XK_Escape);
+                    EscPressed = (keysym==XK_Escape);
                 }
                 
                 case ConfigureNotify:
@@ -215,7 +225,7 @@ int main (int argc, char ** argv)
             }
         }
 
-        if(exit)
+        if(EscPressed)
             break;
 
         // Render the scene
@@ -233,8 +243,7 @@ int main (int argc, char ** argv)
         pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
         TwDraw();
         
-        glXSwapBuffers(display, win);
-        //pSwapChain->Present();
+        pSwapChain->Present();
 
         double filterScale = 0.2;
         filteredFrameTime = filteredFrameTime * (1.0 - filterScale) + filterScale * ElapsedTime;
