@@ -39,7 +39,8 @@ public:
     virtual void Render();
     virtual void Update(double CurrTime, double ElapsedTime);
     virtual void WindowResize( Uint32 Width, Uint32 Height );
-
+    virtual const Diligent::Char* GetSampleName()const override{return "Atmosphere Sample";}
+    
 private:
     void CreateShadowMap();
     void ReleaseShadowMap();

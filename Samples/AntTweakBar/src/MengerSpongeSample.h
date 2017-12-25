@@ -34,6 +34,7 @@ public:
     ~MengerSpongeSample();
     virtual void Render();
     virtual void Update(double CurrTime, double ElapsedTime);
+    virtual const Diligent::Char* GetSampleName()const override{return "AntTweakBar Sample";}
 
 private:
     static void SetSpongeLevelCB( const void *value, void * /*clientData*/ );
