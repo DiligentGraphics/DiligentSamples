@@ -43,6 +43,11 @@ You can use Android Studio to build, deploy and run samples.
 
 # Version History
 
+## v2.1.a
+
+* Refactored build system to use CMake and Gradle for Android
+* Added support for Linux platform
+
 ## v2.1
 
 ## v2.0.alpha
