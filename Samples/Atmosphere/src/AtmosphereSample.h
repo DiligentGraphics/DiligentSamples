@@ -36,9 +36,9 @@ class AtmosphereSample : public SampleBase
 public:
     AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain);
     ~AtmosphereSample();
-    virtual void Render();
-    virtual void Update(double CurrTime, double ElapsedTime);
-    virtual void WindowResize( Uint32 Width, Uint32 Height );
+    virtual void Render()override;
+    virtual void Update(double CurrTime, double ElapsedTime)override;
+    virtual void WindowResize( Uint32 Width, Uint32 Height )override;
     virtual const Diligent::Char* GetSampleName()const override{return "Atmosphere Sample";}
     
 private:

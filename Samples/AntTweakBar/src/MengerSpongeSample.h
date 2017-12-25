@@ -32,8 +32,8 @@ class MengerSpongeSample : public SampleBase
 public:
     MengerSpongeSample(Diligent::IRenderDevice *pDevice, Diligent::IDeviceContext *pImmediateContext, Diligent::ISwapChain *pSwapChain);
     ~MengerSpongeSample();
-    virtual void Render();
-    virtual void Update(double CurrTime, double ElapsedTime);
+    virtual void Render()override;
+    virtual void Update(double CurrTime, double ElapsedTime)override;
     virtual const Diligent::Char* GetSampleName()const override{return "AntTweakBar Sample";}
 
 private:
