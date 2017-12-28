@@ -20,59 +20,59 @@ set(INCLUDE
 )
 
 set(ATMOSPHERE_SHADERS
-	build/assets/shaders/atmosphere/AtmosphereShadersCommon.fxh
-	build/assets/shaders/atmosphere/CoarseInsctr.fx
-	build/assets/shaders/atmosphere/InterpolateIrradiance.fx
-	build/assets/shaders/atmosphere/LookUpTables.fxh
-	build/assets/shaders/atmosphere/MarkRayMarchingSamples.fx
-	build/assets/shaders/atmosphere/MinMaxBinTree.fx
-	build/assets/shaders/atmosphere/Precomputation.fx
-	build/assets/shaders/atmosphere/RayMarch.fx
-	build/assets/shaders/atmosphere/ReconstructCameraSpaceZ.fx
-	build/assets/shaders/atmosphere/RefineSampleLocations.fx
-	build/assets/shaders/atmosphere/RenderCoordinateTexture.fx
-	build/assets/shaders/atmosphere/RenderSampling.fx
-	build/assets/shaders/atmosphere/RenderSliceEndPoints.fx
-	build/assets/shaders/atmosphere/ScatteringIntegrals.fxh
-	build/assets/shaders/atmosphere/ScreenSizeQuadVS.fx
-	build/assets/shaders/atmosphere/Sun.fx
-	build/assets/shaders/atmosphere/ToneMapping.fxh
-	build/assets/shaders/atmosphere/UnshadowedScattering.fxh
-	build/assets/shaders/atmosphere/UnwarpEpipolarScattering.fx
-	build/assets/shaders/atmosphere/UpdateAverageLuminance.fx
+	assets/shaders/atmosphere/AtmosphereShadersCommon.fxh
+	assets/shaders/atmosphere/CoarseInsctr.fx
+	assets/shaders/atmosphere/InterpolateIrradiance.fx
+	assets/shaders/atmosphere/LookUpTables.fxh
+	assets/shaders/atmosphere/MarkRayMarchingSamples.fx
+	assets/shaders/atmosphere/MinMaxBinTree.fx
+	assets/shaders/atmosphere/Precomputation.fx
+	assets/shaders/atmosphere/RayMarch.fx
+	assets/shaders/atmosphere/ReconstructCameraSpaceZ.fx
+	assets/shaders/atmosphere/RefineSampleLocations.fx
+	assets/shaders/atmosphere/RenderCoordinateTexture.fx
+	assets/shaders/atmosphere/RenderSampling.fx
+	assets/shaders/atmosphere/RenderSliceEndPoints.fx
+	assets/shaders/atmosphere/ScatteringIntegrals.fxh
+	assets/shaders/atmosphere/ScreenSizeQuadVS.fx
+	assets/shaders/atmosphere/Sun.fx
+	assets/shaders/atmosphere/ToneMapping.fxh
+	assets/shaders/atmosphere/UnshadowedScattering.fxh
+	assets/shaders/atmosphere/UnwarpEpipolarScattering.fx
+	assets/shaders/atmosphere/UpdateAverageLuminance.fx
 )
 
 set(TERRAIN_SHADERS
-	build/assets/shaders/terrain/GenerateNormalMapPS.fx
-	build/assets/shaders/terrain/HemispherePS.fx
-	build/assets/shaders/terrain/HemisphereVS.fx
-	build/assets/shaders/terrain/HemisphereZOnlyVS.fx
-	build/assets/shaders/terrain/ScreenSizeQuadVS.fx
-	build/assets/shaders/terrain/TerrainShadersCommon.fxh
+	assets/shaders/terrain/GenerateNormalMapPS.fx
+	assets/shaders/terrain/HemispherePS.fx
+	assets/shaders/terrain/HemisphereVS.fx
+	assets/shaders/terrain/HemisphereZOnlyVS.fx
+	assets/shaders/terrain/ScreenSizeQuadVS.fx
+	assets/shaders/terrain/TerrainShadersCommon.fxh
 )
 
 set(SHADERS
-	build/assets/shaders/HostSharedTerrainStructs.fxh
-	build/assets/shaders/LightScattering.lua
-	build/assets/shaders/Structures.fxh
-	build/assets/shaders/Terrain.lua
+	assets/shaders/HostSharedTerrainStructs.fxh
+	assets/shaders/LightScattering.lua
+	assets/shaders/Structures.fxh
+	assets/shaders/Terrain.lua
 )
 
 set(TERRAIN_TEXTURES
-	build/assets/Terrain/HeightMap.tif
-	build/assets/Terrain/Mask.png
+	assets/Terrain/HeightMap.tif
+	assets/Terrain/Mask.png
 )
 
 set(TERRAIN_TILES
-	build/assets/Terrain/Tiles/cliff_DM.dds
-	build/assets/Terrain/Tiles/cliff_NM.dds
-	build/assets/Terrain/Tiles/grass_DM.dds
-	build/assets/Terrain/Tiles/grass_NM.dds
-	build/assets/Terrain/Tiles/grassDark_DM.dds
-	build/assets/Terrain/Tiles/gravel_DM.dds
-	build/assets/Terrain/Tiles/gravel_NM.dds
-	build/assets/Terrain/Tiles/snow_DM.dds
-	build/assets/Terrain/Tiles/Snow_NM.jpg
+	assets/Terrain/Tiles/cliff_DM.dds
+	assets/Terrain/Tiles/cliff_NM.dds
+	assets/Terrain/Tiles/grass_DM.dds
+	assets/Terrain/Tiles/grass_NM.dds
+	assets/Terrain/Tiles/grassDark_DM.dds
+	assets/Terrain/Tiles/gravel_DM.dds
+	assets/Terrain/Tiles/gravel_NM.dds
+	assets/Terrain/Tiles/snow_DM.dds
+	assets/Terrain/Tiles/Snow_NM.jpg
 )
 
 set(ASSETS ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS} ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
@@ -82,7 +82,7 @@ if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 
 	if(PLATFORM_WIN32)
 		set_target_properties(AtmosphereSample PROPERTIES 
-			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/assets"
+			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
 		)
 		copy_required_dlls(AtmosphereSample)
 	endif()
@@ -124,7 +124,7 @@ target_include_directories(AtmosphereSample
 PRIVATE
 	src
 	src/Terrain
-	build/assets/shaders
+	assets/shaders
 )
 
 target_link_libraries(AtmosphereSample

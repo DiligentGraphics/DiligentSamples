@@ -51,7 +51,6 @@ set(PRIVATE_HEADERS
 
 if(PLATFORM_WIN32)
 	list(APPEND PRIVATE_HEADERS src/resource.h)
-#	list(APPEND PRIVATE_HEADERS build/Win32/res/TwXCursors.h)
 endif()
 
 
@@ -60,26 +59,26 @@ set(PUBLIC_HEADERS
 )
 
 set(WIN32_RESOURCE_FILES
-	build/Win32/AntTweakBar.rc	
-	build/Win32/res/cur00000.cur
-	build/Win32/res/cur00001.cur
-	build/Win32/res/cur00002.cur
-	build/Win32/res/cur00003.cur
-	build/Win32/res/cur00004.cur
-	build/Win32/res/cur00005.cur
-	build/Win32/res/cur00006.cur
-	build/Win32/res/cur00007.cur
-	build/Win32/res/cur00008.cur
-	build/Win32/res/cur00009.cur
-	build/Win32/res/cur00010.cur
-	build/Win32/res/cur00011.cur
-	build/Win32/res/cur00012.cur
-	build/Win32/res/cur00013.cur
-	build/Win32/res/FontChars.txt
-	build/Win32/res/FontFixed1.pgm
-	build/Win32/res/FontLargeAA.pgm
-	build/Win32/res/FontNormal.pgm
-	build/Win32/res/FontSmall.pgm
+	res/AntTweakBar.rc	
+	res/cur00000.cur
+	res/cur00001.cur
+	res/cur00002.cur
+	res/cur00003.cur
+	res/cur00004.cur
+	res/cur00005.cur
+	res/cur00006.cur
+	res/cur00007.cur
+	res/cur00008.cur
+	res/cur00009.cur
+	res/cur00010.cur
+	res/cur00011.cur
+	res/cur00012.cur
+	res/cur00013.cur
+	res/FontChars.txt
+	res/FontFixed1.pgm
+	res/FontLargeAA.pgm
+	res/FontNormal.pgm
+	res/FontSmall.pgm
 )
 
 set(DX_SHADERS

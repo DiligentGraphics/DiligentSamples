@@ -52,8 +52,6 @@
 #include "TextureUtilities.h"
 
 using namespace Diligent;
-using namespace Diligent;
-using namespace Diligent;
 
 
 struct HemisphereVertex
@@ -130,7 +128,7 @@ public:
                 if( m_QuadTriangType == QUAD_TRIANG_TYPE_01_TO_10 )
                 {
                     if( iCol == 0 && iRow == 0)
-                        VERIFY_EXPR(iFirstVertex == iV00)
+                        VERIFY_EXPR(iFirstVertex == iV00);
                     // 01      11
                     //  *------*
                     //  | '.   |
@@ -143,7 +141,7 @@ public:
                 else if( m_QuadTriangType == QUAD_TRIANG_TYPE_00_TO_11 )
                 {
                     if( iCol == 0 && iRow == 0)
-                        VERIFY_EXPR(iFirstVertex == iV01)
+                        VERIFY_EXPR(iFirstVertex == iV01);
                     // 01      11
                     //  *------*
                     //  |   .' |

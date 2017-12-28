@@ -133,7 +133,7 @@ MengerSpongeSample::MengerSpongeSample(IRenderDevice *pDevice, IDeviceContext *p
     m_Animate = false;                       // enable animation
     m_AnimationSpeed = 0.2f;               // animation speed
 
-#if defined(PLATFORM_WIN32) || defined(PLATFORM_UNIVERSAL_WINDOWS)
+#if defined(PLATFORM_UNIVERSAL_WINDOWS)
     FileSystem::SetWorkingDirectory("assets");
 #endif
 

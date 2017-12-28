@@ -52,20 +52,20 @@ END
 // Cursor
 //
 
-IDC_CURSOR1             CURSOR                  "res\\cur00013.cur"
-IDC_CURSOR2             CURSOR                  "res\\cur00000.cur"
-IDC_CURSOR3             CURSOR                  "res\\cur00001.cur"
-IDC_CURSOR4             CURSOR                  "res\\cur00002.cur"
-IDC_CURSOR5             CURSOR                  "res\\cur00003.cur"
-IDC_CURSOR6             CURSOR                  "res\\cur00004.cur"
-IDC_CURSOR7             CURSOR                  "res\\cur00005.cur"
-IDC_CURSOR8             CURSOR                  "res\\cur00006.cur"
-IDC_CURSOR9             CURSOR                  "res\\cur00007.cur"
-IDC_CURSOR10            CURSOR                  "res\\cur00008.cur"
-IDC_CURSOR11            CURSOR                  "res\\cur00009.cur"
-IDC_CURSOR12            CURSOR                  "res\\cur00010.cur"
-IDC_CURSOR13            CURSOR                  "res\\cur00011.cur"
-IDC_CURSOR14            CURSOR                  "res\\cur00012.cur"
+IDC_CURSOR1             CURSOR                  "cur00013.cur"
+IDC_CURSOR2             CURSOR                  "cur00000.cur"
+IDC_CURSOR3             CURSOR                  "cur00001.cur"
+IDC_CURSOR4             CURSOR                  "cur00002.cur"
+IDC_CURSOR5             CURSOR                  "cur00003.cur"
+IDC_CURSOR6             CURSOR                  "cur00004.cur"
+IDC_CURSOR7             CURSOR                  "cur00005.cur"
+IDC_CURSOR8             CURSOR                  "cur00006.cur"
+IDC_CURSOR9             CURSOR                  "cur00007.cur"
+IDC_CURSOR10            CURSOR                  "cur00008.cur"
+IDC_CURSOR11            CURSOR                  "cur00009.cur"
+IDC_CURSOR12            CURSOR                  "cur00010.cur"
+IDC_CURSOR13            CURSOR                  "cur00011.cur"
+IDC_CURSOR14            CURSOR                  "cur00012.cur"
 #endif    // Français (France) resources
 /////////////////////////////////////////////////////////////////////////////
 

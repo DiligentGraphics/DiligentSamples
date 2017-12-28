@@ -12,17 +12,17 @@ set(INCLUDE
 
 
 set(SHADERS
-	build/assets/shaders/MainPS_DX.hlsl
-	build/assets/shaders/MainPS_GL.glsl
-	build/assets/shaders/MainVS_DX.hlsl
-	build/assets/shaders/MainVS_GL.glsl
+	assets/shaders/MainPS_DX.hlsl
+	assets/shaders/MainPS_GL.glsl
+	assets/shaders/MainVS_DX.hlsl
+	assets/shaders/MainVS_GL.glsl
 )
-set_property(SOURCE build/assets/shaders/MainPS_DX.hlsl PROPERTY VS_TOOL_OVERRIDE "None")
-set_property(SOURCE build/assets/shaders/MainVS_DX.hlsl PROPERTY VS_TOOL_OVERRIDE "None")
+set_property(SOURCE assets/shaders/MainPS_DX.hlsl PROPERTY VS_TOOL_OVERRIDE "None")
+set_property(SOURCE assets/shaders/MainVS_DX.hlsl PROPERTY VS_TOOL_OVERRIDE "None")
 
 set(ASSETS
 	${SHADERS}
-	build/assets/MengerSponge.lua
+	assets/MengerSponge.lua
 )
 
 if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
@@ -30,7 +30,7 @@ if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
 
 	if(PLATFORM_WIN32)
 		set_target_properties(AntTweakBarSample PROPERTIES 
-			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
+			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
 		)
 		copy_required_dlls(AntTweakBarSample)
 	endif()
@@ -61,7 +61,7 @@ if(PLATFORM_UNIVERSAL_WINDOWS)
 
 	set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_CONTENT 1)
 	set_property(SOURCE ${SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders")
-	set_property(SOURCE build/assets/MengerSponge.lua PROPERTY VS_DEPLOYMENT_LOCATION "assets")
+	set_property(SOURCE assets/MengerSponge.lua PROPERTY VS_DEPLOYMENT_LOCATION "assets")
 endif()
 
 
@@ -93,4 +93,4 @@ set_target_properties(AntTweakBarSample PROPERTIES
 source_group("src" FILES ${SOURCE})
 source_group("include" FILES ${INCLUDE})
 source_group("assets\\shaders" FILES ${SHADERS})
-source_group("assets" FILES build/assets/MengerSponge.lua)
+source_group("assets" FILES assets/MengerSponge.lua)

@@ -88,7 +88,7 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
     // Load the data
     m_TheHeightMap.resize( m_iStride * m_iNumRows );
     
-    VERIFY( ImgInfo.BitsPerPixel == 16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected" )
+    VERIFY( ImgInfo.BitsPerPixel == 16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected" );
     auto *pSrcImgData = reinterpret_cast<Uint8*>( pImageData->GetDataPtr() );
     for (Uint32 row = 0; row < ImgInfo.Height; row++, pSrcImgData += ImgInfo.RowStride)
     {
