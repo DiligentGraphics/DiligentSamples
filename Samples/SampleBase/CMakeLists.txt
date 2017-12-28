@@ -107,7 +107,6 @@ PRIVATE
 PUBLIC
 	TwBarLib 
 	Common 
-	GraphicsEngine
 	GraphicsTools
 	TargetPlatform
 	${ENGINE_LIBRARIES}

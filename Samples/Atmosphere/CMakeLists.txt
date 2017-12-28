@@ -130,6 +130,7 @@ PRIVATE
 target_link_libraries(AtmosphereSample
 PRIVATE
 	BuildSettings
+	GraphicsAccessories
 	SampleBase 
 	Lua
 	TextureLoader

@@ -44,6 +44,7 @@
 #include "LightSctrPostProcess.h"
 #include "ConvenienceFunctions.h"
 #include "GraphicsUtilities.h"
+#include "GraphicsAccessories.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "MapHelper.h"
 

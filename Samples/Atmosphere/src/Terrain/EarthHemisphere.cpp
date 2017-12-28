@@ -46,6 +46,7 @@
 #include "ElevationDataSource.h"
 #include "ConvenienceFunctions.h"
 #include "MapHelper.h"
+#include "GraphicsAccessories.h"
 #include "GraphicsUtilities.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "ShaderMacroHelper.h"
