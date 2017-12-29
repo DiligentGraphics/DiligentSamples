@@ -30,6 +30,11 @@ SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateConte
     return new Tutorial01_HelloTriangle( pDevice, pImmediateContext, pSwapChain );
 }
 
+// For this tutorial, we will use simple vertex shader
+// that will create procedural triangle
+
+// Diligent Engine can use HLSL source for all supported platforms
+// It will convert HLSL to GLSL for OpenGL/Vulkan
 
 static const char* VSSource = R"(
 struct PSInput 
@@ -60,6 +65,7 @@ PSInput main(uint VertId : SV_VertexID)
 }
 )";
 
+// Pixel shader will simply output interpolated vertex color
 static const char* PSSource = R"(
 struct PSInput 
 { 
@@ -101,6 +107,8 @@ Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDevi
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
     ShaderCreationAttribs CreationAttribs;
+    // Tell the system that the shader source code is in HLSL.
+    // For OpenGL, the engine will convert this into GLSL behind the scene
     CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     // Create vertex shader
     RefCntAutoPtr<IShader> pVS;
@@ -122,6 +130,7 @@ Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDevi
         pDevice->CreateShader(CreationAttribs, &pPS);
     }
 
+    // Finally, create the pipeline state
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pPS = pPS;
     pDevice->CreatePipelineState(PSODesc, &m_pPSO);
@@ -135,11 +144,14 @@ void Tutorial01_HelloTriangle::Render()
     m_pDeviceContext->ClearRenderTarget(nullptr, ClearColor);
     m_pDeviceContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
+    // Set pipeline state in the immediate context
     m_pDeviceContext->SetPipelineState(m_pPSO);
+    // We need to commit shader resource. Even though in this example
+    // we don't really have any resources, this call also sets the shaders
     m_pDeviceContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
     DrawAttribs drawAttrs;
-    drawAttrs.NumVertices = 3;
-    drawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    drawAttrs.NumVertices = 3; // We will render 3 vertices
+    drawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
     m_pDeviceContext->Draw(drawAttrs);
 }
 

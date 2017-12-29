@@ -185,6 +185,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         MessageBoxA(wnd, TwGetLastError(), "AntTweakBar initialization failed", MB_OK|MB_ICONERROR);
         return 0;
     }
+    TwDefine(" TW_HELP visible=false ");
 
     g_pSample.reset( CreateSample(pRenderDevice, pDeviceContext, pSwapChain) );
     g_pSample->WindowResize( g_pSwapChain->GetDesc().Width, g_pSwapChain->GetDesc().Height );

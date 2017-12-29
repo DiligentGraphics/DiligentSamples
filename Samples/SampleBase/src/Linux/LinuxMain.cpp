@@ -182,6 +182,7 @@ int main (int argc, char ** argv)
         LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
         return 1;
     }
+    TwDefine(" TW_HELP visible=false ");
 
     std::unique_ptr<SampleBase> pSample( CreateSample(pRenderDevice, pDeviceContext, pSwapChain) );
     pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );

@@ -186,6 +186,7 @@ int Engine::InitDisplay()
             LOGE( "Failed to Init Ant tweak bar" );
             return 0;
         }
+        TwDefine(" TW_HELP visible=false ");
 
         sample_.reset( CreateSample(pRenderDevice, pDeviceContext_, pSwapChain_) );
     }

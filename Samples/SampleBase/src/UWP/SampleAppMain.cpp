@@ -72,6 +72,7 @@ void SampleAppMain::CreateRenderers(const std::shared_ptr<DX::DeviceResources>& 
         //MessageBoxA(wnd, TwGetLastError(), "AntTweakBar initialization failed", MB_OK|MB_ICONERROR);
         //return 0;
     }
+    TwDefine(" TW_HELP visible=false ");
 
     m_pSample.reset( CreateSample(pDevice, pContext, pSwapChain) );
     m_pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
