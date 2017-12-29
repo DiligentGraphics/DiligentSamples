@@ -123,7 +123,7 @@ target_link_libraries(TwBarLib
 PRIVATE 
 	BuildSettings 
 	Common 
-	GraphicsEngine 
+	GraphicsEngineInterface
 	PlatformInterface
 )
 
