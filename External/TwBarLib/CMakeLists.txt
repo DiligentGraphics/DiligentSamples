@@ -148,18 +148,9 @@ SOURCES
 	${GL_SHADERS}
 )
 
-if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-
+if(NOT FILE2STRING_PATH STREQUAL "")
 	set(SHADER_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/ShadersInc)
 	file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
-
-	if(PLATFORM_WIN32)
-		add_dependencies(ProcessTwBarLibShaders File2String)
-		set(FILE2STRING_PATH $<TARGET_FILE:File2String>)
-	else()
-		# We cannot build File2String utility and will use prebuilt Win32 version
-		set(FILE2STRING_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentCore/Utilities/File2Include/bin/Win32/File2String.exe")
-	endif()
 
 	foreach(FILE ${DX_SHADERS})
 	  get_filename_component(FILE_NAME_WE ${FILE} NAME_WE)
@@ -191,7 +182,8 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 	set_target_properties(ProcessTwBarLibShaders PROPERTIES
 		FOLDER Samples/External
 	)
-
+else()
+	message(WARNING "File2String utility is currently unavailable on this host system. This is not an issues unless you modify TwBarLib shaders")
 endif()
 
 target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
