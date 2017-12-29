@@ -8,7 +8,7 @@ This module contains simple graphics applications intended to demonstrate the us
 
 ![](Tutorials/Tutorial01_HelloTriangle/Screenshot.png)
 
-This tutorial shows how to render simple triangle using Diligent Engine API.
+This tutorial shows how to render a simple triangle using Diligent Engine API.
 
 # Samples
 
