@@ -17,6 +17,7 @@ set(SHADERS
 
 set(ASSETS
 	${SHADERS}
+	assets/DGLogo.png
 )
 
 add_tutorial("Tutorial03_Texturing" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
