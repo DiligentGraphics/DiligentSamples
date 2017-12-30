@@ -21,19 +21,20 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial02_Cube.h"
+#include "Tutorial03_Texturing.h"
 #include "MapHelper.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
+#include "TextureUtilities.h"
 
 using namespace Diligent;
 
 SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
 {
-    return new Tutorial02_Cube( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial03_Texturing( pDevice, pImmediateContext, pSwapChain );
 }
 
-Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
+Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
     SampleBase(pDevice, pImmediateContext, pSwapChain)
 {
     {
@@ -95,6 +96,25 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
             CreationAttribs.EntryPoint = "main";
             CreationAttribs.Desc.Name = "Cube PS";
             CreationAttribs.FilePath = "cube.psh";
+            // Shader variables should typically be mutable, which means they are expected
+            // to change on a per-instance basis
+            ShaderVariableDesc Vars[] = 
+            {
+                {"g_Texture", SHADER_VARIABLE_TYPE_MUTABLE}
+            };
+            CreationAttribs.Desc.VariableDesc = Vars;
+            CreationAttribs.Desc.NumVariables = _countof(Vars);
+
+            // Define static sampler for g_Texture. Static samplers should be used whenever possible
+            SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+                                            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+            StaticSamplerDesc StaticSamplers[] = 
+            {
+                {"g_Texture", SamLinearClampDesc}
+            };
+            CreationAttribs.Desc.StaticSamplers = StaticSamplers;
+            CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
+
             pDevice->CreateShader(CreationAttribs, &pPS);
         }
 
@@ -103,8 +123,8 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         {
             // Attribute 0 - vertex position
             LayoutElement(0, 0, 3, VT_FLOAT32, False),
-            // Attribute 1 - vertex color
-            LayoutElement(1, 0, 4, VT_FLOAT32, False)
+            // Attribute 1 - texture coordinates
+            LayoutElement(1, 0, 2, VT_FLOAT32, False)
         };
 
         PSODesc.GraphicsPipeline.pVS = pVS;
@@ -120,9 +140,9 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         struct Vertex
         {
             float3 pos;
-            float4 color;
+            float2 uv;
         };
-        
+
         // Cube vertices
 
         //      (-1,+1,+1)________________(+1,+1,+1) 
@@ -140,17 +160,39 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         //        (-1,-1,-1)       (+1,-1,-1)
         // 
 
-        Vertex CubeVerts[8] =
+        // This time we have to duplicate verices because texture coordinates cannot
+        // be shared
+        Vertex CubeVerts[] =
         {
-            {float3(-1,-1,-1), float4(1,0,0,1)},
-            {float3(-1,+1,-1), float4(0,1,0,1)},
-            {float3(+1,+1,-1), float4(0,0,1,1)},
-            {float3(+1,-1,-1), float4(1,1,1,1)},
+            {float3(-1,-1,-1), float2(0,1)},
+            {float3(-1,+1,-1), float2(0,0)},
+            {float3(+1,+1,-1), float2(1,0)},
+            {float3(+1,-1,-1), float2(1,1)},
 
-            {float3(-1,-1,+1), float4(1,1,0,1)},
-            {float3(-1,+1,+1), float4(0,1,1,1)},
-            {float3(+1,+1,+1), float4(1,0,1,1)},
-            {float3(+1,-1,+1), float4(0.2f,0.2f,0.2f,1)},
+            {float3(-1,-1,-1), float2(0,1)},
+            {float3(-1,-1,+1), float2(0,0)},
+            {float3(+1,-1,+1), float2(1,0)},
+            {float3(+1,-1,-1), float2(1,1)},
+
+            {float3(+1,-1,-1), float2(0,1)},
+            {float3(+1,-1,+1), float2(1,1)},
+            {float3(+1,+1,+1), float2(1,0)},
+            {float3(+1,+1,-1), float2(0,0)},
+
+            {float3(+1,+1,-1), float2(0,1)},
+            {float3(+1,+1,+1), float2(0,0)},
+            {float3(-1,+1,+1), float2(1,0)},
+            {float3(-1,+1,-1), float2(1,1)},
+
+            {float3(-1,+1,-1), float2(1,0)},
+            {float3(-1,+1,+1), float2(0,0)},
+            {float3(-1,-1,+1), float2(0,1)},
+            {float3(-1,-1,-1), float2(1,1)},
+
+            {float3(-1,-1,+1), float2(1,1)},
+            {float3(+1,-1,+1), float2(0,1)},
+            {float3(+1,+1,+1), float2(0,0)},
+            {float3(-1,+1,+1), float2(1,0)}
         };
         // Create vertex buffer that stores cube vertices
         BufferDesc VertBuffDesc;
@@ -168,12 +210,12 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         // Indices
         Uint32 Indices[] =
         {
-            2,0,1, 2,3,0,
-            4,6,5, 4,7,6,
-            0,7,4, 0,3,7,
-            1,0,4, 1,4,5,
-            1,5,2, 5,6,2,
-            3,6,7, 3,2,6
+            2,0,1,    2,3,0,
+            4,6,5,    4,7,6,
+            8,10,9,   8,11,10,
+            12,14,13, 12,15,14,
+            16,18,17, 16,19,18,
+            20,21,22, 20,22,23
         };
         // Create index buffer
         BufferDesc IndBuffDesc;
@@ -186,10 +228,26 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         IBData.DataSize = sizeof(Indices);
         pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
     }
+
+    {
+        // Load texture
+        TextureLoadInfo loadInfo;
+        loadInfo.IsSRGB = true;
+        RefCntAutoPtr<ITexture> Tex;
+        CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
+        // Get shader resource view from the texture
+        m_TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    }
+
+    // Since we are using mutable variable, we must create shader resource binding object
+    // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
+    m_pPSO->CreateShaderResourceBinding(&m_SRB);
+    // Set texture SRV in the SRB
+    m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 }
 
 // Render a frame
-void Tutorial02_Cube::Render()
+void Tutorial03_Texturing::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
@@ -203,7 +261,7 @@ void Tutorial02_Cube::Render()
     }
 
     // Bind vertex buffer
-    Uint32 stride = sizeof(float) * 7; // Stride is 7 floats
+    Uint32 stride = sizeof(float) * 5; // Stride is 5 floats
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
     m_pDeviceContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
@@ -211,8 +269,8 @@ void Tutorial02_Cube::Render()
 
     // Set pipeline state
     m_pDeviceContext->SetPipelineState(m_pPSO);
-    // Commit shader resources
-    m_pDeviceContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    // Commit shader resources. Pass pointer to shader resource binding object
+    m_pDeviceContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is indexed draw call
@@ -222,7 +280,7 @@ void Tutorial02_Cube::Render()
     m_pDeviceContext->Draw(DrawAttrs);
 }
 
-void Tutorial02_Cube::Update(double CurrTime, double ElapsedTime)
+void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
 

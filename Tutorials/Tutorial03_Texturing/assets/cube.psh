@@ -1,0 +1,13 @@
+Texture2D g_Texture;
+SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+
+struct PSInput 
+{ 
+    float4 Pos : SV_POSITION; 
+    float2 uv : TEX_COORD; 
+};
+
+float4 main(PSInput ps_in) : SV_TARGET
+{
+    return g_Texture.Sample(g_Texture_sampler, ps_in.uv); 
+}
