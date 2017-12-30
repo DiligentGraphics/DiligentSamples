@@ -15,7 +15,7 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 	elseif(PLATFORM_ANDROID)
 
-		list(APPEND SOURCE ../../Common/Android/AndroidMain.cpp)
+		list(APPEND SOURCE ../Common/Android/AndroidMain.cpp)
 		add_library(${TUTORIAL_NAME} SHARED ${SOURCE} ${INCLUDE})
 
 	elseif(PLATFORM_LINUX)

@@ -1,1 +1,1 @@
-include ':AntTweakBar', ':Atmosphere', ':Common'
+include ':AntTweakBar', ':Atmosphere', ':Common', ':Tutorial01_HelloTriangle'
