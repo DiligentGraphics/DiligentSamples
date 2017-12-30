@@ -10,6 +10,13 @@ This module contains simple graphics applications intended to demonstrate the us
 
 This tutorial shows how to render a simple triangle using Diligent Engine API.
 
+## Tutorial 02 - Cube
+
+![](Tutorials/Tutorial02_Cube/Screenshot.png)
+
+This tutorial shows how to render an actual 3D object, a cube. It shows how to load shaders from files, create and use vertex, 
+index and uniform buffers.
+
 # Samples
 
 ## AntTweakBar Sample

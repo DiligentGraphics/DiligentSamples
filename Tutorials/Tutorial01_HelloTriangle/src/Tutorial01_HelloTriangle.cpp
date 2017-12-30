@@ -91,7 +91,7 @@ Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDevi
 
     // Pipeline state name is used by the engine to report issues
     // It is always a good idea to give objects descriptive names
-    PSODesc.Name = "Render sample cube PSO"; 
+    PSODesc.Name = "Simple triangle PSO"; 
 
     // This sample will render to single render target
     PSODesc.GraphicsPipeline.NumRenderTargets = 1;
@@ -115,7 +115,7 @@ Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDevi
     {
         CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
         CreationAttribs.EntryPoint = "main";
-        CreationAttribs.Desc.Name = "Mirror VS";
+        CreationAttribs.Desc.Name = "Triangle vertex shader";
         CreationAttribs.Source = VSSource;
         pDevice->CreateShader(CreationAttribs, &pVS);
     }
@@ -125,7 +125,7 @@ Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDevi
     {
         CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
         CreationAttribs.EntryPoint = "main";
-        CreationAttribs.Desc.Name = "Mirror PS";
+        CreationAttribs.Desc.Name = "Triangle pixel shader";
         CreationAttribs.Source = PSSource;
         pDevice->CreateShader(CreationAttribs, &pPS);
     }
