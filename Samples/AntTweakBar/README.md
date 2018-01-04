@@ -39,4 +39,4 @@ folder, select ARM platform and build the solution
 Please visit [this page](http://diligentgraphics.com/diligent-engine/getting-started) for detailed build instructions.
 
 
-**Copyright 2015-2017 Egor Yusov**
+**Copyright 2015-2018 Egor Yusov**
