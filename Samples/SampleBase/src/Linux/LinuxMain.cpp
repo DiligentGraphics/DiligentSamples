@@ -27,7 +27,6 @@
 #include <GL/glx.h>
 #include <GL/gl.h>
 
-#define TW_STATIC
 #include "AntTweakBar.h"
  
  // Undef symbols defined by XLib

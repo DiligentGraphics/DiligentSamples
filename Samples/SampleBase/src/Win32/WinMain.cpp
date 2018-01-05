@@ -29,10 +29,10 @@
 #include "RenderDeviceFactoryD3D12.h"
 #include "RenderDeviceFactoryOpenGL.h"
 #include "Timer.h"
+#include "StringTools.h"
 
 using namespace Diligent;
 
-#define TW_STATIC
 #include "AntTweakBar.h"
 
 std::unique_ptr<SampleBase> g_pSample;
@@ -112,8 +112,6 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
-    std::wstring Title = L"Graphics engine sample";
-
     DeviceType DevType = DeviceType::Undefined;
     std::wstring CmdLine = GetCommandLine();
     std::wstring Key = L"mode=";
@@ -122,20 +120,17 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     {
         pos += Key.length();
         auto Val = CmdLine.substr( pos );
-        if(Val == L"D3D11")
+        if( _wcsicmp(Val.c_str(), L"D3D11") == 0)
         {
             DevType = DeviceType::D3D11;
-            Title.append( L" (D3D11)" );
         }
-        else if(Val == L"D3D12")
+        else if( _wcsicmp(Val.c_str(), L"D3D12") == 0)
         {
             DevType = DeviceType::D3D12;
-            Title.append( L" (D3D12)" );
         }
-        else if(Val == L"GL")
+        else if( _wcsicmp(Val.c_str(), L"GL") == 0)
         {
             DevType = DeviceType::OpenGL;
-            Title.append( L" (OpenGL)" );
         }
         else
         {
@@ -147,7 +142,6 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     {
         LOG_INFO_MESSAGE("Device type is not specified. Using D3D11 device");
         DevType = DeviceType::D3D11;
-        Title.append( L" (D3D11)" );
     }
     // Register our window class
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX), CS_HREDRAW|CS_VREDRAW, MessageProc,
@@ -157,7 +151,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     // Create a window
     RECT rc = { 0, 0, 1280, 1024 };
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    HWND wnd = CreateWindow(L"SampleApp", Title.c_str(), 
+    HWND wnd = CreateWindow(L"SampleApp", L"Diligent Engine Sample App", 
                             WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
                             rc.right-rc.left, rc.bottom-rc.top, NULL, NULL, instance, NULL);
     if (!wnd)
@@ -190,6 +184,14 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     g_pSample.reset( CreateSample(pRenderDevice, pDeviceContext, pSwapChain) );
     g_pSample->WindowResize( g_pSwapChain->GetDesc().Width, g_pSwapChain->GetDesc().Height );
 
+    std::wstring Title = WidenString(g_pSample->GetSampleName());
+    switch (DevType)
+    {
+        case DeviceType::D3D11: Title.append( L" (D3D11)" ); break;
+        case DeviceType::D3D12: Title.append( L" (D3D12)" ); break;
+        case DeviceType::OpenGL: Title.append( L" (OpenGL)" ); break;
+        default: UNEXPECTED("Unknown device type");
+    }
 
     Timer Timer;
     auto PrevTime = Timer.GetElapsedTime();

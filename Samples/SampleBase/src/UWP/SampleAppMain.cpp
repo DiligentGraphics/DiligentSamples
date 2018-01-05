@@ -29,7 +29,6 @@
 #include "FileSystem.h"
 #include "Timer.h"
 
-#define TW_STATIC
 #include "AntTweakBar.h"
 
 using namespace SampleApp;

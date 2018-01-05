@@ -43,7 +43,6 @@
 
 #include "Timer.h"
 
-#define TW_STATIC
 #include "AntTweakBar.h"
 
 //-------------------------------------------------------------------------

@@ -23,7 +23,6 @@
 
 #include "pch.h"
 
-#define TW_STATIC
 #include "AntTweakBar.h"
 
 #include <cmath>

@@ -93,11 +93,11 @@ Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDevi
     // It is always a good idea to give objects descriptive names
     PSODesc.Name = "Simple triangle PSO"; 
 
-    // This sample will render to single render target
+    // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-    // Set render target format, which is the format of the swap chain's color buffer
+    // Set render target format which is the format of the swap chain's color buffer
     PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-    // This sample will not use depth buffer
+    // This tutorial will not use depth buffer
     PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_UNKNOWN;
     // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
     PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;

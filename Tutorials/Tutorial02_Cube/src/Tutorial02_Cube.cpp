@@ -50,11 +50,11 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         // It is always a good idea to give objects descriptive names
         PSODesc.Name = "Cube PSO"; 
 
-        // This sample will render to single render target
+        // This tutorial will render to a single render target
         PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-        // Set render target format, which is the format of the swap chain's color buffer
+        // Set render target format which is the format of the swap chain's color buffer
         PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-        // Set depth buffer format, which is the format of the swap chain's back buffer
+        // Set depth buffer format which is the format of the swap chain's back buffer
         PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
         // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
         PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -72,7 +72,7 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
         // we need to create a shader source stream factory
         BasicShaderSourceStreamFactory BasicSSSFactory;
         CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
-        // Defines variable type that will be used by default
+        // Define variable type that will be used by default
         CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
@@ -85,8 +85,8 @@ Tutorial02_Cube::Tutorial02_Cube(IRenderDevice *pDevice, IDeviceContext *pImmedi
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
             CreateUniformBuffer(pDevice, sizeof(float4x4), "SamplePlugin: VS constants CB", &m_VSConstants);
-            // Since we did not explcitly specify the type for Constants, it will use
-            // default type (SHADER_VARIABLE_TYPE_STATIC). Static variables never change and are bound directly
+            // Since we did not explcitly specify the type for Constants, default type
+            // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
             pVS->GetShaderVariable("Constants")->Set(m_VSConstants);
         }
@@ -215,6 +215,8 @@ void Tutorial02_Cube::Render()
     // Set pipeline state
     m_pDeviceContext->SetPipelineState(m_pPSO);
     // Commit shader resources
+    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
+    // that resources are transitioned to proper states
     m_pDeviceContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
     DrawAttribs DrawAttrs;

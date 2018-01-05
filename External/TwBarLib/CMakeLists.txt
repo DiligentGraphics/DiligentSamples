@@ -186,7 +186,7 @@ else()
 	message(WARNING "File2String utility is currently unavailable on this host system. This is not an issues unless you modify TwBarLib shaders")
 endif()
 
-target_compile_definitions(TwBarLib PRIVATE -DTW_STATIC)
+target_compile_definitions(TwBarLib PUBLIC -DTW_STATIC)
 if(PLATFORM_LINUX)
 	target_compile_definitions(TwBarLib PUBLIC _UNIX PRIVATE __PLACEMENT_NEW_INLINE)
 	target_compile_options(TwBarLib PRIVATE -fno-strict-aliasing)
