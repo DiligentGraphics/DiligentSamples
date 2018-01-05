@@ -28,8 +28,8 @@ binding object and how to sample a texture in the shader.
 
 ![](Tutorials/Tutorial04_Instancing/Screenshot.png)
 
-This tutorial demonstrates how to instancing to render multiple copies of one object
-using unique transformation for every copy.
+This tutorial demonstrates how to use instancing to render multiple copies of one object
+using unique transformation matrix for every copy.
 
 # Samples
 
