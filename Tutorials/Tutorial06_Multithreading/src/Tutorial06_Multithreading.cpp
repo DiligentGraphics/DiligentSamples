@@ -21,11 +21,15 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial03_Texturing.h"
+#include <random>
+#include <string>
+
+#include "Tutorial06_Multithreading.h"
 #include "MapHelper.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "AntTweakBar.h"
 
 using namespace Diligent;
 
@@ -34,10 +38,11 @@ SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateConte
 #ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
-    return new Tutorial03_Texturing( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial06_Multithreading( pDevice, pImmediateContext, pSwapChain );
 }
 
-Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
+
+Tutorial06_Multithreading::Tutorial06_Multithreading(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
     SampleBase(pDevice, pImmediateContext, pSwapChain)
 {
     {
@@ -85,11 +90,14 @@ Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContex
             pDevice->CreateShader(CreationAttribs, &pVS);
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4), "VS constants CB", &m_VSConstants);
-            // Since we did not explcitly specify the type for Constants, default type
+            CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
+            CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_InstanceConstants);
+            
+            // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
             pVS->GetShaderVariable("Constants")->Set(m_VSConstants);
+            pVS->GetShaderVariable("InstanceData")->Set(m_InstanceConstants);
         }
 
         // Create pixel shader
@@ -122,8 +130,10 @@ Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContex
         }
 
         // Define vertex shader input layout
+        // This tutorial uses two types of input: per-vertex data and per-instance data.
         LayoutElement LayoutElems[] =
         {
+            // Per-vertex data - first buffer slot
             // Attribute 0 - vertex position
             LayoutElement(0, 0, 3, VT_FLOAT32, False),
             // Attribute 1 - texture coordinates
@@ -139,7 +149,7 @@ Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContex
     }
 
     {
-        // Layout of this structure matches the one we defined in pipeline state
+        // Layout of this structure matches the one we defined in the pipeline state
         struct Vertex
         {
             float3 pos;
@@ -163,7 +173,7 @@ Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContex
         //        (-1,-1,-1)       (+1,-1,-1)
         // 
 
-        // This time we have to duplicate verices because texture coordinates cannot
+        // We have to duplicate verices because texture coordinates cannot
         // be shared
         Vertex CubeVerts[] =
         {
@@ -232,25 +242,88 @@ Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContex
         pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
     }
 
+    PopulateInstanceData();
+
+    // Load textures
+    for(int tex=0; tex < NumTextures; ++tex)
     {
-        // Load texture
+        // Load current texture
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
-        RefCntAutoPtr<ITexture> Tex;
-        CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
+        RefCntAutoPtr<ITexture> SrcTex;
+        std::stringstream FileNameSS;
+        FileNameSS << "DGLogo" << tex << ".png";
+        auto FileName = FileNameSS.str();
+        CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
         // Get shader resource view from the texture
-        m_TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        m_TextureSRV[tex] = SrcTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    }
+    
+    // Set texture SRV in the SRB
+    for(int tex=0; tex < NumTextures; ++tex)
+    {
+        // Create one Shader Resource Binding for every texture
+        // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
+        m_pPSO->CreateShaderResourceBinding(&m_SRB[tex]);
+        m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
 
-    // Since we are using mutable variable, we must create shader resource binding object
-    // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-    m_pPSO->CreateShaderResourceBinding(&m_SRB);
-    // Set texture SRV in the SRB
-    m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
+    // Create a tweak bar
+    TwBar *bar = TwNewBar("Settings");
+    int barSize[2] = {224, 120};
+#ifdef ANDROID
+    barSize[0] *= 3;
+    barSize[1] *= 3;
+#endif
+    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+
+    // Add grid size control
+    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, SetGridSize, GetGridSize, this, "min=1 max=32");
 }
 
+void Tutorial06_Multithreading::PopulateInstanceData()
+{
+    m_InstanceData.resize(m_GridSize*m_GridSize*m_GridSize);
+    // Populate instance data buffer
+    float fGridSize = static_cast<float>(m_GridSize);
+    
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
+    std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
+    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
+    std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
+
+    float BaseScale = 0.6f / fGridSize;
+    int instId = 0;
+    for (int x = 0; x < m_GridSize; ++x)
+    {
+        for (int y = 0; y < m_GridSize; ++y)
+        {
+            for (int z = 0; z < m_GridSize; ++z)
+            {
+                // Add random offset from central position in the grid
+                float xOffset = 2.f * (x+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float yOffset = 2.f * (y+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float zOffset = 2.f * (z+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                // Random scale
+                float scale = BaseScale * scale_distr(gen);
+                // Random rotation
+                float4x4 rotation = rotationX(rot_distr(gen)) * rotationY(rot_distr(gen)) * rotationZ(rot_distr(gen));
+                // Combine rotation, scale and translation
+                float4x4 matrix = rotation * scaleMatrix(scale, scale, scale) * translationMatrix(xOffset, yOffset, zOffset);
+                auto &CurrInst = m_InstanceData[instId++];
+                CurrInst.Matrix = matrix;
+                // Texture array index
+                CurrInst.TextureInd = tex_distr(gen);
+            }
+        }
+    }
+}
+
+
 // Render a frame
-void Tutorial03_Texturing::Render()
+void Tutorial06_Multithreading::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
@@ -260,45 +333,78 @@ void Tutorial03_Texturing::Render()
     {
         // Map the buffer and write current world-view-projection matrix
         MapHelper<float4x4> CBConstants(m_pDeviceContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        *CBConstants = transposeMatrix(m_WorldViewProjMatrix);
+        CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
+        CBConstants[1] = transposeMatrix(m_RotationMatrix);
     }
 
-    // Bind vertex buffer
-    Uint32 stride = sizeof(float) * 5; // Stride is 5 floats
-    Uint32 offset = 0;
+    // Bind vertex & instance buffers
+    Uint32 strides[] = {sizeof(float) * 5};
+    Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pDeviceContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pDeviceContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pDeviceContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
-    // Set pipeline state
-    m_pDeviceContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. Pass pointer to shader resource binding object
-    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
-    // that resources are transitioned to proper states
-    m_pDeviceContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    for(size_t i=0; i < _countof(m_SRB); ++i)
+        m_pDeviceContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
 
+    // Set pipeline state
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    m_pDeviceContext->Draw(DrawAttrs);
+
+    m_pDeviceContext->SetPipelineState(m_pPSO);
+    for(size_t inst=0; inst < m_InstanceData.size(); ++inst)
+    {
+        const auto &CurrInstData = m_InstanceData[inst];
+        // Shader resources have been explicitly transitioned to correct states, so
+        // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
+        m_pDeviceContext->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+
+        {
+            // Map the buffer and write current world-view-projection matrix
+            MapHelper<float4x4> InstData(m_pDeviceContext, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+            *InstData = transposeMatrix(CurrInstData.Matrix);
+        }
+
+        m_pDeviceContext->Draw(DrawAttrs);
+    }
 }
 
-void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
+// Callback function called by AntTweakBar to set the grid size
+void Tutorial06_Multithreading::SetGridSize(const void *value, void * clientData)
+{
+    Tutorial06_Multithreading *pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>( clientData );
+    pTheTutorial->m_GridSize = *static_cast<const int *>(value);
+    pTheTutorial->PopulateInstanceData();
+}
+
+// Callback function called by AntTweakBar to get the grid size
+void Tutorial06_Multithreading::GetGridSize(void *value, void * clientData)
+{
+    Tutorial06_Multithreading *pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>( clientData );
+    *static_cast<int*>(value) = pTheTutorial->m_GridSize;
+}
+
+
+void Tutorial06_Multithreading::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
 
     bool IsDX = m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 || m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12;
 
-    // Set cube world view matrix
-    float4x4 CubeWorldView = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(PI_F*0.1f) * 
-        translationMatrix(0.f, 0.0f, 5.0f);
+    // Set cube view matrix
+    float4x4 View = rotationX(+0.6f) * translationMatrix(0.f, 0.f, 4.0f);
+
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsDX);
-    // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = CubeWorldView * Proj;
+    // Compute view-projection matrix
+    m_ViewProjMatrix = View * Proj;
+
+    // Global rotation matrix
+    m_RotationMatrix = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(static_cast<float>(CurrTime)*0.25f);
 }

@@ -99,7 +99,7 @@ Tutorial05_TextureArray::Tutorial05_TextureArray(IRenderDevice *pDevice, IDevice
             pDevice->CreateShader(CreationAttribs, &pVS);
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "SamplePlugin: VS constants CB", &m_VSConstants);
+            CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
@@ -263,7 +263,7 @@ Tutorial05_TextureArray::Tutorial05_TextureArray(IRenderDevice *pDevice, IDevice
         };
         // Create index buffer
         BufferDesc IndBuffDesc;
-        IndBuffDesc.Name = "SamplePlugin: cube index buffer";
+        IndBuffDesc.Name = "Cube index buffer";
         IndBuffDesc.Usage = USAGE_DEFAULT;
         IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
         IndBuffDesc.uiSizeInBytes = sizeof(Indices);
@@ -334,7 +334,7 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
     std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
-    std::uniform_int_distribution<Int32> tex_distr(0, NumTextures);
+    std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
 
     float BaseScale = 0.6f / fGridSize;
     int instId = 0;

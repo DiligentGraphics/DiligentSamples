@@ -88,7 +88,7 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
             pDevice->CreateShader(CreationAttribs, &pVS);
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "SamplePlugin: VS constants CB", &m_VSConstants);
+            CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
@@ -250,7 +250,7 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
         };
         // Create index buffer
         BufferDesc IndBuffDesc;
-        IndBuffDesc.Name = "SamplePlugin: cube index buffer";
+        IndBuffDesc.Name = "Cube index buffer";
         IndBuffDesc.Usage = USAGE_DEFAULT;
         IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
         IndBuffDesc.uiSizeInBytes = sizeof(Indices);
