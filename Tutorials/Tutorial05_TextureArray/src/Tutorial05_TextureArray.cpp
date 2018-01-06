@@ -23,7 +23,7 @@
 
 #include <random>
 
-#include "Tutorial04_Instancing.h"
+#include "Tutorial05_TextureArray.h"
 #include "MapHelper.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
@@ -37,10 +37,20 @@ SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateConte
 #ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
-    return new Tutorial04_Instancing( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial05_TextureArray( pDevice, pImmediateContext, pSwapChain );
 }
 
-Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
+namespace
+{
+
+struct InstanceData
+{
+    float4x4 Matrix;
+    float TextureInd;
+};
+
+}
+Tutorial05_TextureArray::Tutorial05_TextureArray(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
     SampleBase(pDevice, pImmediateContext, pSwapChain)
 {
     {
@@ -143,7 +153,9 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
             // Attribute 4 - third row
             LayoutElement(4, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 5 - fourth row
-            LayoutElement(5, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE)
+            LayoutElement(5, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            // Attribute 6 - texture array index
+            LayoutElement(6, 1, 1, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
         };
 
         PSODesc.GraphicsPipeline.pVS = pVS;
@@ -155,7 +167,7 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
     }
 
     {
-        // Layout of this structure matches the one we defined in pipeline state
+        // Layout of this structure matches the one we defined in the pipeline state
         struct Vertex
         {
             float3 pos;
@@ -232,7 +244,7 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
         // Use default usage as this buffer will only be updated when grid size changes
         InstBuffDesc.Usage = USAGE_DEFAULT; 
         InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-        InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
+        InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
         pDevice->CreateBuffer(InstBuffDesc, BufferData(), &m_InstanceBuffer);
         PopulateInstanceBuffer();
     }
@@ -260,15 +272,36 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
         pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
     }
 
+    // Load texture array
+    RefCntAutoPtr<ITexture> pTexArray;
+    for(int tex=0; tex < NumTextures; ++tex)
     {
-        // Load texture
+        // Load current texture
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
-        RefCntAutoPtr<ITexture> Tex;
-        CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
-        // Get shader resource view from the texture
-        m_TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        RefCntAutoPtr<ITexture> SrcTex;
+        std::string FileName("DGLogo");
+        FileName += std::to_string(tex);
+        FileName += ".png";
+        CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
+        const auto &TexDesc = SrcTex->GetDesc();
+        if (pTexArray == nullptr)
+        {
+            auto TexArrDesc = TexDesc;
+            TexArrDesc.ArraySize = NumTextures;
+            TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
+            TexArrDesc.Usage = USAGE_DEFAULT;
+            TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+            m_pDevice->CreateTexture(TexArrDesc, TextureData(), &pTexArray);
+        }
+        // Copy current texture into the texture array
+        for(Uint32 mip=0; mip < TexDesc.MipLevels; ++mip)
+        {
+            pTexArray->CopyData(m_pDeviceContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
+        }
     }
+    // Get shader resource view from the texture array
+    m_TextureSRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     // Since we are using mutable variable, we must create shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
@@ -278,7 +311,7 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224, 60};
+    int barSize[2] = {224, 120};
 #ifdef ANDROID
     barSize[0] *= 3;
     barSize[1] *= 3;
@@ -289,10 +322,10 @@ Tutorial04_Instancing::Tutorial04_Instancing(IRenderDevice *pDevice, IDeviceCont
     TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, SetGridSize, GetGridSize, this, "min=1 max=32");
 }
 
-void Tutorial04_Instancing::PopulateInstanceBuffer()
+void Tutorial05_TextureArray::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    std::vector<float4x4> InstanceData(m_GridSize*m_GridSize*m_GridSize);
+    std::vector<InstanceData> InstanceData(m_GridSize*m_GridSize*m_GridSize);
     float fGridSize = static_cast<float>(m_GridSize);
     
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -300,6 +333,7 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
     std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
+    std::uniform_int_distribution<Int32> tex_distr(0, NumTextures);
 
     float BaseScale = 0.6f / fGridSize;
     int instId = 0;
@@ -319,7 +353,10 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
                 float4x4 rotation = rotationX(rot_distr(gen)) * rotationY(rot_distr(gen)) * rotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
                 float4x4 matrix = rotation * scaleMatrix(scale, scale, scale) * translationMatrix(xOffset, yOffset, zOffset);
-                InstanceData[instId++] = matrix;
+                auto &CurrInst = InstanceData[instId++];
+                CurrInst.Matrix = matrix;
+                // Texture array index
+                CurrInst.TextureInd = static_cast<float>(tex_distr(gen));
             }
         }
     }
@@ -330,7 +367,7 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
 
 
 // Render a frame
-void Tutorial04_Instancing::Render()
+void Tutorial05_TextureArray::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
@@ -345,7 +382,7 @@ void Tutorial04_Instancing::Render()
     }
 
     // Bind vertex & instance buffers
-    Uint32 strides[] = {sizeof(float) * 5, sizeof(float4x4)}; // Stride is 5 floats for the vertex stream and matrix size for the instance stream
+    Uint32 strides[] = {sizeof(float) * 5, sizeof(InstanceData)};
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
     m_pDeviceContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
@@ -368,22 +405,22 @@ void Tutorial04_Instancing::Render()
 }
 
 // Callback function called by AntTweakBar to set the grid size
-void Tutorial04_Instancing::SetGridSize(const void *value, void * clientData)
+void Tutorial05_TextureArray::SetGridSize(const void *value, void * clientData)
 {
-    Tutorial04_Instancing *pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>( clientData );
+    Tutorial05_TextureArray *pTheTutorial = reinterpret_cast<Tutorial05_TextureArray*>( clientData );
     pTheTutorial->m_GridSize = *static_cast<const int *>(value);
     pTheTutorial->PopulateInstanceBuffer();
 }
 
 // Callback function called by AntTweakBar to get the grid size
-void Tutorial04_Instancing::GetGridSize(void *value, void * clientData)
+void Tutorial05_TextureArray::GetGridSize(void *value, void * clientData)
 {
-    Tutorial04_Instancing *pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>( clientData );
+    Tutorial05_TextureArray *pTheTutorial = reinterpret_cast<Tutorial05_TextureArray*>( clientData );
     *static_cast<int*>(value) = pTheTutorial->m_GridSize;
 }
 
 
-void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
+void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
 

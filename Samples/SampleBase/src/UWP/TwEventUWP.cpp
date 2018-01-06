@@ -39,7 +39,6 @@
 
 #include "TwEventUWP.h"
 
-#define TW_STATIC
 #include <AntTweakBar.h>
 
 

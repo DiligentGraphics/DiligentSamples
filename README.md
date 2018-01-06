@@ -31,6 +31,13 @@ binding object and how to sample a texture in the shader.
 This tutorial demonstrates how to use instancing to render multiple copies of one object
 using unique transformation matrix for every copy.
 
+## [Tutorial 05 - Texture Array](Tutorials/Tutorial05_TextureArray)
+
+![](Tutorials/Tutorial05_TextureArray/Screenshot.png)
+
+This tutorial demonstrates how to combine instancing with texture arrays to 
+use unique texture for every instance.
+
 # Samples
 
 ## AntTweakBar Sample

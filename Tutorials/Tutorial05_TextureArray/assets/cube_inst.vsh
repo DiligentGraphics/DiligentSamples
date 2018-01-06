@@ -8,6 +8,7 @@ struct PSInput
 { 
     float4 Pos : SV_POSITION; 
     float2 uv : TEX_COORD; 
+    float TexIndex : TEX_ARRAY_INDEX;
 };
 
 // Vertex shader takes two inputs: vertex position and color.
@@ -19,7 +20,8 @@ PSInput main(float3 pos : ATTRIB0,
              float4 matr_row0 : ATTRIB2,
              float4 matr_row1 : ATTRIB3,
              float4 matr_row2 : ATTRIB4,
-             float4 matr_row3 : ATTRIB5) 
+             float4 matr_row3 : ATTRIB5,
+             float TexArrInd : ATTRIB6) 
 {
     PSInput ps; 
     // HLSL matrices are row-major while GLSL matrices are column-major. We will
@@ -32,5 +34,7 @@ PSInput main(float3 pos : ATTRIB0,
     // Apply view-projection matrix
     ps.Pos = mul( TransformedPos, g_ViewProj);
     ps.uv = uv;
+    // Pass texture array index to pixel shader
+    ps.TexIndex = TexArrInd;
     return ps;
 }
