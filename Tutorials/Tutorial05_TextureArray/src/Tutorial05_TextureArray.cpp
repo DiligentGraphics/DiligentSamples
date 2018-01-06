@@ -22,6 +22,7 @@
  */
 
 #include <random>
+#include <string>
 
 #include "Tutorial05_TextureArray.h"
 #include "MapHelper.h"
@@ -280,9 +281,9 @@ Tutorial05_TextureArray::Tutorial05_TextureArray(IRenderDevice *pDevice, IDevice
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
         RefCntAutoPtr<ITexture> SrcTex;
-        std::string FileName("DGLogo");
-        FileName += std::to_string(tex);
-        FileName += ".png";
+        std::stringstream FileNameSS;
+        FileNameSS << "DGLogo" << tex << ".png";
+        auto FileName = FileNameSS.str();
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
         const auto &TexDesc = SrcTex->GetDesc();
         if (pTexArray == nullptr)
