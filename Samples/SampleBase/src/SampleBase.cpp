@@ -65,6 +65,12 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
             // Nothing to do
         }
         break;
+
+        case DeviceType::OpenGLES:
+        {
+            // Nothing to do
+        }
+        break;
 #endif
 
         default:

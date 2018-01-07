@@ -193,7 +193,8 @@ int main (int argc, char ** argv)
     }
     TwDefine(" TW_HELP visible=false ");
 
-    pSample->Initialize(pRenderDevice, &pDeviceContext, NumDeferredContexts, pSwapChain);
+    IDeviceContext *ppContexts[] = {pDeviceContext};
+    pSample->Initialize(pRenderDevice, ppContexts, NumDeferredContexts, pSwapChain);
     pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
     std::string Title = pSample->GetSampleName(); 
  
