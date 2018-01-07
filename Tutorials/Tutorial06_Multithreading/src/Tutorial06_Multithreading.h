@@ -29,7 +29,13 @@
 class Tutorial06_Multithreading : public SampleBase
 {
 public:
-    Tutorial06_Multithreading(Diligent::IRenderDevice *pDevice, Diligent::IDeviceContext *pImmediateContext, Diligent::ISwapChain *pSwapChain);
+    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
+                                                Diligent::EngineCreationAttribs &Attribs, 
+                                                Diligent::Uint32 &NumDeferredContexts)override;
+    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
+                            Diligent::IDeviceContext **ppContexts, 
+                            Diligent::Uint32 NumDeferredCtx, 
+                            Diligent::ISwapChain *pSwapChain)override;
     virtual void Render()override;
     virtual void Update(double CurrTime, double ElapsedTime)override;
     virtual const Diligent::Char* GetSampleName()const override{return "Tutorial06: Multithreaded rendering";}

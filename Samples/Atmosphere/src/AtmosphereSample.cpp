@@ -33,12 +33,12 @@
 #include "GraphicsUtilities.h"
 #include "LightSctrPostProcess.h"
 
-SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
+SampleBase* CreateSample()
 {
 #ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
-    return new AtmosphereSample( pDevice, pImmediateContext, pSwapChain );
+    return new AtmosphereSample();
 }
  
 // Callback function called by AntTweakBar to set the sponge recursion level
@@ -71,8 +71,7 @@ void AtmosphereSample::GetShadowMapResCB( void *value, void * clientData )
 }
 
 
-AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
-    SampleBase(pDevice, pImmediateContext, pSwapChain),
+AtmosphereSample::AtmosphereSample() : 
     m_f3LightDir( 0.21f, -0.19f, -0.91f),
     m_f3CameraDir( 0.51f, -0.33f, 0.68f),
     m_f3CameraPos(0, 10000.f, 0),
@@ -82,8 +81,14 @@ AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImme
     m_bEnableLightScattering(true),
     m_fScatteringScale(0.5f),
     m_fElapsedTime(0.f),
-    m_bIsDXDevice(pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 ||  pDevice->GetDeviceCaps().DevType == DeviceType::D3D12)
+    m_bIsDXDevice(true)
+{}
+
+void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
+    m_bIsDXDevice = pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 ||  pDevice->GetDeviceCaps().DevType == DeviceType::D3D12;
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )
     {
         m_uiShadowMapResolution = 512;
@@ -135,13 +140,13 @@ AtmosphereSample::AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImme
     CreateUniformBuffer( pDevice, sizeof( LightAttribs ), "Light Attribs CB", &m_pcbLightAttribs );
 
     const auto &SCDesc = pSwapChain->GetDesc();
-    m_pLightSctrPP.reset( new LightSctrPostProcess(m_pDevice, m_pDeviceContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT) );
+    m_pLightSctrPP.reset( new LightSctrPostProcess(m_pDevice, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT) );
     auto *pcMediaScatteringParams = m_pLightSctrPP->GetMediaAttribsCB();
 
     m_EarthHemisphere.Create(m_pElevDataSource.get(), 
                              m_TerrainRenderParams, 
                              m_pDevice, 
-                             m_pDeviceContext, 
+                             m_pImmediateContext, 
                              m_strMtrlMaskFile.c_str(), 
                              strTileTexPaths, 
                              strNormalMapPaths, 
@@ -646,16 +651,16 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
         ShadowMapAttribs.mWorldToShadowMapUVDepthT[iCascade] = transposeMatrix( WorldToShadowMapUVDepthMatr );
 
-        m_pDeviceContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade] );
-        m_pDeviceContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f );
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade] );
+        m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f );
 
         // Render terrain to shadow map
         {
-            MapHelper<CameraAttribs> CamAttribs( m_pDeviceContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
+            MapHelper<CameraAttribs> CamAttribs( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
             CamAttribs->mViewProjT = transposeMatrix( WorldToLightProjSpaceMatr );
         }
 
-        m_EarthHemisphere.Render(m_pDeviceContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
+        m_EarthHemisphere.Render(m_pImmediateContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
     }
 
     pContext->SetRenderTargets( 0, nullptr, nullptr );
@@ -680,7 +685,7 @@ void AtmosphereSample::Render()
     m_PPAttribs.m_iFirstCascade = std::min(m_PPAttribs.m_iFirstCascade, m_TerrainRenderParams.m_iNumShadowCascades - 1);
     m_PPAttribs.m_fFirstCascade = (float)m_PPAttribs.m_iFirstCascade;
 
-	RenderShadowMap(m_pDeviceContext, LightAttrs, m_mCameraView, m_mCameraProj);
+	RenderShadowMap(m_pImmediateContext, LightAttrs, m_mCameraView, m_mCameraProj);
     
     LightAttrs.ShadowAttribs.bVisualizeCascades = m_bVisualizeCascades ? TRUE : FALSE;
 
@@ -704,40 +709,40 @@ void AtmosphereSample::Render()
                                     fabs(f4LightPosPS.y) <= 1.f - 1.f/(float)SCDesc.Height;
 
     {
-        MapHelper<LightAttribs> pLightAttribs( m_pDeviceContext, m_pcbLightAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
+        MapHelper<LightAttribs> pLightAttribs( m_pImmediateContext, m_pcbLightAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
         *pLightAttribs = LightAttrs;
     }
 
     // The first time GetAmbientSkyLightSRV() is called, the ambient sky light texture 
     // is computed and render target is set. So we need to query the texture before setting 
     // render targets
-    auto *pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, m_pDeviceContext);
+    auto *pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, m_pImmediateContext);
 
-    m_pDeviceContext->SetRenderTargets( 0, nullptr, nullptr );
+    m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr );
 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     const float Zero[] = {  0.f,  0.f,  0.f, 0.f };
-    m_pDeviceContext->ClearRenderTarget(nullptr, m_bEnableLightScattering ? Zero : ClearColor);
+    m_pImmediateContext->ClearRenderTarget(nullptr, m_bEnableLightScattering ? Zero : ClearColor);
 
     ITextureView *pRTV = nullptr, *pDSV = nullptr;
     if( m_bEnableLightScattering )
     {
         pRTV = m_pOffscreenColorBuffer->GetDefaultView( TEXTURE_VIEW_RENDER_TARGET );
         pDSV = m_pOffscreenDepthBuffer->GetDefaultView( TEXTURE_VIEW_DEPTH_STENCIL );
-        m_pDeviceContext->SetRenderTargets( 1, &pRTV, pDSV );
-        m_pDeviceContext->ClearRenderTarget(pRTV, Zero);
+        m_pImmediateContext->SetRenderTargets( 1, &pRTV, pDSV );
+        m_pImmediateContext->ClearRenderTarget(pRTV, Zero);
     }
     else
     {
         pRTV = nullptr;
         pDSV = nullptr;
-        m_pDeviceContext->SetRenderTargets( 0, nullptr, nullptr );
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr );
     }
         
-    m_pDeviceContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f);
 
     {
-        MapHelper<CameraAttribs> CamAttribs( m_pDeviceContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
+        MapHelper<CameraAttribs> CamAttribs( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
         CamAttribs->mViewProjT = transposeMatrix( mViewProj );
         CamAttribs->mProjT = transposeMatrix( m_mCameraProj );
         CamAttribs->mViewProjInvT = transposeMatrix( inverseMatrix(mViewProj) );
@@ -751,7 +756,7 @@ void AtmosphereSample::Render()
     // Render terrain
     auto *pPrecomputedNetDensitySRV = m_pLightSctrPP->GetPrecomputedNetDensitySRV();
     m_TerrainRenderParams.DstRTVFormat = m_bEnableLightScattering ? m_pOffscreenColorBuffer->GetDesc().Format : m_pSwapChain->GetDesc().ColorBufferFormat;
-    m_EarthHemisphere.Render( m_pDeviceContext, 
+    m_EarthHemisphere.Render( m_pImmediateContext, 
                               m_TerrainRenderParams, 
                               m_f3CameraPos, 
                               mViewProj, 
@@ -765,7 +770,7 @@ void AtmosphereSample::Render()
         FrameAttribs FrameAttribs;
 
         FrameAttribs.pDevice = m_pDevice;
-        FrameAttribs.pDeviceContext = m_pDeviceContext;
+        FrameAttribs.pDeviceContext = m_pImmediateContext;
         FrameAttribs.dElapsedTime = m_fElapsedTime;
         FrameAttribs.pLightAttribs = &LightAttrs;
 
@@ -969,7 +974,7 @@ void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
     // every intermediate window size, and light scattering object creates resources
     // for the new size. This resources are then released by the light scattering object, but 
     // not by Intel driver, which results in memory exhaustion.
-    m_pDeviceContext->Flush();
+    m_pImmediateContext->Flush();
 
     m_pOffscreenColorBuffer.Release();
     m_pOffscreenDepthBuffer.Release();

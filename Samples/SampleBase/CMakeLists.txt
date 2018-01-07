@@ -39,12 +39,6 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 		)
 	endfunction(get_sample_base_uwp_source)
 
-	# This is only necessary to have at least one source file so that
-	# SampleBase.lib will is created and link is not failed
-	set(SOURCE 
-		src/UWP/dummy.cpp
-	)
-
 elseif(PLATFORM_ANDROID)
 	set(SOURCE 
 		src/Android/AndroidMainImpl.cpp
@@ -55,6 +49,7 @@ elseif(PLATFORM_LINUX)
 	)
 endif()
 
+list(APPEND SOURCE src/SampleBase.cpp)
 list(APPEND INCLUDE include/SampleBase.h)
 
 

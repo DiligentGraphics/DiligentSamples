@@ -25,9 +25,9 @@
 
 using namespace Diligent;
 
-SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
+SampleBase* CreateSample()
 {
-    return new Tutorial01_HelloTriangle( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial01_HelloTriangle();
 }
 
 // For this tutorial, we will use simple vertex shader
@@ -80,9 +80,10 @@ float4 main(PSInput In) : SV_Target
 )";
 
 
-Tutorial01_HelloTriangle::Tutorial01_HelloTriangle(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
-    SampleBase(pDevice, pImmediateContext, pSwapChain)
+void Tutorial01_HelloTriangle::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
     // Pipeline state object encompasses configuration of all GPU stages
 
     PipelineStateDesc PSODesc;
@@ -141,18 +142,18 @@ void Tutorial01_HelloTriangle::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-    m_pDeviceContext->ClearRenderTarget(nullptr, ClearColor);
-    m_pDeviceContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     // Set pipeline state in the immediate context
-    m_pDeviceContext->SetPipelineState(m_pPSO);
+    m_pImmediateContext->SetPipelineState(m_pPSO);
     // We need to commit shader resource. Even though in this example
     // we don't really have any resources, this call also sets the shaders
-    m_pDeviceContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
     DrawAttribs drawAttrs;
     drawAttrs.NumVertices = 3; // We will render 3 vertices
     drawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
-    m_pDeviceContext->Draw(drawAttrs);
+    m_pImmediateContext->Draw(drawAttrs);
 }
 
 void Tutorial01_HelloTriangle::Update(double CurrTime, double ElapsedTime)

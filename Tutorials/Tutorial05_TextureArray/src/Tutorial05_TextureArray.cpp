@@ -33,12 +33,12 @@
 
 using namespace Diligent;
 
-SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
+SampleBase* CreateSample()
 {
 #ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
-    return new Tutorial05_TextureArray( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial05_TextureArray();
 }
 
 namespace
@@ -51,9 +51,11 @@ struct InstanceData
 };
 
 }
-Tutorial05_TextureArray::Tutorial05_TextureArray(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
-    SampleBase(pDevice, pImmediateContext, pSwapChain)
+
+void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -298,7 +300,7 @@ Tutorial05_TextureArray::Tutorial05_TextureArray(IRenderDevice *pDevice, IDevice
         // Copy current texture into the texture array
         for(Uint32 mip=0; mip < TexDesc.MipLevels; ++mip)
         {
-            pTexArray->CopyData(m_pDeviceContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
+            pTexArray->CopyData(m_pImmediateContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
         }
     }
     // Get shader resource view from the texture array
@@ -363,7 +365,7 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
     }
     // Update instance data buffer
     Uint32 DataSize = static_cast<Uint32>(sizeof(InstanceData[0]) * InstanceData.size());
-    m_InstanceBuffer->UpdateData(m_pDeviceContext, 0, DataSize, InstanceData.data());
+    m_InstanceBuffer->UpdateData(m_pImmediateContext, 0, DataSize, InstanceData.data());
 }
 
 
@@ -372,12 +374,12 @@ void Tutorial05_TextureArray::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-    m_pDeviceContext->ClearRenderTarget(nullptr, ClearColor);
-    m_pDeviceContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     {
         // Map the buffer and write current world-view-projection matrix
-        MapHelper<float4x4> CBConstants(m_pDeviceContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
         CBConstants[1] = transposeMatrix(m_RotationMatrix);
     }
@@ -386,15 +388,15 @@ void Tutorial05_TextureArray::Render()
     Uint32 strides[] = {sizeof(float) * 5, sizeof(InstanceData)};
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
-    m_pDeviceContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pDeviceContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     // Set pipeline state
-    m_pDeviceContext->SetPipelineState(m_pPSO);
+    m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. Pass pointer to the shader resource binding object
     // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
     // that resources are transitioned to proper states
-    m_pDeviceContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is indexed draw call
@@ -402,7 +404,7 @@ void Tutorial05_TextureArray::Render()
     DrawAttrs.NumIndices = 36;
     DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // Specify number of instances
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    m_pDeviceContext->Draw(DrawAttrs);
+    m_pImmediateContext->Draw(DrawAttrs);
 }
 
 // Callback function called by AntTweakBar to set the grid size

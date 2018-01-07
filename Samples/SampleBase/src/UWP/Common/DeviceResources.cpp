@@ -9,7 +9,6 @@
 #include "RenderDeviceD3D11.h"
 #include "SwapChainD3D11.h"
 
-
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation;
@@ -73,7 +72,7 @@ namespace ScreenRotation
 };
 
 // Constructor for DeviceResources.
-DX::DeviceResources::DeviceResources() :
+DX::DeviceResources::DeviceResources(SampleBase *pSample) :
 	m_d3dRenderTargetSize(),
 	m_outputSize(),
 	m_logicalSize(),
@@ -82,16 +81,19 @@ DX::DeviceResources::DeviceResources() :
 	m_dpi(-1.0f),
 	m_deviceRemoved(false)
 {
-	CreateDeviceResources();
+	CreateDeviceResources(pSample);
 }
 
 // Configures the Direct3D device, and stores handles to it and the device context.
-void DX::DeviceResources::CreateDeviceResources()
+void DX::DeviceResources::CreateDeviceResources(SampleBase *pSample)
 {
+    Uint32 NumDeferredCtx = 0;
     if(m_UseD3D12)
     {
         EngineD3D12Attribs D3D12Attribs;
-        GetEngineFactoryD3D12()->CreateDeviceAndContextsD3D12( D3D12Attribs, &m_pRenderDevice, &m_pDeviceContext, 0);
+        pSample->GetEngineInitializationAttribs(DeviceType::D3D12, D3D12Attribs, NumDeferredCtx);
+        m_ppContexts.resize(1 + NumDeferredCtx);
+        GetEngineFactoryD3D12()->CreateDeviceAndContextsD3D12( D3D12Attribs, &m_pRenderDevice, m_ppContexts.data(), NumDeferredCtx);
 
         // Store pointers to the Direct3D 11.1 API device and immediate context.
         IRenderDeviceD3D12 *pRenderDeviceD3D12 = nullptr;
@@ -105,7 +107,9 @@ void DX::DeviceResources::CreateDeviceResources()
     else
     {
         EngineD3D11Attribs D3D11Attribs;
-        GetEngineFactoryD3D11()->CreateDeviceAndContextsD3D11( D3D11Attribs, &m_pRenderDevice, &m_pDeviceContext, 0);
+        m_ppContexts.resize(1 + NumDeferredCtx);
+        pSample->GetEngineInitializationAttribs(DeviceType::D3D11, D3D11Attribs, NumDeferredCtx);
+        GetEngineFactoryD3D11()->CreateDeviceAndContextsD3D11( D3D11Attribs, &m_pRenderDevice, m_ppContexts.data(), NumDeferredCtx);
 
         // Store pointers to the Direct3D 11.1 API device and immediate context.
         IRenderDeviceD3D11 *pRenderDeviceD3D11 = nullptr;
@@ -116,6 +120,10 @@ void DX::DeviceResources::CreateDeviceResources()
 		    device.As(&m_d3d11Device)
 		    );
     }
+    m_pImmediateContext.Attach(m_ppContexts[0]);
+    m_ppDeferredContexts.resize(NumDeferredCtx);
+    for(Uint32 ctx=0; ctx < NumDeferredCtx; ++ctx)
+        m_ppDeferredContexts[ctx].Attach(m_ppContexts[1+ctx]);
 }
 
 // These resources need to be recreated every time the window size is changed.
@@ -166,9 +174,9 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
         SwapChainDesc.ColorBufferFormat = TEX_FORMAT_RGBA8_UNORM_SRGB;
         SwapChainDesc.DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
         if(m_UseD3D12)
-            GetEngineFactoryD3D12()->CreateSwapChainD3D12( m_pRenderDevice, m_pDeviceContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
+            GetEngineFactoryD3D12()->CreateSwapChainD3D12( m_pRenderDevice, m_pImmediateContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
         else
-            GetEngineFactoryD3D11()->CreateSwapChainD3D11( m_pRenderDevice, m_pDeviceContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
+            GetEngineFactoryD3D11()->CreateSwapChainD3D11( m_pRenderDevice, m_pImmediateContext, SwapChainDesc, reinterpret_cast<IUnknown*>(m_window.Get()), &m_pSwapChain );
     }
 
     if(m_UseD3D12)

@@ -40,17 +40,17 @@ std::unique_ptr<SampleBase> g_pSample;
 LRESULT CALLBACK MessageProc(HWND, UINT, WPARAM, LPARAM);
 
 // Create Direct3D device and swap chain
-void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppImmediateContext,  ISwapChain **ppSwapChain, DeviceType DevType)
+void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, std::vector<IDeviceContext*> &ppContexts,  ISwapChain **ppSwapChain, DeviceType DevType)
 {
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
+    Uint32 NumDeferredCtx = 0;
     switch (DevType)
     {
         case DeviceType::D3D11:
         {
             EngineD3D11Attribs DeviceAttribs;
-            DeviceAttribs.DebugFlags = (Uint32)EngineD3D11DebugFlags::VerifyCommittedShaderResources |
-                                       (Uint32)EngineD3D11DebugFlags::VerifyCommittedResourceRelevance;
+            g_pSample->GetEngineInitializationAttribs(DevType, DeviceAttribs, NumDeferredCtx);
 
 #ifdef ENGINE_DLL
             GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
@@ -58,8 +58,9 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppIm
             LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
             auto *pFactoryD3D11 = GetEngineFactoryD3D11();
-            pFactoryD3D11->CreateDeviceAndContextsD3D11( DeviceAttribs, ppRenderDevice, ppImmediateContext, 0 );
-            pFactoryD3D11->CreateSwapChainD3D11( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
+            ppContexts.resize(1 + NumDeferredCtx);
+            pFactoryD3D11->CreateDeviceAndContextsD3D11( DeviceAttribs, ppRenderDevice, ppContexts.data(), NumDeferredCtx );
+            pFactoryD3D11->CreateSwapChainD3D11( *ppRenderDevice, ppContexts[0], SCDesc, hWnd, ppSwapChain );
         }
         break;
 
@@ -73,13 +74,10 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppIm
 
             auto *pFactoryD3D12 = GetEngineFactoryD3D12();
             EngineD3D12Attribs EngD3D12Attribs;
-			EngD3D12Attribs.GPUDescriptorHeapDynamicSize[0] = 32768;
-			EngD3D12Attribs.GPUDescriptorHeapSize[1] = 128;
-			EngD3D12Attribs.GPUDescriptorHeapDynamicSize[1] = 2048-128;
-			EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[0] = 32;
-			EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[1] = 8; // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
-            pFactoryD3D12->CreateDeviceAndContextsD3D12( EngD3D12Attribs, ppRenderDevice, ppImmediateContext, 0);
-            pFactoryD3D12->CreateSwapChainD3D12( *ppRenderDevice, *ppImmediateContext, SCDesc, hWnd, ppSwapChain );
+            g_pSample->GetEngineInitializationAttribs(DevType, EngD3D12Attribs, NumDeferredCtx);
+            ppContexts.resize(1 + NumDeferredCtx);
+            pFactoryD3D12->CreateDeviceAndContextsD3D12( EngD3D12Attribs, ppRenderDevice, ppContexts.data(), NumDeferredCtx);
+            pFactoryD3D12->CreateSwapChainD3D12( *ppRenderDevice, ppContexts[0], SCDesc, hWnd, ppSwapChain );
         }
         break;
 
@@ -91,9 +89,12 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, IDeviceContext **ppIm
             // Load the dll and import GetEngineFactoryOpenGL() function
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
-            EngineCreationAttribs EngineCreationAttribs;
+            EngineCreationAttribs CreationAttribs;
+            g_pSample->GetEngineInitializationAttribs(DevType, CreationAttribs, NumDeferredCtx);
+            VERIFY(NumDeferredCtx == 0, "Multithreded rendering is not supported in OpenGL mode");
+            ppContexts.resize(1 + NumDeferredCtx);
             GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
-                EngineCreationAttribs, ppRenderDevice, ppImmediateContext, SCDesc, hWnd, ppSwapChain );
+                CreationAttribs, ppRenderDevice, ppContexts.data(), SCDesc, hWnd, ppSwapChain );
         }
         break;
 
@@ -111,6 +112,9 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
 #if defined(_DEBUG) || defined(DEBUG)
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
+
+    g_pSample.reset( CreateSample() );
+    std::wstring Title = WidenString(g_pSample->GetSampleName());
 
     DeviceType DevType = DeviceType::Undefined;
     std::wstring CmdLine = GetCommandLine();
@@ -143,6 +147,15 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         LOG_INFO_MESSAGE("Device type is not specified. Using D3D11 device");
         DevType = DeviceType::D3D11;
     }
+
+    switch (DevType)
+    {
+        case DeviceType::D3D11: Title.append( L" (D3D11)" ); break;
+        case DeviceType::D3D12: Title.append( L" (D3D12)" ); break;
+        case DeviceType::OpenGL: Title.append( L" (OpenGL)" ); break;
+        default: UNEXPECTED("Unknown device type");
+    }
+
     // Register our window class
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX), CS_HREDRAW|CS_VREDRAW, MessageProc,
                         0L, 0L, instance, NULL, NULL, NULL, NULL, L"SampleApp", NULL };
@@ -151,7 +164,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     // Create a window
     RECT rc = { 0, 0, 1280, 1024 };
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    HWND wnd = CreateWindow(L"SampleApp", L"Diligent Engine Sample App", 
+    HWND wnd = CreateWindow(L"SampleApp", Title.c_str(), 
                             WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
                             rc.right-rc.left, rc.bottom-rc.top, NULL, NULL, instance, NULL);
     if (!wnd)
@@ -163,9 +176,15 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     UpdateWindow(wnd);
 
     RefCntAutoPtr<IRenderDevice> pRenderDevice;
-    RefCntAutoPtr<IDeviceContext> pDeviceContext;
     Diligent::RefCntAutoPtr<ISwapChain> pSwapChain;
-    InitDevice( wnd, &pRenderDevice, &pDeviceContext, &pSwapChain, DevType );
+    std::vector<IDeviceContext*> ppContexts;
+    InitDevice( wnd, &pRenderDevice, ppContexts, &pSwapChain, DevType );
+    RefCntAutoPtr<IDeviceContext> pImmediateContext;
+    pImmediateContext.Attach(ppContexts[0]);
+    std::vector<RefCntAutoPtr<IDeviceContext>> ppDeferredCtx(ppContexts.size()-1);
+    for(size_t ctx = 0; ctx < ppContexts.size()-1; ++ctx)
+        ppDeferredCtx[ctx].Attach(ppContexts[1+ctx]);
+
     g_pSwapChain = pSwapChain;
 
     // Initialize AntTweakBar
@@ -174,24 +193,15 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     // odd offsets which distorts everything
     // Latest OpenGL works very much like Direct3D11, and 
     // Tweak Bar will never know if D3D or OpenGL is actually used
-    if (!TwInit(TW_DIRECT3D11, pRenderDevice.RawPtr(), pDeviceContext.RawPtr(), pSwapChain->GetDesc().ColorBufferFormat))
+    if (!TwInit(TW_DIRECT3D11, pRenderDevice.RawPtr(), pImmediateContext.RawPtr(), pSwapChain->GetDesc().ColorBufferFormat))
     {
         MessageBoxA(wnd, TwGetLastError(), "AntTweakBar initialization failed", MB_OK|MB_ICONERROR);
         return 0;
     }
     TwDefine(" TW_HELP visible=false ");
 
-    g_pSample.reset( CreateSample(pRenderDevice, pDeviceContext, pSwapChain) );
+    g_pSample->Initialize(pRenderDevice, ppContexts.data(), static_cast<Uint32>(ppContexts.size() - 1), pSwapChain);
     g_pSample->WindowResize( g_pSwapChain->GetDesc().Width, g_pSwapChain->GetDesc().Height );
-
-    std::wstring Title = WidenString(g_pSample->GetSampleName());
-    switch (DevType)
-    {
-        case DeviceType::D3D11: Title.append( L" (D3D11)" ); break;
-        case DeviceType::D3D12: Title.append( L" (D3D12)" ); break;
-        case DeviceType::OpenGL: Title.append( L" (OpenGL)" ); break;
-        default: UNEXPECTED("Unknown device type");
-    }
 
     Timer Timer;
     auto PrevTime = Timer.GetElapsedTime();
@@ -216,7 +226,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
 
 	        // Draw tweak bars
             // Restore default render target in case the sample has changed it
-            pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+            pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
             TwDraw();
 
             pSwapChain->Present();
@@ -234,6 +244,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
 
 	//pDeviceContext->Flush();
     g_pSample.reset();
+    ppDeferredCtx.clear();
+    pImmediateContext.Release();
     pRenderDevice.Release();
 
     return (int)msg.wParam;

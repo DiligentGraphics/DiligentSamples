@@ -51,6 +51,7 @@ int main(Platform::Array<Platform::String^>^)
 	return 0;
 }
 
+
 IFrameworkView^ Direct3DApplicationSource::CreateView()
 {
 	return ref new App();
@@ -61,6 +62,7 @@ App::App() :
 	m_windowVisible(true)
 {
 }
+
 
 // The first method called when the IFrameworkView is being created.
 void App::Initialize(CoreApplicationView^ applicationView)
@@ -244,7 +246,7 @@ std::shared_ptr<DX::DeviceResources> App::GetDeviceResources()
 
 	if (m_deviceResources == nullptr)
 	{
-		m_deviceResources = std::make_shared<DX::DeviceResources>();
+		m_deviceResources = std::make_shared<DX::DeviceResources>(m_main->GetSample());
 		m_deviceResources->SetWindow(CoreWindow::GetForCurrentThread());
 		m_main->CreateRenderers(m_deviceResources);
 	}

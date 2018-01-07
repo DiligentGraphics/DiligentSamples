@@ -29,17 +29,18 @@
 
 using namespace Diligent;
 
-SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
+SampleBase* CreateSample()
 {
 #ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
-    return new Tutorial03_Texturing( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial03_Texturing();
 }
 
-Tutorial03_Texturing::Tutorial03_Texturing(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
-    SampleBase(pDevice, pImmediateContext, pSwapChain)
+void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -254,12 +255,12 @@ void Tutorial03_Texturing::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-    m_pDeviceContext->ClearRenderTarget(nullptr, ClearColor);
-    m_pDeviceContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     {
         // Map the buffer and write current world-view-projection matrix
-        MapHelper<float4x4> CBConstants(m_pDeviceContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         *CBConstants = transposeMatrix(m_WorldViewProjMatrix);
     }
 
@@ -267,22 +268,22 @@ void Tutorial03_Texturing::Render()
     Uint32 stride = sizeof(float) * 5; // Stride is 5 floats
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pDeviceContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pDeviceContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     // Set pipeline state
-    m_pDeviceContext->SetPipelineState(m_pPSO);
+    m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. Pass pointer to shader resource binding object
     // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
     // that resources are transitioned to proper states
-    m_pDeviceContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    m_pDeviceContext->Draw(DrawAttrs);
+    m_pImmediateContext->Draw(DrawAttrs);
 }
 
 void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)

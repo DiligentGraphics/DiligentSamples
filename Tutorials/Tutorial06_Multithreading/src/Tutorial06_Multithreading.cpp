@@ -33,18 +33,24 @@
 
 using namespace Diligent;
 
-SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
+SampleBase* CreateSample()
 {
 #ifdef PLATFORM_UNIVERSAL_WINDOWS
     FileSystem::SetWorkingDirectory("assets");
 #endif
-    return new Tutorial06_Multithreading( pDevice, pImmediateContext, pSwapChain );
+    return new Tutorial06_Multithreading();
 }
 
-
-Tutorial06_Multithreading::Tutorial06_Multithreading(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
-    SampleBase(pDevice, pImmediateContext, pSwapChain)
+void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
 {
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
+    NumDeferredContexts = 4;
+}
+
+void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+{
+    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -327,12 +333,12 @@ void Tutorial06_Multithreading::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-    m_pDeviceContext->ClearRenderTarget(nullptr, ClearColor);
-    m_pDeviceContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     {
         // Map the buffer and write current world-view-projection matrix
-        MapHelper<float4x4> CBConstants(m_pDeviceContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
         CBConstants[1] = transposeMatrix(m_RotationMatrix);
     }
@@ -341,11 +347,11 @@ void Tutorial06_Multithreading::Render()
     Uint32 strides[] = {sizeof(float) * 5};
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pDeviceContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pDeviceContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     for(size_t i=0; i < _countof(m_SRB); ++i)
-        m_pDeviceContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
+        m_pImmediateContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
 
     // Set pipeline state
     DrawAttribs DrawAttrs;
@@ -354,21 +360,21 @@ void Tutorial06_Multithreading::Render()
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-    m_pDeviceContext->SetPipelineState(m_pPSO);
+    m_pImmediateContext->SetPipelineState(m_pPSO);
     for(size_t inst=0; inst < m_InstanceData.size(); ++inst)
     {
         const auto &CurrInstData = m_InstanceData[inst];
         // Shader resources have been explicitly transitioned to correct states, so
         // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-        m_pDeviceContext->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+        m_pImmediateContext->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
 
         {
             // Map the buffer and write current world-view-projection matrix
-            MapHelper<float4x4> InstData(m_pDeviceContext, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+            MapHelper<float4x4> InstData(m_pImmediateContext, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
             *InstData = transposeMatrix(CurrInstData.Matrix);
         }
 
-        m_pDeviceContext->Draw(DrawAttrs);
+        m_pImmediateContext->Draw(DrawAttrs);
     }
 }
 

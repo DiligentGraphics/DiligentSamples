@@ -23,6 +23,8 @@
 
 #pragma once 
 
+#include <vector>
+
 #include "RefCntAutoPtr.h"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
@@ -31,16 +33,14 @@
 class SampleBase
 {
 public:
-    SampleBase( Diligent::IRenderDevice *pDevice, Diligent::IDeviceContext *pImmediateContext, Diligent::ISwapChain *pSwapChain ) :
-        m_pDevice( pDevice ),
-        m_pSwapChain( pSwapChain ),
-        m_pDeviceContext( pImmediateContext ),
-        m_LastFPSTime(0),
-        m_uiNumFramesRendered(0)
-    {
-    }
-
     virtual ~SampleBase(){}
+
+    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, Diligent::EngineCreationAttribs &Attribs, Diligent::Uint32 &NumDeferredContexts);
+
+    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
+                            Diligent::IDeviceContext **ppContexts, 
+                            Diligent::Uint32 NumDeferredCtx, 
+                            Diligent::ISwapChain *pSwapChain) = 0;
 
     virtual void Render() = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
@@ -50,11 +50,12 @@ public:
 
 protected:
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
-    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pDeviceContext;
+    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
+    std::vector<Diligent::RefCntAutoPtr<Diligent::IDeviceContext> > m_pDeferredContexts;
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> m_pSwapChain;
-    float m_fFPS;
-    double m_LastFPSTime;
-    Diligent::Uint32 m_uiNumFramesRendered;
+    float m_fFPS = 0;
+    double m_LastFPSTime = 0;
+    Diligent::Uint32 m_uiNumFramesRendered = 0;
 };
 
 inline void SampleBase::Update( double CurrTime, double ElapsedTime )
@@ -69,4 +70,17 @@ inline void SampleBase::Update( double CurrTime, double ElapsedTime )
     }
 }
 
-extern SampleBase* CreateSample(Diligent::IRenderDevice *pDevice, Diligent::IDeviceContext *pImmediateContext, Diligent::ISwapChain *pSwapChain);
+inline void SampleBase::Initialize(Diligent::IRenderDevice *pDevice, 
+                                   Diligent::IDeviceContext **ppContexts, 
+                                   Diligent::Uint32 NumDeferredCtx, 
+                                   Diligent::ISwapChain *pSwapChain)
+{
+    m_pDevice = pDevice;
+    m_pSwapChain = pSwapChain;
+    m_pImmediateContext = ppContexts[0];
+    m_pDeferredContexts.resize(NumDeferredCtx);
+    for(Diligent::Uint32 ctx=0; ctx < NumDeferredCtx; ++ctx)
+        m_pDeferredContexts[ctx] = ppContexts[1+ctx];
+}
+
+extern SampleBase* CreateSample();

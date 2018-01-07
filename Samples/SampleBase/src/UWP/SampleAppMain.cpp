@@ -42,7 +42,8 @@ using namespace Diligent;
 // Loads and initializes application assets when the application is loaded.
 SampleAppMain::SampleAppMain()
 {
-    
+    m_pSample.reset( CreateSample() );
+
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*
@@ -64,16 +65,16 @@ void SampleAppMain::CreateRenderers(const std::shared_ptr<DX::DeviceResources>& 
     // Latest OpenGL works very much like Direct3D11, and 
     // Tweak Bar will never know if D3D or OpenGL is actually used
     auto pDevice = m_deviceResources->GetDevice();
-    auto pContext = m_deviceResources->GetDeviceContext();
+    auto ppContexts = m_deviceResources->GetDeviceContexts();
     auto pSwapChain = m_deviceResources->GetSwapChain();
-    if (!TwInit(TW_DIRECT3D11, pDevice, pContext, pSwapChain->GetDesc().ColorBufferFormat))
+    if (!TwInit(TW_DIRECT3D11, pDevice, m_deviceResources->GetImmediateContext(), pSwapChain->GetDesc().ColorBufferFormat))
     {
         //MessageBoxA(wnd, TwGetLastError(), "AntTweakBar initialization failed", MB_OK|MB_ICONERROR);
         //return 0;
     }
     TwDefine(" TW_HELP visible=false ");
 
-    m_pSample.reset( CreateSample(pDevice, pContext, pSwapChain) );
+    m_pSample->Initialize(pDevice, ppContexts, m_deviceResources->GetNumDeferredContexts(), pSwapChain) ;
     m_pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
 
     TwWindowSize(pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height);
@@ -107,7 +108,7 @@ bool SampleAppMain::Render()
 		return false;
 	}
 
-	auto context = m_deviceResources->GetDeviceContext();
+	auto context = m_deviceResources->GetImmediateContext();
 
 	// Reset the viewport to target the whole screen.
     context->SetViewports( 1, nullptr, 0, 0 );

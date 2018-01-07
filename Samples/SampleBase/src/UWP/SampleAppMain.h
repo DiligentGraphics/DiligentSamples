@@ -44,6 +44,8 @@ namespace SampleApp
 		void OnResuming();
 		void OnDeviceRemoved();
 
+        SampleBase* GetSample(){return m_pSample.get();}
+
 	private:
 		// Cached pointer to device resources.
 		std::shared_ptr<DX::DeviceResources> m_deviceResources;

@@ -1,9 +1,12 @@
 ﻿#pragma once
 
+#include <vector>
+
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
 #include "RefCntAutoPtr.h"
+#include "SampleBase.h"
 
 namespace DX
 {
@@ -11,7 +14,7 @@ namespace DX
 	class DeviceResources
 	{
 	public:
-		DeviceResources();
+		DeviceResources(SampleBase *pSample);
 		void SetWindow(Windows::UI::Core::CoreWindow^ window);
 		void SetLogicalSize(Windows::Foundation::Size logicalSize);
 		void SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations currentOrientation);
@@ -33,17 +36,21 @@ namespace DX
 		DirectX::XMFLOAT4X4			GetOrientationTransform3D() const	{ return m_orientationTransform3D; }
 
         Diligent::IRenderDevice*          GetDevice()                             { return m_pRenderDevice; }
-        Diligent::IDeviceContext*         GetDeviceContext()                      { return m_pDeviceContext; }
+        Diligent::IDeviceContext*         GetImmediateContext()                   { return m_pImmediateContext; }
+        Diligent::IDeviceContext**        GetDeviceContexts()                     { return m_ppContexts.data(); }
+        Diligent::Uint32                  GetNumDeferredContexts()                { return static_cast<Diligent::Uint32>(m_ppDeferredContexts.size()); }
         Diligent::ISwapChain*             GetSwapChain()                          { return m_pSwapChain;  }
 
 	private:
-		void CreateDeviceResources();
+		void CreateDeviceResources(SampleBase *pSample);
 		void CreateWindowSizeDependentResources();
 		void UpdateRenderTargetSize();
 		DXGI_MODE_ROTATION ComputeDisplayRotation();
 
         Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pRenderDevice;
-        Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pDeviceContext;
+        Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
+        std::vector< Diligent::RefCntAutoPtr<Diligent::IDeviceContext> > m_ppDeferredContexts;
+        std::vector< Diligent::IDeviceContext* > m_ppContexts;
         Diligent::RefCntAutoPtr<Diligent::ISwapChain> m_pSwapChain;
         bool											m_deviceRemoved;
 

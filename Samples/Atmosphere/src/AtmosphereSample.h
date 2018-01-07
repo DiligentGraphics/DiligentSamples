@@ -34,8 +34,13 @@ using namespace Diligent;
 class AtmosphereSample : public SampleBase
 {
 public:
-    AtmosphereSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain);
+    AtmosphereSample();
     ~AtmosphereSample();
+
+    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
+                            Diligent::IDeviceContext **ppContexts, 
+                            Diligent::Uint32 NumDeferredCtx, 
+                            Diligent::ISwapChain *pSwapChain)override;
     virtual void Render()override;
     virtual void Update(double CurrTime, double ElapsedTime)override;
     virtual void WindowResize( Uint32 Width, Uint32 Height )override;

@@ -56,9 +56,9 @@
 
 using namespace Diligent;
 
-SampleBase* CreateSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain)
+SampleBase* CreateSample()
 {
-    return new MengerSpongeSample( pDevice, pImmediateContext, pSwapChain );
+    return new MengerSpongeSample();
 }
 
 
@@ -116,9 +116,10 @@ void MengerSpongeSample::GetSpongeAOCB(void *value, void * clientData)
     *static_cast<bool *>(value) = pTheSample->m_SpongeAO;
 }
 
-MengerSpongeSample::MengerSpongeSample(IRenderDevice *pDevice, IDeviceContext *pImmediateContext, ISwapChain *pSwapChain) : 
-    SampleBase(pDevice, pImmediateContext, pSwapChain)
+void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
     m_SpongeLevel = 2;                       // number of recursions
     m_SpongeAO = true;                      // apply ambient occlusion
     m_LightDir[0] = -0.5f;
@@ -143,7 +144,7 @@ MengerSpongeSample::MengerSpongeSample(IRenderDevice *pDevice, IDeviceContext *p
     BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
     m_pDevice->CreateBuffer( BuffDesc, BufferData(), &m_pConstantBuffer );
 
-    m_pRenderScript = CreateRenderScriptFromFile( "MengerSponge.lua", m_pDevice, m_pDeviceContext, [&]( ScriptParser *pScriptParser )
+    m_pRenderScript = CreateRenderScriptFromFile( "MengerSponge.lua", m_pDevice, m_pImmediateContext, [&]( ScriptParser *pScriptParser )
     {
         pScriptParser->SetGlobalVariable( "extConstantBuffer", m_pConstantBuffer );
     } );
@@ -389,7 +390,7 @@ void MengerSpongeSample::BuildSponge(int levelMax, bool aoEnabled)
 // Copy world/view/proj matrices and light parameters to shader constants
 void MengerSpongeSample::SetShaderConstants(const float4x4& world, const float4x4& view, const float4x4& proj)
 {
-    MapHelper<ShaderConstants> MappedData( m_pDeviceContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
+    MapHelper<ShaderConstants> MappedData( m_pImmediateContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
     ShaderConstants *cst = MappedData;
     cst->WorldViewProjT = transposeMatrix( world * view * proj );
     cst->WorldNormT = transposeMatrix( world );
@@ -402,8 +403,8 @@ void MengerSpongeSample::SetShaderConstants(const float4x4& world, const float4x
 void MengerSpongeSample::Render()
 {
     // Clear the back buffer 
-    m_pDeviceContext->ClearRenderTarget(nullptr, m_BackgroundColor);
-    m_pDeviceContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearRenderTarget(nullptr, m_BackgroundColor);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     const auto &DeviceCaps = m_pDevice->GetDeviceCaps();
 
@@ -418,7 +419,7 @@ void MengerSpongeSample::Render()
     SetShaderConstants(world, view, proj);
 
     // Draw the sponge
-    m_pRenderScript->Run( m_pDeviceContext, "Draw" );
+    m_pRenderScript->Run( m_pImmediateContext, "Draw" );
 }
 
 
