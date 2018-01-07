@@ -172,8 +172,7 @@ int Engine::InitDisplay()
         RefCntAutoPtr<IRenderDevice> pRenderDevice;
         SwapChainDesc SwapChainDesc;
         auto pFactory = GetEngineFactoryOpenGL();
-        IDeviceContext *ppContexts[] = {pDeviceContext_};
-        pFactory->CreateDeviceAndSwapChainGL( EngineCreationAttribs, &pRenderDevice, ppContexts, SwapChainDesc, app_->window, &pSwapChain_ );
+        pFactory->CreateDeviceAndSwapChainGL( EngineCreationAttribs, &pRenderDevice, &pDeviceContext_, SwapChainDesc, app_->window, &pSwapChain_ );
 
         Diligent::IRenderDeviceGLES *pRenderDeviceOpenGLES;
         pRenderDevice->QueryInterface( Diligent::IID_RenderDeviceGLES, reinterpret_cast<IObject**>(&pRenderDeviceOpenGLES) );
@@ -197,7 +196,8 @@ int Engine::InitDisplay()
         }
         TwDefine(" TW_HELP visible=false ");
 
-        sample_->Initialize(pRenderDevice, &pDeviceContext_, NumDeferredContexts, pSwapChain_);
+        IDeviceContext *ppContexts[] = {pDeviceContext_};
+        sample_->Initialize(pRenderDevice, ppContexts, NumDeferredContexts, pSwapChain_);
     }
     else
     {
