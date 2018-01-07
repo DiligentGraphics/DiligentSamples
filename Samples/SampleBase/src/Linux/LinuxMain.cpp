@@ -68,6 +68,8 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
  
 int main (int argc, char ** argv)
 {
+    std::unique_ptr<SampleBase> pSample( CreateSample() );
+
     Display *display = XOpenDisplay(0);
   
     static int visual_attribs[] =
@@ -167,6 +169,14 @@ int main (int argc, char ** argv)
     
     SwapChainDesc SCDesc;
     EngineCreationAttribs EngineCreationAttribs;
+    Uint32 NumDeferredContexts = 0;
+    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, EngineCreationAttribs, NumDeferredContexts);
+    if(NumDeferredContexts != 0)
+    {
+        LOG_ERROR_MESSAGE("Deferred contexts are not supported by OpenGL implementation");
+        NumDeferredContexts = 0;
+    }
+
     GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
         EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, reinterpret_cast<void*>(static_cast<size_t>(win)), display, &pSwapChain );
 
@@ -183,7 +193,7 @@ int main (int argc, char ** argv)
     }
     TwDefine(" TW_HELP visible=false ");
 
-    std::unique_ptr<SampleBase> pSample( CreateSample(pRenderDevice, pDeviceContext, pSwapChain) );
+    pSample->Initialize(pRenderDevice, &pDeviceContext, NumDeferredContexts, pSwapChain);
     pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
     std::string Title = pSample->GetSampleName(); 
  
