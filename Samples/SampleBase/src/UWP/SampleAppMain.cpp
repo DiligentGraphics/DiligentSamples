@@ -118,6 +118,9 @@ bool SampleAppMain::Render()
 
     m_pSample->Render();
 
+    // Restore default render target in case the sample has changed it
+    context->SetRenderTargets( 0, nullptr, nullptr );
+
 	// Draw tweak bars
     TwDraw();
     
