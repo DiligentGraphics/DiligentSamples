@@ -91,7 +91,11 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, std::vector<IDeviceCo
 #endif
             EngineCreationAttribs CreationAttribs;
             g_pSample->GetEngineInitializationAttribs(DevType, CreationAttribs, NumDeferredCtx);
-            VERIFY(NumDeferredCtx == 0, "Multithreded rendering is not supported in OpenGL mode");
+            if(NumDeferredCtx != 0)
+            {
+                LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");
+                NumDeferredCtx = 0;
+            }
             ppContexts.resize(1 + NumDeferredCtx);
             GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
                 CreationAttribs, ppRenderDevice, ppContexts.data(), SCDesc, hWnd, ppSwapChain );

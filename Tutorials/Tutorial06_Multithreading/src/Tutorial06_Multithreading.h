@@ -23,12 +23,15 @@
 
 #pragma once 
 
+#include <atomic>
 #include "SampleBase.h"
 #include "BasicMath.h"
+#include "LockHelper.h"
 
 class Tutorial06_Multithreading : public SampleBase
 {
 public:
+    ~Tutorial06_Multithreading()override;
     virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
                                                 Diligent::EngineCreationAttribs &Attribs, 
                                                 Diligent::Uint32 &NumDeferredContexts)override;
@@ -43,7 +46,22 @@ public:
 private:
     static void SetGridSize(const void *value, void * clientData);
     static void GetGridSize(void *value, void * clientData);
+    static void SetWorkerThreadCount(const void *value, void * clientData);
+    static void GetWorkerThreadCount(void *value, void * clientData);
     void PopulateInstanceData();
+    void StartWorkerThreads();
+    void StopWorkerThreads();
+    void RenderSubset(Diligent::IDeviceContext *pCtx, Diligent::Uint32 Subset);
+
+    static void WorkerThreadFunc(Tutorial06_Multithreading *pThis, Diligent::Uint32 ThreadNum);
+
+    ThreadingTools::Signal m_RenderSubsetSignal;
+    ThreadingTools::Signal m_GotoNextFrameSignal;
+    std::atomic_bool m_bStopWorkerThreads = false;
+    std::atomic_int m_NumThreadsCompleted;
+    std::atomic_int m_NumThreadsReady;
+    std::vector<std::thread> m_WorkerThreads;
+    std::vector< Diligent::RefCntAutoPtr<Diligent::ICommandList> > m_CmdLists;
 
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
@@ -57,7 +75,10 @@ private:
     float4x4 m_ViewProjMatrix;
     float4x4 m_RotationMatrix;
     int m_GridSize = 5;
-   
+
+    int m_MaxThreads = 8;
+    int m_NumWorkerThreads = 4;
+
     struct InstanceData
     {
         float4x4 Matrix;

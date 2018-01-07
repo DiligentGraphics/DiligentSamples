@@ -41,15 +41,22 @@ SampleBase* CreateSample()
     return new Tutorial06_Multithreading();
 }
 
+Tutorial06_Multithreading::~Tutorial06_Multithreading()
+{
+    StopWorkerThreads();
+}
+
 void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
-    NumDeferredContexts = 4;
+    NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
 }
 
 void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
+    m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
 
     {
         // Pipeline state object encompasses configuration of all GPU stages
@@ -285,6 +292,12 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
 
     // Add grid size control
     TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, SetGridSize, GetGridSize, this, "min=1 max=32");
+    std::stringstream def;
+    def << "min=0 max=" << m_MaxThreads;
+    TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
+    m_NumWorkerThreads = std::min(4, m_MaxThreads);
+
+    StartWorkerThreads();
 }
 
 void Tutorial06_Multithreading::PopulateInstanceData()
@@ -327,6 +340,110 @@ void Tutorial06_Multithreading::PopulateInstanceData()
     }
 }
 
+void Tutorial06_Multithreading::StartWorkerThreads()
+{
+    m_WorkerThreads.resize(m_NumWorkerThreads);
+    for(Uint32 t=0; t < m_WorkerThreads.size(); ++t)
+    {
+        m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t );
+    }
+    m_NumThreadsReady = m_NumWorkerThreads;
+    m_CmdLists.resize(m_NumWorkerThreads);
+}
+
+void Tutorial06_Multithreading::StopWorkerThreads()
+{
+    m_bStopWorkerThreads = true;
+    m_RenderSubsetSignal.Trigger(true);
+
+    for(auto &thread : m_WorkerThreads)
+    {
+        thread.join();
+    }
+    m_bStopWorkerThreads = false;
+    m_RenderSubsetSignal.Reset();
+}
+
+void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThis, Uint32 ThreadNum)
+{
+    // Every thread should use its own deferred context
+    IDeviceContext *pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+    for (;;)
+    {
+        // Wait for the signal
+        pThis->m_RenderSubsetSignal.Wait();
+        if(pThis->m_bStopWorkerThreads)
+            return;
+
+        // Render current subset using the deferred context
+        pThis->RenderSubset(pDeferredCtx, 1+ThreadNum);
+
+        // Finish command list
+        RefCntAutoPtr<ICommandList> pCmdList;
+        pDeferredCtx->FinishCommandList(&pCmdList);
+        pThis->m_CmdLists[ThreadNum] = pCmdList;
+
+        // Increment the number of completed threads
+        ++pThis->m_NumThreadsCompleted;
+
+        // Wait for the signal
+        pThis->m_GotoNextFrameSignal.Wait();
+        // Increment the number of ready threads
+        ++pThis->m_NumThreadsReady;
+    }
+}
+
+void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
+{
+    // Deferred contexts start in default state. We must bind everything to the context
+    pCtx->SetRenderTargets(0, nullptr, nullptr);
+
+    {
+        // Map the buffer and write current world-view-projection matrix
+        
+        // Since this is a dynamic buffer, it must be mapped in every context before
+        // it can be used even though the matricesa are the same.
+        MapHelper<float4x4> CBConstants(pCtx, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
+        CBConstants[1] = transposeMatrix(m_RotationMatrix);
+    }
+
+    // Bind vertex & instance buffers. This must be done for every context
+    Uint32 strides[] = {sizeof(float) * 5};
+    Uint32 offsets[] = {0, 0};
+    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
+    pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pCtx->SetIndexBuffer(m_CubeIndexBuffer, 0);
+
+    DrawAttribs DrawAttrs;
+    DrawAttrs.IsIndexed = true; // This is an indexed draw call
+    DrawAttrs.IndexType = VT_UINT32; // Index type
+    DrawAttrs.NumIndices = 36;
+    DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    // Set pipeline state
+    pCtx->SetPipelineState(m_pPSO);
+    Uint32 NumSubsets = 1 + m_NumWorkerThreads;
+    Uint32 NumInstances = static_cast<Uint32>(m_InstanceData.size());
+    Uint32 SusbsetSize = NumInstances / NumSubsets;
+    Uint32 StartInst = SusbsetSize * Subset;
+    Uint32 EndInst = (Subset < NumSubsets-1) ? SusbsetSize * (Subset+1) : NumInstances;
+    for(size_t inst=StartInst; inst < EndInst; ++inst)
+    {
+        const auto &CurrInstData = m_InstanceData[inst];
+        // Shader resources have been explicitly transitioned to correct states, so
+        // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
+        pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+
+        {
+            // Map the buffer and write current world-view-projection matrix
+            MapHelper<float4x4> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+            *InstData = transposeMatrix(CurrInstData.Matrix);
+        }
+
+        pCtx->Draw(DrawAttrs);
+    }
+}
 
 // Render a frame
 void Tutorial06_Multithreading::Render()
@@ -336,45 +453,37 @@ void Tutorial06_Multithreading::Render()
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
-    {
-        // Map the buffer and write current world-view-projection matrix
-        MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
-        CBConstants[1] = transposeMatrix(m_RotationMatrix);
-    }
-
-    // Bind vertex & instance buffers
-    Uint32 strides[] = {sizeof(float) * 5};
-    Uint32 offsets[] = {0, 0};
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
-
+    // Transition all shader resource bindings
     for(size_t i=0; i < _countof(m_SRB); ++i)
         m_pImmediateContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
 
-    // Set pipeline state
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed = true; // This is indexed draw call
-    DrawAttrs.IndexType = VT_UINT32; // Index type
-    DrawAttrs.NumIndices = 36;
-    DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-    m_pImmediateContext->SetPipelineState(m_pPSO);
-    for(size_t inst=0; inst < m_InstanceData.size(); ++inst)
+    if (m_NumWorkerThreads > 0)
     {
-        const auto &CurrInstData = m_InstanceData[inst];
-        // Shader resources have been explicitly transitioned to correct states, so
-        // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-        m_pImmediateContext->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+        // Wait for all worker threads to become ready
+        while(m_NumThreadsReady < (int)m_NumWorkerThreads)
+            std::this_thread::yield();
+        // Reset GotoNextFrameSignal while all threads are waiting for RenderSubsetSignal
+        m_GotoNextFrameSignal.Reset();
 
+        m_NumThreadsCompleted = 0;
+        m_RenderSubsetSignal.Trigger(true);
+    }
+
+    RenderSubset(m_pImmediateContext, 0);
+
+    if (m_NumWorkerThreads > 0)
+    {
+        // Wait for worker threads to finish
+        while(m_NumThreadsCompleted < (int)m_NumWorkerThreads)
+            std::this_thread::yield();
+        // Reset RenderSubsetSignal while all threads are waiting for GotoNextFrameSignal
+        m_RenderSubsetSignal.Reset();
+        m_GotoNextFrameSignal.Trigger(true);
+
+        for(auto &cmdList : m_CmdLists)
         {
-            // Map the buffer and write current world-view-projection matrix
-            MapHelper<float4x4> InstData(m_pImmediateContext, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-            *InstData = transposeMatrix(CurrInstData.Matrix);
+            m_pImmediateContext->ExecuteCommandList(cmdList);
         }
-
-        m_pImmediateContext->Draw(DrawAttrs);
     }
 }
 
@@ -391,6 +500,20 @@ void Tutorial06_Multithreading::GetGridSize(void *value, void * clientData)
 {
     Tutorial06_Multithreading *pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>( clientData );
     *static_cast<int*>(value) = pTheTutorial->m_GridSize;
+}
+
+void Tutorial06_Multithreading::SetWorkerThreadCount(const void *value, void * clientData)
+{
+    Tutorial06_Multithreading *pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>( clientData );
+    pTheTutorial->m_NumWorkerThreads = *static_cast<const int *>(value);
+    pTheTutorial->StopWorkerThreads();
+    pTheTutorial->StartWorkerThreads();
+}
+
+void Tutorial06_Multithreading::GetWorkerThreadCount(void *value, void * clientData)
+{
+    Tutorial06_Multithreading *pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>( clientData );
+    *static_cast<int*>(value) = pTheTutorial->m_NumWorkerThreads;
 }
 
 
