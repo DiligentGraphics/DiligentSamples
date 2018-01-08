@@ -25,3 +25,6 @@ set(ASSETS
 
 add_tutorial("Tutorial06_Multithreading" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial06_Multithreading PRIVATE TextureLoader)
+if(PLATFORM_LINUX)
+	target_link_libraries(Tutorial06_Multithreading PRIVATE pthread)
+endif()
