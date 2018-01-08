@@ -31,7 +31,7 @@ SampleBase* CreateSample()
 }
 
 // For this tutorial, we will use simple vertex shader
-// that will create procedural triangle
+// that creates a procedural triangle
 
 // Diligent Engine can use HLSL source for all supported platforms
 // It will convert HLSL to GLSL for OpenGL/Vulkan
@@ -53,9 +53,9 @@ PSInput main(uint VertId : SV_VertexID)
     };
     float3 Col[] =
     {
-        float3(1.0, 0.0, 0.0),
-        float3(0.0, 1.0, 0.0),
-        float3(0.0, 0.0, 1.0)
+        float3(1.0, 0.0, 0.0), // red
+        float3(0.0, 1.0, 0.0), // green
+        float3(0.0, 0.0, 1.0)  // blue
     };
 
     PSInput ps; 
@@ -87,12 +87,12 @@ void Tutorial01_HelloTriangle::Initialize(IRenderDevice *pDevice, IDeviceContext
     // Pipeline state object encompasses configuration of all GPU stages
 
     PipelineStateDesc PSODesc;
-    // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
-
     // Pipeline state name is used by the engine to report issues
     // It is always a good idea to give objects descriptive names
     PSODesc.Name = "Simple triangle PSO"; 
+
+    // This is a graphics pipeline
+    PSODesc.IsComputePipeline = false; 
 
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets = 1;
