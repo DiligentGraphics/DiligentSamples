@@ -347,20 +347,17 @@ void Tutorial06_Multithreading::StartWorkerThreads()
     {
         m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t );
     }
-    m_NumThreadsReady = m_NumWorkerThreads;
     m_CmdLists.resize(m_NumWorkerThreads);
 }
 
 void Tutorial06_Multithreading::StopWorkerThreads()
 {
-    m_bStopWorkerThreads = true;
-    m_RenderSubsetSignal.Trigger(true);
+    m_RenderSubsetSignal.Trigger(true, -1);
 
     for(auto &thread : m_WorkerThreads)
     {
         thread.join();
     }
-    m_bStopWorkerThreads = false;
     m_RenderSubsetSignal.Reset();
 }
 
@@ -371,8 +368,8 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
     for (;;)
     {
         // Wait for the signal
-        pThis->m_RenderSubsetSignal.Wait();
-        if(pThis->m_bStopWorkerThreads)
+        auto SignalledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+        if(SignalledValue < 0)
             return;
 
         // Render current subset using the deferred context
@@ -383,13 +380,23 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
         pDeferredCtx->FinishCommandList(&pCmdList);
         pThis->m_CmdLists[ThreadNum] = pCmdList;
 
-        // Increment the number of completed threads
-        ++pThis->m_NumThreadsCompleted;
+        {
+            std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
+            // Increment the number of completed threads
+            ++pThis->m_NumThreadsCompleted;
+            if(pThis->m_NumThreadsCompleted == pThis->m_NumWorkerThreads)
+                pThis->m_ExecuteCommandListsSignal.Trigger();
+        }
 
-        // Wait for the signal
-        pThis->m_GotoNextFrameSignal.Wait();
-        // Increment the number of ready threads
+        pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
         ++pThis->m_NumThreadsReady;
+        // We must wait until all threads reach this point, because
+        // m_GotoNextFrameSignal must be unsignaled before we proceed to 
+        // RenderSubsetSignal to avoid one thread go through the loop twice in 
+        // a row
+        while(pThis->m_NumThreadsReady < pThis->m_NumWorkerThreads)
+            std::this_thread::yield();
+        VERIFY_EXPR( !pThis->m_GotoNextFrameSignal.IsTriggered() );
     }
 }
 
@@ -459,12 +466,6 @@ void Tutorial06_Multithreading::Render()
 
     if (m_NumWorkerThreads > 0)
     {
-        // Wait for all worker threads to become ready
-        while(m_NumThreadsReady < (int)m_NumWorkerThreads)
-            std::this_thread::yield();
-        // Reset GotoNextFrameSignal while all threads are waiting for RenderSubsetSignal
-        m_GotoNextFrameSignal.Reset();
-
         m_NumThreadsCompleted = 0;
         m_RenderSubsetSignal.Trigger(true);
     }
@@ -473,17 +474,15 @@ void Tutorial06_Multithreading::Render()
 
     if (m_NumWorkerThreads > 0)
     {
-        // Wait for worker threads to finish
-        while(m_NumThreadsCompleted < (int)m_NumWorkerThreads)
-            std::this_thread::yield();
-        // Reset RenderSubsetSignal while all threads are waiting for GotoNextFrameSignal
-        m_RenderSubsetSignal.Reset();
-        m_GotoNextFrameSignal.Trigger(true);
+        m_ExecuteCommandListsSignal.Wait(true, 1);
 
         for(auto &cmdList : m_CmdLists)
         {
             m_pImmediateContext->ExecuteCommandList(cmdList);
         }
+
+        m_NumThreadsReady = 0;
+        m_GotoNextFrameSignal.Trigger(true);
     }
 }
 
@@ -505,8 +504,8 @@ void Tutorial06_Multithreading::GetGridSize(void *value, void * clientData)
 void Tutorial06_Multithreading::SetWorkerThreadCount(const void *value, void * clientData)
 {
     Tutorial06_Multithreading *pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>( clientData );
-    pTheTutorial->m_NumWorkerThreads = *static_cast<const int *>(value);
     pTheTutorial->StopWorkerThreads();
+    pTheTutorial->m_NumWorkerThreads = *static_cast<const int *>(value);
     pTheTutorial->StartWorkerThreads();
 }
 
