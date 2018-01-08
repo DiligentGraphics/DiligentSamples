@@ -153,13 +153,17 @@ PSODesc.GraphicsPipeline.pPS = pPS;
 pDevice->CreatePipelineState(PSODesc, &m_pPSO);
 ```
 
-The pipeline state keeps references to the shader objects, so the app does not need to keep references
+The pipeline state keeps references to the shader objects, so the app does not need to keep the references
 unless it wants to use them.
 
 ## Rendering
 
 All rendering commands in Diligent Engine go through device contexts that are very 
-similar to D3D11 device contexts. Before rendering anything on the screen we want to clear it:
+similar to D3D11 device contexts. There is immediate context that directly 
+executes commands and deferred contexts. Deferred contexts are intended to record command 
+lists that can later be executed by the immediate context.
+
+Before rendering anything on the screen we want to clear it:
 
 ```cpp
 const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
@@ -167,7 +171,9 @@ m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
 m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 ```
 
-Clearing the depth buffer is not really necessary, but we will keep it here for consistency.
+Passing `nullptr` makes the engine clear default (i.e. the swap chain's) render 
+and depth buffers. Clearing the depth buffer is not really necessary, but we will 
+keep it here for consistency.
 
 Next, we need to set our pipeline state in the immediate device context:
 
@@ -182,15 +188,15 @@ m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG
 ```
 
 The first argument of `CommitShaderResources()` is the shader resource binding object. We do not have
-one in this case. The `COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES` tells the system that resources
-needs to be transitioned to correct states. Transitioning resources introduces some overhead and can be
+one in this tutorial. The `COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES` tells the system that resources
+need to be transitioned to correct states. Transitioning resources introduces some overhead and can be
 avoided when it is known that resources are already in correct states.
 
-Finally, we invoke the draw command that renders 3 vertices:
+Finally, we invoke the draw command that renders our 3 vertices:
 
 ```cpp
 DrawAttribs drawAttrs;
-drawAttrs.NumVertices = 3; // We will render 3 vertices
+drawAttrs.NumVertices = 3;
 drawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 m_pImmediateContext->Draw(drawAttrs);
 ```
