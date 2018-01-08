@@ -17,7 +17,7 @@ PSInput main(float3 pos : ATTRIB0,
 
 By convention, vertex shader inputs should be labeled as ATTRIBn, where n is the attribute number. The 
 attributes must match the input layout defined in the pipeline state object.
-The shader also uses world-view-projection matrix defined in constant (uniform) buffer called `Constants` to
+The shader also uses a world-view-projection matrix defined in a constant (uniform) buffer called `Constants` to
 transform vertex positions:
 
 ```hlsl
@@ -51,7 +51,7 @@ PSInput main(float3 pos : ATTRIB0,
 }
 ```
 
-Similar to Tutorial01, pixel (fragment) shader interpolates vertex colors.
+Similar to Tutorial01, pixel (fragment) shader simply interpolates vertex colors.
 
 ## Initializing the Pipeline State
 
@@ -68,7 +68,7 @@ PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 Also, we will enable back-face culling:
 
 ```cpp
-CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
 ```
 
 In this tutorial, we create shaders from files rather than from the source code strings. Diligent Engine
@@ -119,8 +119,8 @@ pDevice->CreateBuffer( CBDesc, BufferData(), &m_VSConstants );
 Usage and Bind flags are designed after [D3D11 Usage](https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx) 
 and [D3D11 Bind Flags](https://msdn.microsoft.com/en-us/library/windows/desktop/ff476085(v=vs.85).aspx).
 
-`Constants` uniform buffer is a static variable. Static variables are bound directly through the shader and 
-cannot be changed once bound:
+`Constants` uniform buffer is a static variable. Static variables are bound directly to the shader and 
+cannot be changed once bound (only the binding cannot be changed. The contents of the buffer is modifiable):
 
 ```cpp
 pVS->GetShaderVariable("Constants")->Set(m_VSConstants);
