@@ -45,12 +45,12 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         // Pipeline state object encompasses configuration of all GPU stages
 
         PipelineStateDesc PSODesc;
-        // This is a graphics pipeline
-        PSODesc.IsComputePipeline = false; 
-
         // Pipeline state name is used by the engine to report issues
         // It is always a good idea to give objects descriptive names
         PSODesc.Name = "Cube PSO"; 
+
+        // This is a graphics pipeline
+        PSODesc.IsComputePipeline = false; 
 
         // This tutorial will render to a single render target
         PSODesc.GraphicsPipeline.NumRenderTargets = 1;
@@ -86,7 +86,14 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
             pDevice->CreateShader(CreationAttribs, &pVS);
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4), "VS constants CB", &m_VSConstants);
+            BufferDesc CBDesc;
+            CBDesc.Name = "VS constants CB";
+            CBDesc.uiSizeInBytes = sizeof(float4x4);
+            CBDesc.Usage = USAGE_DYNAMIC;
+            CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
+            CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+            pDevice->CreateBuffer( CBDesc, BufferData(), &m_VSConstants );
+
             // Since we did not explcitly specify the type for Constants, default type
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
@@ -111,11 +118,11 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
             // Attribute 1 - vertex color
             LayoutElement(1, 0, 4, VT_FLOAT32, False)
         };
+        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+        PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
 
         PSODesc.GraphicsPipeline.pVS = pVS;
         PSODesc.GraphicsPipeline.pPS = pPS;
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
 
         pDevice->CreatePipelineState(PSODesc, &m_pPSO);
     }
@@ -160,7 +167,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         // Create vertex buffer that stores cube vertices
         BufferDesc VertBuffDesc;
         VertBuffDesc.Name = "Cube vertex buffer";
-        VertBuffDesc.Usage = USAGE_DEFAULT;
+        VertBuffDesc.Usage = USAGE_STATIC;
         VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
         BufferData VBData;
@@ -183,7 +190,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         // Create index buffer
         BufferDesc IndBuffDesc;
         IndBuffDesc.Name = "Cube index buffer";
-        IndBuffDesc.Usage = USAGE_DEFAULT;
+        IndBuffDesc.Usage = USAGE_STATIC;
         IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
         IndBuffDesc.uiSizeInBytes = sizeof(Indices);
         BufferData IBData;
@@ -222,7 +229,7 @@ void Tutorial02_Cube::Render()
     m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
     DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed = true; // This is indexed draw call
+    DrawAttrs.IsIndexed = true; // This is an indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
