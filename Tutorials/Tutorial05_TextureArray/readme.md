@@ -5,8 +5,8 @@ use unique texture for every instance.
 
 ![](Screenshot.png)
 
-Texture array is special kind of texture that consists of multiple 2D (or 1D) textures sharing the same
-format, size, and number of mip levels. Every individual texture in the array is called *slice*. Slices can
+Texture array is a special kind of texture that consists of multiple 2D (or 1D) textures sharing the same
+format, size, and the number of mip levels. Every individual texture in the array is called *slice*. Slices can
 be dynamically indexed by the shaders which enables a number of useful techniques such as selecting different slices 
 for different instances.
 
@@ -27,14 +27,14 @@ PSInput main(// ...
              // ...
              float TexArrInd : ATTRIB6) 
 {
-	// ...
-	ps.TexIndex = TexArrInd;
-	return ps;
+    // ...
+    ps.TexIndex = TexArrInd;
+    return ps;
 }
 ```
 
 Pixel shader declares `Texture2DArray` variable `g_Texture` and uses the index passed from the
-vertex shader to select the slice. When sampling texture array, 3-component vector is used as texture
+vertex shader to select the slice. When sampling a texture array, 3-component vector is used as the texture
 coordinate, where the third component defines the slice.
 
 ```hlsl
@@ -103,8 +103,10 @@ for(int tex=0; tex < NumTextures; ++tex)
         pTexArray->CopyData(m_pImmediateContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
     }
 }
+// Get shader resource view from the texture array
+m_TextureSRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 ```
 
 
 The only last detail that is different from Tutorial04 is that `PopulateInstanceBuffer()` function computes
-texture array index, for every slices, and writes it to the instance buffer along with the transform matrix.
+texture array index, for every instance, and writes it to the instance buffer along with the transform matrix.
