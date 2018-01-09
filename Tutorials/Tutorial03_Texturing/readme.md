@@ -172,17 +172,17 @@ but are less efficient from performance point of view. Refer to
 [this post](http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
 for more details.
 Do not confuse shader variable type with resource usage. Shader variable type is all about
-binding resources to a shader. It has nothing to do with ability to change resource contents which
-is controlled by resource usage
+binding resources to a shader. It has nothing to do with the ability to change resource contents which
+is controlled by the resource usage
 
 ## Vertex and Index Buffers
 
 Initializing vertex and index buffers is very similar to that of Tutorial02. The only difference
-is that cube vertices cannot be shared between faces as texture UV coordinates needs to be different.
+is that cube vertices cannot be shared between faces as texture UV coordinates need to be different.
 
 # Rendering
 
-Render function is also very similar to that of Tutorial02. This time however we have SRB
+Render function is also very similar to that of Tutorial02. This time however we have a SRB
 object that encompasses resources to be committed:
 
 ```cpp
@@ -190,6 +190,5 @@ m_pImmediateContext->SetPipelineState(m_pPSO);
 m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 ```
 
-Using shader resource binding object allows efficiently commiting all resources required by all shaders
+Using shader resource binding object allows efficiently commit all resources required by all shaders
 in the pipeline state.
-
