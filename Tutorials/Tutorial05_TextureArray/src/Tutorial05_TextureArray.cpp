@@ -231,7 +231,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
         // Create vertex buffer that stores cube vertices
         BufferDesc VertBuffDesc;
         VertBuffDesc.Name = "Cube vertex buffer";
-        VertBuffDesc.Usage = USAGE_DEFAULT;
+        VertBuffDesc.Usage = USAGE_STATIC;
         VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
         BufferData VBData;
@@ -266,7 +266,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
         // Create index buffer
         BufferDesc IndBuffDesc;
         IndBuffDesc.Name = "Cube index buffer";
-        IndBuffDesc.Usage = USAGE_DEFAULT;
+        IndBuffDesc.Usage = USAGE_STATIC;
         IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
         IndBuffDesc.uiSizeInBytes = sizeof(Indices);
         BufferData IBData;
@@ -290,6 +290,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
         const auto &TexDesc = SrcTex->GetDesc();
         if (pTexArray == nullptr)
         {
+            //	Create texture array
             auto TexArrDesc = TexDesc;
             TexArrDesc.ArraySize = NumTextures;
             TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
