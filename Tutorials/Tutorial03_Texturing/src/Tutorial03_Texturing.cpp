@@ -45,12 +45,12 @@ void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **p
         // Pipeline state object encompasses configuration of all GPU stages
 
         PipelineStateDesc PSODesc;
-        // This is a graphics pipeline
-        PSODesc.IsComputePipeline = false; 
-
         // Pipeline state name is used by the engine to report issues
         // It is always a good idea to give objects descriptive names
         PSODesc.Name = "Cube PSO"; 
+
+        // This is a graphics pipeline
+        PSODesc.IsComputePipeline = false; 
 
         // This tutorial will render to a single render target
         PSODesc.GraphicsPipeline.NumRenderTargets = 1;
@@ -201,7 +201,7 @@ void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **p
         // Create vertex buffer that stores cube vertices
         BufferDesc VertBuffDesc;
         VertBuffDesc.Name = "Cube vertex buffer";
-        VertBuffDesc.Usage = USAGE_DEFAULT;
+        VertBuffDesc.Usage = USAGE_STATIC;
         VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
         BufferData VBData;
@@ -224,7 +224,7 @@ void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **p
         // Create index buffer
         BufferDesc IndBuffDesc;
         IndBuffDesc.Name = "Cube index buffer";
-        IndBuffDesc.Usage = USAGE_DEFAULT;
+        IndBuffDesc.Usage = USAGE_STATIC;
         IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
         IndBuffDesc.uiSizeInBytes = sizeof(Indices);
         BufferData IBData;
@@ -265,7 +265,7 @@ void Tutorial03_Texturing::Render()
     }
 
     // Bind vertex buffer
-    Uint32 stride = sizeof(float) * 5; // Stride is 5 floats
+    Uint32 stride = sizeof(float) * 5; // Stride is 5 floats (float3 pos + float2 uv)
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);

@@ -15,7 +15,7 @@ PSInput main(float3 pos : ATTRIB0,
              float4 color : ATTRIB1) 
 ```
 
-By convention, vertex shader inputs should be labeled as ATTRIBn, where n is the attribute number. The 
+By convention, **vertex shader inputs should be labeled as ATTRIBn, where n is the attribute number.** The 
 attributes must match the input layout defined in the pipeline state object.
 The shader also uses a world-view-projection matrix defined in a constant (uniform) buffer called `Constants` to
 transform vertex positions:
