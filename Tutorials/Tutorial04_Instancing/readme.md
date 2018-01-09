@@ -1,6 +1,6 @@
 # Tutorial04 - Instancing
 
-This tutorial extends Tutorial04 and demonstrates how to use instancing to render multiple copies
+This tutorial extends Tutorial03 and demonstrates how to use instancing to render multiple copies
 of one object using unique transformation matrix for every copy.
 
 ![](Screenshot.png)
@@ -13,7 +13,7 @@ in a forest or characters in a crowd), using just single draw call.
 To allow instancing, vertex shader attibutes are split into two categories: per-vertex attributes
 and per-instance attributes. Per-vertex attributes are regular vertex attributes, while per-instance
 attributes are the same for all vertices in one object instance. In this example, we use
-four attributes to encode unique matrix used to transform vertices of one instance:
+four attributes to encode rows of an instance-specific transform matrix:
 
 ```hlsl
 cbuffer Constants
@@ -107,9 +107,8 @@ Note that this buffer will be updated at run-time, and the usage is `USAGE_DEFAU
 void Tutorial04_Instancing::PopulateInstanceBuffer()
 {
     std::vector<float4x4> InstanceData(m_GridSize*m_GridSize*m_GridSize);
-	// Populate InstanceData
 
-	// ...
+    // Compute transformation matrix for every instance
 
     Uint32 DataSize = static_cast<Uint32>(sizeof(InstanceData[0]) * InstanceData.size());
     m_InstanceBuffer->UpdateData(m_pImmediateContext, 0, DataSize, InstanceData.data());
