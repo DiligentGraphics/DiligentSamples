@@ -9,7 +9,7 @@ struct PSInput
     float2 uv : TEX_COORD; 
 };
 
-// Vertex shader takes two inputs: vertex position and color.
+// Vertex shader takes two inputs: vertex position and uv coordinates.
 // By convention, Diligent Engine expects vertex shader inputs to 
 // be labeled as ATTRIBn, where n is the attribute number
 PSInput main(float3 pos : ATTRIB0, 

@@ -1,0 +1,144 @@
+# Tutorial04 - Instancing
+
+This tutorial extends Tutorial04 and demonstrates how to use instancing to render multiple copies
+of one object using unique transformation matrix for every copy.
+
+![](Screenshot.png)
+
+Instancing is a very widely used technique. It allows rendering multiple copies of one object (trees 
+in a forest or characters in a crowd), using just single draw call. 
+
+## Shaders
+
+To allow instancing, vertex shader attibutes are split into two categories: per-vertex attributes
+and per-instance attributes. Per-vertex attributes are regular vertex attributes, while per-instance
+attributes are the same for all vertices in one object instance. In this example, we use
+four attributes to encode unique matrix used to transform vertices of one instance:
+
+```hlsl
+cbuffer Constants
+{
+    float4x4 g_ViewProj;
+    float4x4 g_Rotation;
+};
+
+struct PSInput 
+{ 
+    float4 Pos : SV_POSITION; 
+    float2 uv : TEX_COORD; 
+};
+
+PSInput main(float3 pos : ATTRIB0, 
+             float2 uv : ATTRIB1,
+             // Instance-specific attributes
+             float4 matr_row0 : ATTRIB2,
+             float4 matr_row1 : ATTRIB3,
+             float4 matr_row2 : ATTRIB4,
+             float4 matr_row3 : ATTRIB5) 
+{
+    PSInput ps; 
+    // HLSL matrices are row-major while GLSL matrices are column-major. We will
+    // use convenience function MatrixFromRows() appropriately defined by the engine
+    float4x4 InstanceMatr = MatrixFromRows(matr_row0, matr_row1, matr_row2, matr_row3);
+    // Apply rotation
+    float4 TransformedPos = mul( float4(pos,1.0),g_Rotation);
+    // Apply instance-specific transformation
+    TransformedPos = mul(TransformedPos, InstanceMatr);
+    // Apply view-projection matrix
+    ps.Pos = mul( TransformedPos, g_ViewProj);
+    ps.uv = uv;
+    return ps;
+}
+```
+
+Pixel shader in this tutorial is identical to that of Tutorial03.
+
+## Initializing the Pipeline State
+
+The only difference in pipeline state initialization compared to Tutorial03 is how input layout is defined.
+Besides vertex position and texture uv coordinates, we use four per-instance attributes:
+
+```cpp
+LayoutElement LayoutElems[] =
+{
+    // Per-vertex data - first buffer slot
+    // Attribute 0 - vertex position
+    LayoutElement(0, 0, 3, VT_FLOAT32, False),
+    // Attribute 1 - texture coordinates
+    LayoutElement(1, 0, 2, VT_FLOAT32, False),
+            
+    // Per-instance data - second buffer slot
+    // We will use four attributes to encode instance-specific 4x4 transformation matrix
+    // Attribute 2 - first row
+    LayoutElement(2, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+    // Attribute 3 - second row
+    LayoutElement(3, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+    // Attribute 4 - third row
+    LayoutElement(4, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+    // Attribute 5 - fourth row
+    LayoutElement(5, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE)
+};
+```
+
+Note that the last four attributes come from the vertex stream #1 and that `FREQUENCY_PER_INSTANCE`
+indicates that these are per-instance attributes.
+
+## Vertex and Index Buffers
+
+Vertex and index buffers are the same as in Tutorial03, but we will also need another buffer
+that will store per-instance transformation matrices:
+
+```cpp
+BufferDesc InstBuffDesc;
+InstBuffDesc.Name = "Instance data buffer";
+InstBuffDesc.Usage = USAGE_DEFAULT; 
+InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
+pDevice->CreateBuffer(InstBuffDesc, BufferData(), &m_InstanceBuffer);
+```
+
+Note that this buffer will be updated at run-time, and the usage is `USAGE_DEFAULT`.
+
+## Updating the Instance Buffer
+
+`USAGE_DEFAULT` buffers should be updated using `UpdateData()` method as shown below:
+
+```cpp
+void Tutorial04_Instancing::PopulateInstanceBuffer()
+{
+    std::vector<float4x4> InstanceData(m_GridSize*m_GridSize*m_GridSize);
+	// Populate InstanceData
+
+	// ...
+
+    Uint32 DataSize = static_cast<Uint32>(sizeof(InstanceData[0]) * InstanceData.size());
+    m_InstanceBuffer->UpdateData(m_pImmediateContext, 0, DataSize, InstanceData.data());
+}
+```
+
+## Rendering
+
+In this example, we use two buffers containing per-vertex and per-instance data.
+Both buffers need to be bound to the pipeline before calling rendering command:
+
+```cpp
+// Stride is 5 floats for the per-vertex stream and matrix size for the per-instance stream
+Uint32 strides[] = {sizeof(float) * 5, sizeof(float4x4)};
+Uint32 offsets[] = {0, 0};
+IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
+m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+```
+
+Number of instances is specified by the `NumInstances` member of `DrawAttribs` structure:
+
+```cpp
+DrawAttribs DrawAttrs;
+DrawAttrs.IsIndexed = true;
+DrawAttrs.IndexType = VT_UINT32; // Index type
+DrawAttrs.NumIndices = 36;
+// Number of instances
+DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; 
+DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+m_pImmediateContext->Draw(DrawAttrs);
+```
