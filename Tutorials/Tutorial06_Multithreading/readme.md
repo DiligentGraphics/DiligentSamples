@@ -6,7 +6,7 @@ This tutorial shows how to record command lists in parallel from multiple thread
 
 This tutorial generates the same output as Tutorial05, but renders every cube using individual draw call.
 It shows how recording commands can be split between multiple threads. Note that this tutorial illustrates
-the API usage and for this specific rendering problem, instancing is a more efficient approach.
+the API usage and for this specific rendering problem, instancing is a more efficient solution.
 However, multithreading in a real application can be implemented in the same way as shown in this
 tutorial.
 
@@ -62,8 +62,8 @@ for(int tex=0; tex < NumTextures; ++tex)
 }
 ```
 
-This example illustrates the expect usage of mutable shader resources: several
-resource binding objects encompassing different bindings are created.
+This example illustrates the expect usage of mutable shader resources: the app creates 
+several SRB objects encompassing different resource bindings.
 
 ## Multithreaded Rendering
 
@@ -154,8 +154,8 @@ next frame.
 ### Rendering Subsets
 
 Subset rendering procedure is generally the same as in previous tutorials. Few details are worth mentioning.
-1. Deferred contexts start in default state (no render target, viewports, pipeline state etc. is bound),
-so every context should set default render target:
+1. Deferred contexts start in default state (no render target, viewports, pipeline state etc. are bound),
+so every context should set the default render target:
 
 ```cpp
 pCtx->SetRenderTargets(0, nullptr, nullptr);
@@ -164,7 +164,7 @@ pCtx->SetRenderTargets(0, nullptr, nullptr);
 2. The rendering procedure iterates through all the instances in the allotted subset, and for every instance
 does the following:
 
-* Commits SRB binding object corresponding to the texture index, no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES
+* Commits SRB object corresponding to the texture index, no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES
   is specified since we already transitioned all resources to correct states.
 
 * Updates the constant buffer with the transformation matrix for this instance
