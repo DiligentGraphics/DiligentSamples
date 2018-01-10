@@ -1,0 +1,197 @@
+# Tutorial06 - Multithreading
+
+This tutorial shows how to record command lists in parallel from multiple threads.
+
+![](Screenshot.png)
+
+This tutorial generates the same output as Tutorial05, but renders every cube using individual draw call.
+It shows how recording commands can be split between multiple threads. Note that this tutorial illustrates
+the API usage and for this specific rendering problem, instancing is a more efficient approach.
+However, multithreading in a real application can be implemented in the same way as shown in this
+tutorial.
+
+## Shaders
+
+This tutorial uses shaders from Tutorial03. While pixel shader is exactly the same, the vertex shader
+applies rotation and instance-specific transformation before the global view-projection transform. The
+instance transform matrix resides in its own constant buffer that is updated every time a new instance is
+rendered.
+
+```hlsl
+cbuffer Constants
+{
+    float4x4 g_ViewProj;
+    float4x4 g_Rotation;
+};
+
+cbuffer InstanceData
+{
+    float4x4 g_InstanceMatr;
+};
+
+struct PSInput 
+{ 
+    float4 Pos : SV_POSITION; 
+    float2 uv : TEX_COORD; 
+};
+
+PSInput main(float3 pos : ATTRIB0, 
+             float2 uv : ATTRIB1) 
+{
+    PSInput ps; 
+    float4 TransformedPos = mul( float4(pos,1.0),g_Rotation);
+    TransformedPos = mul(TransformedPos, g_InstanceMatr);
+    ps.Pos = mul( TransformedPos, g_ViewProj);
+    ps.uv = uv;
+    return ps;
+}
+```
+
+## Resource initialization
+
+Pipeline state, shaders, vertex and index buffers are initialized in the same way as in 
+previous tutorials. What is different is that this time we load every texture
+individually, and then bind the texture to its own shader resource binding object:
+
+```cpp
+for(int tex=0; tex < NumTextures; ++tex)
+{
+    // Create one Shader Resource Binding for every texture
+    m_pPSO->CreateShaderResourceBinding(&m_SRB[tex]);
+    m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+}
+```
+
+This example illustrates the expect usage of mutable shader resources: several
+resource binding objects encompassing different bindings are created.
+
+## Multithreaded Rendering
+
+All rendering commands in Diligent Engine are issued through device contexts.
+Similar to [Direct3D11](https://msdn.microsoft.com/en-us/library/windows/desktop/ff476880(v=vs.85).aspx), 
+there are two types of contexts: immediate and deferred. An immediate context records
+rendering commands and implicitly submits them for execution. Deferred contexts can only record
+commands to a command list that can later be executed through the immediate context.
+Deferred contexts should be created for every worker thread that records rendering commands.
+
+### Main Thread
+
+Main thread coordinates the execution of worker threads and handles recorded command lists.
+It starts by transitioning all resources in shader resource binding objects
+to correct states. This is very important as once we know all resources are transitioned to
+correct states, we can tell the engine not to check the states when processing every draw command:
+
+```cpp
+for(size_t i=0; i < _countof(m_SRB); ++i)
+    m_pImmediateContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
+```
+
+The main thread then signals all worker threads to start:
+
+```cpp
+m_NumThreadsCompleted = 0;
+m_RenderSubsetSignal.Trigger(true);
+```
+
+and renders its own subset:
+
+```cpp
+RenderSubset(m_pImmediateContext, 0);
+```
+
+It then waits until worker threads signal that all command lists are ready
+and executes them:
+
+```cpp
+m_ExecuteCommandListsSignal.Wait(true, 1);
+
+for(auto &cmdList : m_CmdLists)
+{
+    m_pImmediateContext->ExecuteCommandList(cmdList);
+}
+```
+
+Finally, it tells the worker threads to proceed to the next frame:
+
+```cpp
+m_NumThreadsReady = 0;
+m_GotoNextFrameSignal.Trigger(true);
+```
+
+### Worker Threads
+
+Every worker thread starts by waiting for the signal from the main thread (a negative
+value is an exit signal):
+
+```cpp
+auto SignalledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+if(SignalledValue < 0)
+    return;
+```
+
+The thread then renders the allotted subset using its own deferred context:
+
+```cpp
+IDeviceContext *pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+pThis->RenderSubset(pDeferredCtx, 1+ThreadNum);
+```
+
+When all commands are recorded, a command list is requested from the deferred context
+that is later executed by the main thread:
+
+```cpp
+RefCntAutoPtr<ICommandList> pCmdList;
+pDeferredCtx->FinishCommandList(&pCmdList);
+pThis->m_CmdLists[ThreadNum] = pCmdList;
+```
+
+When all threads are done recording the commands, the last thread
+signals the main thread that it can start executing the command lists.
+The threads then wait for the signal from the main thread to proceed to the
+next frame.
+
+
+### Rendering Subsets
+
+Subset rendering procedure is generally the same as in previous tutorials. Few details are worth mentioning.
+1. Deferred contexts start in default state (no render target, viewports, pipeline state etc. is bound),
+so every context should set default render target:
+
+```cpp
+pCtx->SetRenderTargets(0, nullptr, nullptr);
+```
+
+2. The rendering procedure iterates through all the instances in the allotted subset, and for every instance
+does the following:
+
+* Commits SRB binding object corresponding to the texture index, no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES
+  is specified since we already transitioned all resources to correct states.
+
+* Updates the constant buffer with the transformation matrix for this instance
+
+* Issues the draw call
+
+
+```cpp
+DrawAttribs DrawAttrs;
+DrawAttrs.IsIndexed = true;
+DrawAttrs.IndexType = VT_UINT32;
+DrawAttrs.NumIndices = 36;
+DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+pCtx->SetPipelineState(m_pPSO);
+for(size_t inst = StartInst; inst < EndInst; ++inst)
+{
+    const auto &CurrInstData = m_InstanceData[inst];
+    // Shader resources have been explicitly transitioned to correct states, so
+    // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
+    pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+
+    {
+        MapHelper<float4x4> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        *InstData = transposeMatrix(CurrInstData.Matrix);
+    }
+
+    pCtx->Draw(DrawAttrs);
+}
+```
