@@ -44,6 +44,12 @@ use unique texture for every instance.
 
 This tutorial shows how to generate command lists in parallel from multiple threads.
 
+## [Tutorial 07 - Geometry Shader](Tutorials/Tutorial07_GeometryShader)
+
+![](Tutorials/Tutorial07_GeometryShader/Screenshot.png)
+
+This tutorial shows how to use geometry shader to render smooth wireframe.
+
 
 # Samples
 
