@@ -11,6 +11,8 @@ SamplerState g_Texture_sampler; // By convention, texture samplers must use _sam
 float4 main(GSOutput ps_in) : SV_TARGET
 {
     float4 Color = g_Texture.Sample(g_Texture_sampler, ps_in.VSOut.uv);
+    
+    // Compute distance to the closest edge
     float minDist = min(ps_in.DistToEdges.x, ps_in.DistToEdges.y);
     minDist = min(minDist, ps_in.DistToEdges.z);
 

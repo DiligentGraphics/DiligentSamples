@@ -104,6 +104,7 @@ void Tutorial07_GeometryShader::Initialize(IRenderDevice *pDevice, IDeviceContex
             pVS->GetShaderVariable("VSConstants")->Set(m_ShaderConstants);
         }
 
+        // Create geometry shader
         RefCntAutoPtr<IShader> pGS;
         {
             CreationAttribs.Desc.ShaderType = SHADER_TYPE_GEOMETRY;
@@ -113,6 +114,7 @@ void Tutorial07_GeometryShader::Initialize(IRenderDevice *pDevice, IDeviceContex
             pDevice->CreateShader(CreationAttribs, &pGS);
             pGS->GetShaderVariable("GSConstants")->Set(m_ShaderConstants);
         }
+
         // Create pixel shader
         RefCntAutoPtr<IShader> pPS;
         {
