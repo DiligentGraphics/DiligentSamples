@@ -6,17 +6,17 @@ This tutorial is based on Tutorial03 and shows how to use geometry shader to ren
 
 Geometry shader is a programmable stage that resides between vertex and pixel shaders (it can also 
 be used with hardware tessellation, in which case it resides between domain shader and pixel shader). 
-While vertex shader processes individual vertices and pixel shader handles pixel, geometry shader operates
-with full primitives.
+While vertex shader processes individual vertices and pixel shader handles pixels, geometry shader operates
+on full primitives.
 
 ## Shaders
 
 Vertex shader in this tutorial is mostly identical to that of Tutorial03. The only difference is that
-the shader uses `#include` directive to include file with definitons of common structures.
+the shader uses `#include` directive to include `structures.h` containing the definitons of common structures.
 
-Geometry shader processes entire triangles. It fist computes the triangle area that is used to
+Geometry shader processes entire triangles. It fist computes the triangle area which it then uses to
 determine the distance from every vertex to the opposite edge. The distances are then
-interpolated across the triangle surface which allows the pixel shader to compute the distance
+interpolated across the triangle surface by the rasterizaer allowing the pixel shader to compute the distance
 to the closest edge. Outputs from the vertex shader are passed through to the pixel shader
 without changes.
 
