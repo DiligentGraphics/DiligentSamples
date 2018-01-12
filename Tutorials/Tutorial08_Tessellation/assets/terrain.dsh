@@ -1,0 +1,28 @@
+#include "structures.h"
+
+Texture2D<float> g_HeightMap;
+SamplerState g_HeightMap_sampler;
+
+
+cbuffer DSConstants
+{
+    GlobalConstants g_Constants;
+};
+
+// For some reason, winding direction in HLSL and GLSL are different
+[domain("quad")]
+/* partitioning = fractional_even, outputtopology = triangle_cw */
+TerrainDSOut TerrainDS( TerrainHSConstFuncOut input, 
+                        OutputPatch<TerrainHSOut, 1> QuadPatch,
+                        float2 DomainUV : SV_DomainLocation)
+{
+    TerrainDSOut Out;
+    float2 BlockOffset = QuadPatch[0].BlockOffset;
+    float2 UV = DomainUV / float2(g_Constants.fNumHorzBlocks,g_Constants.fNumVertBlocks) + BlockOffset;
+    float2 XY = (UV - float2(0.5,0.5)) * g_Constants.SampleSpacing;
+    float Height = g_HeightMap.SampleLevel(g_HeightMap_sampler, UV, 0) * g_Constants.HeightScale;
+    float4 PosWorld = float4(XY, Height , 1.0);
+    Out.Pos = mul(PosWorld.xzyw, g_Constants.WorldViewProj);
+    Out.uv = UV;
+    return Out;
+}
