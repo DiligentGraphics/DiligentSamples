@@ -2,12 +2,13 @@
 
 cbuffer GSConstants
 {
-    Constants g_Constants;
-}
+    GlobalConstants g_Constants;
+};
+
 
 [maxvertexcount(3)]
-void main(triangle VSOutput In[3], 
-          inout TriangleStream<GSOutput> triStream )
+void TerrainGS(triangle TerrainDSOut In[3], 
+               inout TriangleStream<TerrainGSOut> triStream )
 {
     // Compute screen-space position of every vertex
     float2 v0 = g_Constants.ViewportSize.xy * In[0].Pos.xy / In[0].Pos.w;
@@ -19,19 +20,19 @@ void main(triangle VSOutput In[3],
     // Compute triangle area
     float area = abs(edge1.x*edge2.y - edge1.y * edge2.x);
 
-    GSOutput Out;
+    TerrainGSOut Out;
 
-    Out.VSOut = In[0];
+    Out.DSOut = In[0];
     // Distance to edge0
     Out.DistToEdges = float3(area/length(edge0), 0.0, 0.0);
     triStream.Append( Out );
 
-    Out.VSOut = In[1];
+    Out.DSOut = In[1];
     // Distance to edge1
     Out.DistToEdges = float3(0.0, area/length(edge1), 0.0);
     triStream.Append( Out );
 
-    Out.VSOut = In[2];
+    Out.DSOut = In[2];
     // Distance to edge2
     Out.DistToEdges = float3(0.0, 0.0, area/length(edge2));
     triStream.Append( Out );

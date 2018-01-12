@@ -20,6 +20,12 @@ struct TerrainDSOut
     float2 uv : TEX_COORD;
 };
 
+struct TerrainGSOut
+{
+    TerrainDSOut DSOut;
+    float3 DistToEdges : DIST_TO_EDGES;
+};
+
 struct GlobalConstants
 {
     uint NumHorzBlocks; // Number of blocks along the horizontal edge
@@ -28,9 +34,13 @@ struct GlobalConstants
     float fNumVertBlocks;
 
     float fBlockSize;
-    float SampleSpacing;
+    float LengthScale;
     float HeightScale;
     float LineWidth;
+
+    float TessDensity;
+    float Dummy;
+    float2 Dummy2;
 
     float4x4 WorldViewProj;
     float4 ViewportSize;

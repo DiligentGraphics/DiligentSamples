@@ -13,7 +13,8 @@ set(INCLUDE
 set(SHADERS
 	assets/terrain.vsh
 	assets/terrain.psh
-	#assets/terrain.gsh
+	assets/terrain_wire.psh
+	assets/terrain.gsh
 	assets/terrain.hsh
 	assets/terrain.dsh
 	assets/structures.h

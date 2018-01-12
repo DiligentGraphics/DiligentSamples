@@ -35,16 +35,20 @@ public:
                             Diligent::ISwapChain *pSwapChain)override;
     virtual void Render()override;
     virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial07: Geometry Shader";}
+    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial08: Tessellation";}
 
 private:
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO[2];
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_ShaderConstants;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[2];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_HeightMapSRV;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ColorMapSRV;
     float4x4 m_WorldViewProjMatrix;
-    float m_LineWidth = 3.f;
+    bool m_Animate = true;
+    bool m_Wireframe = false;
+    float m_RotationAngle = 0;
+    float m_TessDensity = 32;
+    float m_Scale = 1.f;
     unsigned int m_BlockSize = 32;
     unsigned int m_HeightMapWidth = 0;
     unsigned int m_HeightMapHeight = 0;
