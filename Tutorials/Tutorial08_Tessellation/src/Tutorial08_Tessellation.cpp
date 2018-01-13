@@ -27,6 +27,7 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
+#include "ShaderMacroHelper.h"
 
 using namespace Diligent;
 
@@ -53,9 +54,10 @@ namespace
         float LineWidth;
 
         float TessDensity;
-        float Dummy;
+        int AdaptiveTessellation;
         float2 Dummy2;
 
+        float4x4 WorldView;
         float4x4 WorldViewProj;
         float4 ViewportSize;
     };
@@ -65,6 +67,8 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
+    ShaderMacroHelper MacroHelper;
+    
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -114,17 +118,6 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
             pVS->GetShaderVariable("VSConstants")->Set(m_ShaderConstants);
         }
 
-        // Create hull shader
-        RefCntAutoPtr<IShader> pHS;
-        {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_HULL;
-            CreationAttribs.EntryPoint = "TerrainHS";
-            CreationAttribs.Desc.Name = "Terrain HS";
-            CreationAttribs.FilePath = "terrain.hsh";
-            pDevice->CreateShader(CreationAttribs, &pHS);
-            pHS->GetShaderVariable("HSConstants")->Set(m_ShaderConstants);
-        }
-
         // Create geometry shader
         RefCntAutoPtr<IShader> pGS;
         {
@@ -136,14 +129,14 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
             pGS->GetShaderVariable("GSConstants")->Set(m_ShaderConstants);
         }
 
-        // Create domain shader
-        RefCntAutoPtr<IShader> pDS;
+        // Create hull shader
+        RefCntAutoPtr<IShader> pHS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_DOMAIN;
-            CreationAttribs.EntryPoint = "TerrainDS";
-            CreationAttribs.Desc.Name = "Terrain DS";
-            CreationAttribs.FilePath = "terrain.dsh";
-            
+            CreationAttribs.Desc.ShaderType = SHADER_TYPE_HULL;
+            CreationAttribs.EntryPoint = "TerrainHS";
+            CreationAttribs.Desc.Name = "Terrain HS";
+            CreationAttribs.FilePath = "terrain.hsh";
+
             ShaderVariableDesc Vars[] = 
             {
                 {"g_HeightMap", SHADER_VARIABLE_TYPE_MUTABLE}
@@ -153,7 +146,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
 
             // Define static sampler for g_Texture. Static samplers should be used whenever possible
             SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+                TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
             StaticSamplerDesc StaticSamplers[] = 
             {
                 {"g_HeightMap", SamLinearClampDesc}
@@ -161,6 +154,22 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
             CreationAttribs.Desc.StaticSamplers = StaticSamplers;
             CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
 
+            MacroHelper.AddShaderMacro("BLOCK_SIZE", m_BlockSize);
+            CreationAttribs.Macros = MacroHelper;
+
+            pDevice->CreateShader(CreationAttribs, &pHS);
+            pHS->GetShaderVariable("HSConstants")->Set(m_ShaderConstants);
+        }
+
+        // Create domain shader
+        RefCntAutoPtr<IShader> pDS;
+        {
+            CreationAttribs.Desc.ShaderType = SHADER_TYPE_DOMAIN;
+            CreationAttribs.EntryPoint = "TerrainDS";
+            CreationAttribs.Desc.Name = "Terrain DS";
+            CreationAttribs.FilePath = "terrain.dsh";
+            CreationAttribs.Macros = nullptr;
+            
             pDevice->CreateShader(CreationAttribs, &pDS);
             pDS->GetShaderVariable("DSConstants")->Set(m_ShaderConstants);
         }
@@ -245,6 +254,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
         // Set texture SRV in the SRB
         m_SRB[i]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_ColorMapSRV);
         m_SRB[i]->GetVariable(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
+        m_SRB[i]->GetVariable(SHADER_TYPE_HULL, "g_HeightMap")->Set(m_HeightMapSRV);
     }
 
     // Create a tweak bar
@@ -258,9 +268,10 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
 
     // Add grid size control
     TwAddVarRW(bar, "Animate", TW_TYPE_BOOLCPP, &m_Animate, "");
+    TwAddVarRW(bar, "Adaptive tessellation", TW_TYPE_BOOLCPP, &m_AdaptiveTessellation, "");
     TwAddVarRW(bar, "Wireframe", TW_TYPE_BOOLCPP, &m_Wireframe, "");
     TwAddVarRW(bar, "Tess density", TW_TYPE_FLOAT, &m_TessDensity, "min=1 max=32 step=0.1");
-    TwAddVarRW(bar, "Scale", TW_TYPE_FLOAT, &m_Scale, "min=1 max=20 step=0.1");
+    TwAddVarRW(bar, "Distance", TW_TYPE_FLOAT, &m_Distance, "min=1 max=20 step=0.1");
 }
 
 // Render a frame
@@ -282,12 +293,14 @@ void Tutorial08_Tessellation::Render()
         Consts->fNumHorzBlocks = static_cast<float>(NumHorzBlocks);
         Consts->fNumVertBlocks = static_cast<float>(NumVertBlocks);
 
-        Consts->LengthScale = 10.f * m_Scale;
+        Consts->LengthScale = 10.f;
         Consts->HeightScale = Consts->LengthScale / 25.f;
 
+        Consts->WorldView = transposeMatrix(m_WorldViewMatrix);
         Consts->WorldViewProj = transposeMatrix(m_WorldViewProjMatrix);
 
         Consts->TessDensity = m_TessDensity;
+        Consts->AdaptiveTessellation = m_AdaptiveTessellation ? 1 : 0;
         
         const auto &SCDesc = m_pSwapChain->GetDesc();
         Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f/static_cast<float>(SCDesc.Width), 1.f/static_cast<float>(SCDesc.Height));
@@ -323,13 +336,12 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
             m_RotationAngle += PI_F*2.f;
     }
 
-    float4x4 CubeWorldView = rotationY(m_RotationAngle) * rotationX(PI_F*0.1f) * 
-        translationMatrix(0.f, 0.0f, 10.0f);
+    m_WorldViewMatrix = rotationY(m_RotationAngle) * rotationX(PI_F*0.1f) * translationMatrix(0.f, 0.0f, m_Distance);
     float NearPlane = 0.1f;
     float FarPlane = 1000.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsDX);
     // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = CubeWorldView * Proj;
+    m_WorldViewProjMatrix = m_WorldViewMatrix * Proj;
 }

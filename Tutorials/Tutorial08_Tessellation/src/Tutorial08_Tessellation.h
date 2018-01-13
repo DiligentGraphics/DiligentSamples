@@ -44,11 +44,13 @@ private:
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_HeightMapSRV;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ColorMapSRV;
     float4x4 m_WorldViewProjMatrix;
+    float4x4 m_WorldViewMatrix;
     bool m_Animate = true;
     bool m_Wireframe = false;
     float m_RotationAngle = 0;
     float m_TessDensity = 32;
-    float m_Scale = 1.f;
+    float m_Distance = 10.f;
+    bool m_AdaptiveTessellation = true;
     unsigned int m_BlockSize = 32;
     unsigned int m_HeightMapWidth = 0;
     unsigned int m_HeightMapHeight = 0;

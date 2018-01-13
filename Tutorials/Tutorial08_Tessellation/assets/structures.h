@@ -39,9 +39,10 @@ struct GlobalConstants
     float LineWidth;
 
     float TessDensity;
-    float Dummy;
+    int AdaptiveTessellation;
     float2 Dummy2;
 
+    float4x4 WorldView;
     float4x4 WorldViewProj;
     float4 ViewportSize;
  };
