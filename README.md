@@ -58,7 +58,6 @@ This tutorial shows how to use geometry shader to render smooth wireframe.
 ![](Samples/AntTweakBar/Screenshot.png)
 
 This sample demonstrates how to use [AntTweakBar library](http://anttweakbar.sourceforge.net/doc) to create simple user interface. 
-It can also be thought of as Diligent Engine’s “Hello World” example. 
 
 ## Atmospheric Light Scattering sample
 
