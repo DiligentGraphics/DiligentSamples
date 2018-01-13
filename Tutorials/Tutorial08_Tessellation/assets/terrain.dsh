@@ -12,7 +12,7 @@ cbuffer DSConstants
 // For some reason, winding direction in HLSL and GLSL are different
 [domain("quad")]
 /* partitioning = fractional_even, outputtopology = triangle_cw */
-TerrainDSOut TerrainDS( TerrainHSConstFuncOut input, 
+TerrainDSOut TerrainDS( TerrainHSConstFuncOut ConstFuncOut, 
                         OutputPatch<TerrainHSOut, 1> QuadPatch,
                         float2 DomainUV : SV_DomainLocation)
 {
