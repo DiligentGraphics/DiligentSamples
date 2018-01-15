@@ -17,7 +17,7 @@ set(SHADERS
 	assets/terrain.gsh
 	assets/terrain.hsh
 	assets/terrain.dsh
-	assets/structures.h
+	assets/structures.fxh
 )
 
 set(ASSETS

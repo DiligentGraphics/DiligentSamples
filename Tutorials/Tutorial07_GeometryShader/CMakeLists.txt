@@ -14,7 +14,7 @@ set(SHADERS
 	assets/cube.vsh
 	assets/cube.psh
 	assets/cube.gsh
-	assets/structures.h
+	assets/structures.fxh
 )
 
 set(ASSETS
