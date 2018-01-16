@@ -190,5 +190,5 @@ m_pImmediateContext->SetPipelineState(m_pPSO);
 m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 ```
 
-Using shader resource binding object allows efficiently commit all resources required by all shaders
+Using shader resource binding object allows to efficiently commit all resources required by all shaders
 in the pipeline state.
