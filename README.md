@@ -100,6 +100,19 @@ You can use Android Studio to build, deploy and run samples.
 
 # Version History
 
+## v2.1.b
+
+* Removed legacy VS projects and solutions
+* Added tutorials:
+  * 01 - Hello Triangle
+  * 02 - Cube
+  * 03 - Texturing
+  * 04 - Instancing
+  * 05 - Texture Array
+  * 06 - Multithreading
+  * 07 - Geometry Shader
+  * 08 - Tessellation
+
 ## v2.1.a
 
 * Refactored build system to use CMake and Gradle for Android
