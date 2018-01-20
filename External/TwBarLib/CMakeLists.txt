@@ -193,6 +193,19 @@ if(PLATFORM_LINUX)
 	target_link_libraries(TwBarLib PRIVATE glew-static)
 endif()
 
+if(PLATFORM_MACOS)
+    target_compile_definitions(TwBarLib PUBLIC _MACOSX PRIVATE __PLACEMENT_NEW_INLINE)
+    target_compile_options(TwBarLib PRIVATE -fno-strict-aliasing -x objective-c++)
+    find_library(APP_KIT AppKit)
+    if (NOT APP_KIT)
+        message(FATAL_ERROR "AppKit not found")
+    endif()
+    target_link_libraries(TwBarLib PRIVATE ${APP_KIT})
+    # target_link_libraries(TwBarLib PRIVATE glew-static)
+endif()
+
+
+
 source_group("Source Files" FILES ${SOURCE})
 source_group("Private Header Files" FILES ${PRIVATE_HEADERS})
 source_group("Public Header Files" FILES ${PUBLIC_HEADERS})

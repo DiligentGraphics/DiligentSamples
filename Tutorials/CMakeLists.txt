@@ -22,8 +22,8 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 		add_executable(${TUTORIAL_NAME} ${SOURCE} ${INCLUDE})
 
-	#elseif(APPLE)
-	#	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)
+	elseif(PLATFORM_MACOS)
+		add_executable(${TUTORIAL_NAME} ${SOURCE} ${INCLUDE})
 	else()
 		message(FATAL_ERROR "Unknown platform")
 	endif()

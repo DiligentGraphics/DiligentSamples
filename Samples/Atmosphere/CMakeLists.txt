@@ -96,10 +96,8 @@ elseif(PLATFORM_LINUX)
 
 	add_executable(AtmosphereSample ${SOURCE} ${INCLUDE})
 	
-#elseif(APPLE)
-#	add_executable(AtmosphereSample MACOSX_BUNDLE Main.cpp)
-#elseif(UNIX)
-#	add_executable(AtmosphereSample Main.cpp)
+elseif(PLATFORM_MACOS)
+	add_executable(AtmosphereSample ${SOURCE} ${INCLUDE} ${ASSETS})
 else()
 	message(FATAL_ERROR "Unknown platform")
 endif()

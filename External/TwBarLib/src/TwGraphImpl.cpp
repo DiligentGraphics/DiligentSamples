@@ -93,7 +93,7 @@ static const char* g_TextPS_GL =
 
 //  ---------------------------------------------------------------------------
 
-bool operator == (const Rect& l, const Rect& r) 
+bool operator == (const Diligent::Rect& l, const Diligent::Rect& r) 
 { 
     return r.left   == l.left  && 
            r.right  == l.right && 

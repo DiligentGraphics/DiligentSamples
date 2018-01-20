@@ -44,8 +44,8 @@ elseif(PLATFORM_LINUX)
 
 	add_executable(AntTweakBarSample ${SOURCE} ${INCLUDE})
 
-#elseif(APPLE)
-#	add_executable(AntTweakBarSample MACOSX_BUNDLE Main.cpp)
+elseif(PLATFORM_MACOS)
+	add_executable(AntTweakBarSample ${SOURCE} ${INCLUDE} ${ASSETS})
 #elseif(UNIX)
 #	add_executable(AntTweakBarSample Main.cpp)
 else()

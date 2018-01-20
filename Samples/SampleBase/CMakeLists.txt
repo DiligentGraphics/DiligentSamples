@@ -47,6 +47,10 @@ elseif(PLATFORM_LINUX)
 	set(SOURCE 
 		src/Linux/LinuxMain.cpp
 	)
+elseif(PLATFORM_MACOS)
+	set(SOURCE 
+		src/MacOS/MacOSMain.cpp
+	)
 endif()
 
 list(APPEND SOURCE src/SampleBase.cpp)
