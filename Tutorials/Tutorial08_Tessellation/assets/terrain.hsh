@@ -74,7 +74,8 @@ TerrainHSConstFuncOut ConstantHS( InputPatch<TerrainVSOut, 1> inputPatch/*, uint
 [maxtessfactor( (float)(BLOCK_SIZE) )]
 TerrainHSOut TerrainHS(InputPatch<TerrainVSOut, 1> inputPatch, uint uCPID : SV_OutputControlPointID )
 {
-    TerrainHSOut HSOut = {inputPatch[0].BlockOffset};
+    TerrainHSOut HSOut;
+    HSOut.BlockOffset = inputPatch[0].BlockOffset;
 
     return HSOut;
 }

@@ -236,10 +236,10 @@ struct PostProcessingAttribs
         m_bOptimizeSampleLocations(TRUE),
         m_bEnableLightShafts(TRUE),
         m_uiInstrIntegralSteps(30),
-        m_bUse1DMinMaxTree(TRUE),
-        m_fMaxShadowMapStep(16.f),
         m_f2ShadowMapTexelSize(0,0),
         m_uiMinMaxShadowMapResolution(0),
+        m_bUse1DMinMaxTree(TRUE),
+        m_fMaxShadowMapStep(16.f),
         m_fMiddleGray(0.18f),
         m_uiLightSctrTechnique(LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING),
         m_iNumCascades(0),
@@ -302,12 +302,12 @@ struct AirScatteringAttribs
 
 
 #ifdef __cplusplus
-    AirScatteringAttribs():        
-        f2ParticleScaleHeight(7994.f, 1200.f),
+    AirScatteringAttribs():
         // Air molecules and aerosols are assumed to be distributed
         // between 6360 km and 6420 km
         fEarthRadius(6360000.f),
         fAtmTopHeight(80000.f),
+        f2ParticleScaleHeight(7994.f, 1200.f),
         fTurbidity(1.02f),
         m_fAerosolPhaseFuncG(0.76f)
     {

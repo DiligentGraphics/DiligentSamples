@@ -112,7 +112,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
         {
             CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
             CreationAttribs.EntryPoint = "TerrainVS";
-            CreationAttribs.Desc.Name = "Cube VS";
+            CreationAttribs.Desc.Name = "Terrain VS";
             CreationAttribs.FilePath = "terrain.vsh";
             pDevice->CreateShader(CreationAttribs, &pVS);
             pVS->GetShaderVariable("VSConstants")->Set(m_ShaderConstants);

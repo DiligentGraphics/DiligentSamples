@@ -96,6 +96,10 @@ elseif(PLATFORM_LINUX)
 	SET(ENGINE_LIBRARIES
 		GraphicsEngineOpenGL-shared
 	)
+elseif(PLATFORM_MACOS)
+    SET(ENGINE_LIBRARIES
+        GraphicsEngineOpenGL-shared
+    )
 else()
 	message("Undefined platform")
 endif()
@@ -120,6 +124,8 @@ elseif(PLATFORM_ANDROID)
 	)
 elseif(PLATFORM_LINUX)
 	target_link_libraries(SampleBase PRIVATE GL X11)
+elseif(PLATFORM_MACOS)
+	target_link_libraries(SampleBase PRIVATE glfw)
 endif()
 
 source_group("src" FILES ${SOURCE})

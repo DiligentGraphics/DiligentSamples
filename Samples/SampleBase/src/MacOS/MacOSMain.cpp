@@ -21,19 +21,160 @@
  *  of the possibility of such damages.
  */
 
-int main( void )
-{
-    
-}
-
-#if 0
+#include <iostream>
 #include <memory>
 #include <iomanip>
+
+#include "GLFW/glfw3.h"
+
+#include "AntTweakBar.h"
+
+#include "SampleBase.h"
+#include "RenderDeviceFactoryOpenGL.h"
+#include "Timer.h"
+
+#include "Errors.h"
+
+using namespace Diligent;
+
+GLFWwindow* window;
+
+void WindowSizeFun(GLFWwindow*, int width, int height)
+{
+    TwWindowSize(width, height);
+}
+
+int main( void )
+{
+    std::unique_ptr<SampleBase> pSample( CreateSample() );
+    
+    // Initialise GLFW
+    if( !glfwInit() )
+    {
+        std::cerr << "Failed to initialize GLFW\n";
+        return -1;
+    }
+    
+    glfwWindowHint(GLFW_SAMPLES, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
+    // Open a window and create its OpenGL context
+    window = glfwCreateWindow( 1024, 768, pSample->GetSampleName(), NULL, NULL);
+    if( window == NULL ){
+        std::cout << "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n";
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    
+    RefCntAutoPtr<IRenderDevice> pRenderDevice;
+    RefCntAutoPtr<IDeviceContext> pDeviceContext;
+    Diligent::RefCntAutoPtr<ISwapChain> pSwapChain;
+    
+    SwapChainDesc SCDesc;
+    EngineCreationAttribs EngineCreationAttribs;
+    Uint32 NumDeferredContexts = 0;
+    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, EngineCreationAttribs, NumDeferredContexts);
+    if(NumDeferredContexts != 0)
+    {
+        LOG_ERROR_MESSAGE("Deferred contexts are not supported by OpenGL implementation");
+        NumDeferredContexts = 0;
+    }
+    
+    GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
+                                                         EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, reinterpret_cast<void*>(window), &pSwapChain );
+    
+    // Initialize AntTweakBar
+    // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with
+    // very old GL specification. Using these modes results in applying some
+    // odd offsets which distorts everything
+    // Latest OpenGL works very much like Direct3D11, and
+    // Tweak Bar will never know if D3D or OpenGL is actually used
+    if (!TwInit(TW_DIRECT3D11, pRenderDevice.RawPtr(), pDeviceContext.RawPtr(), pSwapChain->GetDesc().ColorBufferFormat))
+    {
+        LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
+        return 1;
+    }
+    TwDefine(" TW_HELP visible=false ");
+    
+    int width = 0, height = 0;
+    glfwGetWindowSize(window, &width, &height);
+    IDeviceContext *ppContexts[] = {pDeviceContext};
+    pSample->Initialize(pRenderDevice, ppContexts, NumDeferredContexts, pSwapChain);
+    pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
+    std::string Title = pSample->GetSampleName();
+    TwWindowSize(width, height);
+    
+    //glfwSetMouseButtonCallback(window, (GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    //glfwSetMousePosCallback(window, (GLFWmouseposfun)TwEventMousePosGLFW);
+    //glfwSetMouseWheelCallback(window, (GLFWmousewheelfun)TwEventMouseWheelGLFW);
+    //glfwSetKeyCallback(window, (GLFWkeyfun)TwEventKeyGLFW);
+    //glfwSetCharCallback(window, (GLFWcharfun)TwEventCharGLFW);
+    glfwSetWindowSizeCallback(window, WindowSizeFun);
+    
+    // Ensure we can capture the escape key being pressed below
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    
+    Timer Timer;
+    auto PrevTime = Timer.GetElapsedTime();
+    double filteredFrameTime = 0.0;
+    
+    do{
+        // Render the scene
+        auto CurrTime = Timer.GetElapsedTime();
+        auto ElapsedTime = CurrTime - PrevTime;
+        PrevTime = CurrTime;
+        
+        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+        
+        pSample->Update(CurrTime, ElapsedTime);
+        pSample->Render();
+        
+        // Draw tweak bars
+        // Restore default render target in case the sample has changed it
+        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+        TwDraw();
+        
+        pSwapChain->Present();
+        
+        // Swap buffers
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+        
+        double filterScale = 0.2;
+        filteredFrameTime = filteredFrameTime * (1.0 - filterScale) + filterScale * ElapsedTime;
+        std::stringstream fpsCounterSS;
+        fpsCounterSS << " - " << std::fixed << std::setprecision(1) << filteredFrameTime * 1000;
+        fpsCounterSS << " ms (" << 1.0 / filteredFrameTime << " fps)";
+        glfwSetWindowTitle(window, (Title + fpsCounterSS.str()).c_str());
+    } // Check if the ESC key was pressed or the window was closed
+    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+          glfwWindowShouldClose(window) == 0 );
+    
+    pSample.reset();
+    TwTerminate();
+    pSwapChain.Release();
+    pDeviceContext.Release();
+    pRenderDevice.Release();
+    
+    
+    // Close OpenGL window and terminate GLFW
+    glfwTerminate();
+    
+    return 0;
+}
+
+
+#if 0
+
 
 #include <GL/glx.h>
 #include <GL/gl.h>
 
-#include "AntTweakBar.h"
+
  
  // Undef symbols defined by XLib
 #ifdef Bool
@@ -46,13 +187,7 @@ int main( void )
 #   undef False
 #endif
 
-#include "SampleBase.h"
-#include "RenderDeviceFactoryOpenGL.h"
-#include "Timer.h"
 
-#include "Errors.h"
-
-using namespace Diligent;
 
 #ifndef GLX_CONTEXT_MAJOR_VERSION_ARB
 #   define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
@@ -74,7 +209,7 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
  
 int main (int argc, char ** argv)
 {
-    std::unique_ptr<SampleBase> pSample( CreateSample() );
+    
 
     Display *display = XOpenDisplay(0);
   
@@ -169,45 +304,7 @@ int main (int argc, char ** argv)
     
     glXMakeCurrent(display, win, ctx);
  
-    RefCntAutoPtr<IRenderDevice> pRenderDevice;
-    RefCntAutoPtr<IDeviceContext> pDeviceContext;
-    Diligent::RefCntAutoPtr<ISwapChain> pSwapChain;
-    
-    SwapChainDesc SCDesc;
-    EngineCreationAttribs EngineCreationAttribs;
-    Uint32 NumDeferredContexts = 0;
-    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, EngineCreationAttribs, NumDeferredContexts);
-    if(NumDeferredContexts != 0)
-    {
-        LOG_ERROR_MESSAGE("Deferred contexts are not supported by OpenGL implementation");
-        NumDeferredContexts = 0;
-    }
-
-    GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
-        EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, reinterpret_cast<void*>(static_cast<size_t>(win)), display, &pSwapChain );
-
-    // Initialize AntTweakBar
-    // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
-    // very old GL specification. Using these modes results in applying some 
-    // odd offsets which distorts everything
-    // Latest OpenGL works very much like Direct3D11, and 
-    // Tweak Bar will never know if D3D or OpenGL is actually used
-    if (!TwInit(TW_DIRECT3D11, pRenderDevice.RawPtr(), pDeviceContext.RawPtr(), pSwapChain->GetDesc().ColorBufferFormat))
-    {
-        LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
-        return 1;
-    }
-    TwDefine(" TW_HELP visible=false ");
-
-    IDeviceContext *ppContexts[] = {pDeviceContext};
-    pSample->Initialize(pRenderDevice, ppContexts, NumDeferredContexts, pSwapChain);
-    pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
-    std::string Title = pSample->GetSampleName(); 
- 
-    Timer Timer;
-    auto PrevTime = Timer.GetElapsedTime();
-    double filteredFrameTime = 0.0;
- 
+   
     while (true) 
     {
         bool EscPressed = false;
@@ -245,36 +342,10 @@ int main (int argc, char ** argv)
         if(EscPressed)
             break;
 
-        // Render the scene
-        auto CurrTime = Timer.GetElapsedTime();
-        auto ElapsedTime = CurrTime - PrevTime;
-        PrevTime = CurrTime;
 
-        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
-        
-        pSample->Update(CurrTime, ElapsedTime);
-        pSample->Render();
-
-        // Draw tweak bars
-        // Restore default render target in case the sample has changed it
-        pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
-        TwDraw();
-        
-        pSwapChain->Present();
-
-        double filterScale = 0.2;
-        filteredFrameTime = filteredFrameTime * (1.0 - filterScale) + filterScale * ElapsedTime;
-        std::stringstream fpsCounterSS;
-        fpsCounterSS << " - " << std::fixed << std::setprecision(1) << filteredFrameTime * 1000;
-        fpsCounterSS << " ms (" << 1.0 / filteredFrameTime << " fps)";
-        XStoreName(display, win, (Title + fpsCounterSS.str()).c_str());
     }
  
-    pSample.reset();
-    TwTerminate();
-    pSwapChain.Release();
-    pDeviceContext.Release();
-    pRenderDevice.Release();
+
  
     ctx = glXGetCurrentContext();
     glXMakeCurrent(display, None, NULL);

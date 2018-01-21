@@ -15,6 +15,7 @@ TerrainVSOut TerrainVS(uint BlockID : SV_VertexID)
         float(BlockVertOrder) / g_Constants.fNumVertBlocks
     );
 
-    TerrainVSOut Out = {BlockOffset};
+    TerrainVSOut Out;
+    Out.BlockOffset = BlockOffset;
     return Out;
 }

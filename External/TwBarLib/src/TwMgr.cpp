@@ -6330,7 +6330,7 @@ CTwMgr::CCursor CTwMgr::PixmapCursor(int _CurIdx)
     for (y=0;y<32;y++) {
         for (x=0;x<32;x++) {
             //printf("%d",g_CurMask[_CurIdx][x+y*32]);
-            data[(x>>2) + y*8] |= (unsigned char)(g_CurPict[_CurIdx][x+y*32] << 2*(3-(x&3))+1); //turn whiteon
+            data[(x>>2) + y*8] |= (unsigned char)(g_CurPict[_CurIdx][x+y*32] << (2*(3-(x&3))+1)); //turn whiteon
             data[(x>>2) + y*8] |= (unsigned char)(g_CurMask[_CurIdx][x+y*32] << 2*(3-(x&3))); //turn the alpha all the way up
         }
         //printf("\n");
