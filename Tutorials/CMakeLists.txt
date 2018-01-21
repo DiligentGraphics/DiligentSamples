@@ -23,7 +23,16 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 		add_executable(${TUTORIAL_NAME} ${SOURCE} ${INCLUDE})
 
 	elseif(PLATFORM_MACOS)
-		add_executable(${TUTORIAL_NAME} ${SOURCE} ${INCLUDE})
+		get_sample_base_macos_source(MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST)
+		add_executable(${TUTORIAL_NAME} MACOSX_BUNDLE ${SOURCE} ${MAC_SOURCE} ${INCLUDE} ${MAC_INCLUDE} ${ASSETS} ${MAC_RESOURCES})
+		set_target_properties(${TUTORIAL_NAME} PROPERTIES
+			MACOSX_BUNDLE_GUI_IDENTIFIER "com.diligentengine.tutorials.${TUTORIAL_NAME}"
+			MACOSX_BUNDLE_INFO_PLIST "${MAC_INFO_PLIST}"
+			RESOURCE ${MAC_RESOURCES}
+		)
+		source_group("MacOS" FILES ${MAC_SOURCE})
+		source_group("MacOS" FILES ${MAC_INCLUDE})
+		source_group("Resources" FILES ${MAC_RESOURCES})
 	else()
 		message(FATAL_ERROR "Unknown platform")
 	endif()
@@ -53,7 +62,7 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 	if(MSVC)
 		# Disable MSVC-specific warnings
-		# - w4201: nonstandard extension used: nameless struct/unio
+		# - w4201: nonstandard extension used: nameless struct/union
 		target_compile_options(${TUTORIAL_NAME} PRIVATE /wd4201)
 	endif()
 	

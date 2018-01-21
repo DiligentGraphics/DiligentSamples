@@ -77,7 +77,6 @@ struct ShaderConstants
     float LightCoeff;
 };
 // Each cube face is split into a 3x3 grid
-const int CUBE_FACE_VERTEX_COUNT = 4 * 4;       // 16 vertices per face
 const int CUBE_FACE_TRIANGLE_COUNT = 2 * 3 * 3; // 18 triangles to be drawn for each face
 // Faces color of the sponge wrt to recursion level
 const unsigned int COLORS[] = { 0xffffffff, 0xff007fff, 0xff7fff00, 0xffff007f, 0xff0000ff, 0xff00ff00, 0xffff0000 };
