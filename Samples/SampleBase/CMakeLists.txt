@@ -48,31 +48,30 @@ elseif(PLATFORM_LINUX)
 		src/Linux/LinuxMain.cpp
 	)
 elseif(PLATFORM_MACOS)
-	set(SOURCE 
-        Apple/Source/main.m
-		Apple/Source/Classes/OpenGLRenderer.m
-		Apple/Source/Classes/OSX/AppDelegate.m
-		Apple/Source/Classes/OSX/FullScreenWindow.m
-		Apple/Source/Classes/OSX/GLView.m
-	)
-
+    set(SOURCE
+        src/MacOS/Renderer.cpp
+    )
     set(INCLUDE
-        Apple/Source/Classes/OpenGLRenderer.h
-        Apple/Source/Classes/OSX/AppDelegate.h
-        Apple/Source/Classes/OSX/FullScreenWindow.h
-        Apple/Source/Classes/OSX/GLView.h
+        src/MacOS/Renderer.h
     )
 
-	function(get_sample_base_macos_source MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST)
+	function(get_sample_base_macos_source MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST MAC_INCLUDE_DIRS)
 		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
 
 		set(${MAC_SOURCE}
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullScreenWindow.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.m
 		    PARENT_SCOPE
 		)
 
 		set(${MAC_INCLUDE}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.h
+       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.h
+       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullScreenWindow.h
+       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.h
 		    PARENT_SCOPE
 		)
 
@@ -84,7 +83,12 @@ elseif(PLATFORM_MACOS)
 		set(${MAC_INFO_PLIST}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Info.plist
 		    PARENT_SCOPE
-	)
+		)
+
+		set(${MAC_INCLUDE_DIRS}
+        		${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX
+			PARENT_SCOPE
+		)
 	endfunction()
 
 endif()
@@ -161,10 +165,8 @@ elseif(PLATFORM_ANDROID)
 elseif(PLATFORM_LINUX)
 	target_link_libraries(SampleBase PRIVATE GL X11)
 elseif(PLATFORM_MACOS)
-    target_compile_options(SampleBase PRIVATE -x objective-c++)
-    target_include_directories(SampleBase PRIVATE
-        Apple/Source/Classes
-        Apple/Source/Classes/OSX
+    target_include_directories(SampleBase PUBLIC
+        src/MacOS
     )
 endif()
 

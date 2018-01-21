@@ -7,13 +7,14 @@
  */
 
 #import "GLView.h"
-#import "OpenGLRenderer.h"
+#include "Renderer.h"
+#include <memory>
 
 #define SUPPORT_RETINA_RESOLUTION 1
 
 @interface GLView ()
 {
-    OpenGLRenderer* _renderer;
+    std::unique_ptr<Renderer> _renderer;
 }
 @end
 
@@ -133,9 +134,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	GLint swapInt = 1;
 	[[self openGLContext] setValues:&swapInt forParameter:NSOpenGLCPSwapInterval];
 	
-	// Init our renderer.  Use 0 for the defaultFBO which is appropriate for
-	// OSX (but not iOS since iOS apps must create their own FBO)
-	_renderer = [[OpenGLRenderer alloc] initWithDefaultFBO:0];
+	// Init our renderer.
+    _renderer.reset(new Renderer());
+    _renderer->Init();
 }
 
 - (void)reshape
@@ -179,9 +180,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 #endif // !SUPPORT_RETINA_RESOLUTION
     
 	// Set the new dimensions in our renderer
-	[_renderer resizeWithWidth:viewRectPixels.size.width
-                      AndHeight:viewRectPixels.size.height];
-	
+    _renderer->WindowResize(viewRectPixels.size.width, viewRectPixels.size.height);
+
 	CGLUnlockContext([[self openGLContext] CGLContextObj]);
 }
 
@@ -218,7 +218,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	// simultaneously when resizing
 	CGLLockContext([[self openGLContext] CGLContextObj]);
 
-	[_renderer render];
+	_renderer->Render();
 
 	CGLFlushDrawable([[self openGLContext] CGLContextObj]);
 	CGLUnlockContext([[self openGLContext] CGLContextObj]);
