@@ -62,7 +62,7 @@ elseif(PLATFORM_MACOS)
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullScreenWindow.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.m
 		    PARENT_SCOPE
 		)
@@ -70,7 +70,7 @@ elseif(PLATFORM_MACOS)
 		set(${MAC_INCLUDE}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.h
        		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.h
-       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullScreenWindow.h
+       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.h
        		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.h
 		    PARENT_SCOPE
 		)
