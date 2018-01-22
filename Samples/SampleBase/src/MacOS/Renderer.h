@@ -44,6 +44,5 @@ private:
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> pSwapChain;
     Diligent::Timer timer;
     double PrevTime = 0.0;
-    double FilteredFrameTime = 0.0;
 };
 

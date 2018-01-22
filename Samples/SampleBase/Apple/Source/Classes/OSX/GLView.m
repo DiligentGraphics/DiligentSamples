@@ -44,8 +44,12 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     return result;
 }
 
+// Prepares the receiver for service after it has been loaded
+// from an Interface Builder archive, or nib file.
 - (void) awakeFromNib
 {
+    [super awakeFromNib];
+    
     NSOpenGLPixelFormatAttribute attrs[] =
 	{
 		NSOpenGLPFADoubleBuffer,
@@ -81,6 +85,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     // Opt-In to Retina resolution
     [self setWantsBestResolutionOpenGLSurface:YES];
 #endif // SUPPORT_RETINA_RESOLUTION
+    
+    _renderer.reset(new Renderer());
 }
 
 - (void) prepareOpenGL
@@ -114,10 +120,12 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) windowWillClose:(NSNotification*)notification
 {
+    _renderer.reset();
+
 	// Stop the display link when the window is closing because default
 	// OpenGL render buffers will be destroyed.  If display link continues to
 	// fire without renderbuffers, OpenGL draw calls will set errors.
-	
+
 	CVDisplayLinkStop(displayLink);
 }
 
@@ -133,9 +141,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	// Synchronize buffer swaps with vertical refresh rate
 	GLint swapInt = 1;
 	[[self openGLContext] setValues:&swapInt forParameter:NSOpenGLCPSwapInterval];
-	
+
 	// Init our renderer.
-    _renderer.reset(new Renderer());
     _renderer->Init();
 }
 

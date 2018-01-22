@@ -201,7 +201,6 @@ if(PLATFORM_MACOS)
         message(FATAL_ERROR "AppKit not found")
     endif()
     target_link_libraries(TwBarLib PRIVATE ${APP_KIT})
-    # target_link_libraries(TwBarLib PRIVATE glew-static)
 endif()
 
 

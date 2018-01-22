@@ -53,7 +53,8 @@ void Renderer::Init()
         LOG_ERROR_MESSAGE("Deferred contexts are not supported by OpenGL implementation");
         NumDeferredContexts = 0;
     }
-    
+
+    // On MacOS, we attach to active GL context initialized by the application
     GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, nullptr, &pSwapChain );
     
     // Initialize AntTweakBar
@@ -68,16 +69,15 @@ void Renderer::Init()
     }
     TwDefine(" TW_HELP visible=false ");
     
-    int width = 1024, height = 768;
-    //glfwGetWindowSize(window, &width, &height);
+    auto width = pSwapChain->GetDesc().Width;
+    auto height = pSwapChain->GetDesc().Height;
     IDeviceContext *ppContexts[] = {pDeviceContext};
     pSample->Initialize(pRenderDevice, ppContexts, NumDeferredContexts, pSwapChain);
-    pSample->WindowResize( pSwapChain->GetDesc().Width, pSwapChain->GetDesc().Height );
+    pSample->WindowResize( width, height );
     std::string Title = pSample->GetSampleName();
     TwWindowSize(width, height);
     
     PrevTime = timer.GetElapsedTime();
-    FilteredFrameTime = 0.0;
 }
 
 void Renderer::WindowResize(int width, int height)
@@ -104,14 +104,7 @@ void Renderer::Render()
     pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
     TwDraw();
     
+    // On MacOS, present is performed by the app
     //pSwapChain->Present();
-    
-/*    double filterScale = 0.2;
-    filteredFrameTime = filteredFrameTime * (1.0 - filterScale) + filterScale * ElapsedTime;
-    std::stringstream fpsCounterSS;
-    fpsCounterSS << " - " << std::fixed << std::setprecision(1) << filteredFrameTime * 1000;
-    fpsCounterSS << " ms (" << 1.0 / filteredFrameTime << " fps)";
-    glfwSetWindowTitle(window, (Title + fpsCounterSS.str()).c_str());
-*/
 }
 
