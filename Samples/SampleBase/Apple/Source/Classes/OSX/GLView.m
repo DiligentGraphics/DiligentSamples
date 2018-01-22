@@ -120,13 +120,16 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) windowWillClose:(NSNotification*)notification
 {
-    _renderer.reset();
-
 	// Stop the display link when the window is closing because default
 	// OpenGL render buffers will be destroyed.  If display link continues to
 	// fire without renderbuffers, OpenGL draw calls will set errors.
 
 	CVDisplayLinkStop(displayLink);
+    // Stop the display link BEFORE releasing anything in the view
+    // otherwise the display link thread may call into the view and crash
+    // when it encounters something that has been released
+
+    _renderer.reset();
 }
 
 - (void) initGL
@@ -235,9 +238,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
 	// Stop the display link BEFORE releasing anything in the view
     // otherwise the display link thread may call into the view and crash
-    // when it encounters something that has been release
+    // when it encounters something that has been released
 	CVDisplayLinkStop(displayLink);
 
 	CVDisplayLinkRelease(displayLink);
+
+	_renderer.reset();
+	
+    [super dealloc];
 }
 @end
