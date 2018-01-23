@@ -50,7 +50,9 @@
 
 	// Allocate a new fullscreen window
     [self setFullscreenWindow: [[FullscreenWindow alloc] init]];
-
+    
+    [[self fullscreenWindow] setAcceptsMouseMovedEvents:YES];
+    
 	// Resize the view to screensize
 	NSRect viewRect = [[self fullscreenWindow] frame];
 
