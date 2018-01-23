@@ -183,6 +183,7 @@ int Engine::InitDisplay()
 
         // Set font scaling
         TwDefine(" GLOBAL fontscaling=3");
+        sample_->SetUIScale(3);
 
         // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
         // very old GL specification. Using these modes results in applying some 

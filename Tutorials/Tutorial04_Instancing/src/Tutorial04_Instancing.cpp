@@ -279,11 +279,7 @@ void Tutorial04_Instancing::Initialize(IRenderDevice *pDevice, IDeviceContext **
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224, 60};
-#ifdef ANDROID
-    barSize[0] *= 3;
-    barSize[1] *= 3;
-#endif
+    int barSize[2] = {224 * m_UIScale, 60 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     // Add grid size control

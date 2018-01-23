@@ -40,6 +40,7 @@ public:
     void OnMouseDown(int button);
     void OnMouseUp(int button);
     void OnMouseMove(int x, int y);
+    void OnKeyPressed(int key);
     
 private:
     std::unique_ptr<SampleBase> pSample;
@@ -60,13 +61,16 @@ private:
             LMB_RELEASED,
             RMB_PRESSED,
             RMB_RELEASED,
-            MOUSE_MOVE
+            MOUSE_MOVE,
+            KEY_PRESSED
         }type;
         int mouseX = 0;
         int mouseY = 0;
+        int key = 0;
 
         TwEvent(EVENT_TYPE _type) : type(_type){}
         TwEvent(int x, int y) : type(MOUSE_MOVE), mouseX(x), mouseY(y){}
+        TwEvent(int k) : type(KEY_PRESSED), key(k){}
     };
     std::queue<TwEvent> TwBarEvents;
 };

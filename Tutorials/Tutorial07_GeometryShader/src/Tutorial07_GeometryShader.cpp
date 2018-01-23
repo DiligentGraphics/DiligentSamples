@@ -275,11 +275,7 @@ void Tutorial07_GeometryShader::Initialize(IRenderDevice *pDevice, IDeviceContex
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224, 120};
-#ifdef ANDROID
-    barSize[0] *= 3;
-    barSize[1] *= 3;
-#endif
+    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     // Add grid size control

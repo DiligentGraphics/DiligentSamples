@@ -148,7 +148,7 @@
 	}
 
 	// Allow other character to be handled (or not and beep)
-	[super keyDown:event];
+	//[super keyDown:event];
 }
 
 @end

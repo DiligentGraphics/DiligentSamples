@@ -47,6 +47,7 @@ public:
     virtual void WindowResize(Diligent::Uint32 Width, Diligent::Uint32 Height){}
     virtual bool HandleNativeMessage(const void *pNativeMsgData) { return false; }
     virtual const Diligent::Char* GetSampleName()const{return "Diligent Engine Sample";}
+    void SetUIScale(Diligent::Int32 UIScale){m_UIScale = UIScale;};
 
 protected:
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
@@ -56,6 +57,7 @@ protected:
     float m_fFPS = 0;
     double m_LastFPSTime = 0;
     Diligent::Uint32 m_uiNumFramesRendered = 0;
+    Diligent::Int32 m_UIScale = 1;
 };
 
 inline void SampleBase::Update( double CurrTime, double ElapsedTime )

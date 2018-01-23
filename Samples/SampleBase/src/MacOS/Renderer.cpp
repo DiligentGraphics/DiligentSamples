@@ -57,6 +57,9 @@ void Renderer::Init()
     // On MacOS, we attach to active GL context initialized by the application
     GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, nullptr, &pSwapChain );
     
+    // Set font scaling
+    TwDefine(" GLOBAL fontscaling=2");
+    pSample->SetUIScale(2);
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with
     // very old GL specification. Using these modes results in applying some
@@ -123,8 +126,11 @@ void Renderer::Render()
             case TwEvent::MOUSE_MOVE:
                 TwMouseMotion(event.mouseX, event.mouseY);
                 break;
-        }
 
+            case TwEvent::KEY_PRESSED:
+                TwKeyPressed(event.key, 0);
+                break;
+        }
         TwBarEvents.pop();
     }
     TwDraw();
@@ -146,5 +152,10 @@ void Renderer::OnMouseUp(int button)
 void Renderer::OnMouseMove(int x, int y)
 {
     TwBarEvents.emplace(x, y);
+}
+
+void Renderer::OnKeyPressed(int key)
+{
+    TwBarEvents.emplace(key);
 }
 

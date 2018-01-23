@@ -285,6 +285,20 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     [self mouseMove: theEvent];
 }
 
+- (void)keyDown:(NSEvent *)theEvent {
+    unichar c = [[theEvent charactersIgnoringModifiers] characterAtIndex:0];
+    int key = 0;
+    switch(c){
+        case NSLeftArrowFunctionKey: key = 260; break;
+        case NSRightArrowFunctionKey: key = 262; break;
+        case 0x7F: key = '\b'; break;
+        default: key = c;
+    }
+    _renderer->OnKeyPressed(key);
+
+    [super keyDown:theEvent];
+}
+
 - (BOOL)acceptsFirstResponder {
     return YES;
 }
