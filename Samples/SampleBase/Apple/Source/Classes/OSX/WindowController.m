@@ -10,13 +10,13 @@
 #import "FullscreenWindow.h"
 
 @interface WindowController ()
-{
-    // Fullscreen window
-    FullscreenWindow *_fullscreenWindow;
 
-    // Non-Fullscreen window (also the initial window)
-    NSWindow* _standardWindow;
-}
+// Fullscreen window
+@property(strong) FullscreenWindow *fullscreenWindow;
+
+// Non-Fullscreen window (also the initial window)
+@property(strong) NSWindow* standardWindow;
+
 @end
 
 @implementation WindowController
@@ -28,7 +28,7 @@
 	if (self)
 	{
 		// Initialize to nil since it indicates app is not fullscreen
-		_fullscreenWindow = nil;
+        [self setFullscreenWindow: nil];
     }
 
 	return self;
@@ -37,7 +37,7 @@
 - (void) goFullscreen
 {
 	// If app is already fullscreen...
-	if(_fullscreenWindow)
+    if([self fullscreenWindow])
 	{
 		//...don't do anything
 		return;
@@ -49,31 +49,29 @@
     [self.window.contentView stopDisplayLink];
 
 	// Allocate a new fullscreen window
-	_fullscreenWindow = [[FullscreenWindow alloc] init];
+    [self setFullscreenWindow: [[FullscreenWindow alloc] init]];
 
 	// Resize the view to screensize
-	NSRect viewRect = [_fullscreenWindow frame];
+	NSRect viewRect = [[self fullscreenWindow] frame];
 
 	// Set the view to the size of the fullscreen window
 	[self.window.contentView setFrameSize: viewRect.size];
 
 	// Set the view in the fullscreen window
-	[_fullscreenWindow setContentView:self.window.contentView];
+	[[self fullscreenWindow] setContentView:self.window.contentView];
 
-	_standardWindow = [self window];
-    // Prevent standard window to be released
-    [_standardWindow retain];
+    [self setStandardWindow:[self window]];
 
 	// Hide non-fullscreen window so it doesn't show up when switching out
 	// of this app (i.e. with CMD-TAB)
-	[_standardWindow orderOut:self];
+	[[self standardWindow] orderOut:self];
 
 	// Set controller to the fullscreen window so that all input will go to
 	// this controller (self)
-	[self setWindow:_fullscreenWindow];
+	[self setWindow:[self fullscreenWindow]];
 
 	// Show the window and make it the key window for input
-	[_fullscreenWindow makeKeyAndOrderFront:self];
+	[[self fullscreenWindow] makeKeyAndOrderFront:self];
 
     // Restore display link
     [self.window.contentView startDisplayLink];
@@ -82,7 +80,7 @@
 - (void) goWindow
 {
 	// If controller doesn't have a full screen window...
-	if(_fullscreenWindow == nil)
+	if([self fullscreenWindow] == nil)
 	{
 		//...app is already windowed so don't do anything
 		return;
@@ -94,29 +92,27 @@
     [self.window.contentView stopDisplayLink];
 
 	// Get the rectangle of the original window
-	NSRect viewRect = [_standardWindow frame];
+	NSRect viewRect = [[self standardWindow] frame];
 	
 	// Set the view rect to the new size
 	[self.window.contentView setFrame:viewRect];
 
     // Hide fullscreen window
-    [_fullscreenWindow orderOut:self];
+    [[self fullscreenWindow] orderOut:self];
 
 	// Set controller to the standard window so that all input will go to
 	// this controller (self)
-	[self setWindow:_standardWindow];
-    [_standardWindow release];
-    _standardWindow = nil;
+	[self setWindow:[self standardWindow]];
 
 	// Set the content of the orginal window to the view
-	[[self window] setContentView:_fullscreenWindow.contentView];
+	[[self window] setContentView: [self fullscreenWindow].contentView];
 
 	// Show the window and make it the key window for input
 	[[self window] makeKeyAndOrderFront:self];
 
 	// Ensure we set fullscreen Window to nil so our checks for 
 	// windowed vs. fullscreen mode elsewhere are correct
-	_fullscreenWindow = nil;
+    [self setFullscreenWindow: nil];
 
     // Restore display link
     [self.window.contentView startDisplayLink];
@@ -131,14 +127,14 @@
 	{
 		// Handle [ESC] key
 		case 27:
-			if(_fullscreenWindow != nil)
+            if([self fullscreenWindow] != nil)
 			{
 				[self goWindow];
 			}
 			return;
 		// Have f key toggle fullscreen
 		case 'f':
-			if(_fullscreenWindow == nil)
+			if([self fullscreenWindow] == nil)
 			{
 				[self goFullscreen];
 			}
