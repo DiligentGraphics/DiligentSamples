@@ -102,9 +102,49 @@ void Renderer::Render()
     // Draw tweak bars
     // Restore default render target in case the sample has changed it
     pDeviceContext->SetRenderTargets(0, nullptr, nullptr);
+
+    // Handle all TwBar events here as the event handlers call draw commands
+    // and thus cannot be used in the UI thread
+    while(!TwBarEvents.empty())
+    {
+        const auto& event = TwBarEvents.front();
+        switch (event.type)
+        {
+            case TwEvent::LMB_PRESSED:
+            case TwEvent::RMB_PRESSED:
+                TwMouseButton(TW_MOUSE_PRESSED, event.type == TwEvent::LMB_PRESSED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
+                break;
+
+            case TwEvent::LMB_RELEASED:
+            case TwEvent::RMB_RELEASED:
+                TwMouseButton(TW_MOUSE_RELEASED, event.type == TwEvent::LMB_RELEASED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
+                break;
+
+            case TwEvent::MOUSE_MOVE:
+                TwMouseMotion(event.mouseX, event.mouseY);
+                break;
+        }
+
+        TwBarEvents.pop();
+    }
     TwDraw();
     
     // On MacOS, present is performed by the app
     //pSwapChain->Present();
+}
+
+void Renderer::OnMouseDown(int button)
+{
+    TwBarEvents.emplace(button == 1 ? TwEvent::LMB_PRESSED : TwEvent::RMB_PRESSED);
+}
+
+void Renderer::OnMouseUp(int button)
+{
+    TwBarEvents.emplace(button == 1 ? TwEvent::LMB_RELEASED : TwEvent::RMB_RELEASED);
+}
+
+void Renderer::OnMouseMove(int x, int y)
+{
+    TwBarEvents.emplace(x, y);
 }
 

@@ -16,6 +16,7 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
+    [[[NSApplication sharedApplication]mainWindow]setAcceptsMouseMovedEvents:YES];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {

@@ -27,6 +27,7 @@
 #include "RefCntAutoPtr.h"
 #include "SampleBase.h"
 #include "Timer.h"
+#include <queue>
 
 class Renderer
 {
@@ -36,6 +37,9 @@ public:
     void Init();
     void WindowResize(int width, int height);
     void Render();
+    void OnMouseDown(int button);
+    void OnMouseUp(int button);
+    void OnMouseMove(int x, int y);
     
 private:
     std::unique_ptr<SampleBase> pSample;
@@ -44,5 +48,26 @@ private:
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> pSwapChain;
     Diligent::Timer timer;
     double PrevTime = 0.0;
+
+    // Unfortunately TwBar library calls rendering
+    // functions from event handlers, which does not work on MacOS
+    // as UI events and rendering are handled by separate threads
+    struct TwEvent
+    {
+        enum EVENT_TYPE
+        {
+            LMB_PRESSED,
+            LMB_RELEASED,
+            RMB_PRESSED,
+            RMB_RELEASED,
+            MOUSE_MOVE
+        }type;
+        int mouseX = 0;
+        int mouseY = 0;
+
+        TwEvent(EVENT_TYPE _type) : type(_type){}
+        TwEvent(int x, int y) : type(MOUSE_MOVE), mouseX(x), mouseY(y){}
+    };
+    std::queue<TwEvent> TwBarEvents;
 };
 

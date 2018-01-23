@@ -15,6 +15,7 @@
 @interface GLView ()
 {
     std::unique_ptr<Renderer> _renderer;
+    NSRect _viewRectPixels;
 }
 @end
 
@@ -175,7 +176,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     // calculations appropriately.
     // viewRectPixels will be larger than viewRectPoints for retina displays.
     // viewRectPixels will be the same as viewRectPoints for non-retina displays
-    NSRect viewRectPixels = [self convertRectToBacking:viewRectPoints];
+    _viewRectPixels = [self convertRectToBacking:viewRectPoints];
     
 #else //if !SUPPORT_RETINA_RESOLUTION
     
@@ -185,12 +186,12 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     // on a Mac without a retina display.
     
     // Points:Pixels is always 1:1 when not supporting retina resolutions
-    NSRect viewRectPixels = viewRectPoints;
+    _viewRectPixels = viewRectPoints;
     
 #endif // !SUPPORT_RETINA_RESOLUTION
     
 	// Set the new dimensions in our renderer
-    _renderer->WindowResize(viewRectPixels.size.width, viewRectPixels.size.height);
+    _renderer->WindowResize(_viewRectPixels.size.width, _viewRectPixels.size.height);
 
 	CGLUnlockContext([[self openGLContext] CGLContextObj]);
 }
@@ -247,4 +248,45 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
     [super dealloc];
 }
+
+- (void)mouseMove:(NSEvent *)theEvent {
+    NSPoint curPoint = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+#if SUPPORT_RETINA_RESOLUTION
+    curPoint = [self convertPointToBacking:curPoint];
+#endif
+    _renderer->OnMouseMove(curPoint.x, _viewRectPixels.size.height-1 - curPoint.y);
+}
+
+- (void)mouseDown:(NSEvent *)theEvent {
+    [self mouseMove: theEvent];
+    _renderer->OnMouseDown(1);
+}
+
+- (void)mouseUp:(NSEvent *)theEvent {
+    [self mouseMove: theEvent];
+    _renderer->OnMouseUp(1);
+}
+
+- (void)rightMouseDown:(NSEvent *)theEvent {
+    [self mouseMove: theEvent];
+    _renderer->OnMouseDown(3);
+}
+
+- (void)rightMouseUp:(NSEvent *)theEvent {
+    [self mouseMove: theEvent];
+    _renderer->OnMouseUp(3);
+}
+
+- (void)mouseMoved:(NSEvent *)theEvent {
+    [self mouseMove: theEvent];
+}
+
+- (void)mouseDragged:(NSEvent *)theEvent {
+    [self mouseMove: theEvent];
+}
+
+- (BOOL)acceptsFirstResponder {
+    return YES;
+}
+
 @end
