@@ -289,4 +289,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     return YES;
 }
 
+- (void)stopDisplayLink
+{
+    CVDisplayLinkStop(displayLink);
+}
+
+- (void)startDisplayLink
+{
+    CVDisplayLinkStart(displayLink);
+}
+
 @end

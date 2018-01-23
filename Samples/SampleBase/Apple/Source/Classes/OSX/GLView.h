@@ -14,4 +14,7 @@
 	CVDisplayLinkRef displayLink;
 }
 
+-(void)stopDisplayLink;
+-(void)startDisplayLink;
+
 @end
