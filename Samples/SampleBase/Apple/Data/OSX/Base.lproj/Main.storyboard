@@ -149,7 +149,7 @@
             <objects>
                 <viewController id="XfG-lQ-9wD" sceneMemberID="viewController">
                     <view key="view" id="m2S-Jp-Qdl" userLabel="GL View" customClass="GLView">
-                        <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                        <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </view>
                 </viewController>
