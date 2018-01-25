@@ -28,7 +28,7 @@
 	if (self)
 	{
 		// Initialize to nil since it indicates app is not fullscreen
-        [self setFullscreenWindow: nil];
+        _fullscreenWindow = nil;
     }
 
 	return self;

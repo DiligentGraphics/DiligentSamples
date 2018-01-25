@@ -64,8 +64,11 @@ elseif(PLATFORM_MACOS)
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.m
-		    PARENT_SCOPE
 		)
+        set_source_files_properties(${MAC_SOURCE} PROPERTIES
+            COMPILE_FLAGS "-x objective-c++"
+        )
+        set( MAC_SOURCE ${MAC_SOURCE} PARENT_SCOPE )
 
 		set(${MAC_INCLUDE}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.h

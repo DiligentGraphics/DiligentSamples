@@ -13,6 +13,17 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 		endif()
 		set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 
+		if(PLATFORM_UNIVERSAL_WINDOWS)
+			get_sample_base_uwp_source(UWP_SOURCE UWP_INCLUDE UWP_INCLUDE_DIR)
+			source_group("UWP\\src" FILES ${UWP_SOURCE})
+			source_group("UWP\\include" FILES ${UWP_INCLUDE})
+			target_include_directories(${TUTORIAL_NAME} PRIVATE ${UWP_INCLUDE_DIR})
+			target_sources(${TUTORIAL_NAME} PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
+
+			set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_CONTENT 1)
+			set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_LOCATION "assets")
+		endif()
+
 	elseif(PLATFORM_ANDROID)
 
 		list(APPEND SOURCE ../Common/Android/AndroidMain.cpp)
@@ -25,15 +36,16 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 	elseif(PLATFORM_MACOS)
 		get_sample_base_macos_source(MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST MAC_INCLUDE_DIRS)
 		add_executable(${TUTORIAL_NAME} MACOSX_BUNDLE ${SOURCE} ${MAC_SOURCE} ${INCLUDE} ${MAC_INCLUDE} ${ASSETS} ${MAC_RESOURCES})
+		set(RESOURCES ${MAC_RESOURCES} ${ASSETS})
 		set_target_properties(${TUTORIAL_NAME} PROPERTIES
 			MACOSX_BUNDLE_GUI_IDENTIFIER "com.diligentengine.tutorials.${TUTORIAL_NAME}"
 			MACOSX_BUNDLE_INFO_PLIST "${MAC_INFO_PLIST}"
-			RESOURCE ${MAC_RESOURCES}
+			RESOURCE "${RESOURCES}"
 		)
+  
 		source_group("MacOS" FILES ${MAC_SOURCE})
 		source_group("MacOS" FILES ${MAC_INCLUDE})
 		source_group("Resources" FILES ${MAC_RESOURCES})
-		target_compile_options(${TUTORIAL_NAME} PRIVATE -x objective-c++)
 		target_include_directories(${TUTORIAL_NAME} PRIVATE ${MAC_INCLUDE_DIRS})
                 find_package(OpenGL REQUIRED)
 
@@ -46,16 +58,6 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 		message(FATAL_ERROR "Unknown platform")
 	endif()
 
-	if(PLATFORM_UNIVERSAL_WINDOWS)
-		get_sample_base_uwp_source(UWP_SOURCE UWP_INCLUDE UWP_INCLUDE_DIR)
-		source_group("UWP\\src" FILES ${UWP_SOURCE})
-		source_group("UWP\\include" FILES ${UWP_INCLUDE})
-		target_include_directories(${TUTORIAL_NAME} PRIVATE ${UWP_INCLUDE_DIR})
-		target_sources(${TUTORIAL_NAME} PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
-
-		set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_CONTENT 1)
-		set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_LOCATION "assets")
-	endif()
 
 	target_include_directories(${TUTORIAL_NAME}
 	PRIVATE	
