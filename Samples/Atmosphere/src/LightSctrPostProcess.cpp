@@ -86,7 +86,6 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice,
     m_uiSampleRefinementCSThreadGroupSize(0),
     // Using small group size is inefficient because a lot of SIMD lanes become idle
     m_uiSampleRefinementCSMinimumThreadGroupSize(128),// Must be greater than 32
-    m_fTurbidity(1.02f),
     m_bUseCombinedMinMaxTexture(false),
     m_uiUpToDateResourceFlags(0)
 {

@@ -78,17 +78,21 @@ AtmosphereSample::AtmosphereSample() :
     m_uiShadowMapResolution( 1024 ),
     m_fCascadePartitioningFactor(0.95f),
     m_bVisualizeCascades(false),
+    m_bIsDXDevice(true),
     m_bEnableLightScattering(true),
     m_fScatteringScale(0.5f),
-    m_bIsDXDevice(true),
     m_fElapsedTime(0.f)
 {}
 
 void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    if(!deviceCaps.bComputeShadersSupported)
+        LOG_ERROR_AND_THROW("Compute shaders are required for this sample");
+
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
-    m_bIsDXDevice = pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 ||  pDevice->GetDeviceCaps().DevType == DeviceType::D3D12;
+    m_bIsDXDevice = deviceCaps.DevType == DeviceType::D3D11 ||  deviceCaps.DevType == DeviceType::D3D12;
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )
     {
         m_uiShadowMapResolution = 512;

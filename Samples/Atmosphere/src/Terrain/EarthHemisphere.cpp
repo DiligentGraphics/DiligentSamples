@@ -89,8 +89,8 @@ class TriStrip
 public:
     TriStrip(std::vector<IndexType> &Indices, IndexGenerator indexGenerator):
         m_Indices(Indices),
-        m_IndexGenerator(indexGenerator),
-        m_QuadTriangType(QUAD_TRIANG_TYPE_UNDEFINED)
+        m_QuadTriangType(QUAD_TRIANG_TYPE_UNDEFINED),
+        m_IndexGenerator(indexGenerator)
     {
     }
     
@@ -211,7 +211,12 @@ public:
     RingMeshBuilder(IRenderDevice *pDevice,
                      const std::vector<HemisphereVertex> &VB,
                      int iGridDimenion,
-                     std::vector<RingSectorMesh> &RingMeshes) : m_pDevice(pDevice), m_VB(VB), m_iGridDimenion(iGridDimenion), m_RingMeshes(RingMeshes){}
+                     std::vector<RingSectorMesh> &RingMeshes) :
+        m_pDevice(pDevice),
+        m_RingMeshes(RingMeshes),
+        m_VB(VB),
+        m_iGridDimenion(iGridDimenion)
+    {}
 
     void CreateMesh(int iBaseIndex, 
                     int iStartCol, 
@@ -280,13 +285,13 @@ void GenerateSphereGeometry(IRenderDevice *pDevice,
 {
     if( (iGridDimension - 1) % 4 != 0 )
     {
-        VERIFY_EXPR(false);
         iGridDimension = RenderingParams().m_iRingDimension;
+        UNEXPECTED("Grid dimension must be 4k+1. Defaulting to ", iGridDimension);
     }
     const int iGridMidst = (iGridDimension-1)/2;
     const int iGridQuart = (iGridDimension-1)/4;
 
-    const int iLargestGridScale = iGridDimension << (iNumRings-1);
+    //const int iLargestGridScale = iGridDimension << (iNumRings-1);
     
     RingMeshBuilder RingMeshBuilder(pDevice, VB, iGridDimension, SphereMeshes);
 

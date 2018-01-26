@@ -209,7 +209,7 @@ private:
 
     Uint32 m_uiBackBufferWidth, m_uiBackBufferHeight;
     
-    const float m_fTurbidity;
+    const float m_fTurbidity = 1.02f;
     AirScatteringAttribs m_MediaParams;
 
     enum UpToDateResourceFlags

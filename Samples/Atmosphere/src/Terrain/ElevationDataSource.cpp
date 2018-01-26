@@ -53,9 +53,9 @@
 using namespace Diligent;
 
 // Creates data source from the specified raw data file
-ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) : 
-    m_iPatchSize(128),
+ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
     m_iNumLevels(0),
+    m_iPatchSize(128),
     m_iColOffset(0), 
     m_iRowOffset(0)
 {

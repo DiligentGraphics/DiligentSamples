@@ -10,13 +10,11 @@ ScreenSizeQuadVSOutput ScreenSizeQuadVS(in uint VertexId : SV_VertexID,
     ScreenSizeQuadVSOutput VSOut;
     float4 Bounds = float4(-1.0, -1.0, 1.0, 1.0);
     
-    float2 PosXY[4] = 
-    {
-        Bounds.xy,
-        Bounds.xw,
-        Bounds.zy,
-        Bounds.zw
-    };
+    float2 PosXY[4];
+    PosXY[0] = Bounds.xy;
+    PosXY[1] = Bounds.xw;
+    PosXY[2] = Bounds.zy;
+    PosXY[3] = Bounds.zw;
 
     float2 f2XY = PosXY[VertexId];
     VSOut.m_f2PosPS = f2XY;
