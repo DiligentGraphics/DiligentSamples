@@ -132,10 +132,6 @@ void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppC
     m_Animate = false;                       // enable animation
     m_AnimationSpeed = 0.2f;               // animation speed
 
-#if defined(PLATFORM_UNIVERSAL_WINDOWS)
-    FileSystem::SetWorkingDirectory("assets");
-#endif
-
     BufferDesc BuffDesc;
     BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
     BuffDesc.Usage = USAGE_DYNAMIC;

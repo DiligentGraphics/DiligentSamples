@@ -20,8 +20,6 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
             target_sources(${SAMPLE_NAME} PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
 
             set_source_files_properties(${ASSETS} ${SHADERS} PROPERTIES VS_DEPLOYMENT_CONTENT 1)
-            set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_LOCATION "assets")
-            set_property(SOURCE ${SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "assets/shaders")
         endif()
 
         set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")

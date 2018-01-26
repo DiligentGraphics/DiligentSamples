@@ -31,9 +31,6 @@ using namespace Diligent;
 
 SampleBase* CreateSample()
 {
-#ifdef PLATFORM_UNIVERSAL_WINDOWS
-    FileSystem::SetWorkingDirectory("assets");
-#endif
     return new Tutorial03_Texturing();
 }
 

@@ -35,9 +35,6 @@
 
 SampleBase* CreateSample()
 {
-#ifdef PLATFORM_UNIVERSAL_WINDOWS
-    FileSystem::SetWorkingDirectory("assets");
-#endif
     return new AtmosphereSample();
 }
  

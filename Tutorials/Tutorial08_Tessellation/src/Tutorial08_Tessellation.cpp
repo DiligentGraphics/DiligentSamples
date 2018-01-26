@@ -33,9 +33,6 @@ using namespace Diligent;
 
 SampleBase* CreateSample()
 {
-#ifdef PLATFORM_UNIVERSAL_WINDOWS
-    FileSystem::SetWorkingDirectory("assets");
-#endif
     return new Tutorial08_Tessellation();
 }
 
