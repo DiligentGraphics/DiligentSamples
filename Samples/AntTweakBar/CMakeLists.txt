@@ -24,8 +24,14 @@ set(ASSETS
 
 add_sample("AntTweakBarSample" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
-set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_LOCATION ".")
-set_property(SOURCE ${SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "shaders")
+set_source_files_properties(${ASSETS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "."
+    MACOSX_PACKAGE_LOCATION Resources)
+
+set_source_files_properties(${SHADERS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "shaders"
+    MACOSX_PACKAGE_LOCATION Resources/shaders
+)
 
 source_group("assets" FILES ${ASSETS})
 source_group("assets\\shaders" FILES ${SHADERS})

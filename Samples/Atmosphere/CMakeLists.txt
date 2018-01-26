@@ -79,21 +79,26 @@ set(ALL_SHADERS ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
 add_sample("AtmosphereSample" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
-if(PLATFORM_UNIVERSAL_WINDOWS)
-	set_property(SOURCE ${ATMOSPHERE_SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "shaders")
-	set_property(SOURCE ${ATMOSPHERE_SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "shaders/atmosphere")
-	set_property(SOURCE ${TERRAIN_SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "shaders/terrain")
-	set_property(SOURCE ${SHADERS} PROPERTY VS_DEPLOYMENT_LOCATION "shaders")
-	set_property(SOURCE ${TERRAIN_TEXTURES} PROPERTY VS_DEPLOYMENT_LOCATION "Terrain")
-	set_property(SOURCE ${TERRAIN_TILES} PROPERTY VS_DEPLOYMENT_LOCATION "Terrain/Tiles")
-elseif(PLATFORM_MACOS)
-	set_property(SOURCE ${ATMOSPHERE_SHADERS} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/shaders")
-	set_property(SOURCE ${ATMOSPHERE_SHADERS} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/shaders/atmosphere")
-	set_property(SOURCE ${TERRAIN_SHADERS} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/shaders/terrain")
-	set_property(SOURCE ${SHADERS} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/shaders")
-	set_property(SOURCE ${TERRAIN_TEXTURES} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/Terrain")
-	set_property(SOURCE ${TERRAIN_TILES} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/Terrain/Tiles")	
-endif()
+set_source_files_properties(${ATMOSPHERE_SHADERS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "shaders/atmosphere"
+    MACOSX_PACKAGE_LOCATION "Resources/shaders/atmosphere"
+)
+set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "shaders/terrain"
+    MACOSX_PACKAGE_LOCATION "Resources/shaders/terrain"
+)
+set_source_files_properties(${SHADERS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "shaders"
+    MACOSX_PACKAGE_LOCATION "Resources/shaders"
+)
+set_source_files_properties(${TERRAIN_TEXTURES} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "Terrain"
+    MACOSX_PACKAGE_LOCATION "Resources/Terrain"
+)
+set_source_files_properties(${TERRAIN_TILES} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "Terrain/Tiles"
+    MACOSX_PACKAGE_LOCATION "Resources/Terrain/Tiles"
+)
 
 target_include_directories(AtmosphereSample
 PRIVATE

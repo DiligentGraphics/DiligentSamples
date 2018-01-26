@@ -41,10 +41,6 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
             MACOSX_BUNDLE_INFO_PLIST "${MAC_INFO_PLIST}"
             RESOURCE "${MAC_RESOURCES}"
         )
-
-        set_source_files_properties(${ASSETS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-        set_source_files_properties(${SHADERS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/shaders)
-
         source_group("MacOS" FILES ${MAC_SOURCE})
         source_group("MacOS" FILES ${MAC_INCLUDE})
         source_group("Resources" FILES ${MAC_RESOURCES})
