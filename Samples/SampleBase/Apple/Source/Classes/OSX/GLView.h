@@ -16,5 +16,6 @@
 
 -(void)stopDisplayLink;
 -(void)startDisplayLink;
+-(NSString*)getSampleName;
 
 @end

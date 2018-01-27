@@ -313,4 +313,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
     CVDisplayLinkStart(displayLink);
 }
 
+- (NSString*)getSampleName
+{
+    return [NSString stringWithFormat:@"%s", _renderer->GetSampleName()];
+}
+
 @end

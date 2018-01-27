@@ -41,6 +41,7 @@ public:
     void OnMouseUp(int button);
     void OnMouseMove(int x, int y);
     void OnKeyPressed(int key);
+    const char* GetSampleName()const{return pSample->GetSampleName();}
     
 private:
     std::unique_ptr<SampleBase> pSample;

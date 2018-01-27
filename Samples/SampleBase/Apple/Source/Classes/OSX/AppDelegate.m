@@ -7,6 +7,7 @@
  */
 
 #import "AppDelegate.h"
+#import "GLView.h"
 
 @interface AppDelegate ()
 
@@ -16,7 +17,10 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
-    [[[NSApplication sharedApplication]mainWindow]setAcceptsMouseMovedEvents:YES];
+    NSWindow* mainWindow = [[NSApplication sharedApplication]mainWindow];
+    [mainWindow setAcceptsMouseMovedEvents:YES];
+    NSString *Name =  [[mainWindow contentView] getSampleName];
+    [mainWindow setTitle:Name];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
