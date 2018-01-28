@@ -82,11 +82,11 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice,
                                              IDeviceContext *pContext,
                                              TEXTURE_FORMAT BackBufferFmt,
                                              TEXTURE_FORMAT DepthBufferFmt,
-                                             TEXTURE_FORMAT OffscreenBackBuffer) : 
+                                             TEXTURE_FORMAT OffscreenBackBuffer) :
+    m_bUseCombinedMinMaxTexture(false),
     m_uiSampleRefinementCSThreadGroupSize(0),
     // Using small group size is inefficient because a lot of SIMD lanes become idle
     m_uiSampleRefinementCSMinimumThreadGroupSize(128),// Must be greater than 32
-    m_bUseCombinedMinMaxTexture(false),
     m_uiUpToDateResourceFlags(0)
 {
     pDevice->CreateResourceMapping(ResourceMappingDesc(), &m_pResMapping);
@@ -1337,7 +1337,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         InterpolateInsctrIrradiance(FrameAttribs);
 
         const Uint32 uiMaxStepsAlongRayAtDepthBreak0 = std::min(m_PostProcessingAttribs.m_uiShadowMapResolution/4, 256u);
-        const Uint32 uiMaxStepsAlongRayAtDepthBreak1 = std::min(m_PostProcessingAttribs.m_uiShadowMapResolution/8, 128u);
+        //const Uint32 uiMaxStepsAlongRayAtDepthBreak1 = std::min(m_PostProcessingAttribs.m_uiShadowMapResolution/8, 128u);
 
         if( m_PostProcessingAttribs.m_bAutoExposure )
         {

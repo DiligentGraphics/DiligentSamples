@@ -88,8 +88,8 @@ class TriStrip
 {
 public:
     TriStrip(std::vector<IndexType> &Indices, IndexGenerator indexGenerator):
-        m_Indices(Indices),
         m_QuadTriangType(QUAD_TRIANG_TYPE_UNDEFINED),
+        m_Indices(Indices),
         m_IndexGenerator(indexGenerator)
     {
     }
