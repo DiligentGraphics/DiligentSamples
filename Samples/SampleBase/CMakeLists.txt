@@ -80,6 +80,7 @@ elseif(PLATFORM_MACOS)
 
 		set(${MAC_RESOURCES}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Base.lproj/Main.storyboard
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Images.xcassets/AppIcon.appiconset/dg.icns
 		    PARENT_SCOPE
 		)
 
