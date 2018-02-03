@@ -45,9 +45,9 @@ Renderer::~Renderer()
 void Renderer::Init()
 {
     SwapChainDesc SCDesc;
-    EngineCreationAttribs EngineCreationAttribs;
+    EngineGLAttribs CreationAttribs;
     Uint32 NumDeferredContexts = 0;
-    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, EngineCreationAttribs, NumDeferredContexts);
+    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, CreationAttribs, NumDeferredContexts);
     if(NumDeferredContexts != 0)
     {
         LOG_ERROR_MESSAGE("Deferred contexts are not supported by OpenGL implementation");
@@ -55,7 +55,7 @@ void Renderer::Init()
     }
 
     // On MacOS, we attach to active GL context initialized by the application
-    GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, nullptr, &pSwapChain );
+    GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(CreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, &pSwapChain );
     
     // Set font scaling
     TwDefine(" GLOBAL fontscaling=2");
