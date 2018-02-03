@@ -160,9 +160,9 @@ int Engine::InitDisplay()
     {
         sample_.reset( CreateSample() );
 
-        EngineCreationAttribs EngineCreationAttribs;
+        EngineGLAttribs CreationAttribs;
         Uint32 NumDeferredContexts = 0;
-        sample_->GetEngineInitializationAttribs(DeviceType::OpenGLES, EngineCreationAttribs, NumDeferredContexts);
+        sample_->GetEngineInitializationAttribs(DeviceType::OpenGLES, CreationAttribs, NumDeferredContexts);
         if(NumDeferredContexts != 0)
         {
             LOGE( "Deferred contexts are not supported on GLES" );
@@ -172,7 +172,8 @@ int Engine::InitDisplay()
         RefCntAutoPtr<IRenderDevice> pRenderDevice;
         SwapChainDesc SwapChainDesc;
         auto pFactory = GetEngineFactoryOpenGL();
-        pFactory->CreateDeviceAndSwapChainGL( EngineCreationAttribs, &pRenderDevice, &pDeviceContext_, SwapChainDesc, app_->window, &pSwapChain_ );
+        CreationAttribs.pNativeWndHandle = app_->window;
+        pFactory->CreateDeviceAndSwapChainGL( CreationAttribs, &pRenderDevice, &pDeviceContext_, SwapChainDesc, &pSwapChain_ );
 
         Diligent::IRenderDeviceGLES *pRenderDeviceOpenGLES;
         pRenderDevice->QueryInterface( Diligent::IID_RenderDeviceGLES, reinterpret_cast<IObject**>(&pRenderDeviceOpenGLES) );

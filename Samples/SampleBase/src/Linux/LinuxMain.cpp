@@ -168,17 +168,19 @@ int main (int argc, char ** argv)
     Diligent::RefCntAutoPtr<ISwapChain> pSwapChain;
     
     SwapChainDesc SCDesc;
-    EngineCreationAttribs EngineCreationAttribs;
+    EngineGLAttribs EngineGLAttribs;
     Uint32 NumDeferredContexts = 0;
-    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, EngineCreationAttribs, NumDeferredContexts);
+    pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, EngineGLAttribs, NumDeferredContexts);
     if(NumDeferredContexts != 0)
     {
         LOG_ERROR_MESSAGE("Deferred contexts are not supported by OpenGL implementation");
         NumDeferredContexts = 0;
     }
 
+    EngineGLAttribs.pNativeWndHandle = reinterpret_cast<void*>(static_cast<size_t>(win));
+    EngineGLAttribs.pDisplay = display;
     GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
-        EngineCreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, reinterpret_cast<void*>(static_cast<size_t>(win)), display, &pSwapChain );
+        EngineGLAttribs, &pRenderDevice, &pDeviceContext, SCDesc, &pSwapChain );
 
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
