@@ -55,22 +55,22 @@ elseif(PLATFORM_MACOS)
         src/MacOS/Renderer.h
     )
 
-	function(get_sample_base_macos_source MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST MAC_INCLUDE_DIRS)
+	function(get_sample_base_macos_source APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
 		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
 
-		set(${MAC_SOURCE}
+		set(${APPLE_SOURCE}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.m
 		)
-        set_source_files_properties(${MAC_SOURCE} PROPERTIES
+        set_source_files_properties(${APPLE_SOURCE} PROPERTIES
             COMPILE_FLAGS "-x objective-c++"
         )
-        set( MAC_SOURCE ${MAC_SOURCE} PARENT_SCOPE )
+        set( APPLE_SOURCE ${APPLE_SOURCE} PARENT_SCOPE )
 
-		set(${MAC_INCLUDE}
+		set(${APPLE_INCLUDE}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.h
        		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.h
        		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.h
@@ -78,19 +78,66 @@ elseif(PLATFORM_MACOS)
 		    PARENT_SCOPE
 		)
 
-		set(${MAC_RESOURCES}
+		set(${APPLE_RESOURCES}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Base.lproj/Main.storyboard
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Images.xcassets/AppIcon.appiconset/dg.icns
 		    PARENT_SCOPE
 		)
 
-		set(${MAC_INFO_PLIST}
+		set(${APPLE_INFO_PLIST}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Info.plist
 		    PARENT_SCOPE
 		)
 
-		set(${MAC_INCLUDE_DIRS}
+		set(${APPLE_INCLUDE_DIRS}
         		${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX
+			PARENT_SCOPE
+		)
+	endfunction()
+
+elseif(PLATFORM_IOS)
+    set(SOURCE
+        src/MacOS/Renderer.cpp
+    )
+    set(INCLUDE
+        src/MacOS/Renderer.h
+    )
+
+	function(get_sample_base_ios_source APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
+		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
+
+		set(${APPLE_SOURCE}
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/AppDelegate.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/EAGLView.m
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/ES3Renderer.m
+		)
+        set_source_files_properties(${APPLE_SOURCE} PROPERTIES
+            COMPILE_FLAGS "-x objective-c++"
+        )
+        set( APPLE_SOURCE ${APPLE_SOURCE} PARENT_SCOPE )
+
+		set(${APPLE_INCLUDE}
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/AppDelegate.h
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/EAGLView.h
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/ES3Renderer.h
+		    PARENT_SCOPE
+		)
+
+		set(${APPLE_RESOURCES}
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Base.lproj/Main.storyboard
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Base.lproj/LaunchScreen.xib
+		    #${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Images.xcassets/AppIcon.appiconset/dg.icns
+		    PARENT_SCOPE
+		)
+
+		set(${APPLE_INFO_PLIST}
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/info.plist
+		    PARENT_SCOPE
+		)
+
+		set(${APPLE_INCLUDE_DIRS}
+        		${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS
 			PARENT_SCOPE
 		)
 	endfunction()
@@ -140,12 +187,12 @@ elseif(PLATFORM_LINUX)
 	SET(ENGINE_LIBRARIES
 		GraphicsEngineOpenGL-shared
 	)
-elseif(PLATFORM_MACOS)
+elseif(PLATFORM_MACOS OR PLATFORM_IOS)
     SET(ENGINE_LIBRARIES
         GraphicsEngineOpenGL-shared
     )
 else()
-	message("Undefined platform")
+	message(FATAL_ERROR "Undefined platform")
 endif()
 
 target_link_libraries(SampleBase 
@@ -168,7 +215,7 @@ elseif(PLATFORM_ANDROID)
 	)
 elseif(PLATFORM_LINUX)
 	target_link_libraries(SampleBase PRIVATE GL X11)
-elseif(PLATFORM_MACOS)
+elseif(PLATFORM_MACOS OR PLATFORM_IOS)
     target_include_directories(SampleBase PUBLIC
         src/MacOS
     )

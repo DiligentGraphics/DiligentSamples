@@ -75,7 +75,7 @@ char g_ErrParse[512];
 
 void ANT_CALL TwGlobalError(const char *_ErrorMessage);
 
-#if defined(ANT_UNIX) || defined(ANT_OSX) || defined(ANT_ANDROID)
+#if defined(ANT_UNIX) || defined(ANT_OSX) || defined(ANT_ANDROID) || defined(ANT_IOS)
 #define _stricmp strcasecmp
 #define _strdup strdup
 #endif
@@ -1769,7 +1769,7 @@ static inline int TwFreeAsyncDrawing()
         {
             #if defined(ANT_WIN32)
                 Sleep(1); // milliseconds
-            #elif defined(ANT_UNIX) || defined(ANT_OSX) || defined(ANT_ANDROID)
+            #elif defined(ANT_UNIX) || defined(ANT_OSX) || defined(ANT_ANDROID) || defined(ANT_IOS)
                 usleep(1000); // microseconds
             #endif
         }
@@ -2039,7 +2039,7 @@ int ANT_CALL TwDraw()
         return 0;
 
     // Create cursors
-    #if defined(ANT_WIN32) || defined(ANT_OSX)
+    #if defined(ANT_WIN32) || defined(ANT_OSX) || defined(ANT_IOS)
         if( !g_TwMgr->m_CursorsCreated )
             g_TwMgr->CreateCursors();
     #elif defined(ANT_UNIX)
@@ -6561,7 +6561,7 @@ void CTwMgr::SetCursor(CTwMgr::CCursor _Cursor)
     }
 }
 
-#elif defined (ANT_ANDROID)
+#elif defined (ANT_ANDROID) || defined(ANT_IOS)
 
 CTwMgr::CCursor CTwMgr::PixmapCursor(int _CurIdx)
 { 

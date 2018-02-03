@@ -294,7 +294,7 @@ struct CTwMgr
         CCursor         PixmapCursor(int _CurIdx);
         Display *       m_CurrentXDisplay;
         Window          m_CurrentXWindow;
-    #elif defined(ANT_ANDROID)
+    #elif defined(ANT_ANDROID) || defined(ANT_IOS)
         typedef void* CCursor; // Temporary stub
         CCursor         PixmapCursor(int _CurIdx);
     #elif defined(ANT_OSX)

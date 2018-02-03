@@ -33,27 +33,51 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 		add_executable(${TUTORIAL_NAME} ${SOURCE} ${INCLUDE})
 
-	elseif(PLATFORM_MACOS)
-		get_sample_base_macos_source(MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST MAC_INCLUDE_DIRS)
-		add_executable(${TUTORIAL_NAME} MACOSX_BUNDLE ${SOURCE} ${MAC_SOURCE} ${INCLUDE} ${MAC_INCLUDE} ${ASSETS} ${MAC_RESOURCES})
-		set(RESOURCES ${MAC_RESOURCES} ${ASSETS})
+	elseif(PLATFORM_MACOS OR PLATFORM_IOS)
+		if(PLATFORM_MACOS)
+		    get_sample_base_macos_source(APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
+		else()
+   		    get_sample_base_ios_source(APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
+		endif()
+		
+		add_executable(${TUTORIAL_NAME} MACOSX_BUNDLE ${SOURCE} ${APPLE_SOURCE} ${INCLUDE} ${APPLE_INCLUDE} ${ASSETS} ${APPLE_RESOURCES})
+		set(RESOURCES ${APPLE_RESOURCES} ${ASSETS})
 		set_target_properties(${TUTORIAL_NAME} PROPERTIES
 			MACOSX_BUNDLE_GUI_IDENTIFIER "com.diligentengine.tutorials.${TUTORIAL_NAME}"
-			MACOSX_BUNDLE_INFO_PLIST "${MAC_INFO_PLIST}"
+			MACOSX_BUNDLE_INFO_PLIST "${APPLE_INFO_PLIST}"
 			RESOURCE "${RESOURCES}"
 		)
   
-		source_group("MacOS" FILES ${MAC_SOURCE})
-		source_group("MacOS" FILES ${MAC_INCLUDE})
-		source_group("Resources" FILES ${MAC_RESOURCES})
-		target_include_directories(${TUTORIAL_NAME} PRIVATE ${MAC_INCLUDE_DIRS})
-                find_package(OpenGL REQUIRED)
+		source_group("Apple" FILES ${APPLE_SOURCE})
+		source_group("Apple" FILES ${APPLE_INCLUDE})
+		source_group("Resources" FILES ${APPLE_RESOURCES})
+		target_include_directories(${TUTORIAL_NAME} PRIVATE ${APPLE_INCLUDE_DIRS})
+		if(PLATFORM_MACOS)
+                     find_package(OpenGL REQUIRED)
 
-    		find_library(CORE_VIDEO CoreVideo)
-   		if (NOT CORE_VIDEO)
-        		message(FATAL_ERROR "CoreVideo not found")
-    		endif()
-		target_link_libraries(${TUTORIAL_NAME} PRIVATE ${OPENGL_LIBRARY} ${CORE_VIDEO})  
+    		     find_library(CORE_VIDEO CoreVideo)
+   		     if (NOT CORE_VIDEO)
+        		 message(FATAL_ERROR "CoreVideo not found")
+    		     endif()
+		     target_link_libraries(${TUTORIAL_NAME} PRIVATE ${OPENGL_LIBRARY} ${CORE_VIDEO})
+		else()
+		    find_library(OPENGLES OpenGLES)
+            	    if (NOT OPENGLES)
+                         message(FATAL_ERROR "OpenGLES not found")
+            	    endif()
+
+		    find_library(UIKIT UIKit)
+            	    if (NOT UIKIT)
+                         message(FATAL_ERROR "UIKIT not found")
+            	    endif()
+
+    		     find_library(CORE_ANIMATION QuartzCore)
+   		     if (NOT CORE_ANIMATION)
+        		 message(FATAL_ERROR "QuartzCore (CoreAnimation) not found")
+    		     endif()
+
+	    	    target_link_libraries(${TUTORIAL_NAME} PRIVATE ${OPENGLES} ${UIKIT} ${CORE_ANIMATION})
+		endif()		     
 	else()
 		message(FATAL_ERROR "Unknown platform")
 	endif()

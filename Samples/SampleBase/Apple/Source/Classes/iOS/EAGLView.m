@@ -8,10 +8,10 @@
 
 #import "EAGLView.h"
 
-#import "ES2Renderer.h"
+#import "ES3Renderer.h"
 @interface EAGLView ()
 {
-    ES2Renderer* _renderer;
+    ES3Renderer* _renderer;
     EAGLContext* _context;
     NSInteger _animationFrameInterval;
     CADisplayLink* _displayLink;
@@ -39,14 +39,14 @@
                                         [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking, kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
 		
 		
-		_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+		_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
         
         if (!_context || ![EAGLContext setCurrentContext:_context])
 		{
             return nil;
 		}
 		
-		_renderer = [[ES2Renderer alloc] initWithContext:_context AndDrawable:(id<EAGLDrawable>)self.layer];
+		_renderer = [[ES3Renderer alloc] initWithContext:_context AndDrawable:(id<EAGLDrawable>)self.layer];
 		
 		if (!_renderer)
 		{

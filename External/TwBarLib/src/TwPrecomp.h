@@ -60,6 +60,7 @@
 #   undef ANT_UNIVERSAL_WINDOWS
 #   undef ANT_OSX
 #   undef ANT_ANDROID
+#   undef ANT_IOS
 #elif defined(_MACOSX)
 #   define ANT_OSX
 #   include <unistd.h>
@@ -75,6 +76,7 @@
 #   undef ANT_UNIVERSAL_WINDOWS
 #   undef ANT_UNIX
 #   undef ANT_ANDROID
+#   undef ANT_IOS
 #elif defined(ANDROID)
 #   define ANT_ANDROID
 #   include <unistd.h>
@@ -88,9 +90,27 @@
 #   undef ANT_UNIVERSAL_WINDOWS
 #   undef ANT_UNIX
 #   undef ANT_OSX
+#   undef ANT_IOS
 #elif defined(PLATFORM_UNIVERSAL_WINDOWS)
 #   define ANT_UNIVERSAL_WINDOWS
 #   include <windows.h>
+#   undef ANT_UNIX
+#   undef ANT_ANDROID
+#   undef ANT_OSX
+#   undef ANT_IOS
+#elif defined(PLATFORM_IOS)
+#   define ANT_IOS
+#   include <unistd.h>
+#   undef _WIN32
+#   undef WIN32
+#   undef _WIN64
+#   undef WIN64
+#   undef _WINDOWS
+#   undef ANT_WIN32
+#   undef ANT_UNIVERSAL_WINDOWS
+#   undef ANT_UNIX
+#   undef ANT_ANDROID
+#   undef ANT_OSX
 #elif defined(_WINDOWS) || defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
 #   define ANT_WIN32
 #   ifndef WIN32_LEAN_AND_MEAN

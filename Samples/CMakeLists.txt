@@ -33,25 +33,38 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
         add_executable(${SAMPLE_NAME} ${SOURCE} ${INCLUDE})
 
-    elseif(PLATFORM_MACOS)
-        get_sample_base_macos_source(MAC_SOURCE MAC_INCLUDE MAC_RESOURCES MAC_INFO_PLIST MAC_INCLUDE_DIRS)
-        add_executable(${SAMPLE_NAME} MACOSX_BUNDLE ${SOURCE} ${MAC_SOURCE} ${INCLUDE} ${MAC_INCLUDE} ${ASSETS} ${SHADERS} ${MAC_RESOURCES})
+    elseif(PLATFORM_MACOS OR PLATFORM_IOS)
+	if(PLATFORM_MACOS)
+	    get_sample_base_macos_source(APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
+	else()
+   	    get_sample_base_ios_source(APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
+	endif()
+        add_executable(${SAMPLE_NAME} MACOSX_BUNDLE ${SOURCE} ${APPLE_SOURCE} ${INCLUDE} ${APPLE_INCLUDE} ${ASSETS} ${SHADERS} ${APPLE_RESOURCES})
         set_target_properties(${SAMPLE_NAME} PROPERTIES
             MACOSX_BUNDLE_GUI_IDENTIFIER "com.diligentengine.samples.${SAMPLE_NAME}"
-            MACOSX_BUNDLE_INFO_PLIST "${MAC_INFO_PLIST}"
-            RESOURCE "${MAC_RESOURCES}"
+            MACOSX_BUNDLE_INFO_PLIST "${APPLE_INFO_PLIST}"
+            RESOURCE "${APPLE_RESOURCES}"
         )
-        source_group("MacOS" FILES ${MAC_SOURCE})
-        source_group("MacOS" FILES ${MAC_INCLUDE})
-        source_group("Resources" FILES ${MAC_RESOURCES})
-        target_include_directories(${SAMPLE_NAME} PRIVATE ${MAC_INCLUDE_DIRS})
-        find_package(OpenGL REQUIRED)
+        source_group("MacOS" FILES ${APPLE_SOURCE})
+        source_group("MacOS" FILES ${APPLE_INCLUDE})
+        source_group("Resources" FILES ${APPLE_RESOURCES})
+        target_include_directories(${SAMPLE_NAME} PRIVATE ${APPLE_INCLUDE_DIRS})
 
-        find_library(CORE_VIDEO CoreVideo)
-        if (NOT CORE_VIDEO)
-            message(FATAL_ERROR "CoreVideo not found")
-        endif()
-        target_link_libraries(${SAMPLE_NAME} PRIVATE ${OPENGL_LIBRARY} ${CORE_VIDEO})
+	if(PLATFORM_MACOS)
+            find_package(OpenGL REQUIRED)
+
+            find_library(CORE_VIDEO CoreVideo)
+            if (NOT CORE_VIDEO)
+                 message(FATAL_ERROR "CoreVideo not found")
+            endif()
+	    target_link_libraries(${SAMPLE_NAME} PRIVATE ${OPENGL_LIBRARY} ${CORE_VIDEO})
+	else()
+            if (NOT OPENGLES)
+                 message(FATAL_ERROR "OpenGLES not found")
+            endif()	
+	    target_link_libraries(${SAMPLE_NAME} PRIVATE ${OPENGLES})
+	endif()
+
     else()
         message(FATAL_ERROR "Unknown platform")
     endif()

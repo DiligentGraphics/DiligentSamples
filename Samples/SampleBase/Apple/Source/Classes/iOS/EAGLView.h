@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ES2Renderer.h"
+#import "ES3Renderer.h"
 
 // This class wraps the CAEAGLLayer from CoreAnimation into a convenient UIView subclass.
 // The view content is basically an EAGL surface you render your OpenGL scene into.

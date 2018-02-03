@@ -10,9 +10,8 @@
 
 #import <OpenGLES/EAGL.h>
 #import <OpenGLES/EAGLDrawable.h>
-#import "OpenGLRenderer.h"
 
-@interface ES2Renderer : OpenGLRenderer
+@interface ES3Renderer : NSObject
 {
 	
 }
