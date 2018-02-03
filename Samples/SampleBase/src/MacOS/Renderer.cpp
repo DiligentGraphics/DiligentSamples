@@ -42,10 +42,18 @@ Renderer::~Renderer()
     pRenderDevice.Release();
 }
 
-void Renderer::Init()
+void Renderer::Init(
+#ifdef PLATFORM_IOS
+                    void  *layer
+#endif
+)
 {
     SwapChainDesc SCDesc;
     EngineGLAttribs CreationAttribs;
+#ifdef PLATFORM_IOS
+    CreationAttribs.pNativeWndHandle = layer;
+#endif
+
     Uint32 NumDeferredContexts = 0;
     pSample->GetEngineInitializationAttribs(DeviceType::OpenGL, CreationAttribs, NumDeferredContexts);
     if(NumDeferredContexts != 0)
@@ -136,7 +144,9 @@ void Renderer::Render()
     TwDraw();
     
     // On MacOS, present is performed by the app
-    //pSwapChain->Present();
+#ifdef PLATFORM_IOS
+    pSwapChain->Present();
+#endif
 }
 
 void Renderer::OnMouseDown(int button)

@@ -33,8 +33,13 @@ class Renderer
 {
 public:
     Renderer();
+    
     ~Renderer();
-    void Init();
+    void Init(
+#ifdef PLATFORM_IOS
+              void  *layer
+#endif
+    );
     void WindowResize(int width, int height);
     void Render();
     void OnMouseDown(int button);
