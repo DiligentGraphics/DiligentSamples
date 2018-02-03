@@ -89,7 +89,8 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, std::vector<IDeviceCo
             // Load the dll and import GetEngineFactoryOpenGL() function
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
-            EngineCreationAttribs CreationAttribs;
+            EngineGLAttribs CreationAttribs;
+            CreationAttribs.pNativeWndHandle = hWnd;
             g_pSample->GetEngineInitializationAttribs(DevType, CreationAttribs, NumDeferredCtx);
             if(NumDeferredCtx != 0)
             {
@@ -98,7 +99,7 @@ void InitDevice(HWND hWnd, IRenderDevice **ppRenderDevice, std::vector<IDeviceCo
             }
             ppContexts.resize(1 + NumDeferredCtx);
             GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
-                CreationAttribs, ppRenderDevice, ppContexts.data(), SCDesc, hWnd, ppSwapChain );
+                CreationAttribs, ppRenderDevice, ppContexts.data(), SCDesc, ppSwapChain );
         }
         break;
 
