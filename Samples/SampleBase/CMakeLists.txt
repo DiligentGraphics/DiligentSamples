@@ -125,7 +125,7 @@ elseif(PLATFORM_IOS)
 		set(${APPLE_RESOURCES}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Base.lproj/Main.storyboard
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Base.lproj/LaunchScreen.xib
-		    #${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Images.xcassets/AppIcon.appiconset/dg.icns
+		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Images.xcassets/AppIcon.appiconset/dg-icon.png
 		    PARENT_SCOPE
 		)
 
