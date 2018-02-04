@@ -64,10 +64,12 @@ void Renderer::Init(
 
     // On MacOS, we attach to active GL context initialized by the application
     GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(CreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, &pSwapChain );
-    
+
+#ifdef PLATFORM_MACOS
     // Set font scaling
     TwDefine(" GLOBAL fontscaling=2");
     pSample->SetUIScale(2);
+#endif
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with
     // very old GL specification. Using these modes results in applying some
@@ -94,8 +96,10 @@ void Renderer::Init(
 void Renderer::WindowResize(int width, int height)
 {
     pSwapChain->Resize(width, height);
-    pSample->WindowResize( width, height );
-    TwWindowSize(width, height);
+    // On iOS, width and height are zeroes
+    const auto& SCDesc = pSwapChain->GetDesc();
+    pSample->WindowResize( SCDesc.Width, SCDesc.Height );
+    TwWindowSize(SCDesc.Width, SCDesc.Height);
 }
 
 void Renderer::Render()
