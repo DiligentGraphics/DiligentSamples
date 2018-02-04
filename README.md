@@ -1,6 +1,8 @@
 # DiligentSamples
 
-This module contains simple graphics applications intended to demonstrate the usage of the Diligent Engine API.
+This module contains tutorials and sample applications intended to demonstrate the usage of [Diligent Engine](https://github.com/DiligentGraphics/DiligentEngine). The module depends on the [Core](https://github.com/DiligentGraphics/DiligentCore) and [Tools](https://github.com/DiligentGraphics/DiligentTools) submodules.
+
+To build and run the applications in the module, please follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md) in the master repository.
 
 # Tutorials
 
