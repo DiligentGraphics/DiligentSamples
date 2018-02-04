@@ -132,4 +132,4 @@ Initial release
 
 Licensed under the [Apache License, Version 2.0](License.txt)
 
-**Copyright 2015-2016 Egor Yusov**
+**Copyright 2015-2018 Egor Yusov**
