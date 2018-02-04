@@ -110,7 +110,6 @@ elseif(PLATFORM_IOS)
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/AppDelegate.m
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/EAGLView.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/ES3Renderer.m
 		)
         set_source_files_properties(${APPLE_SOURCE} PROPERTIES
             COMPILE_FLAGS "-x objective-c++"
@@ -120,7 +119,6 @@ elseif(PLATFORM_IOS)
 		set(${APPLE_INCLUDE}
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/AppDelegate.h
 		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/EAGLView.h
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/ES3Renderer.h
 		    PARENT_SCOPE
 		)
 

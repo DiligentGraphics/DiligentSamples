@@ -8,10 +8,12 @@
 
 #import "EAGLView.h"
 
-#import "ES3Renderer.h"
+#include "Renderer.h"
+#include <memory>
+
 @interface EAGLView ()
 {
-    ES3Renderer* _renderer;
+    std::unique_ptr<Renderer> _renderer;
     EAGLContext* _context;
     NSInteger _animationFrameInterval;
     CADisplayLink* _displayLink;
@@ -46,8 +48,10 @@
             return nil;
 		}
 		
-		_renderer = [[ES3Renderer alloc] initWithContext:_context AndDrawable:(id<EAGLDrawable>)self.layer];
-		
+        _renderer.reset(new Renderer());
+        // Init our renderer.
+        _renderer->Init((__bridge void*)self.layer);
+
 		if (!_renderer)
 		{
             return nil;
@@ -64,12 +68,12 @@
 - (void) drawView:(id)sender
 {   
 	[EAGLContext setCurrentContext:_context];
-    [_renderer render];
+    _renderer->Render();
 }
 
 - (void) layoutSubviews
 {
-	[_renderer resizeFromLayer:(CAEAGLLayer*)self.layer];
+	_renderer->WindowResize(0, 0);
     [self drawView:nil];
 }
 
@@ -127,6 +131,8 @@
 
 - (void) dealloc
 {
+     _renderer.reset();
+
 	// tear down context
 	if ([EAGLContext currentContext] == _context)
         [EAGLContext setCurrentContext:nil];
