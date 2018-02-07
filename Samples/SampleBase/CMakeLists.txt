@@ -4,7 +4,7 @@ project(SampleBase)
 
 if(PLATFORM_WIN32)
 	set(SOURCE 
-		src/Win32/WinMain.cpp
+		src/Win32/SampleAppWin32.cpp
 	)
 elseif(PLATFORM_UNIVERSAL_WINDOWS)
 
@@ -143,7 +143,9 @@ elseif(PLATFORM_IOS)
 endif()
 
 list(APPEND SOURCE src/SampleBase.cpp)
+list(APPEND SOURCE src/SampleApp.cpp)
 list(APPEND INCLUDE include/SampleBase.h)
+list(APPEND INCLUDE include/SampleApp.h)
 
 
 add_library(SampleBase STATIC ${SOURCE} ${INCLUDE})
@@ -197,6 +199,7 @@ target_link_libraries(SampleBase
 PRIVATE 
 	BuildSettings 
 PUBLIC
+	NativeAppBase
 	TwBarLib 
 	Common 
 	GraphicsTools
