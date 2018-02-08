@@ -29,15 +29,15 @@
 #include "Errors.h"
 
 #if D3D11_SUPPORTED
-#include "RenderDeviceFactoryD3D11.h"
+#   include "RenderDeviceFactoryD3D11.h"
 #endif
 
 #if D3D12_SUPPORTED
-#include "RenderDeviceFactoryD3D12.h"
+#   include "RenderDeviceFactoryD3D12.h"
 #endif
 
 #if OPENGL_SUPPORTED
-#include "RenderDeviceFactoryOpenGL.h"
+#   include "RenderDeviceFactoryOpenGL.h"
 #endif
 
 #include "AntTweakBar.h"
@@ -62,7 +62,7 @@ SampleApp::~SampleApp()
 }
 
 
-void SampleApp::Initialize(const NativeAppAttributes &NativeAppAttribs)
+void SampleApp::InitializeDiligentEngine(void *NativeWindowHandle)
 {
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
@@ -81,29 +81,32 @@ void SampleApp::Initialize(const NativeAppAttributes &NativeAppAttribs)
             // Load the dll and import GetEngineFactoryD3D11() function
             LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
-            auto *pFactoryD3D11 = GetEngineFactoryD3D11();
             ppContexts.resize(1 + NumDeferredCtx);
+            auto *pFactoryD3D11 = GetEngineFactoryD3D11();
             pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
-            pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, NativeAppAttribs.NativeWindowHandle, &m_pSwapChain);
+
+            if(NativeWindowHandle != nullptr)
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
         }
         break;
 #endif
 
 #if D3D12_SUPPORTED
-    case DeviceType::D3D12:
+        case DeviceType::D3D12:
         {
 #ifdef ENGINE_DLL
             GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
             // Load the dll and import GetEngineFactoryD3D12() function
             LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
-
-            auto *pFactoryD3D12 = GetEngineFactoryD3D12();
             EngineD3D12Attribs EngD3D12Attribs;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs, NumDeferredCtx);
             ppContexts.resize(1 + NumDeferredCtx);
+            auto *pFactoryD3D12 = GetEngineFactoryD3D12();
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
-            pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, NativeAppAttribs.NativeWindowHandle, &m_pSwapChain);
+
+            if (!m_pSwapChain && NativeWindowHandle != nullptr)
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
         }
         break;
 #endif
@@ -111,14 +114,16 @@ void SampleApp::Initialize(const NativeAppAttributes &NativeAppAttribs)
 #if OPENGL_SUPPORTED
         case DeviceType::OpenGL:
         {
+            VERIFY_EXPR(NativeWindowHandle != nullptr);
 #ifdef ENGINE_DLL
             // Declare function pointer
             GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
             // Load the dll and import GetEngineFactoryOpenGL() function
-            LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
+                LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
+            auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
             EngineGLAttribs CreationAttribs;
-            CreationAttribs.pNativeWndHandle = NativeAppAttribs.NativeWindowHandle;
+            CreationAttribs.pNativeWndHandle = NativeWindowHandle;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, NumDeferredCtx);
             if (NumDeferredCtx != 0)
             {
@@ -126,7 +131,7 @@ void SampleApp::Initialize(const NativeAppAttributes &NativeAppAttribs)
                 NumDeferredCtx = 0;
             }
             ppContexts.resize(1 + NumDeferredCtx);
-            GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
+            pFactoryOpenGL->CreateDeviceAndSwapChainGL(
                 CreationAttribs, &m_pDevice, ppContexts.data(), SCDesc, &m_pSwapChain);
         }
         break;
@@ -141,20 +146,28 @@ void SampleApp::Initialize(const NativeAppAttributes &NativeAppAttribs)
     m_pDeferredContexts.resize(NumDeferredCtx);
     for (Diligent::Uint32 ctx = 0; ctx < NumDeferredCtx; ++ctx)
         m_pDeferredContexts[ctx].Attach(ppContexts[1 + ctx]);
+}
 
+void SampleApp::InitializeSample()
+{
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
     // very old GL specification. Using these modes results in applying some 
     // odd offsets which distorts everything
     // Latest OpenGL works very much like Direct3D11, and 
     // Tweak Bar will never know if D3D or OpenGL is actually used
-    SCDesc = m_pSwapChain->GetDesc();
+    const auto& SCDesc = m_pSwapChain->GetDesc();
     if (!TwInit(TW_DIRECT3D11, m_pDevice.RawPtr(), m_pImmediateContext.RawPtr(), SCDesc.ColorBufferFormat))
     {
         LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
     }
     TwDefine(" TW_HELP visible=false ");
 
+    std::vector<IDeviceContext*> ppContexts(1 + m_pDeferredContexts.size());
+    ppContexts[0] = m_pImmediateContext;
+    Uint32 NumDeferredCtx = static_cast<Uint32>(m_pDeferredContexts.size());
+    for (size_t ctx = 0; ctx < m_pDeferredContexts.size(); ++ctx)
+        ppContexts[1 + ctx] = m_pDeferredContexts[ctx];
     m_TheSample->Initialize(m_pDevice, ppContexts.data(), NumDeferredCtx, m_pSwapChain);
 
     m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
@@ -193,10 +206,10 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
 
     switch (m_DeviceType)
     {
-    case DeviceType::D3D11: m_AppTitle.append(" (D3D11)"); break;
-    case DeviceType::D3D12: m_AppTitle.append(" (D3D12)"); break;
-    case DeviceType::OpenGL: m_AppTitle.append(" (OpenGL)"); break;
-    default: UNEXPECTED("Unknown device type");
+        case DeviceType::D3D11: m_AppTitle.append(" (D3D11)"); break;
+        case DeviceType::D3D12: m_AppTitle.append(" (D3D12)"); break;
+        case DeviceType::OpenGL: m_AppTitle.append(" (OpenGL)"); break;
+        default: UNEXPECTED("Unknown device type");
     }
 }
 
@@ -213,4 +226,20 @@ void SampleApp::Resize(int width, int height)
 void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
     m_TheSample->Update(CurrTime, ElapsedTime);
+}
+
+void SampleApp::Render()
+{
+    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
+    m_TheSample->Render();
+
+    // Draw tweak bars
+    // Restore default render target in case the sample has changed it
+    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
+    TwDraw();
+}
+
+void SampleApp::Present()
+{
+    m_pSwapChain->Present();
 }

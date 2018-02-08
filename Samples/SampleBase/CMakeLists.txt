@@ -11,29 +11,24 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 	# Windows Runtime types cannot be included into static libraries
 	# https://social.msdn.microsoft.com/Forums/en-US/269db513-64ef-4817-a025-43954f614eb3/lnk4264-why-are-static-libraries-not-recommended-when-authoring-windows-runtime-types?forum=winappswithnativecode
 	# So as a workaround, we will include all source files into the target app project
-	function(get_sample_base_uwp_source UWP_SOURCE UWP_INCLUDE UWP_INCLUDE_DIR)
+	function(get_sample_base_uwp_source UWP_SOURCE_IN UWP_INCLUDE_IN UWP_INCLUDE_DIR_IN)
 		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
 
-		set(${UWP_SOURCE}
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/Common/DeviceResources.cpp
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/App.cpp
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/SampleAppMain.cpp
+		set(UWP_SOURCE
+			${UWP_SOURCE_IN}
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.cpp
+			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/SampleAppUWP.cpp
 			PARENT_SCOPE
 		)
 
-		set(${UWP_INCLUDE}
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/Common/DeviceResources.h
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/Common/DirectXHelper.h
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/Common/StepTimer.h
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/App.h
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/pch2.h
-			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/SampleAppMain.h
+		set(UWP_INCLUDE
+			${UWP_INCLUDE_IN}
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.h
 			PARENT_SCOPE
 		)
 
-		set(${UWP_INCLUDE_DIR}
+		set(UWP_INCLUDE_DIR
+			${UWP_INCLUDE_DIR_IN}
 			${SAMPLE_BASE_SOURCE_DIR}/Src/UWP
 			PARENT_SCOPE
 		)

@@ -34,12 +34,14 @@
 //              it is not recommended to pack Windows Runtime extensions 
 //              into a static library
 //  ---------------------------------------------------------------------------
-#include "pch.h"
-#include "pch2.h"
+
+#define NOMINIMAX
+#include <wrl.h>
+#include <wrl/client.h>
+#include <DirectXMath.h>
 
 #include "TwEventUWP.h"
-
-#include <AntTweakBar.h>
+#include "AntTweakBar.h"
 
 
 // Mouse wheel support

@@ -27,30 +27,20 @@
 class SampleAppWin32 final : public SampleApp
 {
 public:
-    virtual void Render()override final;
-    virtual LRESULT HandleWin32Message(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)override final;
+    virtual LRESULT HandleWin32Message(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)override final
+    {
+        // Send event message to AntTweakBar
+        return TwEventWin(hWnd, message, wParam, lParam);
+    }
+
+    virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight)override final
+    {
+        InitializeDiligentEngine(hWnd);
+        InitializeSample();
+    }
 };
 
 NativeAppBase* CreateApplication()
 {
     return new SampleAppWin32;
-}
-
-void SampleAppWin32::Render()
-{
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
-    m_TheSample->Render();
-
-    // Draw tweak bars
-    // Restore default render target in case the sample has changed it
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
-    TwDraw();
-
-    m_pSwapChain->Present();
-}
-
-LRESULT SampleAppWin32::HandleWin32Message(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    // Send event message to AntTweakBar
-    return TwEventWin(hWnd, message, wParam, lParam);
 }
