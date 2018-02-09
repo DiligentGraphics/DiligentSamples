@@ -21,9 +21,6 @@
 *  of the possibility of such damages.
 */
 
-#define NOMINMAX
-#include<Windows.h>
-
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
 #include "Errors.h"

@@ -5,7 +5,12 @@ project(SampleBase)
 if(PLATFORM_WIN32)
 	set(SOURCE 
 		src/Win32/SampleAppWin32.cpp
+		src/SampleApp.cpp
 	)
+	set(INCLUDE 
+		include/SampleApp.h
+	)
+
 elseif(PLATFORM_UNIVERSAL_WINDOWS)
 
 	# Windows Runtime types cannot be included into static libraries
@@ -18,12 +23,14 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 			${UWP_SOURCE_IN}
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.cpp
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/SampleAppUWP.cpp
+			${SAMPLE_BASE_SOURCE_DIR}/src/SampleApp.cpp
 			PARENT_SCOPE
 		)
 
 		set(UWP_INCLUDE
 			${UWP_INCLUDE_IN}
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.h
+			${SAMPLE_BASE_SOURCE_DIR}/include/SampleApp.h
 			PARENT_SCOPE
 		)
 
@@ -37,17 +44,27 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 elseif(PLATFORM_ANDROID)
 	set(SOURCE 
 		src/Android/AndroidMainImpl.cpp
+		src/SampleApp.cpp
+	)
+	set(INCLUDE 
+		include/SampleApp.h
 	)
 elseif(PLATFORM_LINUX)
 	set(SOURCE 
 		src/Linux/LinuxMain.cpp
+		src/SampleApp.cpp
+	)
+	set(INCLUDE 
+		include/SampleApp.h
 	)
 elseif(PLATFORM_MACOS)
     set(SOURCE
         src/MacOS/Renderer.cpp
+		src/SampleApp.cpp
     )
     set(INCLUDE
         src/MacOS/Renderer.h
+		include/SampleApp.h
     )
 
 	function(get_sample_base_macos_source APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
@@ -93,9 +110,11 @@ elseif(PLATFORM_MACOS)
 elseif(PLATFORM_IOS)
     set(SOURCE
         src/MacOS/Renderer.cpp
+		src/SampleApp.cpp
     )
     set(INCLUDE
         src/MacOS/Renderer.h
+		include/SampleApp.h
     )
 
 	function(get_sample_base_ios_source APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
@@ -138,9 +157,7 @@ elseif(PLATFORM_IOS)
 endif()
 
 list(APPEND SOURCE src/SampleBase.cpp)
-list(APPEND SOURCE src/SampleApp.cpp)
 list(APPEND INCLUDE include/SampleBase.h)
-list(APPEND INCLUDE include/SampleApp.h)
 
 
 add_library(SampleBase STATIC ${SOURCE} ${INCLUDE})
