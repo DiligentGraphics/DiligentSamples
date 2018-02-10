@@ -36,7 +36,7 @@ public:
     
     ~Renderer();
     void Init(
-#ifdef PLATFORM_IOS
+#if PLATFORM_IOS
               void  *layer
 #endif
     );

@@ -28,7 +28,7 @@
 
 #pragma once
 
-#ifdef PLATFORM_WIN32
+#if PLATFORM_WIN32
     #include "targetver.h"
 
     #define NOMINMAX

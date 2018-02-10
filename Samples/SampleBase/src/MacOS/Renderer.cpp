@@ -43,14 +43,14 @@ Renderer::~Renderer()
 }
 
 void Renderer::Init(
-#ifdef PLATFORM_IOS
+#if PLATFORM_IOS
                     void  *layer
 #endif
 )
 {
     SwapChainDesc SCDesc;
     EngineGLAttribs CreationAttribs;
-#ifdef PLATFORM_IOS
+#if PLATFORM_IOS
     CreationAttribs.pNativeWndHandle = layer;
 #endif
 
@@ -65,7 +65,7 @@ void Renderer::Init(
     // On MacOS, we attach to active GL context initialized by the application
     GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(CreationAttribs, &pRenderDevice, &pDeviceContext, SCDesc, &pSwapChain );
 
-#ifdef PLATFORM_MACOS
+#if PLATFORM_MACOS
     // Set font scaling
     TwDefine(" GLOBAL fontscaling=2");
     pSample->SetUIScale(2);
@@ -148,7 +148,7 @@ void Renderer::Render()
     TwDraw();
     
     // On MacOS, present is performed by the app
-#ifdef PLATFORM_IOS
+#if PLATFORM_IOS
     pSwapChain->Present();
 #endif
 }

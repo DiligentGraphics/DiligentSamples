@@ -6,7 +6,7 @@
  Standard AppKit entry point.
  */
 
-#ifdef PLATFORM_IOS
+#if PLATFORM_IOS
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 #else // OS X
@@ -15,7 +15,7 @@
 
 int main(int argc, char * argv[]) {
 
-#ifdef PLATFORM_IOS
+#if PLATFORM_IOS
     @autoreleasepool {
         return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
     }

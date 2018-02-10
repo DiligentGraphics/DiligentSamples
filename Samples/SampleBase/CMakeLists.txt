@@ -50,7 +50,7 @@ elseif(PLATFORM_ANDROID)
 	)
 elseif(PLATFORM_LINUX)
 	set(SOURCE 
-		src/Linux/LinuxMain.cpp
+		src/Linux/SampleAppLinux.cpp
 		src/SampleApp.cpp
 	)
 	set(INCLUDE 

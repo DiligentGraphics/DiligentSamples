@@ -24,6 +24,7 @@
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
 #include "Errors.h"
+#include "StringTools.h"
 
 #if D3D11_SUPPORTED
 #   include "RenderDeviceFactoryD3D11.h"
@@ -55,11 +56,17 @@ SampleApp::~SampleApp()
     //pDeviceContext->Flush();
     m_pDeferredContexts.clear();
     m_pImmediateContext.Release();
+    m_pSwapChain.Release();
     m_pDevice.Release();
 }
 
 
-void SampleApp::InitializeDiligentEngine(void *NativeWindowHandle)
+void SampleApp::InitializeDiligentEngine(
+#if PLATFORM_LINUX
+        void *display,
+#endif
+    void *NativeWindowHandle
+    )
 {
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
@@ -73,7 +80,7 @@ void SampleApp::InitializeDiligentEngine(void *NativeWindowHandle)
             EngineD3D11Attribs DeviceAttribs;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, DeviceAttribs, NumDeferredCtx);
 
-#ifdef ENGINE_DLL
+#if ENGINE_DLL
             GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
             // Load the dll and import GetEngineFactoryD3D11() function
             LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
@@ -91,7 +98,7 @@ void SampleApp::InitializeDiligentEngine(void *NativeWindowHandle)
 #if D3D12_SUPPORTED
         case DeviceType::D3D12:
         {
-#ifdef ENGINE_DLL
+#if ENGINE_DLL
             GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
             // Load the dll and import GetEngineFactoryD3D12() function
             LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
@@ -112,15 +119,18 @@ void SampleApp::InitializeDiligentEngine(void *NativeWindowHandle)
         case DeviceType::OpenGL:
         {
             VERIFY_EXPR(NativeWindowHandle != nullptr);
-#ifdef ENGINE_DLL
+#if ENGINE_DLL && (PLATFORM_WIN32 || PLATFORM_UNIVERSAL_WINDOWS)
             // Declare function pointer
             GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
             // Load the dll and import GetEngineFactoryOpenGL() function
-                LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
+            LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
             auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
             EngineGLAttribs CreationAttribs;
             CreationAttribs.pNativeWndHandle = NativeWindowHandle;
+#if PLATFORM_LINUX
+            CreationAttribs.pDisplay = display;
+#endif            
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, NumDeferredCtx);
             if (NumDeferredCtx != 0)
             {
@@ -210,7 +220,7 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
     }
 }
 
-void SampleApp::Resize(int width, int height)
+void SampleApp::WindowResize(int width, int height)
 {
     if (m_pSwapChain)
     {

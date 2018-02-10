@@ -26,7 +26,7 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
     elseif(PLATFORM_LINUX)
 
-        add_executable(${SAMPLE_NAME} ${SOURCE} ${INCLUDE})
+        add_linux_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
 
     elseif(PLATFORM_MACOS OR PLATFORM_IOS)
 	if(PLATFORM_MACOS)
@@ -83,6 +83,7 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
     target_link_libraries(${SAMPLE_NAME}
     PRIVATE
+        NativeAppBase
         BuildSettings
         SampleBase
         Lua

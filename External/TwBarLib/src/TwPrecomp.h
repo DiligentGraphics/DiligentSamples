@@ -91,14 +91,14 @@
 #   undef ANT_UNIX
 #   undef ANT_OSX
 #   undef ANT_IOS
-#elif defined(PLATFORM_UNIVERSAL_WINDOWS)
+#elif PLATFORM_UNIVERSAL_WINDOWS
 #   define ANT_UNIVERSAL_WINDOWS
 #   include <windows.h>
 #   undef ANT_UNIX
 #   undef ANT_ANDROID
 #   undef ANT_OSX
 #   undef ANT_IOS
-#elif defined(PLATFORM_IOS)
+#elif PLATFORM_IOS
 #   define ANT_IOS
 #   include <unistd.h>
 #   undef _WIN32

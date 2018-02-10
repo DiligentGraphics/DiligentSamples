@@ -28,7 +28,7 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 	elseif(PLATFORM_LINUX)
 
-		add_executable(${TUTORIAL_NAME} ${SOURCE} ${INCLUDE})
+		add_linux_app(${TUTORIAL_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS}")
 
 	elseif(PLATFORM_MACOS OR PLATFORM_IOS)
 		if(PLATFORM_MACOS)
@@ -87,6 +87,7 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 	target_link_libraries(${TUTORIAL_NAME}
 	PRIVATE
+		NativeAppBase	
 		BuildSettings
 		SampleBase 
 	)

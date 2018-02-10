@@ -40,12 +40,17 @@ public:
     virtual void ProcessCommandLine(const char *CmdLine)override final;
     virtual const char* GetAppTitle()const override final { return m_AppTitle.c_str(); }
     virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual void Resize(int width, int height)override final;
+    virtual void WindowResize(int width, int height)override final;
     virtual void Render()override;
     virtual void Present()override;
 
 protected:
-    void InitializeDiligentEngine(void *NativeWindowHandle);
+    void InitializeDiligentEngine(
+#if PLATFORM_LINUX
+        void *display,
+#endif
+        void *NativeWindowHandle
+    );
     void InitializeSample();
 
     Diligent::DeviceType m_DeviceType = Diligent::DeviceType::Undefined;
