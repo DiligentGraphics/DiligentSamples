@@ -16,30 +16,29 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 	# Windows Runtime types cannot be included into static libraries
 	# https://social.msdn.microsoft.com/Forums/en-US/269db513-64ef-4817-a025-43954f614eb3/lnk4264-why-are-static-libraries-not-recommended-when-authoring-windows-runtime-types?forum=winappswithnativecode
 	# So as a workaround, we will include all source files into the target app project
-	function(get_sample_base_uwp_source UWP_SOURCE_IN UWP_INCLUDE_IN UWP_INCLUDE_DIR_IN)
+	function(append_sample_base_uwp_source TARGET_NAME)
 		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
 
-		set(UWP_SOURCE
-			${UWP_SOURCE_IN}
+		set(SAMPLE_BASE_UWP_SOURCE
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.cpp
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/SampleAppUWP.cpp
 			${SAMPLE_BASE_SOURCE_DIR}/src/SampleApp.cpp
-			PARENT_SCOPE
 		)
 
-		set(UWP_INCLUDE
-			${UWP_INCLUDE_IN}
+		set(SAMPLE_BASE_UWP_INCLUDE
 			${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.h
 			${SAMPLE_BASE_SOURCE_DIR}/include/SampleApp.h
-			PARENT_SCOPE
 		)
 
-		set(UWP_INCLUDE_DIR
-			${UWP_INCLUDE_DIR_IN}
+		set(SAMPLE_BASE_UWP_INCLUDE_DIR
 			${SAMPLE_BASE_SOURCE_DIR}/Src/UWP
-			PARENT_SCOPE
 		)
-	endfunction(get_sample_base_uwp_source)
+
+		target_sources(${TARGET_NAME} PRIVATE ${SAMPLE_BASE_UWP_SOURCE} ${SAMPLE_BASE_UWP_INCLUDE})
+		source_group("src\\SampleBase" FILES ${SAMPLE_BASE_UWP_SOURCE})
+		source_group("include\\SampleBase" FILES ${SAMPLE_BASE_UWP_INCLUDE})
+		target_include_directories(${TARGET_NAME} PRIVATE ${SAMPLE_BASE_UWP_INCLUDE_DIR})
+	endfunction()
 
 elseif(PLATFORM_ANDROID)
 	set(SOURCE 

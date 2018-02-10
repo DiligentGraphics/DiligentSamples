@@ -2,28 +2,24 @@ cmake_minimum_required (VERSION 3.6)
 
 function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
-	if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
-		add_executable(${TUTORIAL_NAME} WIN32 ${SOURCE} ${INCLUDE} ${ASSETS})
+	set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
+
+	if(PLATFORM_WIN32)
 		
-		if(PLATFORM_WIN32)
-			set_target_properties(${TUTORIAL_NAME} PROPERTIES 
-				VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+		add_win32_app(${TUTORIAL_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS}")
+		set_target_properties(${TUTORIAL_NAME} PROPERTIES 
+			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+		)
+		copy_required_dlls(${TUTORIAL_NAME})
+
+	elseif(PLATFORM_UNIVERSAL_WINDOWS)
+			add_uwp_app(${TUTORIAL_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS}")
+			append_sample_base_uwp_source(${TUTORIAL_NAME})
+			target_sources(${TUTORIAL_NAME} PRIVATE ${ASSETS})
+			set_source_files_properties(${ASSETS} PROPERTIES 
+				VS_DEPLOYMENT_CONTENT 1
+				VS_DEPLOYMENT_LOCATION "."
 			)
-			copy_required_dlls(${TUTORIAL_NAME})
-		endif()
-		set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
-
-		if(PLATFORM_UNIVERSAL_WINDOWS)
-			get_native_app_uwp_source("" "" "")
-			get_sample_base_uwp_source("${UWP_SOURCE}" "${UWP_INCLUDE}" "${UWP_INCLUDE_DIR}")
-			source_group("UWP\\src" FILES ${UWP_SOURCE})
-			source_group("UWP\\include" FILES ${UWP_INCLUDE})
-			target_include_directories(${TUTORIAL_NAME} PRIVATE ${UWP_INCLUDE_DIR})
-			target_sources(${TUTORIAL_NAME} PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
-
-			set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_CONTENT 1)
-			set_property(SOURCE ${ASSETS} PROPERTY VS_DEPLOYMENT_LOCATION ".")
-		endif()
 
 	elseif(PLATFORM_ANDROID)
 

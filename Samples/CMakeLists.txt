@@ -2,28 +2,22 @@ cmake_minimum_required (VERSION 3.6)
 
 function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
-    if(PLATFORM_WIN32 OR PLATFORM_UNIVERSAL_WINDOWS)
-        add_executable(${SAMPLE_NAME} WIN32 ${SOURCE} ${INCLUDE} ${ASSETS} ${SHADERS})
+    set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
+	set(ASSETS_AND_SHADERS ${ASSETS} ${SHADERS})
+	
+    if(PLATFORM_WIN32)
 
-        if(PLATFORM_WIN32)
-            set_target_properties(${SAMPLE_NAME} PROPERTIES
-                VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-            )
-            copy_required_dlls(${SAMPLE_NAME})
-        endif()
+		add_win32_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
+        set_target_properties(${SAMPLE_NAME} PROPERTIES
+            VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        )
+        copy_required_dlls(${SAMPLE_NAME})
 
-        if(PLATFORM_UNIVERSAL_WINDOWS)
-            get_native_app_uwp_source("" "" "")
-			get_sample_base_uwp_source("${UWP_SOURCE}" "${UWP_INCLUDE}" "${UWP_INCLUDE_DIR}")
-            source_group("UWP\\src" FILES ${UWP_SOURCE})
-            source_group("UWP\\include" FILES ${UWP_INCLUDE})
-            target_include_directories(${SAMPLE_NAME} PRIVATE ${UWP_INCLUDE_DIR})
-            target_sources(${SAMPLE_NAME} PRIVATE ${UWP_SOURCE} ${UWP_INCLUDE})
+    elseif(PLATFORM_UNIVERSAL_WINDOWS)
 
-            set_source_files_properties(${ASSETS} ${SHADERS} PROPERTIES VS_DEPLOYMENT_CONTENT 1)
-        endif()
-
-        set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
+        add_uwp_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
+		append_sample_base_uwp_source(${SAMPLE_NAME})
+        set_source_files_properties(${ASSETS_AND_SHADERS} PROPERTIES VS_DEPLOYMENT_CONTENT 1)
 
     elseif(PLATFORM_ANDROID)
 
