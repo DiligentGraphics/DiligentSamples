@@ -121,7 +121,9 @@ void SampleApp::InitializeDiligentEngine(
         case DeviceType::OpenGL:
         case DeviceType::OpenGLES:
         {
+#if !PLATFORM_MACOS
             VERIFY_EXPR(NativeWindowHandle != nullptr);
+#endif
 #if ENGINE_DLL && (PLATFORM_WIN32 || PLATFORM_UNIVERSAL_WINDOWS)
             // Declare function pointer
             GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
@@ -133,7 +135,7 @@ void SampleApp::InitializeDiligentEngine(
             CreationAttribs.pNativeWndHandle = NativeWindowHandle;
 #if PLATFORM_LINUX
             CreationAttribs.pDisplay = display;
-#endif            
+#endif
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, NumDeferredCtx);
             if (NumDeferredCtx != 0)
             {

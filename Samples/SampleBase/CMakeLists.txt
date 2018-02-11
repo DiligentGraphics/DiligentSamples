@@ -57,54 +57,14 @@ elseif(PLATFORM_LINUX)
 		include/SampleApp.h
 	)
 elseif(PLATFORM_MACOS)
+
     set(SOURCE
-        src/MacOS/Renderer.cpp
-		src/SampleApp.cpp
+        src/MacOS/SampleAppMacOS.cpp
+        src/SampleApp.cpp
     )
     set(INCLUDE
-        src/MacOS/Renderer.h
-		include/SampleApp.h
+        include/SampleApp.h
     )
-
-	function(get_sample_base_macos_source APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
-		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
-
-		set(${APPLE_SOURCE}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.m
-		)
-        set_source_files_properties(${APPLE_SOURCE} PROPERTIES
-            COMPILE_FLAGS "-x objective-c++"
-        )
-        set( APPLE_SOURCE ${APPLE_SOURCE} PARENT_SCOPE )
-
-		set(${APPLE_INCLUDE}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/WindowController.h
-       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/AppDelegate.h
-       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/FullscreenWindow.h
-       		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX/GLView.h
-		    PARENT_SCOPE
-		)
-
-		set(${APPLE_RESOURCES}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Base.lproj/Main.storyboard
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Images.xcassets/AppIcon.appiconset/dg.icns
-		    PARENT_SCOPE
-		)
-
-		set(${APPLE_INFO_PLIST}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/OSX/Info.plist
-		    PARENT_SCOPE
-		)
-
-		set(${APPLE_INCLUDE_DIRS}
-        		${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/OSX
-			PARENT_SCOPE
-		)
-	endfunction()
 
 elseif(PLATFORM_IOS)
     set(SOURCE
@@ -225,9 +185,7 @@ elseif(PLATFORM_ANDROID)
 elseif(PLATFORM_LINUX)
 	target_link_libraries(SampleBase PRIVATE GL X11)
 elseif(PLATFORM_MACOS OR PLATFORM_IOS)
-    target_include_directories(SampleBase PUBLIC
-        src/MacOS
-    )
+
 endif()
 
 source_group("src" FILES ${SOURCE})

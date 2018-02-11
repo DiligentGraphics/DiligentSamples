@@ -29,7 +29,11 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 		add_linux_app(${TUTORIAL_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS}")
 
-	elseif(PLATFORM_MACOS OR PLATFORM_IOS)
+	elseif(PLATFORM_MACOS)
+
+		add_macos_app(${TUTORIAL_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS}")
+
+	elseif(PLATFORM_IOS)
 		if(PLATFORM_MACOS)
 		    get_sample_base_macos_source(APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
 		else()
