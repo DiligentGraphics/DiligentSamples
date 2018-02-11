@@ -41,8 +41,8 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 	endfunction()
 
 elseif(PLATFORM_ANDROID)
-	set(SOURCE 
-		src/Android/AndroidMainImpl.cpp
+	set(SOURCE
+		src/Android/SampleAppAndroid.cpp
 		src/SampleApp.cpp
 	)
 	set(INCLUDE 
@@ -221,10 +221,7 @@ PUBLIC
 if(PLATFORM_UNIVERSAL_WINDOWS)
 	target_link_libraries(SampleBase PRIVATE dxguid.lib)
 elseif(PLATFORM_ANDROID)
-	target_link_libraries(SampleBase PRIVATE NDKHelper GLESv3 android PUBLIC NativeAppGlue)
-	target_include_directories(SampleBase PRIVATE
-		${ANDROID_NDK}/sources/android/cpufeatures
-	)
+	target_link_libraries(SampleBase PRIVATE GLESv3 PUBLIC NativeAppGlue)
 elseif(PLATFORM_LINUX)
 	target_link_libraries(SampleBase PRIVATE GL X11)
 elseif(PLATFORM_MACOS OR PLATFORM_IOS)

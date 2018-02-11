@@ -21,6 +21,8 @@
 *  of the possibility of such damages.
 */
 
+#include <sstream>
+
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
 #include "Errors.h"
@@ -117,6 +119,7 @@ void SampleApp::InitializeDiligentEngine(
 
 #if OPENGL_SUPPORTED
         case DeviceType::OpenGL:
+        case DeviceType::OpenGLES:
         {
             VERIFY_EXPR(NativeWindowHandle != nullptr);
 #if ENGINE_DLL && (PLATFORM_WIN32 || PLATFORM_UNIVERSAL_WINDOWS)
@@ -157,6 +160,14 @@ void SampleApp::InitializeDiligentEngine(
 
 void SampleApp::InitializeSample()
 {
+    auto UIScale = m_TheSample->GetUIScale();
+    if(UIScale != 1)
+    {
+        std::stringstream fontscaling;
+        fontscaling << " GLOBAL fontscaling=" << UIScale;
+        TwDefine(fontscaling.str().c_str());
+    }
+
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
     // very old GL specification. Using these modes results in applying some 

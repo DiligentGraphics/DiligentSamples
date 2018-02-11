@@ -48,6 +48,7 @@ public:
     virtual bool HandleNativeMessage(const void *pNativeMsgData) { return false; }
     virtual const Diligent::Char* GetSampleName()const{return "Diligent Engine Sample";}
     void SetUIScale(Diligent::Int32 UIScale){m_UIScale = UIScale;};
+    Diligent::Int32 GetUIScale()const{return m_UIScale;}
 
 protected:
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;

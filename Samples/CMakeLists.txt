@@ -21,8 +21,7 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
     elseif(PLATFORM_ANDROID)
 
-        list(APPEND SOURCE src/AndroidMain.cpp)
-        add_library(${SAMPLE_NAME} SHARED ${SOURCE} ${INCLUDE})
+        add_android_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
 
     elseif(PLATFORM_LINUX)
 
