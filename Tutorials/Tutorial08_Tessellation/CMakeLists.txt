@@ -21,7 +21,6 @@ set(SHADERS
 )
 
 set(ASSETS
-	${SHADERS}
 	assets/ps_height_1k.png
 	assets/ps_texture_2k.png
 )

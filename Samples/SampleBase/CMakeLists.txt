@@ -68,50 +68,12 @@ elseif(PLATFORM_MACOS)
 
 elseif(PLATFORM_IOS)
     set(SOURCE
-        src/MacOS/Renderer.cpp
+        src/IOS/SampleAppIOS.cpp
 		src/SampleApp.cpp
     )
     set(INCLUDE
-        src/MacOS/Renderer.h
 		include/SampleApp.h
     )
-
-	function(get_sample_base_ios_source APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
-		get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
-
-		set(${APPLE_SOURCE}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/main.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/AppDelegate.m
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/EAGLView.m
-		)
-        set_source_files_properties(${APPLE_SOURCE} PROPERTIES
-            COMPILE_FLAGS "-x objective-c++"
-        )
-        set( APPLE_SOURCE ${APPLE_SOURCE} PARENT_SCOPE )
-
-		set(${APPLE_INCLUDE}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/AppDelegate.h
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS/EAGLView.h
-		    PARENT_SCOPE
-		)
-
-		set(${APPLE_RESOURCES}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Base.lproj/Main.storyboard
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Base.lproj/LaunchScreen.xib
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/Images.xcassets/AppIcon.appiconset/dg-icon.png
-		    PARENT_SCOPE
-		)
-
-		set(${APPLE_INFO_PLIST}
-		    ${SAMPLE_BASE_SOURCE_DIR}/Apple/Data/iOS/info.plist
-		    PARENT_SCOPE
-		)
-
-		set(${APPLE_INCLUDE_DIRS}
-        		${SAMPLE_BASE_SOURCE_DIR}/Apple/Source/Classes/iOS
-			PARENT_SCOPE
-		)
-	endfunction()
 
 endif()
 

@@ -15,8 +15,6 @@ set(SHADERS
 	assets/cube.psh
 )
 
-set(ASSETS
-	${SHADERS}
-)
+set(ASSETS)
 
 add_tutorial("Tutorial02_Cube" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

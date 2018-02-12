@@ -18,7 +18,6 @@ set(SHADERS
 )
 
 set(ASSETS
-	${SHADERS}
 	assets/DGLogo.png
 )
 

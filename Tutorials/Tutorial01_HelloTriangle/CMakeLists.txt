@@ -11,8 +11,6 @@ set(INCLUDE
 )
 
 set(SHADERS)
-set(ASSETS
-	${SHADERS}
-)
+set(ASSETS)
 
 add_tutorial("Tutorial01_HelloTriangle" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

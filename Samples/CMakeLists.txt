@@ -3,11 +3,11 @@ cmake_minimum_required (VERSION 3.6)
 function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
     set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
-	set(ASSETS_AND_SHADERS ${ASSETS} ${SHADERS})
+	set(ALL_ASSETS ${ASSETS} ${SHADERS})
 	
-    if(PLATFORM_WIN32)
+    add_target_platform_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ALL_ASSETS}")
 
-		add_win32_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
+    if(PLATFORM_WIN32)
         set_target_properties(${SAMPLE_NAME} PROPERTIES
             VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
         )
@@ -15,54 +15,8 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
     elseif(PLATFORM_UNIVERSAL_WINDOWS)
 
-        add_uwp_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
 		append_sample_base_uwp_source(${SAMPLE_NAME})
-        set_source_files_properties(${ASSETS_AND_SHADERS} PROPERTIES VS_DEPLOYMENT_CONTENT 1)
 
-    elseif(PLATFORM_ANDROID)
-
-        add_android_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
-
-    elseif(PLATFORM_LINUX)
-
-        add_linux_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
-
-    elseif(PLATFORM_MACOS)
-
-    	    add_macos_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ASSETS_AND_SHADERS}")
-
-    elseif(PLATFORM_IOS)
-	
-	if(PLATFORM_MACOS)
-	    
-	else()
-   	    get_sample_base_ios_source(APPLE_SOURCE APPLE_INCLUDE APPLE_RESOURCES APPLE_INFO_PLIST APPLE_INCLUDE_DIRS)
-	endif()
-
-
-	if(PLATFORM_MACOS)
-
-	else()
-	    find_library(OPENGLES OpenGLES)
-            if (NOT OPENGLES)
-                message(FATAL_ERROR "OpenGLES not found")
-            endif()
-
-	    find_library(UIKIT UIKit)
-            if (NOT UIKIT)
-                 message(FATAL_ERROR "UIKIT not found")
-            endif()
-
-     	    find_library(CORE_ANIMATION QuartzCore)
-      	    if (NOT CORE_ANIMATION)
-        	 message(FATAL_ERROR "QuartzCore (CoreAnimation) not found")
-    	    endif()
-
-	    target_link_libraries(${SAMPLE_NAME} PRIVATE ${OPENGLES} ${UIKIT} ${CORE_ANIMATION})
-	endif()
-
-    else()
-        message(FATAL_ERROR "Unknown platform")
     endif()
 
     target_include_directories(${SAMPLE_NAME}

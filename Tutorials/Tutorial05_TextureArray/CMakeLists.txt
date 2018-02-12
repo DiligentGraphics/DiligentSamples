@@ -16,7 +16,6 @@ set(SHADERS
 )
 
 set(ASSETS
-	${SHADERS}
 	assets/DGLogo0.png
 	assets/DGLogo1.png
 	assets/DGLogo2.png

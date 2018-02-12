@@ -238,8 +238,10 @@ void SampleApp::WindowResize(int width, int height)
     if (m_pSwapChain)
     {
         m_pSwapChain->Resize(width, height);
-        m_TheSample->WindowResize(m_pSwapChain->GetDesc().Width, m_pSwapChain->GetDesc().Height);
-        TwWindowSize(width, height);
+        auto SCWidth = m_pSwapChain->GetDesc().Width;
+        auto SCHeight = m_pSwapChain->GetDesc().Height;
+        m_TheSample->WindowResize(SCWidth, SCHeight);
+        TwWindowSize(SCWidth, SCHeight);
     }
 }
 
