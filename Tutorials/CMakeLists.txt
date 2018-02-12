@@ -48,7 +48,7 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 	)
 
 	source_group("src" FILES ${SOURCE} ${INCLUDE})
-	source_group("assets" FILES ${ASSETS})	
+	source_group("assets" FILES ${ALL_ASSETS})	
 
 endfunction()
 
