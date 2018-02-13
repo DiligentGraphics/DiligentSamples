@@ -47,6 +47,12 @@ struct Constants
 
 void Tutorial07_GeometryShader::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    if(!deviceCaps.bGeometryShadersSupported)
+    {
+        throw std::runtime_error("Geometry shaders are required to run this sample");
+    }
+
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     {

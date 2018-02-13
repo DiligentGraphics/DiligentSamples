@@ -62,6 +62,12 @@ namespace
 
 void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
+    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    if(!deviceCaps.bTessellationSupported)
+    {
+        throw std::runtime_error("Hardware tessellation is not supported");
+    }
+
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     ShaderMacroHelper MacroHelper;
