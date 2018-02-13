@@ -38,7 +38,6 @@ public:
     virtual void OnGLContextCreated(void *eaglLayer)override final
     {
         InitializeDiligentEngine(eaglLayer);
-        m_TheSample->SetUIScale(2);
         InitializeSample();
     }
     
