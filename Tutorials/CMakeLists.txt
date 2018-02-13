@@ -2,7 +2,6 @@ cmake_minimum_required (VERSION 3.6)
 
 function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
-	
 	set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 	set(ALL_ASSETS ${ASSETS} ${SHADERS})
 	add_target_platform_app(${TUTORIAL_NAME} "${SOURCE}" "${INCLUDE}" "${ALL_ASSETS}")
@@ -13,15 +12,12 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 	)
 
 	if(PLATFORM_WIN32)
-		
 		set_target_properties(${TUTORIAL_NAME} PROPERTIES 
 			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
 		)
 		copy_required_dlls(${TUTORIAL_NAME})
-
 	elseif(PLATFORM_UNIVERSAL_WINDOWS)
 			append_sample_base_uwp_source(${TUTORIAL_NAME})
-	
 	endif()
 
 	target_include_directories(${TUTORIAL_NAME}

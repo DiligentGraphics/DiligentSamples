@@ -3,19 +3,19 @@ cmake_minimum_required (VERSION 3.6)
 project(AntTweakBarSample CXX)
 
 set(SOURCE
-	src/MengerSponge.cpp
+    src/MengerSponge.cpp
 )
 
 set(INCLUDE
-	src/MengerSpongeSample.h
+    src/MengerSpongeSample.h
 )
 
 
 set(SHADERS
-	assets/shaders/MainPS_DX.hlsl
-	assets/shaders/MainPS_GL.glsl
-	assets/shaders/MainVS_DX.hlsl
-	assets/shaders/MainVS_GL.glsl
+    assets/shaders/MainPS_DX.hlsl
+    assets/shaders/MainPS_GL.glsl
+    assets/shaders/MainVS_DX.hlsl
+    assets/shaders/MainVS_GL.glsl
 )
 
 set(ASSETS
@@ -26,7 +26,8 @@ add_sample("AntTweakBarSample" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}"
 
 set_source_files_properties(${ASSETS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "."
-    MACOSX_PACKAGE_LOCATION Resources)
+    MACOSX_PACKAGE_LOCATION Resources
+)
 
 set_source_files_properties(${SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"

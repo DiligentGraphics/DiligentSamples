@@ -3,20 +3,20 @@ cmake_minimum_required (VERSION 3.6)
 project(Tutorial04_Instancing CXX)
 
 set(SOURCE
-	src/Tutorial04_Instancing.cpp
+    src/Tutorial04_Instancing.cpp
 )
 
 set(INCLUDE
-	src/Tutorial04_Instancing.h
+    src/Tutorial04_Instancing.h
 )
 
 set(SHADERS
-	assets/cube_inst.vsh
-	assets/cube_inst.psh
+    assets/cube_inst.vsh
+    assets/cube_inst.psh
 )
 
 set(ASSETS
-	assets/DGLogo.png
+    assets/DGLogo.png
 )
 
 add_tutorial("Tutorial04_Instancing" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

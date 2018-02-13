@@ -4,7 +4,6 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
     set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 	set(ALL_ASSETS ${ASSETS} ${SHADERS})
-	
     add_target_platform_app(${SAMPLE_NAME} "${SOURCE}" "${INCLUDE}" "${ALL_ASSETS}")
 
     if(PLATFORM_WIN32)
@@ -12,11 +11,8 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
             VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
         )
         copy_required_dlls(${SAMPLE_NAME})
-
     elseif(PLATFORM_UNIVERSAL_WINDOWS)
-
 		append_sample_base_uwp_source(${SAMPLE_NAME})
-
     endif()
 
     target_include_directories(${SAMPLE_NAME}
@@ -39,7 +35,6 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
         # - w4201: nonstandard extension used: nameless struct/unio
         target_compile_options(${SAMPLE_NAME} PRIVATE /wd4201)
     endif()
-
 
     set_target_properties(${SAMPLE_NAME} PROPERTIES
         FOLDER Samples
