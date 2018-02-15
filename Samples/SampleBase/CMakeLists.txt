@@ -120,9 +120,16 @@ elseif(PLATFORM_LINUX)
     SET(ENGINE_LIBRARIES
         GraphicsEngineOpenGL-shared
     )
-elseif(PLATFORM_MACOS OR PLATFORM_IOS)
+elseif(PLATFORM_MACOS)
     SET(ENGINE_LIBRARIES
         GraphicsEngineOpenGL-shared
+    )
+elseif(PLATFORM_IOS)
+    # Statically link with the engine on iOS.
+    # It is also possible to link dynamically by
+    # putting the library into the framework.
+    SET(ENGINE_LIBRARIES
+        GraphicsEngineOpenGL-static
     )
 else()
     message(FATAL_ERROR "Undefined platform")

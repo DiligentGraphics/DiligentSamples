@@ -38,7 +38,6 @@ public:
     virtual void OnGLContextCreated(void *eaglLayer)override final
     {
         InitializeDiligentEngine(eaglLayer);
-        m_TheSample->SetUIScale(2);
         InitializeSample();
     }
     
@@ -76,6 +75,23 @@ public:
         SampleApp::Render();
     }
 
+    virtual void OnTouchBegan(float x, float y)override final
+    {
+        TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
+        TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
+    }
+    
+    virtual void OnTouchMoved(float x, float y)override final
+    {
+        TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
+    }
+    
+    virtual void OnTouchEnded(float x, float y)override final
+    {
+        TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
+        TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
+    }
+    
 private:
     /*
     // Unfortunately TwBar library calls rendering
