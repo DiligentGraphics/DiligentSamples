@@ -25,7 +25,6 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
         NativeAppBase
         BuildSettings
         SampleBase
-        Lua
         RenderScript
     )
     set_common_target_properties(${SAMPLE_NAME})

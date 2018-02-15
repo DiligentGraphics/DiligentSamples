@@ -31,7 +31,7 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
         )
 
         set(SAMPLE_BASE_UWP_INCLUDE_DIR
-            ${SAMPLE_BASE_SOURCE_DIR}/Src/UWP
+            ${SAMPLE_BASE_SOURCE_DIR}/src/UWP
         )
 
         target_sources(${TARGET_NAME} PRIVATE ${SAMPLE_BASE_UWP_SOURCE} ${SAMPLE_BASE_UWP_INCLUDE})
