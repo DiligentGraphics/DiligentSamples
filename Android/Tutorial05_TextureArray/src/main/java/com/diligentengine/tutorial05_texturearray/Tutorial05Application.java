@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial05_texturearray;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial05Application extends SampleApplication {
+public class Tutorial05Application extends DiligentApplicationBase {
 
 }

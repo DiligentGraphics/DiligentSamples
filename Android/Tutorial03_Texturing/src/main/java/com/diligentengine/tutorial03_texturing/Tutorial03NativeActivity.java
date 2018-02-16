@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial03_texturing;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial03NativeActivity extends NativeActivityBase {
 

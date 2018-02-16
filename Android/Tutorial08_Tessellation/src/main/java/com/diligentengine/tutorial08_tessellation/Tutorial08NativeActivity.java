@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial08_tessellation;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial08NativeActivity extends NativeActivityBase {
 

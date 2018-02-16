@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.anttweakbarsample;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class TweakBarSampleApplication extends SampleApplication {
+public class TweakBarSampleApplication extends DiligentApplicationBase {
 
 }

@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial06_multithreading;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial06NativeActivity extends NativeActivityBase {
 

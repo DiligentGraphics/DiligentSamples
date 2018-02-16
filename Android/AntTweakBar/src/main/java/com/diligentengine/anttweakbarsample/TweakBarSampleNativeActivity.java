@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.anttweakbarsample;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class TweakBarSampleNativeActivity extends NativeActivityBase {
 

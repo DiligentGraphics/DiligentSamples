@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial06_multithreading;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial06Application extends SampleApplication {
+public class Tutorial06Application extends DiligentApplicationBase {
 
 }

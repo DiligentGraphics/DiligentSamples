@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial03_texturing;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial03Application extends SampleApplication {
+public class Tutorial03Application extends DiligentApplicationBase {
 
 }

@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial01_hellotriangle;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial01NativeActivity extends NativeActivityBase {
 

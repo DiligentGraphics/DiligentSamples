@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial02_cube;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial02Application extends SampleApplication {
+public class Tutorial02Application extends DiligentApplicationBase {
 
 }

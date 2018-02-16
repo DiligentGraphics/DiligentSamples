@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial02_cube;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial02NativeActivity extends NativeActivityBase {
 

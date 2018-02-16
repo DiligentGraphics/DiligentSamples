@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.atmospheresample;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class AtmosphereSampleNativeActivity extends NativeActivityBase {
 

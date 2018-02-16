@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial04_instancing;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial04Application extends SampleApplication {
+public class Tutorial04Application extends DiligentApplicationBase {
 
 }

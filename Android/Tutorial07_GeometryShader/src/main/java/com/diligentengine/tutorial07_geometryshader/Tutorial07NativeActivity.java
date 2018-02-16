@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial07_geometryshader;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial07NativeActivity extends NativeActivityBase {
 

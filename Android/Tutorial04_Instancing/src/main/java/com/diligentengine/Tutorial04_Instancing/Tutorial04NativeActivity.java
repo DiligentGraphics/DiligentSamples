@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial04_instancing;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial04NativeActivity extends NativeActivityBase {
 

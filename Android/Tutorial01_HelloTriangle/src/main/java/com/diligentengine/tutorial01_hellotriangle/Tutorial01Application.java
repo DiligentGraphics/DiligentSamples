@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial01_hellotriangle;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial01Application extends SampleApplication {
+public class Tutorial01Application extends DiligentApplicationBase {
 
 }

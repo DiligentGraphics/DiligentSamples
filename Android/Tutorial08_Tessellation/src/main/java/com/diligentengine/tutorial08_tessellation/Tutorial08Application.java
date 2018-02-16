@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial08_tessellation;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial08Application extends SampleApplication {
+public class Tutorial08Application extends DiligentApplicationBase {
 
 }

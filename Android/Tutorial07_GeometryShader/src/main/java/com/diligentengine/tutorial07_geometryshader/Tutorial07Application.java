@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.tutorial07_geometryshader;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class Tutorial07Application extends SampleApplication {
+public class Tutorial07Application extends DiligentApplicationBase {
 
 }

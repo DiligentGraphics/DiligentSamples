@@ -15,8 +15,8 @@
  */
 
 package com.diligentengine.atmospheresample;
-import com.diligentengine.samples.common.SampleApplication;
+import com.diligentengine.android.common.DiligentApplicationBase;
 
-public class AtmosphereSampleApplication extends SampleApplication {
+public class AtmosphereSampleApplication extends DiligentApplicationBase {
 
 }

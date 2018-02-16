@@ -15,7 +15,7 @@
  */
 
 package com.diligentengine.tutorial05_texturearray;
-import com.diligentengine.samples.common.NativeActivityBase;
+import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial05NativeActivity extends NativeActivityBase {
 
