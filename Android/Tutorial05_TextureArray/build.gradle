@@ -1,12 +1,10 @@
 apply plugin: 'com.android.application'
+apply from: "../../../Common/NativeApp/Android/android_common.gradle"
 
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
         applicationId = 'com.diligentengine.tutorial05_texturearray.Tutorial05Application'
-        minSdkVersion 21
-        targetSdkVersion 25
     }
     buildTypes {
             release {

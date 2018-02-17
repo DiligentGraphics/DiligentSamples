@@ -15,14 +15,3 @@ allprojects {
         google()
     }
 }
-
-// This block encapsulates custom properties and makes them available to all
-// modules in the project.
-ext {
-   /**
-    * compileSdkVersion specifies the Android API level Gradle should use to
-    * compile your app. This means your app can use the API features included in
-    * this API level and lower.
-    */
-    compileSdkVersion = 27
-}
