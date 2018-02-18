@@ -37,6 +37,7 @@ public:
 
     virtual void Initialize(ANativeWindow* window)override final
     {
+        SampleApp::Initialize(window);
         InitializeDiligentEngine(window);
         m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
         m_TheSample->SetUIScale(3);
