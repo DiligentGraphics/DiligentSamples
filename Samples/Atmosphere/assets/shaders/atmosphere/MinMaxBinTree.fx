@@ -63,8 +63,8 @@ void RenderSliceUVDirInShadowMapTexturePS(in ScreenSizeQuadVSOutput VSOut,
     float2 f2SliceDir = f2SliceExitUV - f2SliceOriginUV;
     f2SliceDir /= max(abs(f2SliceDir.x), abs(f2SliceDir.y));
     
-    float4 f4BoundaryMinMaxXYXY = float4(0,0,1,1) + float4(0.5, 0.5, -0.5, -0.5)*g_PPAttribs.m_f2ShadowMapTexelSize.xyxy;
-    if( any( Less( (f2SliceOriginUV.xyxy - f4BoundaryMinMaxXYXY) * float4( 1, 1, -1, -1), F4ZERO ) ) )
+    float4 f4BoundaryMinMaxXYXY = float4(0.0, 0.0, 1.0, 1.0) + float4(0.5, 0.5, -0.5, -0.5)*g_PPAttribs.m_f2ShadowMapTexelSize.xyxy;
+    if( any( Less( (f2SliceOriginUV.xyxy - f4BoundaryMinMaxXYXY) * float4( 1.0, 1.0, -1.0, -1.0), F4ZERO ) ) )
     {
         // If slice origin in UV coordinates falls beyond [0,1]x[0,1] region, we have
         // to continue the ray and intersect it with this rectangle
