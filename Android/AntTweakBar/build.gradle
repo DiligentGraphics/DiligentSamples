@@ -17,6 +17,10 @@ android {
             assets.srcDirs = ['../../Samples/AntTweakBar/assets']
         }
     }
+
+    packagingOptions {
+        exclude '*.so'
+    }
 }
 
 buildDir '../build/AntTweakBar'
