@@ -269,7 +269,7 @@ void LightSctrPostProcess :: CreateRandomSphereSamplingTexture(IRenderDevice *pD
 
 void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevice, IDeviceContext *pContext)
 {
-    const int ThreadGroupSize = 16;
+    const int ThreadGroupSize = pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES ? 8 : 16;
     if( !m_pPrecomputeSingleSctrCS )
     {
         ShaderMacroHelper Macros;

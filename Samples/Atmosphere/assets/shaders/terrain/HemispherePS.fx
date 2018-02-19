@@ -145,13 +145,12 @@ float ComputeShadowAmount(in float3 f3PosInLightViewSpace, in float fCameraSpace
     float fLightAmount = g_tex2DShadowMap.SampleCmp( g_tex2DShadowMap_sampler, float3(f3ShadowMapUVDepth.xy, Cascade), float( f3ShadowMapUVDepth.z ) );
 
 #if SMOOTH_SHADOWS
-        float2 Offsets[] = 
-        {
-            float2(-1.,-1.),
-            float2(+1.,-1.),
-            float2(-1.,+1.),
-            float2(+1.,+1.),
-        };
+        float2 Offsets[4];
+        Offsets[0] = float2(-1.,-1.);
+        Offsets[1] = float2(+1.,-1.);
+        Offsets[2] = float2(-1.,+1.);
+        Offsets[3] = float2(+1.,+1.);
+        
         [unroll]
         for(int i=0; i<4; ++i)
         {
@@ -200,7 +199,12 @@ void CombineMaterials(in float4 MtrlWeights,
 #endif
 
     float4 f4TilingScale = g_TerrainAttribs.m_f4TilingScale;
-    float fTilingScale[5] = {0.0, f4TilingScale.x, f4TilingScale.y, f4TilingScale.z, f4TilingScale.w};
+    float fTilingScale[5]; 
+    fTilingScale[0] = 0.0;
+    fTilingScale[1] = f4TilingScale.x;
+    fTilingScale[2] = f4TilingScale.y;
+    fTilingScale[3] = f4TilingScale.z;
+    fTilingScale[4] = f4TilingScale.w;
     // Load material colors and normals
     const float fThresholdWeight = 3.f/256.f;
     MaterialColors[1] = MtrlWeights.x > fThresholdWeight ? g_tex2DTileDiffuse[1].Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[1]) : float3(0.0, 0.0, 0.0);
