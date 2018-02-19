@@ -33,13 +33,11 @@ void RenderSampleLocationsVS(in uint VertexID : SV_VertexID,
     float4 MinMaxUV = float4(f2QuadCenterPos.x-f2QuadSize.x, f2QuadCenterPos.y - f2QuadSize.y, f2QuadCenterPos.x+f2QuadSize.x, f2QuadCenterPos.y + f2QuadSize.y);
     
     float3 f3Color = bIsInterpolation ? float3(0.5,0.0,0.0) : float3(1.0,0.0,0.0);
-    float4 Verts[4] = 
-    {
-        float4(MinMaxUV.xy, 1.0, 1.0), 
-        float4(MinMaxUV.xw, 1.0, 1.0),
-        float4(MinMaxUV.zy, 1.0, 1.0),
-        float4(MinMaxUV.zw, 1.0, 1.0)
-    };
+    float4 Verts[4];
+    Verts[0] = float4(MinMaxUV.xy, 1.0, 1.0);
+    Verts[1] = float4(MinMaxUV.xw, 1.0, 1.0);
+    Verts[2] = float4(MinMaxUV.zy, 1.0, 1.0);
+    Verts[3] = float4(MinMaxUV.zw, 1.0, 1.0);
 
     f4PosPS = Verts[VertexID];
     VSOut.f2PosXY = Verts[VertexID].xy;
