@@ -102,6 +102,11 @@ You can use Android Studio to build, deploy and run samples.
 
 # Version History
 
+## v2.2
+
+* Enabled MacOS and iOS platforms
+* Fixed multiple issues with OpenGL/GLES
+
 ## v2.1.b
 
 * Removed legacy VS projects and solutions
