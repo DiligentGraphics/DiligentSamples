@@ -26,7 +26,6 @@ set(ATMOSPHERE_SHADERS
     assets/shaders/atmosphere/LookUpTables.fxh
     assets/shaders/atmosphere/MarkRayMarchingSamples.fx
     assets/shaders/atmosphere/MinMaxBinTree.fx
-    assets/shaders/atmosphere/Precomputation.fx
     assets/shaders/atmosphere/RayMarch.fx
     assets/shaders/atmosphere/ReconstructCameraSpaceZ.fx
     assets/shaders/atmosphere/RefineSampleLocations.fx
@@ -40,6 +39,18 @@ set(ATMOSPHERE_SHADERS
     assets/shaders/atmosphere/UnshadowedScattering.fxh
     assets/shaders/atmosphere/UnwarpEpipolarScattering.fx
     assets/shaders/atmosphere/UpdateAverageLuminance.fx
+)
+
+SET(PRECOMPUTE_SHADERS
+    assets/shaders/atmosphere/precompute/PrecomputeNetDensityToAtmTop.fx
+    assets/shaders/atmosphere/precompute/CombineScatteringOrders.fx
+    assets/shaders/atmosphere/precompute/ComputeScatteringOrder.fx
+    assets/shaders/atmosphere/precompute/ComputeSctrRadiance.fx
+    assets/shaders/atmosphere/precompute/InitHighOrderScattering.fx
+    assets/shaders/atmosphere/precompute/PrecomputeAmbientSkyLight.fx
+    assets/shaders/atmosphere/precompute/PrecomputeSingleScattering.fx
+    assets/shaders/atmosphere/precompute/UpdateHighOrderScattering.fx
+    assets/shaders/atmosphere/precompute/PrecomputeCommon.fxh
 )
 
 set(TERRAIN_SHADERS
@@ -75,13 +86,17 @@ set(TERRAIN_TILES
     assets/Terrain/Tiles/Snow_NM.jpg
 )
 
-set(ALL_SHADERS ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS})
+set(ALL_SHADERS ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS} ${PRECOMPUTE_SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
 add_sample("AtmosphereSample" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
 set_source_files_properties(${ATMOSPHERE_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/atmosphere"
     MACOSX_PACKAGE_LOCATION "Resources/shaders/atmosphere"
+)
+set_source_files_properties(${PRECOMPUTE_SHADERS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "shaders/atmosphere/precompute"
+    MACOSX_PACKAGE_LOCATION "Resources/shaders/atmosphere/precompute"
 )
 set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/terrain"
@@ -114,6 +129,7 @@ PRIVATE
 )
 
 source_group("assets\\shaders\\atmosphere" FILES ${ATMOSPHERE_SHADERS})
+source_group("assets\\shaders\\atmosphere\\precompute" FILES ${PRECOMPUTE_SHADERS})
 source_group("assets\\shaders\\terrain" FILES ${TERRAIN_SHADERS})
 source_group("assets\\shaders" FILES ${SHADERS})
 source_group("assets\\Terrain" FILES ${TERRAIN_TEXTURES})

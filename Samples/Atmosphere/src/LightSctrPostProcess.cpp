@@ -73,7 +73,7 @@ void CreateShader(IRenderDevice *pDevice,
     Attribs.Desc.VariableDesc = pVarDesc;
     Attribs.Desc.NumVariables = NumVars;
     Attribs.Desc.DefaultVariableType = DefaultVarType;
-    BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\atmosphere");
+    BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\atmosphere;shaders\\atmosphere\\precompute");
     Attribs.pShaderSourceStreamFactory = &BasicSSSFactory;
     pDevice->CreateShader( Attribs, ppShader );
 }
@@ -276,7 +276,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "PrecomputeSingleScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pPrecomputeSingleSctrCS );
+        CreateShader( pDevice, "PrecomputeSingleScattering.fx", "PrecomputeSingleScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pPrecomputeSingleSctrCS );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pPrecomputeSingleSctrCS;
@@ -291,7 +291,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", sm_iNumRandomSamplesOnSphere );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "ComputeSctrRadianceCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeSctrRadianceCS );
+        CreateShader( pDevice, "ComputeSctrRadiance.fx", "ComputeSctrRadianceCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeSctrRadianceCS );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pComputeSctrRadianceCS;
@@ -306,7 +306,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "ComputeScatteringOrderCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeScatteringOrderCS );
+        CreateShader( pDevice, "ComputeScatteringOrder.fx", "ComputeScatteringOrderCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeScatteringOrderCS );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pComputeScatteringOrderCS;
@@ -320,7 +320,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "InitHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pInitHighOrderScatteringCS );
+        CreateShader( pDevice, "InitHighOrderScattering.fx", "InitHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pInitHighOrderScatteringCS );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pInitHighOrderScatteringCS;
@@ -334,7 +334,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "UpdateHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pUpdateHighOrderScatteringCS);
+        CreateShader( pDevice, "UpdateHighOrderScattering.fx", "UpdateHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pUpdateHighOrderScatteringCS);
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pUpdateHighOrderScatteringCS;
@@ -348,7 +348,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "CombineScatteringOrdersCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pCombineScatteringOrdersCS );
+        CreateShader( pDevice, "CombineScatteringOrders.fx", "CombineScatteringOrdersCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pCombineScatteringOrdersCS );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pCombineScatteringOrdersCS;
@@ -1659,7 +1659,7 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", sm_iNumRandomSamplesOnSphere );
         Macros.Finalize();
-        CreateShader( pDevice, "Precomputation.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pPrecomputeAmbientSkyLightPS );
+        CreateShader( pDevice, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pPrecomputeAmbientSkyLightPS );
         m_pRenderScript->Run("CreatePrecomputeAmbientSkyLightPSO", m_pPrecomputeAmbientSkyLightPS);
     }
 

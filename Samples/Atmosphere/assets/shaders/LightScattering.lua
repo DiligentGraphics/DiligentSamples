@@ -412,7 +412,7 @@ function CreateShader(File, Entry, ShaderType)
 	return Shader.Create{
 				FilePath = File,
 				EntryPoint = Entry,
-				SearchDirectories = "shaders;shaders\\atmosphere",
+				SearchDirectories = "shaders;shaders\\atmosphere;shaders\\atmosphere\\precompute",
 				SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
 				Desc = {
 					ShaderType = ShaderType,
@@ -474,7 +474,7 @@ end
 
 
 -----------------------------------[ Precomputing Optical Depth ]-----------------------------------
-PrecomputeNetDensityToAtmTopPS = CreatePixelShader("Precomputation.fx", "PrecomputeNetDensityToAtmTopPS")
+PrecomputeNetDensityToAtmTopPS = CreatePixelShader("PrecomputeNetDensityToAtmTop.fx", "PrecomputeNetDensityToAtmTopPS")
 PrecomputeNetDensityToAtmTopPSO = CreateScreenSizeQuadPSO("PrecomputeNetDensityToAtmTop", PrecomputeNetDensityToAtmTopPS, DisableDepthDesc, DefaultBlendDesc, "TEX_FORMAT_RG32_FLOAT")
 -- Bind required shader resources
 -- All shader resources are static resources, so we bind them once directly to the shader
