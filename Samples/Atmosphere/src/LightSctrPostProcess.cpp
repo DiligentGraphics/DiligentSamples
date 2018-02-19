@@ -87,6 +87,7 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice,
     m_uiSampleRefinementCSThreadGroupSize(0),
     // Using small group size is inefficient because a lot of SIMD lanes become idle
     m_uiSampleRefinementCSMinimumThreadGroupSize(128),// Must be greater than 32
+    m_uiNumRandomSamplesOnSphere(pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES ? 64 : 128),
     m_uiUpToDateResourceFlags(0)
 {
     pDevice->CreateResourceMapping(ResourceMappingDesc(), &m_pResMapping);
@@ -235,15 +236,15 @@ void LightSctrPostProcess :: CreateRandomSphereSamplingTexture(IRenderDevice *pD
 {
     TextureDesc RandomSphereSamplingTexDesc;
     RandomSphereSamplingTexDesc.Type = RESOURCE_DIM_TEX_2D;
-    RandomSphereSamplingTexDesc.Width = sm_iNumRandomSamplesOnSphere;
+    RandomSphereSamplingTexDesc.Width = m_uiNumRandomSamplesOnSphere;
     RandomSphereSamplingTexDesc.Height = 1;
     RandomSphereSamplingTexDesc.MipLevels = 1;
     RandomSphereSamplingTexDesc.Format = TEX_FORMAT_RGBA32_FLOAT;
     RandomSphereSamplingTexDesc.Usage = USAGE_STATIC;
     RandomSphereSamplingTexDesc.BindFlags = BIND_SHADER_RESOURCE;
 
-    std::vector<float4> SphereSampling(sm_iNumRandomSamplesOnSphere);
-    for(int iSample = 0; iSample < sm_iNumRandomSamplesOnSphere; ++iSample)
+    std::vector<float4> SphereSampling(m_uiNumRandomSamplesOnSphere);
+    for(int iSample = 0; iSample < m_uiNumRandomSamplesOnSphere; ++iSample)
     {
         float4 &f4Sample = SphereSampling[iSample];
         f4Sample.z = ((float)rand()/(float)RAND_MAX) * 2.f - 1.f;
@@ -255,7 +256,7 @@ void LightSctrPostProcess :: CreateRandomSphereSamplingTexture(IRenderDevice *pD
     }
     TextureSubResData Mip0Data;
     Mip0Data.pData = SphereSampling.data();
-    Mip0Data.Stride = sm_iNumRandomSamplesOnSphere*sizeof( float4 );
+    Mip0Data.Stride = m_uiNumRandomSamplesOnSphere*sizeof( float4 );
 
     TextureData TexData;
     TexData.NumSubresources = 1;
@@ -289,7 +290,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
-        Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", sm_iNumRandomSamplesOnSphere );
+        Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", m_uiNumRandomSamplesOnSphere );
         Macros.Finalize();
         CreateShader( pDevice, "ComputeSctrRadiance.fx", "ComputeSctrRadianceCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeSctrRadianceCS );
         PipelineStateDesc PSODesc;
@@ -428,7 +429,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
     m_pInitHighOrderScatteringSRB->BindResources( SHADER_TYPE_COMPUTE, m_pResMapping, 0 );
     m_pUpdateHighOrderScatteringSRB->BindResources( SHADER_TYPE_COMPUTE, m_pResMapping, 0 );
 
-    const int iNumScatteringOrders = 4;
+    const int iNumScatteringOrders = pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES ? 3 : 4;
     for(int iSctrOrder = 1; iSctrOrder < iNumScatteringOrders; ++iSctrOrder)
     {
         // Step 1: compute differential in-scattering
@@ -1657,7 +1658,7 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
     if( !m_pPrecomputeAmbientSkyLightPS )
     {
         ShaderMacroHelper Macros;
-        Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", sm_iNumRandomSamplesOnSphere );
+        Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", m_uiNumRandomSamplesOnSphere );
         Macros.Finalize();
         CreateShader( pDevice, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pPrecomputeAmbientSkyLightPS );
         m_pRenderScript->Run("CreatePrecomputeAmbientSkyLightPSO", m_pPrecomputeAmbientSkyLightPS);

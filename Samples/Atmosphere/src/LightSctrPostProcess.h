@@ -143,7 +143,8 @@ private:
     Diligent::RefCntAutoPtr<ITextureView> m_ptex3DHighOrderScatteringSRV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex3DMultipleScatteringSRV;
     
-    static const int sm_iNumRandomSamplesOnSphere = 128;
+    const Diligent::Uint32 m_uiNumRandomSamplesOnSphere;
+    
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DSphereRandomSamplingSRV;
 
     void CreateMinMaxShadowMap(IRenderDevice* pDevice);
@@ -207,7 +208,7 @@ private:
     Diligent::RefCntAutoPtr<IBuffer> m_pcbMediaAttribs;
     Diligent::RefCntAutoPtr<IBuffer> m_pcbMiscParams;
 
-    Uint32 m_uiBackBufferWidth, m_uiBackBufferHeight;
+    Diligent::Uint32 m_uiBackBufferWidth, m_uiBackBufferHeight;
     
     //const float m_fTurbidity = 1.02f;
     AirScatteringAttribs m_MediaParams;
@@ -222,6 +223,6 @@ private:
         AmbientSkyLightTex          = 0x020,
         PrecomputedIntegralsTex     = 0x040
     };
-    Uint32 m_uiUpToDateResourceFlags;
+    Diligent::Uint32 m_uiUpToDateResourceFlags;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DShadowMapSRV;
 };
