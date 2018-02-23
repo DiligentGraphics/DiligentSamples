@@ -244,7 +244,7 @@ void LightSctrPostProcess :: CreateRandomSphereSamplingTexture(IRenderDevice *pD
     RandomSphereSamplingTexDesc.BindFlags = BIND_SHADER_RESOURCE;
 
     std::vector<float4> SphereSampling(m_uiNumRandomSamplesOnSphere);
-    for(int iSample = 0; iSample < m_uiNumRandomSamplesOnSphere; ++iSample)
+    for(Uint32 iSample = 0; iSample < m_uiNumRandomSamplesOnSphere; ++iSample)
     {
         float4 &f4Sample = SphereSampling[iSample];
         f4Sample.z = ((float)rand()/(float)RAND_MAX) * 2.f - 1.f;
