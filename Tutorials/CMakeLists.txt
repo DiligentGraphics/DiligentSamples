@@ -48,7 +48,9 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 endfunction()
 
-
+if(PLATFORM_WIN32)
+    add_subdirectory(Tutorial00_HelloWin32)
+endif()
 add_subdirectory(Tutorial01_HelloTriangle)
 add_subdirectory(Tutorial02_Cube)
 add_subdirectory(Tutorial03_Texturing)

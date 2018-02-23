@@ -1,6 +1,6 @@
 # Tutorial01 - Hello Triangle
 
-This tutorials demonstrates the basics of Diligent Engine API. It shows how to create shaders, pipeline state object
+This tutorial demonstrates the basics of Diligent Engine API. It shows how to create shaders, pipeline state object
 and how to render a simple triangle.
 
 ![](Screenshot.png)
