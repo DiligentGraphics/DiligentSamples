@@ -50,6 +50,8 @@ endfunction()
 
 if(PLATFORM_WIN32)
     add_subdirectory(Tutorial00_HelloWin32)
+elseif(PLATFORM_LINUX)
+    add_subdirectory(Tutorial00_HelloLinux)
 endif()
 add_subdirectory(Tutorial01_HelloTriangle)
 add_subdirectory(Tutorial02_Cube)
