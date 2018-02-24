@@ -15,5 +15,8 @@ set_target_properties(Tutorial00_HelloWin32 PROPERTIES
     FOLDER Tutorials
 )
 
-add_dependencies(Tutorial00_HelloWin32 GraphicsEngineD3D11-shared GraphicsEngineD3D12-shared GraphicsEngineOpenGL-shared)
+add_dependencies(Tutorial00_HelloWin32 GraphicsEngineD3D11-shared GraphicsEngineOpenGL-shared)
+if(D3D12_SUPPORTED)
+    add_dependencies(Tutorial00_HelloWin32 GraphicsEngineD3D12-shared)
+endif()
 copy_required_dlls(Tutorial00_HelloWin32)
