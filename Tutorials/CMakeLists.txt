@@ -27,6 +27,7 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 	target_link_libraries(${TUTORIAL_NAME}
 	PRIVATE
+		NativeAppBase
 		BuildSettings
 		SampleBase 
 	)
