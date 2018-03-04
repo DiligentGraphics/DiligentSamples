@@ -38,6 +38,18 @@
 #   define ENGINE_DLL 1
 #endif
 
+#ifndef D3D11_SUPPORTED
+#   define D3D11_SUPPORTED 1
+#endif
+
+#ifndef D3D12_SUPPORTED
+#   define D3D12_SUPPORTED 1
+#endif
+
+#ifndef GL_SUPPORTED
+#   define GL_SUPPORTED 1
+#endif
+
 #include "Graphics/GraphicsEngineD3D11/interface/RenderDeviceFactoryD3D11.h"
 #include "Graphics/GraphicsEngineD3D12/interface/RenderDeviceFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"

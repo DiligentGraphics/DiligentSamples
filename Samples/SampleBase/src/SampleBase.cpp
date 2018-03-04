@@ -59,13 +59,15 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
         break;
 #endif
 
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED
         case DeviceType::OpenGL:
         {
             // Nothing to do
         }
         break;
+#endif
 
+#if GLES_SUPPORTED
         case DeviceType::OpenGLES:
         {
             // Nothing to do

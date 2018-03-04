@@ -36,7 +36,7 @@
 #   include "RenderDeviceFactoryD3D12.h"
 #endif
 
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED || GLES_SUPPORTED
 #   include "RenderDeviceFactoryOpenGL.h"
 #endif
 
@@ -117,7 +117,7 @@ void SampleApp::InitializeDiligentEngine(
         break;
 #endif
 
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED || GLES_SUPPORTED
         case DeviceType::OpenGL:
         case DeviceType::OpenGLES:
         {

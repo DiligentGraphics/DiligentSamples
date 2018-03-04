@@ -47,6 +47,10 @@
 #   define ENGINE_DLL 1
 #endif
 
+#ifndef GL_SUPPORTED
+#   define GL_SUPPORTED 1
+#endif
+
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"
 
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
