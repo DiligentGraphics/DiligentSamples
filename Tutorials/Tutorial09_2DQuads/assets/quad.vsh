@@ -1,8 +1,3 @@
-cbuffer Constants
-{
-    float4x4 g_ViewProj;
-    float4x4 g_Rotation;
-};
 
 cbuffer InstanceData
 {

@@ -23,6 +23,7 @@
 
 #include <random>
 #include <string>
+#include <cmath>
 
 #include "Tutorial09_Quads.h"
 #include "MapHelper.h"
@@ -100,13 +101,11 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
             pDevice->CreateShader(CreationAttribs, &pVS);
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
             CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_InstanceConstants);
             
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
-            pVS->GetShaderVariable("Constants")->Set(m_VSConstants);
             pVS->GetShaderVariable("InstanceData")->Set(m_InstanceConstants);
         }
 
@@ -145,7 +144,7 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         pDevice->CreatePipelineState(PSODesc, &m_pPSO);
     }
 
-    PopulateInstanceData();
+    InitializeInstanceData();
 
     // Load textures
     for(int tex=0; tex < NumTextures; ++tex)
@@ -177,7 +176,7 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     // Add num quads control
-    TwAddVarCB(bar, "Num Quads", TW_TYPE_INT32, SetNumQuads, GetNumQuads, this, "min=1 max=500000 step=20");
+    TwAddVarCB(bar, "Num Quads", TW_TYPE_INT32, SetNumQuads, GetNumQuads, this, "min=1 max=100000 step=20");
     std::stringstream def;
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
@@ -186,33 +185,56 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     StartWorkerThreads();
 }
 
-void Tutorial09_Quads::PopulateInstanceData()
+void Tutorial09_Quads::InitializeInstanceData()
 {
     m_InstanceData.resize(m_NumQuads);
 
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<float> scale_distr(0.01f, 0.05f);
     std::uniform_real_distribution<float> pos_distr(-0.95f, +0.95f);
-    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
+    std::uniform_real_distribution<float> move_dir_distr(-0.1f, +0.1f);
+    std::uniform_real_distribution<float> angle_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
+    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
     std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
 
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
         auto &CurrInst = m_InstanceData[quad];
-        float scale = scale_distr(gen);
-        float2x2 ScaleMatr = float2x2(scale, 0.f,
-                                      0.f, scale);
-        float rot = rot_distr(gen);
-        float sinAngle = sinf(rot);
-        float cosAngle = cosf(rot);
-        float2x2 RotMatr(cosAngle, -sinAngle, 
-                         sinAngle, cosAngle);
-        CurrInst.Matrix = ScaleMatr * RotMatr;
+        CurrInst.Size = scale_distr(gen);
+        CurrInst.Angle = angle_distr(gen);
         CurrInst.Pos.x = pos_distr(gen);
         CurrInst.Pos.y = pos_distr(gen);
+        CurrInst.MoveDir.x = move_dir_distr(gen);
+        CurrInst.MoveDir.y = move_dir_distr(gen);
+        CurrInst.RotSpeed = rot_distr(gen);
         // Texture array index
         CurrInst.TextureInd = tex_distr(gen);
+    }
+}
+
+void Tutorial09_Quads::UpdateInstanceData(float elapsedTime)
+{
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
+    for (int quad = 0; quad < m_NumQuads; ++quad)
+    {
+        auto &CurrInst = m_InstanceData[quad];
+        CurrInst.Angle += CurrInst.RotSpeed * elapsedTime;
+        if (std::abs(CurrInst.Pos.x + CurrInst.MoveDir.x * elapsedTime) > 0.95)
+        {
+            CurrInst.MoveDir.x *= -1.f;
+            CurrInst.RotSpeed = rot_distr(gen);
+        }
+        CurrInst.Pos.x += CurrInst.MoveDir.x * elapsedTime;
+        if (std::abs(CurrInst.Pos.y + CurrInst.MoveDir.y * elapsedTime) > 0.95)
+        {
+            CurrInst.MoveDir.y *= -1.f;
+            CurrInst.RotSpeed = rot_distr(gen);
+        }
+        CurrInst.Pos.y += CurrInst.MoveDir.y * elapsedTime;
     }
 }
 
@@ -281,16 +303,6 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     // Deferred contexts start in default state. We must bind everything to the context
     pCtx->SetRenderTargets(0, nullptr, nullptr);
 
-    {
-        // Map the buffer and write current world-view-projection matrix
-        
-        // Since this is a dynamic buffer, it must be mapped in every context before
-        // it can be used even though the matricesa are the same.
-        MapHelper<float4x4> CBConstants(pCtx, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
-        CBConstants[1] = transposeMatrix(m_RotationMatrix);
-    }
-
     DrawAttribs DrawAttrs;
     DrawAttrs.NumIndices = 4;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -318,10 +330,19 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 
             // Map the buffer and write current world-view-projection matrix
             MapHelper<VSInstanceData> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-            InstData->g_QuadRotationAndScale.x = CurrInstData.Matrix._m00;
-            InstData->g_QuadRotationAndScale.y = CurrInstData.Matrix._m10;
-            InstData->g_QuadRotationAndScale.z = CurrInstData.Matrix._m01;
-            InstData->g_QuadRotationAndScale.w = CurrInstData.Matrix._m11;
+
+            float2x2 ScaleMatr = 
+                float2x2(CurrInstData.Size, 0.f,
+                         0.f, CurrInstData.Size);
+            float sinAngle = sinf(CurrInstData.Angle);
+            float cosAngle = cosf(CurrInstData.Angle);
+            float2x2 RotMatr(cosAngle, -sinAngle,
+                             sinAngle, cosAngle);
+            auto Matr = ScaleMatr * RotMatr;
+            InstData->g_QuadRotationAndScale.x = Matr._m00;
+            InstData->g_QuadRotationAndScale.y = Matr._m10;
+            InstData->g_QuadRotationAndScale.z = Matr._m01;
+            InstData->g_QuadRotationAndScale.w = Matr._m11;
             InstData->g_QuadCenter.x = CurrInstData.Pos.x;
             InstData->g_QuadCenter.y = CurrInstData.Pos.y;
         }
@@ -369,7 +390,7 @@ void Tutorial09_Quads::SetNumQuads(const void *value, void * clientData)
 {
     Tutorial09_Quads *pTheTutorial = reinterpret_cast<Tutorial09_Quads*>( clientData );
     pTheTutorial->m_NumQuads = *static_cast<const int *>(value);
-    pTheTutorial->PopulateInstanceData();
+    pTheTutorial->InitializeInstanceData();
 }
 
 // Callback function called by AntTweakBar to get the grid size
@@ -397,20 +418,5 @@ void Tutorial09_Quads::GetWorkerThreadCount(void *value, void * clientData)
 void Tutorial09_Quads::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
-
-    bool IsDX = m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 || m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12;
-
-    // Set cube view matrix
-    float4x4 View = rotationX(+0.6f) * translationMatrix(0.f, 0.f, 4.0f);
-
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsDX);
-    // Compute view-projection matrix
-    m_ViewProjMatrix = View * Proj;
-
-    // Global rotation matrix
-    m_RotationMatrix = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(static_cast<float>(CurrTime)*0.25f);
+    UpdateInstanceData(static_cast<float>(ElapsedTime));
 }

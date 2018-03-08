@@ -48,7 +48,8 @@ private:
     static void GetNumQuads(void *value, void * clientData);
     static void SetWorkerThreadCount(const void *value, void * clientData);
     static void GetWorkerThreadCount(void *value, void * clientData);
-    void PopulateInstanceData();
+    void InitializeInstanceData();
+    void UpdateInstanceData(float elapsedTime);
     void StartWorkerThreads();
     void StopWorkerThreads();
     void RenderSubset(Diligent::IDeviceContext *pCtx, Diligent::Uint32 Subset);
@@ -66,22 +67,22 @@ private:
 
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_InstanceConstants;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
         
     static constexpr int NumTextures = 4;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
-    int m_NumQuads = 100;
+    int m_NumQuads = 1000;
 
     int m_MaxThreads = 8;
     int m_NumWorkerThreads = 4;
 
     struct InstanceData
     {
-        float2x2 Matrix;
         float2 Pos;
+        float2 MoveDir;
+        float Size;
+        float Angle;
+        float RotSpeed;
         int TextureInd;
     };
     std::vector<InstanceData> m_InstanceData;
