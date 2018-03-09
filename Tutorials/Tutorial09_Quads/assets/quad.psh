@@ -9,5 +9,5 @@ struct PSInput
 
 float4 main(PSInput ps_in) : SV_TARGET
 {
-    return g_Texture.Sample(g_Texture_sampler, ps_in.uv);
+    return g_Texture.Sample(g_Texture_sampler, ps_in.uv).rgbg;
 }

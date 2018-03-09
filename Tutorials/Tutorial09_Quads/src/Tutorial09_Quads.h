@@ -69,13 +69,14 @@ private:
     std::vector<std::thread> m_WorkerThreads;
     std::vector< Diligent::RefCntAutoPtr<Diligent::ICommandList> > m_CmdLists;
 
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO[2];
+    static constexpr int NumStates = 5;
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO[2][NumStates];
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_QuadAttribsCB;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_BatchDataBuffer;
 
     static constexpr int NumTextures = 4;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_BatchSRB;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures][NumStates];
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_BatchSRB[NumStates];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TexArraySRV;
     int m_NumQuads = 1000;
@@ -92,6 +93,7 @@ private:
         float Angle;
         float RotSpeed;
         int TextureInd;
+        int StateInd;
     };
     std::vector<QuadData> m_Quads;
 

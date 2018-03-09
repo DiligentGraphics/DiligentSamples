@@ -56,6 +56,23 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 
     m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
 
+    BlendStateDesc BlendState[NumStates];
+    BlendState[1].RenderTargets[0].BlendEnable = true;
+    BlendState[1].RenderTargets[0].SrcBlend = BLEND_FACTOR_SRC_ALPHA;
+    BlendState[1].RenderTargets[0].DestBlend = BLEND_FACTOR_INV_SRC_ALPHA;
+
+    BlendState[2].RenderTargets[0].BlendEnable = true;
+    BlendState[2].RenderTargets[0].SrcBlend = BLEND_FACTOR_INV_SRC_ALPHA;
+    BlendState[2].RenderTargets[0].DestBlend = BLEND_FACTOR_SRC_ALPHA;
+
+    BlendState[3].RenderTargets[0].BlendEnable = true;
+    BlendState[3].RenderTargets[0].SrcBlend = BLEND_FACTOR_SRC_COLOR;
+    BlendState[3].RenderTargets[0].DestBlend = BLEND_FACTOR_INV_SRC_COLOR;
+
+    BlendState[4].RenderTargets[0].BlendEnable = true;
+    BlendState[4].RenderTargets[0].SrcBlend = BLEND_FACTOR_INV_SRC_COLOR;
+    BlendState[4].RenderTargets[0].DestBlend = BLEND_FACTOR_SRC_COLOR;
+
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -149,7 +166,11 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         PSODesc.GraphicsPipeline.pVS = pVS;
         PSODesc.GraphicsPipeline.pPS = pPS;
 
-        pDevice->CreatePipelineState(PSODesc, &m_pPSO[0]);
+        for (int state = 0; state < NumStates; ++state)
+        {
+            PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
+            pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
+        }
 
 
         PSODesc.Name = "Batched Quads PSO";
@@ -169,7 +190,12 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         
         PSODesc.GraphicsPipeline.pVS = pVSBatched;
         PSODesc.GraphicsPipeline.pPS = pPSBatched;
-        pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
+
+        for (int state = 0; state < NumStates; ++state)
+        {
+            PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
+            pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
+        }
     }
 
     InitializeQuads();
@@ -208,17 +234,23 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     }
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-    // Set texture SRV in the SRB
-    for(int tex=0; tex < NumTextures; ++tex)
+    for (int state = 0; state < NumStates; ++state)
     {
-        // Create one Shader Resource Binding for every texture
-        // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-        m_pPSO[0]->CreateShaderResourceBinding(&m_SRB[tex]);
-        m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+        // Set texture SRV in the SRB
+        for (int tex = 0; tex < NumTextures; ++tex)
+        {
+            // Create one Shader Resource Binding for every texture
+            // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
+            m_pPSO[0][state]->CreateShaderResourceBinding(&m_SRB[tex][state]);
+            m_SRB[tex][state]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+        }
     }
 
-    m_pPSO[1]->CreateShaderResourceBinding(&m_BatchSRB);
-    m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
+    for (int state = 0; state < NumStates; ++state)
+    {
+        m_pPSO[1][state]->CreateShaderResourceBinding(&m_BatchSRB[state]);
+        m_BatchSRB[state]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
+    }
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
@@ -251,6 +283,7 @@ void Tutorial09_Quads::InitializeQuads()
     std::uniform_real_distribution<float> angle_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
     std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
     std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
+    std::uniform_int_distribution<Int32> state_distr(0, NumStates - 1);
 
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
@@ -264,6 +297,7 @@ void Tutorial09_Quads::InitializeQuads()
         CurrInst.RotSpeed = rot_distr(gen);
         // Texture array index
         CurrInst.TextureInd = tex_distr(gen);
+        CurrInst.StateInd = state_distr(gen);
     }
 }
 
@@ -373,8 +407,6 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     DrawAttrs.NumIndices = 4;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
-    // Set pipeline state
-    pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0]);
     Uint32 NumSubsets = 1 + m_NumWorkerThreads;
     const Uint32 TotalQuads = static_cast<Uint32>(m_Quads.size());
     const Uint32 TotalBatches = (TotalQuads + m_BatchSize - 1) / m_BatchSize;
@@ -383,24 +415,29 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     const Uint32 EndBatch = (Subset < NumSubsets-1) ? SusbsetSize * (Subset+1) : TotalBatches;
     for(Uint32 batch = StartBatch; batch < EndBatch; ++batch)
     {
+        const Uint32 StartInst = batch * m_BatchSize;
+        const Uint32 EndInst = UseBatch ?
+            std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads)) :
+            StartInst + 1;
+
+        // Set pipeline state
+        auto StateInd = m_Quads[StartInst].StateInd;
+        pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0][StateInd]);
+
         MapHelper<InstanceData> BatchData;
         if (UseBatch)
         {
-            pCtx->CommitShaderResources(m_BatchSRB, 0);
+            pCtx->CommitShaderResources(m_BatchSRB[StateInd], 0);
             BatchData.Map(pCtx, m_BatchDataBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         }
 
-        const Uint32 StartInst = batch * m_BatchSize;
-        const Uint32 EndInst = UseBatch ? 
-            std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads)) : 
-            StartInst+1;
         for (Uint32 inst = StartInst; inst < EndInst; ++inst)
         {
             const auto &CurrInstData = m_Quads[inst];
             // Shader resources have been explicitly transitioned to correct states, so
             // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
             if(!UseBatch)
-                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd][StateInd], 0);
 
             {
                 float2x2 ScaleMatr =
@@ -455,9 +492,12 @@ void Tutorial09_Quads::Render()
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     // Transition all shader resource bindings
-    for(size_t i=0; i < _countof(m_SRB); ++i)
-        m_pImmediateContext->TransitionShaderResources(m_pPSO[0], m_SRB[i]);
-    m_pImmediateContext->TransitionShaderResources(m_pPSO[1], m_BatchSRB);
+    for (int state = 0; state < NumStates; ++state)
+    {
+        for (size_t i = 0; i < _countof(m_SRB); ++i)
+            m_pImmediateContext->TransitionShaderResources(m_pPSO[0][state], m_SRB[i][state]);
+        m_pImmediateContext->TransitionShaderResources(m_pPSO[1][state], m_BatchSRB[state]);
+    }
 
     if (m_NumWorkerThreads > 0)
     {
