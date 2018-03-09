@@ -46,12 +46,16 @@ public:
 private:
     static void SetNumQuads(const void *value, void * clientData);
     static void GetNumQuads(void *value, void * clientData);
+    static void SetBatchSize(const void *value, void * clientData);
+    static void GetBatchSize(void *value, void * clientData);
     static void SetWorkerThreadCount(const void *value, void * clientData);
     static void GetWorkerThreadCount(void *value, void * clientData);
-    void InitializeInstanceData();
-    void UpdateInstanceData(float elapsedTime);
+    void InitializeQuads();
+    void CreateInstanceBuffer();
+    void UpdateQuads(float elapsedTime);
     void StartWorkerThreads();
     void StopWorkerThreads();
+    template<bool UseBatch>
     void RenderSubset(Diligent::IDeviceContext *pCtx, Diligent::Uint32 Subset);
 
     static void WorkerThreadFunc(Tutorial09_Quads *pThis, Diligent::Uint32 ThreadNum);
@@ -65,18 +69,22 @@ private:
     std::vector<std::thread> m_WorkerThreads;
     std::vector< Diligent::RefCntAutoPtr<Diligent::ICommandList> > m_CmdLists;
 
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_InstanceConstants;
-        
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO[2];
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_QuadAttribsCB;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_BatchDataBuffer;
+
     static constexpr int NumTextures = 4;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_BatchSRB;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
+    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TexArraySRV;
     int m_NumQuads = 1000;
+    int m_BatchSize = 5;
 
     int m_MaxThreads = 8;
     int m_NumWorkerThreads = 4;
 
-    struct InstanceData
+    struct QuadData
     {
         float2 Pos;
         float2 MoveDir;
@@ -85,5 +93,12 @@ private:
         float RotSpeed;
         int TextureInd;
     };
-    std::vector<InstanceData> m_InstanceData;
+    std::vector<QuadData> m_Quads;
+
+    struct InstanceData
+    {
+        float4 QuadRotationAndScale;
+        float2 QuadCenter;
+        float TexArrInd;
+    };
 };

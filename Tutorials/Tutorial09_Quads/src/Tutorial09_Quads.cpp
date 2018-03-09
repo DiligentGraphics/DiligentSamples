@@ -92,7 +92,7 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         // Define variable type that will be used by default
         CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
         // Create vertex shader
-        RefCntAutoPtr<IShader> pVS;
+        RefCntAutoPtr<IShader> pVS, pVSBatched;
         {
             CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
             CreationAttribs.EntryPoint = "main";
@@ -101,16 +101,20 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
             pDevice->CreateShader(CreationAttribs, &pVS);
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_InstanceConstants);
+            CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_QuadAttribsCB);
             
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
-            pVS->GetShaderVariable("InstanceData")->Set(m_InstanceConstants);
+            pVS->GetShaderVariable("QuadAttribs")->Set(m_QuadAttribsCB);
+
+            CreationAttribs.Desc.Name = "Quad VS Batched";
+            CreationAttribs.FilePath = "quad_batch.vsh";
+            pDevice->CreateShader(CreationAttribs, &pVSBatched);
         }
 
         // Create pixel shader
-        RefCntAutoPtr<IShader> pPS;
+        RefCntAutoPtr<IShader> pPS, pPSBatched;
         {
             CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
             CreationAttribs.EntryPoint = "main";
@@ -136,17 +140,42 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
             CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
 
             pDevice->CreateShader(CreationAttribs, &pPS);
+
+            CreationAttribs.Desc.Name = "Quad PS Batched";
+            CreationAttribs.FilePath = "quad_batch.psh";
+            pDevice->CreateShader(CreationAttribs, &pPSBatched);
         }
 
         PSODesc.GraphicsPipeline.pVS = pVS;
         PSODesc.GraphicsPipeline.pPS = pPS;
 
-        pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+        pDevice->CreatePipelineState(PSODesc, &m_pPSO[0]);
+
+
+        PSODesc.Name = "Batched Quads PSO";
+        // Define vertex shader input layout
+        // This tutorial uses two types of input: per-vertex data and per-instance data.
+        LayoutElement LayoutElems[] =
+        {
+            // Attribute 0 - QuadRotationAndScale
+            LayoutElement(0, 0, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            // Attribute 1 - QuadCenter
+            LayoutElement(1, 0, 2, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            // Attribute 2 - TexArrInd
+            LayoutElement(2, 0, 1, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE)
+        };
+        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+        PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
+        
+        PSODesc.GraphicsPipeline.pVS = pVSBatched;
+        PSODesc.GraphicsPipeline.pPS = pPSBatched;
+        pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
     }
 
-    InitializeInstanceData();
+    InitializeQuads();
 
     // Load textures
+    RefCntAutoPtr<ITexture> pTexArray;
     for(int tex=0; tex < NumTextures; ++tex)
     {
         // Load current texture
@@ -159,16 +188,37 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
         // Get shader resource view from the texture
         m_TextureSRV[tex] = SrcTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+        const auto &TexDesc = SrcTex->GetDesc();
+        if (pTexArray == nullptr)
+        {
+            //	Create texture array
+            auto TexArrDesc = TexDesc;
+            TexArrDesc.ArraySize = NumTextures;
+            TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
+            TexArrDesc.Usage = USAGE_DEFAULT;
+            TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+            m_pDevice->CreateTexture(TexArrDesc, TextureData(), &pTexArray);
+        }
+        // Copy current texture into the texture array
+        for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
+        {
+            pTexArray->CopyData(m_pImmediateContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
+        }
     }
-    
+    m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
     // Set texture SRV in the SRB
     for(int tex=0; tex < NumTextures; ++tex)
     {
         // Create one Shader Resource Binding for every texture
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-        m_pPSO->CreateShaderResourceBinding(&m_SRB[tex]);
+        m_pPSO[0]->CreateShaderResourceBinding(&m_SRB[tex]);
         m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
+
+    m_pPSO[1]->CreateShaderResourceBinding(&m_BatchSRB);
+    m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
@@ -177,17 +227,21 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 
     // Add num quads control
     TwAddVarCB(bar, "Num Quads", TW_TYPE_INT32, SetNumQuads, GetNumQuads, this, "min=1 max=100000 step=20");
+    TwAddVarCB(bar, "Batch Size", TW_TYPE_INT32, SetBatchSize, GetBatchSize, this, "min=1 max=100");
     std::stringstream def;
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
     m_NumWorkerThreads = std::min(4, m_MaxThreads);
 
+    if (m_BatchSize > 1)
+        CreateInstanceBuffer();
+
     StartWorkerThreads();
 }
 
-void Tutorial09_Quads::InitializeInstanceData()
+void Tutorial09_Quads::InitializeQuads()
 {
-    m_InstanceData.resize(m_NumQuads);
+    m_Quads.resize(m_NumQuads);
 
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
@@ -200,7 +254,7 @@ void Tutorial09_Quads::InitializeInstanceData()
 
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
-        auto &CurrInst = m_InstanceData[quad];
+        auto &CurrInst = m_Quads[quad];
         CurrInst.Size = scale_distr(gen);
         CurrInst.Angle = angle_distr(gen);
         CurrInst.Pos.x = pos_distr(gen);
@@ -213,7 +267,7 @@ void Tutorial09_Quads::InitializeInstanceData()
     }
 }
 
-void Tutorial09_Quads::UpdateInstanceData(float elapsedTime)
+void Tutorial09_Quads::UpdateQuads(float elapsedTime)
 {
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
@@ -221,7 +275,7 @@ void Tutorial09_Quads::UpdateInstanceData(float elapsedTime)
     std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
-        auto &CurrInst = m_InstanceData[quad];
+        auto &CurrInst = m_Quads[quad];
         CurrInst.Angle += CurrInst.RotSpeed * elapsedTime;
         if (std::abs(CurrInst.Pos.x + CurrInst.MoveDir.x * elapsedTime) > 0.95)
         {
@@ -271,7 +325,10 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNu
             return;
 
         // Render current subset using the deferred context
-        pThis->RenderSubset(pDeferredCtx, 1+ThreadNum);
+        if(pThis->m_BatchSize > 1)
+            pThis->RenderSubset<true>(pDeferredCtx, 1+ThreadNum);
+        else
+            pThis->RenderSubset<false>(pDeferredCtx, 1 + ThreadNum);
 
         // Finish command list
         RefCntAutoPtr<ICommandList> pCmdList;
@@ -298,55 +355,93 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNu
     }
 }
 
+template<bool UseBatch>
 void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context
     pCtx->SetRenderTargets(0, nullptr, nullptr);
+
+    if (UseBatch)
+    {
+        Uint32 strides[] = { sizeof(InstanceData) };
+        Uint32 offsets[] = { 0 };
+        IBuffer *pBuffs[] = { m_BatchDataBuffer };
+        pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+    }
 
     DrawAttribs DrawAttrs;
     DrawAttrs.NumIndices = 4;
     DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
     // Set pipeline state
-    pCtx->SetPipelineState(m_pPSO);
+    pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0]);
     Uint32 NumSubsets = 1 + m_NumWorkerThreads;
-    Uint32 NumInstances = static_cast<Uint32>(m_InstanceData.size());
-    Uint32 SusbsetSize = NumInstances / NumSubsets;
-    Uint32 StartInst = SusbsetSize * Subset;
-    Uint32 EndInst = (Subset < NumSubsets-1) ? SusbsetSize * (Subset+1) : NumInstances;
-    for(size_t inst = StartInst; inst < EndInst; ++inst)
+    const Uint32 TotalQuads = static_cast<Uint32>(m_Quads.size());
+    const Uint32 TotalBatches = (TotalQuads + m_BatchSize - 1) / m_BatchSize;
+    const Uint32 SusbsetSize = TotalBatches / NumSubsets;
+    const Uint32 StartBatch = SusbsetSize * Subset;
+    const Uint32 EndBatch = (Subset < NumSubsets-1) ? SusbsetSize * (Subset+1) : TotalBatches;
+    for(Uint32 batch = StartBatch; batch < EndBatch; ++batch)
     {
-        const auto &CurrInstData = m_InstanceData[inst];
-        // Shader resources have been explicitly transitioned to correct states, so
-        // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-        pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
-
+        MapHelper<InstanceData> BatchData;
+        if (UseBatch)
         {
-            struct VSInstanceData
-            {
-                float4 g_QuadRotationAndScale;
-                float4 g_QuadCenter;
-            };
-
-            // Map the buffer and write current world-view-projection matrix
-            MapHelper<VSInstanceData> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-
-            float2x2 ScaleMatr = 
-                float2x2(CurrInstData.Size, 0.f,
-                         0.f, CurrInstData.Size);
-            float sinAngle = sinf(CurrInstData.Angle);
-            float cosAngle = cosf(CurrInstData.Angle);
-            float2x2 RotMatr(cosAngle, -sinAngle,
-                             sinAngle, cosAngle);
-            auto Matr = ScaleMatr * RotMatr;
-            InstData->g_QuadRotationAndScale.x = Matr._m00;
-            InstData->g_QuadRotationAndScale.y = Matr._m10;
-            InstData->g_QuadRotationAndScale.z = Matr._m01;
-            InstData->g_QuadRotationAndScale.w = Matr._m11;
-            InstData->g_QuadCenter.x = CurrInstData.Pos.x;
-            InstData->g_QuadCenter.y = CurrInstData.Pos.y;
+            pCtx->CommitShaderResources(m_BatchSRB, 0);
+            BatchData.Map(pCtx, m_BatchDataBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         }
 
+        const Uint32 StartInst = batch * m_BatchSize;
+        const Uint32 EndInst = UseBatch ? 
+            std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads)) : 
+            StartInst+1;
+        for (Uint32 inst = StartInst; inst < EndInst; ++inst)
+        {
+            const auto &CurrInstData = m_Quads[inst];
+            // Shader resources have been explicitly transitioned to correct states, so
+            // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
+            if(!UseBatch)
+                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+
+            {
+                float2x2 ScaleMatr =
+                    float2x2(CurrInstData.Size, 0.f,
+                        0.f, CurrInstData.Size);
+                float sinAngle = sinf(CurrInstData.Angle);
+                float cosAngle = cosf(CurrInstData.Angle);
+                float2x2 RotMatr(cosAngle, -sinAngle,
+                    sinAngle, cosAngle);
+                auto Matr = ScaleMatr * RotMatr;
+                float4 QuadRotationAndScale(Matr._m00, Matr._m10, Matr._m01, Matr._m11);
+
+                if (UseBatch)
+                {
+                    auto& CurrQuad = BatchData[inst - StartInst];
+                    CurrQuad.QuadRotationAndScale = QuadRotationAndScale;
+                    CurrQuad.QuadCenter = CurrInstData.Pos;
+                    CurrQuad.TexArrInd = static_cast<float>(CurrInstData.TextureInd);
+                }
+                else
+                {
+                    struct QuadAttribs
+                    {
+                        float4 g_QuadRotationAndScale;
+                        float4 g_QuadCenter;
+                    };
+
+                    // Map the buffer and write current world-view-projection matrix
+                    MapHelper<QuadAttribs> InstData(pCtx, m_QuadAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+
+                    InstData->g_QuadRotationAndScale = QuadRotationAndScale;
+                    InstData->g_QuadCenter.x = CurrInstData.Pos.x;
+                    InstData->g_QuadCenter.y = CurrInstData.Pos.y;
+                }
+            }
+        }
+
+        if (UseBatch)
+            BatchData.Unmap();
+
+        DrawAttrs.NumInstances = EndInst - StartInst;
         pCtx->Draw(DrawAttrs);
     }
 }
@@ -361,7 +456,8 @@ void Tutorial09_Quads::Render()
 
     // Transition all shader resource bindings
     for(size_t i=0; i < _countof(m_SRB); ++i)
-        m_pImmediateContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
+        m_pImmediateContext->TransitionShaderResources(m_pPSO[0], m_SRB[i]);
+    m_pImmediateContext->TransitionShaderResources(m_pPSO[1], m_BatchSRB);
 
     if (m_NumWorkerThreads > 0)
     {
@@ -369,7 +465,10 @@ void Tutorial09_Quads::Render()
         m_RenderSubsetSignal.Trigger(true);
     }
 
-    RenderSubset(m_pImmediateContext, 0);
+    if(m_BatchSize>1)
+        RenderSubset<true>(m_pImmediateContext, 0);
+    else
+        RenderSubset<false>(m_pImmediateContext, 0);
 
     if (m_NumWorkerThreads > 0)
     {
@@ -390,7 +489,7 @@ void Tutorial09_Quads::SetNumQuads(const void *value, void * clientData)
 {
     Tutorial09_Quads *pTheTutorial = reinterpret_cast<Tutorial09_Quads*>( clientData );
     pTheTutorial->m_NumQuads = *static_cast<const int *>(value);
-    pTheTutorial->InitializeInstanceData();
+    pTheTutorial->InitializeQuads();
 }
 
 // Callback function called by AntTweakBar to get the grid size
@@ -398,6 +497,32 @@ void Tutorial09_Quads::GetNumQuads(void *value, void * clientData)
 {
     Tutorial09_Quads *pTheTutorial = reinterpret_cast<Tutorial09_Quads*>( clientData );
     *static_cast<int*>(value) = pTheTutorial->m_NumQuads;
+}
+
+void Tutorial09_Quads::CreateInstanceBuffer()
+{
+    // Create instance data buffer that will store transformation matrices
+    BufferDesc InstBuffDesc;
+    InstBuffDesc.Name = "Batch data buffer";
+    // Use default usage as this buffer will only be updated when grid size changes
+    InstBuffDesc.Usage = USAGE_DYNAMIC;
+    InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+    InstBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * m_BatchSize;
+    m_BatchDataBuffer.Release();
+    m_pDevice->CreateBuffer(InstBuffDesc, BufferData(), &m_BatchDataBuffer);
+}
+
+void Tutorial09_Quads::SetBatchSize(const void *value, void * clientData)
+{
+    Tutorial09_Quads *pTheTutorial = reinterpret_cast<Tutorial09_Quads*>(clientData);
+    pTheTutorial->m_BatchSize = *static_cast<const int *>(value);
+    pTheTutorial->CreateInstanceBuffer();
+}
+void Tutorial09_Quads::GetBatchSize(void *value, void * clientData)
+{
+    Tutorial09_Quads *pTheTutorial = reinterpret_cast<Tutorial09_Quads*>(clientData);
+    *static_cast<int*>(value) = pTheTutorial->m_BatchSize;
 }
 
 void Tutorial09_Quads::SetWorkerThreadCount(const void *value, void * clientData)
@@ -418,5 +543,5 @@ void Tutorial09_Quads::GetWorkerThreadCount(void *value, void * clientData)
 void Tutorial09_Quads::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
-    UpdateInstanceData(static_cast<float>(ElapsedTime));
+    UpdateQuads(static_cast<float>(ElapsedTime));
 }

@@ -13,6 +13,8 @@ set(INCLUDE
 set(SHADERS
     assets/quad.vsh
     assets/quad.psh
+    assets/quad_batch.vsh
+    assets/quad_batch.psh
 )
 
 set(ASSETS
