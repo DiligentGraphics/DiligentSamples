@@ -48,6 +48,13 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, Engine
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
+#if D3D12_SUPPORTED
+    if (DevType == DeviceType::D3D12)
+    {
+        EngineD3D12Attribs &EngD3D12Attribs = static_cast<EngineD3D12Attribs &>(Attribs);
+        EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
+    }
+#endif
 }
 
 void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
@@ -263,7 +270,7 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     std::stringstream def;
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
-    m_NumWorkerThreads = std::min(4, m_MaxThreads);
+    m_NumWorkerThreads = std::min(4, m_MaxThreads); 
 
     if (m_BatchSize > 1)
         CreateInstanceBuffer();

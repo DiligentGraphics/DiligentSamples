@@ -49,7 +49,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
 #if D3D12_SUPPORTED
         case DeviceType::D3D12:
         {
-            EngineD3D12Attribs EngD3D12Attribs = static_cast<EngineD3D12Attribs &>(Attribs);
+            EngineD3D12Attribs &EngD3D12Attribs = static_cast<EngineD3D12Attribs &>(Attribs);
             EngD3D12Attribs.GPUDescriptorHeapDynamicSize[0] = 32768;
             EngD3D12Attribs.GPUDescriptorHeapSize[1] = 128;
             EngD3D12Attribs.GPUDescriptorHeapDynamicSize[1] = 2048-128;
