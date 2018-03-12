@@ -75,8 +75,8 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_BatchDataBuffer;
 
     static constexpr int NumTextures = 4;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures][NumStates];
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_BatchSRB[NumStates];
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_BatchSRB;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TexArraySRV;
     int m_NumQuads = 1000;

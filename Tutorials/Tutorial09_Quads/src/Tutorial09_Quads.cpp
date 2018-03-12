@@ -177,6 +177,8 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         {
             PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
             pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
+            if (state > 0)
+                VERIFY(m_pPSO[0][state]->IsCompatibleWith(m_pPSO[0][0]), "PSOs are expected to be compatible");
         }
 
 
@@ -202,6 +204,8 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         {
             PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
             pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
+            if (state > 0)
+                VERIFY(m_pPSO[1][state]->IsCompatibleWith(m_pPSO[1][0]), "PSOs are expected to be compatible");
         }
     }
 
@@ -241,23 +245,17 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     }
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-    for (int state = 0; state < NumStates; ++state)
+    // Set texture SRV in the SRB
+    for (int tex = 0; tex < NumTextures; ++tex)
     {
-        // Set texture SRV in the SRB
-        for (int tex = 0; tex < NumTextures; ++tex)
-        {
-            // Create one Shader Resource Binding for every texture
-            // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-            m_pPSO[0][state]->CreateShaderResourceBinding(&m_SRB[tex][state]);
-            m_SRB[tex][state]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
-        }
+        // Create one Shader Resource Binding for every texture
+        // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
+        m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex]);
+        m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
 
-    for (int state = 0; state < NumStates; ++state)
-    {
-        m_pPSO[1][state]->CreateShaderResourceBinding(&m_BatchSRB[state]);
-        m_BatchSRB[state]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
-    }
+    m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB);
+    m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
@@ -270,7 +268,7 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     std::stringstream def;
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
-    m_NumWorkerThreads = std::min(4, m_MaxThreads); 
+    m_NumWorkerThreads = std::min(4, m_MaxThreads);
 
     if (m_BatchSize > 1)
         CreateInstanceBuffer();
@@ -434,7 +432,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         MapHelper<InstanceData> BatchData;
         if (UseBatch)
         {
-            pCtx->CommitShaderResources(m_BatchSRB[StateInd], 0);
+            pCtx->CommitShaderResources(m_BatchSRB, 0);
             BatchData.Map(pCtx, m_BatchDataBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         }
 
@@ -444,8 +442,8 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
             // Shader resources have been explicitly transitioned to correct states, so
             // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
             if(!UseBatch)
-                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd][StateInd], 0);
-
+                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+            
             {
                 float2x2 ScaleMatr =
                     float2x2(CurrInstData.Size, 0.f,
@@ -499,12 +497,9 @@ void Tutorial09_Quads::Render()
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     // Transition all shader resource bindings
-    for (int state = 0; state < NumStates; ++state)
-    {
-        for (size_t i = 0; i < _countof(m_SRB); ++i)
-            m_pImmediateContext->TransitionShaderResources(m_pPSO[0][state], m_SRB[i][state]);
-        m_pImmediateContext->TransitionShaderResources(m_pPSO[1][state], m_BatchSRB[state]);
-    }
+    for (size_t i = 0; i < _countof(m_SRB); ++i)
+        m_pImmediateContext->TransitionShaderResources(m_pPSO[0][0], m_SRB[i]);
+    m_pImmediateContext->TransitionShaderResources(m_pPSO[1][0], m_BatchSRB);
 
     if (m_NumWorkerThreads > 0)
     {
