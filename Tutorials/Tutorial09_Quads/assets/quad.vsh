@@ -1,7 +1,7 @@
 
 cbuffer QuadAttribs
 {
-    float4 g_QuadRotationAndScale; // Using float2x2 doesn't work
+    float4 g_QuadRotationAndScale; // float2x2 doesn't work
     float4 g_QuadCenter;
 };
 

@@ -59,6 +59,12 @@ This tutorial shows how to use geometry shader to render smooth wireframe.
 This tutorial shows how to use hardware tessellation to implement simple adaptive terrain 
 rendering algorithm.
 
+## [Tutorial 09 - Quads](Tutorials/Tutorial09_Quads)
+
+![](Tutorials/Tutorial09_Quads/Screenshot.png)
+
+This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
+
 
 # Samples
 
