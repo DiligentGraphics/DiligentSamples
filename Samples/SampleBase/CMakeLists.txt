@@ -109,6 +109,9 @@ if(PLATFORM_WIN32)
 	if(D3D12_SUPPORTED)
 		list(APPEND ENGINE_LIBRARIES GraphicsEngineD3D12-shared)
 	endif()
+	if(VULKAN_SUPPORTED)
+		list(APPEND ENGINE_LIBRARIES GraphicsEngineVk-shared)
+	endif()
 elseif(PLATFORM_ANDROID)
     SET(ENGINE_LIBRARIES
         GraphicsEngineOpenGL-shared

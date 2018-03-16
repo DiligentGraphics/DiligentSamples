@@ -53,6 +53,7 @@
 #include "Graphics/GraphicsEngineD3D11/interface/RenderDeviceFactoryD3D11.h"
 #include "Graphics/GraphicsEngineD3D12/interface/RenderDeviceFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"
+#include "Graphics/GraphicsEngineVulkan/interface/RenderDeviceFactoryVk.h"
 
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
@@ -169,6 +170,22 @@ public:
         }
         break;
 
+        case DeviceType::Vulkan:
+        {
+#if ENGINE_DLL
+            GetEngineFactoryVkType GetEngineFactoryVk = nullptr;
+            // Load the dll and import GetEngineFactoryVk() function
+            LoadGraphicsEngineVk(GetEngineFactoryVk);
+#endif
+            EngineVkAttribs EngVkAttribs;
+            auto *pFactoryVk = GetEngineFactoryVk();
+            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
+
+            if (!m_pSwapChain && NativeWindowHandle != nullptr)
+                pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);
+        }
+        break;
+
         default:
             std::cerr << "Unknown device type";
             return false;
@@ -197,9 +214,13 @@ public:
             {
                 m_DeviceType = DeviceType::OpenGL;
             }
+            else if (_stricmp(pos, "VK") == 0)
+            {
+                m_DeviceType = DeviceType::Vulkan;
+            }
             else
             {
-                std::cerr << "Unknown device type. Only the following types are supported: D3D11, D3D12, GL";
+                std::cerr << "Unknown device type. Only the following types are supported: D3D11, D3D12, GL, VK";
                 return false;
             }
         }
@@ -327,6 +348,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         case DeviceType::D3D11: Title.append(L" (D3D11)"); break;
         case DeviceType::D3D12: Title.append(L" (D3D12)"); break;
         case DeviceType::OpenGL: Title.append(L" (GL)"); break;
+        case DeviceType::Vulkan: Title.append(L" (VK)"); break;
     }
     // Register our window class
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, MessageProc,
