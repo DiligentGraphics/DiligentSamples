@@ -40,7 +40,7 @@
 #   include "RenderDeviceFactoryOpenGL.h"
 #endif
 
-#ifdef VULKAN_SUPPORTED
+#if VULKAN_SUPPORTED
 #   include "RenderDeviceFactoryVk.h"
 #endif
 
@@ -153,7 +153,7 @@ void SampleApp::InitializeDiligentEngine(
         break;
 #endif
 
-#ifdef VULKAN_SUPPORTED
+#if VULKAN_SUPPORTED
         case DeviceType::Vulkan:
         {
 #if ENGINE_DLL
