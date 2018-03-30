@@ -92,7 +92,7 @@ void SampleApp::InitializeDiligentEngine(
             pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
 
             if(NativeWindowHandle != nullptr)
-                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
         }
         break;
 #endif
@@ -112,7 +112,7 @@ void SampleApp::InitializeDiligentEngine(
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
-                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
         }
         break;
 #endif

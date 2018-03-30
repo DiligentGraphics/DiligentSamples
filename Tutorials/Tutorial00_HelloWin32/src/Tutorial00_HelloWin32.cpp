@@ -134,7 +134,7 @@ public:
 #endif
                 auto *pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
-                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
 
@@ -148,7 +148,7 @@ public:
                 EngineD3D12Attribs EngD3D12Attribs;
                 auto *pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
-                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
 
