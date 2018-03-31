@@ -289,6 +289,8 @@ void SampleApp::InitializeSample()
                 pTheApp->m_pSwapChain->SetWindowedMode();
             },
             this, "label=\'Set windowed mode\'");
+
+        TwAddVarRW(bar, "VSync", TW_TYPE_BOOLCPP, &m_bVSync, "label=\'VSync\' key=v");
     }
 #endif
 }
@@ -362,5 +364,5 @@ void SampleApp::Render()
 
 void SampleApp::Present()
 {
-    m_pSwapChain->Present();
+    m_pSwapChain->Present(m_bVSync ? 1 : 0);
 }

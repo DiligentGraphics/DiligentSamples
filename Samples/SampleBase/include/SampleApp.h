@@ -67,4 +67,5 @@ protected:
     Diligent::Int32 m_UIScale = 1;
     std::string m_AdapterDetailsString;
     int m_SelectedDisplayMode = 0;
+    bool m_bVSync = false;
 };
