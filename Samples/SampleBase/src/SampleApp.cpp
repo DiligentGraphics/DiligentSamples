@@ -22,6 +22,7 @@
 */
 
 #include <sstream>
+#include <iomanip>
 
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
@@ -70,6 +71,8 @@ void SampleApp::InitializeDiligentEngine(
     void *NativeWindowHandle
     )
 {
+    Uint32 AdapterId = 0;
+
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
     Uint32 NumDeferredCtx = 0;
@@ -87,8 +90,22 @@ void SampleApp::InitializeDiligentEngine(
             // Load the dll and import GetEngineFactoryD3D11() function
             LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
-            ppContexts.resize(1 + NumDeferredCtx);
             auto *pFactoryD3D11 = GetEngineFactoryD3D11();
+            Uint32 NumAdapters = 0;
+            pFactoryD3D11->EnumerateHardwareAdapters(NumAdapters, 0);
+            std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
+            if(NumAdapters>0)
+                pFactoryD3D11->EnumerateHardwareAdapters(NumAdapters, Adapters.data());
+            else
+                LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
+            
+            m_AdapterAttribs = Adapters[AdapterId];
+            Uint32 NumDisplayModes = 0;
+            pFactoryD3D11->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
+            m_DisplayModes.resize(NumDisplayModes);
+            pFactoryD3D11->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+
+            ppContexts.resize(1 + NumDeferredCtx);
             pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
 
             if(NativeWindowHandle != nullptr)
@@ -105,10 +122,24 @@ void SampleApp::InitializeDiligentEngine(
             // Load the dll and import GetEngineFactoryD3D12() function
             LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
+            auto *pFactoryD3D12 = GetEngineFactoryD3D12();
+            Uint32 NumAdapters = 0;
+            pFactoryD3D12->EnumerateHardwareAdapters(NumAdapters, 0);
+            std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
+            if (NumAdapters>0)
+                pFactoryD3D12->EnumerateHardwareAdapters(NumAdapters, Adapters.data());
+            else
+                LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
+
+            m_AdapterAttribs = Adapters[AdapterId];
+            Uint32 NumDisplayModes = 0;
+            pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
+            m_DisplayModes.resize(NumDisplayModes);
+            pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+
             EngineD3D12Attribs EngD3D12Attribs;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs, NumDeferredCtx);
             ppContexts.resize(1 + NumDeferredCtx);
-            auto *pFactoryD3D12 = GetEngineFactoryD3D12();
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
@@ -192,6 +223,74 @@ void SampleApp::InitializeSample()
 
     m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
     TwWindowSize(SCDesc.Width, SCDesc.Height);
+
+#if PLATFORM_WIN32
+    if(m_DeviceType == DeviceType::D3D11 || m_DeviceType == DeviceType::D3D12)
+    {
+        TwBar *bar = TwNewBar("adapters");
+        int barSize[2] = { 480 * m_UIScale, 120 * m_UIScale };
+        TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+        TwDefine(" adapters iconified=true label='Adapters & Display Modes' valueswidth=280");
+        {
+            std::stringstream ss;
+            ss << m_AdapterAttribs.Description << " (" << (m_AdapterAttribs.DedicatedVideoMemory>>20) << " MB)";
+            m_AdapterDetailsString = ss.str();
+            TwAddVarRO(bar, "Adapter", TW_TYPE_STDSTRING, &m_AdapterDetailsString, "label=\'Adapter details\'");
+        }
+        std::vector<TwEnumVal> twDisplayModes(m_DisplayModes.size());
+        std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
+        for(int i=0; i < m_DisplayModes.size(); ++i)
+        {
+            static constexpr const char* ScalingModeStr[] = 
+            {
+                ""
+                " Centered",
+                " Stretched"
+            };
+            const auto &Mode = m_DisplayModes[i];
+            std::stringstream ss;
+            float RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
+            ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
+            DisplayModeStrings[i] = ss.str();
+            twDisplayModes[i] = TwEnumVal{i, DisplayModeStrings[i].c_str()};
+        }
+        {
+            RECT rc;
+            const HWND hDesktop = GetDesktopWindow();
+            GetWindowRect(hDesktop, &rc);
+            Uint32 ScreenWidth  = static_cast<Uint32>(rc.right - rc.left);
+            Uint32 ScreenHeight = static_cast<Uint32>(rc.bottom - rc.top);
+            for(int i = 0; i < m_DisplayModes.size(); ++i)
+            {
+                if(ScreenWidth == m_DisplayModes[i].Width && ScreenHeight == m_DisplayModes[i].Height)
+                {
+                    m_SelectedDisplayMode = i;
+                    break;
+                }
+            }
+        }
+
+        TwType DisplayModesEnum = TwDefineEnum("Display Modes", twDisplayModes.data(), static_cast<unsigned int>(twDisplayModes.size()));
+        TwAddVarRW(bar, "DisplayModes", DisplayModesEnum, &m_SelectedDisplayMode, "label=\'Display Modes\'");
+
+        TwAddButton(bar, "SetFullScreen",
+            [](void *clientData)
+            {
+                SampleApp *pTheApp = reinterpret_cast<SampleApp*>(clientData);
+                const auto &SelectedMode = pTheApp->m_DisplayModes[pTheApp->m_SelectedDisplayMode];
+                pTheApp->m_pSwapChain->SetFullscreenMode(SelectedMode);
+            },
+            this, "label=\'Set fullscreen mode\'");
+
+        TwAddButton(bar, "SetWindowed",
+            [](void *clientData)
+            {
+                SampleApp *pTheApp = reinterpret_cast<SampleApp*>(clientData);
+                pTheApp->m_pSwapChain->SetWindowedMode();
+            },
+            this, "label=\'Set windowed mode\'");
+    }
+#endif
 }
 
 void SampleApp::ProcessCommandLine(const char *CmdLine)

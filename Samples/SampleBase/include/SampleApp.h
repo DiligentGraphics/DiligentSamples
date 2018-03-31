@@ -24,6 +24,7 @@
 #pragma once 
 
 #include <vector>
+#include <string>
 
 #include "NativeAppBase.h"
 #include "RefCntAutoPtr.h"
@@ -58,8 +59,12 @@ protected:
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
     std::vector<Diligent::RefCntAutoPtr<Diligent::IDeviceContext> > m_pDeferredContexts;
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> m_pSwapChain;
-    
+    Diligent::HardwareAdapterAttribs m_AdapterAttribs;
+    std::vector<Diligent::DisplayModeAttribs> m_DisplayModes;
+
     std::unique_ptr<SampleBase> m_TheSample;
     std::string m_AppTitle;
     Diligent::Int32 m_UIScale = 1;
+    std::string m_AdapterDetailsString;
+    int m_SelectedDisplayMode = 0;
 };
