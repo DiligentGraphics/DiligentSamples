@@ -41,6 +41,7 @@
 
 #pragma once
 
+#include <vector>
 #include "AdvancedMath.h"
 #include "HostSharedTerrainStructs.fxh"
 #include "ScriptParser.h"

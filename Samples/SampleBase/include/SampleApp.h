@@ -24,6 +24,7 @@
 #pragma once 
 
 #include <vector>
+#include <string>
 
 #include "NativeAppBase.h"
 #include "RefCntAutoPtr.h"
@@ -53,13 +54,30 @@ protected:
     );
     void InitializeSample();
 
+    virtual void SetFullscreenMode(const Diligent::DisplayModeAttribs &DisplayMode)
+    { 
+        m_bFullScreenMode = true;
+        m_pSwapChain->SetFullscreenMode(DisplayMode); 
+    }
+    virtual void SetWindowedMode()
+    { 
+        m_bFullScreenMode = false;
+        m_pSwapChain->SetWindowedMode(); 
+    }
+
     Diligent::DeviceType m_DeviceType = Diligent::DeviceType::Undefined;
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
     std::vector<Diligent::RefCntAutoPtr<Diligent::IDeviceContext> > m_pDeferredContexts;
     Diligent::RefCntAutoPtr<Diligent::ISwapChain> m_pSwapChain;
-    
+    Diligent::HardwareAdapterAttribs m_AdapterAttribs;
+    std::vector<Diligent::DisplayModeAttribs> m_DisplayModes;
+
     std::unique_ptr<SampleBase> m_TheSample;
     std::string m_AppTitle;
     Diligent::Int32 m_UIScale = 1;
+    std::string m_AdapterDetailsString;
+    int m_SelectedDisplayMode = 0;
+    bool m_bVSync = false;
+    bool m_bFullScreenMode = false;
 };
