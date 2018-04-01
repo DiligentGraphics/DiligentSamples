@@ -54,6 +54,17 @@ protected:
     );
     void InitializeSample();
 
+    virtual void SetFullscreenMode(const Diligent::DisplayModeAttribs &DisplayMode)
+    { 
+        m_bFullScreenMode = true;
+        m_pSwapChain->SetFullscreenMode(DisplayMode); 
+    }
+    virtual void SetWindowedMode()
+    { 
+        m_bFullScreenMode = false;
+        m_pSwapChain->SetWindowedMode(); 
+    }
+
     Diligent::DeviceType m_DeviceType = Diligent::DeviceType::Undefined;
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
@@ -68,4 +79,5 @@ protected:
     std::string m_AdapterDetailsString;
     int m_SelectedDisplayMode = 0;
     bool m_bVSync = false;
+    bool m_bFullScreenMode = false;
 };

@@ -278,7 +278,7 @@ void SampleApp::InitializeSample()
             {
                 SampleApp *pTheApp = reinterpret_cast<SampleApp*>(clientData);
                 const auto &SelectedMode = pTheApp->m_DisplayModes[pTheApp->m_SelectedDisplayMode];
-                pTheApp->m_pSwapChain->SetFullscreenMode(SelectedMode);
+                pTheApp->SetFullscreenMode(SelectedMode);
             },
             this, "label=\'Set fullscreen mode\'");
 
@@ -286,7 +286,7 @@ void SampleApp::InitializeSample()
             [](void *clientData)
             {
                 SampleApp *pTheApp = reinterpret_cast<SampleApp*>(clientData);
-                pTheApp->m_pSwapChain->SetWindowedMode();
+                pTheApp->SetWindowedMode();
             },
             this, "label=\'Set windowed mode\'");
 
