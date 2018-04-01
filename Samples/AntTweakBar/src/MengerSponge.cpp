@@ -153,7 +153,7 @@ void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppC
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("TweakBar");
-    TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar into a DirectX11 application.' "); // Message added to the help bar.
+    TwDefine(" GLOBAL help='This example shows how to use AntTweakBar library.' "); // Message added to the help bar.
     int barSize[2] = {224 * m_UIScale, 320 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
