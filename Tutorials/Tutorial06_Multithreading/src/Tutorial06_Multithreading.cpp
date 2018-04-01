@@ -472,6 +472,10 @@ void Tutorial06_Multithreading::Render()
         for(auto &cmdList : m_CmdLists)
         {
             m_pImmediateContext->ExecuteCommandList(cmdList);
+            // Release command lists now to release all outstanding references
+            // In d3d11 mode, command lists hold references to the swap chain's back buffer 
+            // that cause swap chain resize to fail
+            cmdList.Release();
         }
 
         m_NumThreadsReady = 0;
