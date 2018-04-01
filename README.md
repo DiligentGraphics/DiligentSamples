@@ -88,7 +88,7 @@ Please refer to Build and Run Instructions section of the [master repository's r
 
 ## Current progress
 
-* Added display fullscreen mode selection dialog box
+* Added fullscreen mode selection dialog box
 * Implemented fullscreen mode toggle on UWP with shift + enter
 * Implemented fullscreen window toggle on Win32 with alt + enter
 
