@@ -97,8 +97,8 @@ void Tutorial01_HelloTriangle::Initialize(IRenderDevice *pDevice, IDeviceContext
     PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
     // This tutorial will not use depth buffer
     PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_UNKNOWN;
-    // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
     // No back face culling for this tutorial
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
     // Disable depth testing
@@ -149,7 +149,6 @@ void Tutorial01_HelloTriangle::Render()
     m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
     DrawAttribs drawAttrs;
     drawAttrs.NumVertices = 3; // We will render 3 vertices
-    drawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
     m_pImmediateContext->Draw(drawAttrs);
 }
 

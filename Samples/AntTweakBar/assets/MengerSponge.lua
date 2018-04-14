@@ -45,7 +45,7 @@ PSO = PipelineState.Create
 			{ InputIndex = 1, NumComponents = 3, ValueType = "VT_FLOAT32"},
 			{ InputIndex = 2, NumComponents = 4, ValueType = "VT_UINT8", IsNormalized = true}
 		},
-		PrimitiveTopologyType = "PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE",
+		PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
 		pVS = MainVS,
 		pPS = MainPS,
 		RTVFormats = "TEX_FORMAT_RGBA8_UNORM_SRGB",
@@ -63,7 +63,6 @@ MainVS:BindResources(ResMapping)
 MainPS:BindResources(ResMapping)
 
 DrawAttrs = DrawAttribs.Create{
-    Topology = "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
 	IsIndexed = true,
 	IndexType = "VT_UINT32"
 }

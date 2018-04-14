@@ -431,8 +431,7 @@ end
 ScreenSizeQuadVS = CreateVertexShader("ScreenSizeQuadVS.fx", "ScreenSizeQuadVS")
 
 ScreenSizeQuadDrawAttrs = DrawAttribs.Create{
-    NumVertices = 4,
-    Topology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
+    NumVertices = 4
 }
 
 function CreateScreenSizeQuadPSO(_Name, PixelShader, DSSDesc, BSDesc, RTVFmts, DSVFmt)
@@ -452,7 +451,8 @@ function CreateScreenSizeQuadPSO(_Name, PixelShader, DSSDesc, BSDesc, RTVFmts, D
 			pVS = ScreenSizeQuadVS,
 			pPS = PixelShader,
 			RTVFormats = RTVFmts,
-			DSVFormat = DSVFmt
+			DSVFormat = DSVFmt,
+            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
 end
@@ -851,8 +851,7 @@ function UpdateAverageLuminance()
 end
 
 SampleLocationsDrawAttrs = DrawAttribs.Create{
-    NumVertices = 4,
-    Topology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
+    NumVertices = 4
 }
 
 
@@ -871,7 +870,8 @@ function CreateRenderSampleLocationsPSO(RenderSampleLocationsVS, RenderSampleLoc
 			BlendDesc = AlphaBlendBSDesc,
 			pVS = RenderSampleLocationsVS,
 			pPS = RenderSampleLocationsPS,
-			RTVFormats = MainBackBufferFmt
+			RTVFormats = MainBackBufferFmt,
+            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
 	RenderSampleLocationsSRB = nil
@@ -911,7 +911,8 @@ RenderSunPSO = PipelineState.Create
 		pVS = SunVS,
 		pPS = SunPS,
 		RTVFormats =  OffscreenBackBufferFmt,
-		DSVFormat = MainDepthBufferFmt
+		DSVFormat = MainDepthBufferFmt,
+        PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 	}
 }
 

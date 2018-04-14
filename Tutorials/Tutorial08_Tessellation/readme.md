@@ -160,16 +160,20 @@ shader to generate smooth wireframe.
 
 ## Initializing the Pipeline State and Rendering
 
-Pipeline state initialization is done in the same way as in previous tutorials.
+Pipeline state initialization is done in the same way as in previous tutorials. The only difference 
+is that primitive topology is one-control-point patchlist:
+
+```cpp
+PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+```
+
 Two pipeline state objects are created. The first one renders terrain in normal mode, the second
 one initializes all 5 shader stages to render wireframe overlay.
 
-Rendering is done using one-control-point patchlist as primitive topology, one instance per 
-tessellation block:
+Rendering is done as usual, with one primitive being one patch:
 
 ```cpp
 DrawAttribs DrawAttrs;
 DrawAttrs.NumVertices = NumHorzBlocks * NumVertBlocks;
-DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
 m_pImmediateContext->Draw(DrawAttrs);
 ```

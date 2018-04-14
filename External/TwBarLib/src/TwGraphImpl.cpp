@@ -180,7 +180,7 @@ int CTwGraphImpl::Init(int BackBufferFormat)
 
         // Create rect vertex buffer
         BuffDesc.Name = "AntTwBar: Rect VB";
-        BuffDesc.uiSizeInBytes = 4 * sizeof(CLineRectVtx);
+        BuffDesc.uiSizeInBytes = 6 * sizeof(CLineRectVtx);
         m_pDev->CreateBuffer(BuffDesc, BufferData(), &m_pRectVertexBuffer);
 
         // Create constant buffer
@@ -303,7 +303,7 @@ int CTwGraphImpl::Init(int BackBufferFormat)
     RasterizerDesc.AntialiasedLineEnable = False;
 
     InputLayoutDesc &lineRectLayout = PSODesc.GraphicsPipeline.InputLayout;
-    PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     PSODesc.GraphicsPipeline.pVS = m_pTextVS;
     PSODesc.GraphicsPipeline.pPS = m_pTextPS;
     LayoutElement TextLayoutElems[] = 
@@ -338,7 +338,7 @@ int CTwGraphImpl::Init(int BackBufferFormat)
     PSODesc.Name = "AntTwBar: line PSO";
     PSODesc.GraphicsPipeline.pVS = m_pLineRectVS;
     PSODesc.GraphicsPipeline.pPS = m_pLineRectPS;
-    PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_LINE_LIST;
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Line)]);
 
     PSODesc.Name = "AntTwBar: line antialiased PSO";
@@ -347,7 +347,7 @@ int CTwGraphImpl::Init(int BackBufferFormat)
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::LineAA)]);
 
     PSODesc.GraphicsPipeline.pPS = m_pLineRectPS;
-    PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     PSODesc.GraphicsPipeline.pVS = m_pLineRectCstColorVS;
     PSODesc.Name = "AntTwBar: triangle cst color PSO";
@@ -537,7 +537,6 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
-        DrawAttribs.Topology = PRIMITIVE_TOPOLOGY_LINE_LIST;
         DrawAttribs.NumVertices = 2;
         m_pDevImmContext->Draw(DrawAttribs);
     }
@@ -569,24 +568,17 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
     //if( mappedVertices )
     {
         //CLineRectVtx *vertices = mappedVertices;
-        CLineRectVtx vertices[4];
         // Fill vertex buffer
-        vertices[0].m_Pos[0] = x0;
-        vertices[0].m_Pos[1] = y0;
-        vertices[0].m_Pos[2] = 0;
-        vertices[0].m_Color = ToR8G8B8A8(_Color00);
-        vertices[1].m_Pos[0] = x1;
-        vertices[1].m_Pos[1] = y0;
-        vertices[1].m_Pos[2] = 0;
-        vertices[1].m_Color = ToR8G8B8A8(_Color10);
-        vertices[2].m_Pos[0] = x0;
-        vertices[2].m_Pos[1] = y1;
-        vertices[2].m_Pos[2] = 0;
-        vertices[2].m_Color = ToR8G8B8A8(_Color01);
-        vertices[3].m_Pos[0] = x1;
-        vertices[3].m_Pos[1] = y1;
-        vertices[3].m_Pos[2] = 0;
-        vertices[3].m_Color = ToR8G8B8A8(_Color11);
+        CLineRectVtx vertices[] =
+        {
+            { {x0, y0, 0}, ToR8G8B8A8(_Color00) },
+            { {x1, y0, 0}, ToR8G8B8A8(_Color10) },
+            { {x0, y1, 0}, ToR8G8B8A8(_Color01) },
+
+            { {x0, y1, 0}, ToR8G8B8A8(_Color01) },
+            { {x1, y0, 0}, ToR8G8B8A8(_Color10) },
+            { {x1, y1, 0}, ToR8G8B8A8(_Color11) }
+        };
         //mappedVertices.Unmap();
         m_pRectVertexBuffer->UpdateData(m_pDevImmContext, 0, sizeof(vertices), vertices);
 
@@ -619,8 +611,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
-        DrawAttribs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        DrawAttribs.NumVertices = 4;
+        DrawAttribs.NumVertices = 6;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }
@@ -920,7 +911,6 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
-        DrawAttribs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         DrawAttribs.NumVertices = textObj->m_NbBgVerts;
         m_pDevImmContext->Draw(DrawAttribs);
     }
@@ -965,7 +955,6 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         m_pDevImmContext->CommitShaderResources(pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
-        DrawAttribs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         DrawAttribs.NumVertices = textObj->m_NbTextVerts;
         m_pDevImmContext->Draw(DrawAttribs);
     }
@@ -1136,7 +1125,6 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = 3*_NumTriangles;
-        DrawAttribs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }

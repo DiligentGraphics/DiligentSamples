@@ -90,7 +90,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
         // Set depth buffer format which is the format of the swap chain's back buffer
         PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
         // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+        PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
         // Cull back faces
         PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
         // Enable depth testing
@@ -317,7 +317,6 @@ void Tutorial08_Tessellation::Render()
 
     DrawAttribs DrawAttrs;
     DrawAttrs.NumVertices = NumHorzBlocks * NumVertBlocks;
-    DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

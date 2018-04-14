@@ -94,7 +94,7 @@ struct RingSectorMesh
 class EarthHemsiphere
 {
 public:
-    EarthHemsiphere(void) : m_uiNumStitchIndices(0), m_ValidShaders(0){}
+    EarthHemsiphere(void) : m_ValidShaders(0){}
 
     // Renders the model
 	void Render(IDeviceContext* pContext,
@@ -148,9 +148,6 @@ private:
 
     std::vector<RingSectorMesh> m_SphereMeshes;
     
-    Diligent::RefCntAutoPtr<IBuffer> m_pStitchIndBuff;
-    
-    Diligent::Uint32 m_uiNumStitchIndices;
     Diligent::Uint32 m_ValidShaders;
 
 private:

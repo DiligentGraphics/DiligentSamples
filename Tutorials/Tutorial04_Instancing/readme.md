@@ -138,6 +138,5 @@ DrawAttrs.IndexType = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
 // Number of instances
 DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; 
-DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 m_pImmediateContext->Draw(DrawAttrs);
 ```

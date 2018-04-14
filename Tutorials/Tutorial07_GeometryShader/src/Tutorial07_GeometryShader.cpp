@@ -72,8 +72,8 @@ void Tutorial07_GeometryShader::Initialize(IRenderDevice *pDevice, IDeviceContex
         PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
         // Set depth buffer format which is the format of the swap chain's back buffer
         PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
-        // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+        PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         // Cull back faces
         PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
         // Enable depth testing
@@ -322,7 +322,6 @@ void Tutorial07_GeometryShader::Render()
     DrawAttrs.IsIndexed = true; // This is indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
-    DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

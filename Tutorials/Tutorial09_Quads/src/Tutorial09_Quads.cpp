@@ -97,8 +97,8 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
         // Set depth buffer format which is the format of the swap chain's back buffer
         PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
-        // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+        PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         // Disable back face culling
         PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
         // Disable depth testing
@@ -410,7 +410,6 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 
     DrawAttribs DrawAttrs;
     DrawAttrs.NumIndices = 4;
-    DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
     Uint32 NumSubsets = 1 + m_NumWorkerThreads;
     const Uint32 TotalQuads = static_cast<Uint32>(m_Quads.size());

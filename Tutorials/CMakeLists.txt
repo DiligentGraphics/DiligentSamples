@@ -45,6 +45,11 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 
 	source_group("src" FILES ${SOURCE} ${INCLUDE})
 	source_group("assets" FILES ${ALL_ASSETS})	
+    
+    target_sources(${TUTORIAL_NAME} PRIVATE readme.md)
+    set_source_files_properties(
+        readme.md PROPERTIES HEADER_FILE_ONLY TRUE
+    )
 
 endfunction()
 

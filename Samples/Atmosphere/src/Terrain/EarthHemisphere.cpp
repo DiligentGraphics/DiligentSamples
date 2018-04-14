@@ -280,7 +280,6 @@ void GenerateSphereGeometry(IRenderDevice *pDevice,
                             float fSamplingStep,
                             float fSampleScale,
                             std::vector<HemisphereVertex> &VB,
-                            std::vector<Uint32> &StitchIB,
                             std::vector<RingSectorMesh> &SphereMeshes)
 {
     if( (iGridDimension - 1) % 4 != 0 )
@@ -358,75 +357,6 @@ void GenerateSphereGeometry(IRenderDevice *pDevice,
                     const auto &V2 = VB[iCurrGridStart + iCol + (i + 1)*iGridDimension].f3WorldPos;
                     V1 = (V0+V2)/2.f;
                 }
-            }
-
-
-            // Add triangles stitching this ring with the next one
-            int iNextGridStart = (int)VB.size();
-            VERIFY_EXPR( iNextGridStart == iCurrGridStart + iGridDimension*iGridDimension);
-
-            // Bottom boundary
-            for(int iCol=0; iCol < iGridDimension-1; iCol += 2)
-            {
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2) + iGridQuart * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+1) + 0 * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+0) + 0 * iGridDimension); 
-
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2) + iGridQuart * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+2) + 0 * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+1) + 0 * iGridDimension); 
-
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2)   + iGridQuart * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2+1) + iGridQuart * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+2) + 0 * iGridDimension); 
-            }
-
-            // Top boundary
-            for(int iCol=0; iCol < iGridDimension-1; iCol += 2)
-            {
-                StitchIB.push_back(iCurrGridStart + (iCol+0) + (iGridDimension-1) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+1) + (iGridDimension-1) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2) + iGridQuart* 3 * iGridDimension); 
-
-                StitchIB.push_back(iCurrGridStart + (iCol+1) + (iGridDimension-1) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iCol+2) + (iGridDimension-1) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2) + iGridQuart* 3 * iGridDimension); 
-
-                StitchIB.push_back(iCurrGridStart + (iCol+2) + (iGridDimension-1) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2 + 1) + iGridQuart* 3 * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + (iGridQuart + iCol/2)     + iGridQuart* 3 * iGridDimension); 
-            }
-
-            // Left boundary
-            for(int iRow=0; iRow < iGridDimension-1; iRow += 2)
-            {
-                StitchIB.push_back(iNextGridStart + iGridQuart + (iGridQuart+ iRow/2) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + 0 + (iRow+0) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + 0 + (iRow+1) * iGridDimension); 
-
-                StitchIB.push_back(iNextGridStart + iGridQuart + (iGridQuart+ iRow/2) * iGridDimension);  
-                StitchIB.push_back(iCurrGridStart + 0 + (iRow+1) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + 0 + (iRow+2) * iGridDimension); 
-
-                StitchIB.push_back(iNextGridStart + iGridQuart + (iGridQuart + iRow/2 + 1) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + iGridQuart + (iGridQuart + iRow/2)     * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + 0 + (iRow+2) * iGridDimension); 
-            }
-
-            // Right boundary
-            for(int iRow=0; iRow < iGridDimension-1; iRow += 2)
-            {
-                StitchIB.push_back(iCurrGridStart + (iGridDimension-1) + (iRow+1) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iGridDimension-1) + (iRow+0) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + iGridQuart*3 + (iGridQuart+ iRow/2) * iGridDimension); 
-
-                StitchIB.push_back(iCurrGridStart + (iGridDimension-1) + (iRow+2) * iGridDimension); 
-                StitchIB.push_back(iCurrGridStart + (iGridDimension-1) + (iRow+1) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + iGridQuart*3 + (iGridQuart+ iRow/2) * iGridDimension); 
-
-                StitchIB.push_back(iCurrGridStart + (iGridDimension-1) + (iRow+2) * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + iGridQuart*3 + (iGridQuart+ iRow/2)     * iGridDimension); 
-                StitchIB.push_back(iNextGridStart + iGridQuart*3 + (iGridQuart+ iRow/2 + 1) * iGridDimension); 
             }
         }
 
@@ -628,7 +558,6 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
         }
 
         DrawAttribs DrawAttrs;
-        DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         DrawAttrs.NumVertices = 4;
         pContext->Draw( DrawAttrs );
     }
@@ -732,8 +661,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     m_pTerrainScript->Run( pContext, "CreateHemisphereShaders" );
 
     std::vector<HemisphereVertex> VB;
-    std::vector<Uint32> StitchIB;
-    GenerateSphereGeometry(pDevice, AirScatteringAttribs().fEarthRadius, m_Params.m_iRingDimension, m_Params.m_iNumRings, pDataSource, m_Params.m_TerrainAttribs.m_fElevationSamplingInterval, m_Params.m_TerrainAttribs.m_fElevationScale, VB, StitchIB, m_SphereMeshes);
+    GenerateSphereGeometry(pDevice, AirScatteringAttribs().fEarthRadius, m_Params.m_iRingDimension, m_Params.m_iNumRings, pDataSource, m_Params.m_TerrainAttribs.m_fElevationSamplingInterval, m_Params.m_TerrainAttribs.m_fElevationScale, VB, m_SphereMeshes);
 
     BufferDesc VBDesc;
     VBDesc.Name = "Hemisphere vertex buffer";
@@ -745,18 +673,6 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     VBInitData.DataSize = VBDesc.uiSizeInBytes;
     pDevice->CreateBuffer( VBDesc, VBInitData, &m_pVertBuff );
     VERIFY( m_pVertBuff, "Failed to create VB" );
-
-    m_uiNumStitchIndices = (Uint32)StitchIB.size();
-    BufferDesc StitchIndexBufferDesc;
-    StitchIndexBufferDesc.uiSizeInBytes = (Uint32)(m_uiNumStitchIndices * sizeof( StitchIB[0] ));
-    StitchIndexBufferDesc.Usage = USAGE_STATIC;
-    StitchIndexBufferDesc.BindFlags = BIND_INDEX_BUFFER;
-    BufferData IBInitData;
-    IBInitData.pData = StitchIB.data();
-    IBInitData.DataSize = StitchIndexBufferDesc.uiSizeInBytes;
-    // Create the buffer
-    pDevice->CreateBuffer( StitchIndexBufferDesc, IBInitData, &m_pStitchIndBuff);
-    VERIFY( m_pStitchIndBuff, "Failed to create stitch IB" );
 }
 
 void EarthHemsiphere::Render(IDeviceContext* pContext,
@@ -894,19 +810,10 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         {
             pContext->SetIndexBuffer(MeshIt->pIndBuff, 0);
             DrawAttribs DrawAttrs;
-            DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             DrawAttrs.IndexType = VT_UINT32;
             DrawAttrs.NumIndices = MeshIt->uiNumIndices;
             DrawAttrs.IsIndexed = true;
             pContext->Draw(DrawAttrs);
         }
     }
-    
-    pContext->SetIndexBuffer(m_pStitchIndBuff, 0);
-    DrawAttribs DrawAttrs;
-    DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    DrawAttrs.IndexType = VT_UINT32;
-    DrawAttrs.NumIndices = m_uiNumStitchIndices;
-    DrawAttrs.IsIndexed = true;
-    pContext->Draw(DrawAttrs);
 }

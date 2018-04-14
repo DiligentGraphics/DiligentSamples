@@ -132,7 +132,8 @@ function SetHemispherePS(in_HemispherePS, RTVFormat)
 			pVS = HemisphereVS,
 			pPS = HemispherePS,
 			RTVFormats = RTVFormat,
-			DSVFormat = "TEX_FORMAT_D32_FLOAT"
+			DSVFormat = "TEX_FORMAT_D32_FLOAT",
+            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
 	RenderHemisphereSRB = RenderHemispherePSO:CreateShaderResourceBinding()
@@ -160,7 +161,8 @@ function SetHemispherePS(in_HemispherePS, RTVFormat)
 			},
 			InputLayout = InputLayoutElements,
 			pVS = HemisphereZOnlyVS,
-			DSVFormat = "TEX_FORMAT_D32_FLOAT"
+			DSVFormat = "TEX_FORMAT_D32_FLOAT",
+            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
 end
@@ -219,7 +221,8 @@ function CreateRenderNormalMapShaders()
 			},
 			pVS = ScreenSizeQuadVS,
 			pPS = GenerateNormalMapPS,
-			RTVFormats = "TEX_FORMAT_RG8_UNORM"
+			RTVFormats = "TEX_FORMAT_RG8_UNORM",
+            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
 	

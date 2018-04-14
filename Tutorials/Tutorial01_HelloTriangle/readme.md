@@ -88,7 +88,7 @@ PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_UNKNOWN;
 Next, we need to define what kind of primitives the pipeline can render, which are triangles in our case:
 
 ```cpp
-PSODesc.GraphicsPipeline.PrimitiveTopologyType = PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 ```
 
 In this example, we do not want to worry about culling back-facing triangles, so we disable it:
@@ -194,7 +194,6 @@ Finally, we invoke the draw command that renders our 3 vertices:
 ```cpp
 DrawAttribs drawAttrs;
 drawAttrs.NumVertices = 3;
-drawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 m_pImmediateContext->Draw(drawAttrs);
 ```
 

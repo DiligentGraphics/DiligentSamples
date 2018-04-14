@@ -193,6 +193,10 @@ void SampleApp::InitializeDiligentEngine(
             LoadGraphicsEngineVk(GetEngineFactoryVk);
 #endif
             EngineVkAttribs EngVkAttribs;
+#ifdef _DEBUG
+            EngVkAttribs.EnableValidation = true;
+#endif
+
             ppContexts.resize(1 + NumDeferredCtx);
             auto *pFactoryVk = GetEngineFactoryVk();
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
