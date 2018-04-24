@@ -118,6 +118,11 @@ public:
 
     }
 
+    ~Tutorial00App()
+    {
+        m_pImmediateContext->Flush();
+    }
+
     bool InitializeDiligentEngine(HWND NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
@@ -257,7 +262,7 @@ public:
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
         PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
         // No back face culling for this tutorial
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
         // Disable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
@@ -393,7 +398,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
             g_pTheApp->Present();
         }
     }
-
+    
     g_pTheApp.reset();
 
     return (int)msg.wParam;

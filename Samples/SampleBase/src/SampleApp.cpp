@@ -60,7 +60,7 @@ SampleApp::~SampleApp()
     TwTerminate();
     m_TheSample.reset();
 
-    //pDeviceContext->Flush();
+    m_pImmediateContext->Flush();
     m_pDeferredContexts.clear();
     m_pImmediateContext.Release();
     m_pSwapChain.Release();
