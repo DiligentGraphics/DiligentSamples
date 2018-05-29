@@ -147,15 +147,15 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
             // Per-instance data - second buffer slot
             // We will use four attributes to encode instance-specific 4x4 transformation matrix
             // Attribute 2 - first row
-            LayoutElement(2, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(2, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 3 - second row
-            LayoutElement(3, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(3, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 4 - third row
-            LayoutElement(4, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(4, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 5 - fourth row
-            LayoutElement(5, 1, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(5, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 6 - texture array index
-            LayoutElement(6, 1, 1, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(6, 1, 1, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
         };
 
         PSODesc.GraphicsPipeline.pVS = pVS;
@@ -379,10 +379,9 @@ void Tutorial05_TextureArray::Render()
     }
 
     // Bind vertex & instance buffers
-    Uint32 strides[] = {sizeof(float) * 5, sizeof(InstanceData)};
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     // Set pipeline state

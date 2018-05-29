@@ -524,10 +524,9 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         }
 
         // Set vertex buffer
-        Uint32 stride = sizeof(CLineRectVtx);
         Uint32 offset = 0;
         IBuffer *pBuffs[] = {m_pLineVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the line
         IPipelineState *pPSO = m_pPSO[static_cast<int>(_AntiAliased ? PSO_ID::LineAA : PSO_ID::Line)];
@@ -599,10 +598,9 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         }
 
         // Set vertex buffer
-        Uint32 stride = sizeof(CLineRectVtx);
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = {m_pRectVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the rect
         IPipelineState *pPSO = m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)];
@@ -895,10 +893,9 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         }
 
         // Set vertex buffer
-        Uint32 stride = sizeof(CLineRectVtx);
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = {textObj->m_pBgVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the bg rectangles
         IPipelineState *pPSO = nullptr;
@@ -932,10 +929,9 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         }
 
         // Set vertex buffer
-        Uint32 stride = sizeof(CTextVtx);
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = { textObj->m_pTextVertexBuffer };
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the text
         IPipelineState *pPSO = nullptr;
@@ -1100,10 +1096,9 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
         }
 
         // Set vertex buffer
-        Uint32 stride = sizeof(CLineRectVtx);
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = {m_pTrianglesVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         IPipelineState *pLineRectPSO = nullptr;
         if( _CullMode==CULL_CW )

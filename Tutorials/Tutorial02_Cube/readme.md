@@ -225,10 +225,9 @@ that facilitates buffer mapping:
 Second, we need to bind vertex and index buffer to the GPU pipeline:
 
 ```cpp
-Uint32 stride = sizeof(float) * 7; // Stride is 7 floats
 Uint32 offset = 0;
 IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 ```
 

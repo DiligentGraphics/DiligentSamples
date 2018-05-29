@@ -262,10 +262,9 @@ void Tutorial03_Texturing::Render()
     }
 
     // Bind vertex buffer
-    Uint32 stride = sizeof(float) * 5; // Stride is 5 floats (float3 pos + float2 uv)
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     // Set pipeline state

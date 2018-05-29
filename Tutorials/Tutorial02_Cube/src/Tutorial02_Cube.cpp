@@ -111,7 +111,8 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         LayoutElement LayoutElems[] =
         {
             // Attribute 0 - vertex position
-            LayoutElement(0, 0, 3, VT_FLOAT32, False),
+            // Stride is 7 floats. This could have been zero to allow the engine compute the stride
+            LayoutElement(0, 0, 3, VT_FLOAT32, False, 0, sizeof(float)*7),
             // Attribute 1 - vertex color
             LayoutElement(1, 0, 4, VT_FLOAT32, False)
         };
@@ -212,10 +213,9 @@ void Tutorial02_Cube::Render()
     }
 
     // Bind vertex buffer
-    Uint32 stride = sizeof(float) * 7; // Stride is 7 floats (float3 pos + float4 color)
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &stride, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     // Set pipeline state

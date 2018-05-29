@@ -188,11 +188,11 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         LayoutElement LayoutElems[] =
         {
             // Attribute 0 - QuadRotationAndScale
-            LayoutElement(0, 0, 4, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(0, 0, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 1 - QuadCenter
-            LayoutElement(1, 0, 2, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
+            LayoutElement(1, 0, 2, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE),
             // Attribute 2 - TexArrInd
-            LayoutElement(2, 0, 1, VT_FLOAT32, False, 0, LayoutElement::FREQUENCY_PER_INSTANCE)
+            LayoutElement(2, 0, 1, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE)
         };
         PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
         PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
@@ -402,10 +402,9 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 
     if (UseBatch)
     {
-        Uint32 strides[] = { sizeof(InstanceData) };
         Uint32 offsets[] = { 0 };
         IBuffer *pBuffs[] = { m_BatchDataBuffer };
-        pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+        pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
     }
 
     DrawAttribs DrawAttrs;

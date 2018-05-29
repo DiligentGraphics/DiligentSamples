@@ -792,9 +792,8 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
 #endif
 
     Uint32 offset[1] = { 0 };
-    Uint32 stride[1] = { sizeof(HemisphereVertex) };
     IBuffer* ppBuffers[1] = { m_pVertBuff };
-    pContext->SetVertexBuffers( 0, 1, ppBuffers, stride, offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pContext->SetVertexBuffers( 0, 1, ppBuffers, offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 
     if( bZOnlyPass )
         m_pTerrainScript->Run( pContext, "RenderHemisphereShadow" );

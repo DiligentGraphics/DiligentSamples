@@ -11,7 +11,7 @@ uniform sampler2D g_Font;
 layout(location = 1) in vec4 Color;
 layout(location = 2) in vec2 Tex;
 
-out vec4 out_Color;
+layout(location = 0) out vec4 out_Color;
 
 void main()
 { 

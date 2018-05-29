@@ -9,7 +9,7 @@
  
 layout(location = 1) in vec4 Color;
 
-out vec4 out_Color;
+layout(location = 0) out vec4 out_Color;
 
 void main()
 { 

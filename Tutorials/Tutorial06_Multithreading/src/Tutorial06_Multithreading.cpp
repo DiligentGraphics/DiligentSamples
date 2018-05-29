@@ -409,10 +409,9 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     }
 
     // Bind vertex & instance buffers. This must be done for every context
-    Uint32 strides[] = {sizeof(float) * 5};
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, strides, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
     pCtx->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     DrawAttribs DrawAttrs;

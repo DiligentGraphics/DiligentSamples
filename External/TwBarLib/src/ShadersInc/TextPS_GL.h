@@ -11,7 +11,7 @@
 "layout(location = 1) in vec4 Color;\n"
 "layout(location = 2) in vec2 Tex;\n"
 "\n"
-"out vec4 out_Color;\n"
+"layout(location = 0) out vec4 out_Color;\n"
 "\n"
 "void main()\n"
 "{ \n"
