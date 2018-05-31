@@ -141,6 +141,8 @@ void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppC
 
     m_pRenderScript = CreateRenderScriptFromFile( "MengerSponge.lua", m_pDevice, m_pImmediateContext, [&]( ScriptParser *pScriptParser )
     {
+        auto BackBufferFmt = m_pDevice->GetTextureFormatInfo(m_pSwapChain->GetDesc().ColorBufferFormat).Name;
+        pScriptParser->SetGlobalVariable( "extBackBufferFormat", BackBufferFmt );
         pScriptParser->SetGlobalVariable( "extConstantBuffer", m_pConstantBuffer );
     } );
 

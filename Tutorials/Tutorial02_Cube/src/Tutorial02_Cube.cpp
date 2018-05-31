@@ -111,8 +111,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         LayoutElement LayoutElems[] =
         {
             // Attribute 0 - vertex position
-            // Stride is 7 floats. This could have been zero to allow the engine compute the stride
-            LayoutElement(0, 0, 3, VT_FLOAT32, False, 0, sizeof(float)*7),
+            LayoutElement(0, 0, 3, VT_FLOAT32, False),
             // Attribute 1 - vertex color
             LayoutElement(1, 0, 4, VT_FLOAT32, False)
         };
@@ -224,7 +223,7 @@ void Tutorial02_Cube::Render()
     // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
     // that resources are transitioned to proper states
     m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
-
+    
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is an indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type

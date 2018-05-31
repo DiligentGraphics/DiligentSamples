@@ -48,7 +48,7 @@ PSO = PipelineState.Create
 		PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
 		pVS = MainVS,
 		pPS = MainPS,
-		RTVFormats = "TEX_FORMAT_RGBA8_UNORM_SRGB",
+		RTVFormats = extBackBufferFormat,
 		DSVFormat = "TEX_FORMAT_D32_FLOAT",
 	}
 }
