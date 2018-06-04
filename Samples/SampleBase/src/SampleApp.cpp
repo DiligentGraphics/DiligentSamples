@@ -197,6 +197,7 @@ void SampleApp::InitializeDiligentEngine(
             EngVkAttribs.EnableValidation = true;
 #endif
 
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, NumDeferredCtx);
             ppContexts.resize(1 + NumDeferredCtx);
             auto *pFactoryVk = GetEngineFactoryVk();
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);

@@ -402,7 +402,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
         // Map the buffer and write current world-view-projection matrix
         
         // Since this is a dynamic buffer, it must be mapped in every context before
-        // it can be used even though the matricesa are the same.
+        // it can be used even though the matrices are the same.
         MapHelper<float4x4> CBConstants(pCtx, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
         CBConstants[1] = transposeMatrix(m_RotationMatrix);

@@ -383,7 +383,7 @@ void Tutorial05_TextureArray::Render()
     IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
-
+    
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. Pass pointer to the shader resource binding object

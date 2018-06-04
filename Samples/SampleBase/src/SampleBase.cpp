@@ -59,6 +59,15 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
         break;
 #endif
 
+#if VULKAN_SUPPORTED
+        case DeviceType::Vulkan:
+        {
+            EngineVkAttribs &EngVkAttribs = static_cast<EngineVkAttribs&>(Attribs);
+
+        }
+        break;
+#endif
+
 #if GL_SUPPORTED
         case DeviceType::OpenGL:
         {
