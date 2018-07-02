@@ -49,7 +49,7 @@ PSO = PipelineState.Create
 		pVS = MainVS,
 		pPS = MainPS,
 		RTVFormats = extBackBufferFormat,
-		DSVFormat = "TEX_FORMAT_D32_FLOAT",
+		DSVFormat = extDepthBufferFormat
 	}
 }
 
