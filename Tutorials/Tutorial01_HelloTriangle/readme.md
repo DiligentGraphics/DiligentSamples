@@ -82,7 +82,7 @@ whose format can be queried through the swap chain object. It does not use the d
 ```cpp
 PSODesc.GraphicsPipeline.NumRenderTargets = 1;
 PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_UNKNOWN;
+PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
 ```
 
 Next, we need to define what kind of primitives the pipeline can render, which are triangles in our case:

@@ -26,7 +26,7 @@
 class CTwGraphImpl : public ITwGraph
 {
 public:
-    virtual int                 Init(int BackBufferFormat);
+    virtual int                 Init(int BackBufferFormat, int DepthStencilFormat);
     virtual int                 Shut();
     virtual void                BeginDraw(int _WndWidth, int _WndHeight);
     virtual void                EndDraw();

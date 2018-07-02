@@ -96,7 +96,7 @@ void Tutorial01_HelloTriangle::Initialize(IRenderDevice *pDevice, IDeviceContext
     // Set render target format which is the format of the swap chain's color buffer
     PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
     // This tutorial will not use depth buffer
-    PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_UNKNOWN;
+    PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
     PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
     // No back face culling for this tutorial

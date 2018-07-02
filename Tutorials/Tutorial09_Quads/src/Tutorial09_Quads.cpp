@@ -55,6 +55,13 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, Engine
         EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
     }
 #endif
+#if VULKAN_SUPPORTED
+    if(DevType == DeviceType::Vulkan)
+    {
+        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        VkAttrs.DynamicHeapSize = 32 << 20;
+    }
+#endif
 }
 
 void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)

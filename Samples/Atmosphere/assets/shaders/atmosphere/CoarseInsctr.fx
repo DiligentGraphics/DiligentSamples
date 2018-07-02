@@ -25,8 +25,6 @@ SamplerState g_tex2DOccludedNetDensityToAtmTop_sampler;
 
 Texture2D<float>  g_tex2DEpipolarCamSpaceZ;
 
-Texture2D<float4> g_tex2DSliceUVDirAndOrigin;
-
 Texture2D<float2> g_tex2DMinMaxLightSpaceDepth;
 
 Texture2DArray<float> g_tex2DLightSpaceDepthMap;

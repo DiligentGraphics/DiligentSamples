@@ -47,6 +47,13 @@ void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType DevTyp
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
+#if VULKAN_SUPPORTED
+    if(DevType == DeviceType::Vulkan)
+    {
+        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        VkAttrs.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
+    }
+#endif
 }
 
 void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
@@ -289,7 +296,7 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
     m_NumWorkerThreads = std::min(4, m_MaxThreads);
-
+    
     StartWorkerThreads();
 }
 
@@ -436,9 +443,14 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
         {
             // Map the buffer and write current world-view-projection matrix
             MapHelper<float4x4> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+            if(InstData == nullptr)
+            {
+                LOG_ERROR_MESSAGE("Failed to map instance data buffer");
+                break;
+            }
             *InstData = transposeMatrix(CurrInstData.Matrix);
         }
-
+        
         pCtx->Draw(DrawAttrs);
     }
 }

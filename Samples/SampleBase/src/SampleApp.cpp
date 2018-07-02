@@ -236,7 +236,7 @@ void SampleApp::InitializeSample()
     // Latest OpenGL works very much like Direct3D11, and 
     // Tweak Bar will never know if D3D or OpenGL is actually used
     const auto& SCDesc = m_pSwapChain->GetDesc();
-    if (!TwInit(TW_DIRECT3D11, m_pDevice.RawPtr(), m_pImmediateContext.RawPtr(), SCDesc.ColorBufferFormat))
+    if (!TwInit(TW_DIRECT3D11, m_pDevice.RawPtr(), m_pImmediateContext.RawPtr(), SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat))
     {
         LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
     }

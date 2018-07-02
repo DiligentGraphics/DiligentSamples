@@ -148,7 +148,7 @@ static void UnbindFont(IRenderDevice *_Dev, RefCntAutoPtr<ITexture> &_Tex)
 //  ---------------------------------------------------------------------------
 
 
-int CTwGraphImpl::Init(int BackBufferFormat)
+int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
 {
     assert(g_TwMgr!=NULL);
     assert(g_TwMgr->m_Device!=NULL);
@@ -276,6 +276,7 @@ int CTwGraphImpl::Init(int BackBufferFormat)
 
     PSODesc.GraphicsPipeline.NumRenderTargets = 1;
     PSODesc.GraphicsPipeline.RTVFormats[0] = static_cast<TEXTURE_FORMAT>(BackBufferFormat);
+    PSODesc.GraphicsPipeline.DSVFormat =  static_cast<TEXTURE_FORMAT>(DepthStencilFormat);
 
     DepthStencilStateDesc &DepthStencilDesc = PSODesc.GraphicsPipeline.DepthStencilDesc;
     DepthStencilDesc.DepthEnable = False;

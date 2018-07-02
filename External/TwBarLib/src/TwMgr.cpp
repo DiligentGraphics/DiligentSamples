@@ -1736,7 +1736,7 @@ std::string& CTwMgr::CLibStdString::ToLib()
 //  ---------------------------------------------------------------------------
 
 
-static int TwCreateGraph(int BackBufferFormat)
+static int TwCreateGraph(int BackBufferFormat, int DepthStencilFormat)
 {
     assert( g_TwMgr!=NULL && g_TwMgr->m_Graph==NULL );
 
@@ -1754,7 +1754,7 @@ static int TwCreateGraph(int BackBufferFormat)
         return 0;
     }
     else
-        return g_TwMgr->m_Graph->Init(BackBufferFormat);
+        return g_TwMgr->m_Graph->Init(BackBufferFormat, DepthStencilFormat);
 }
 
 //  ---------------------------------------------------------------------------
@@ -1860,7 +1860,7 @@ static int TwInitMgr()
 }
 
 
-int ANT_CALL TwInit(ETwGraphAPI _GraphAPI, void *_Device, void *_ImmediateContext, int BackBufferFormat)
+int ANT_CALL TwInit(ETwGraphAPI _GraphAPI, void *_Device, void *_ImmediateContext, int BackBufferFormat, int DepthStencilFormat)
 {
 #if defined(_DEBUG) && (defined(ANT_WIN32) || defined(ANT_UNIVERSAL_WINDOWS))
     _CrtSetDbgFlag(_CRTDBG_LEAK_CHECK_DF|_CrtSetDbgFlag(_CRTDBG_LEAK_CHECK_DF));
@@ -1881,7 +1881,7 @@ int ANT_CALL TwInit(ETwGraphAPI _GraphAPI, void *_Device, void *_ImmediateContex
     TwGenerateDefaultFonts(g_FontScaling);
     g_TwMgr->m_CurrentFont = g_DefaultNormalFont;
 
-    int Res = TwCreateGraph(BackBufferFormat);
+    int Res = TwCreateGraph(BackBufferFormat, DepthStencilFormat);
     if( Res )
         Res = TwInitMgr();
     
