@@ -406,7 +406,7 @@ void MengerSpongeSample::Render()
     const auto& SCDesc = m_pSwapChain->GetDesc();
     // Set world/view/proj matrices and global shader constants
     float aspectRatio = (float)SCDesc.Width / SCDesc.Height;
-    float4x4 proj = Projection(FLOAT_PI/4, aspectRatio, 0.1f, 100.0f, DeviceCaps.DevType == DeviceType::D3D11 || DeviceCaps.DevType == DeviceType::D3D12);
+    float4x4 proj = Projection(FLOAT_PI/4, aspectRatio, 0.1f, 100.0f, DeviceCaps.IsGLDevice());
     float dist = m_CamDistance + 0.4f;
     float3 camPosInv ( dist * 0.3f, dist * 0.0f, dist * 2.0f );
     float4x4 view = translationMatrix(camPosInv);

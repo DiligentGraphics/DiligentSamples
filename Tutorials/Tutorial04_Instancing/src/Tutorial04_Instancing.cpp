@@ -379,7 +379,7 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
 
-    bool IsDX = m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D11 || m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12;
+    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube view matrix
     float4x4 View = rotationX(+0.6f) * translationMatrix(0.f, 0.f, 4.0f);
@@ -388,7 +388,7 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
-    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsDX);
+    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute view-projection matrix
     m_ViewProjMatrix = View * Proj;
 

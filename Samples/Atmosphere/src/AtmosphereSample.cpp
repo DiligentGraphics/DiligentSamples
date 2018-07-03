@@ -75,7 +75,7 @@ AtmosphereSample::AtmosphereSample() :
     m_uiShadowMapResolution( 1024 ),
     m_fCascadePartitioningFactor(0.95f),
     m_bVisualizeCascades(false),
-    m_bIsDXDevice(true),
+    m_bIsGLDevice(false),
     m_bEnableLightScattering(true),
     m_fScatteringScale(0.5f),
     m_fElapsedTime(0.f)
@@ -91,7 +91,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
-    m_bIsDXDevice = deviceCaps.DevType == DeviceType::D3D11 ||  deviceCaps.DevType == DeviceType::D3D12;
+    m_bIsGLDevice = deviceCaps.IsGLDevice();
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )
     {
         m_uiShadowMapResolution = 512;
@@ -536,7 +536,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
     float3 f3CameraPosInLightSpace = m_f3CameraPos * WorldToLightViewSpaceMatr;
 
     float fMainCamNearPlane, fMainCamFarPlane;
-    GetNearFarPlaneFromProjMatrix( mCameraProj, fMainCamNearPlane, fMainCamFarPlane, m_bIsDXDevice);
+    GetNearFarPlaneFromProjMatrix( mCameraProj, fMainCamNearPlane, fMainCamFarPlane, m_bIsGLDevice);
 
     for(int i=0; i < MAX_CASCADES; ++i)
         ShadowMapAttribs.fCascadeCamSpaceZEnd[i] = +FLT_MAX;
@@ -568,7 +568,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         CurrCascade.f4StartEndZ.x = (iCascade == m_PPAttribs.m_iFirstCascade) ? 0 : std::min(fCascadeNearZ, fMaxLightShaftsDist);
         CurrCascade.f4StartEndZ.y = std::min(fCascadeFarZ, fMaxLightShaftsDist);
         CascadeFrustumProjMatrix = mCameraProj;
-        SetNearFarClipPlanes( CascadeFrustumProjMatrix, fCascadeNearZ, fCascadeFarZ, m_bIsDXDevice );
+        SetNearFarClipPlanes( CascadeFrustumProjMatrix, fCascadeNearZ, fCascadeFarZ, m_bIsGLDevice);
 
         float4x4 CascadeFrustumViewProjMatr = mCameraView * CascadeFrustumProjMatrix;
         float4x4 CascadeFrustumProjSpaceToWorldSpace = inverseMatrix(CascadeFrustumViewProjMatr);
@@ -590,7 +590,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
                                            (iClipPlaneCorner & 0x02) ? +1.f : - 1.f,
                                             // Since we use complimentary depth buffering, 
                                             // far plane has depth 0
-                                           (iClipPlaneCorner & 0x04) ? 1.f : (m_bIsDXDevice ? 0.f : -1.f));
+                                           (iClipPlaneCorner & 0x04) ? 1.f : (m_bIsGLDevice ? -1.f : 0.f));
             float3 f3PlaneCornerLightSpace = f3PlaneCornerProjSpace * CascadeFrustumProjSpaceToLightSpace;
             f3MinXYZ = min(f3MinXYZ, f3PlaneCornerLightSpace);
             f3MaxXYZ = max(f3MaxXYZ, f3PlaneCornerLightSpace);
@@ -623,12 +623,12 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         CurrCascade.f4LightSpaceScale.x =  2.f / (f3MaxXYZ.x - f3MinXYZ.x);
         CurrCascade.f4LightSpaceScale.y =  2.f / (f3MaxXYZ.y - f3MinXYZ.y);
         CurrCascade.f4LightSpaceScale.z =  
-                    (m_bIsDXDevice ? 1.f : 2.f) / (f3MaxXYZ.z - f3MinXYZ.z);
+                    (m_bIsGLDevice ? 2.f : 1.f) / (f3MaxXYZ.z - f3MinXYZ.z);
         // Apply bias to shift the extent to [-1,1]x[-1,1]x[0,1] for DX or to [-1,1]x[-1,1]x[-1,1] for GL
         // Find bias such that f3MinXYZ -> (-1,-1,0) for DX or (-1,-1,-1) for GL
         CurrCascade.f4LightSpaceScaledBias.x = -f3MinXYZ.x * CurrCascade.f4LightSpaceScale.x - 1.f;
         CurrCascade.f4LightSpaceScaledBias.y = -f3MinXYZ.y * CurrCascade.f4LightSpaceScale.y - 1.f;
-        CurrCascade.f4LightSpaceScaledBias.z = -f3MinXYZ.z * CurrCascade.f4LightSpaceScale.z + (m_bIsDXDevice ? 0.f : -1.f);
+        CurrCascade.f4LightSpaceScaledBias.z = -f3MinXYZ.z * CurrCascade.f4LightSpaceScale.z + (m_bIsGLDevice ? -1.f : 0.f);
 
         float4x4 ScaleMatrix = scaleMatrix( CurrCascade.f4LightSpaceScale.x, CurrCascade.f4LightSpaceScale.y, CurrCascade.f4LightSpaceScale.z );
         float4x4 ScaledBiasMatrix = translationMatrix( CurrCascade.f4LightSpaceScaledBias.x, CurrCascade.f4LightSpaceScaledBias.y, CurrCascade.f4LightSpaceScaledBias.z ) ;
@@ -640,15 +640,15 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         // Adjust the world to light space transformation matrix
         float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
         float4x4 ProjToUVScale, ProjToUVBias;
-        if( m_bIsDXDevice )
-        {
-            ProjToUVScale = scaleMatrix( 0.5f, -0.5f, 1.f );
-            ProjToUVBias = translationMatrix( 0.5f, 0.5f, 0.f );
-        }
-        else
+        if( m_bIsGLDevice )
         {
             ProjToUVScale = scaleMatrix( 0.5f, 0.5f, 0.5f );
             ProjToUVBias = translationMatrix( 0.5f, 0.5f, 0.5f );
+        }
+        else
+        {
+            ProjToUVScale = scaleMatrix( 0.5f, -0.5f, 1.f );
+            ProjToUVBias = translationMatrix( 0.5f, 0.5f, 0.f );
         }
 
         float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
@@ -750,7 +750,7 @@ void AtmosphereSample::Render()
         CamAttribs->mProjT = transposeMatrix( m_mCameraProj );
         CamAttribs->mViewProjInvT = transposeMatrix( inverseMatrix(mViewProj) );
         float fNearPlane = 0.f, fFarPlane = 0.f;
-        GetNearFarPlaneFromProjMatrix( m_mCameraProj, fNearPlane, fFarPlane, m_bIsDXDevice);
+        GetNearFarPlaneFromProjMatrix( m_mCameraProj, fNearPlane, fFarPlane, m_bIsGLDevice);
         CamAttribs->fNearPlaneZ = fNearPlane;
         CamAttribs->fFarPlaneZ = fFarPlane * 0.999999f;
         CamAttribs->f4CameraPos = m_f3CameraPos;
@@ -918,7 +918,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     // This projection matrix is only used to set up directions in view frustum
     // Actual near and far planes are ignored
     float FOV = (float)M_PI/4.f;
-    float4x4 mTmpProj = Projection(FOV, aspectRatio, 50.f, 500000.f, m_bIsDXDevice);
+    float4x4 mTmpProj = Projection(FOV, aspectRatio, 50.f, 500000.f, m_bIsGLDevice);
 
     float fEarthRadius = AirScatteringAttribs().fEarthRadius;
     float3 EarthCenter(0, -fEarthRadius, 0);
@@ -936,7 +936,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     fFarPlaneZ  = std::max(fFarPlaneZ, fNearPlaneZ+100.f);
     fFarPlaneZ  = std::max(fFarPlaneZ, 1000.f);
 
-    m_mCameraProj = Projection(FOV, aspectRatio, fNearPlaneZ, fFarPlaneZ, m_bIsDXDevice);
+    m_mCameraProj = Projection(FOV, aspectRatio, fNearPlaneZ, fFarPlaneZ, m_bIsGLDevice);
 
 #if 0
     if( m_bAnimateSun )
