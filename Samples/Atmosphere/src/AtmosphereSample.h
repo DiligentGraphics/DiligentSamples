@@ -37,6 +37,10 @@ public:
     AtmosphereSample();
     ~AtmosphereSample();
 
+    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
+                                                Diligent::EngineCreationAttribs& Attribs, 
+                                                Diligent::Uint32& NumDeferredContexts)override;
+
     virtual void Initialize(Diligent::IRenderDevice *pDevice, 
                             Diligent::IDeviceContext **ppContexts, 
                             Diligent::Uint32 NumDeferredCtx, 
@@ -87,7 +91,7 @@ private:
     float m_fMinElevation, m_fMaxElevation;
 	std::unique_ptr<ElevationDataSource> m_pElevDataSource;
     EarthHemsiphere m_EarthHemisphere;
-    bool m_bIsDXDevice;
+    bool m_bIsGLDevice;
 
     std::unique_ptr<class LightSctrPostProcess> m_pLightSctrPP;
 

@@ -63,7 +63,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
         case DeviceType::Vulkan:
         {
             EngineVkAttribs &EngVkAttribs = static_cast<EngineVkAttribs&>(Attribs);
-
+            EngVkAttribs.EnabledFeatures.multiViewport = true;
         }
         break;
 #endif

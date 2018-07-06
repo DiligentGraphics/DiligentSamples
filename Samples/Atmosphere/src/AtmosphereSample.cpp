@@ -81,6 +81,18 @@ AtmosphereSample::AtmosphereSample() :
     m_fElapsedTime(0.f)
 {}
 
+void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs& Attribs, Uint32& NumDeferredContexts)
+{
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
+#if VULKAN_SUPPORTED
+    if(DevType == DeviceType::Vulkan)
+    {
+        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        VkAttrs.EnabledFeatures.depthClamp = true;
+    }
+#endif
+}
+
 void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
@@ -507,6 +519,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
                                         const float4x4 &mCameraProj )
 {
     ShadowMapAttribs& ShadowMapAttribs = LightAttribs.ShadowAttribs;
+    const auto& DevCaps = m_pDevice->GetDeviceCaps();
 
     float3 v3DirOnLight = (float3&)LightAttribs.f4DirOnLight;
     float3 v3LightDirection = -v3DirOnLight;
@@ -636,24 +649,17 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         // Note: bias is applied after scaling!
         float4x4 CascadeProjMatr = ScaleMatrix * ScaledBiasMatrix;
         //D3DXMatrixOrthoOffCenterLH( &m_LightOrthoMatrix, MinX, MaxX, MinY, MaxY, MaxZ, MinZ);
-
+        
         // Adjust the world to light space transformation matrix
         float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
-        float4x4 ProjToUVScale, ProjToUVBias;
-        if( m_bIsGLDevice )
-        {
-            ProjToUVScale = scaleMatrix( 0.5f, 0.5f, 0.5f );
-            ProjToUVBias = translationMatrix( 0.5f, 0.5f, 0.5f );
-        }
-        else
-        {
-            ProjToUVScale = scaleMatrix( 0.5f, -0.5f, 1.f );
-            ProjToUVBias = translationMatrix( 0.5f, 0.5f, 0.f );
-        }
 
+        const auto& NDCAttribs = DevCaps.GetNDCAttribs();
+        float4x4 ProjToUVScale = scaleMatrix( 0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale );
+        float4x4 ProjToUVBias = translationMatrix( 0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
+        
         float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
         ShadowMapAttribs.mWorldToShadowMapUVDepthT[iCascade] = transposeMatrix( WorldToShadowMapUVDepthMatr );
-
+        
         m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade] );
         m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f );
 
@@ -784,7 +790,7 @@ void AtmosphereSample::Render()
         FrameAttribs.pcbCameraAttribs = m_pcbCameraAttribs;
 
         m_PPAttribs.m_fMaxShadowMapStep = static_cast<float>(m_uiShadowMapResolution / 4);
-
+        
         m_PPAttribs.m_f2ShadowMapTexelSize = float2( 1.f / static_cast<float>(m_uiShadowMapResolution), 1.f / static_cast<float>(m_uiShadowMapResolution) );
         m_PPAttribs.m_uiShadowMapResolution = m_uiShadowMapResolution;
         // During the ray marching, on each step we move by the texel size in either horz 

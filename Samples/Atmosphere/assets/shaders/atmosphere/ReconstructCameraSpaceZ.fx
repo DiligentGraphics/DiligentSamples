@@ -17,15 +17,8 @@ float DepthToCameraZ(in float fDepth, in matrix mProj)
     // same in both APIs.
     // However, in GL, depth must be transformed to NDC Z first
 
-#ifdef HLSL
-    return mProj[3][2]/(fDepth - mProj[2][2]);
-#else
-    // In GLSL, the first index is the column, and the 
-    // second one is the row
-    // Moreover, we need to transform depth
-    // to normalized device space z range [-1,+1]
-    return mProj[2][3]/((fDepth*2.0-1.0) - mProj[2][2]);
-#endif
+    float z = DepthToNormalizedDeviceZ(fDepth);
+    return MATRIX_ELEMENT(mProj,3,2) / (z - MATRIX_ELEMENT(mProj,2,2));
 }
 
 void ReconstructCameraSpaceZPS(ScreenSizeQuadVSOutput VSOut,

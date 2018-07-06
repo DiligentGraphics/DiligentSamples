@@ -134,12 +134,15 @@ float ComputeShadowAmount(in float3 f3PosInLightViewSpace, in float fCameraSpace
     float3 f3ddYShadowMapUVDepth = ddy(f3PosInLightViewSpace) * f3CascadeLightSpaceScale * F3NDC_XYZ_TO_UVD_SCALE;
 
     float2 f2DepthSlopeScaledBias = ComputeReceiverPlaneDepthBias(f3ddXShadowMapUVDepth, f3ddYShadowMapUVDepth);
+    const float MaxSlope = 0.1f;
+    f2DepthSlopeScaledBias = clamp(f2DepthSlopeScaledBias, -float2(MaxSlope, MaxSlope), float2(MaxSlope, MaxSlope));
     uint SMWidth, SMHeight, Elems; 
     g_tex2DShadowMap.GetDimensions(SMWidth, SMHeight, Elems);
     float2 ShadowMapDim = float2(SMWidth, SMHeight);
     f2DepthSlopeScaledBias /= ShadowMapDim.xy;
 
     float fractionalSamplingError = dot( float2(1.f, 1.f), abs(f2DepthSlopeScaledBias.xy) );
+    fractionalSamplingError = max(fractionalSamplingError, 1e-5);
     f3ShadowMapUVDepth.z -= fractionalSamplingError;
     
     float fLightAmount = g_tex2DShadowMap.SampleCmp( g_tex2DShadowMap_sampler, float3(f3ShadowMapUVDepth.xy, Cascade), float( f3ShadowMapUVDepth.z ) );

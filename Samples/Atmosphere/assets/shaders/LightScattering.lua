@@ -350,8 +350,9 @@ function CreateLowResLuminanceTexture(LowResLuminanceMips)
 	TexDesc.MiscFlags = 0
 	TexDesc.ClearValue = {Color = {r=0.1, g=0.1, b=0.1, a=0.1}}
 	tex2DAverageLuminance = Texture.Create(TexDesc)
-	tex2DAverageLuminanceSRV = tex2DAverageLuminance:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
+    tex2DAverageLuminanceSRV = tex2DAverageLuminance:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
 	tex2DAverageLuminanceRTV = tex2DAverageLuminance:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET")
+    tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	-- Set intial luminance to 1
 	Context.SetRenderTargets(tex2DAverageLuminanceRTV)
 	Context.ClearRenderTarget(tex2DAverageLuminanceRTV, 0.1,0.1,0.1,0.1)
@@ -545,6 +546,7 @@ function CreateReconstructCameraSpaceZPSO(ReconstructCameraSpaceZPS)
 end
 
 function ReconstructCameraSpaceZ(DepthBufferSRV)
+    DepthBufferSRV:SetSampler(LinearClampSampler) -- Sampler must be set for Vulkan backend
 	if ReconstructCameraSpaceZSRB == nil then
 		ReconstructCameraSpaceZSRB = ReconstructCameraSpaceZPSO:CreateShaderResourceBinding()
 		ReconstructCameraSpaceZSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED"})
@@ -715,15 +717,19 @@ function CreateRayMarchPSO(RayMarchPS, Use1DMinMaxTree)
 	collectgarbage()
 end
 
-function RayMarch(Use1DMinMaxTree, NumQuads)
+function RayMarch(Use1DMinMaxTree, NumQuads, SrcColorBufferSRV)
 	if RayMarchSRB == nil then RayMarchSRB = {} end
 
 	if RayMarchSRB[Use1DMinMaxTree] == nil then
 		RayMarchSRB[Use1DMinMaxTree] = RayMarchPSO[Use1DMinMaxTree]:CreateShaderResourceBinding()
+        if Constants.DeviceType == "Vulkan" then
+            extResourceMapping["g_tex2DColorBuffer"] = SrcColorBufferSRV
+            SrcColorBufferSRV:SetSampler(LinearClampSampler)
+        end
 		RayMarchSRB[Use1DMinMaxTree]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
 	end
-
-	Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV)
+    
+    Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV)
 	RenderScreenSizeQuad(RayMarchPSO[Use1DMinMaxTree], 2, NumQuads, RayMarchSRB[Use1DMinMaxTree])
 end
 
@@ -810,7 +816,7 @@ function CreateFixInscatteringAtDepthBreaksPSO(FixInsctrAtDepthBreaksPS, FixInsc
 	-- Disable depth and stencil tests since we are performing 
 	-- full screen ray marching
 	-- Use default blend state - the rendering is always done in single pass
-	FixInscatteringAtDepthBreaksPSO[2] = CreateScreenSizeQuadPSO("FixInsctrAtDepthBreaks", FixInsctrAtDepthBreaksPS, DisableDepthDesc, DefaultBlendDesc, MainBackBufferFmt)
+	FixInscatteringAtDepthBreaksPSO[2] = CreateScreenSizeQuadPSO("FixInsctrAtDepthBreaks", FixInsctrAtDepthBreaksPS, DisableDepthDesc, DefaultBlendDesc, MainBackBufferFmt, MainDepthBufferFmt)
 	FixInscatteringAtDepthBreaksSRB = nil
 
 	-- Force garbage collection to make sure all graphics resources are released
@@ -871,6 +877,7 @@ function CreateRenderSampleLocationsPSO(RenderSampleLocationsVS, RenderSampleLoc
 			pVS = RenderSampleLocationsVS,
 			pPS = RenderSampleLocationsPS,
 			RTVFormats = MainBackBufferFmt,
+            DSVFormat = MainDepthBufferFmt,
             PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
@@ -883,7 +890,7 @@ end
 function RenderSampleLocations(TotalSamples)
 	if RenderSampleLocationsSRB == nil then
 		RenderSampleLocationsSRB= RenderSampleLocationsPSO:CreateShaderResourceBinding()
-		RenderSampleLocationsSRB:BindResources("SHADER_TYPE_VERTEX", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		RenderSampleLocationsSRB:BindResources({"SHADER_TYPE_VERTEX","SHADER_TYPE_PIXEL"}, extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
 	end
 
 	Context.SetPipelineState(RenderSampleLocationsPSO)

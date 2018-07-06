@@ -265,6 +265,7 @@ void LightSctrPostProcess :: CreateRandomSphereSamplingTexture(IRenderDevice *pD
     RefCntAutoPtr<ITexture> ptex2DSphereRandomSampling;
     pDevice->CreateTexture( RandomSphereSamplingTexDesc, TexData, &ptex2DSphereRandomSampling );
     m_ptex2DSphereRandomSamplingSRV = ptex2DSphereRandomSampling->GetDefaultView( TEXTURE_VIEW_SHADER_RESOURCE );
+    m_ptex2DSphereRandomSamplingSRV->SetSampler(m_pLinearClampSampler);
     m_pResMapping->AddResource( "g_tex2DSphereRandomSampling", m_ptex2DSphereRandomSamplingSRV, true );
 }
 
@@ -702,6 +703,13 @@ void LightSctrPostProcess :: RenderSliceUVDirAndOrig(FrameAttribs &FrameAttribs)
         m_uiUpToDateResourceFlags |= UpToDateResourceFlags::SliceUVDirAndOriginTex;
     }
 
+    if(FrameAttribs.pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
+    {
+        // NOTE: this is only needed as a workaround until GLSLang optimizes out unused shader resources.
+        //       If m_pcbMiscParams is not mapped, it causes an error on Vulkan backend because it finds
+        //       a dynamic buffer that has not been mapped before the first use.
+        MapHelper<MiscDynamicParams> pMiscDynamicParams(FrameAttribs.pDeviceContext, m_pcbMiscParams, MAP_WRITE, MAP_FLAG_DISCARD);
+    }
     m_pRenderScript->Run( FrameAttribs.pDeviceContext, "RenderSliceUVDirAndOrigin"  );
 }
 
@@ -886,7 +894,7 @@ void LightSctrPostProcess :: DoRayMarching(FrameAttribs &FrameAttribs,
 
     // Depth stencil view now contains 2 for these pixels, for which ray marchings is to be performed
     // Depth stencil state is configured to pass only these pixels and discard the rest
-    m_pRenderScript->Run( FrameAttribs.pDeviceContext, "RayMarch", m_PostProcessingAttribs.m_bUse1DMinMaxTree, iNumInst );
+    m_pRenderScript->Run( FrameAttribs.pDeviceContext, "RayMarch", m_PostProcessingAttribs.m_bUse1DMinMaxTree, iNumInst, FrameAttribs.ptex2DSrcColorBufferSRV );
 }
 
 void LightSctrPostProcess :: InterpolateInsctrIrradiance(FrameAttribs &FrameAttribs)
@@ -1418,6 +1426,7 @@ void LightSctrPostProcess :: CreateMinMaxShadowMap(IRenderDevice* pDevice)
         // Create 2-D texture, shader resource and target view buffers on the device
         pDevice->CreateTexture( MinMaxShadowMapTexDesc, TextureData(), &ptex2DMinMaxShadowMap);
         m_ptex2DMinMaxShadowMapSRV[i] = ptex2DMinMaxShadowMap->GetDefaultView( TEXTURE_VIEW_SHADER_RESOURCE );
+        m_ptex2DMinMaxShadowMapSRV[i]->SetSampler(m_pLinearClampSampler);
         m_ptex2DMinMaxShadowMapRTV[i] = ptex2DMinMaxShadowMap->GetDefaultView( TEXTURE_VIEW_RENDER_TARGET );
 
         m_pResMapping->AddResource( "g_tex2DMinMaxLightSpaceDepth", m_ptex2DMinMaxShadowMapSRV[0], false );
