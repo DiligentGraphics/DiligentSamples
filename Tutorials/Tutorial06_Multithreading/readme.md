@@ -184,8 +184,11 @@ for(size_t inst = StartInst; inst < EndInst; ++inst)
 {
     const auto &CurrInstData = m_InstanceData[inst];
     // Shader resources have been explicitly transitioned to correct states, so
-    // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-    pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+    // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed.
+    // Instead, we provide COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES flag to
+    // verify that all resources are in correct states. This flag only has effect
+    // in debug and development builds
+    pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
 
     {
         MapHelper<float4x4> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);

@@ -437,7 +437,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         MapHelper<InstanceData> BatchData;
         if (UseBatch)
         {
-            pCtx->CommitShaderResources(m_BatchSRB, 0);
+            pCtx->CommitShaderResources(m_BatchSRB, COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
             BatchData.Map(pCtx, m_BatchDataBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
         }
 
@@ -447,7 +447,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
             // Shader resources have been explicitly transitioned to correct states, so
             // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
             if(!UseBatch)
-                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+                pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
             
             {
                 float2x2 ScaleMatr =

@@ -1278,7 +1278,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
     }
 
 
-    if( m_PostProcessingAttribs.m_bAutoExposure && !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::LowResLuminamceTex) )
+    if( /*m_PostProcessingAttribs.m_bAutoExposure &&*/ !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::LowResLuminamceTex) )
     {
         // static_cast<int>() is required because Run() gets its arguments by reference
         // and gcc will try to find reference to sm_iLowResLuminanceMips, which does not exist

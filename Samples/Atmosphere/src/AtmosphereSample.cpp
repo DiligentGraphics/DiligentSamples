@@ -37,7 +37,7 @@ SampleBase* CreateSample()
 {
     return new AtmosphereSample();
 }
- 
+
 // Callback function called by AntTweakBar to set the sponge recursion level
 void AtmosphereSample::SetNumCascadesCB(const void *value, void * clientData)
 {
@@ -89,6 +89,7 @@ void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, Engine
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
         VkAttrs.EnabledFeatures.depthClamp = true;
+        VkAttrs.EnabledFeatures.shaderStorageImageExtendedFormats = true;
     }
 #endif
 }

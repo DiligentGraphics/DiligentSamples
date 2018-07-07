@@ -438,7 +438,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
         const auto &CurrInstData = m_InstanceData[inst];
         // Shader resources have been explicitly transitioned to correct states, so
         // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-        pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], 0);
+        pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
 
         {
             // Map the buffer and write current world-view-projection matrix
