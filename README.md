@@ -72,13 +72,16 @@ This tutorial shows how to render multiple 2D quads, frequently swithcing textur
 
 ![](Samples/AntTweakBar/Screenshot.png)
 
-This sample demonstrates how to use [AntTweakBar library](http://anttweakbar.sourceforge.net/doc) to create simple user interface. 
+This sample demonstrates how to use [AntTweakBar library](http://anttweakbar.sourceforge.net/doc)
+to create simple user interface. 
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)
 
 ![](Samples/Atmosphere/Screenshot.png)
 
-The sample implements physically-based atmospheric light scattering model and demonstrates how Diligent Engine can be used to accomplish various rendering tasks: loading textures from files, using complex shaders, rendering to textures, using compute shaders and unordered access views, etc.
+The sample implements physically-based atmospheric light scattering model and demonstrates how 
+Diligent Engine can be used to accomplish various rendering tasks: loading textures from files,
+using complex shaders, rendering to textures, using compute shaders and unordered access views, etc.
 
 # Build and Run Instructions
 
