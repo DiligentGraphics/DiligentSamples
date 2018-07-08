@@ -1,4 +1,4 @@
-# AtmosphereSample
+# Atmospheric Light Scattering sample
 
 ![](Screenshot.png)
 
