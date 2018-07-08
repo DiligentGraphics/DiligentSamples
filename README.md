@@ -68,13 +68,13 @@ This tutorial shows how to render multiple 2D quads, frequently swithcing textur
 
 # Samples
 
-## AntTweakBar Sample
+## [AntTweakBar Sample](Samples/AntTweakBar)
 
 ![](Samples/AntTweakBar/Screenshot.png)
 
 This sample demonstrates how to use [AntTweakBar library](http://anttweakbar.sourceforge.net/doc) to create simple user interface. 
 
-## Atmospheric Light Scattering sample
+## [Atmospheric Light Scattering sample](Samples/Atmosphere)
 
 ![](Samples/Atmosphere/Screenshot.png)
 
