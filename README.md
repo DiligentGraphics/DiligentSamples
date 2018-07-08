@@ -85,7 +85,8 @@ using complex shaders, rendering to textures, using compute shaders and unordere
 
 # Build and Run Instructions
 
-Please refer to Build and Run Instructions section of the [master repository's readme](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md).
+Please refer to Build and Run Instructions section of the
+[master repository's readme](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md#build-and-run-instructions).
 
 # Version History
 
