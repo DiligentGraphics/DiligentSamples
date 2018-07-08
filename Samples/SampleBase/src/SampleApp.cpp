@@ -267,7 +267,7 @@ void SampleApp::InitializeSample()
         }
         std::vector<TwEnumVal> twDisplayModes(m_DisplayModes.size());
         std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
-        for(int i=0; i < m_DisplayModes.size(); ++i)
+        for(int i=0; i < static_cast<int>(m_DisplayModes.size()); ++i)
         {
             static constexpr const char* ScalingModeStr[] = 
             {
@@ -288,7 +288,7 @@ void SampleApp::InitializeSample()
             GetWindowRect(hDesktop, &rc);
             Uint32 ScreenWidth  = static_cast<Uint32>(rc.right - rc.left);
             Uint32 ScreenHeight = static_cast<Uint32>(rc.bottom - rc.top);
-            for(int i = 0; i < m_DisplayModes.size(); ++i)
+            for(int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
             {
                 if(ScreenWidth == m_DisplayModes[i].Width && ScreenHeight == m_DisplayModes[i].Height)
                 {
