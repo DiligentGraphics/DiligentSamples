@@ -359,11 +359,23 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
 
     switch (m_DeviceType)
     {
+#if D3D11_SUPPORTED
         case DeviceType::D3D11: m_AppTitle.append(" (D3D11)"); break;
+#endif
+
+#if D3D12_SUPPORTED
         case DeviceType::D3D12: m_AppTitle.append(" (D3D12)"); break;
+#endif
+
+#if GL_SUPPORTED || GLES_SUPPORTED
         case DeviceType::OpenGL: m_AppTitle.append(" (OpenGL)"); break;
+#endif
+
+#if VULKAN_SUPPORTED
         case DeviceType::Vulkan: m_AppTitle.append(" (Vulkan)"); break;
-        default: UNEXPECTED("Unknown device type");
+#endif
+
+        default: UNEXPECTED("Unknown/unsupported device type");
     }
 }
 
