@@ -68,7 +68,7 @@ This tutorial shows how to render multiple 2D quads, frequently swithcing textur
 
 ## [Tutorial 10 - Streaming](Tutorials/Tutorial10_Streaming)
 
-![](Tutorials/Tutorial10_Streaming/Screenshot.png)
+![](Tutorials/Tutorial10_DataStreaming/Screenshot.png)
 
 This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
 flags to efficiently stream varying amounts of data to GPU.
