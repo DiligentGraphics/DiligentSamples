@@ -1,4 +1,4 @@
-# Tutorial10 - Streaming
+# Tutorial10 - Data Streaming
 
 This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
 flags to efficiently stream varying amounts of data to GPU.

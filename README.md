@@ -66,7 +66,7 @@ rendering algorithm.
 This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
 
 
-## [Tutorial 10 - Streaming](Tutorials/Tutorial10_Streaming)
+## [Tutorial 10 - Data Streaming](Tutorials/Tutorial10_DataStreaming)
 
 ![](Tutorials/Tutorial10_DataStreaming/Screenshot.png)
 
