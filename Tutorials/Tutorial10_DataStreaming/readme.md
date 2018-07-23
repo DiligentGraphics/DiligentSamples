@@ -19,7 +19,7 @@ The sample employs the following strategy to upload varying amounts of data to t
 3. Set current buffer offset to zero, write polygon data to the buffer and update offset
 4. Unmap the buffer and issue draw command. Note that in Direct3D12 and Vulkan backends, unmapping the buffer is not required
    and can be safely skipped to improve performance
-5. When mapping the buffer next time, check if remaining space is enough to encompass the new polygon data.
+5. When mapping the buffer next time, check if the remaining space is enough to encompass the new polygon data.
    * If there is enough space, map the buffer with `MAP_FLAG_DO_NOT_SYNCHRONIZE` flag. This will tell the system 
      to return previously allocated memory. It is the responsibility of the application to not overwrite the memory that 
      is in use by the GPU. Write polygon data at current offset and update the offset.
@@ -94,7 +94,7 @@ Uint32 StreamingBuffer::Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNu
 }
 ```
 
-Writing data to the buffer is than straightforward:
+Writing data to the buffer is then straightforward:
 
 ```cpp
 auto VBOffset = m_StreamingVB->Allocate(pCtx, NumVerts * sizeof(float2), CtxNum);
