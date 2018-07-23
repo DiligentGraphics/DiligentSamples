@@ -37,14 +37,10 @@ using namespace Diligent;
 class StreamingBuffer
 {
 public:
-    StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, Uint32 Size, size_t NumContexts, bool AllowPersistentMap) : 
-        m_BufferSize        (Size),
-        m_AllowPersistentMap(AllowPersistentMap),
-        m_MapInfo           (NumContexts)
+    StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, Uint32 Size, size_t NumContexts) : 
+        m_BufferSize            (Size),
+        m_MapInfo               (NumContexts)
     {
-        if (pDevice->GetDeviceCaps().DevType != DeviceType::D3D12 && pDevice->GetDeviceCaps().DevType != DeviceType::Vulkan)
-            m_AllowPersistentMap = false;
-
         BufferDesc BuffDesc;
         BuffDesc.Name = "Data streaming buffer";
         // Use default usage as this buffer will only be updated when grid size changes
@@ -93,10 +89,15 @@ public:
         return m_MapInfo[CtxNum].m_MappedData;
     }
 
+    void AllowPersistentMapping(bool AllowMapping)
+    {
+        m_AllowPersistentMap = AllowMapping;
+    }
+
 private:
     RefCntAutoPtr<IBuffer> m_pBuffer;
     const Uint32 m_BufferSize;
-    bool m_AllowPersistentMap = true;
+    bool m_AllowPersistentMap = false;
     
     struct MapInfo
     {
@@ -299,9 +300,8 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
         }
     }
 
-    bool AllowPersistentMap = false;
-    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2),     1+NumDeferredCtx, AllowPersistentMap));
-    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER,  MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1+NumDeferredCtx, AllowPersistentMap));
+    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2),     1+NumDeferredCtx));
+    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER,  MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1+NumDeferredCtx));
 
     InitializePolygonGeometry();
     InitializePolygons();
@@ -364,6 +364,11 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
     m_NumWorkerThreads = std::min(4, m_MaxThreads);
+    
+    if (pDevice->GetDeviceCaps().DevType == DeviceType::D3D12 || pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
+    {
+        TwAddVarRW(bar, "Persistent map", TW_TYPE_BOOLCPP, &m_bAllowPersistentMap, "");
+    }
 
     if (m_BatchSize > 1)
         CreateInstanceBuffer();
@@ -635,6 +640,9 @@ void Tutorial10_DataStreaming::Render()
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+
+    m_StreamingIB->AllowPersistentMapping(m_bAllowPersistentMap);
+    m_StreamingVB->AllowPersistentMapping(m_bAllowPersistentMap);
 
     // Transition all shader resource bindings
     for (size_t i = 0; i < _countof(m_SRB); ++i)

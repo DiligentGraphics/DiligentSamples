@@ -120,7 +120,7 @@ private:
         std::vector<Diligent::Uint32> Inds;
     };
     std::vector<PolygonGeometry> m_PolygonGeo;
-
+    bool m_bAllowPersistentMap = false;
     std::pair<Diligent::Uint32, Diligent::Uint32> WritePolygon(const PolygonGeometry& PolygonGeo, Diligent::IDeviceContext* pCtx, size_t CtxNum);
 
 };
