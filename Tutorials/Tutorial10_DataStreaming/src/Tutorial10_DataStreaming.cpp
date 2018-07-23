@@ -42,29 +42,34 @@ public:
         m_MapInfo               (NumContexts)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name = "Data streaming buffer";
-        // Use default usage as this buffer will only be updated when grid size changes
-        BuffDesc.Usage = USAGE_DYNAMIC;
-        BuffDesc.BindFlags = BindFlags;
+        BuffDesc.Name           = "Data streaming buffer";
+        BuffDesc.Usage          = USAGE_DYNAMIC;
+        BuffDesc.BindFlags      = BindFlags;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        BuffDesc.uiSizeInBytes = Size;
+        BuffDesc.uiSizeInBytes  = Size;
         pDevice->CreateBuffer(BuffDesc, BufferData(), &m_pBuffer);
     }
 
+    // Returns offset of the allocated region
     Uint32 Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNum)
     {
         auto& MapInfo = m_MapInfo[CtxNum];
+        // Check if there is enough space in the buffer
         if (MapInfo.m_CurrOffset + Size > m_BufferSize)
         {
+            // Unmap the buffer
             Flush(CtxNum);
         }
         
         if (MapInfo.m_MappedData == nullptr)
         {
+            // If current offset is zero, we are mapping the buffer for the first time after it has been flushed. Use MAP_FLAG_DISCARD flag.
+            // Otherwise use MAP_FLAG_DO_NOT_SYNCHRONIZE flag.
             MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_DO_NOT_SYNCHRONIZE);
         }
 
         auto Offset = MapInfo.m_CurrOffset;
+        // Update offset
         MapInfo.m_CurrOffset += Size;
         return Offset;
     }
@@ -97,6 +102,7 @@ public:
 private:
     RefCntAutoPtr<IBuffer> m_pBuffer;
     const Uint32 m_BufferSize;
+
     bool m_AllowPersistentMap = false;
     
     struct MapInfo
@@ -104,6 +110,7 @@ private:
         MapHelper<void*> m_MappedData;
         Uint32 m_CurrOffset = 0;
     };
+    // We need to keep track of mapped data for every context
     std::vector<MapInfo> m_MapInfo;
 };
 
@@ -434,6 +441,7 @@ void Tutorial10_DataStreaming::InitializePolygons()
 
 std::pair<Diligent::Uint32, Diligent::Uint32> Tutorial10_DataStreaming::WritePolygon(const PolygonGeometry& PolygonGeo, IDeviceContext* pCtx, size_t CtxNum)
 {
+    // Request memory for vertices and indices
     auto VBOffset = m_StreamingVB->Allocate(pCtx, static_cast<Uint32>(PolygonGeo.Verts.size()) * sizeof(float2), CtxNum);
     auto IBOffset = m_StreamingIB->Allocate(pCtx, static_cast<Uint32>(PolygonGeo.Inds.size()) * sizeof(Uint32), CtxNum);
     auto* VertexData = reinterpret_cast<float2*>(reinterpret_cast<Uint8*>(m_StreamingVB->GetMappedCPUAddress(CtxNum)) + VBOffset);

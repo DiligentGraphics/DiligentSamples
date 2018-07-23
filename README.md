@@ -66,6 +66,14 @@ rendering algorithm.
 This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
 
 
+## [Tutorial 10 - Streaming](Tutorials/Tutorial10_Streaming)
+
+![](Tutorials/Tutorial10_Streaming/Screenshot.png)
+
+This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
+flags to efficiently stream varying amounts of data to GPU.
+
+
 # Samples
 
 ## [AntTweakBar Sample](Samples/AntTweakBar)
@@ -89,6 +97,10 @@ Please refer to Build and Run Instructions section of the
 [master repository's readme](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md#build-and-run-instructions).
 
 # Version History
+
+## Current progress
+
+* Added Tutorial 10 - Streaming
 
 ## v2.3
 

@@ -1,172 +1,119 @@
-# Tutorial09 - Quads
+# Tutorial10 - Streaming
 
-This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
+This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
+flags to efficiently stream varying amounts of data to GPU.
 
 ![](Screenshot.png)
 
-The tutorial is based on [Tutorial06 - Multithreading](../Tutorial06_Multithreading), but renders
-2D quads instead of 3D cubes and changes the states frequently. It also demonstrates *Pipeline State
-compatibility feature* - if two PSOs share the same shader resource layout, they can use shader resource
-binding objects interchangeably, i.e. SRBs created by one PSO can be committed when another PSO is bound.
+The tutorial is based on [Tutorial09 - Quads](../Tutorial09_Quads), but instead of quads it renders polygons
+with varying number of vertices, streaming geometry of every polygon at every draw call.
 
-## Shaders
+## Streaming Data
 
-The tutorial has two rendering modes, non-batched (Batch Size parameter equals 1) and batched 
-(Batch Size parameter greater than 1). In the first mode, the quads are rendered one-by-one.
-In the second mode, the quads are rendered in small batches, which is more efficient.
+The main difference between this and previous tutorial is that this time the geometry of every polygon is not fixed and
+change dynamically at run time. Before issuing a draw command, polygon vertices and index list are streamed to the GPU.
+The sample employs the following strategy to upload varying amounts of data to the GPU:
 
-Non-batched vertex shader generates two triangles and applies rotation, scale and offset transformation.
-It does not use any input other than the vertex id. Quad transformation 2x2 matrix is packed into one `float4` vector.
+1. Create dynamic buffer large enough to encompass few polygons
+2. First time, map the buffer with `MAP_FLAG_DISCARD` flag. This will discard previous buffer contents and allocate new memory.
+3. Set current buffer offset to zero, write polygon data to the buffer and update offset
+4. Unmap the buffer and issue draw command. Note that in Direct3D12 and Vulkan backends, unmapping the buffer is not required
+   and can be safely skipped to improve performance
+5. When mapping the buffer next time, check if remaining space is enough to encompass the new polygon data.
+   * If there is enough space, map the buffer with `MAP_FLAG_DO_NOT_SYNCHRONIZE` flag. This will tell the system 
+     to return previously allocated memory. It is the responsibility of the application to not overwrite the memory that 
+     is in use by the GPU. Write polygon data at current offset and update the offset.
+   * If there is not enough space, reset the offset to zero and map the buffer with `MAP_FLAG_DISCARD` flag to request new
+     chunk of memory
 
-```hlsl
-cbuffer QuadAttribs
-{
-    float4 g_QuadRotationAndScale; // float2x2 doesn't work
-    float4 g_QuadCenter;
-};
-
-struct PSInput 
-{ 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
-};
-
-PSInput main(in uint VertID : SV_VertexID) 
-{
-    float4 pos_uv[4];
-    pos_uv[0] = float4(-1.0,+1.0, 0.0,0.0);
-    pos_uv[1] = float4(-1.0,-1.0, 0.0,1.0);
-    pos_uv[2] = float4(+1.0,+1.0, 1.0,0.0);
-    pos_uv[3] = float4(+1.0,-1.0, 1.0,1.0);
-
-    float2 pos = pos_uv[VertID].xy;
-    float2x2 mat = MatrixFromRows(g_QuadRotationAndScale.xy, g_QuadRotationAndScale.zw);
-    pos = mul(pos, mat);
-    pos += g_QuadCenter.xy;
-    PSInput ps;
-    ps.Pos = float4(pos, 0.0, 1.0);
-    ps.uv = pos_uv[VertID].zw;
-    return ps;
-}
-```
-
-`MatrixFromRows()` is a function defined by the engine that creates a matrix from rows, in an API-spesific fashion.
-
-Non-batched pixel shader is straightforward and simply samples the texture:
-
-```hlsl
-Texture2D g_Texture;
-SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
-
-struct PSInput 
-{ 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
-};
-
-float4 main(PSInput ps_in) : SV_TARGET
-{
-    return g_Texture.Sample(g_Texture_sampler, ps_in.uv).rgbg;
-}
-```
-
-In batched mode, instancing is used to rendered a number of quads in the same draw call. The quad
-attributes (rotation, scale, translation) are fetched by the vertex shader from the vertex buffer:
-
-```hlsl
-struct PSInput 
-{ 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
-    float TexIndex : TEX_ARRAY_INDEX;
-};
-
-PSInput main(in uint VertID : SV_VertexID,
-             in float4 QuadRotationAndScale : ATTRIB0,
-             in float2 QuadCenter : ATTRIB1,
-             in float TexArrInd : ATTRIB2)
-{
-    float4 pos_uv[4];
-    pos_uv[0] = float4(-1.0,+1.0, 0.0,0.0);
-    pos_uv[1] = float4(-1.0,-1.0, 0.0,1.0);
-    pos_uv[2] = float4(+1.0,+1.0, 1.0,0.0);
-    pos_uv[3] = float4(+1.0,-1.0, 1.0,1.0);
-
-    float2 pos = pos_uv[VertID].xy;
-    float2x2 mat = MatrixFromRows(QuadRotationAndScale.xy, QuadRotationAndScale.zw);
-    pos = mul(pos, mat);
-    pos += QuadCenter.xy;
-    PSInput ps;
-    ps.Pos = float4(pos, 0.0, 1.0);
-    ps.uv = pos_uv[VertID].zw;
-    ps.TexIndex = TexArrInd;
-    return ps;
-}
-```
-
-Quad textures are packed into the texture array. The vertex shader passes texture array index over to 
-the pixel shader that uses the index to select texture array slice:
-
-```hlsl
-Texture2DArray g_Texture;
-SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
-
-struct PSInput
-{
-    float4 Pos : SV_POSITION;
-    float2 uv : TEX_COORD;
-    float TexIndex : TEX_ARRAY_INDEX;
-};
-
-float4 main(PSInput ps_in) : SV_TARGET
-{
-    return g_Texture.Sample(g_Texture_sampler, float3(ps_in.uv, ps_in.TexIndex)).rgbg;
-}
-```
-
-## Initializing Pipeline States and Shader Resource Binding Objects
-
-The tutorial creates multiple PSO objects that share the same shaders, but define different blend modes.
-Two pipeline states that share the same shader resource layout are called *compatible*. The enigne exposes
-`IPipelineState::IsCompatibleWith()` method that checks if two pipeline states are compatible.
-Compatible pipeline states can use shader resource binding objects interchangeably. We create shader
-resource binding objects using the first pipeline state version, but use them with other PSOs:
+The strategy described above is implemented by `StreamingBuffer` class:
 
 ```cpp
-for (int tex = 0; tex < NumTextures; ++tex)
+class StreamingBuffer
 {
-    // Create one Shader Resource Binding for every texture
-    // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-    m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex]);
-    m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+public:
+    // ... 
+
+private:
+    RefCntAutoPtr<IBuffer> m_pBuffer;
+    const Uint32 m_BufferSize;
+    bool m_AllowPersistentMap = false;
+    
+    struct MapInfo
+    {
+        MapHelper<void*> m_MappedData;
+        Uint32 m_CurrOffset = 0;
+    };
+    // We need to keep track of mapped data for every context
+    std::vector<MapInfo> m_MapInfo;
+};
+```
+
+The class constructor simply initializes the dynamic buffer to hold streaming data:
+
+```cpp
+StreamingBuffer::StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, Uint32 Size, size_t NumContexts) : 
+    m_BufferSize            (Size),
+    m_MapInfo               (NumContexts)
+{
+    BufferDesc BuffDesc;
+    BuffDesc.Name           = "Data streaming buffer";
+    BuffDesc.Usage          = USAGE_DYNAMIC;
+    BuffDesc.BindFlags      = BindFlags;
+    BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    BuffDesc.uiSizeInBytes  = Size;
+    pDevice->CreateBuffer(BuffDesc, BufferData(), &m_pBuffer);
 }
-
-m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB);
-m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 ```
 
-Note that we create one SRB per texture for non-batched mode and just one SRB for batched mode.
-
-## Rendering
-
-The tutorial largely uses the same rendering scheme as [Tutorial06 - Multithreading](../Tutorial06_Multithreading). 
-If multithreading is enabled, command lists are recorded in parallel by multiple threads and are then executed by the
-immediate context. Few important things to note:
-
-Resources are transitioned to correct states before render loop starts:
+The allocation strategy described above is implemented by `Allocate()` method:
 
 ```cpp
-for (size_t i = 0; i < _countof(m_SRB); ++i)
-    m_pImmediateContext->TransitionShaderResources(m_pPSO[0][0], m_SRB[i]);
-m_pImmediateContext->TransitionShaderResources(m_pPSO[1][0], m_BatchSRB);
+// Returns offset of the allocated region
+Uint32 StreamingBuffer::Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNum)
+{
+    auto& MapInfo = m_MapInfo[CtxNum];
+    // Check if there is enough space in the buffer
+    if (MapInfo.m_CurrOffset + Size > m_BufferSize)
+    {
+        // Unmap the buffer
+        Flush(CtxNum);
+    }
+        
+    if (MapInfo.m_MappedData == nullptr)
+    {
+        // If current offset is zero, we are mapping the buffer for the first time after it has been flushed. Use MAP_FLAG_DISCARD flag.
+        // Otherwise use MAP_FLAG_DO_NOT_SYNCHRONIZE flag.
+        MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_DO_NOT_SYNCHRONIZE);
+    }
+
+    auto Offset = MapInfo.m_CurrOffset;
+    // Update offset
+    MapInfo.m_CurrOffset += Size;
+    return Offset;
+}
 ```
 
-This avoids checking the states inside every draw command:
+Writing data to the buffer is than straightforward:
 
 ```cpp
-// Shader resources have been explicitly transitioned to correct states, so
-// no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
+auto VBOffset = m_StreamingVB->Allocate(pCtx, NumVerts * sizeof(float2), CtxNum);
+auto* VertexData = reinterpret_cast<float2*>(reinterpret_cast<Uint8*>(m_StreamingVB->GetMappedCPUAddress(CtxNum)) + VBOffset);
+// Write required data to VertexData
+// ... 
+
+m_StreamingVB->Release(CtxNum);
 ```
 
-Every thread uses its own rendering context to avoid contention.
+After the data has been written, the last thing to do is to bind the buffers at the specified offsets:
+
+```cpp
+Uint32 offsets[] = { VBOffset };
+IBuffer *pBuffs[] = { m_StreamingVB->GetBuffer() };
+pCtx->SetVertexBuffers(0, 1, pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), IBOffsets);
+```
+
+
+Shader and pipeline state inititalization as well as multithreaded rendering is done similar to previous sample; refer to 
+[Tutorial09 - Quads](../Tutorial09_Quads) for details.
