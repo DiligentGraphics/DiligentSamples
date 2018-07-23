@@ -23,7 +23,7 @@
 
 #include <random>
 #include <string>
-#include <cmath>
+#include <math.h>
 
 #include "Tutorial10_DataStreaming.h"
 #include "MapHelper.h"
@@ -395,7 +395,7 @@ void Tutorial10_DataStreaming::InitializePolygonGeometry()
         float Angle = ((NumVerts % 2) == 1) ? (float)M_PI/2.f : (float)M_PI/2.f - ArcLen/2.f;
         for(Uint32 v=0; v < NumVerts; ++v, Angle += ArcLen)
         {
-            PolygonGeo.Verts.emplace_back( float2{cos(Angle), sin(Angle)} );
+            PolygonGeo.Verts.emplace_back( float2{cosf(Angle), sinf(Angle)} );
 
             if(v < NumVerts-2)
             {
