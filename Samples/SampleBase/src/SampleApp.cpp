@@ -348,7 +348,7 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
         }
         else
         {
-            LOG_ERROR_AND_THROW("Unknown device type. Only the following types are supported: D3D11, D3D12, GL, VK");
+            LOG_ERROR_AND_THROW("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, VK");
         }
     }
     else

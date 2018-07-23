@@ -60,6 +60,7 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, Engine
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
         VkAttrs.DynamicHeapSize = 32 << 20;
+        VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
 }

@@ -33,39 +33,40 @@ class Tutorial10_DataStreaming : public SampleBase
 {
 public:
     ~Tutorial10_DataStreaming()override;
-    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
-                                                Diligent::EngineCreationAttribs &Attribs, 
-                                                Diligent::Uint32 &NumDeferredContexts)override;
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
+    virtual void GetEngineInitializationAttribs(Diligent::DeviceType             DevType, 
+                                                Diligent::EngineCreationAttribs& Attribs, 
+                                                Diligent::Uint32&                NumDeferredContexts)override;
+    virtual void Initialize(Diligent::IRenderDevice*        pDevice, 
+                            Diligent::IDeviceContext**      ppContexts, 
+                            Diligent::Uint32                NumDeferredCtx, 
+                            Diligent::ISwapChain*           pSwapChain)override;
     virtual void Render()override;
     virtual void Update(double CurrTime, double ElapsedTime)override;
     virtual const Diligent::Char* GetSampleName()const override{return "Tutorial10: Streaming";}
 
 private:
-    static void SetNumPolygons(const void *value, void * clientData);
-    static void GetNumPolygons(void *value, void * clientData);
-    static void SetBatchSize(const void *value, void * clientData);
-    static void GetBatchSize(void *value, void * clientData);
-    static void SetWorkerThreadCount(const void *value, void * clientData);
-    static void GetWorkerThreadCount(void *value, void * clientData);
+    static void SetNumPolygons(const void* value, void* clientData);
+    static void GetNumPolygons(      void* value, void* clientData);
+    static void SetBatchSize  (const void* value, void* clientData);
+    static void GetBatchSize  (      void* value, void * clientData);
+    static void SetWorkerThreadCount(const void *value, void* clientData);
+    static void GetWorkerThreadCount(      void *value, void* clientData);
     void InitializePolygons();
     void InitializePolygonGeometry();
     void CreateInstanceBuffer();
     void UpdatePolygons(float elapsedTime);
     void StartWorkerThreads();
     void StopWorkerThreads();
-    template<bool UseBatch>
-    void RenderSubset(Diligent::IDeviceContext *pCtx, Diligent::Uint32 Subset);
 
-    static void WorkerThreadFunc(Tutorial10_DataStreaming *pThis, Diligent::Uint32 ThreadNum);
+    template<bool UseBatch>
+    void RenderSubset(Diligent::IDeviceContext* pCtx, Diligent::Uint32 Subset);
+
+    static void WorkerThreadFunc(Tutorial10_DataStreaming* pThis, Diligent::Uint32 ThreadNum);
 
     ThreadingTools::Signal m_RenderSubsetSignal;
     ThreadingTools::Signal m_ExecuteCommandListsSignal;
     ThreadingTools::Signal m_GotoNextFrameSignal;
-    std::mutex m_NumThreadsCompletedMtx;
+    std::mutex      m_NumThreadsCompletedMtx;
     std::atomic_int m_NumThreadsCompleted;
     std::atomic_int m_NumThreadsReady;
     std::vector<std::thread> m_WorkerThreads;

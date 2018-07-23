@@ -132,6 +132,7 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType DevType
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
         VkAttrs.DynamicHeapSize = 64 << 20;
+        VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
 }
