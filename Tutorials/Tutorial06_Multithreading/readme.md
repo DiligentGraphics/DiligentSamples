@@ -148,8 +148,15 @@ pThis->m_CmdLists[ThreadNum] = pCmdList;
 When all threads are done recording the commands, the last thread
 signals the main thread that it can start executing the command lists.
 The threads then wait for the signal from the main thread to proceed to the
-next frame.
+next frame. After the signal is received, every thread calls FinishFrame() to
+release all dynamic resources allocted by its deferred context. This must be done
+after the command lists have been submitted for execution.
 
+```cpp
+pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
+
+pDeferredCtx->FinishFrame();
+```
 
 ### Rendering Subsets
 

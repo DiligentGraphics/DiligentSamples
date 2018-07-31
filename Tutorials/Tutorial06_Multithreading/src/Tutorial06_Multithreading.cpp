@@ -389,6 +389,12 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
         }
 
         pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
+
+        // Call FinishFrame() to release dynamic resources allocated by deferred contexts
+        // IMPORTANT: we must wait until the command lists are submitted for execution
+        // because FinishFrame() invalidates all dynamic resources
+        pDeferredCtx->FinishFrame();
+
         ++pThis->m_NumThreadsReady;
         // We must wait until all threads reach this point, because
         // m_GotoNextFrameSignal must be unsignaled before we proceed to 

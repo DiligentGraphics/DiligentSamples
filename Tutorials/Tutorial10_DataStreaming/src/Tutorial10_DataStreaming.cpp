@@ -533,7 +533,7 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis,
 
         pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
 
-        // Call finish frame to release dynamic resources allocated by deferred contexts
+        // Call FinishFrame() to release dynamic resources allocated by deferred contexts
         // IMPORTANT: we must wait until the command lists are submitted for execution
         // because FinishFrame() invalidates all dynamic resources
         pDeferredCtx->FinishFrame();
