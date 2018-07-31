@@ -139,7 +139,7 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType DevType
     if(DevType == DeviceType::Vulkan)
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
-        VkAttrs.DynamicHeapSize = 64 << 20;
+        VkAttrs.DynamicHeapSize = 128 << 20;
         VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
@@ -532,6 +532,12 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis,
         }
 
         pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
+
+        // Call finish frame to release dynamic resources allocated by deferred contexts
+        // IMPORTANT: we must wait until the command lists are submitted for execution
+        // because FinishFrame() invalidates all dynamic resources
+        pDeferredCtx->FinishFrame();
+
         ++pThis->m_NumThreadsReady;
         // We must wait until all threads reach this point, because
         // m_GotoNextFrameSignal must be unsignaled before we proceed to 
@@ -628,7 +634,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
                 }
             }
         }
-
+        
         if (UseBatch)
             BatchData.Unmap();
 

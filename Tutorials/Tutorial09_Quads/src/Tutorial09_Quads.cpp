@@ -59,7 +59,7 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, Engine
     if(DevType == DeviceType::Vulkan)
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
-        VkAttrs.DynamicHeapSize = 32 << 20;
+        VkAttrs.DynamicHeapSize = 128 << 20;
         VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
@@ -391,6 +391,12 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNu
         }
 
         pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
+
+        // Call finish frame to release dynamic resources allocated by deferred contexts
+        // IMPORTANT: we must wait until the command lists are submitted for execution
+        // because FinishFrame() invalidates all dynamic resources
+        pDeferredCtx->FinishFrame();
+
         ++pThis->m_NumThreadsReady;
         // We must wait until all threads reach this point, because
         // m_GotoNextFrameSignal must be unsignaled before we proceed to 
