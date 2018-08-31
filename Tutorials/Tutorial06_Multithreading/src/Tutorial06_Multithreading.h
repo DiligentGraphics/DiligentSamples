@@ -26,7 +26,7 @@
 #include <atomic>
 #include "SampleBase.h"
 #include "BasicMath.h"
-#include "LockHelper.h"
+#include "Signal.h"
 
 class Tutorial06_Multithreading : public SampleBase
 {

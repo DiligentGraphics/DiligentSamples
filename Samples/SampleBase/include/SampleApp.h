@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "NativeAppBase.h"
 #include "RefCntAutoPtr.h"
