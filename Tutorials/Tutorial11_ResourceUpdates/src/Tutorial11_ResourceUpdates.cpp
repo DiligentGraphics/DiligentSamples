@@ -21,6 +21,9 @@
  *  of the possibility of such damages.
  */
 
+#include <math.h>
+#include <cmath>
+
 #include "Tutorial11_ResourceUpdates.h"
 #include "MapHelper.h"
 #include "BasicShaderSourceStreamFactory.h"
@@ -33,6 +36,65 @@ SampleBase* CreateSample()
 {
     return new Tutorial11_ResourceUpdates();
 }
+
+// Layout of this structure matches the one we defined in pipeline state
+struct Vertex
+{
+    float3 pos;
+    float2 uv;
+};
+
+// Cube vertices
+
+//      (-1,+1,+1)________________(+1,+1,+1) 
+//               /|              /|
+//              / |             / |
+//             /  |            /  |
+//            /   |           /   |
+//(-1,-1,+1) /____|__________/(+1,-1,+1)
+//           |    |__________|____| 
+//           |   /(-1,+1,-1) |    /(+1,+1,-1)
+//           |  /            |   /
+//           | /             |  /
+//           |/              | /
+//           /_______________|/ 
+//        (-1,-1,-1)       (+1,-1,-1)
+// 
+
+// This time we have to duplicate verices because texture coordinates cannot
+// be shared
+static const Vertex CubeVerts[] =
+{
+    {float3(-1,-1,-1), float2(0,1)},
+    {float3(-1,+1,-1), float2(0,0)},
+    {float3(+1,+1,-1), float2(1,0)},
+    {float3(+1,-1,-1), float2(1,1)},
+
+    {float3(-1,-1,-1), float2(0,1)},
+    {float3(-1,-1,+1), float2(0,0)},
+    {float3(+1,-1,+1), float2(1,0)},
+    {float3(+1,-1,-1), float2(1,1)},
+
+    {float3(+1,-1,-1), float2(0,1)},
+    {float3(+1,-1,+1), float2(1,1)},
+    {float3(+1,+1,+1), float2(1,0)},
+    {float3(+1,+1,-1), float2(0,0)},
+
+    {float3(+1,+1,-1), float2(0,1)},
+    {float3(+1,+1,+1), float2(0,0)},
+    {float3(-1,+1,+1), float2(1,0)},
+    {float3(-1,+1,-1), float2(1,1)},
+
+    {float3(-1,+1,-1), float2(1,0)},
+    {float3(-1,+1,+1), float2(0,0)},
+    {float3(-1,-1,+1), float2(0,1)},
+    {float3(-1,-1,-1), float2(1,1)},
+
+    {float3(-1,-1,+1), float2(1,1)},
+    {float3(+1,-1,+1), float2(0,1)},
+    {float3(+1,+1,+1), float2(0,0)},
+    {float3(-1,+1,+1), float2(1,0)}
+};
 
 void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
@@ -134,77 +196,34 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceConte
         PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
 
         pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+        pDevice->CreatePipelineState(PSODesc, &m_pPSO_NoCull);
     }
 
+    for(Uint32 i=0; i < _countof(m_CubeVertexBuffer); ++i)
     {
-        // Layout of this structure matches the one we defined in pipeline state
-        struct Vertex
-        {
-            float3 pos;
-            float2 uv;
-        };
+        auto& VertexBuffer = m_CubeVertexBuffer[i];
 
-        // Cube vertices
-
-        //      (-1,+1,+1)________________(+1,+1,+1) 
-        //               /|              /|
-        //              / |             / |
-        //             /  |            /  |
-        //            /   |           /   |
-        //(-1,-1,+1) /____|__________/(+1,-1,+1)
-        //           |    |__________|____| 
-        //           |   /(-1,+1,-1) |    /(+1,+1,-1)
-        //           |  /            |   /
-        //           | /             |  /
-        //           |/              | /
-        //           /_______________|/ 
-        //        (-1,-1,-1)       (+1,-1,-1)
-        // 
-
-        // This time we have to duplicate verices because texture coordinates cannot
-        // be shared
-        Vertex CubeVerts[] =
-        {
-            {float3(-1,-1,-1), float2(0,1)},
-            {float3(-1,+1,-1), float2(0,0)},
-            {float3(+1,+1,-1), float2(1,0)},
-            {float3(+1,-1,-1), float2(1,1)},
-
-            {float3(-1,-1,-1), float2(0,1)},
-            {float3(-1,-1,+1), float2(0,0)},
-            {float3(+1,-1,+1), float2(1,0)},
-            {float3(+1,-1,-1), float2(1,1)},
-
-            {float3(+1,-1,-1), float2(0,1)},
-            {float3(+1,-1,+1), float2(1,1)},
-            {float3(+1,+1,+1), float2(1,0)},
-            {float3(+1,+1,-1), float2(0,0)},
-
-            {float3(+1,+1,-1), float2(0,1)},
-            {float3(+1,+1,+1), float2(0,0)},
-            {float3(-1,+1,+1), float2(1,0)},
-            {float3(-1,+1,-1), float2(1,1)},
-
-            {float3(-1,+1,-1), float2(1,0)},
-            {float3(-1,+1,+1), float2(0,0)},
-            {float3(-1,-1,+1), float2(0,1)},
-            {float3(-1,-1,-1), float2(1,1)},
-
-            {float3(-1,-1,+1), float2(1,1)},
-            {float3(+1,-1,+1), float2(0,1)},
-            {float3(+1,+1,+1), float2(0,0)},
-            {float3(-1,+1,+1), float2(1,0)}
-        };
         // Create vertex buffer that stores cube vertices
         BufferDesc VertBuffDesc;
         VertBuffDesc.Name = "Cube vertex buffer";
-        VertBuffDesc.Usage = USAGE_STATIC;
+        if(i==0)
+            VertBuffDesc.Usage = USAGE_STATIC;
+        else if(i==1)
+            VertBuffDesc.Usage = USAGE_DEFAULT;
+        else
+        {
+            VertBuffDesc.Usage = USAGE_DYNAMIC;
+            VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+        }
+
         VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, i < 2 ? VBData : BufferData{}, &VertexBuffer);
     }
 
     {
@@ -230,21 +249,76 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceConte
         pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
     }
 
+    for (size_t i=0; i < m_Textures.size(); ++i)
     {
         // Load texture
         TextureLoadInfo loadInfo;
+        std::stringstream FileNameSS;
+        FileNameSS << "DGLogo" << i << ".png";
+        auto FileName = FileNameSS.str();
         loadInfo.IsSRGB = true;
-        RefCntAutoPtr<ITexture> Tex;
-        CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
+        loadInfo.Usage = USAGE_STATIC;
+        if (i==2)
+        {
+            loadInfo.Usage = USAGE_DEFAULT;
+            // Disable mipmapping for simplicity as we will only update mip level 0
+            loadInfo.MipLevels = 1;
+        }
+        else if (i==3)
+        {
+            // Disable mipmapping
+            loadInfo.MipLevels = 1;
+            loadInfo.Usage = USAGE_DYNAMIC;
+            loadInfo.CPUAccessFlags = CPU_ACCESS_WRITE;
+        }
+
+        auto& Tex = m_Textures[i];
+        CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &Tex);
         // Get shader resource view from the texture
-        m_TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        auto TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+        // Since we are using mutable variable, we must create shader resource binding object
+        // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
+        m_pPSO->CreateShaderResourceBinding(&(m_SRBs[i]));
+        // Set texture SRV in the SRB
+        m_SRBs[i]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(TextureSRV);
     }
 
-    // Since we are using mutable variable, we must create shader resource binding object
-    // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-    m_pPSO->CreateShaderResourceBinding(&m_SRB);
-    // Set texture SRV in the SRB
-    m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
+    {
+        BufferDesc VertBuffDesc;
+        VertBuffDesc.Name = "Texture update buffer";
+        VertBuffDesc.Usage = USAGE_DYNAMIC;
+        VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER; // We do not really bind the buffer, but D3D11 wants at least one bind flag bit
+        VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+        VertBuffDesc.uiSizeInBytes = MaxUpdateRegionSize * MaxUpdateRegionSize * 4;
+        pDevice->CreateBuffer(VertBuffDesc, BufferData(), &m_TextureUpdateBuffer);
+    }
+}
+
+void Tutorial11_ResourceUpdates::DrawCube(const float4x4& WVPMatrix, Diligent::IBuffer *pVertexBuffer, Diligent::IShaderResourceBinding *pSRB)
+{
+    // Bind vertex buffer
+    Uint32 offset = 0;
+    IBuffer *pBuffs[] = {pVertexBuffer};
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+
+    // Commit shader resources. Pass pointer to shader resource binding object
+    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
+    // that resources are transitioned to proper states
+    m_pImmediateContext->CommitShaderResources(pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+
+    {
+        // Map the buffer and write current world-view-projection matrix
+        MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        *CBConstants = transposeMatrix(WVPMatrix);
+    }
+
+    DrawAttribs DrawAttrs;
+    DrawAttrs.IsIndexed = true; // This is indexed draw call
+    DrawAttrs.IndexType = VT_UINT32; // Index type
+    DrawAttrs.NumIndices = 36;
+    m_pImmediateContext->Draw(DrawAttrs);
 }
 
 // Render a frame
@@ -255,46 +329,166 @@ void Tutorial11_ResourceUpdates::Render()
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
-    {
-        // Map the buffer and write current world-view-projection matrix
-        MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        *CBConstants = transposeMatrix(m_WorldViewProjMatrix);
-    }
-
-    // Bind vertex buffer
-    Uint32 offset = 0;
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
-
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. Pass pointer to shader resource binding object
-    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
-    // that resources are transitioned to proper states
-    m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed = true; // This is indexed draw call
-    DrawAttrs.IndexType = VT_UINT32; // Index type
-    DrawAttrs.NumIndices = 36;
-    m_pImmediateContext->Draw(DrawAttrs);
+    // Projection matrix differs between DX and OpenGL
+    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
+    float NearPlane = 0.1f;
+    float FarPlane = 100.f;
+    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
+    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+
+    auto CubeRotation = rotationY( -static_cast<float>(m_CurrTime) * 0.5f) * rotationX(PI_F * 0.1f) * translationMatrix(0, 0, 12.0f);
+
+    DrawCube(CubeRotation * translationMatrix(-2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[2]);
+    DrawCube(CubeRotation * translationMatrix(+2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[3]);
+
+    DrawCube(CubeRotation * translationMatrix(-4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[0]);
+    m_pImmediateContext->SetPipelineState(m_pPSO_NoCull);
+    DrawCube(CubeRotation * translationMatrix( 0.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[1], m_SRBs[0]);
+    DrawCube(CubeRotation * translationMatrix(+4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[2], m_SRBs[1]);
 }
+
+void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint32 Stride)
+{
+    auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    auto c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
+    for(Uint32 j=0; j < Height; ++j)
+    {
+        for(Uint32 i=0; i < Width; ++i)
+        {
+            for(int c=0; c < 4; ++c)
+                pData[i*4 + c + j*Stride] = (i * x_scale + j * y_scale + c*c_scale) & 0xFF;
+        }
+    }
+}
+
+void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint32 Stride)
+{
+    auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    auto c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
+    for(Uint32 j=0; j < Height; ++j)
+    {
+        for(Uint32 i=0; i < Width; ++i)
+        {
+            for(int c=0; c < 4; ++c)
+                pData[i*4 + c + j*Stride] = ( abs(static_cast<int>(i) - static_cast<int>(Width/2)) * x_scale + abs(static_cast<int>(j) - static_cast<int>(Height/2)) * y_scale + c*c_scale) & 0xFF;
+        }
+    }
+}
+
+void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
+{
+    auto& Texture = *m_Textures[TexIndex];
+    static constexpr const Uint32 NumUpdates = 3;
+    for(Uint32 update = 0; update < NumUpdates; ++update)
+    {
+        const auto& TexDesc = Texture.GetDesc();
+        Uint32 Width  = std::uniform_int_distribution<Uint32>{2, MaxUpdateRegionSize}(m_gen);
+        Uint32 Height = std::uniform_int_distribution<Uint32>{2, MaxUpdateRegionSize}(m_gen);
+
+        std::vector<Uint8> Data(Width * Height * 4);
+        WriteStripPattern(Data.data(), Width, Height, Width*4);
+            
+        Box UpdateBox;
+        UpdateBox.MinX = std::uniform_int_distribution<Uint32>{0, TexDesc.Width  - Width} (m_gen);
+        UpdateBox.MinY = std::uniform_int_distribution<Uint32>{0, TexDesc.Height - Height}(m_gen);
+        UpdateBox.MaxX = UpdateBox.MinX + Width;
+        UpdateBox.MaxY = UpdateBox.MinY + Height;
+        TextureSubResData SubresData;
+        
+        SubresData.Stride = Width * 4;
+        SubresData.pData = Data.data();
+        Texture.UpdateData(m_pImmediateContext, 0, 0, UpdateBox, SubresData);
+    }
+}
+
+void Tutorial11_ResourceUpdates::MapTexture(Uint32 TexIndex, bool MapEntireTexture)
+{
+    auto& Texture = *m_Textures[TexIndex];
+    const auto& TexDesc = m_Textures[2]->GetDesc();
+    MappedTextureSubresource MappedSubres;
+    Box MapRegion;
+    if (MapEntireTexture)
+    {
+        MapRegion.MaxX = TexDesc.Width;
+        MapRegion.MaxY = TexDesc.Height;
+    }
+    else
+    {
+        Uint32 Width  = std::uniform_int_distribution<Uint32>{2, MaxMapRegionSize}(m_gen);
+        Uint32 Height = std::uniform_int_distribution<Uint32>{2, MaxMapRegionSize}(m_gen);
+        MapRegion.MinX = std::uniform_int_distribution<Uint32>{0, TexDesc.Width  - Width} (m_gen);
+        MapRegion.MinY = std::uniform_int_distribution<Uint32>{0, TexDesc.Height - Height}(m_gen);
+        MapRegion.MaxX = MapRegion.MinX + Width;
+        MapRegion.MaxY = MapRegion.MinY + Height;
+    }
+    Texture.Map(m_pImmediateContext, 0, 0, MAP_WRITE, MAP_FLAG_DISCARD, MapEntireTexture ? nullptr : &MapRegion, MappedSubres);
+    WriteDiamondPattern( (Uint8*)MappedSubres.pData, MapRegion.MaxX-MapRegion.MinX, MapRegion.MaxY-MapRegion.MinY, MappedSubres.Stride);
+    Texture.Unmap(m_pImmediateContext, 0, 0);
+}
+
+void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
+{
+    Uint32 NumVertsToUpdate  = std::uniform_int_distribution<Uint32>{2, 8}(m_gen);
+    Uint32 FirstVertToUpdate = std::uniform_int_distribution<Uint32>{0, _countof(CubeVerts) - NumVertsToUpdate} (m_gen);
+    Vertex Vertices[_countof(CubeVerts)];
+    for(Uint32 v=0; v < NumVertsToUpdate; ++v)
+    {
+        auto SrcInd = FirstVertToUpdate+v;
+        const auto& SrcVert = CubeVerts[SrcInd];
+        Vertices[v].uv = SrcVert.uv;
+        Vertices[v].pos = SrcVert.pos * static_cast<float>(1 + 0.2*sin(m_CurrTime * (1.0 + SrcInd * 0.2)));
+    }
+    m_CubeVertexBuffer[BufferIndex]->UpdateData(m_pImmediateContext, FirstVertToUpdate * sizeof(Vertex), NumVertsToUpdate * sizeof(Vertex), Vertices);
+}
+
+void Tutorial11_ResourceUpdates::MapDynamicBuffer(Diligent::Uint32 BufferIndex)
+{
+    // Map the buffer and write current world-view-projection matrix
+    MapHelper<Vertex> Vertices(m_pImmediateContext, m_CubeVertexBuffer[BufferIndex], MAP_WRITE, MAP_FLAG_DISCARD);
+    for(Uint32 v=0; v < _countof(CubeVerts); ++v)
+    {
+        const auto& SrcVert = CubeVerts[v];
+        Vertices[v].uv = SrcVert.uv;
+        Vertices[v].pos = SrcVert.pos * static_cast<float>(1 + 0.2*sin(m_CurrTime * (1.0 + v * 0.2)));
+    }
+}
+
 
 void Tutorial11_ResourceUpdates::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    
+    m_CurrTime = CurrTime;
 
-    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
+    static constexpr const double UpdateBufferPeriod = 0.1;
+    if(CurrTime - m_LastBufferUpdateTime > UpdateBufferPeriod)
+    {
+        m_LastBufferUpdateTime = CurrTime;
+        UpdateBuffer(1);
+    }
 
-    // Set cube world view matrix
-    float4x4 CubeWorldView = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(PI_F*0.1f) * 
-        translationMatrix(0.f, 0.0f, 5.0f);
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
-    // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = CubeWorldView * Proj;
+    MapDynamicBuffer(2);
+
+    static constexpr const double UpdateTexturePeriod = 0.5;
+    if(CurrTime - m_LastTextureUpdateTime > UpdateTexturePeriod)
+    {
+        m_LastTextureUpdateTime = CurrTime;
+        UpdateTexture(2);
+    }
+
+    static constexpr const double MapTexturePeriod = 0.05;
+    const auto &deviceType = m_pDevice->GetDeviceCaps().DevType;
+    if(CurrTime - m_LastMapTime > MapTexturePeriod * (deviceType == DeviceType::D3D11 ? 10.f : 1.f))
+    {
+        m_LastMapTime = CurrTime;
+        if (deviceType == DeviceType::D3D11 || deviceType == DeviceType::D3D12 || deviceType == DeviceType::Vulkan)
+        {
+            MapTexture(3, deviceType == DeviceType::D3D11);
+        }
+    }
 }

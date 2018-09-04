@@ -23,6 +23,8 @@
 
 #pragma once 
 
+#include <array>
+#include <random>
 #include "SampleBase.h"
 #include "BasicMath.h"
 
@@ -38,11 +40,28 @@ public:
     virtual const Diligent::Char* GetSampleName()const override{return "Tutorial11: Resource Updates";}
 
 private:
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
+    void WriteStripPattern(Diligent::Uint8*, Diligent::Uint32 Width, Diligent::Uint32 Height, Diligent::Uint32 Stride);
+    void WriteDiamondPattern(Diligent::Uint8*, Diligent::Uint32 Width, Diligent::Uint32 Height, Diligent::Uint32 Stride);
+    
+    void UpdateTexture(Diligent::Uint32 TexIndex);
+    void MapTexture(Diligent::Uint32 TexIndex, bool MapEntireTexture);
+    void UpdateBuffer(Diligent::Uint32 BufferIndex);
+    void MapDynamicBuffer(Diligent::Uint32 BufferIndex);
+
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO, m_pPSO_NoCull;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer[3];
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
-    float4x4 m_WorldViewProjMatrix;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_TextureUpdateBuffer;
+    void DrawCube(const float4x4& WVPMatrix, Diligent::IBuffer *pVertexBuffer, Diligent::IShaderResourceBinding *pSRB);
+    static constexpr const size_t NumTextures = 4;
+    static constexpr const Diligent::Uint32 MaxUpdateRegionSize = 128;
+    static constexpr const Diligent::Uint32 MaxMapRegionSize = 128;
+    std::array<Diligent::RefCntAutoPtr<Diligent::ITexture>,               NumTextures> m_Textures;
+    std::array<Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>, NumTextures> m_SRBs;
+    double m_LastTextureUpdateTime = 0;
+    double m_LastBufferUpdateTime = 0;
+    double m_LastMapTime = 0;
+    std::mt19937 m_gen{0}; //Use 0 as the seed to always generate the same sequence
+    double m_CurrTime;
 };
