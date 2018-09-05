@@ -16,7 +16,10 @@ set(SHADERS
 )
 
 set(ASSETS
-    assets/DGLogo.png
+    assets/DGLogo0.png
+    assets/DGLogo1.png
+    assets/DGLogo2.png
+    assets/DGLogo3.png
 )
 
 add_tutorial("Tutorial11_ResourceUpdates" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
