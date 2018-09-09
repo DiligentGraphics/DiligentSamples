@@ -73,6 +73,13 @@ This tutorial shows how to render multiple 2D quads, frequently swithcing textur
 This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
 flags to efficiently stream varying amounts of data to GPU.
 
+## [Tutorial 11 - Resource Updates](Tutorials/Tutorial11_ResourceUpdates)
+
+![](Tutorials/Tutorial11_ResourceUpdates/Screenshot.png)
+
+This tutorial demonstrated different ways to update buffers and textures in Diligent Engine and explains 
+important internal details and performance implications related to each method.
+
 
 # Samples
 
