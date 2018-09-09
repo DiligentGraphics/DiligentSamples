@@ -438,7 +438,7 @@ void Tutorial11_ResourceUpdates::MapTexture(Uint32 TexIndex, bool MapEntireTextu
 void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
 {
     Uint32 NumVertsToUpdate  = std::uniform_int_distribution<Uint32>{2, 8}(m_gen);
-    Uint32 FirstVertToUpdate = std::uniform_int_distribution<Uint32>{0, _countof(CubeVerts) - NumVertsToUpdate} (m_gen);
+    Uint32 FirstVertToUpdate = std::uniform_int_distribution<Uint32>{0, static_cast<Uint32>(_countof(CubeVerts)) - NumVertsToUpdate} (m_gen);
     Vertex Vertices[_countof(CubeVerts)];
     for(Uint32 v=0; v < NumVertsToUpdate; ++v)
     {
