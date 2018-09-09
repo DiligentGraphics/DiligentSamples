@@ -343,7 +343,7 @@ void Tutorial11_ResourceUpdates::Render()
 
     DrawCube(CubeRotation * translationMatrix(-2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[2]);
     DrawCube(CubeRotation * translationMatrix(+2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[3]);
-
+    
     DrawCube(CubeRotation * translationMatrix(-4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[0]);
     m_pImmediateContext->SetPipelineState(m_pPSO_NoCull);
     DrawCube(CubeRotation * translationMatrix( 0.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[1], m_SRBs[0]);
@@ -398,11 +398,13 @@ void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
         UpdateBox.MinY = std::uniform_int_distribution<Uint32>{0, TexDesc.Height - Height}(m_gen);
         UpdateBox.MaxX = UpdateBox.MinX + Width;
         UpdateBox.MaxY = UpdateBox.MinY + Height;
-        TextureSubResData SubresData;
         
+        TextureSubResData SubresData;
         SubresData.Stride = Width * 4;
-        SubresData.pData = Data.data();
-        Texture.UpdateData(m_pImmediateContext, 0, 0, UpdateBox, SubresData);
+        SubresData.pData  = Data.data();
+        Uint32 MipLevel   = 0;
+        Uint32 ArraySlice = 0;
+        Texture.UpdateData(m_pImmediateContext, MipLevel, ArraySlice, UpdateBox, SubresData);
     }
 }
 
@@ -426,7 +428,9 @@ void Tutorial11_ResourceUpdates::MapTexture(Uint32 TexIndex, bool MapEntireTextu
         MapRegion.MaxX = MapRegion.MinX + Width;
         MapRegion.MaxY = MapRegion.MinY + Height;
     }
-    Texture.Map(m_pImmediateContext, 0, 0, MAP_WRITE, MAP_FLAG_DISCARD, MapEntireTexture ? nullptr : &MapRegion, MappedSubres);
+    Uint32 MipLevel   = 0;
+    Uint32 ArraySlice = 0;
+    Texture.Map(m_pImmediateContext, MipLevel, ArraySlice, MAP_WRITE, MAP_FLAG_DISCARD, MapEntireTexture ? nullptr : &MapRegion, MappedSubres);
     WriteDiamondPattern( (Uint8*)MappedSubres.pData, MapRegion.MaxX-MapRegion.MinX, MapRegion.MaxY-MapRegion.MinY, MappedSubres.Stride);
     Texture.Unmap(m_pImmediateContext, 0, 0);
 }
@@ -440,10 +444,15 @@ void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
     {
         auto SrcInd = FirstVertToUpdate+v;
         const auto& SrcVert = CubeVerts[SrcInd];
-        Vertices[v].uv = SrcVert.uv;
+        Vertices[v].uv  = SrcVert.uv;
         Vertices[v].pos = SrcVert.pos * static_cast<float>(1 + 0.2*sin(m_CurrTime * (1.0 + SrcInd * 0.2)));
     }
-    m_CubeVertexBuffer[BufferIndex]->UpdateData(m_pImmediateContext, FirstVertToUpdate * sizeof(Vertex), NumVertsToUpdate * sizeof(Vertex), Vertices);
+    m_CubeVertexBuffer[BufferIndex]->UpdateData(
+        m_pImmediateContext,                // Device context to use for the operation
+        FirstVertToUpdate * sizeof(Vertex), // Start offset in bytes
+        NumVertsToUpdate  * sizeof(Vertex), // Data size in bytes
+        Vertices                            // Data pointer
+    );
 }
 
 void Tutorial11_ResourceUpdates::MapDynamicBuffer(Diligent::Uint32 BufferIndex)
