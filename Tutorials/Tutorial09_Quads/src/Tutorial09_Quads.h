@@ -24,9 +24,12 @@
 #pragma once 
 
 #include <atomic>
+#include <vector>
+#include <thread>
+#include <mutex>
 #include "SampleBase.h"
 #include "BasicMath.h"
-#include "LockHelper.h"
+#include "Signal.h"
 
 class Tutorial09_Quads : public SampleBase
 {

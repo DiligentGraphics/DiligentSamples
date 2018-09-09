@@ -267,13 +267,13 @@ one CPU-side copy.
 
 The following table summarizes update methods for buffers:
 
-| Update scenario  | Usage           | Update Method          |   Comment           |
-| -----------------| ----------------|------------------------|---------------------|
-| Constant data    | `USAGE_STATIC`  | n/a                    | Data can only be written during buffer initialization|
-| < Once per frame | `USAGE_DEFAULT` | `IBuffer::UpdateData()`|                     |
-| >= Once per frame| `USAGE_DYNAMIC` | `IBuffer::Map()`       | The content of dynamic buffers is invalidated at the end of every frame |
+| Update scenario  | Usage         | Update Method         |   Comment           |
+| -----------------|---------------|-----------------------|---------------------|
+| Constant data    |`USAGE_STATIC` |n/a                    | Data can only be written during buffer initialization|
+| < Once per frame |`USAGE_DEFAULT`|`IBuffer::UpdateData()`|                     |
+| >= Once per frame|`USAGE_DYNAMIC`|`IBuffer::Map()`       | The content of dynamic buffers is invalidated at the end of every frame |
 
-The following table summarizes update methods for texture:
+The following table summarizes update methods for textures:
 
 | Update scenario  | Usage/Update Method                |   Comment                   |
 | -----------------| -----------------------------------|-----------------------------|

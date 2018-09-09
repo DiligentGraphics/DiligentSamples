@@ -24,6 +24,9 @@
 #pragma once 
 
 #include <atomic>
+#include <vector>
+#include <thread>
+#include <mutex>
 #include "SampleBase.h"
 #include "BasicMath.h"
 #include "Signal.h"

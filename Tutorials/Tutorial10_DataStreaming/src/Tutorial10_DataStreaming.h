@@ -25,9 +25,12 @@
 
 #include <atomic>
 #include <memory>
+#include <vector>
+#include <thread>
+#include <mutex>
 #include "SampleBase.h"
 #include "BasicMath.h"
-#include "LockHelper.h"
+#include "Signal.h"
 
 class Tutorial10_DataStreaming : public SampleBase
 {
