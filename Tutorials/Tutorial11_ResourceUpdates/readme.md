@@ -62,9 +62,9 @@ However the main and so obvious performance issue with this method is state tran
 a copy operation, it needs to be transitioned to copy destination state. Every time it is used in a shader, it needs to be transitioned
 to shader resource state. Transitioning back and forth stalls the GPU pipeline and degrades performance dramatically.
 
-This method should be used when a buffer content stays constant most of the time and only needs to be updated occasioanlly,
+This method should be used when a buffer content stays constant most of the time and only needs to be updated occasionally,
 usually no more often than once in a frame, for example, when reusing existing buffer to write new mesh data (vertices/indices).
-This method should not be used for high frequency updates such as animation or consant buffer updates.
+This method should not be used for high frequency updates such as animation or constant buffer updates.
 
 To illustrate this method, the tutorial updates positions of cube vertices every 0.1 seconds (see `Tutorial11_ResourceUpdates::UpdateBuffer()`).
 
@@ -111,7 +111,7 @@ in the buffer is never given to the application while being used by the GPU.
 In Direct3D12/Vulkan backends mapping dynamic buffers with `MAP_FLAG_DISCARD` flag is very cheap as it only involves updating current
 offset. It is hard to say what exactly Direct3D11 and OpenGL do under the hood, but most likely something similar. There is one significant
 difference however: Direct3D11 and OpenGL preserve contents of dynamic buffers between frames while Direct3D12 and Vulkan backends do not.
-As a result, mapping is many times more effcient in next-gen backends.
+As a result, mapping is many times more efficient in next-gen backends.
 
 Dynamic buffers should be used for content that changes often, typically multiple time per frame. The most common example is a constant
 buffer that is updated with different transformation matrices before every draw call. Dynamic buffers should not be used for constant
@@ -196,7 +196,7 @@ pixels to the texture using GPU-specific layout.
 
 #### Performance
 Usage scenarios are similar to buffer updates: the operation should be used for textures whose contents stay mostly 
-constant and only occasionaly requires updates.
+constant and only occasionally requires updates.
 
 This method is illustrated by `Tutorial11_ResourceUpdates::UpdateTexture()` function.
 
@@ -205,7 +205,7 @@ As the operation involves two copies and state transitions, it is not efficient 
 
 ### Mapping textures
 
-Mapping a texture is a second way to upate its contents. From the API side, mapping textures looks similar to mapping buffers:
+Mapping a texture is a second way to update its contents. From the API side, mapping textures looks similar to mapping buffers:
 
 ```cpp
 Uint32 MipLevel   = 0;
@@ -258,7 +258,7 @@ expects that this will be implemented by the application using low-level API int
 This method is illustrated by `Tutorial11_ResourceUpdates::UpdateTexture()` function.
 
 #### Limitations
-Texture mapping is not currently implemented in OpenGL/GLES backend
+Texture mapping is not currently implemented in OpenGL/GLES backend.
 
 In Direct3D11, only the entire texture level can be mapped with `D3D11_MAP_WRITE_DISCARD` flag.
 
