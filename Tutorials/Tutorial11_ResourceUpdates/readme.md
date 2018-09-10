@@ -58,7 +58,7 @@ state transitions (such as shader resource -> copy destination).
 
 #### Performance
 `IBuffer::UpdateData()` is currently the only way to update data in a default (GPU-only) buffer. The operation involves two copy operations.
-However the main and so obvious performance issue with this method is state transitions. Every time when a buffer is used in
+However the main and not so obvious performance issue with this method is state transitions. Every time when a buffer is used in
 a copy operation, it needs to be transitioned to copy destination state. Every time it is used in a shader, it needs to be transitioned
 to shader resource state. Transitioning back and forth stalls the GPU pipeline and degrades performance dramatically.
 
@@ -113,7 +113,7 @@ offset. It is hard to say what exactly Direct3D11 and OpenGL do under the hood, 
 difference however: Direct3D11 and OpenGL preserve contents of dynamic buffers between frames while Direct3D12 and Vulkan backends do not.
 As a result, mapping is many times more efficient in next-gen backends.
 
-Dynamic buffers should be used for content that changes often, typically multiple time per frame. The most common example is a constant
+Dynamic buffers should be used for content that changes often, typically multiple times per frame. The most common example is a constant
 buffer that is updated with different transformation matrices before every draw call. Dynamic buffers should not be used for constant
 data that never changes.
 
@@ -190,7 +190,7 @@ As with buffer updates, in Direct3D11 backend, this call directly maps to
 [ID3D11DeviceContext::UpdateSubresource](https://docs.microsoft.com/en-us/windows/desktop/api/d3d11/nf-d3d11-id3d11devicecontext-updatesubresource).
 
 #### Direct3D12/Vulkan backend
-As with buffers, to update the texture the next-gen backends first allocate region in a CPU-accessible memory and copy
+As with buffers, to update a texture the next-gen backends first allocate region in a CPU-accessible memory and copy
 client data to this region. They then perform necessary state transitions and issue GPU copy command that writes 
 pixels to the texture using GPU-specific layout.
 
