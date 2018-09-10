@@ -77,7 +77,7 @@ flags to efficiently stream varying amounts of data to GPU.
 
 ![](Tutorials/Tutorial11_ResourceUpdates/Screenshot.png)
 
-This tutorial demonstrated different ways to update buffers and textures in Diligent Engine and explains 
+This tutorial demonstrates different ways to update buffers and textures in Diligent Engine and explains 
 important internal details and performance implications related to each method.
 
 

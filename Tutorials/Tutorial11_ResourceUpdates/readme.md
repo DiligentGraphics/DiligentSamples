@@ -1,6 +1,6 @@
 # Tutorial11 - Resource Updates
 
-This tutorial demonstrated different ways to update buffers and textures in Diligent Engine and explains important
+This tutorial demonstrates different ways to update buffers and textures in Diligent Engine and explains important
 internal details and performance implications related to each method.
 
 ![](Screenshot.png)
@@ -58,7 +58,7 @@ state transitions (such as shader resource -> copy destination).
 
 #### Performance
 `IBuffer::UpdateData()` is currently the only way to update data in a default (GPU-only) buffer. The operation involves two copy operations.
-However the main performance challenge with this method that is not so obvious is state transitions. Every time when a buffer is used in
+However the main and so obvious performance issue with this method is state transitions. Every time when a buffer is used in
 a copy operation, it needs to be transitioned to copy destination state. Every time it is used in a shader, it needs to be transitioned
 to shader resource state. Transitioning back and forth stalls the GPU pipeline and degrades performance dramatically.
 
@@ -110,11 +110,11 @@ in the buffer is never given to the application while being used by the GPU.
 #### Performance
 In Direct3D12/Vulkan backends mapping dynamic buffers with `MAP_FLAG_DISCARD` flag is very cheap as it only involves updating current
 offset. It is hard to say what exactly Direct3D11 and OpenGL do under the hood, but most likely something similar. There is one significant
-difference however: Direct3D11 and OpenGL preserve contents of dynamic buffers between frames while Direct3D12 Vulkan backends do not.
-As a result, Map operation is many times more effcient in next-gen backends.
+difference however: Direct3D11 and OpenGL preserve contents of dynamic buffers between frames while Direct3D12 and Vulkan backends do not.
+As a result, mapping is many times more effcient in next-gen backends.
 
-Dynamic buffers should be used for content that changes often, typically multiple time per frame. The most typical example is a constant
-buffer that is updated with different transformation matrices before every draw call. Dynamic buffers should never be used for constant
+Dynamic buffers should be used for content that changes often, typically multiple time per frame. The most common example is a constant
+buffer that is updated with different transformation matrices before every draw call. Dynamic buffers should not be used for constant
 data that never changes.
 
 To illustrate this method, the tutorial animates cube vertices by mapping the buffer in every frame
@@ -125,15 +125,15 @@ To illustrate this method, the tutorial animates cube vertices by mapping the bu
 Only the entire buffer can currently be mapped with `MAP_FLAG_DISCARD` flag.
 
 In Direct3D12 and Vulkan backends, the contents of all dynamic resources are lost at the end of every frame.
-A dynamic buffer must be mapped in a frame before its first use.
+A dynamic buffer must be mapped in every frame before its first use.
 
-Total amount of CPU-accessible memory can be limited. Besides, access from the GPU may be slower compared to 
+The total amount of CPU-accessible memory can be limited. Besides, access from the GPU may be slower compared to 
 GPU-only memory, so dynamic buffers should not be used to store resources that are constant or change infrequently.
 
 ## Textures
 Textures are different from buffers in a way that to allow efficient sampling operations they use opaque
-layouts that are typically not exposed to the application. As a result, only the drive knows how to write
-data to the texture. Linear layouts are allowed in Direct3D12 and Vulkan, but they are way less efficient.
+layouts that are typically not exposed to the application. As a result, only the driver knows how to write
+data to the texture. Linear layouts are allowed in Direct3D12 and Vulkan, but they are less efficient.
 
 ### Texture initialization
 
@@ -191,8 +191,8 @@ As with buffer updates, in Direct3D11 backend, this call directly maps to
 
 #### Direct3D12/Vulkan backend
 As with buffers, to update the texture the next-gen backends first allocate region in a CPU-accessible memory and copy
-client data to this region. They then issue GPU copy command that updates the texture performing necessary pixel
-reordering.
+client data to this region. They then perform necessary state transitions and issue GPU copy command that writes 
+pixels to the texture using GPU-specific layout.
 
 #### Performance
 Usage scenarios are similar to buffer updates: the operation should be used for textures whose contents stay mostly 
@@ -223,7 +223,7 @@ WriteTextureData( (Uint8*)MappedSubres.pData, Width, Height, MappedSubres.Stride
 Texture.Unmap(m_pImmediateContext, 0, 0);
 ```
 
-What happens under the hood is very different from buffers.
+What happens under the hood is very different compared to buffers.
 
 #### OpenGL/GLES backend
 Mapping textures is currently not supported in OpenGL/GLES backends.
@@ -235,12 +235,12 @@ with `D3D11_MAP_WRITE_DISCARD` flag.
 
 #### Direct3D12/Vulkan backend
 There are no dynamic textures in next-gen backends in a way similar to dynamic buffers. While buffers can easily be
-suballocated from another buffer by binding parent buffer and applying offset, there is no similar way for textures.
-So even if the required memory was suballocated from the dynamic buffer, there would be no way to use this memory
-as texture. Binding the memory to an existing texture is also not allowed.
+suballocated from another buffer by binding parent buffer and applying an offset, there is no similar way for textures.
+So even if the required memory was suballocated from the dynamic buffer, there would be no way to treat this memory
+as a texture. Binding the memory to an existing texture is also not allowed.
 
 As a result, mapping textures in Direct3D12/Vulkan backend does not differ significantly from updating textures with
-`ITexture::UpdateData()`. When mapping the texture, the engine returns the pointer to the CPU-accessible memory directly
+`ITexture::UpdateData()`. When mapping a texture, the engine returns the pointer to the CPU-accessible memory directly
 that avoids one copy. However, GPU-side copy and most importantly state transitions are still performed.
 
 #### Performance
@@ -251,6 +251,9 @@ or performing the same operations as Diligent's next-gen backends.
 
 Mapping dynamic textures is not as efficient as mapping dynamic buffers, and typical usage scenarios
 are similar to `ITexture::UpdateData()`.
+
+There is no simple way to implement high-frequency texture updates across all APIs, so Diligent
+expects that this will be implemented by the application using low-level API interoperability.
 
 This method is illustrated by `Tutorial11_ResourceUpdates::UpdateTexture()` function.
 
