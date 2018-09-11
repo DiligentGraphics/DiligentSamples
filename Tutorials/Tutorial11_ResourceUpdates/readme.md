@@ -131,9 +131,9 @@ The total amount of CPU-accessible memory can be limited. Besides, access from t
 GPU-only memory, so dynamic buffers should not be used to store resources that are constant or change infrequently.
 
 ## Textures
-Textures are different from buffers in a way that to allow efficient sampling operations they use opaque
-layouts that are typically not exposed to the application. As a result, only the driver knows how to write
-data to the texture. Linear layouts are allowed in Direct3D12 and Vulkan, but they are less efficient.
+While buffers are simply linear regions of memory, textures are optimized for efficient sampling operations and 
+use opaque layouts that are typically not exposed to the application. As a result, only the driver knows how
+to write data to the texture. Linear layouts are allowed in Direct3D12 and Vulkan, but they are less efficient.
 
 ### Texture initialization
 
