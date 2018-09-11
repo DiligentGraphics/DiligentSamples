@@ -220,7 +220,7 @@ MapRegion.MaxX = MapRegion.MinX + Width;
 MapRegion.MaxY = MapRegion.MinY + Height;
 Texture->Map(m_pImmediateContext, MipLevel, ArraySlice, MAP_WRITE, MAP_FLAG_DISCARD, &MapRegion, MappedSubres);
 WriteTextureData( (Uint8*)MappedSubres.pData, Width, Height, MappedSubres.Stride);
-Texture.Unmap(m_pImmediateContext, 0, 0);
+Texture->Unmap(m_pImmediateContext, 0, 0);
 ```
 
 What happens under the hood is very different compared to buffers.
