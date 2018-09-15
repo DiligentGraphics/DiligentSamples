@@ -41,7 +41,7 @@ private:
     
     struct MapInfo
     {
-        MapHelper<void*> m_MappedData;
+        MapHelper<Uint8> m_MappedData;
         Uint32 m_CurrOffset = 0;
     };
     // We need to keep track of mapped data for every context

@@ -8,7 +8,7 @@ set(SOURCE
     src/TwFonts.cpp
     src/TwGraphImpl.cpp
     src/TwMgr.cpp
-    src/TwPrecomp.cpp
+    # src/TwPrecomp.cpp - Precompiler header is not used
     src/TwEventGLFW.c
     src/TwEventSDL.c
     src/TwEventSDL12.c
