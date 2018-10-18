@@ -75,6 +75,7 @@ void CreateShader(IRenderDevice *pDevice,
     Attribs.Desc.DefaultVariableType = DefaultVarType;
     BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\atmosphere;shaders\\atmosphere\\precompute");
     Attribs.pShaderSourceStreamFactory = &BasicSSSFactory;
+    Attribs.UseCombinedTextureSamplers = true;
     pDevice->CreateShader( Attribs, ppShader );
 }
 

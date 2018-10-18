@@ -54,6 +54,7 @@ function CreateHemisphereShaders()
 		EntryPoint = "HemisphereVS",
 		SearchDirectories = "shaders;shaders\\terrain",
 		SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
+        UseCombinedTextureSamplers = true,
 		Desc = {
 			ShaderType = "SHADER_TYPE_VERTEX",
 			Name = "HemisphereVS",
@@ -83,6 +84,7 @@ function CreateHemisphereShaders()
 		FilePath =  "HemisphereZOnlyVS.fx",
 		EntryPoint = "HemisphereZOnlyVS",
 		SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
+        UseCombinedTextureSamplers = true,
 		SearchDirectories = "shaders\\;shaders\\terrain",
 		Desc = {
 			ShaderType = "SHADER_TYPE_VERTEX",
@@ -175,6 +177,7 @@ function CreateRenderNormalMapShaders()
 		EntryPoint = "GenerateScreenSizeQuadVS",
 		SearchDirectories = "shaders\\;shaders\\terrain",
 		SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
+        UseCombinedTextureSamplers = true,
 		Desc = {
 			ShaderType = "SHADER_TYPE_VERTEX",
 			Name = "GenerateScreenSizeQuadVS",
@@ -187,6 +190,7 @@ function CreateRenderNormalMapShaders()
 		EntryPoint = "GenerateNormalMapPS",
 		SearchDirectories = "shaders\\;shaders\\terrain",
 		SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
+        UseCombinedTextureSamplers = true,
 		Desc = {
 			ShaderType = "SHADER_TYPE_PIXEL",
 			Name = "GenerateNormalMapPS",

@@ -415,6 +415,7 @@ function CreateShader(File, Entry, ShaderType)
 				EntryPoint = Entry,
 				SearchDirectories = "shaders;shaders\\atmosphere;shaders\\atmosphere\\precompute",
 				SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
+                UseCombinedTextureSamplers = true,
 				Desc = {
 					ShaderType = ShaderType,
 					Name = "LightScattering.lua:" .. Entry,

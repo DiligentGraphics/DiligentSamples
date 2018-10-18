@@ -104,6 +104,9 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
         // For OpenGL, the engine will convert this into GLSL behind the scene
         CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
+        // We will be using combined texture samplers
+        CreationAttribs.UseCombinedTextureSamplers = true;
+
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
         BasicShaderSourceStreamFactory BasicSSSFactory;

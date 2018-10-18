@@ -140,6 +140,7 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType DevType
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
         VkAttrs.DynamicHeapSize = 128 << 20;
+        VkAttrs.DynamicHeapPageSize = 2 << 20;
         VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
@@ -196,6 +197,9 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL behind the scene
         CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+        // We will be using combined texture samplers
+        CreationAttribs.UseCombinedTextureSamplers = true;
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory

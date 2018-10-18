@@ -712,28 +712,29 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         {
             {"g_tex2DShadowMap", SHADER_VARIABLE_TYPE_DYNAMIC},
         };
+        Attrs.UseCombinedTextureSamplers = true;
         Attrs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
         BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\terrain;");
         Attrs.pShaderSourceStreamFactory = &BasicSSSFactory;
 
         StaticSamplerDesc StaticSamplers[5];
-        StaticSamplers[0].TextureName = "g_tex2DTileDiffuse";
+        StaticSamplers[0].SamplerOrTextureName = "g_tex2DTileDiffuse";
         StaticSamplers[0].Desc.AddressU = TEXTURE_ADDRESS_WRAP;
         StaticSamplers[0].Desc.AddressV = TEXTURE_ADDRESS_WRAP;
         StaticSamplers[0].Desc.AddressW = TEXTURE_ADDRESS_WRAP;
 
-        StaticSamplers[1].TextureName = "g_tex2DTileNM";
+        StaticSamplers[1].SamplerOrTextureName = "g_tex2DTileNM";
         StaticSamplers[1].Desc = StaticSamplers[0].Desc;
 
-        StaticSamplers[2].TextureName = "g_tex2DNormalMap";
+        StaticSamplers[2].SamplerOrTextureName = "g_tex2DNormalMap";
         StaticSamplers[2].Desc.AddressU = TEXTURE_ADDRESS_MIRROR;
         StaticSamplers[2].Desc.AddressV = TEXTURE_ADDRESS_MIRROR;
         StaticSamplers[2].Desc.AddressW = TEXTURE_ADDRESS_MIRROR;
 
-        StaticSamplers[3].TextureName = "g_tex2DMtrlMap";
+        StaticSamplers[3].SamplerOrTextureName = "g_tex2DMtrlMap";
         StaticSamplers[3].Desc = StaticSamplers[2].Desc;
 
-        StaticSamplers[4].TextureName = "g_tex2DShadowMap";
+        StaticSamplers[4].SamplerOrTextureName = "g_tex2DShadowMap";
         StaticSamplers[4].Desc.MinFilter = FILTER_TYPE_COMPARISON_LINEAR;
         StaticSamplers[4].Desc.MagFilter = FILTER_TYPE_COMPARISON_LINEAR;
         StaticSamplers[4].Desc.MipFilter = FILTER_TYPE_COMPARISON_LINEAR;

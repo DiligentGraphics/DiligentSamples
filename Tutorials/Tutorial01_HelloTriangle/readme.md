@@ -118,6 +118,12 @@ The shaders are authored in HLSL, so we need to tell the system:
 CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 ```
 
+In this tutorial we use combined texture samplers:
+
+```cpp
+CreationAttribs.UseCombinedTextureSamplers = true;
+```
+
 In this example, vertex and pixel shaders are created from the source. The code is self-explanatory:
 
 ```cpp

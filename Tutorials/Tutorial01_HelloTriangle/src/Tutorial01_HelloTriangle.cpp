@@ -108,6 +108,7 @@ void Tutorial01_HelloTriangle::Initialize(IRenderDevice *pDevice, IDeviceContext
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL behind the scene
     CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    CreationAttribs.UseCombinedTextureSamplers = true;
     // Create vertex shader
     RefCntAutoPtr<IShader> pVS;
     {

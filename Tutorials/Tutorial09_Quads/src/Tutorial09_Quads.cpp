@@ -60,6 +60,7 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, Engine
     {
         auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
         VkAttrs.DynamicHeapSize = 128 << 20;
+        VkAttrs.DynamicHeapPageSize = 2 << 20;
         VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
@@ -116,6 +117,9 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL behind the scene
         CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+        // We will be using combined texture samplers
+        CreationAttribs.UseCombinedTextureSamplers = true;
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
@@ -288,8 +292,8 @@ void Tutorial09_Quads::InitializeQuads()
 {
     m_Quads.resize(m_NumQuads);
 
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
+                         //Use 0 as the seed to always generate the same sequence
     std::uniform_real_distribution<float> scale_distr(0.01f, 0.05f);
     std::uniform_real_distribution<float> pos_distr(-0.95f, +0.95f);
     std::uniform_real_distribution<float> move_dir_distr(-0.1f, +0.1f);

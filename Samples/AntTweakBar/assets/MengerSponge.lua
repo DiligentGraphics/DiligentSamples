@@ -13,11 +13,13 @@ end
 
 MainVS = Shader.Create{
 	FilePath =  GetShaderPath("MainVS" ),
+    UseCombinedTextureSamplers = true,
 	Desc = { ShaderType = "SHADER_TYPE_VERTEX" }
 }
 
 MainPS = Shader.Create{
 	FilePath =  GetShaderPath("MainPS" ),
+    UseCombinedTextureSamplers = true,
 	Desc = { ShaderType = "SHADER_TYPE_PIXEL" }
 }
 

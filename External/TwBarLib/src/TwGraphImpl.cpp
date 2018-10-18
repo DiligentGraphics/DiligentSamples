@@ -210,6 +210,7 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
         CreationAttribs.Source = bIsDX ? g_LineRectVS_DX : g_LineRectVS_GL;
         CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
         CreationAttribs.Desc.Name = "AntTwBar: LineRectVS";
+        CreationAttribs.UseCombinedTextureSamplers = true;
         m_pDev->CreateShader( CreationAttribs, &m_pLineRectVS );
         m_pLineRectVS->BindResources( m_pResourceMapping, 0 );
 
