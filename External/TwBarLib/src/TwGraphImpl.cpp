@@ -534,7 +534,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         IPipelineState *pPSO = m_pPSO[static_cast<int>(_AntiAliased ? PSO_ID::LineAA : PSO_ID::Line)];
         m_pDevImmContext->SetPipelineState(pPSO);
 
-        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
+        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
@@ -607,7 +607,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         // Render the rect
         IPipelineState *pPSO = m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)];
         m_pDevImmContext->SetPipelineState(pPSO);
-        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
+        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
@@ -665,8 +665,8 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
         if( !m_pTextCstColorSRB )
             m_pPSO[static_cast<int>(PSO_ID::TextCstColor)]->CreateShaderResourceBinding(&m_pTextCstColorSRB);
 
-        m_pTextCstColorSRB->BindResources(SHADER_TYPE_VERTEX|SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
-        m_pTextSRB->BindResources(SHADER_TYPE_VERTEX|SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
+        m_pTextCstColorSRB->BindResources(SHADER_TYPE_VERTEX|SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        m_pTextSRB->BindResources(SHADER_TYPE_VERTEX|SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 
         m_FontTex = _Font;
     }
@@ -905,7 +905,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
             pPSO = m_pPSO[static_cast<int>(PSO_ID::Triangle_CstColor)];
         else
             pPSO = m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)];
-        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
+        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->SetPipelineState(pPSO);
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
@@ -949,7 +949,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
             pSRB = m_pTextSRB;
         }
         m_pDevImmContext->SetPipelineState(pPSO);
-        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
+        pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
@@ -1115,7 +1115,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
             return;
         }
         
-        pLineRectPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED | BIND_SHADER_RESOURCES_ALL_RESOLVED);
+        pLineRectPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         
         m_pDevImmContext->SetPipelineState(pLineRectPSO);
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);

@@ -480,7 +480,7 @@ PrecomputeNetDensityToAtmTopPS = CreatePixelShader("PrecomputeNetDensityToAtmTop
 PrecomputeNetDensityToAtmTopPSO = CreateScreenSizeQuadPSO("PrecomputeNetDensityToAtmTop", PrecomputeNetDensityToAtmTopPS, DisableDepthDesc, DefaultBlendDesc, "TEX_FORMAT_RG32_FLOAT")
 -- Bind required shader resources
 -- All shader resources are static resources, so we bind them once directly to the shader
-PrecomputeNetDensityToAtmTopPS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_ALL_RESOLVED")
+PrecomputeNetDensityToAtmTopPS:BindResources(extResourceMapping, {"BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 
 function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngles)
 	
@@ -550,7 +550,7 @@ function ReconstructCameraSpaceZ(DepthBufferSRV)
     DepthBufferSRV:SetSampler(LinearClampSampler) -- Sampler must be set for Vulkan backend
 	if ReconstructCameraSpaceZSRB == nil then
 		ReconstructCameraSpaceZSRB = ReconstructCameraSpaceZPSO:CreateShaderResourceBinding()
-		ReconstructCameraSpaceZSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED"})
+		ReconstructCameraSpaceZSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING"})
 	end
 
 	-- Set dynamic variable g_tex2DDepthBuffer
@@ -585,7 +585,7 @@ end
 function RenderCoordinateTexture()
 	if RenderCoordinateTextureSRB == nil then
 		RenderCoordinateTextureSRB = RenderCoordinateTexturePSO:CreateShaderResourceBinding()
-		RenderCoordinateTextureSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		RenderCoordinateTextureSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DCoordinateTextureRTV, tex2DEpipolarCamSpaceZRTV, tex2DEpipolarImageDSV)
@@ -620,7 +620,7 @@ end
 function RenderCoarseUnshadowedInctr()
 	if RenderCoarseUnshadowedInctrSRB == nil then
 		RenderCoarseUnshadowedInctrSRB = RenderCoarseUnshadowedInctrPSO:CreateShaderResourceBinding()
-		RenderCoarseUnshadowedInctrSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		RenderCoarseUnshadowedInctrSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	RenderScreenSizeQuad(RenderCoarseUnshadowedInctrPSO, 1, 1, RenderCoarseUnshadowedInctrSRB)
@@ -639,7 +639,7 @@ end
 function MarkRayMarchingSamples()
 	if MarkRayMarchingSamplesSRB == nil then
 		MarkRayMarchingSamplesSRB = MarkRayMarchingSamplesPSO:CreateShaderResourceBinding()
-		MarkRayMarchingSamplesSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		MarkRayMarchingSamplesSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DEpipolarImageDSV)
@@ -659,7 +659,7 @@ end
 function RenderSliceUVDirAndOrigin()
 	if RenderSliceUVDirAndOriginSRB == nil then
 		RenderSliceUVDirAndOriginSRB = RenderSliceUVDirAndOriginPSO:CreateShaderResourceBinding()
-		RenderSliceUVDirAndOriginSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		RenderSliceUVDirAndOriginSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DSliceUVDirAndOriginRTV)
@@ -678,7 +678,7 @@ end
 function InitMinMaxShadowMap(ShadowMapSRV)
 	if InitMinMaxShadowMapSRB == nil then
 		InitMinMaxShadowMapSRB = InitMinMaxShadowMapPSO:CreateShaderResourceBinding()
-		InitMinMaxShadowMapSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		InitMinMaxShadowMapSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	-- Set dynamic variable g_tex2DLightSpaceDepthMap
@@ -727,7 +727,7 @@ function RayMarch(Use1DMinMaxTree, NumQuads, SrcColorBufferSRV)
             extResourceMapping["g_tex2DColorBuffer"] = SrcColorBufferSRV
             SrcColorBufferSRV:SetSampler(LinearClampSampler)
         end
-		RayMarchSRB[Use1DMinMaxTree]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		RayMarchSRB[Use1DMinMaxTree]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
     
     Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV)
@@ -747,7 +747,7 @@ end
 function InterpolateIrradiance()
 	if InterpolateIrradianceSRB == nil then
 		InterpolateIrradianceSRB = InterpolateIrradiancePSO:CreateShaderResourceBinding()
-		InterpolateIrradianceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		InterpolateIrradianceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DEpipolarInscatteringRTV)
@@ -766,7 +766,7 @@ end
 function UnwarpAndRenderLuminance(SrcColorBufferSRV)
 	if UnwarpAndRenderLuminanceSRB == nil then
 		UnwarpAndRenderLuminanceSRB= UnwarpAndRenderLuminancePSO:CreateShaderResourceBinding()
-		UnwarpAndRenderLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED")
+		UnwarpAndRenderLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 	end
 
 	-- Set dynamic variable g_tex2DColorBuffer
@@ -788,7 +788,7 @@ end
 function UnwarpEpipolarScattering(SrcColorBufferSRV)
 	if UnwarpEpipolarScatteringSRB == nil then
 		UnwarpEpipolarScatteringSRB= UnwarpEpipolarScatteringPSO:CreateShaderResourceBinding()
-		UnwarpEpipolarScatteringSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED")
+		UnwarpEpipolarScatteringSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 	end
 
 	-- Set dynamic variable g_tex2DColorBuffer
@@ -828,7 +828,7 @@ function FixInscatteringAtDepthBreaks(Mode, SrcColorBufferSRV)
 	if FixInscatteringAtDepthBreaksSRB == nil then FixInscatteringAtDepthBreaksSRB = {} end
 	if FixInscatteringAtDepthBreaksSRB[Mode] == nil then
 		FixInscatteringAtDepthBreaksSRB[Mode]= FixInscatteringAtDepthBreaksPSO[Mode]:CreateShaderResourceBinding()
-		FixInscatteringAtDepthBreaksSRB[Mode]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED")
+		FixInscatteringAtDepthBreaksSRB[Mode]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 	end
 
 	-- Set dynamic variable g_tex2DColorBuffer
@@ -850,7 +850,7 @@ end
 function UpdateAverageLuminance()
 	if UpdateAverageLuminanceSRB == nil then
 		UpdateAverageLuminanceSRB= UpdateAverageLuminancePSO:CreateShaderResourceBinding()
-		UpdateAverageLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		UpdateAverageLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DAverageLuminanceRTV)
@@ -891,7 +891,7 @@ end
 function RenderSampleLocations(TotalSamples)
 	if RenderSampleLocationsSRB == nil then
 		RenderSampleLocationsSRB= RenderSampleLocationsPSO:CreateShaderResourceBinding()
-		RenderSampleLocationsSRB:BindResources({"SHADER_TYPE_VERTEX","SHADER_TYPE_PIXEL"}, extResourceMapping, {"BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED", "BIND_SHADER_RESOURCES_ALL_RESOLVED"})
+		RenderSampleLocationsSRB:BindResources({"SHADER_TYPE_VERTEX","SHADER_TYPE_PIXEL"}, extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetPipelineState(RenderSampleLocationsPSO)
@@ -927,8 +927,8 @@ RenderSunPSO = PipelineState.Create
 function RenderSun()
 	Context.SetPipelineState(RenderSunPSO)
 
-	SunVS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_ALL_RESOLVED")
-	SunPS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_ALL_RESOLVED")
+	SunVS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED")
+	SunPS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED")
 	
 	Context.CommitShaderResources("COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 

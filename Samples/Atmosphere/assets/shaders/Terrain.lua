@@ -139,7 +139,7 @@ function SetHemispherePS(in_HemispherePS, RTVFormat)
 		}
 	}
 	RenderHemisphereSRB = RenderHemispherePSO:CreateShaderResourceBinding()
-	RenderHemisphereSRB:BindResources("SHADER_TYPE_VERTEX", extResourceMapping, "BIND_SHADER_RESOURCES_UPDATE_UNRESOLVED")
+	RenderHemisphereSRB:BindResources("SHADER_TYPE_VERTEX", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 
 	RenderHemisphereZOnlyPSO = PipelineState.Create
 	{
@@ -204,8 +204,8 @@ function CreateRenderNormalMapShaders()
 	}
 
 	extResourceMapping["g_tex2DElevationMap"]:SetSampler(PointClampSampler)
-	ScreenSizeQuadVS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_RESET_BINDINGS")
-	GenerateNormalMapPS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_RESET_BINDINGS")
+	ScreenSizeQuadVS:BindResources(extResourceMapping)
+	GenerateNormalMapPS:BindResources(extResourceMapping)
 
 
 	RenderNormalMapPSO = PipelineState.Create
