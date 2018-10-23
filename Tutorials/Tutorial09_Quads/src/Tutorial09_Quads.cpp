@@ -24,6 +24,7 @@
 #include <random>
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 #include "Tutorial09_Quads.h"
 #include "MapHelper.h"

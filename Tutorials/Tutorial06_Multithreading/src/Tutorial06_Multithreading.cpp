@@ -23,6 +23,7 @@
 
 #include <random>
 #include <string>
+#include <algorithm>
 
 #include "Tutorial06_Multithreading.h"
 #include "MapHelper.h"

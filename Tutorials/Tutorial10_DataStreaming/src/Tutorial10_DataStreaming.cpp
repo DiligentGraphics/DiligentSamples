@@ -24,6 +24,7 @@
 #include <random>
 #include <string>
 #include <math.h>
+#include <algorithm>
 
 #include "Tutorial10_DataStreaming.h"
 #include "MapHelper.h"
