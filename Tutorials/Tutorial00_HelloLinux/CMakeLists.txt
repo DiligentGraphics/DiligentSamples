@@ -17,3 +17,6 @@ set_target_properties(Tutorial00_HelloLinux PROPERTIES
 
 target_link_libraries(Tutorial00_HelloLinux PRIVATE GL X11 GraphicsEngineOpenGL-shared)
 
+if(VULKAN_SUPPORTED)
+    target_link_libraries(Tutorial00_HelloLinux PRIVATE GraphicsEngineVk-shared)
+endif()
