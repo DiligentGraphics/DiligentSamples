@@ -27,6 +27,10 @@
 #include <GL/glx.h>
 #include <GL/gl.h>
 
+#if VULKAN_SUPPORTED
+#include <xcb/xcb.h>
+#endif
+
 // Undef symbols defined by XLib
 #ifdef Bool
 #   undef Bool
@@ -52,6 +56,10 @@
 #endif
 
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"
+
+#if VULKAN_SUPPORTED
+#   include "Graphics/GraphicsEngineVulkan/interface/RenderDeviceFactoryVk.h"
+#endif
 
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
@@ -80,7 +88,16 @@ using namespace Diligent;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, int, const int*);
  
-
+#if VULKAN_SUPPORTED
+struct XCBInfo
+{
+    xcb_connection_t* connection = nullptr;
+    uint32_t window = 0;
+    uint16_t width = 0;
+    uint16_t height = 0;
+    xcb_intern_atom_reply_t* atom_wm_delete_window = nullptr;
+};
+#endif
 
 // For this tutorial, we will use simple vertex shader
 // that creates a procedural triangle
@@ -152,6 +169,21 @@ public:
         return true;
     }
 
+#if VULKAN_SUPPORTED
+    bool InitVulkan(XCBInfo& xcbInfo)
+    {
+        EngineVkAttribs EngVkAttribs;
+#ifdef _DEBUG
+        EngVkAttribs.EnableValidation = true;
+#endif
+        auto *pFactoryVk = GetEngineFactoryVk();
+        pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext, 0);
+        SwapChainDesc SCDesc;
+        SCDesc.SamplesCount = 1;
+        pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, &xcbInfo, &m_pSwapChain);
+    }
+#endif
+
     void CreateResources()
     {
         // Pipeline state object encompasses configuration of all GPU stages
@@ -169,7 +201,7 @@ public:
         // Set render target format which is the format of the swap chain's color buffer
         PSODesc.GraphicsPipeline.RTVFormats[0] = m_pSwapChain->GetDesc().ColorBufferFormat;
         // This tutorial will not use depth buffer
-        PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_UNKNOWN;
+        PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
         PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         // No back face culling for this tutorial
@@ -245,9 +277,157 @@ private:
     DeviceType m_DeviceType = DeviceType::OpenGL;
 };
 
- using namespace Diligent;
- 
-int main (int argc, char ** argv)
+using namespace Diligent;
+
+
+#if VULKAN_SUPPORTED
+
+XCBInfo InitXCBConnectionAndWindow()
+{
+    XCBInfo info;
+
+    int scr = 0;
+    info.connection = xcb_connect(nullptr, &scr);
+    if (info.connection == nullptr || xcb_connection_has_error(info.connection))
+    {
+        std::cerr << "Unable to make an XCB connection\n";
+        exit(-1);
+    }
+
+    const xcb_setup_t* setup = xcb_get_setup(info.connection);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+    while (scr-- > 0)
+        xcb_screen_next(&iter);
+
+    auto screen = iter.data;
+
+    info.width = 1024;
+    info.height = 768;
+
+    uint32_t value_mask, value_list[32];
+
+    info.window = xcb_generate_id(info.connection);
+
+    value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+    value_list[0] = screen->black_pixel;
+    value_list[1] = XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+
+    xcb_create_window(info.connection, XCB_COPY_FROM_PARENT, info.window, screen->root, 0, 0, info.width, info.height, 0,
+                        XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, value_mask, value_list);
+
+    // Magic code that will send notification when window is destroyed
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(info.connection, 1, 12, "WM_PROTOCOLS");
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(info.connection, cookie, 0);
+
+    xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(info.connection, 0, 16, "WM_DELETE_WINDOW");
+    info.atom_wm_delete_window = xcb_intern_atom_reply(info.connection, cookie2, 0);
+
+    xcb_change_property(info.connection, XCB_PROP_MODE_REPLACE, info.window, (*reply).atom, 4, 32, 1,
+                        &(*info.atom_wm_delete_window).atom);
+    free(reply);
+
+    const char* title = "Tutorial00: Hello Linux (Vulkan)";
+    xcb_change_property(info.connection, XCB_PROP_MODE_REPLACE, info.window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING,
+                        8, strlen(title), title );
+
+    xcb_map_window(info.connection, info.window);
+
+    // Force the x/y coordinates to 100,100 results are identical in consecutive
+    // runs
+    const uint32_t coords[] = {100, 100};
+    xcb_configure_window(info.connection, info.window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, coords);
+    xcb_flush(info.connection);
+
+    xcb_generic_event_t *e;
+    while ((e = xcb_wait_for_event(info.connection)))
+    {
+        if ((e->response_type & ~0x80) == XCB_EXPOSE) break;
+    }
+    return info;
+}
+
+void DestroyXCBConnectionAndWindow(XCBInfo &info)
+{
+    xcb_destroy_window(info.connection, info.window);
+    xcb_disconnect(info.connection);
+}
+
+int xcb_main()
+{
+    std::unique_ptr<Tutorial00App> TheApp(new Tutorial00App);
+
+    auto xcbInfo = InitXCBConnectionAndWindow();
+    TheApp->InitVulkan(xcbInfo);
+    TheApp->CreateResources();
+    xcb_flush(xcbInfo.connection);
+    while (true)
+	{
+		xcb_generic_event_t* event;
+        bool Quit = false;
+		while ((event = xcb_poll_for_event(xcbInfo.connection)) != nullptr)
+		{
+            switch (event->response_type & 0x7f)
+            {
+                case XCB_CLIENT_MESSAGE:
+                    if ((*(xcb_client_message_event_t*)event).data.data32[0] ==
+                        (*xcbInfo.atom_wm_delete_window).atom)
+                    {
+                        Quit = true;
+                    }
+                break;
+
+                case XCB_KEY_RELEASE:
+                {
+                    const auto* keyEvent = reinterpret_cast<const xcb_key_release_event_t*>(event);
+                    switch (keyEvent->detail)
+                    {
+                        #define KEY_ESCAPE 0x9
+                        case KEY_ESCAPE:
+                            Quit = true;
+                            break;
+                    }
+                }
+                break;
+
+                case XCB_DESTROY_NOTIFY:
+                    Quit = true;
+                break;
+
+                case XCB_CONFIGURE_NOTIFY:
+                {
+                    const auto* cfgEvent = reinterpret_cast<const xcb_configure_notify_event_t*>(event);
+                    if ((cfgEvent->width != xcbInfo.width) || (cfgEvent->height != xcbInfo.height))
+                    {
+                        xcbInfo.width  = cfgEvent->width;
+                        xcbInfo.height = cfgEvent->height;
+                        if ((xcbInfo.width > 0) && (xcbInfo.height > 0))
+                        {
+                            TheApp->WindowResize(xcbInfo.width, xcbInfo.height);
+                        }
+                    }
+                }
+                break;
+                                    
+                default:
+                    break;
+            }
+			free(event);
+		}
+
+        if (Quit)
+            break;
+
+        TheApp->Render();
+        TheApp->Present();
+    }
+    TheApp.reset();
+    DestroyXCBConnectionAndWindow(xcbInfo);
+    return 0;
+}
+
+#endif
+
+int x_main()
 {
     std::unique_ptr<Tutorial00App> TheApp(new Tutorial00App);
     Display *display = XOpenDisplay(0);
@@ -348,7 +528,7 @@ int main (int argc, char ** argv)
     glXMakeCurrent(display, win, ctx);
     TheApp->OnGLContextCreated(display, win);
     TheApp->CreateResources();
-    XStoreName(display, win, "Tutorial00: Hello Linux");
+    XStoreName(display, win, "Tutorial00: Hello Linux (OpenGL)");
     while (true) 
     {
         bool EscPressed = false;
@@ -365,7 +545,7 @@ int main (int argc, char ** argv)
                     int num_char = XLookupString((XKeyEvent *)&xev, buffer, _countof(buffer), &keysym, 0);
                     EscPressed = (keysym==XK_Escape);
                 }
-                
+
                 case ConfigureNotify:
                 {
                     XConfigureEvent &xce = reinterpret_cast<XConfigureEvent &>(xev);
@@ -380,7 +560,7 @@ int main (int argc, char ** argv)
             break;
 
         TheApp->Render();
-        
+
         TheApp->Present();
     }
 
@@ -391,4 +571,44 @@ int main (int argc, char ** argv)
     glXDestroyContext(display, ctx);
     XDestroyWindow(display, win);
     XCloseDisplay(display);
+
+    return 0;
+}
+
+int main (int argc, char ** argv)
+{
+    DeviceType DevType = DeviceType::OpenGL;
+
+#ifdef VULKAN_SUPPORTED
+    DevType = DeviceType::Vulkan;
+    if (argc > 1)
+    {
+        const auto* Key = "mode=";
+        const auto* pos = strstr(argv[1], Key);
+        if (pos != nullptr)
+        {
+            pos += strlen(Key);
+            if (strcasecmp(pos, "GL") == 0)
+            {
+                DevType = DeviceType::OpenGL;
+            }
+            else if (strcasecmp(pos, "VK") == 0)
+            {
+                DevType = DeviceType::Vulkan;
+            }
+            else
+            {
+                std::cerr << "Unknown device type. Only the following types are supported: GL, VK";
+                return -1;
+            }
+        }
+    }
+
+    if (DevType == DeviceType::Vulkan)
+    {
+        return xcb_main();
+    }
+#endif
+
+    return x_main();
 }
