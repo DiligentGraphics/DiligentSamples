@@ -31,7 +31,7 @@ elseif(PLATFORM_ANDROID)
         COMPILE_FLAGS "-x c++"
     )
 elseif(PLATFORM_LINUX)
-    list(APPEND SOURCE src/TwEventX11.c)
+    list(APPEND SOURCE src/TwEventX11.c src/TwEventXCB.c src/xcb_keysyms/xcb_keysyms.h src/xcb_keysyms/xcb_keysyms.c)
 endif()
 
 set(PRIVATE_HEADERS 

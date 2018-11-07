@@ -34,6 +34,12 @@ public:
         m_DeviceType = DeviceType::OpenGL;
     }
 
+    ~SampleAppLinux()
+    {
+#if VULKAN_SUPPORTED
+        TwReleaseXCBKeysyms();
+#endif
+    }
     virtual void OnGLContextCreated(Display* display, Window window)override final
     {
         InitializeDiligentEngine(display, reinterpret_cast<void*>(static_cast<size_t>(window)));
@@ -44,6 +50,25 @@ public:
     {
         return TwEventX11(xev);
     }
+
+#if VULKAN_SUPPORTED
+    virtual void InitVulkan(xcb_connection_t* connection, uint32_t window)override final
+    {
+        m_DeviceType = DeviceType::Vulkan;
+        struct XCBInfo
+        {
+            xcb_connection_t* connection;
+            uint32_t window;
+        }xcbInfo = {connection, window};
+        InitializeDiligentEngine(nullptr, &xcbInfo);
+        TwInitXCBKeysms(connection);
+        InitializeSample();
+    }
+    virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
+    {
+        TwEventXCB(event);
+    }
+#endif
 };
 
 NativeAppBase* CreateApplication()

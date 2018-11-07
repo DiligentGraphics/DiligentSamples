@@ -343,6 +343,10 @@ TW_API int      TW_CALL TwEventSFML(const void *sfmlEvent, unsigned char sfmlMaj
 // For X11 event loop
 #if defined(_UNIX)
     TW_API int TW_CDECL_CALL TwEventX11(void *xevent);
+    
+    TW_API int TW_CDECL_CALL TwInitXCBKeysms(void *connection);
+    TW_API int TW_CDECL_CALL TwReleaseXCBKeysyms();
+    TW_API int TW_CDECL_CALL TwEventXCB(void *xcbEvent);
 #endif
 
 // ----------------------------------------------------------------------------
