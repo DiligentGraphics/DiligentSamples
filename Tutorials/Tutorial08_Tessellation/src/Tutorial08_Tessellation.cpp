@@ -92,7 +92,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
         // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
         PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
         // Cull back faces. For some reason, in OpenGL the order is reversed
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = m_pDevice->GetDeviceCaps().DevType == DeviceType::OpenGL ? CULL_MODE_FRONT : CULL_MODE_BACK;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
         // Enable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
