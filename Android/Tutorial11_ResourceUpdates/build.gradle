@@ -1,0 +1,29 @@
+apply plugin: 'com.android.application'
+apply from: "../../../Common/NativeApp/Android/android_common.gradle"
+
+android {
+    defaultConfig {
+        applicationId = 'com.diligentengine.tutorial11_resourceupdates.Tutorial11Application'
+    }
+    buildTypes {
+            release {
+                minifyEnabled = false
+                proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                              'proguard-rules.pro'
+            }
+    }
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../Tutorials/Tutorial11_ResourceUpdates/assets']
+        }
+    }
+}
+
+buildDir '../build/Tutorial11_ResourceUpdates'
+
+dependencies {
+    implementation project(":Common")
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:25.4.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.1'
+}
