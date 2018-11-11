@@ -153,8 +153,5 @@ Please refer to Build and Run Instructions section of the
 
 Initial release
 
-# License
-
-Licensed under the [Apache License, Version 2.0](License.txt)
 
 **Copyright 2015-2018 Egor Yusov**
