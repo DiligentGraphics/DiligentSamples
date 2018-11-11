@@ -110,9 +110,10 @@ Please refer to Build and Run Instructions section of the
 
 # Version History
 
-## Current progress
+## v2.3.a
 
 * Added Tutorial 10 - Streaming
+* Added Tutorial 11 - Resource Updates
 
 ## v2.3
 
