@@ -66,7 +66,8 @@ MainPS:BindResources(ResMapping)
 
 DrawAttrs = DrawAttribs.Create{
 	IsIndexed = true,
-	IndexType = "VT_UINT32"
+	IndexType = "VT_UINT32",
+    Flags = {"DRAW_FLAG_TRANSITION_VERTEX_BUFFERS", "DRAW_FLAG_TRANSITION_INDEX_BUFFER"}
 }
 
 function SetNumIndices(NumIndices)

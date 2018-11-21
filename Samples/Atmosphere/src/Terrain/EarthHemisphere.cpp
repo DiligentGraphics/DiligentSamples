@@ -559,6 +559,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
 
         DrawAttribs DrawAttrs;
         DrawAttrs.NumVertices = 4;
+        DrawAttrs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS | DRAW_FLAG_TRANSITION_INDEX_BUFFER;
         pContext->Draw( DrawAttrs );
     }
 
@@ -813,6 +814,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
             DrawAttrs.IndexType = VT_UINT32;
             DrawAttrs.NumIndices = MeshIt->uiNumIndices;
             DrawAttrs.IsIndexed = true;
+            DrawAttrs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS | DRAW_FLAG_TRANSITION_INDEX_BUFFER;
             pContext->Draw(DrawAttrs);
         }
     }
