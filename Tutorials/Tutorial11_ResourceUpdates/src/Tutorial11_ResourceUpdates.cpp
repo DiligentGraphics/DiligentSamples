@@ -321,6 +321,8 @@ void Tutorial11_ResourceUpdates::DrawCube(const float4x4& WVPMatrix, Diligent::I
     DrawAttrs.IsIndexed = true; // This is indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
+    // Transition vertex and index buffer to required states
+    DrawAttrs.Flags = DRAW_FLAG_TRANSITION_INDEX_BUFFER | DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

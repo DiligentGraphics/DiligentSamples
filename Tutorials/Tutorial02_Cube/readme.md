@@ -238,5 +238,12 @@ DrawAttribs DrawAttrs;
 DrawAttrs.IsIndexed = true; // This is an indexed draw call
 DrawAttrs.IndexType = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
+// Transition vertex and index buffer to required states
+DrawAttrs.Flags = DRAW_FLAG_TRANSITION_INDEX_BUFFER | DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
 m_pImmediateContext->Draw(DrawAttrs);
 ```
+
+The `Flags` member of `DrawAttribs` structure informs the engine how to handle resource
+transitions. We want the engine to transition vertex and index buffer to required states,
+so we use `DRAW_FLAG_TRANSITION_INDEX_BUFFER` and `DRAW_FLAG_TRANSITION_VERTEX_BUFFERS`
+flags.

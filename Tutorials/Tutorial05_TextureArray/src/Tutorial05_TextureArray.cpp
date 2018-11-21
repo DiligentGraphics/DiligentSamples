@@ -399,6 +399,8 @@ void Tutorial05_TextureArray::Render()
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // Specify number of instances
+    // Transition vertex and index buffer to required states
+    DrawAttrs.Flags = DRAW_FLAG_TRANSITION_INDEX_BUFFER | DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

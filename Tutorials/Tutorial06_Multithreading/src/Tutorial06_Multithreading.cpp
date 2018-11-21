@@ -63,6 +63,7 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
 
     m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
 
+    std::vector<StateTransitionDesc> Barriers;
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -113,6 +114,9 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
             // Dynamic buffers can be frequently updated by the CPU
             CreateUniformBuffer(pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
             CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_InstanceConstants);
+            // Explicitly transition the buffers to RESOURCE_STATE_CONSTANT_BUFFER state
+            Barriers.emplace_back(m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+            Barriers.emplace_back(m_InstanceConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
             
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
@@ -238,6 +242,8 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
         pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        // Explicitly transition the buffer to RESOURCE_STATE_VERTEX_BUFFER state
+        Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
     }
 
     {
@@ -261,6 +267,8 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
         pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        // Explicitly transition the buffer to RESOURCE_STATE_INDEX_BUFFER1 state
+        Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
     }
 
     PopulateInstanceData();
@@ -278,8 +286,12 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
         // Get shader resource view from the texture
         m_TextureSRV[tex] = SrcTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        // Transition textures to shader resource state
+        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
     }
-    
+    // Execute all barriers
+    m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
+
     // Set texture SRV in the SRB
     for(int tex=0; tex < NumTextures; ++tex)
     {
@@ -446,7 +458,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     for(size_t inst = StartInst; inst < EndInst; ++inst)
     {
         const auto &CurrInstData = m_InstanceData[inst];
-        // Shader resources have been explicitly transitioned to correct states, so
+        // Shader resources have been explicitly transitioned to required states, so
         // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
         pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
 
@@ -461,6 +473,9 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
             *InstData = transposeMatrix(CurrInstData.Matrix);
         }
         
+        // Since we transitioned vertex and index buffers to correct states, we do not 
+        // use DRAW_FLAG_TRANSITION_INDEX_BUFFER and DRAW_FLAG_TRANSITION_VERTEX_BUFFERS
+        // flags
         pCtx->Draw(DrawAttrs);
     }
 }
@@ -472,10 +487,6 @@ void Tutorial06_Multithreading::Render()
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
-
-    // Transition all shader resource bindings
-    for(size_t i=0; i < _countof(m_SRB); ++i)
-        m_pImmediateContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
 
     if (m_NumWorkerThreads > 0)
     {

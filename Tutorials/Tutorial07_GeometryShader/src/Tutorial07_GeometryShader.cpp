@@ -324,6 +324,8 @@ void Tutorial07_GeometryShader::Render()
     DrawAttrs.IsIndexed = true; // This is indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
+    // Transition vertex and index buffer to required states
+    DrawAttrs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS | DRAW_FLAG_TRANSITION_INDEX_BUFFER;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

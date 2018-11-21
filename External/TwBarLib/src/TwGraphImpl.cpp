@@ -538,6 +538,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         m_pDevImmContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
 
         DrawAttribs DrawAttribs;
+        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
         DrawAttribs.NumVertices = 2;
         m_pDevImmContext->Draw(DrawAttribs);
     }
@@ -612,6 +613,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = 6;
+        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }
@@ -911,6 +913,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = textObj->m_NbBgVerts;
+        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 
@@ -954,6 +957,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = textObj->m_NbTextVerts;
+        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }
@@ -1122,6 +1126,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = 3*_NumTriangles;
+        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }

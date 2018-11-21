@@ -65,6 +65,34 @@ for(int tex=0; tex < NumTextures; ++tex)
 This example illustrates the expect usage of mutable shader resources: the app creates 
 several SRB objects encompassing different resource bindings.
 
+## Explicit state transitoins
+
+This tutorial explicitly transitions all resources to required states using
+`IDeviceContext::TransitionResourceStates()` method. The method takes an array
+of `StateTransitionDesc` structures. The structure defines resource to transition,
+as well old state and new states. Old state can be set to `RESOURCE_STATE_UNKNOWN` in 
+which case the engine will use the internal resource state. For a texture, the structure
+also defines the range of array slices and mip levels to transition.
+For example, transitioning vertex and index buffers to required states can be performed as follows:
+
+```cpp
+StateTransitionDesc Barriers[2];
+Barriers[0].pBuffer = m_CubeVertexBuffer;
+Barriers[0].OldState = RESOURCE_STATE_UNKNOWN; // Use internal buffer state
+Barriers[0].NewState = RESOURCE_STATE_VERTEX_BUFFER;
+Barriers[0].UpdateResourceState = true;
+
+Barriers[1].pBuffer = m_CubeIndexBuffer;
+Barriers[1].OldState = RESOURCE_STATE_UNKNOWN; // Use internal buffer state
+Barriers[1].NewState = RESOURCE_STATE_INDEX_BUFFER;
+Barriers[1].UpdateResourceState = true;
+
+m_pImmediateContext->TransitionResourceStates(2, Barriers);
+```
+
+When resources are explicitly transitioned to correct states, the engine does not need to check
+the states at every draw command which greately reduces the overhead. 
+
 ## Multithreaded Rendering
 
 All rendering commands in Diligent Engine are issued through device contexts.

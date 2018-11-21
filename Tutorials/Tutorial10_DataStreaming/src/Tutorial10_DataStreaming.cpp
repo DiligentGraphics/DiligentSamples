@@ -38,12 +38,12 @@ using namespace Diligent;
 class StreamingBuffer
 {
 public:
-    StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, Uint32 Size, size_t NumContexts) : 
+    StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, Uint32 Size, size_t NumContexts, const Char* Name) : 
         m_BufferSize            (Size),
         m_MapInfo               (NumContexts)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name           = "Data streaming buffer";
+        BuffDesc.Name           = Name;
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.BindFlags      = BindFlags;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
@@ -170,6 +170,7 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
     BlendState[4].RenderTargets[0].SrcBlend = BLEND_FACTOR_INV_SRC_COLOR;
     BlendState[4].RenderTargets[0].DestBlend = BLEND_FACTOR_SRC_COLOR;
 
+    std::vector<StateTransitionDesc> Barriers;
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
@@ -219,7 +220,9 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
             CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_PolygonAttribsCB);
-            
+            // Transition the buffer to RESOURCE_STATE_CONSTANT_BUFFER state
+            Barriers.emplace_back(m_PolygonAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
@@ -312,8 +315,12 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
         }
     }
 
-    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2),     1+NumDeferredCtx));
-    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER,  MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1+NumDeferredCtx));
+    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2),     1+NumDeferredCtx, "Streaming vertex buffer"));
+    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER,  MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1+NumDeferredCtx, "Streaming index buffer"));
+
+    // Transition the buffers to required state
+    Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+    Barriers.emplace_back(m_StreamingIB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
 
     InitializePolygonGeometry();
     InitializePolygons();
@@ -349,8 +356,14 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
         {
             pTexArray->CopyData(m_pImmediateContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
         }
+
+        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
     }
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+    // Transition all textures to shader resource state
+    Barriers.emplace_back(pTexArray, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+    m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 
     // Set texture SRV in the SRB
     for (int tex = 0; tex < NumTextures; ++tex)
@@ -643,6 +656,9 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         if (UseBatch)
             BatchData.Unmap();
 
+        // Note that since we transitioned vertex and index buffers to correct states, we do not 
+        // use DRAW_FLAG_TRANSITION_INDEX_BUFFER and DRAW_FLAG_TRANSITION_VERTEX_BUFFERS
+        // flags
         DrawAttrs.NumIndices = static_cast<Uint32>(PolygonGeo.Inds.size());
         DrawAttrs.NumInstances = EndInst - StartInst;
         pCtx->Draw(DrawAttrs);
@@ -662,11 +678,6 @@ void Tutorial10_DataStreaming::Render()
 
     m_StreamingIB->AllowPersistentMapping(m_bAllowPersistentMap);
     m_StreamingVB->AllowPersistentMapping(m_bAllowPersistentMap);
-
-    // Transition all shader resource bindings
-    for (size_t i = 0; i < _countof(m_SRB); ++i)
-        m_pImmediateContext->TransitionShaderResources(m_pPSO[0][0], m_SRB[i]);
-    m_pImmediateContext->TransitionShaderResources(m_pPSO[1][0], m_BatchSRB);
 
     if (m_NumWorkerThreads > 0)
     {
