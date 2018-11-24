@@ -284,7 +284,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pPrecomputeSingleSctrCS;
         pDevice->CreatePipelineState(PSODesc, &m_pPrecomputeSingleSctrPSO);
-        m_pPrecomputeSingleSctrPSO->CreateShaderResourceBinding(&m_pPrecomputeSingleSctrSRB);
+        m_pPrecomputeSingleSctrPSO->CreateShaderResourceBinding(&m_pPrecomputeSingleSctrSRB, true);
     }
     
     if( !m_pComputeSctrRadianceCS )
@@ -300,7 +300,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         PSODesc.ComputePipeline.pCS = m_pComputeSctrRadianceCS;
         pDevice->CreatePipelineState(PSODesc, &m_pComputeSctrRadiancePSO);
         m_pComputeSctrRadianceSRB.Release();
-        m_pComputeSctrRadiancePSO->CreateShaderResourceBinding(&m_pComputeSctrRadianceSRB);
+        m_pComputeSctrRadiancePSO->CreateShaderResourceBinding(&m_pComputeSctrRadianceSRB, true);
     }
 
     if( !m_pComputeScatteringOrderCS )
@@ -314,7 +314,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pComputeScatteringOrderCS;
         pDevice->CreatePipelineState(PSODesc, &m_pComputeScatteringOrderPSO);
-        m_pComputeScatteringOrderPSO->CreateShaderResourceBinding(&m_pComputeScatteringOrderSRB);
+        m_pComputeScatteringOrderPSO->CreateShaderResourceBinding(&m_pComputeScatteringOrderSRB, true);
     }
 
     if( !m_pInitHighOrderScatteringCS )
@@ -328,7 +328,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pInitHighOrderScatteringCS;
         pDevice->CreatePipelineState(PSODesc, &m_pInitHighOrderScatteringPSO);
-        m_pInitHighOrderScatteringPSO->CreateShaderResourceBinding( &m_pInitHighOrderScatteringSRB );
+        m_pInitHighOrderScatteringPSO->CreateShaderResourceBinding( &m_pInitHighOrderScatteringSRB, true );
     }
 
     if( !m_pUpdateHighOrderScatteringCS )
@@ -342,7 +342,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pUpdateHighOrderScatteringCS;
         pDevice->CreatePipelineState(PSODesc, &m_pUpdateHighOrderScatteringPSO);
-        m_pUpdateHighOrderScatteringPSO->CreateShaderResourceBinding(&m_pUpdateHighOrderScatteringSRB);
+        m_pUpdateHighOrderScatteringPSO->CreateShaderResourceBinding(&m_pUpdateHighOrderScatteringSRB, true);
     }
 
     if( !m_pCombineScatteringOrdersCS )
@@ -356,7 +356,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pCombineScatteringOrdersCS;
         pDevice->CreatePipelineState(PSODesc, &m_pCombineScatteringOrdersPSO);
-        m_pCombineScatteringOrdersPSO->CreateShaderResourceBinding(&m_pCombineScatteringOrdersSRB);
+        m_pCombineScatteringOrdersPSO->CreateShaderResourceBinding(&m_pCombineScatteringOrdersSRB, true);
     }
 
     if( !m_ptex2DSphereRandomSamplingSRV )
@@ -541,6 +541,9 @@ void LightSctrPostProcess :: RenderSliceEndpoints(FrameAttribs &FrameAttribs)
         m_pRenderScript->Run("CreateRenderSliceEndPointsPSO", m_pRendedSliceEndpointsPS );
         // Bind input resources required by the shader
         m_pRendedSliceEndpointsPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+        RefCntAutoPtr<IShaderResourceBinding> RenderSliceEndPointsSRB;
+        m_pRenderScript->GetShaderResourceBindingByName( "RenderSliceEndPointsSRB", &RenderSliceEndPointsSRB );
+        RenderSliceEndPointsSRB->InitializeStaticResources();
     }
 
     m_pRenderScript->Run(FrameAttribs.pDeviceContext, "RenderSliceEndPoints" );
@@ -645,7 +648,7 @@ void LightSctrPostProcess :: RefineSampleLocations(FrameAttribs &FrameAttribs)
     m_pRefineSampleLocationsCS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
     if( !m_pRefineSampleLocationsSRB )
     {
-        m_pRefineSampleLocationsPSO->CreateShaderResourceBinding(&m_pRefineSampleLocationsSRB);
+        m_pRefineSampleLocationsPSO->CreateShaderResourceBinding(&m_pRefineSampleLocationsSRB, true);
         m_pRefineSampleLocationsSRB->BindResources(SHADER_TYPE_COMPUTE, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
     
@@ -757,7 +760,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
         m_pRenderScript->GetPipelineStateByName("ComputeMinMaxShadowMapLevelPSO", &pPSO);
         for(int Parity = 0; Parity < 2; ++Parity)
         {
-            pPSO->CreateShaderResourceBinding(&m_pComputeMinMaxSMLevelSRB[Parity]);
+            pPSO->CreateShaderResourceBinding(&m_pComputeMinMaxSMLevelSRB[Parity], true);
             auto *pVar = m_pComputeMinMaxSMLevelSRB[Parity]->GetVariable(SHADER_TYPE_PIXEL, "g_tex2DMinMaxLightSpaceDepth");
             pVar->Set(m_ptex2DMinMaxShadowMapSRV[Parity]);
             m_pComputeMinMaxSMLevelSRB[Parity]->BindResources(SHADER_TYPE_PIXEL | SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
@@ -1679,6 +1682,9 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
     // Create 2-D texture, shader resource and target view buffers on the device
     
     m_pPrecomputeAmbientSkyLightPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    RefCntAutoPtr<IShaderResourceBinding> PrecomputeAmbientSkyLightSRB;
+    m_pRenderScript->GetShaderResourceBindingByName( "PrecomputeAmbientSkyLightSRB", &PrecomputeAmbientSkyLightSRB );
+    PrecomputeAmbientSkyLightSRB->InitializeStaticResources();
 
     ITextureView *pRTVs[] = {ptex2DAmbientSkyLightRTV};
     pContext->SetRenderTargets(1, pRTVs, nullptr);

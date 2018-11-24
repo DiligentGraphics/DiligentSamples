@@ -370,11 +370,11 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
     {
         // Create one Shader Resource Binding for every texture
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-        m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex]);
+        m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex], true);
         m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
 
-    m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB);
+    m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB, true);
     m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 
     // Create a tweak bar
@@ -586,9 +586,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     for(Uint32 batch = StartBatch; batch < EndBatch; ++batch)
     {
         const Uint32 StartInst = batch * m_BatchSize;
-        const Uint32 EndInst = UseBatch ?
-            std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumPolygons)) :
-            StartInst + 1;
+        const Uint32 EndInst = std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumPolygons));
 
         // Set pipeline state
         auto StateInd = m_Polygons[StartInst].StateInd;

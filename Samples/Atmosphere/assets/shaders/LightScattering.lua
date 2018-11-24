@@ -459,14 +459,10 @@ function CreateScreenSizeQuadPSO(_Name, PixelShader, DSSDesc, BSDesc, RTVFmts, D
 	}
 end
 
-function RenderScreenSizeQuad(PSO, StencilRef, NumQuads, SRB)
+function RenderScreenSizeQuad(PSO, SRB, StencilRef, NumQuads)
 
 	Context.SetPipelineState(PSO)
-	if SRB == nil then
-		Context.CommitShaderResources("COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
-	else
-		Context.CommitShaderResources(SRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
-	end
+    Context.CommitShaderResources(SRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 
 	Context.SetStencilRef(StencilRef)
 
@@ -481,6 +477,7 @@ PrecomputeNetDensityToAtmTopPSO = CreateScreenSizeQuadPSO("PrecomputeNetDensityT
 -- Bind required shader resources
 -- All shader resources are static resources, so we bind them once directly to the shader
 PrecomputeNetDensityToAtmTopPS:BindResources(extResourceMapping, {"BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
+PrecomputeNetDensityToAtmTopSRB = PrecomputeNetDensityToAtmTopPSO:CreateShaderResourceBinding(true)
 
 function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngles)
 	
@@ -507,7 +504,7 @@ function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngle
 
 	Context.SetRenderTargets( tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET") )
 	-- Render quad
-	RenderScreenSizeQuad(PrecomputeNetDensityToAtmTopPSO, 0)
+	RenderScreenSizeQuad(PrecomputeNetDensityToAtmTopPSO, PrecomputeNetDensityToAtmTopSRB, 0)
 
 	-- Force garbage collection to make sure all graphics resources are released
 	collectgarbage()
@@ -549,20 +546,21 @@ end
 function ReconstructCameraSpaceZ(DepthBufferSRV)
     DepthBufferSRV:SetSampler(LinearClampSampler) -- Sampler must be set for Vulkan backend
 	if ReconstructCameraSpaceZSRB == nil then
-		ReconstructCameraSpaceZSRB = ReconstructCameraSpaceZPSO:CreateShaderResourceBinding()
+		ReconstructCameraSpaceZSRB = ReconstructCameraSpaceZPSO:CreateShaderResourceBinding(true)
 		ReconstructCameraSpaceZSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING"})
 	end
 
 	-- Set dynamic variable g_tex2DDepthBuffer
 	ReconstructCameraSpaceZSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DDepthBuffer"):Set(DepthBufferSRV)
 	Context.SetRenderTargets(ptex2DCamSpaceZRTV)
-	RenderScreenSizeQuad(ReconstructCameraSpaceZPSO, 0, 1, ReconstructCameraSpaceZSRB)
+	RenderScreenSizeQuad(ReconstructCameraSpaceZPSO, ReconstructCameraSpaceZSRB, 0)
 end
 
 
 
 function CreateRenderSliceEndPointsPSO(RenderSliceEndPointsPS)
 	RenderSliceEndPointsPSO = CreateScreenSizeQuadPSO("RenderSliceEndPoints", RenderSliceEndPointsPS, DisableDepthDesc, DefaultBlendDesc, SliceEndpointsFmt)	
+    RenderSliceEndPointsSRB = RenderSliceEndPointsPSO:CreateShaderResourceBinding()
 
 	-- Force garbage collection to make sure all graphics resources are released
 	collectgarbage()
@@ -570,7 +568,7 @@ end
 
 function RenderSliceEndPoints()
 	Context.SetRenderTargets(tex2DSliceEndpointsRTV)
-	RenderScreenSizeQuad(RenderSliceEndPointsPSO, 0)
+	RenderScreenSizeQuad(RenderSliceEndPointsPSO, RenderSliceEndPointsSRB, 0)
 end
 
 
@@ -584,7 +582,7 @@ end
 
 function RenderCoordinateTexture()
 	if RenderCoordinateTextureSRB == nil then
-		RenderCoordinateTextureSRB = RenderCoordinateTexturePSO:CreateShaderResourceBinding()
+		RenderCoordinateTextureSRB = RenderCoordinateTexturePSO:CreateShaderResourceBinding(true)
 		RenderCoordinateTextureSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
@@ -596,7 +594,7 @@ function RenderCoordinateTexture()
     -- Depth stencil state is configured to always increment stencil value. If coordinates are outside the screen,
     -- the pixel shader discards the pixel and stencil value is left untouched. All such pixels will be skipped from
     -- further processing
-	RenderScreenSizeQuad(RenderCoordinateTexturePSO, 0, 1, RenderCoordinateTextureSRB)
+	RenderScreenSizeQuad(RenderCoordinateTexturePSO, RenderCoordinateTextureSRB, 0)
 end
 
 
@@ -619,11 +617,11 @@ end
 
 function RenderCoarseUnshadowedInctr()
 	if RenderCoarseUnshadowedInctrSRB == nil then
-		RenderCoarseUnshadowedInctrSRB = RenderCoarseUnshadowedInctrPSO:CreateShaderResourceBinding()
+		RenderCoarseUnshadowedInctrSRB = RenderCoarseUnshadowedInctrPSO:CreateShaderResourceBinding(true)
 		RenderCoarseUnshadowedInctrSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	RenderScreenSizeQuad(RenderCoarseUnshadowedInctrPSO, 1, 1, RenderCoarseUnshadowedInctrSRB)
+	RenderScreenSizeQuad(RenderCoarseUnshadowedInctrPSO, RenderCoarseUnshadowedInctrSRB, 1)
 end
 
 
@@ -638,12 +636,12 @@ end
 
 function MarkRayMarchingSamples()
 	if MarkRayMarchingSamplesSRB == nil then
-		MarkRayMarchingSamplesSRB = MarkRayMarchingSamplesPSO:CreateShaderResourceBinding()
+		MarkRayMarchingSamplesSRB = MarkRayMarchingSamplesPSO:CreateShaderResourceBinding(true)
 		MarkRayMarchingSamplesSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DEpipolarImageDSV)
-	RenderScreenSizeQuad(MarkRayMarchingSamplesPSO, 1, 1, MarkRayMarchingSamplesSRB)
+	RenderScreenSizeQuad(MarkRayMarchingSamplesPSO, MarkRayMarchingSamplesSRB, 1)
 end
 
 
@@ -658,12 +656,12 @@ end
 
 function RenderSliceUVDirAndOrigin()
 	if RenderSliceUVDirAndOriginSRB == nil then
-		RenderSliceUVDirAndOriginSRB = RenderSliceUVDirAndOriginPSO:CreateShaderResourceBinding()
+		RenderSliceUVDirAndOriginSRB = RenderSliceUVDirAndOriginPSO:CreateShaderResourceBinding(true)
 		RenderSliceUVDirAndOriginSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DSliceUVDirAndOriginRTV)
-	RenderScreenSizeQuad(RenderSliceUVDirAndOriginPSO, 0, 1, RenderSliceUVDirAndOriginSRB)
+	RenderScreenSizeQuad(RenderSliceUVDirAndOriginPSO, RenderSliceUVDirAndOriginSRB, 0)
 end
 
 
@@ -677,13 +675,13 @@ end
 
 function InitMinMaxShadowMap(ShadowMapSRV)
 	if InitMinMaxShadowMapSRB == nil then
-		InitMinMaxShadowMapSRB = InitMinMaxShadowMapPSO:CreateShaderResourceBinding()
+		InitMinMaxShadowMapSRB = InitMinMaxShadowMapPSO:CreateShaderResourceBinding(true)
 		InitMinMaxShadowMapSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	-- Set dynamic variable g_tex2DLightSpaceDepthMap
 	InitMinMaxShadowMapSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DLightSpaceDepthMap"):Set(ShadowMapSRV)
-	RenderScreenSizeQuad(InitMinMaxShadowMapPSO, 0, 1, InitMinMaxShadowMapSRB)
+	RenderScreenSizeQuad(InitMinMaxShadowMapPSO, InitMinMaxShadowMapSRB, 0)
 end
 
 
@@ -696,7 +694,7 @@ function CreateComputeMinMaxShadowMapLevelPSO(ComputeMinMaxShadowMapLevelPS, Min
 end
 
 function ComputeMinMaxShadowMapLevel(SRB)
-	RenderScreenSizeQuad(ComputeMinMaxShadowMapLevelPSO, 0, 1, SRB)
+	RenderScreenSizeQuad(ComputeMinMaxShadowMapLevelPSO, SRB, 0)
 end
 
 
@@ -722,7 +720,7 @@ function RayMarch(Use1DMinMaxTree, NumQuads, SrcColorBufferSRV)
 	if RayMarchSRB == nil then RayMarchSRB = {} end
 
 	if RayMarchSRB[Use1DMinMaxTree] == nil then
-		RayMarchSRB[Use1DMinMaxTree] = RayMarchPSO[Use1DMinMaxTree]:CreateShaderResourceBinding()
+		RayMarchSRB[Use1DMinMaxTree] = RayMarchPSO[Use1DMinMaxTree]:CreateShaderResourceBinding(true)
         if Constants.DeviceType == "Vulkan" then
             extResourceMapping["g_tex2DColorBuffer"] = SrcColorBufferSRV
             SrcColorBufferSRV:SetSampler(LinearClampSampler)
@@ -731,7 +729,7 @@ function RayMarch(Use1DMinMaxTree, NumQuads, SrcColorBufferSRV)
 	end
     
     Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV)
-	RenderScreenSizeQuad(RayMarchPSO[Use1DMinMaxTree], 2, NumQuads, RayMarchSRB[Use1DMinMaxTree])
+	RenderScreenSizeQuad(RayMarchPSO[Use1DMinMaxTree], RayMarchSRB[Use1DMinMaxTree], 2, NumQuads)
 end
 
 
@@ -746,12 +744,12 @@ end
 
 function InterpolateIrradiance()
 	if InterpolateIrradianceSRB == nil then
-		InterpolateIrradianceSRB = InterpolateIrradiancePSO:CreateShaderResourceBinding()
+		InterpolateIrradianceSRB = InterpolateIrradiancePSO:CreateShaderResourceBinding(true)
 		InterpolateIrradianceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DEpipolarInscatteringRTV)
-	RenderScreenSizeQuad(InterpolateIrradiancePSO, 0, 1, InterpolateIrradianceSRB)
+	RenderScreenSizeQuad(InterpolateIrradiancePSO, InterpolateIrradianceSRB, 0)
 end
 
 
@@ -765,7 +763,7 @@ end
 
 function UnwarpAndRenderLuminance(SrcColorBufferSRV)
 	if UnwarpAndRenderLuminanceSRB == nil then
-		UnwarpAndRenderLuminanceSRB= UnwarpAndRenderLuminancePSO:CreateShaderResourceBinding()
+		UnwarpAndRenderLuminanceSRB= UnwarpAndRenderLuminancePSO:CreateShaderResourceBinding(true)
 		UnwarpAndRenderLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 	end
 
@@ -773,7 +771,7 @@ function UnwarpAndRenderLuminance(SrcColorBufferSRV)
 	UnwarpAndRenderLuminanceSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DColorBuffer"):Set(SrcColorBufferSRV)
 
 	-- Disable depth testing - we need to render the entire image in low resolution
-	RenderScreenSizeQuad(UnwarpAndRenderLuminancePSO, 0, 1, UnwarpAndRenderLuminanceSRB)
+	RenderScreenSizeQuad(UnwarpAndRenderLuminancePSO, UnwarpAndRenderLuminanceSRB, 0)
 end
 
 
@@ -787,7 +785,7 @@ end
 
 function UnwarpEpipolarScattering(SrcColorBufferSRV)
 	if UnwarpEpipolarScatteringSRB == nil then
-		UnwarpEpipolarScatteringSRB= UnwarpEpipolarScatteringPSO:CreateShaderResourceBinding()
+		UnwarpEpipolarScatteringSRB= UnwarpEpipolarScatteringPSO:CreateShaderResourceBinding(true)
 		UnwarpEpipolarScatteringSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 	end
 
@@ -797,7 +795,7 @@ function UnwarpEpipolarScattering(SrcColorBufferSRV)
 	-- Enable depth testing to write 0.0 to the depth buffer. All pixel that require 
 	-- inscattering correction (if enabled) will be discarded, so that 1.0 will be retained
 	-- This 1.0 will then be used to perform inscattering correction
-	RenderScreenSizeQuad(UnwarpEpipolarScatteringPSO, 0, 1, UnwarpEpipolarScatteringSRB)
+	RenderScreenSizeQuad(UnwarpEpipolarScatteringPSO, UnwarpEpipolarScatteringSRB, 0)
 end
 
 FixInscatteringAtDepthBreaksPSO = {}
@@ -827,14 +825,14 @@ end
 function FixInscatteringAtDepthBreaks(Mode, SrcColorBufferSRV)
 	if FixInscatteringAtDepthBreaksSRB == nil then FixInscatteringAtDepthBreaksSRB = {} end
 	if FixInscatteringAtDepthBreaksSRB[Mode] == nil then
-		FixInscatteringAtDepthBreaksSRB[Mode]= FixInscatteringAtDepthBreaksPSO[Mode]:CreateShaderResourceBinding()
+		FixInscatteringAtDepthBreaksSRB[Mode]= FixInscatteringAtDepthBreaksPSO[Mode]:CreateShaderResourceBinding(true)
 		FixInscatteringAtDepthBreaksSRB[Mode]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 	end
 
 	-- Set dynamic variable g_tex2DColorBuffer
 	FixInscatteringAtDepthBreaksSRB[Mode]:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DColorBuffer"):Set(SrcColorBufferSRV )
 
-	RenderScreenSizeQuad(FixInscatteringAtDepthBreaksPSO[Mode], 0, 1, FixInscatteringAtDepthBreaksSRB[Mode])
+	RenderScreenSizeQuad(FixInscatteringAtDepthBreaksPSO[Mode], FixInscatteringAtDepthBreaksSRB[Mode], 0)
 end
 
 
@@ -849,12 +847,12 @@ end
 
 function UpdateAverageLuminance()
 	if UpdateAverageLuminanceSRB == nil then
-		UpdateAverageLuminanceSRB= UpdateAverageLuminancePSO:CreateShaderResourceBinding()
+		UpdateAverageLuminanceSRB= UpdateAverageLuminancePSO:CreateShaderResourceBinding(true)
 		UpdateAverageLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
 	Context.SetRenderTargets(tex2DAverageLuminanceRTV)
-	RenderScreenSizeQuad(UpdateAverageLuminancePSO, 0, 1, UpdateAverageLuminanceSRB)
+	RenderScreenSizeQuad(UpdateAverageLuminancePSO, UpdateAverageLuminanceSRB, 0)
 end
 
 SampleLocationsDrawAttrs = DrawAttribs.Create{
@@ -890,7 +888,7 @@ end
 
 function RenderSampleLocations(TotalSamples)
 	if RenderSampleLocationsSRB == nil then
-		RenderSampleLocationsSRB= RenderSampleLocationsPSO:CreateShaderResourceBinding()
+		RenderSampleLocationsSRB= RenderSampleLocationsPSO:CreateShaderResourceBinding(true)
 		RenderSampleLocationsSRB:BindResources({"SHADER_TYPE_VERTEX","SHADER_TYPE_PIXEL"}, extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
@@ -903,34 +901,38 @@ end
 SunVS = CreateVertexShader("Sun.fx", "SunVS")
 SunPS = CreatePixelShader("Sun.fx", "SunPS")
 
-RenderSunPSO = PipelineState.Create
-{
-	Name = "Render Sun",
-	GraphicsPipeline = 
-	{
-		RasterizerDesc = 
-		{
-			FillMode = "FILL_MODE_SOLID",
-			CullMode = "CULL_MODE_NONE",
-			FrontCounterClockwise = true
-		},
-		DepthStencilDesc = CmpEqNoWritesDSSDesc,
-		BlendDesc = DefaultBlendDesc,
-		pVS = SunVS,
-		pPS = SunPS,
-		RTVFormats =  OffscreenBackBufferFmt,
-		DSVFormat = MainDepthBufferFmt,
-        PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
-	}
-}
-
-function RenderSun()
-	Context.SetPipelineState(RenderSunPSO)
-
+function CreateRenderSunPSO()
+    RenderSunPSO = PipelineState.Create
+    {
+	    Name = "Render Sun",
+	    GraphicsPipeline = 
+	    {
+		    RasterizerDesc = 
+		    {
+			    FillMode = "FILL_MODE_SOLID",
+			    CullMode = "CULL_MODE_NONE",
+			    FrontCounterClockwise = true
+		    },
+		    DepthStencilDesc = CmpEqNoWritesDSSDesc,
+		    BlendDesc = DefaultBlendDesc,
+		    pVS = SunVS,
+		    pPS = SunPS,
+		    RTVFormats =  OffscreenBackBufferFmt,
+		    DSVFormat = MainDepthBufferFmt,
+            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
+	    }
+    }
 	SunVS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED")
 	SunPS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED")
-	
-	Context.CommitShaderResources("COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+    RenderSunSRB = RenderSunPSO:CreateShaderResourceBinding(true)
+end
+
+function RenderSun()
+    if RenderSunPSO == nil then
+        CreateRenderSunPSO()
+    end
+	Context.SetPipelineState(RenderSunPSO)
+    Context.CommitShaderResources(RenderSunSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 
 	ScreenSizeQuadDrawAttrs.NumInstances = 1
 	Context.Draw(ScreenSizeQuadDrawAttrs)
@@ -938,11 +940,11 @@ end
 
 function CreatePrecomputeAmbientSkyLightPSO(PrecomputeAmbientSkyLightPS)
 	PrecomputeAmbientSkyLightPSO = CreateScreenSizeQuadPSO("PrecomputeAmbientSkyLight", PrecomputeAmbientSkyLightPS, DisableDepthDesc, DefaultBlendDesc, AmbientSkyLightTexFmt)
-
+    PrecomputeAmbientSkyLightSRB = PrecomputeAmbientSkyLightPSO:CreateShaderResourceBinding()
 	-- Force garbage collection to make sure all graphics resources are released
 	collectgarbage()
 end
 
 function PrecomputeAmbientSkyLight()
-	RenderScreenSizeQuad(PrecomputeAmbientSkyLightPSO, 0)
+	RenderScreenSizeQuad(PrecomputeAmbientSkyLightPSO, PrecomputeAmbientSkyLightSRB, 0)
 end

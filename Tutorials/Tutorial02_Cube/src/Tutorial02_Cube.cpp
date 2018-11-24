@@ -125,6 +125,9 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         PSODesc.GraphicsPipeline.pPS = pPS;
 
         pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+        
+        // Create shader resource binding object and bind all static resources in it
+        m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
     }
 
     {
@@ -225,7 +228,7 @@ void Tutorial02_Cube::Render()
     // Commit shader resources
     // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
     // that resources are transitioned to proper states
-    m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(m_pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
     
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is an indexed draw call

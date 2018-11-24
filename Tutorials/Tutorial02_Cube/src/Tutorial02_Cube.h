@@ -39,6 +39,7 @@ public:
 
 private:
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_pSRB;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;

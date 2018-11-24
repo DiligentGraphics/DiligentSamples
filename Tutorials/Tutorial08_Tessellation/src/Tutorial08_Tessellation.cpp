@@ -256,7 +256,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext 
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     for(size_t i=0; i < _countof(m_pPSO); ++i)
     {
-        m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i]);
+        m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i], true);
         // Set texture SRV in the SRB
         m_SRB[i]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_ColorMapSRV);
         m_SRB[i]->GetVariable(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);

@@ -106,7 +106,7 @@ protected:
         NumIDs
     };
     Diligent::RefCntAutoPtr<Diligent::IPipelineState>  m_pPSO[static_cast<int>(PSO_ID::NumIDs)];
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pTextSRB, m_pTextCstColorSRB;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSRB[static_cast<int>(PSO_ID::NumIDs)];
 
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pLineRectVS;
     Diligent::RefCntAutoPtr<Diligent::IShader>     m_pLineRectCstColorVS;

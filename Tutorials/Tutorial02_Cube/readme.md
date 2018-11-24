@@ -206,6 +206,18 @@ pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
 
 Index buffer is initialized in a very similar fashion.
 
+## Creating Shader Resource Binding Object
+
+Since our fragment shader uses shader resources (constant buffer), we need to create
+a shader resource binding object that will manage all requried resource bindings:
+
+```cpp
+m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
+```
+
+The second parameter tells the engine to initialize all static resources bindings
+in the created SRB object.
+
 
 ## Rendering
 
@@ -230,6 +242,13 @@ IBuffer *pBuffs[] = {m_CubeVertexBuffer};
 m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
 m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 ```
+
+Since our shader uses shader resources, we need to commit the SRB object:
+
+```cpp
+m_pImmediateContext->CommitShaderResources(m_pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+```
+
 
 Finally, this time the draw call is an indexed one:
 

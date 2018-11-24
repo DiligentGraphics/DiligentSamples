@@ -297,7 +297,7 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
     {
         // Create one Shader Resource Binding for every texture
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-        m_pPSO->CreateShaderResourceBinding(&m_SRB[tex]);
+        m_pPSO->CreateShaderResourceBinding(&m_SRB[tex], true);
         m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
 

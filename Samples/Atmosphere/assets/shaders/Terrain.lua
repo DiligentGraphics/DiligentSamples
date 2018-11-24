@@ -138,7 +138,7 @@ function SetHemispherePS(in_HemispherePS, RTVFormat)
             PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
-	RenderHemisphereSRB = RenderHemispherePSO:CreateShaderResourceBinding()
+	RenderHemisphereSRB = RenderHemispherePSO:CreateShaderResourceBinding(true)
 	RenderHemisphereSRB:BindResources("SHADER_TYPE_VERTEX", extResourceMapping, "BIND_SHADER_RESOURCES_KEEP_EXISTING")
 
 	RenderHemisphereZOnlyPSO = PipelineState.Create
@@ -161,12 +161,16 @@ function SetHemispherePS(in_HemispherePS, RTVFormat)
 				-- Do not use slope-scaled depth bias because this results in light leaking
 				-- through terrain!			
 			},
-			InputLayout = InputLayoutElements,
+			InputLayout = 
+            {
+			    {InputIndex = 0, BufferSlot = 0, NumComponents = 3, ValueType = "VT_FLOAT32", Stride = (3+2)*4}
+            },
 			pVS = HemisphereZOnlyVS,
 			DSVFormat = "TEX_FORMAT_D32_FLOAT",
             PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
+    RenderHemisphereZOnlySRB = RenderHemisphereZOnlyPSO:CreateShaderResourceBinding(true)
 end
 
 
@@ -210,9 +214,10 @@ function CreateRenderNormalMapShaders()
 
 	RenderNormalMapPSO = PipelineState.Create
 	{
+        Name = "Render Normal Map",
 		GraphicsPipeline = 
 		{
-			DepthStencilDesc = 
+            DepthStencilDesc = 
 			{
 				DepthEnable = false,
 				DepthWriteEnable = false
@@ -229,13 +234,13 @@ function CreateRenderNormalMapShaders()
             PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
 		}
 	}
-	
+	RenderNormalMapSRB = RenderNormalMapPSO:CreateShaderResourceBinding(true)
 end
 
 
 function SetRenderNormalMapShadersAndStates()
 	Context.SetPipelineState(RenderNormalMapPSO)
-	Context.CommitShaderResources("COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(RenderNormalMapSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 end
 
 function RenderHemisphere(PrecomputedNetDensitySRV, AmbientSkylightSRV, ShadowMapSRV)
@@ -250,5 +255,5 @@ end
 
 function RenderHemisphereShadow()
 	Context.SetPipelineState(RenderHemisphereZOnlyPSO)
-	Context.CommitShaderResources("COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(RenderHemisphereZOnlySRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
 end

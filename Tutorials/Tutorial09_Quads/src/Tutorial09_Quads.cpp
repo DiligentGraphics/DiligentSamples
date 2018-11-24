@@ -272,13 +272,13 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     {
         // Create one Shader Resource Binding for every texture
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-        m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex]);
+        m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex], true);
         m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
 
-    m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB);
+    m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB, true);
     m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
-
+    
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
@@ -290,7 +290,7 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     std::stringstream def;
     def << "min=0 max=" << m_MaxThreads;
     TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
-    m_NumWorkerThreads = std::min(4, m_MaxThreads);
+    m_NumWorkerThreads = std::min(7, m_MaxThreads);
 
     if (m_BatchSize > 1)
         CreateInstanceBuffer();
@@ -384,7 +384,7 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNu
         auto SignalledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
         if(SignalledValue < 0)
             return;
-
+        
         // Render current subset using the deferred context
         if(pThis->m_BatchSize > 1)
             pThis->RenderSubset<true>(pDeferredCtx, 1+ThreadNum);
@@ -427,14 +427,13 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context
     pCtx->SetRenderTargets(0, nullptr, nullptr);
-
+    
     if (UseBatch)
     {
         Uint32 offsets[] = { 0 };
         IBuffer *pBuffs[] = { m_BatchDataBuffer };
         pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
     }
-
     DrawAttribs DrawAttrs;
     DrawAttrs.NumIndices = 4;
 
@@ -447,9 +446,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     for(Uint32 batch = StartBatch; batch < EndBatch; ++batch)
     {
         const Uint32 StartInst = batch * m_BatchSize;
-        const Uint32 EndInst = UseBatch ?
-            std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads)) :
-            StartInst + 1;
+        const Uint32 EndInst = std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads));
 
         // Set pipeline state
         auto StateInd = m_Quads[StartInst].StateInd;

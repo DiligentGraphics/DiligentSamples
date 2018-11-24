@@ -309,7 +309,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
 
     // Since we are using mutable variable, we must create shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-    m_pPSO->CreateShaderResourceBinding(&m_SRB);
+    m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
     // Set texture SRV in the SRB
     m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 
