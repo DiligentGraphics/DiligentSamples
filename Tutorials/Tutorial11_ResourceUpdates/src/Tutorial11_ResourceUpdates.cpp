@@ -452,8 +452,8 @@ void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
         Vertices[v].uv  = SrcVert.uv;
         Vertices[v].pos = SrcVert.pos * static_cast<float>(1 + 0.2*sin(m_CurrTime * (1.0 + SrcInd * 0.2)));
     }
-    m_CubeVertexBuffer[BufferIndex]->UpdateData(
-        m_pImmediateContext,                // Device context to use for the operation
+    m_pImmediateContext->UpdateBuffer(
+        m_CubeVertexBuffer[BufferIndex],                // Device context to use for the operation
         FirstVertToUpdate * sizeof(Vertex), // Start offset in bytes
         NumVertsToUpdate  * sizeof(Vertex), // Data size in bytes
         Vertices                            // Data pointer

@@ -508,7 +508,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         vertices[1].m_Pos[2] = 0;
         vertices[1].m_Color = ToR8G8B8A8(_Color1);
         //mappedVertices.Unmap();
-        m_pLineVertexBuffer->UpdateData(m_pDevImmContext, 0, sizeof(vertices), vertices);
+        m_pDevImmContext->UpdateBuffer(m_pLineVertexBuffer, 0, sizeof(vertices), vertices);
 
 
         // Reset shader constants
@@ -586,7 +586,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
             { {x1, y1, 0}, ToR8G8B8A8(_Color11) }
         };
         //mappedVertices.Unmap();
-        m_pRectVertexBuffer->UpdateData(m_pDevImmContext, 0, sizeof(vertices), vertices);
+        m_pDevImmContext->UpdateBuffer(m_pRectVertexBuffer, 0, sizeof(vertices), vertices);
 
         // Reset shader constants
         MapHelper<CConstants> mappedConstBuffer( m_pDevImmContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
@@ -872,12 +872,12 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
     if( textVerts!=NULL )
     {
         //textObj->m_pTextVertexBuffer->Unmap(m_pDevImmContext);
-        textObj->m_pTextVertexBuffer->UpdateData(m_pDevImmContext, 0, (Uint32)m_textVtxBuffer.size() * sizeof(m_textVtxBuffer[0]), textVerts);
+        m_pDevImmContext->UpdateBuffer(textObj->m_pTextVertexBuffer, 0, (Uint32)m_textVtxBuffer.size() * sizeof(m_textVtxBuffer[0]), textVerts);
     }
     if( bgVerts!=NULL )
     {
         //textObj->m_pBgVertexBuffer->Unmap(m_pDevImmContext);
-        textObj->m_pBgVertexBuffer->UpdateData(m_pDevImmContext, 0, (Uint32)m_mappedVertices.size() * sizeof(m_mappedVertices[0]), bgVerts);
+        m_pDevImmContext->UpdateBuffer(textObj->m_pBgVertexBuffer, 0, (Uint32)m_mappedVertices.size() * sizeof(m_mappedVertices[0]), bgVerts);
     }
 }
 
@@ -1083,7 +1083,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
             vertices[i].m_Pos[2] = 0;
             vertices[i].m_Color = ToR8G8B8A8(_Colors[i]);
         }
-        m_pTrianglesVertexBuffer->UpdateData(m_pDevImmContext, 0, 3*_NumTriangles*sizeof(CLineRectVtx), mappedVertices);
+        m_pDevImmContext->UpdateBuffer(m_pTrianglesVertexBuffer, 0, 3*_NumTriangles*sizeof(CLineRectVtx), mappedVertices);
         //mappedVertices.Unmap();
 
         // Reset shader constants

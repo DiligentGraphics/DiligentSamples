@@ -1643,7 +1643,7 @@ void LightSctrPostProcess :: ComputeScatteringCoefficients(IDeviceContext *pDevi
 
     if( pDeviceCtx && m_pcbMediaAttribs )
     {
-        m_pcbMediaAttribs->UpdateData( pDeviceCtx, 0, sizeof( m_MediaParams ), &m_MediaParams );
+        pDeviceCtx->UpdateBuffer(m_pcbMediaAttribs, 0, sizeof( m_MediaParams ), &m_MediaParams );
     }
 }
 
