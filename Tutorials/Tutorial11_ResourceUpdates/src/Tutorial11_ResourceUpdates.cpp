@@ -435,9 +435,9 @@ void Tutorial11_ResourceUpdates::MapTexture(Uint32 TexIndex, bool MapEntireTextu
     }
     Uint32 MipLevel   = 0;
     Uint32 ArraySlice = 0;
-    Texture.Map(m_pImmediateContext, MipLevel, ArraySlice, MAP_WRITE, MAP_FLAG_DISCARD, MapEntireTexture ? nullptr : &MapRegion, MappedSubres);
+    m_pImmediateContext->MapTextureSubresource(&Texture, MipLevel, ArraySlice, MAP_WRITE, MAP_FLAG_DISCARD, MapEntireTexture ? nullptr : &MapRegion, MappedSubres);
     WriteDiamondPattern( (Uint8*)MappedSubres.pData, MapRegion.MaxX-MapRegion.MinX, MapRegion.MaxY-MapRegion.MinY, MappedSubres.Stride);
-    Texture.Unmap(m_pImmediateContext, 0, 0);
+    m_pImmediateContext->UnmapTextureSubresource(&Texture, 0, 0);
 }
 
 void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
