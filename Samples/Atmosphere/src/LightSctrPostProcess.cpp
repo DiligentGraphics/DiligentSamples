@@ -1358,7 +1358,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
             ITextureView *pRTVs[] = { m_ptex2DLowResLuminanceRTV };
             FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr);
             UnwarpEpipolarScattering(FrameAttribs, true);
-            m_ptex2DLowResLuminanceSRV->GenerateMips( FrameAttribs.pDeviceContext );
+            FrameAttribs.pDeviceContext->GenerateMips(m_ptex2DLowResLuminanceSRV);
 
             UpdateAverageLuminance(FrameAttribs);
         }
@@ -1392,7 +1392,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
             FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr);
 
             FixInscatteringAtDepthBreaks(FrameAttribs, m_PostProcessingAttribs.m_uiShadowMapResolution, EFixInscatteringMode::LuminanceOnly);
-            m_ptex2DLowResLuminanceSRV->GenerateMips( FrameAttribs.pDeviceContext );
+            FrameAttribs.pDeviceContext->GenerateMips(m_ptex2DLowResLuminanceSRV);
 
             UpdateAverageLuminance(FrameAttribs);
         }
