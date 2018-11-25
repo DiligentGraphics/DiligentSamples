@@ -354,7 +354,7 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
         // Copy current texture into the texture array
         for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
         {
-            pTexArray->CopyData(m_pImmediateContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
+            m_pImmediateContext->CopyTexture(SrcTex, mip, 0, nullptr, pTexArray, mip, tex, 0, 0, 0);
         }
 
         Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);

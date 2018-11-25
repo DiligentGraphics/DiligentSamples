@@ -834,7 +834,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
             SrcBox.MinY = 0;
             SrcBox.MaxY = iMinMaxTexHeight;
             
-            tex2DMinMaxShadowMap0->CopyData( FrameAttribs.pDeviceContext, tex2DMinMaxShadowMap1, 0, 0, &SrcBox, 0, 0, uiXOffset, 0, 0);
+            FrameAttribs.pDeviceContext->CopyTexture(tex2DMinMaxShadowMap1, 0, 0, &SrcBox, tex2DMinMaxShadowMap0, 0, 0, uiXOffset, 0, 0);
         }
 
         uiPrevXOffset = uiXOffset;
