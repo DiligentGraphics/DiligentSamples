@@ -175,7 +175,7 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
         BuffDesc.Usage = USAGE_DEFAULT;
         BuffDesc.uiSizeInBytes = 2 * sizeof( CLineRectVtx );
         BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-        BuffDesc.CPUAccessFlags = 0;
+        BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
         m_pDev->CreateBuffer( BuffDesc, BufferData(), &m_pLineVertexBuffer );
 
         // Create rect vertex buffer
@@ -711,7 +711,7 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
             BuffDesc.Usage = USAGE_DEFAULT;
             BuffDesc.uiSizeInBytes = textObj->m_TextVertexBufferSize * sizeof(CTextVtx) + 6*256; // add a reserve of 256 characters
             BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-            BuffDesc.CPUAccessFlags = 0;
+            BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
             m_pDev->CreateBuffer(BuffDesc, BufferData(), &textObj->m_pTextVertexBuffer);
         }
 
@@ -740,7 +740,7 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
             BuffDesc.Usage = USAGE_DEFAULT;
             BuffDesc.uiSizeInBytes = textObj->m_BgVertexBufferSize * sizeof(CLineRectVtx) + 6*32; // add a reserve of 32 rects
             BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-            BuffDesc.CPUAccessFlags = 0;
+            BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
             m_pDev->CreateBuffer(BuffDesc, BufferData(), &textObj->m_pBgVertexBuffer);
         }
 
@@ -1052,7 +1052,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
         BufferDesc BuffDesc;
         BuffDesc.Usage = USAGE_DEFAULT;
         BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-        BuffDesc.CPUAccessFlags = 0;
+        BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
         BuffDesc.uiSizeInBytes = 3*_NumTriangles * sizeof(CLineRectVtx);
         try
         {
