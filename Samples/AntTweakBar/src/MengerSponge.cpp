@@ -399,7 +399,7 @@ void MengerSpongeSample::Render()
 {
     // Clear the back buffer 
     m_pImmediateContext->ClearRenderTarget(nullptr, m_BackgroundColor, CLEAR_RENDER_TARGET_TRANSITION_STATE);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
 
     const auto &DeviceCaps = m_pDevice->GetDeviceCaps();
 

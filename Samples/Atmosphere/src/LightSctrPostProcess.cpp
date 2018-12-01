@@ -1366,7 +1366,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 
         // Clear depth to 1.0.
-        FrameAttribs.pDeviceContext->ClearDepthStencil( nullptr, CLEAR_DEPTH_FLAG, 1.f );
+        FrameAttribs.pDeviceContext->ClearDepthStencil( nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f );
         // Transform inscattering irradiance from epipolar coordinates back to rectangular
         // The shader will write 0.0 to the depth buffer, but all pixel that require inscattering
         // correction will be discarded and will keep 1.0

@@ -662,7 +662,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         ShadowMapAttribs.mWorldToShadowMapUVDepthT[iCascade] = transposeMatrix( WorldToShadowMapUVDepthMatr );
         
         m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade], SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
-        m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f );
+        m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f );
 
         // Render terrain to shadow map
         {
@@ -749,7 +749,7 @@ void AtmosphereSample::Render()
         m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
     }
         
-    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
 
     {
         MapHelper<CameraAttribs> CamAttribs( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );

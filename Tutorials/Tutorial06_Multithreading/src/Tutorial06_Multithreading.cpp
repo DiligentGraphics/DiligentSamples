@@ -488,7 +488,7 @@ void Tutorial06_Multithreading::Render()
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, CLEAR_RENDER_TARGET_TRANSITION_STATE);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
 
     if (m_NumWorkerThreads > 0)
     {

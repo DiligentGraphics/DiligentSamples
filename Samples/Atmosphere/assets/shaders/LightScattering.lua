@@ -604,7 +604,7 @@ function RenderCoordinateTexture()
 	-- Clear both render targets with values that can't be correct projection space coordinates and camera space Z:
 	Context.ClearRenderTarget(tex2DCoordinateTextureRTV, -1e+30, -1e+30, -1e+30, -1e+30, "CLEAR_RENDER_TARGET_TRANSITION_STATE")
 	Context.ClearRenderTarget(tex2DEpipolarCamSpaceZRTV, -1e+30, "CLEAR_RENDER_TARGET_TRANSITION_STATE")
-	Context.ClearDepthStencil(tex2DEpipolarImageDSV, 1.0, 0)
+	Context.ClearDepthStencil(tex2DEpipolarImageDSV, "CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG", 1.0, 0)
     -- Depth stencil state is configured to always increment stencil value. If coordinates are outside the screen,
     -- the pixel shader discards the pixel and stencil value is left untouched. All such pixels will be skipped from
     -- further processing
