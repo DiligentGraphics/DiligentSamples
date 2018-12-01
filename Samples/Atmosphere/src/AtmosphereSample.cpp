@@ -661,7 +661,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
         ShadowMapAttribs.mWorldToShadowMapUVDepthT[iCascade] = transposeMatrix( WorldToShadowMapUVDepthMatr );
         
-        m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade] );
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade], SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
         m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f );
 
         // Render terrain to shadow map
@@ -673,7 +673,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         m_EarthHemisphere.Render(m_pImmediateContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
     }
 
-    pContext->SetRenderTargets( 0, nullptr, nullptr );
+    pContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 }
 
 
@@ -728,7 +728,7 @@ void AtmosphereSample::Render()
     // render targets
     auto *pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, m_pImmediateContext);
 
-    m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr );
+    m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     const float Zero[] = {  0.f,  0.f,  0.f, 0.f };
@@ -739,14 +739,14 @@ void AtmosphereSample::Render()
     {
         pRTV = m_pOffscreenColorBuffer->GetDefaultView( TEXTURE_VIEW_RENDER_TARGET );
         pDSV = m_pOffscreenDepthBuffer->GetDefaultView( TEXTURE_VIEW_DEPTH_STENCIL );
-        m_pImmediateContext->SetRenderTargets( 1, &pRTV, pDSV );
+        m_pImmediateContext->SetRenderTargets( 1, &pRTV, pDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
         m_pImmediateContext->ClearRenderTarget(pRTV, Zero);
     }
     else
     {
         pRTV = nullptr;
         pDSV = nullptr;
-        m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr );
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
     }
         
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f);

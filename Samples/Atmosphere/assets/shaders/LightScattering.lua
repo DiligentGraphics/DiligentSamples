@@ -211,6 +211,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 	}
 	-- MaxSamplesInSlice x NumSlices RG32F texture to store screen-space coordinates
 	-- for every epipolar sample
+    TexDesc.Name = "Coordinate Texture"
 	tex2DCoordinateTexture = Texture.Create(TexDesc)
 	tex2DCoordinateTextureSRV = tex2DCoordinateTexture:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
 	tex2DCoordinateTextureRTV = tex2DCoordinateTexture:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET")
@@ -219,6 +220,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 
 	-- NumSlices x 1 RGBA32F texture to store end point coordinates
 	-- for every epipolar slice
+    TexDesc.Name = "Slice Endpoints"
 	TexDesc.Width = NumSlices
 	TexDesc.Height = 1
 	TexDesc.Format = SliceEndpointsFmt
@@ -238,6 +240,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 	-- interpolation source indices. However, NVidia GLES does
 	-- not supported imge load/store operations on this format, 
 	-- so we have to resort to RGBA32U.
+    TexDesc.Name = "Interpolation Source"
 	TexDesc.Format = InterpolationSourceTexFmt
 	TexDesc.BindFlags = {"BIND_UNORDERED_ACCESS", "BIND_SHADER_RESOURCE"}
 	tex2DInterpolationSource = Texture.Create(TexDesc)
@@ -249,6 +252,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 
 	-- MaxSamplesInSlice x NumSlices R32F texture to store camera-space Z coordinate,
 	-- for every epipolar sample
+    TexDesc.Name = "Epipolar Cam Space Z"
 	TexDesc.Format = EpipolarCamSpaceZFmt
 	TexDesc.BindFlags = {"BIND_RENDER_TARGET", "BIND_SHADER_RESOURCE"}
 	tex2DEpipolarCamSpaceZ = Texture.Create(TexDesc)
@@ -261,6 +265,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 	-- for every epipolar sample
 	TexDesc.Format = EpipolarInsctrTexFmt
 	flt16max = 65504
+    TexDesc.Name = "Epipolar Inscattering"
 	TexDesc.ClearValue = {Format = TexDesc.Format, Color = {r=-flt16max, g=-flt16max, b=-flt16max, a=-flt16max}}
 	tex2DEpipolarInscattering = Texture.Create(TexDesc)
 	tex2DEpipolarInscatteringSRV = tex2DEpipolarInscattering:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
@@ -270,6 +275,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 
 	-- MaxSamplesInSlice x NumSlices RGBA16F texture to store initial inscattered light,
 	-- for every epipolar sample
+    TexDesc.Name = "Initial Scattered Light"
 	TexDesc.ClearValue = {Color = {r=0, g=0, b=0, a=0}}
 	tex2DInitialScatteredLight = Texture.Create(TexDesc)
 	tex2DInitialScatteredLightSRV = tex2DInitialScatteredLight:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
@@ -279,6 +285,7 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 
 	-- MaxSamplesInSlice x NumSlices depth stencil texture to mark samples for processing,
 	-- for every epipolar sample
+    TexDesc.Name = "Epipolar Image Depth"
 	TexDesc.Format = EpipolarImageDepthFmt
 	TexDesc.BindFlags = "BIND_DEPTH_STENCIL"
 	TexDesc.ClearValue = {Format = EpipolarImageDepthFmt, DepthStencil = {Depth=1, Stencil=0}}
@@ -304,6 +311,7 @@ end
 
 function CreateExtinctionTexture(NumSlices, MaxSamplesInSlice)
 	local TexDesc = {
+        Name = "Epipolar Extinction",
 		Type = "RESOURCE_DIM_TEX_2D", 
 		Width = MaxSamplesInSlice, Height = NumSlices,
 		Format = EpipolarExtinctionFmt,
@@ -329,6 +337,7 @@ end
 function CreateLowResLuminanceTexture(LowResLuminanceMips)
 	-- Create low-resolution texture to store image luminance
 	local TexDesc = {
+        Name = "Low Res Luminance",
 		Type = "RESOURCE_DIM_TEX_2D", 
 		Width = 2^(LowResLuminanceMips-1), Height = 2^(LowResLuminanceMips-1),
 		Format = LuminanceTexFmt,
@@ -349,12 +358,13 @@ function CreateLowResLuminanceTexture(LowResLuminanceMips)
 	TexDesc.MipLevels = 1
 	TexDesc.MiscFlags = 0
 	TexDesc.ClearValue = {Color = {r=0.1, g=0.1, b=0.1, a=0.1}}
+    TexDesc.Name = "Average Luminance"
 	tex2DAverageLuminance = Texture.Create(TexDesc)
     tex2DAverageLuminanceSRV = tex2DAverageLuminance:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
 	tex2DAverageLuminanceRTV = tex2DAverageLuminance:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET")
     tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	-- Set intial luminance to 1
-	Context.SetRenderTargets(tex2DAverageLuminanceRTV)
+	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	Context.ClearRenderTarget(tex2DAverageLuminanceRTV, 0.1,0.1,0.1,0.1)
 	tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	extResourceMapping["g_tex2DAverageLuminance"] = tex2DAverageLuminanceSRV
@@ -367,6 +377,7 @@ end
 
 function CreateSliceUVDirAndOriginTexture(NumEpipolarSlices, NumCascades)
 	tex2DSliceUVDirAndOrigin = Texture.Create{
+        Name = "Slice UV Dir and Origin",
 		Type = "RESOURCE_DIM_TEX_2D", 
 		Width = NumEpipolarSlices, 
 		Height = NumCascades,
@@ -389,6 +400,7 @@ end
 
 function CreateAmbientSkyLightTexture(AmbientSkyLightTexDim)
 	tex2DAmbientSkyLight = Texture.Create{
+        Name = "Ambient Sky Light",
 		Type = "RESOURCE_DIM_TEX_2D", 
 		Width = AmbientSkyLightTexDim, 
 		Height = 1,
@@ -486,6 +498,7 @@ function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngle
 		-- Do not recreate texture if it already exists as this may
 		-- break static resource bindings.
 		tex2DOccludedNetDensityToAtmTop = Texture.Create{
+            Name = "Occluded Net Density to Atm Top",
 			Type = "RESOURCE_DIM_TEX_2D", 
 			Width = NumPrecomputedHeights, Height = NumPrecomputedAngles,
 			Format = "TEX_FORMAT_RG32_FLOAT",
@@ -502,7 +515,7 @@ function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngle
 		extResourceMapping["g_tex2DOccludedNetDensityToAtmTop"] = tex2DOccludedNetDensityToAtmTopSRV
 	end
 
-	Context.SetRenderTargets( tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET") )
+	Context.SetRenderTargets( tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET"), "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL" )
 	-- Render quad
 	RenderScreenSizeQuad(PrecomputeNetDensityToAtmTopPSO, PrecomputeNetDensityToAtmTopSRB, 0)
 
@@ -515,6 +528,7 @@ end
 
 function WindowResize(BackBufferWidth, BackBufferHeight)
 	ptex2DCamSpaceZ = Texture.Create{
+        Name = "Cam-space Z",
 		Type = "RESOURCE_DIM_TEX_2D", Width = BackBufferWidth, Height = BackBufferHeight,
 		Format = CamSpaceZFmt,
 		MipLevels = 1,
@@ -552,7 +566,7 @@ function ReconstructCameraSpaceZ(DepthBufferSRV)
 
 	-- Set dynamic variable g_tex2DDepthBuffer
 	ReconstructCameraSpaceZSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DDepthBuffer"):Set(DepthBufferSRV)
-	Context.SetRenderTargets(ptex2DCamSpaceZRTV)
+	Context.SetRenderTargets(ptex2DCamSpaceZRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(ReconstructCameraSpaceZPSO, ReconstructCameraSpaceZSRB, 0)
 end
 
@@ -567,7 +581,7 @@ function CreateRenderSliceEndPointsPSO(RenderSliceEndPointsPS)
 end
 
 function RenderSliceEndPoints()
-	Context.SetRenderTargets(tex2DSliceEndpointsRTV)
+	Context.SetRenderTargets(tex2DSliceEndpointsRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(RenderSliceEndPointsPSO, RenderSliceEndPointsSRB, 0)
 end
 
@@ -586,7 +600,7 @@ function RenderCoordinateTexture()
 		RenderCoordinateTextureSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DCoordinateTextureRTV, tex2DEpipolarCamSpaceZRTV, tex2DEpipolarImageDSV)
+	Context.SetRenderTargets(tex2DCoordinateTextureRTV, tex2DEpipolarCamSpaceZRTV, tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	-- Clear both render targets with values that can't be correct projection space coordinates and camera space Z:
 	Context.ClearRenderTarget(tex2DCoordinateTextureRTV, -1e+30, -1e+30, -1e+30, -1e+30)
 	Context.ClearRenderTarget(tex2DEpipolarCamSpaceZRTV, -1e+30)
@@ -640,7 +654,7 @@ function MarkRayMarchingSamples()
 		MarkRayMarchingSamplesSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DEpipolarImageDSV)
+	Context.SetRenderTargets(tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(MarkRayMarchingSamplesPSO, MarkRayMarchingSamplesSRB, 1)
 end
 
@@ -660,7 +674,7 @@ function RenderSliceUVDirAndOrigin()
 		RenderSliceUVDirAndOriginSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DSliceUVDirAndOriginRTV)
+	Context.SetRenderTargets(tex2DSliceUVDirAndOriginRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(RenderSliceUVDirAndOriginPSO, RenderSliceUVDirAndOriginSRB, 0)
 end
 
@@ -701,7 +715,7 @@ end
 
 function ClearInitialScatteredLight()
 	-- On GL, we need to bind render target to pipeline to clear it
-	Context.SetRenderTargets(tex2DInitialScatteredLightRTV)
+	Context.SetRenderTargets(tex2DInitialScatteredLightRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	Context.ClearRenderTarget(tex2DInitialScatteredLightRTV, 0,0,0,0)
 end
 
@@ -728,7 +742,7 @@ function RayMarch(Use1DMinMaxTree, NumQuads, SrcColorBufferSRV)
 		RayMarchSRB[Use1DMinMaxTree]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
     
-    Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV)
+    Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(RayMarchPSO[Use1DMinMaxTree], RayMarchSRB[Use1DMinMaxTree], 2, NumQuads)
 end
 
@@ -748,7 +762,7 @@ function InterpolateIrradiance()
 		InterpolateIrradianceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DEpipolarInscatteringRTV)
+	Context.SetRenderTargets(tex2DEpipolarInscatteringRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(InterpolateIrradiancePSO, InterpolateIrradianceSRB, 0)
 end
 
@@ -851,7 +865,7 @@ function UpdateAverageLuminance()
 		UpdateAverageLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DAverageLuminanceRTV)
+	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	RenderScreenSizeQuad(UpdateAverageLuminancePSO, UpdateAverageLuminanceSRB, 0)
 end
 

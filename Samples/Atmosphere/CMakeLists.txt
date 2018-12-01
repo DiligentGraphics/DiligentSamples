@@ -22,10 +22,11 @@ set(INCLUDE
 set(ATMOSPHERE_SHADERS
     assets/shaders/atmosphere/AtmosphereShadersCommon.fxh
     assets/shaders/atmosphere/CoarseInsctr.fx
+    assets/shaders/atmosphere/ComputeMinMaxShadowMapLevel.fx
+    assets/shaders/atmosphere/InitializeMinMaxShadowMap.fx
     assets/shaders/atmosphere/InterpolateIrradiance.fx
     assets/shaders/atmosphere/LookUpTables.fxh
     assets/shaders/atmosphere/MarkRayMarchingSamples.fx
-    assets/shaders/atmosphere/MinMaxBinTree.fx
     assets/shaders/atmosphere/RayMarch.fx
     assets/shaders/atmosphere/ReconstructCameraSpaceZ.fx
     assets/shaders/atmosphere/RefineSampleLocations.fx
@@ -34,6 +35,7 @@ set(ATMOSPHERE_SHADERS
     assets/shaders/atmosphere/RenderSliceEndPoints.fx
     assets/shaders/atmosphere/ScatteringIntegrals.fxh
     assets/shaders/atmosphere/ScreenSizeQuadVS.fx
+    assets/shaders/atmosphere/SliceUVDirection.fx
     assets/shaders/atmosphere/Sun.fx
     assets/shaders/atmosphere/ToneMapping.fxh
     assets/shaders/atmosphere/UnshadowedScattering.fxh

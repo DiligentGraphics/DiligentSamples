@@ -571,7 +571,8 @@ template<bool UseBatch>
 void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context
-    pCtx->SetRenderTargets(0, nullptr, nullptr);
+    // Render targets are set and transitioned to correct states by the main thread, here we only verify states
+    pCtx->SetRenderTargets(0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_VERIFY_STATES);
 
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true;

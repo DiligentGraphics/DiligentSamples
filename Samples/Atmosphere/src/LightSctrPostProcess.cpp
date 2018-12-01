@@ -600,7 +600,7 @@ void LightSctrPostProcess :: RenderCoarseUnshadowedInctr(FrameAttribs &FrameAttr
     }
 
     ITextureView *pRTVs[] = {m_ptex2DEpipolarInscatteringRTV, m_ptex2DEpipolarExtinctionRTV};
-    FrameAttribs.pDeviceContext->SetRenderTargets(m_PostProcessingAttribs.m_uiExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR ? 2 : 1, pRTVs, m_ptex2DEpipolarImageDSV);
+    FrameAttribs.pDeviceContext->SetRenderTargets(m_PostProcessingAttribs.m_uiExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR ? 2 : 1, pRTVs, m_ptex2DEpipolarImageDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
 
     float flt16max = 65504.f; // Epipolar Inscattering is 16-bit float
     const float InvalidInsctr[] = {-flt16max, -flt16max, -flt16max, -flt16max};
@@ -696,7 +696,7 @@ void LightSctrPostProcess :: RenderSliceUVDirAndOrig(FrameAttribs &FrameAttribs)
             {"cbPostProcessingAttribs", SHADER_VARIABLE_TYPE_STATIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "MinMaxBinTree.fx", "RenderSliceUVDirInShadowMapTexturePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRenderSliceUVDirInSMPS, Vars, _countof(Vars) );
+        CreateShader( FrameAttribs.pDevice, "SliceUVDirection.fx", "RenderSliceUVDirInShadowMapTexturePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRenderSliceUVDirInSMPS, Vars, _countof(Vars) );
         m_pRenderScript->Run( "CreateRenderSliceUVDirAndOriginPSO", m_pRenderSliceUVDirInSMPS );
         m_pRenderSliceUVDirInSMPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
@@ -733,7 +733,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
             {"g_tex2DLightSpaceDepthMap", SHADER_VARIABLE_TYPE_DYNAMIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "MinMaxBinTree.fx", "InitializeMinMaxShadowMapPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pInitializeMinMaxShadowMapPS, Vars, _countof(Vars) );
+        CreateShader( FrameAttribs.pDevice, "InitializeMinMaxShadowMap.fx", "InitializeMinMaxShadowMapPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pInitializeMinMaxShadowMapPS, Vars, _countof(Vars) );
         auto MinMaxTexFmt = m_ptex2DMinMaxShadowMapSRV[0]->GetTexture()->GetDesc().Format;
         m_pRenderScript->Run( "CreateInitMinMaxShadowMapPSO", m_pInitializeMinMaxShadowMapPS, GetTextureFormatAttribs(MinMaxTexFmt).Name );
         m_pInitializeMinMaxShadowMapPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
@@ -746,7 +746,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
         Macros.Finalize();
 
         ShaderVariableDesc VarDesc[] = { {"cbMiscDynamicParams", SHADER_VARIABLE_TYPE_STATIC} };
-        CreateShader( FrameAttribs.pDevice, "MinMaxBinTree.fx", "ComputeMinMaxShadowMapLevelPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pComputeMinMaxSMLevelPS, VarDesc, _countof(VarDesc) );
+        CreateShader( FrameAttribs.pDevice, "ComputeMinMaxShadowMapLevel.fx", "ComputeMinMaxShadowMapLevelPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pComputeMinMaxSMLevelPS, VarDesc, _countof(VarDesc) );
         auto MinMaxTexFmt = m_ptex2DMinMaxShadowMapSRV[0]->GetTexture()->GetDesc().Format;
         m_pRenderScript->Run( "CreateComputeMinMaxShadowMapLevelPSO", m_pComputeMinMaxSMLevelPS, GetTextureFormatAttribs(MinMaxTexFmt).Name );
         m_pComputeMinMaxSMLevelSRB[0].Release();
@@ -793,7 +793,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
     {
         // Use two buffers which are in turn used as the source and destination
         ITextureView *pRTVs[] = {m_ptex2DMinMaxShadowMapRTV[uiParity]};
-        FrameAttribs.pDeviceContext->SetRenderTargets( _countof( pRTVs ), pRTVs, nullptr );
+        FrameAttribs.pDeviceContext->SetRenderTargets( _countof( pRTVs ), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 
         Viewport VP;
         VP.Width = static_cast<float>( m_PostProcessingAttribs.m_uiMinMaxShadowMapResolution / iStep );
@@ -1302,7 +1302,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
 
     {
         ITextureView *pRTVs[] = { FrameAttribs.ptex2DSrcColorBufferRTV };
-        FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, FrameAttribs.ptex2DSrcDepthBufferDSV);
+        FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, FrameAttribs.ptex2DSrcDepthBufferDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
         RenderSun(FrameAttribs);
     }
 
@@ -1356,14 +1356,14 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         {
             // Render scene luminance to low-resolution texture
             ITextureView *pRTVs[] = { m_ptex2DLowResLuminanceRTV };
-            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr);
+            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
             UnwarpEpipolarScattering(FrameAttribs, true);
             FrameAttribs.pDeviceContext->GenerateMips(m_ptex2DLowResLuminanceSRV);
 
             UpdateAverageLuminance(FrameAttribs);
         }
         // Set the main back & depth buffers
-        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr );
+        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 
         // Clear depth to 1.0.
         FrameAttribs.pDeviceContext->ClearDepthStencil( nullptr, CLEAR_DEPTH_FLAG, 1.f );
@@ -1389,7 +1389,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         {
             // Render scene luminance to low-resolution texture
             ITextureView *pRTVs[] = { m_ptex2DLowResLuminanceRTV };
-            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr);
+            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
 
             FixInscatteringAtDepthBreaks(FrameAttribs, m_PostProcessingAttribs.m_uiShadowMapResolution, EFixInscatteringMode::LuminanceOnly);
             FrameAttribs.pDeviceContext->GenerateMips(m_ptex2DLowResLuminanceSRV);
@@ -1398,12 +1398,12 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         }
 
         // Set the main back & depth buffers
-        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr );
+        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 
         FixInscatteringAtDepthBreaks(FrameAttribs, m_PostProcessingAttribs.m_uiShadowMapResolution, EFixInscatteringMode::FullScreenRayMarching);
     }
 
-    FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr );
+    FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
 }
 
 
@@ -1424,6 +1424,9 @@ void LightSctrPostProcess :: CreateMinMaxShadowMap(IRenderDevice* pDevice)
     
     for(int i=0; i < 2; ++i)
     {
+        std::string name = "MinMaxShadowMap";
+        name.push_back('0'+char(i));
+        MinMaxShadowMapTexDesc.Name = name.c_str();
         m_ptex2DMinMaxShadowMapSRV[i].Release();
         m_ptex2DMinMaxShadowMapRTV[i].Release();
         RefCntAutoPtr<ITexture> ptex2DMinMaxShadowMap;
@@ -1687,7 +1690,7 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
     PrecomputeAmbientSkyLightSRB->InitializeStaticResources();
 
     ITextureView *pRTVs[] = {ptex2DAmbientSkyLightRTV};
-    pContext->SetRenderTargets(1, pRTVs, nullptr);
+    pContext->SetRenderTargets(1, pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
 
     m_pRenderScript->Run(pContext, "PrecomputeAmbientSkyLight" );
     m_uiUpToDateResourceFlags |= UpToDateResourceFlags::AmbientSkyLightTex;
