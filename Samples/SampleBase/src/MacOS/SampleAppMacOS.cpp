@@ -44,7 +44,7 @@ public:
     
     virtual void Render()override
     {
-        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
+        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
         // Handle all TwBar events here as the event handlers call draw commands
         // and thus cannot be used in the UI thread
         while(!TwBarEvents.empty())
