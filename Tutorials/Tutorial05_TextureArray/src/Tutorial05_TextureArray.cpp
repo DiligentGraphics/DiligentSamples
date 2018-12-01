@@ -371,7 +371,7 @@ void Tutorial05_TextureArray::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor);
+    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, CLEAR_RENDER_TARGET_TRANSITION_STATE);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f);
 
     {

@@ -732,7 +732,7 @@ void AtmosphereSample::Render()
 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     const float Zero[] = {  0.f,  0.f,  0.f, 0.f };
-    m_pImmediateContext->ClearRenderTarget(nullptr, m_bEnableLightScattering ? Zero : ClearColor);
+    m_pImmediateContext->ClearRenderTarget(nullptr, m_bEnableLightScattering ? Zero : ClearColor, CLEAR_RENDER_TARGET_TRANSITION_STATE);
 
     ITextureView *pRTV = nullptr, *pDSV = nullptr;
     if( m_bEnableLightScattering )
@@ -740,7 +740,7 @@ void AtmosphereSample::Render()
         pRTV = m_pOffscreenColorBuffer->GetDefaultView( TEXTURE_VIEW_RENDER_TARGET );
         pDSV = m_pOffscreenDepthBuffer->GetDefaultView( TEXTURE_VIEW_DEPTH_STENCIL );
         m_pImmediateContext->SetRenderTargets( 1, &pRTV, pDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
-        m_pImmediateContext->ClearRenderTarget(pRTV, Zero);
+        m_pImmediateContext->ClearRenderTarget(pRTV, Zero, CLEAR_RENDER_TARGET_TRANSITION_STATE);
     }
     else
     {
