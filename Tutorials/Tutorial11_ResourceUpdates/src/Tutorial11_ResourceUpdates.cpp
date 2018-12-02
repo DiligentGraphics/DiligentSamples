@@ -409,7 +409,7 @@ void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
         SubresData.pData  = Data.data();
         Uint32 MipLevel   = 0;
         Uint32 ArraySlice = 0;
-        m_pImmediateContext->UpdateTexture(&Texture, MipLevel, ArraySlice, UpdateBox, SubresData);
+        m_pImmediateContext->UpdateTexture(&Texture, MipLevel, ArraySlice, UpdateBox, SubresData, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 }
 
@@ -456,7 +456,8 @@ void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
         m_CubeVertexBuffer[BufferIndex],                // Device context to use for the operation
         FirstVertToUpdate * sizeof(Vertex), // Start offset in bytes
         NumVertsToUpdate  * sizeof(Vertex), // Data size in bytes
-        Vertices                            // Data pointer
+        Vertices,                           // Data pointer
+        RESOURCE_STATE_TRANSITION_MODE_TRANSITION
     );
 }
 
