@@ -365,7 +365,7 @@ function CreateLowResLuminanceTexture(LowResLuminanceMips)
     tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	-- Set intial luminance to 1
 	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
-	Context.ClearRenderTarget(tex2DAverageLuminanceRTV, 0.1,0.1,0.1,0.1, "CLEAR_RENDER_TARGET_TRANSITION_STATE")
+	Context.ClearRenderTarget(tex2DAverageLuminanceRTV, 0.1,0.1,0.1,0.1, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	extResourceMapping["g_tex2DAverageLuminance"] = tex2DAverageLuminanceSRV
 
@@ -602,8 +602,8 @@ function RenderCoordinateTexture()
 
 	Context.SetRenderTargets(tex2DCoordinateTextureRTV, tex2DEpipolarCamSpaceZRTV, tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
 	-- Clear both render targets with values that can't be correct projection space coordinates and camera space Z:
-	Context.ClearRenderTarget(tex2DCoordinateTextureRTV, -1e+30, -1e+30, -1e+30, -1e+30, "CLEAR_RENDER_TARGET_TRANSITION_STATE")
-	Context.ClearRenderTarget(tex2DEpipolarCamSpaceZRTV, -1e+30, "CLEAR_RENDER_TARGET_TRANSITION_STATE")
+	Context.ClearRenderTarget(tex2DCoordinateTextureRTV, -1e+30, -1e+30, -1e+30, -1e+30, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
+	Context.ClearRenderTarget(tex2DEpipolarCamSpaceZRTV, -1e+30, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	Context.ClearDepthStencil(tex2DEpipolarImageDSV, "CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG", 1.0, 0)
     -- Depth stencil state is configured to always increment stencil value. If coordinates are outside the screen,
     -- the pixel shader discards the pixel and stencil value is left untouched. All such pixels will be skipped from
@@ -716,7 +716,7 @@ end
 function ClearInitialScatteredLight()
 	-- On GL, we need to bind render target to pipeline to clear it
 	Context.SetRenderTargets(tex2DInitialScatteredLightRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
-	Context.ClearRenderTarget(tex2DInitialScatteredLightRTV, 0,0,0,0, "CLEAR_RENDER_TARGET_TRANSITION_STATE")
+	Context.ClearRenderTarget(tex2DInitialScatteredLightRTV, 0,0,0,0, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 end
 
 

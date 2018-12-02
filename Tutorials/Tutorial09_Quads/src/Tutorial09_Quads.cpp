@@ -256,7 +256,11 @@ void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         // Copy current texture into the texture array
         for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
         {
-            m_pImmediateContext->CopyTexture(SrcTex, mip, 0, nullptr, pTexArray, mip, tex, 0, 0, 0);
+            CopyTextureAttribs CopyAttribs(SrcTex, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            CopyAttribs.SrcMipLevel = mip;
+            CopyAttribs.DstMipLevel = mip;
+            CopyAttribs.DstSlice = tex;
+            m_pImmediateContext->CopyTexture(CopyAttribs);
         }
         // Transition textures to shader resource state
         Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
@@ -521,7 +525,7 @@ void Tutorial09_Quads::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, CLEAR_RENDER_TARGET_TRANSITION_STATE);
+    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
 
     if (m_NumWorkerThreads > 0)

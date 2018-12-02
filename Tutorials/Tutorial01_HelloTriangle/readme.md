@@ -170,7 +170,7 @@ Before rendering anything on the screen we want to clear it:
 
 ```cpp
 const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, CLEAR_RENDER_TARGET_TRANSITION_STATE);
+m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
 ```
 

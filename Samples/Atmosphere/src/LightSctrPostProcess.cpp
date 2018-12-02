@@ -605,10 +605,10 @@ void LightSctrPostProcess :: RenderCoarseUnshadowedInctr(FrameAttribs &FrameAttr
     float flt16max = 65504.f; // Epipolar Inscattering is 16-bit float
     const float InvalidInsctr[] = {-flt16max, -flt16max, -flt16max, -flt16max};
     if( m_ptex2DEpipolarInscatteringRTV )
-        FrameAttribs.pDeviceContext->ClearRenderTarget(m_ptex2DEpipolarInscatteringRTV, InvalidInsctr, CLEAR_RENDER_TARGET_TRANSITION_STATE);
+        FrameAttribs.pDeviceContext->ClearRenderTarget(m_ptex2DEpipolarInscatteringRTV, InvalidInsctr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     const float One[] = {1, 1, 1, 1};
     if( m_ptex2DEpipolarExtinctionRTV )
-        FrameAttribs.pDeviceContext->ClearRenderTarget(m_ptex2DEpipolarExtinctionRTV, One, CLEAR_RENDER_TARGET_TRANSITION_STATE);
+        FrameAttribs.pDeviceContext->ClearRenderTarget(m_ptex2DEpipolarExtinctionRTV, One, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_pRenderScript->Run(FrameAttribs.pDeviceContext, "RenderCoarseUnshadowedInctr");
 }
@@ -834,7 +834,10 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
             SrcBox.MinY = 0;
             SrcBox.MaxY = iMinMaxTexHeight;
             
-            FrameAttribs.pDeviceContext->CopyTexture(tex2DMinMaxShadowMap1, 0, 0, &SrcBox, tex2DMinMaxShadowMap0, 0, 0, uiXOffset, 0, 0);
+            CopyTextureAttribs CopyAttribs(tex2DMinMaxShadowMap1, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, tex2DMinMaxShadowMap0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            CopyAttribs.pSrcBox = &SrcBox;
+            CopyAttribs.DstX = uiXOffset;
+            FrameAttribs.pDeviceContext->CopyTexture(CopyAttribs);
         }
 
         uiPrevXOffset = uiXOffset;
