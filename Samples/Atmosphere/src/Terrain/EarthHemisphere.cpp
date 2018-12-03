@@ -559,7 +559,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
 
         DrawAttribs DrawAttrs;
         DrawAttrs.NumVertices = 4;
-        DrawAttrs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS | DRAW_FLAG_TRANSITION_INDEX_BUFFER;
+        DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
         pContext->Draw( DrawAttrs );
     }
 
@@ -795,7 +795,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
 
     Uint32 offset[1] = { 0 };
     IBuffer* ppBuffers[1] = { m_pVertBuff };
-    pContext->SetVertexBuffers( 0, 1, ppBuffers, offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pContext->SetVertexBuffers( 0, 1, ppBuffers, offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
     if( bZOnlyPass )
         m_pTerrainScript->Run( pContext, "RenderHemisphereShadow" );
@@ -809,12 +809,12 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
     {
         if(GetBoxVisibility<false>(ViewFrustum, MeshIt->BndBox) != BoxVisibility::Invisible)
         {
-            pContext->SetIndexBuffer(MeshIt->pIndBuff, 0);
+            pContext->SetIndexBuffer(MeshIt->pIndBuff, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             DrawAttribs DrawAttrs;
             DrawAttrs.IndexType = VT_UINT32;
             DrawAttrs.NumIndices = MeshIt->uiNumIndices;
             DrawAttrs.IsIndexed = true;
-            DrawAttrs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS | DRAW_FLAG_TRANSITION_INDEX_BUFFER;
+            DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
             pContext->Draw(DrawAttrs);
         }
     }

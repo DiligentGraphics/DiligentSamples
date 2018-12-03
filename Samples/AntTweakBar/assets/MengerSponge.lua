@@ -67,7 +67,7 @@ SRB = PSO:CreateShaderResourceBinding(true)
 DrawAttrs = DrawAttribs.Create{
 	IsIndexed = true,
 	IndexType = "VT_UINT32",
-    Flags = {"DRAW_FLAG_TRANSITION_VERTEX_BUFFERS", "DRAW_FLAG_TRANSITION_INDEX_BUFFER"}
+    Flags = "DRAW_FLAG_VERIFY_STATES"
 }
 
 function SetNumIndices(NumIndices)
@@ -78,8 +78,8 @@ function Draw()
 	Context.SetPipelineState(PSO)
 	SRB:BindResources({"SHADER_TYPE_VERTEX", "SHADER_TYPE_PIXEL"}, ResMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	Context.CommitShaderResources(SRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
-	Context.SetVertexBuffers(extSpongeVB, "SET_VERTEX_BUFFERS_FLAG_RESET")
-	Context.SetIndexBuffer(extSpongeIB)
+	Context.SetVertexBuffers(extSpongeVB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION", "SET_VERTEX_BUFFERS_FLAG_RESET")
+	Context.SetIndexBuffer(extSpongeIB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	
 	Context.Draw(DrawAttrs)
 end

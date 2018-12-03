@@ -234,13 +234,15 @@ that facilitates buffer mapping:
 }
 ```
 
-Second, we need to bind vertex and index buffer to the GPU pipeline:
+Second, we need to bind vertex and index buffer to the GPU pipeline.
+We use `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` to let the engine automatically
+transition the buffers to required states.
 
 ```cpp
 Uint32 offset = 0;
 IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
-m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
 Since our shader uses shader resources, we need to commit the SRB object:
@@ -257,12 +259,10 @@ DrawAttribs DrawAttrs;
 DrawAttrs.IsIndexed = true; // This is an indexed draw call
 DrawAttrs.IndexType = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
-// Transition vertex and index buffer to required states
-DrawAttrs.Flags = DRAW_FLAG_TRANSITION_INDEX_BUFFER | DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+// Verify the state of vertex and index buffers
+DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
 m_pImmediateContext->Draw(DrawAttrs);
 ```
 
-The `Flags` member of `DrawAttribs` structure informs the engine how to handle resource
-transitions. We want the engine to transition vertex and index buffer to required states,
-so we use `DRAW_FLAG_TRANSITION_INDEX_BUFFER` and `DRAW_FLAG_TRANSITION_VERTEX_BUFFERS`
-flags.
+We want the engine to verify that the states of vertex and index buffers are correct,
+so we use `DRAW_FLAG_VERIFY_STATES` flag.

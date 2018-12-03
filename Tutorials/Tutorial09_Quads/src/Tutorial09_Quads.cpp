@@ -437,7 +437,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     {
         Uint32 offsets[] = { 0 };
         IBuffer *pBuffs[] = { m_BatchDataBuffer };
-        pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+        pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     }
     DrawAttribs DrawAttrs;
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
@@ -515,9 +515,6 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         if (UseBatch)
             BatchData.Unmap();
 
-        // Note that since we transitioned vertex and index buffers to correct states, we do not 
-        // use DRAW_FLAG_TRANSITION_INDEX_BUFFER and DRAW_FLAG_TRANSITION_VERTEX_BUFFERS
-        // flags
         DrawAttrs.NumInstances = EndInst - StartInst;
         pCtx->Draw(DrawAttrs);
     }

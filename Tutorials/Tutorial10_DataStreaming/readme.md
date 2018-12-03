@@ -110,8 +110,8 @@ After the data has been written, the last thing to do is to bind the buffers at 
 ```cpp
 Uint32 offsets[] = { VBOffset };
 IBuffer *pBuffs[] = { m_StreamingVB->GetBuffer() };
-pCtx->SetVertexBuffers(0, 1, pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
-pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), IBOffsets);
+pCtx->SetVertexBuffers(0, 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), IBOffsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 ```
 
 

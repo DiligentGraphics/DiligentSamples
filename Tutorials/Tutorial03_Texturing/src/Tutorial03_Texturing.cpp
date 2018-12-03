@@ -266,8 +266,8 @@ void Tutorial03_Texturing::Render()
     // Bind vertex buffer
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
@@ -280,8 +280,8 @@ void Tutorial03_Texturing::Render()
     DrawAttrs.IsIndexed = true; // This is indexed draw call
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
-    // Transition vertex and index buffer to required states
-    DrawAttrs.Flags = DRAW_FLAG_TRANSITION_INDEX_BUFFER | DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+    // Verify the state of vertex and index buffers
+    DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

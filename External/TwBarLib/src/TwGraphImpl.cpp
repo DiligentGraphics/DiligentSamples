@@ -530,7 +530,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         // Set vertex buffer
         Uint32 offset = 0;
         IBuffer *pBuffs[] = {m_pLineVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, pBuffs, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the line
         auto PsoId = static_cast<int>(_AntiAliased ? PSO_ID::LineAA : PSO_ID::Line);
@@ -542,7 +542,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         DrawAttribs DrawAttribs;
-        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
         DrawAttribs.NumVertices = 2;
         m_pDevImmContext->Draw(DrawAttribs);
     }
@@ -607,7 +607,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         // Set vertex buffer
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = {m_pRectVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the rect
         IPipelineState* pPSO = m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)];
@@ -618,7 +618,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = 6;
-        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }
@@ -910,7 +910,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         // Set vertex buffer
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = {textObj->m_pBgVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the bg rectangles
         
@@ -924,7 +924,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = textObj->m_NbBgVerts;
-        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 
@@ -947,7 +947,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         // Set vertex buffer
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = { textObj->m_pTextVertexBuffer };
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         // Render the text
         int PsoId = static_cast<int>((Color!=0 || !textObj->m_LineColors) ? PSO_ID::TextCstColor : PSO_ID::Text);
@@ -959,7 +959,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = textObj->m_NbTextVerts;
-        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }
@@ -1106,7 +1106,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
         // Set vertex buffer
         Uint32 offset = 0;
         IBuffer *ppBuffers[] = {m_pTrianglesVertexBuffer};
-        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, SET_VERTEX_BUFFERS_FLAG_RESET);
+        m_pDevImmContext->SetVertexBuffers(0, 1, ppBuffers, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         int PsoId = 0;
         if( _CullMode==CULL_CW )
@@ -1125,7 +1125,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
 
         DrawAttribs DrawAttribs;
         DrawAttribs.NumVertices = 3*_NumTriangles;
-        DrawAttribs.Flags = DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
         m_pDevImmContext->Draw(DrawAttribs);
     }
 }

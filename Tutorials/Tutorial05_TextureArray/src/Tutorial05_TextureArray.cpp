@@ -388,8 +388,8 @@ void Tutorial05_TextureArray::Render()
     // Bind vertex & instance buffers
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
@@ -403,8 +403,8 @@ void Tutorial05_TextureArray::Render()
     DrawAttrs.IndexType = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // Specify number of instances
-    // Transition vertex and index buffer to required states
-    DrawAttrs.Flags = DRAW_FLAG_TRANSITION_INDEX_BUFFER | DRAW_FLAG_TRANSITION_VERTEX_BUFFERS;
+    // Verify the state of vertex and index buffers
+    DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

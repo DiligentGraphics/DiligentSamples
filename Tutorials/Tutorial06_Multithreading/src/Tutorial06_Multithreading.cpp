@@ -441,8 +441,8 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     // Bind vertex & instance buffers. This must be done for every context
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
-    pCtx->SetIndexBuffer(m_CubeIndexBuffer, 0);
+    pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pCtx->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is an indexed draw call
@@ -478,9 +478,6 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
             *InstData = transposeMatrix(CurrInstData.Matrix);
         }
         
-        // Since we transitioned vertex and index buffers to correct states, we do not 
-        // use DRAW_FLAG_TRANSITION_INDEX_BUFFER and DRAW_FLAG_TRANSITION_VERTEX_BUFFERS
-        // flags
         pCtx->Draw(DrawAttrs);
     }
 }

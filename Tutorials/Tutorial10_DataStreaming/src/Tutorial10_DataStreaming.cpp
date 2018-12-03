@@ -602,9 +602,9 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         auto Offsets = WritePolygon(PolygonGeo, pCtx, Subset);
         Uint32 offsets[] = { Offsets.first, 0 };
         IBuffer *pBuffs[] = { m_StreamingVB->GetBuffer(), m_BatchDataBuffer };
-        pCtx->SetVertexBuffers(0, UseBatch ? 2 : 1, pBuffs, offsets, SET_VERTEX_BUFFERS_FLAG_RESET);
+        pCtx->SetVertexBuffers(0, UseBatch ? 2 : 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
-        pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), Offsets.second);
+        pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), Offsets.second, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
         MapHelper<InstanceData> BatchData;
         if (UseBatch)
@@ -663,9 +663,6 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         if (UseBatch)
             BatchData.Unmap();
 
-        // Note that since we transitioned vertex and index buffers to correct states, we do not 
-        // use DRAW_FLAG_TRANSITION_INDEX_BUFFER and DRAW_FLAG_TRANSITION_VERTEX_BUFFERS
-        // flags
         DrawAttrs.NumIndices = static_cast<Uint32>(PolygonGeo.Inds.size());
         DrawAttrs.NumInstances = EndInst - StartInst;
         pCtx->Draw(DrawAttrs);
