@@ -187,7 +187,7 @@ object that encompasses resources to be committed:
 
 ```cpp
 m_pImmediateContext->SetPipelineState(m_pPSO);
-m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
 Using shader resource binding object allows to efficiently commit all resources required by all shaders

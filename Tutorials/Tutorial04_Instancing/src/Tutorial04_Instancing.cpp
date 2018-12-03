@@ -350,9 +350,9 @@ void Tutorial04_Instancing::Render()
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. Pass pointer to the shader resource binding object
-    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
+    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION makes sure
     // that resources are transitioned to proper states
-    m_pImmediateContext->CommitShaderResources(m_SRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is indexed draw call

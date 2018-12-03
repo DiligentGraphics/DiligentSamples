@@ -246,7 +246,7 @@ m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 Since our shader uses shader resources, we need to commit the SRB object:
 
 ```cpp
-m_pImmediateContext->CommitShaderResources(m_pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
 

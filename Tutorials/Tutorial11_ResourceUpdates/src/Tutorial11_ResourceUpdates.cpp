@@ -307,9 +307,9 @@ void Tutorial11_ResourceUpdates::DrawCube(const float4x4& WVPMatrix, Diligent::I
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0);
 
     // Commit shader resources. Pass pointer to shader resource binding object
-    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
+    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION makes sure
     // that resources are transitioned to proper states
-    m_pImmediateContext->CommitShaderResources(pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {
         // Map the buffer and write current world-view-projection matrix

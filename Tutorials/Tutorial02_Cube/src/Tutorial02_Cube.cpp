@@ -226,9 +226,9 @@ void Tutorial02_Cube::Render()
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources
-    // COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needs to be specified to make sure
+    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode makes sure
     // that resources are transitioned to proper states
-    m_pImmediateContext->CommitShaderResources(m_pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true; // This is an indexed draw call

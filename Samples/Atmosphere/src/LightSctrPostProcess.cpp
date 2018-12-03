@@ -408,7 +408,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
                                           PrecomputedSctrTexDesc.Height/ThreadGroupSize,
                                           PrecomputedSctrTexDesc.Depth);
     pContext->SetPipelineState(m_pPrecomputeSingleSctrPSO);
-    pContext->CommitShaderResources(m_pPrecomputeSingleSctrSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    pContext->CommitShaderResources(m_pPrecomputeSingleSctrSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     pContext->DispatchCompute(DispatchAttrs);
 
 
@@ -437,7 +437,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         // Step 1: compute differential in-scattering
         m_pComputeSctrRadianceSRB->GetVariable( SHADER_TYPE_COMPUTE, "g_tex3DPreviousSctrOrder" )->Set( (iSctrOrder == 1) ? m_ptex3DSingleScatteringSRV : ptex3DInsctrOrderSRV );
         pContext->SetPipelineState(m_pComputeSctrRadiancePSO);
-        pContext->CommitShaderResources(m_pComputeSctrRadianceSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+        pContext->CommitShaderResources(m_pComputeSctrRadianceSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         pContext->DispatchCompute(DispatchAttrs);
 
         // It seemse like on Intel GPU, the driver accumulates work into big batch. 
@@ -449,7 +449,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         // Step 2: integrate differential in-scattering
         m_pComputeScatteringOrderSRB->GetVariable( SHADER_TYPE_COMPUTE, "g_tex3DPointwiseSctrRadiance" )->Set( ptex3DSctrRadianceSRV );
         pContext->SetPipelineState(m_pComputeScatteringOrderPSO);
-        pContext->CommitShaderResources(m_pComputeScatteringOrderSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+        pContext->CommitShaderResources(m_pComputeScatteringOrderSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         pContext->DispatchCompute(DispatchAttrs);
 
         IPipelineState *pPSO = nullptr;
@@ -473,7 +473,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         pSRB->GetVariable( SHADER_TYPE_COMPUTE, "g_rwtex3DHighOrderSctr" )->Set( m_ptex3DHighOrderSctr->GetDefaultView( TEXTURE_VIEW_UNORDERED_ACCESS ) );
         pSRB->GetVariable( SHADER_TYPE_COMPUTE, "g_tex3DCurrentOrderScattering" )->Set( ptex3DInsctrOrderSRV );
         pContext->SetPipelineState(pPSO);
-        pContext->CommitShaderResources(pSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+        pContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         pContext->DispatchCompute(DispatchAttrs);
         
         // Flush the command buffer to force execution of compute shaders and avoid device
@@ -489,7 +489,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
     m_pCombineScatteringOrdersSRB->BindResources( SHADER_TYPE_COMPUTE, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
     // Combine single scattering and higher order scattering into single texture
     pContext->SetPipelineState(m_pCombineScatteringOrdersPSO);
-    pContext->CommitShaderResources(m_pCombineScatteringOrdersSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    pContext->CommitShaderResources(m_pCombineScatteringOrdersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     pContext->DispatchCompute(DispatchAttrs);
 
     m_pResMapping->RemoveResourceByName( "g_rwtex3DMultipleSctr" );
@@ -656,7 +656,7 @@ void LightSctrPostProcess :: RefineSampleLocations(FrameAttribs &FrameAttribs)
                                            m_PostProcessingAttribs.m_uiNumEpipolarSlices,
                                            1);
     FrameAttribs.pDeviceContext->SetPipelineState(m_pRefineSampleLocationsPSO);
-    FrameAttribs.pDeviceContext->CommitShaderResources(m_pRefineSampleLocationsSRB, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+    FrameAttribs.pDeviceContext->CommitShaderResources(m_pRefineSampleLocationsSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     FrameAttribs.pDeviceContext->DispatchCompute(DispatchAttrs);
 }
 

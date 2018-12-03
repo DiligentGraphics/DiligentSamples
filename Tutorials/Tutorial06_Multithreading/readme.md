@@ -202,7 +202,7 @@ SET_RENDER_TARGETS_FLAG_VERIFY_STATES flag to double-check the states are correc
 2. The rendering procedure iterates through all the instances in the allotted subset, and for every instance
 does the following:
 
-* Commits SRB object corresponding to the texture index, no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES
+* Commits SRB object corresponding to the texture index, no RESOURCE_STATE_TRANSITION_MODE_TRANSITION
   is specified since we already transitioned all resources to correct states.
 
 * Updates the constant buffer with the transformation matrix for this instance
@@ -222,11 +222,11 @@ for(size_t inst = StartInst; inst < EndInst; ++inst)
 {
     const auto &CurrInstData = m_InstanceData[inst];
     // Shader resources have been explicitly transitioned to correct states, so
-    // no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed.
-    // Instead, we provide COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES flag to
-    // verify that all resources are in correct states. This flag only has effect
+    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
+    // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
+    // verify that all resources are in correct states. This mode only has effect
     // in debug and development builds
-    pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
+    pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     {
         MapHelper<float4x4> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);

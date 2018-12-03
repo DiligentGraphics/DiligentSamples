@@ -474,7 +474,7 @@ end
 function RenderScreenSizeQuad(PSO, SRB, StencilRef, NumQuads)
 
 	Context.SetPipelineState(PSO)
-    Context.CommitShaderResources(SRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+    Context.CommitShaderResources(SRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 
 	Context.SetStencilRef(StencilRef)
 
@@ -907,7 +907,7 @@ function RenderSampleLocations(TotalSamples)
 	end
 
 	Context.SetPipelineState(RenderSampleLocationsPSO)
-	Context.CommitShaderResources(RenderSampleLocationsSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(RenderSampleLocationsSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	SampleLocationsDrawAttrs.NumInstances = TotalSamples
 	Context.Draw(SampleLocationsDrawAttrs)
 end
@@ -946,7 +946,7 @@ function RenderSun()
         CreateRenderSunPSO()
     end
 	Context.SetPipelineState(RenderSunPSO)
-    Context.CommitShaderResources(RenderSunSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+    Context.CommitShaderResources(RenderSunSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 
 	ScreenSizeQuadDrawAttrs.NumInstances = 1
 	Context.Draw(ScreenSizeQuadDrawAttrs)

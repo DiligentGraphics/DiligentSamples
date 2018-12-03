@@ -77,7 +77,7 @@ end
 function Draw()
 	Context.SetPipelineState(PSO)
 	SRB:BindResources({"SHADER_TYPE_VERTEX", "SHADER_TYPE_PIXEL"}, ResMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
-	Context.CommitShaderResources(SRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(SRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	Context.SetVertexBuffers(extSpongeVB, "SET_VERTEX_BUFFERS_FLAG_RESET")
 	Context.SetIndexBuffer(extSpongeIB)
 	

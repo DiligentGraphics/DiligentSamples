@@ -165,8 +165,11 @@ This avoids checking the states inside every draw command:
 
 ```cpp
 // Shader resources have been explicitly transitioned to correct states, so
-// no COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES flag needed
-pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], COMMIT_SHADER_RESOURCES_FLAG_VERIFY_STATES);
+// RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
+// Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
+// verify that all resources are in correct states. This mode only has effect
+// in debug and development builds
+pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 ```
 
 Every thread uses its own rendering context to avoid contention.

@@ -187,11 +187,11 @@ m_pImmediateContext->SetPipelineState(m_pPSO);
 Next step is very important: we need to commit all shader resources:
 
 ```cpp
-m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+m_pImmediateContext->CommitShaderResources(nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
 The first argument of `CommitShaderResources()` is the shader resource binding object. We do not have
-one in this tutorial. The `COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES` tells the system that resources
+one in this tutorial. The `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` tells the system that resources
 need to be transitioned to correct states. Transitioning resources introduces some overhead and can be
 avoided when it is known that resources are already in correct states.
 

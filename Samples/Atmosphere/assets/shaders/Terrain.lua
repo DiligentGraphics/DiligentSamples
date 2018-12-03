@@ -240,7 +240,7 @@ end
 
 function SetRenderNormalMapShadersAndStates()
 	Context.SetPipelineState(RenderNormalMapPSO)
-	Context.CommitShaderResources(RenderNormalMapSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(RenderNormalMapSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 end
 
 function RenderHemisphere(PrecomputedNetDensitySRV, AmbientSkylightSRV, ShadowMapSRV)
@@ -250,10 +250,10 @@ function RenderHemisphere(PrecomputedNetDensitySRV, AmbientSkylightSRV, ShadowMa
 	RenderHemisphereSRB:GetVariable("SHADER_TYPE_VERTEX", "g_tex2DAmbientSkylight"):Set(AmbientSkylightSRV)
 	RenderHemisphereSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DShadowMap"):Set(ShadowMapSRV)
 	
-	Context.CommitShaderResources(RenderHemisphereSRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(RenderHemisphereSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 end
 
 function RenderHemisphereShadow()
 	Context.SetPipelineState(RenderHemisphereZOnlyPSO)
-	Context.CommitShaderResources(RenderHemisphereZOnlySRB, "COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES")
+	Context.CommitShaderResources(RenderHemisphereZOnlySRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 end
