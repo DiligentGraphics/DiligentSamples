@@ -251,7 +251,7 @@ public:
         m_pImmediateContext->SetPipelineState(m_pPSO);
         // We need to commit shader resource. Even though in this example
         // we don't really have any resources, this call also sets the shaders
-        m_pImmediateContext->CommitShaderResources(nullptr, COMMIT_SHADER_RESOURCES_FLAG_TRANSITION_RESOURCES);
+        m_pImmediateContext->CommitShaderResources(nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         DrawAttribs drawAttrs;
         drawAttrs.NumVertices = 3; // We will render 3 vertices
         m_pImmediateContext->Draw(drawAttrs);
