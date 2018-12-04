@@ -364,7 +364,7 @@ function CreateLowResLuminanceTexture(LowResLuminanceMips)
 	tex2DAverageLuminanceRTV = tex2DAverageLuminance:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET")
     tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	-- Set intial luminance to 1
-	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	Context.ClearRenderTarget(tex2DAverageLuminanceRTV, 0.1,0.1,0.1,0.1, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	tex2DAverageLuminanceSRV:SetSampler(LinearClampSampler)
 	extResourceMapping["g_tex2DAverageLuminance"] = tex2DAverageLuminanceSRV
@@ -515,7 +515,7 @@ function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngle
 		extResourceMapping["g_tex2DOccludedNetDensityToAtmTop"] = tex2DOccludedNetDensityToAtmTopSRV
 	end
 
-	Context.SetRenderTargets( tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET"), "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL" )
+	Context.SetRenderTargets( tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET"), "RESOURCE_STATE_TRANSITION_MODE_TRANSITION" )
 	-- Render quad
 	RenderScreenSizeQuad(PrecomputeNetDensityToAtmTopPSO, PrecomputeNetDensityToAtmTopSRB, 0)
 
@@ -566,7 +566,7 @@ function ReconstructCameraSpaceZ(DepthBufferSRV)
 
 	-- Set dynamic variable g_tex2DDepthBuffer
 	ReconstructCameraSpaceZSRB:GetVariable("SHADER_TYPE_PIXEL", "g_tex2DDepthBuffer"):Set(DepthBufferSRV)
-	Context.SetRenderTargets(ptex2DCamSpaceZRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(ptex2DCamSpaceZRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(ReconstructCameraSpaceZPSO, ReconstructCameraSpaceZSRB, 0)
 end
 
@@ -581,7 +581,7 @@ function CreateRenderSliceEndPointsPSO(RenderSliceEndPointsPS)
 end
 
 function RenderSliceEndPoints()
-	Context.SetRenderTargets(tex2DSliceEndpointsRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DSliceEndpointsRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(RenderSliceEndPointsPSO, RenderSliceEndPointsSRB, 0)
 end
 
@@ -600,11 +600,11 @@ function RenderCoordinateTexture()
 		RenderCoordinateTextureSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DCoordinateTextureRTV, tex2DEpipolarCamSpaceZRTV, tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DCoordinateTextureRTV, tex2DEpipolarCamSpaceZRTV, tex2DEpipolarImageDSV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	-- Clear both render targets with values that can't be correct projection space coordinates and camera space Z:
 	Context.ClearRenderTarget(tex2DCoordinateTextureRTV, -1e+30, -1e+30, -1e+30, -1e+30, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	Context.ClearRenderTarget(tex2DEpipolarCamSpaceZRTV, -1e+30, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
-	Context.ClearDepthStencil(tex2DEpipolarImageDSV, "CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG", 1.0, 0)
+	Context.ClearDepthStencil(tex2DEpipolarImageDSV, 1.0, 0, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
     -- Depth stencil state is configured to always increment stencil value. If coordinates are outside the screen,
     -- the pixel shader discards the pixel and stencil value is left untouched. All such pixels will be skipped from
     -- further processing
@@ -654,7 +654,7 @@ function MarkRayMarchingSamples()
 		MarkRayMarchingSamplesSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DEpipolarImageDSV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(MarkRayMarchingSamplesPSO, MarkRayMarchingSamplesSRB, 1)
 end
 
@@ -674,7 +674,7 @@ function RenderSliceUVDirAndOrigin()
 		RenderSliceUVDirAndOriginSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DSliceUVDirAndOriginRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DSliceUVDirAndOriginRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(RenderSliceUVDirAndOriginPSO, RenderSliceUVDirAndOriginSRB, 0)
 end
 
@@ -715,7 +715,7 @@ end
 
 function ClearInitialScatteredLight()
 	-- On GL, we need to bind render target to pipeline to clear it
-	Context.SetRenderTargets(tex2DInitialScatteredLightRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DInitialScatteredLightRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	Context.ClearRenderTarget(tex2DInitialScatteredLightRTV, 0,0,0,0, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 end
 
@@ -742,7 +742,7 @@ function RayMarch(Use1DMinMaxTree, NumQuads, SrcColorBufferSRV)
 		RayMarchSRB[Use1DMinMaxTree]:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
     
-    Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+    Context.SetRenderTargets(tex2DInitialScatteredLightRTV, tex2DEpipolarImageDSV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(RayMarchPSO[Use1DMinMaxTree], RayMarchSRB[Use1DMinMaxTree], 2, NumQuads)
 end
 
@@ -762,7 +762,7 @@ function InterpolateIrradiance()
 		InterpolateIrradianceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DEpipolarInscatteringRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DEpipolarInscatteringRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(InterpolateIrradiancePSO, InterpolateIrradianceSRB, 0)
 end
 
@@ -865,7 +865,7 @@ function UpdateAverageLuminance()
 		UpdateAverageLuminanceSRB:BindResources("SHADER_TYPE_PIXEL", extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
 	end
 
-	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "SET_RENDER_TARGETS_FLAG_TRANSITION_ALL")
+	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(UpdateAverageLuminancePSO, UpdateAverageLuminanceSRB, 0)
 end
 

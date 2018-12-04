@@ -141,7 +141,7 @@ void Tutorial01_HelloTriangle::Render()
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set pipeline state in the immediate context
     m_pImmediateContext->SetPipelineState(m_pPSO);

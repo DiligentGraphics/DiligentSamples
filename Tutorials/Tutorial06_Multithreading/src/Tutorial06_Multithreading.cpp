@@ -426,7 +426,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
 {
     // Deferred contexts start in default state. We must bind everything to the context
     // Render targets are set and transitioned to correct states by the main thread, here we only verify states
-    pCtx->SetRenderTargets(0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_VERIFY_STATES);
+    pCtx->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     {
         // Map the buffer and write current world-view-projection matrix
@@ -488,7 +488,7 @@ void Tutorial06_Multithreading::Render()
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     if (m_NumWorkerThreads > 0)
     {

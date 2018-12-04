@@ -548,7 +548,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
         ptex2DNormalMap->CreateView( TexViewDesc, &ptex2DNormalMapRTV );
 
         ITextureView *pRTVs[] = { ptex2DNormalMapRTV };
-        pContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+        pContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         {
             MapHelper<NMGenerationAttribs> NMGenerationAttribs( pContext, pcbNMGenerationAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
@@ -567,7 +567,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     pResMapping->RemoveResourceByName( "g_tex2DElevationMap" );
 
     // Restore default render target
-    pContext->SetRenderTargets(0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+    pContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 

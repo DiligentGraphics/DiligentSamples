@@ -600,7 +600,7 @@ void LightSctrPostProcess :: RenderCoarseUnshadowedInctr(FrameAttribs &FrameAttr
     }
 
     ITextureView *pRTVs[] = {m_ptex2DEpipolarInscatteringRTV, m_ptex2DEpipolarExtinctionRTV};
-    FrameAttribs.pDeviceContext->SetRenderTargets(m_PostProcessingAttribs.m_uiExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR ? 2 : 1, pRTVs, m_ptex2DEpipolarImageDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+    FrameAttribs.pDeviceContext->SetRenderTargets(m_PostProcessingAttribs.m_uiExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR ? 2 : 1, pRTVs, m_ptex2DEpipolarImageDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     float flt16max = 65504.f; // Epipolar Inscattering is 16-bit float
     const float InvalidInsctr[] = {-flt16max, -flt16max, -flt16max, -flt16max};
@@ -793,7 +793,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
     {
         // Use two buffers which are in turn used as the source and destination
         ITextureView *pRTVs[] = {m_ptex2DMinMaxShadowMapRTV[uiParity]};
-        FrameAttribs.pDeviceContext->SetRenderTargets( _countof( pRTVs ), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+        FrameAttribs.pDeviceContext->SetRenderTargets( _countof( pRTVs ), pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 
         Viewport VP;
         VP.Width = static_cast<float>( m_PostProcessingAttribs.m_uiMinMaxShadowMapResolution / iStep );
@@ -1305,7 +1305,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
 
     {
         ITextureView *pRTVs[] = { FrameAttribs.ptex2DSrcColorBufferRTV };
-        FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, FrameAttribs.ptex2DSrcDepthBufferDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+        FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, FrameAttribs.ptex2DSrcDepthBufferDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         RenderSun(FrameAttribs);
     }
 
@@ -1359,17 +1359,17 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         {
             // Render scene luminance to low-resolution texture
             ITextureView *pRTVs[] = { m_ptex2DLowResLuminanceRTV };
-            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             UnwarpEpipolarScattering(FrameAttribs, true);
             FrameAttribs.pDeviceContext->GenerateMips(m_ptex2DLowResLuminanceSRV);
 
             UpdateAverageLuminance(FrameAttribs);
         }
         // Set the main back & depth buffers
-        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 
         // Clear depth to 1.0.
-        FrameAttribs.pDeviceContext->ClearDepthStencil( nullptr, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f );
+        FrameAttribs.pDeviceContext->ClearDepthStencil( nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
         // Transform inscattering irradiance from epipolar coordinates back to rectangular
         // The shader will write 0.0 to the depth buffer, but all pixel that require inscattering
         // correction will be discarded and will keep 1.0
@@ -1392,7 +1392,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         {
             // Render scene luminance to low-resolution texture
             ITextureView *pRTVs[] = { m_ptex2DLowResLuminanceRTV };
-            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+            FrameAttribs.pDeviceContext->SetRenderTargets(_countof(pRTVs), pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
             FixInscatteringAtDepthBreaks(FrameAttribs, m_PostProcessingAttribs.m_uiShadowMapResolution, EFixInscatteringMode::LuminanceOnly);
             FrameAttribs.pDeviceContext->GenerateMips(m_ptex2DLowResLuminanceSRV);
@@ -1401,12 +1401,12 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         }
 
         // Set the main back & depth buffers
-        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+        FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 
         FixInscatteringAtDepthBreaks(FrameAttribs, m_PostProcessingAttribs.m_uiShadowMapResolution, EFixInscatteringMode::FullScreenRayMarching);
     }
 
-    FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+    FrameAttribs.pDeviceContext->SetRenderTargets( 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 }
 
 
@@ -1693,7 +1693,7 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
     PrecomputeAmbientSkyLightSRB->InitializeStaticResources();
 
     ITextureView *pRTVs[] = {ptex2DAmbientSkyLightRTV};
-    pContext->SetRenderTargets(1, pRTVs, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+    pContext->SetRenderTargets(1, pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_pRenderScript->Run(pContext, "PrecomputeAmbientSkyLight" );
     m_uiUpToDateResourceFlags |= UpToDateResourceFlags::AmbientSkyLightTex;

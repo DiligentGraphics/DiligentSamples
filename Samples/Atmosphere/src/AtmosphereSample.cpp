@@ -661,8 +661,8 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
         ShadowMapAttribs.mWorldToShadowMapUVDepthT[iCascade] = transposeMatrix( WorldToShadowMapUVDepthMatr );
         
-        m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade], SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
-        m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f );
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade], RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
+        m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 
         // Render terrain to shadow map
         {
@@ -673,7 +673,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         m_EarthHemisphere.Render(m_pImmediateContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
     }
 
-    pContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+    pContext->SetRenderTargets( 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 }
 
 
@@ -728,7 +728,7 @@ void AtmosphereSample::Render()
     // render targets
     auto *pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, m_pImmediateContext);
 
-    m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+    m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
     const float Zero[] = {  0.f,  0.f,  0.f, 0.f };
@@ -739,17 +739,17 @@ void AtmosphereSample::Render()
     {
         pRTV = m_pOffscreenColorBuffer->GetDefaultView( TEXTURE_VIEW_RENDER_TARGET );
         pDSV = m_pOffscreenDepthBuffer->GetDefaultView( TEXTURE_VIEW_DEPTH_STENCIL );
-        m_pImmediateContext->SetRenderTargets( 1, &pRTV, pDSV, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+        m_pImmediateContext->SetRenderTargets( 1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
         m_pImmediateContext->ClearRenderTarget(pRTV, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
     else
     {
         pRTV = nullptr;
         pDSV = nullptr;
-        m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL );
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
     }
         
-    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG | CLEAR_DEPTH_STENCIL_TRANSITION_STATE_FLAG, 1.f);
+    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {
         MapHelper<CameraAttribs> CamAttribs( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );

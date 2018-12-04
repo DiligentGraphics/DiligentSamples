@@ -398,12 +398,12 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 
 void SampleApp::Render()
 {
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_TheSample->Render();
 
     // Draw tweak bars
     // Restore default render target in case the sample has changed it
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, SET_RENDER_TARGETS_FLAG_TRANSITION_ALL);
+    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     TwDraw();
 }
 
