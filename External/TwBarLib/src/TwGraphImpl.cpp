@@ -541,10 +541,8 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawAttribs DrawAttribs;
-        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
-        DrawAttribs.NumVertices = 2;
-        m_pDevImmContext->Draw(DrawAttribs);
+        DrawAttribs DrawAttrs(2, DRAW_FLAG_VERIFY_STATES);
+        m_pDevImmContext->Draw(DrawAttrs);
     }
 }
 
@@ -616,10 +614,8 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawAttribs DrawAttribs;
-        DrawAttribs.NumVertices = 6;
-        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
-        m_pDevImmContext->Draw(DrawAttribs);
+        DrawAttribs DrawAttrs(6, DRAW_FLAG_VERIFY_STATES);
+        m_pDevImmContext->Draw(DrawAttrs);
     }
 }
 
@@ -922,10 +918,8 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         m_pDevImmContext->SetPipelineState(pPSO);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawAttribs DrawAttribs;
-        DrawAttribs.NumVertices = textObj->m_NbBgVerts;
-        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
-        m_pDevImmContext->Draw(DrawAttribs);
+        DrawAttribs DrawAttrs(textObj->m_NbBgVerts, DRAW_FLAG_VERIFY_STATES);
+        m_pDevImmContext->Draw(DrawAttrs);
     }
 
     // Draw text
@@ -957,10 +951,8 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         pPSO->BindShaderResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawAttribs DrawAttribs;
-        DrawAttribs.NumVertices = textObj->m_NbTextVerts;
-        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
-        m_pDevImmContext->Draw(DrawAttribs);
+        DrawAttribs DrawAttrs(textObj->m_NbTextVerts, DRAW_FLAG_VERIFY_STATES);
+        m_pDevImmContext->Draw(DrawAttrs);
     }
 }
 
@@ -1123,10 +1115,8 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
         m_pDevImmContext->SetPipelineState(pLineRectPSO);
         m_pDevImmContext->CommitShaderResources(pLineRectSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawAttribs DrawAttribs;
-        DrawAttribs.NumVertices = 3*_NumTriangles;
-        DrawAttribs.Flags = DRAW_FLAG_VERIFY_STATES;
-        m_pDevImmContext->Draw(DrawAttribs);
+        DrawAttribs DrawAttrs(3*_NumTriangles, DRAW_FLAG_VERIFY_STATES);
+        m_pDevImmContext->Draw(DrawAttrs);
     }
 }
 
