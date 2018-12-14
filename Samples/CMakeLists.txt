@@ -10,7 +10,9 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
         set_target_properties(${SAMPLE_NAME} PROPERTIES
             VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
         )
-        copy_required_dlls(${SAMPLE_NAME})
+        if(MSVC)
+            copy_required_dlls(${SAMPLE_NAME})
+        endif()
     elseif(PLATFORM_UNIVERSAL_WINDOWS)
 		append_sample_base_uwp_source(${SAMPLE_NAME})
     endif()

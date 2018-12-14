@@ -101,7 +101,14 @@ if(MSVC)
 endif()
 
 
-if(PLATFORM_WIN32 OR PLATFORM_LINUX OR PLATFORM_ANDROID OR PLATFORM_MACOS)
+if(PLATFORM_WIN32)
+    if(MSVC)
+        set(LIB_TYPE "shared")
+    else()
+		# Link against static libraries on MinGW
+        set(LIB_TYPE "static")
+    endif()
+elseif(PLATFORM_LINUX OR PLATFORM_ANDROID OR PLATFORM_MACOS)
     set(LIB_TYPE "shared")
 elseif(PLATFORM_UNIVERSAL_WINDOWS)
     set(LIB_TYPE "static")
