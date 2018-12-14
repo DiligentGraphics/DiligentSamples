@@ -50,6 +50,10 @@
 #   define GL_SUPPORTED 1
 #endif
 
+#ifndef VULKAN_SUPPORTED
+#   define VULKAN_SUPPORTED 1
+#endif
+
 #include "Graphics/GraphicsEngineD3D11/interface/RenderDeviceFactoryD3D11.h"
 #include "Graphics/GraphicsEngineD3D12/interface/RenderDeviceFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"
@@ -130,6 +134,7 @@ public:
         Uint32 NumDeferredCtx = 0;
         switch (m_DeviceType)
         {
+#if D3D11_SUPPORTED
             case DeviceType::D3D11:
             {
                 EngineD3D11Attribs DeviceAttribs;
@@ -143,7 +148,10 @@ public:
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
+#endif
 
+
+#if D3D12_SUPPORTED
             case DeviceType::D3D12:
             {
 #if ENGINE_DLL
@@ -157,7 +165,10 @@ public:
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
+#endif
 
+
+#if GL_SUPPORTED
         case DeviceType::OpenGL:
         {
 
@@ -174,7 +185,10 @@ public:
                 CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
         }
         break;
+#endif
 
+
+#if VULKAN_SUPPORTED
         case DeviceType::Vulkan:
         {
 #if ENGINE_DLL
@@ -193,9 +207,11 @@ public:
                 pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);
         }
         break;
+#endif
+
 
         default:
-            std::cerr << "Unknown device type";
+            std::cerr << "Unknown/unsupported device type";
             return false;
             break;
         }
@@ -212,19 +228,39 @@ public:
             pos += strlen(Key);
             if (_stricmp(pos, "D3D11") == 0)
             {
+#if D3D11_SUPPORTED
                 m_DeviceType = DeviceType::D3D11;
+#else
+                std::cerr << "Direct3D11 is not supported. Please select another device type";
+                return false;
+#endif
             }
             else if (_stricmp(pos, "D3D12") == 0)
             {
+#if D3D12_SUPPORTED
                 m_DeviceType = DeviceType::D3D12;
+#else
+                std::cerr << "Direct3D12 is not supported. Please select another device type";
+                return false;
+#endif
             }
             else if (_stricmp(pos, "GL") == 0)
             {
+#if GL_SUPPORTED
                 m_DeviceType = DeviceType::OpenGL;
+#else
+                std::cerr << "OpenGL is not supported. Please select another device type";
+                return false;
+#endif
             }
             else if (_stricmp(pos, "VK") == 0)
             {
+#if VULKAN_SUPPORTED
                 m_DeviceType = DeviceType::Vulkan;
+#else
+                std::cerr << "Vulkan is not supported. Please select another device type";
+                return false;
+#endif
             }
             else
             {
@@ -234,8 +270,15 @@ public:
         }
         else
         {
-            std::cout << "Device type is not specified. Using D3D11 device";
+#if D3D12_SUPPORTED
+            m_DeviceType = DeviceType::D3D12;
+#elif VULKAN_SUPPORTED
+            m_DeviceType = DeviceType::Vulkan;
+#elif D3D11_SUPPORTED
             m_DeviceType = DeviceType::D3D11;
+#elif GL_SUPPORTED
+            m_DeviceType = DeviceType::OpenGL;
+#endif
         }
         return true;
     }

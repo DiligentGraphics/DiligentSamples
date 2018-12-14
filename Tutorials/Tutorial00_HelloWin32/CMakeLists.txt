@@ -11,6 +11,14 @@ target_compile_options(Tutorial00_HelloWin32 PRIVATE -DUNICODE -DENGINE_DLL)
 
 target_include_directories(Tutorial00_HelloWin32 PRIVATE "../../../DiligentCore")
 
+target_compile_definitions(Tutorial00_HelloWin32 
+PRIVATE 
+    D3D11_SUPPORTED=$<BOOL:${D3D11_SUPPORTED}>
+    D3D12_SUPPORTED=$<BOOL:${D3D12_SUPPORTED}>
+    GL_SUPPORTED=$<BOOL:${GL_SUPPORTED}>
+    VULKAN_SUPPORTED=$<BOOL:${VULKAN_SUPPORTED}>
+)
+
 set_target_properties(Tutorial00_HelloWin32 PROPERTIES
     FOLDER Tutorials
 )
