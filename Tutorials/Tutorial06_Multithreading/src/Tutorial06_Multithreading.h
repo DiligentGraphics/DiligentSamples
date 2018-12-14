@@ -29,7 +29,7 @@
 #include <mutex>
 #include "SampleBase.h"
 #include "BasicMath.h"
-#include "Signal.h"
+#include "ThreadSignal.h"
 
 class Tutorial06_Multithreading : public SampleBase
 {

@@ -30,7 +30,7 @@
 #include <mutex>
 #include "SampleBase.h"
 #include "BasicMath.h"
-#include "Signal.h"
+#include "ThreadSignal.h"
 
 class Tutorial10_DataStreaming : public SampleBase
 {

@@ -15,9 +15,14 @@ set_target_properties(Tutorial00_HelloWin32 PROPERTIES
     FOLDER Tutorials
 )
 
-add_dependencies(Tutorial00_HelloWin32 GraphicsEngineD3D11-shared GraphicsEngineOpenGL-shared)
+if(D3D11_SUPPORTED)
+    add_dependencies(Tutorial00_HelloWin32 GraphicsEngineD3D11-shared)
+endif()
 if(D3D12_SUPPORTED)
     add_dependencies(Tutorial00_HelloWin32 GraphicsEngineD3D12-shared)
+endif()
+if(GL_SUPPORTED)
+    add_dependencies(Tutorial00_HelloWin32 GraphicsEngineOpenGL-shared)
 endif()
 if(VULKAN_SUPPORTED)
     add_dependencies(Tutorial00_HelloWin32 GraphicsEngineVk-shared)
