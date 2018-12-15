@@ -15,7 +15,9 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
 		set_target_properties(${TUTORIAL_NAME} PROPERTIES 
 			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
 		)
-		copy_required_dlls(${TUTORIAL_NAME})
+        if(MSVC)
+		    copy_required_dlls(${TUTORIAL_NAME})
+        endif()
 	elseif(PLATFORM_UNIVERSAL_WINDOWS)
 			append_sample_base_uwp_source(${TUTORIAL_NAME})
 	endif()
