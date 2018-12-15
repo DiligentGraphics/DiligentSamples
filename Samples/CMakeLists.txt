@@ -40,9 +40,18 @@ function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
     set_target_properties(${SAMPLE_NAME} PROPERTIES
         FOLDER Samples
     )
-
+    
     source_group("src" FILES ${SOURCE})
     source_group("include" FILES ${INCLUDE})
+
+    if(PLATFORM_WIN32 OR PLATFORM_LINUX)
+        # Copy assets to target folder
+        add_custom_command(TARGET ${SAMPLE_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+                "\"$<TARGET_FILE_DIR:${SAMPLE_NAME}>\"")
+    endif()
+
 endfunction()
 
 add_subdirectory(SampleBase)

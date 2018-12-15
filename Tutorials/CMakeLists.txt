@@ -51,6 +51,14 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
         readme.md PROPERTIES HEADER_FILE_ONLY TRUE
     )
 
+    if(PLATFORM_WIN32 OR PLATFORM_LINUX)
+        # Copy assets to target folder
+        add_custom_command(TARGET ${TUTORIAL_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+                "\"$<TARGET_FILE_DIR:${TUTORIAL_NAME}>\"")
+    endif()
+
 endfunction()
 
 if(PLATFORM_WIN32)
