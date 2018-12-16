@@ -61,6 +61,19 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
                 "\"$<TARGET_FILE_DIR:${TUTORIAL_NAME}>\"")
     endif()
 
+    # Install instructions
+    file(RELATIVE_PATH TUTORIAL_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+    install(TARGETS     ${TUTORIAL_NAME}
+            DESTINATION ${TUTORIAL_REL_PATH})
+    if(PLATFORM_LINUX OR PLATFORM_WIN32)
+        install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/assets/"
+                DESTINATION ${TUTORIAL_REL_PATH})
+        get_supported_backends(BACKEND_LIBRARIES)
+        install(TARGETS  ${BACKEND_LIBRARIES}
+                RUNTIME DESTINATION ${TUTORIAL_REL_PATH}
+                LIBRARY DESTINATION ${TUTORIAL_REL_PATH})
+    endif()
+
 endfunction()
 
 if(PLATFORM_WIN32)
