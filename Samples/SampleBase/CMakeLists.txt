@@ -100,39 +100,7 @@ if(MSVC)
     endif()
 endif()
 
-
-if(PLATFORM_WIN32)
-    if(MSVC)
-        set(LIB_TYPE "shared")
-    else()
-		# Link against static libraries on MinGW
-        set(LIB_TYPE "static")
-    endif()
-elseif(PLATFORM_LINUX OR PLATFORM_ANDROID OR PLATFORM_MACOS)
-    set(LIB_TYPE "shared")
-elseif(PLATFORM_UNIVERSAL_WINDOWS)
-    set(LIB_TYPE "static")
-elseif(PLATFORM_IOS)
-    # Statically link with the engine on iOS.
-    # It is also possible to link dynamically by
-    # putting the library into the framework.
-    set(LIB_TYPE "static")
-else()
-    message(FATAL_ERROR "Undefined platform")
-endif()
-
-if(D3D11_SUPPORTED)
-	list(APPEND ENGINE_LIBRARIES GraphicsEngineD3D11-${LIB_TYPE})
-endif()
-if(D3D12_SUPPORTED)
-	list(APPEND ENGINE_LIBRARIES GraphicsEngineD3D12-${LIB_TYPE})
-endif()
-if(GL_SUPPORTED OR GLES_SUPPORTED)
-	list(APPEND ENGINE_LIBRARIES GraphicsEngineOpenGL-${LIB_TYPE})
-endif()
-if(VULKAN_SUPPORTED)
-	list(APPEND ENGINE_LIBRARIES GraphicsEngineVk-${LIB_TYPE})
-endif()
+get_supported_backends(ENGINE_LIBRARIES)
 
 target_link_libraries(SampleBase 
 PRIVATE 
