@@ -86,13 +86,13 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
     m_iStride = (m_iNumCols + 1) & (-2);
 
     // Load the data
-    m_TheHeightMap.resize( m_iStride * m_iNumRows );
+    m_TheHeightMap.resize( size_t{m_iStride} * size_t{m_iNumRows} );
     
     VERIFY( ImgInfo.BitsPerPixel == 16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected" );
     auto *pSrcImgData = reinterpret_cast<Uint8*>( pImageData->GetDataPtr() );
     for (Uint32 row = 0; row < ImgInfo.Height; row++, pSrcImgData += ImgInfo.RowStride)
     {
-        memcpy( &m_TheHeightMap[row*m_iStride], pSrcImgData, ImgInfo.Width*ImgInfo.BitsPerPixel/8 );
+        memcpy( &m_TheHeightMap[row*m_iStride], pSrcImgData, size_t{ImgInfo.Width}*size_t{ImgInfo.BitsPerPixel}/8 );
     }
 
     // Duplicate the last row and column

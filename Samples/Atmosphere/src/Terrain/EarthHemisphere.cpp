@@ -509,7 +509,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
                 int iAverageHeight = 0;
                 for(int i=0; i<2; ++i)
                     for(int j=0; j<2; ++j)
-                        iAverageHeight += pFinerMipLevel[ (uiCol*2+i) + (uiRow*2+j)*FinerMipPitch];
+                        iAverageHeight += pFinerMipLevel[ (uiCol*2+i) + (uiRow*2+j)*size_t{FinerMipPitch}];
                 pCurrMipLevel[uiCol + uiRow*CurrMipPitch] = (Uint16)(iAverageHeight>>2);
             }
 
