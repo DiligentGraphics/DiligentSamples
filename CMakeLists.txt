@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.6)
 
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     option(INSTALL_DILIGENT_SAMPLES "Enable installation of samples and tutorials" ON)
+else()
+    set(INSTALL_DILIGENT_SAMPLES OFF)
 endif()
 
 add_subdirectory(External)
