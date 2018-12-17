@@ -1,4 +1,8 @@
-cmake_minimum_required (VERSION 3.13)
+if(PLATFORM_WIN32 OR PLATFORM_LINUX)
+    cmake_minimum_required (VERSION 3.13)
+else()
+    cmake_minimum_required (VERSION 3.10)
+endif()
 
 function(add_sample SAMPLE_NAME SOURCE INCLUDE SHADERS ASSETS)
 
