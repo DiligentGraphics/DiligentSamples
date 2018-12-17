@@ -75,7 +75,8 @@ function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
         get_supported_backends(BACKEND_LIBRARIES)
         install(TARGETS  ${BACKEND_LIBRARIES}
                 RUNTIME DESTINATION ${TUTORIAL_REL_PATH}
-                LIBRARY DESTINATION ${TUTORIAL_REL_PATH})
+                LIBRARY DESTINATION ${TUTORIAL_REL_PATH}
+                ARCHIVE DESTINATION ${TUTORIAL_REL_PATH})
     endif()
 
 endfunction()
