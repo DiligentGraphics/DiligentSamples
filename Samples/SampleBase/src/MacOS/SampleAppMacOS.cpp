@@ -35,13 +35,14 @@ public:
         m_DeviceType = DeviceType::OpenGL;
     }
 
-    virtual void OnGLContextCreated()override final
+    virtual void Initialize(void* view)override final
     {
-        InitializeDiligentEngine(nullptr);
+        m_DeviceType = view == nullptr ? DeviceType::OpenGL : DeviceType::Vulkan;
+        InitializeDiligentEngine(view);
         m_TheSample->SetUIScale(2);
         InitializeSample();
     }
-    
+
     virtual void Render()override
     {
         m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -56,48 +57,48 @@ public:
                 case TwEvent::RMB_PRESSED:
                     TwMouseButton(TW_MOUSE_PRESSED, event.type == TwEvent::LMB_PRESSED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
                     break;
-                    
+
                 case TwEvent::LMB_RELEASED:
                 case TwEvent::RMB_RELEASED:
                     TwMouseButton(TW_MOUSE_RELEASED, event.type == TwEvent::LMB_RELEASED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
                     break;
-                    
+
                 case TwEvent::MOUSE_MOVE:
                     TwMouseMotion(event.mouseX, event.mouseY);
                     break;
-                    
+
                 case TwEvent::KEY_PRESSED:
                     TwKeyPressed(event.key, 0);
                     break;
             }
             TwBarEvents.pop();
         }
-        
+
         SampleApp::Render();
     }
-    
+
     void OnMouseDown(int button)override final
     {
         TwBarEvents.emplace(button == 1 ? TwEvent::LMB_PRESSED : TwEvent::RMB_PRESSED);
     }
-    
+
     void OnMouseUp(int button)override final
     {
         TwBarEvents.emplace(button == 1 ? TwEvent::LMB_RELEASED : TwEvent::RMB_RELEASED);
     }
-    
+
     void OnMouseMove(int x, int y)override final
     {
         TwBarEvents.emplace(x, y);
     }
-    
+
     void OnKeyPressed(int key)override final
     {
         TwBarEvents.emplace(key);
     }
 
 private:
-    
+
     // Unfortunately TwBar library calls rendering
     // functions from event handlers, which does not work on MacOS
     // as UI events and rendering are handled by separate threads
@@ -115,7 +116,7 @@ private:
         int mouseX = 0;
         int mouseY = 0;
         int key = 0;
-        
+
         TwEvent(EVENT_TYPE _type) : type(_type){}
         TwEvent(int x, int y) : type(MOUSE_MOVE), mouseX(x), mouseY(y){}
         TwEvent(int k) : type(KEY_PRESSED), key(k){}
