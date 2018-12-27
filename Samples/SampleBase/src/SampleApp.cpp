@@ -369,15 +369,19 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
     }
     else
     {
+        SelectDeviceType();
+        if(m_DeviceType == DeviceType::Undefined)
+        {
 #if D3D12_SUPPORTED
-        m_DeviceType = DeviceType::D3D12;
+            m_DeviceType = DeviceType::D3D12;
 #elif VULKAN_SUPPORTED
-        m_DeviceType = DeviceType::Vulkan;
+            m_DeviceType = DeviceType::Vulkan;
 #elif D3D11_SUPPORTED
-        m_DeviceType = DeviceType::D3D11;
+            m_DeviceType = DeviceType::D3D11;
 #elif GL_SUPPORTED || GLES_SUPPORTED
-        m_DeviceType = DeviceType::OpenGL;
+            m_DeviceType = DeviceType::OpenGL;
 #endif
+        }
     }
 
     switch (m_DeviceType)

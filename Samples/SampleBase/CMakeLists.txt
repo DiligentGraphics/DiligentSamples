@@ -10,6 +10,22 @@ if(PLATFORM_WIN32)
     set(INCLUDE 
         include/SampleApp.h
     )
+    set(WIN32_RESOURCES
+        src/Win32/resources/Win32AppResource.h
+        src/Win32/resources/directx11-logo.bmp
+        src/Win32/resources/directx12-logo.bmp
+        src/Win32/resources/vulkan-logo.bmp
+        src/Win32/resources/opengl-logo.bmp
+        src/Win32/resources/Win32AppResource.rc
+    )
+
+    function(append_sample_base_win32_source TARGET_NAME)
+        get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
+        # We need to add .res file to executable target to make resources available
+        set(RES_FILE ${SAMPLE_BASE_SOURCE_DIR}/src/Win32/resources/Win32AppResource.rc)
+        target_sources(${TARGET_NAME} PRIVATE ${RES_FILE})
+        source_group("resources" FILES ${RES_FILE})
+    endfunction()
 
 elseif(PLATFORM_UNIVERSAL_WINDOWS)
 
@@ -126,6 +142,11 @@ endif()
 
 source_group("src" FILES ${SOURCE})
 source_group("include" FILES ${INCLUDE})
+
+if(PLATFORM_WIN32)
+    target_sources(SampleBase PRIVATE ${WIN32_RESOURCES})
+    source_group("resources" FILES ${WIN32_RESOURCES})
+endif()
 
 set_target_properties(SampleBase PROPERTIES
     FOLDER Samples

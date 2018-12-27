@@ -45,6 +45,7 @@ public:
     virtual void WindowResize(int width, int height)override final;
     virtual void Render()override;
     virtual void Present()override;
+    virtual void SelectDeviceType(){};
 
 protected:
     void InitializeDiligentEngine(

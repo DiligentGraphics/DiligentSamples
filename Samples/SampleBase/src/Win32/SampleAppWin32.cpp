@@ -23,6 +23,89 @@
 
 #include "SampleApp.h"
 #include "AntTweakBar.h"
+#include "resources/Win32AppResource.h"
+
+namespace
+{
+
+Diligent::DeviceType g_DeviceType = Diligent::DeviceType::Undefined;
+
+void SetButtonImage(HWND hwndDlg, int buttonId, int imageId, BOOL Enable)
+{
+    HBITMAP hBitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(imageId));
+    auto hButton = GetDlgItem(hwndDlg, buttonId);
+    SendMessage(hButton, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap);
+    EnableWindow(hButton, Enable);
+}
+
+INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND hwndDlg, 
+                                            UINT message, 
+                                            WPARAM wParam, 
+                                            LPARAM lParam) 
+{ 
+    switch (message) 
+    { 
+        case WM_COMMAND: 
+            switch (LOWORD(wParam)) 
+            { 
+                case ID_DIRECT3D11: 
+                    g_DeviceType = Diligent::DeviceType::D3D11;
+                    EndDialog(hwndDlg, wParam); 
+                    return TRUE;
+
+                case ID_DIRECT3D12:
+                    g_DeviceType = Diligent::DeviceType::D3D12;
+                    EndDialog(hwndDlg, wParam); 
+                    return TRUE;
+
+                case ID_OPENGL:
+                    g_DeviceType = Diligent::DeviceType::OpenGL;
+                    EndDialog(hwndDlg, wParam); 
+                    return TRUE;
+
+                case ID_VULKAN:
+                    g_DeviceType = Diligent::DeviceType::Vulkan;
+                    EndDialog(hwndDlg, wParam); 
+                    return TRUE;
+            } 
+        break;
+
+        case WM_INITDIALOG:
+        {
+#if D3D11_SUPPORTED
+            BOOL D3D11Supported = TRUE;
+#else
+            BOOL D3D11Supported = FALSE;
+#endif
+            SetButtonImage(hwndDlg, ID_DIRECT3D11, IDB_DIRECTX11_LOGO, D3D11Supported);
+
+#if D3D12_SUPPORTED
+            BOOL D3D12Supported = TRUE;
+#else
+            BOOL D3D12Supported = FALSE;
+#endif
+            SetButtonImage(hwndDlg, ID_DIRECT3D12, IDB_DIRECTX12_LOGO, D3D12Supported);
+
+#if GL_SUPPORTED
+            BOOL OpenGLSupported = TRUE;
+#else
+            BOOL OpenGLSupported = FALSE;
+#endif
+            SetButtonImage(hwndDlg, ID_OPENGL, IDB_OPENGL_LOGO, OpenGLSupported);
+
+#if VULKAN_SUPPORTED
+            BOOL VulkanSupported = TRUE;
+#else
+            BOOL VulkanSupported = FALSE;
+#endif
+            SetButtonImage(hwndDlg, ID_VULKAN, IDB_VULKAN_LOGO, VulkanSupported);
+        }
+        break;
+    } 
+    return FALSE; 
+} 
+
+}
 
 class SampleAppWin32 final : public SampleApp
 {
@@ -129,6 +212,12 @@ protected:
             ToggleFullscreenWindow();
         }
         SampleApp::SetWindowedMode();
+    }
+
+    virtual void SelectDeviceType()override final
+    {
+        DialogBox(NULL, MAKEINTRESOURCE(IDD_DEVICE_TYPE_SELECTION_DIALOG), NULL, SelectDeviceTypeDialogProc);
+        m_DeviceType = g_DeviceType;
     }
 
     bool m_bFullScreenWindow = false;
