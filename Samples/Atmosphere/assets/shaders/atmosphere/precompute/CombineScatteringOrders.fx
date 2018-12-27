@@ -13,7 +13,6 @@ void CombineScatteringOrdersCS(uint3 ThreadId  : SV_DispatchThreadID)
 {
     // Combine single & higher order scattering into single look-up table
     g_rwtex3DMultipleSctr[ThreadId] = 
-                     g_tex3DSingleSctrLUT.Load( int4(ThreadId, 0) ) + 
-                     g_tex3DHighOrderSctrLUT.Load( int4(ThreadId, 0) );
+                     g_tex3DSingleSctrLUT.Load( int4(ThreadId, 0) ).xyz + 
+                     g_tex3DHighOrderSctrLUT.Load( int4(ThreadId, 0) ).xyz;
 }
-
