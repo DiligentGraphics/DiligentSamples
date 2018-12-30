@@ -84,6 +84,14 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
         break;
 #endif
 
+#if METAL_SUPPORTED
+        case DeviceType::Metal:
+        {
+            // Nothing to do
+        }
+        break;
+#endif
+
         default:
             LOG_ERROR_AND_THROW("Unknown device type");
             break;

@@ -45,6 +45,10 @@
 #   include "RenderDeviceFactoryVk.h"
 #endif
 
+#if METAL_SUPPORTED
+#   include "RenderDeviceFactoryMtl.h"
+#endif
+
 #include "AntTweakBar.h"
 
 using namespace Diligent;
@@ -204,6 +208,23 @@ void SampleApp::InitializeDiligentEngine(
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
+        }
+        break;
+#endif
+
+
+#if METAL_SUPPORTED
+        case DeviceType::Metal:
+        {
+            EngineMtlAttribs MtlAttribs;
+
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, NumDeferredCtx);
+            ppContexts.resize(1 + NumDeferredCtx);
+            auto *pFactoryMtl = GetEngineFactoryMtl();
+            pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
+
+            if (!m_pSwapChain && NativeWindowHandle != nullptr)
+                pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
         }
         break;
 #endif
