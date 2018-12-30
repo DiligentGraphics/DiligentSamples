@@ -3,7 +3,7 @@
 
 This module contains tutorials and sample applications intended to demonstrate the usage of [Diligent Engine](https://github.com/DiligentGraphics/DiligentEngine). The module depends on the [Core](https://github.com/DiligentGraphics/DiligentCore) and [Tools](https://github.com/DiligentGraphics/DiligentTools) submodules.
 
-To build and run the applications in the module, please follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md) in the master repository.
+To build and run the applications in the module, please follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine#build-and-run-instructions) in the master repository.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](License.txt)
 [![Chat on gitter](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/diligent-engine)
@@ -15,7 +15,7 @@ To build and run the applications in the module, please follow the [instructions
 
 ![](Tutorials/Tutorial01_HelloTriangle/Screenshot.png)
 
-This tutorial shows how to render a simple triangle using Diligent Engine API.
+This tutorial shows how to render simple triangle using Diligent Engine API.
 
 ## [Tutorial 02 - Cube](Tutorials/Tutorial02_Cube)
 

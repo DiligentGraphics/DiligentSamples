@@ -306,9 +306,8 @@ void Tutorial11_ResourceUpdates::DrawCube(const float4x4& WVPMatrix, Diligent::I
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Commit shader resources. Pass pointer to shader resource binding object
-    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION makes sure
-    // that resources are transitioned to proper states
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {

@@ -313,9 +313,8 @@ void Tutorial08_Tessellation::Render()
 
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO[m_Wireframe ? 1 : 0]);
-    // Commit shader resources. Pass pointer to shader resource binding object
-    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION makes sure
-    // that resources are transitioned to proper states
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB[m_Wireframe ? 1 : 0], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawAttribs DrawAttrs;

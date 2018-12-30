@@ -315,9 +315,8 @@ void Tutorial07_GeometryShader::Render()
 
     // Set pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. Pass pointer to shader resource binding object
-    // RESOURCE_STATE_TRANSITION_MODE_TRANSITION makes sure
-    // that resources are transitioned to proper states
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawAttribs DrawAttrs;
