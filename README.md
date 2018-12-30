@@ -110,6 +110,10 @@ Please refer to Build and Run Instructions section of the
 
 # Version History
 
+## v2.4.a
+
+* Added rendering backend selection dialog on Win32 and Mac
+
 ## v2.3.a
 
 * Added Tutorial 10 - Streaming
