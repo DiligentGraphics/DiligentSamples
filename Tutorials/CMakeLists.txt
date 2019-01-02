@@ -1,7 +1,7 @@
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     cmake_minimum_required (VERSION 3.13)
 else()
-    cmake_minimum_required (VERSION 3.10)
+    cmake_minimum_required (VERSION 3.6)
 endif()
 
 function(add_tutorial TUTORIAL_NAME SOURCE INCLUDE SHADERS ASSETS)
