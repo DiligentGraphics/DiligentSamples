@@ -41,8 +41,8 @@ public:
     ~SampleApp();
     virtual void ProcessCommandLine(const char *CmdLine)override final;
     virtual const char* GetAppTitle()const override final { return m_AppTitle.c_str(); }
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual void WindowResize(int width, int height)override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override;
+    virtual void WindowResize(int width, int height)override;
     virtual void Render()override;
     virtual void Present()override;
     virtual void SelectDeviceType(){};

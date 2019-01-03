@@ -22,6 +22,7 @@
 */
 
 #include <queue>
+#include <mutex>
 #include "SampleApp.h"
 #include "AntTweakBar.h"
 
@@ -45,6 +46,8 @@ public:
 
     virtual void Render()override
     {
+        std::lock_guard<std::mutex> lock(AppMutex);
+
         m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         // Handle all TwBar events here as the event handlers call draw commands
         // and thus cannot be used in the UI thread
@@ -77,27 +80,52 @@ public:
         SampleApp::Render();
     }
 
+    virtual void Update(double CurrTime, double ElapsedTime)override
+    {
+        std::lock_guard<std::mutex> lock(AppMutex);
+        SampleApp::Update(CurrTime, ElapsedTime);
+    }
+
+    virtual void WindowResize(int width, int height)override
+    {
+        std::lock_guard<std::mutex> lock(AppMutex);
+        SampleApp::WindowResize(width, height);
+    }
+
+    virtual void Present()override
+    {
+        std::lock_guard<std::mutex> lock(AppMutex);
+        SampleApp::Present();
+    }
+
     void OnMouseDown(int button)override final
     {
+        std::lock_guard<std::mutex> lock(AppMutex);
         TwBarEvents.emplace(button == 1 ? TwEvent::LMB_PRESSED : TwEvent::RMB_PRESSED);
     }
 
     void OnMouseUp(int button)override final
     {
+        std::lock_guard<std::mutex> lock(AppMutex);
         TwBarEvents.emplace(button == 1 ? TwEvent::LMB_RELEASED : TwEvent::RMB_RELEASED);
     }
 
     void OnMouseMove(int x, int y)override final
     {
+        std::lock_guard<std::mutex> lock(AppMutex);
         TwBarEvents.emplace(x, y);
     }
 
     void OnKeyPressed(int key)override final
     {
+        std::lock_guard<std::mutex> lock(AppMutex);
         TwBarEvents.emplace(key);
     }
 
 private:
+    // Render functions are called from high-priority Display Link thread,
+    // so all methods must be protected by mutex
+    std::mutex AppMutex;
 
     // Unfortunately TwBar library calls rendering
     // functions from event handlers, which does not work on MacOS
