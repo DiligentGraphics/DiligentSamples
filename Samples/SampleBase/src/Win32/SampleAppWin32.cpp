@@ -129,7 +129,18 @@ public:
         }
 
         // Send event message to AntTweakBar
-        return TwEventWin(hWnd, message, wParam, lParam);
+        auto Handled = TwEventWin(hWnd, message, wParam, lParam);
+        if(Handled)
+            return Handled;
+
+        struct WindowsMessageData
+        {
+            HWND hWnd;
+            UINT message;
+            WPARAM wParam;
+            LPARAM lParam;
+        }MsgData = {hWnd, message, wParam, lParam};
+        return m_TheSample->HandleNativeMessage(&MsgData);
     }
 
     virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight)override final
