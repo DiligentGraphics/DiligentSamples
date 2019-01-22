@@ -13,4 +13,4 @@ set(INCLUDE
 set(SHADERS)
 set(ASSETS)
 
-add_tutorial("Tutorial01_HelloTriangle" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial01_HelloTriangle" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

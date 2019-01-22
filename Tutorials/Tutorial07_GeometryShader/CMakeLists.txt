@@ -21,5 +21,5 @@ set(ASSETS
     assets/DGLogo.png
 )
 
-add_tutorial("Tutorial07_GeometryShader" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial07_GeometryShader" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial07_GeometryShader PRIVATE TextureLoader)

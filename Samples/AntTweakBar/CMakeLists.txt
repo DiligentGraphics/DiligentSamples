@@ -22,7 +22,8 @@ set(ASSETS
     assets/MengerSponge.lua
 )
 
-add_sample("AntTweakBarSample" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("AntTweakBarSample" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+target_link_libraries(AntTweakBarSample PRIVATE RenderScript)
 
 set_source_files_properties(${ASSETS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "."

@@ -24,7 +24,7 @@ set(ASSETS
     assets/DGLogo3.png
 )
 
-add_tutorial("Tutorial09_Quads" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial09_Quads" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial09_Quads PRIVATE TextureLoader)
 if(PLATFORM_LINUX)
     target_link_libraries(Tutorial09_Quads PRIVATE pthread)

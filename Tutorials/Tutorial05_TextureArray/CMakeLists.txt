@@ -22,5 +22,5 @@ set(ASSETS
     assets/DGLogo3.png
 )
 
-add_tutorial("Tutorial05_TextureArray" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial05_TextureArray" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial05_TextureArray PRIVATE TextureLoader)

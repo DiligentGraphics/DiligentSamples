@@ -17,4 +17,4 @@ set(SHADERS
 
 set(ASSETS)
 
-add_tutorial("Tutorial02_Cube" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial02_Cube" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

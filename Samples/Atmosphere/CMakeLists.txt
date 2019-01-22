@@ -90,7 +90,8 @@ set(TERRAIN_TILES
 
 set(ALL_SHADERS ${ATMOSPHERE_SHADERS} ${TERRAIN_SHADERS} ${SHADERS} ${PRECOMPUTE_SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
-add_sample("AtmosphereSample" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
+add_sample_app("AtmosphereSample" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
+target_link_libraries(AtmosphereSample PRIVATE RenderScript)
 
 set_source_files_properties(${ATMOSPHERE_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/atmosphere"
