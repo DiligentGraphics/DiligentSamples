@@ -43,5 +43,5 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
-    float4x4 m_WorldViewProjMatrix;
+    Diligent::float4x4 m_WorldViewProjMatrix;
 };

@@ -97,8 +97,8 @@ private:
 
     struct PolygonData
     {
-        float2 Pos;
-        float2 MoveDir;
+        Diligent::float2 Pos;
+        Diligent::float2 MoveDir;
         float Size;
         float Angle;
         float RotSpeed;
@@ -110,8 +110,8 @@ private:
 
     struct InstanceData
     {
-        float4 PolygonRotationAndScale;
-        float2 PolygonCenter;
+        Diligent::float4 PolygonRotationAndScale;
+        Diligent::float2 PolygonCenter;
         float TexArrInd;
     };
 
@@ -119,7 +119,7 @@ private:
     static constexpr const Diligent::Uint32 MaxPolygonVerts = 10;
     struct PolygonGeometry
     {
-        std::vector<float2> Verts;
+        std::vector<Diligent::float2> Verts;
         std::vector<Diligent::Uint32> Inds;
     };
     std::vector<PolygonGeometry> m_PolygonGeo;

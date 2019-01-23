@@ -45,12 +45,12 @@ private:
     static void SetSpongeAOCB( const void *value, void * /*clientData*/ );
     static void GetSpongeAOCB( void *value, void * /*clientData*/ );
     void BuildSponge( int levelMax, bool aoEnabled );
-    void SetShaderConstants( const float4x4& world, const float4x4& view, const float4x4& proj );
+    void SetShaderConstants( const Diligent::float4x4& world, const Diligent::float4x4& view, const Diligent::float4x4& proj );
     
-    Quaternion m_SpongeRotation; // model rotation
+    Diligent::Quaternion m_SpongeRotation; // model rotation
     int m_SpongeLevel;           // number of recursions
     bool m_SpongeAO;             // apply ambient occlusion
-    float3 m_LightDir;          // light direction vector
+    Diligent::float3 m_LightDir;          // light direction vector
     float m_CamDistance;         // camera distance
     float m_BackgroundColor[4];  // background color
     bool m_Animate;              // enable animation

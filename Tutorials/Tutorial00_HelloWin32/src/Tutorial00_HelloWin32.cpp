@@ -172,7 +172,7 @@ public:
         case DeviceType::OpenGL:
         {
 
-#if ENGINE_DLL
+#if EXPLICITLY_LOAD_ENGINE_GL_DLL
             // Declare function pointer
             GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
             // Load the dll and import GetEngineFactoryOpenGL() function
@@ -191,7 +191,7 @@ public:
 #if VULKAN_SUPPORTED
         case DeviceType::Vulkan:
         {
-#if ENGINE_DLL
+#if EXPLICITLY_LOAD_ENGINE_VK_DLL
             GetEngineFactoryVkType GetEngineFactoryVk = nullptr;
             // Load the dll and import GetEngineFactoryVk() function
             LoadGraphicsEngineVk(GetEngineFactoryVk);

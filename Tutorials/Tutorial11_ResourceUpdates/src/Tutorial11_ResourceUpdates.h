@@ -53,7 +53,7 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_TextureUpdateBuffer;
-    void DrawCube(const float4x4& WVPMatrix, Diligent::IBuffer *pVertexBuffer, Diligent::IShaderResourceBinding *pSRB);
+    void DrawCube(const Diligent::float4x4& WVPMatrix, Diligent::IBuffer *pVertexBuffer, Diligent::IShaderResourceBinding *pSRB);
     static constexpr const size_t NumTextures = 4;
     static constexpr const Diligent::Uint32 MaxUpdateRegionSize = 128;
     static constexpr const Diligent::Uint32 MaxMapRegionSize = 128;

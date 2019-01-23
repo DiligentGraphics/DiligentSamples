@@ -44,6 +44,6 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_ShaderConstants;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
-    float4x4 m_WorldViewProjMatrix;
+    Diligent::float4x4 m_WorldViewProjMatrix;
     float m_LineWidth = 3.f;
 };

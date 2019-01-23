@@ -43,8 +43,8 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[2];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_HeightMapSRV;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ColorMapSRV;
-    float4x4 m_WorldViewProjMatrix;
-    float4x4 m_WorldViewMatrix;
+    Diligent::float4x4 m_WorldViewProjMatrix;
+    Diligent::float4x4 m_WorldViewMatrix;
     bool m_Animate = true;
     bool m_Wireframe = false;
     float m_RotationAngle = 0;

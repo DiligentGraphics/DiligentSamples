@@ -76,8 +76,8 @@ private:
     static constexpr int NumTextures = 4;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
+    Diligent::float4x4 m_ViewProjMatrix;
+    Diligent::float4x4 m_RotationMatrix;
     int m_GridSize = 5;
 
     int m_MaxThreads = 8;
@@ -85,7 +85,7 @@ private:
 
     struct InstanceData
     {
-        float4x4 Matrix;
+        Diligent::float4x4 Matrix;
         int TextureInd;
     };
     std::vector<InstanceData> m_InstanceData;

@@ -49,8 +49,8 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
+    Diligent::float4x4 m_ViewProjMatrix;
+    Diligent::float4x4 m_RotationMatrix;
     int m_GridSize = 5;
     static constexpr int MaxGridSize = 32;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;

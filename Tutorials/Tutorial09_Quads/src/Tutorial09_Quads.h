@@ -90,8 +90,8 @@ private:
 
     struct QuadData
     {
-        float2 Pos;
-        float2 MoveDir;
+        Diligent::float2 Pos;
+        Diligent::float2 MoveDir;
         float Size;
         float Angle;
         float RotSpeed;
@@ -102,8 +102,8 @@ private:
 
     struct InstanceData
     {
-        float4 QuadRotationAndScale;
-        float2 QuadCenter;
+        Diligent::float4 QuadRotationAndScale;
+        Diligent::float2 QuadCenter;
         float TexArrInd;
     };
 };

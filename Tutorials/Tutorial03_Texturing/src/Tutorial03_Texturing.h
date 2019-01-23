@@ -44,5 +44,5 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
     Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
-    float4x4 m_WorldViewProjMatrix;
+    Diligent::float4x4 m_WorldViewProjMatrix;
 };
