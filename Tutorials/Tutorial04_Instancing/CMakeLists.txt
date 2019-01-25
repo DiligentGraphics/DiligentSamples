@@ -19,5 +19,5 @@ set(ASSETS
     assets/DGLogo.png
 )
 
-add_sample_app("Tutorial04_Instancing" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial04_Instancing" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial04_Instancing PRIVATE TextureLoader)

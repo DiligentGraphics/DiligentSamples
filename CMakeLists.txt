@@ -6,7 +6,7 @@ else()
     set(INSTALL_DILIGENT_SAMPLES OFF)
 endif()
 
-function(add_sample_app APP_NAME SOURCE INCLUDE SHADERS ASSETS)
+function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
 	set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 	set(ALL_ASSETS ${ASSETS} ${SHADERS})
@@ -49,7 +49,7 @@ function(add_sample_app APP_NAME SOURCE INCLUDE SHADERS ASSETS)
 	endif()
 
 	set_target_properties(${APP_NAME} PROPERTIES
-		FOLDER Tutorials
+		FOLDER ${IDE_FOLDER}
 	)
 
 	source_group("src" FILES ${SOURCE} ${INCLUDE})

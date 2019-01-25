@@ -25,5 +25,5 @@ set(ASSETS
     assets/ps_texture_2k.png
 )
 
-add_sample_app("Tutorial08_Tessellation" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial08_Tessellation" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial08_Tessellation PRIVATE TextureLoader)
