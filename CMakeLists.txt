@@ -21,9 +21,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 		set_target_properties(${APP_NAME} PROPERTIES 
 			VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
 		)
-        if(MSVC)
-		    copy_required_dlls(${APP_NAME})
-        endif()
+		copy_required_dlls(${APP_NAME})
         append_sample_base_win32_source(${APP_NAME})
 	elseif(PLATFORM_UNIVERSAL_WINDOWS)
 			append_sample_base_uwp_source(${APP_NAME})
