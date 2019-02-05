@@ -344,14 +344,18 @@ void SampleApp::InitializeSample()
 #endif
 }
 
-void SampleApp::ProcessCommandLine(const char *CmdLine)
+void SampleApp::ProcessCommandLine(const char* CmdLine)
 {
     const auto* Key = "mode=";
-    const auto *pos = strstr(CmdLine, Key);
+    const auto* pos = strstr(CmdLine, Key);
     if (pos != nullptr)
     {
         pos += strlen(Key);
-        if (_stricmp(pos, "D3D11") == 0)
+        size_t len = 0;
+        while(pos[len] != 0 && pos[len] != ' ')
+            ++len;
+
+        if (StrCmpNoCase(pos, "D3D11", len) == 0)
         {
 #if D3D11_SUPPORTED
             m_DeviceType = DeviceType::D3D11;
@@ -359,7 +363,7 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
             LOG_ERROR_AND_THROW("Direct3D11 is not supported. Please select another device type");
 #endif
         }
-        else if (_stricmp(pos, "D3D12") == 0)
+        else if (StrCmpNoCase(pos, "D3D12", len) == 0)
         {
 #if D3D12_SUPPORTED
             m_DeviceType = DeviceType::D3D12;
@@ -367,7 +371,7 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
             LOG_ERROR_AND_THROW("Direct3D12 is not supported. Please select another device type");
 #endif
         }
-        else if (_stricmp(pos, "GL") == 0)
+        else if (StrCmpNoCase(pos, "GL", len) == 0)
         {
 #if GL_SUPPORTED || GLES_SUPPORTED
             m_DeviceType = DeviceType::OpenGL;
@@ -375,7 +379,7 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
             LOG_ERROR_AND_THROW("OpenGL is not supported. Please select another device type");
 #endif
         }
-        else if (_stricmp(pos, "VK") == 0)
+        else if (StrCmpNoCase(pos, "VK", len) == 0)
         {
 #if VULKAN_SUPPORTED
             m_DeviceType = DeviceType::Vulkan;
@@ -425,6 +429,8 @@ void SampleApp::ProcessCommandLine(const char *CmdLine)
 
         default: UNEXPECTED("Unknown/unsupported device type");
     }
+
+    m_TheSample->ProcessCommandLine(CmdLine);
 }
 
 void SampleApp::WindowResize(int width, int height)
