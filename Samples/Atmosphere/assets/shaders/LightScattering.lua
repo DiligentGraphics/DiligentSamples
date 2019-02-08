@@ -192,7 +192,6 @@ function ResetShaderResourceBindings()
 	InitMinMaxShadowMapSRB = nil
 	RayMarchSRB = nil
 	RenderCoordinateTextureSRB = nil
-	RenderSampleLocationsSRB = nil
 	FixInscatteringAtDepthBreaksSRB = nil
 	UnwarpAndRenderLuminanceSRB = nil
 	UnwarpEpipolarScatteringSRB = nil
@@ -826,48 +825,6 @@ function UpdateAverageLuminance()
 	RenderScreenSizeQuad(UpdateAverageLuminancePSO, UpdateAverageLuminanceSRB, 0)
 end
 
-SampleLocationsDrawAttrs = DrawAttribs.Create{
-    NumVertices = 4
-}
-
-
-function CreateRenderSampleLocationsPSO(RenderSampleLocationsVS, RenderSampleLocationsPS)
-	RenderSampleLocationsPSO = PipelineState.Create
-	{
-		GraphicsPipeline = 
-		{
-			RasterizerDesc = 
-			{
-				FillMode = "FILL_MODE_SOLID",
-				CullMode = "CULL_MODE_NONE",
-				FrontCounterClockwise = true
-			},
-			DepthStencilDesc = DisableDepthDesc,
-			BlendDesc = AlphaBlendBSDesc,
-			pVS = RenderSampleLocationsVS,
-			pPS = RenderSampleLocationsPS,
-			RTVFormats = MainBackBufferFmt,
-            DSVFormat = MainDepthBufferFmt,
-            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
-		}
-	}
-	RenderSampleLocationsSRB = nil
-
-	-- Force garbage collection to make sure all graphics resources are released
-	collectgarbage()
-end
-
-function RenderSampleLocations(TotalSamples)
-	if RenderSampleLocationsSRB == nil then
-		RenderSampleLocationsSRB= RenderSampleLocationsPSO:CreateShaderResourceBinding(true)
-		RenderSampleLocationsSRB:BindResources({"SHADER_TYPE_VERTEX","SHADER_TYPE_PIXEL"}, extResourceMapping, {"BIND_SHADER_RESOURCES_KEEP_EXISTING", "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
-	end
-
-	Context.SetPipelineState(RenderSampleLocationsPSO)
-	Context.CommitShaderResources(RenderSampleLocationsSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
-	SampleLocationsDrawAttrs.NumInstances = TotalSamples
-	Context.Draw(SampleLocationsDrawAttrs)
-end
 
 function CreatePrecomputeAmbientSkyLightPSO(PrecomputeAmbientSkyLightPS)
 	PrecomputeAmbientSkyLightPSO = CreateScreenSizeQuadPSO("PrecomputeAmbientSkyLight", PrecomputeAmbientSkyLightPS, DisableDepthDesc, DefaultBlendDesc, AmbientSkyLightTexFmt)

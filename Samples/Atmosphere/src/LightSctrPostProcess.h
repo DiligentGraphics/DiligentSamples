@@ -118,6 +118,7 @@ private:
     void CreateRandomSphereSamplingTexture(IRenderDevice *pDevice);
     void ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext);
     void ComputeScatteringCoefficients(IDeviceContext *pDeviceCtx = NULL);
+    void CreateAuxTextures();
 
     RefCntAutoPtr<IPipelineState> CreateScreenSizeQuadPSO(IRenderDevice*               pDevice,
                                                           const char*                  PSOName,
@@ -136,6 +137,10 @@ private:
 
     void DefineMacros(Diligent::ShaderMacroHelper &Macros);
     
+    const TEXTURE_FORMAT m_BackBufferFmt;
+    const TEXTURE_FORMAT m_DepthBufferFmt;
+    const TEXTURE_FORMAT m_OffscreenBackBufferFmt;
+
     PostProcessingAttribs m_PostProcessingAttribs;
     bool m_bUseCombinedMinMaxTexture;
     Uint32 m_uiSampleRefinementCSThreadGroupSize;
@@ -147,7 +152,7 @@ private:
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DMinMaxShadowMapRTV[2];
 
     static const int sm_iNumPrecomputedHeights = 1024;
-    static const int sm_iNumPrecomputedAngles = 1024;
+    static const int sm_iNumPrecomputedAngles  = 1024;
 
     
     static const int sm_iPrecomputedSctrUDim = 32;
@@ -198,7 +203,8 @@ private:
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DEpipolarExtinctionRTV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DEpipolarImageDSV;
 
-    Diligent::RefCntAutoPtr<IShader> m_pRenderSampleLocationsVS, m_pRenderSampleLocationsPS;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRenderSampleLocationsPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRenderSampleLocationsSRB;
     Diligent::RefCntAutoPtr<ISampler> m_pPointClampSampler, m_pLinearClampSampler;
 
     Diligent::RefCntAutoPtr<IShader> m_pPrecomputeSingleSctrCS;

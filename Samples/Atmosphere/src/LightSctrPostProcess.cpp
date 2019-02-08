@@ -61,6 +61,24 @@ static const DepthStencilStateDesc DSS_CmpEqNoWrites =
 	COMPARISON_FUNC_EQUAL // DepthFunc
 };
 
+static const BlendStateDesc BS_AlphaBlend = 
+{
+    False, // AlphaToCoverageEnable
+    False, // IndependentBlendEnable
+	{      // RenderTagets[0]
+		{
+			True,                       // BlendEnable
+            False,                      // LogicOperationEnable
+            BLEND_FACTOR_SRC_ALPHA,     // SrcBlend
+            BLEND_FACTOR_INV_SRC_ALPHA, // DestBlend
+			BLEND_OPERATION_ADD,        // BlendOp
+            BLEND_FACTOR_SRC_ALPHA,     // SrcBlendAlpha
+            BLEND_FACTOR_INV_SRC_ALPHA, // DestBlendAlpha
+			BLEND_OPERATION_ADD         // BlendOpAlpha
+		}
+	}
+};
+
 static
 RefCntAutoPtr<IShader> CreateShader(IRenderDevice*            pDevice, 
                                     const Char*               FileName, 
@@ -94,6 +112,9 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice,
                                              TEXTURE_FORMAT  BackBufferFmt,
                                              TEXTURE_FORMAT  DepthBufferFmt,
                                              TEXTURE_FORMAT  OffscreenBackBufferFmt) :
+    m_BackBufferFmt            (BackBufferFmt),
+    m_DepthBufferFmt           (DepthBufferFmt),
+    m_OffscreenBackBufferFmt   (OffscreenBackBufferFmt),
     m_bUseCombinedMinMaxTexture(false),
     m_uiSampleRefinementCSThreadGroupSize(0),
     // Using small group size is inefficient because a lot of SIMD lanes become idle
@@ -211,8 +232,7 @@ void LightSctrPostProcess :: OnWindowResize(IRenderDevice* pd3dDevice, Uint32 ui
     m_pRendedCoordTexPS.Release();
     m_pRendedSliceEndpointsPS.Release();
     m_pRenderSliceUVDirInSMPS.Release();
-    m_pRenderSampleLocationsVS.Release();
-    m_pRenderSampleLocationsPS.Release();
+    m_pRenderSampleLocationsPSO.Release();
     m_pUnwarpEpipolarSctrImgPS.Release();
     m_pUnwarpAndRenderLuminancePS.Release();
 }
@@ -380,6 +400,11 @@ void LightSctrPostProcess :: CreateRandomSphereSamplingTexture(IRenderDevice *pD
     m_ptex2DSphereRandomSamplingSRV = ptex2DSphereRandomSampling->GetDefaultView( TEXTURE_VIEW_SHADER_RESOURCE );
     m_ptex2DSphereRandomSamplingSRV->SetSampler(m_pLinearClampSampler);
     m_pResMapping->AddResource( "g_tex2DSphereRandomSampling", m_ptex2DSphereRandomSamplingSRV, true );
+}
+
+void LightSctrPostProcess :: CreateAuxTextures()
+{
+
 }
 
 void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevice, IDeviceContext *pContext)
@@ -1164,22 +1189,50 @@ void LightSctrPostProcess :: FixInscatteringAtDepthBreaks(FrameAttribs &FrameAtt
     m_pRenderScript->Run( FrameAttribs.pDeviceContext, "FixInscatteringAtDepthBreaks", static_cast<Int32>(Mode), FrameAttribs.ptex2DSrcColorBufferSRV );
 }
 
-void LightSctrPostProcess :: RenderSampleLocations(FrameAttribs &FrameAttribs)
+void LightSctrPostProcess :: RenderSampleLocations(FrameAttribs& FrameAttribs)
 {
-    if( !m_pRenderSampleLocationsPS )
+    if (!m_pRenderSampleLocationsPSO)
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.Finalize();
 
-        m_pRenderSampleLocationsVS = CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsVS", SHADER_TYPE_VERTEX, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
-        m_pRenderSampleLocationsPS = CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
-        m_pRenderScript->Run( FrameAttribs.pDeviceContext, "CreateRenderSampleLocationsPSO", m_pRenderSampleLocationsVS, m_pRenderSampleLocationsPS);
-    }
-    m_pRenderSampleLocationsVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
-    m_pRenderSampleLocationsPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        // Shaders use SCREEN_RESLOUTION macro
+        auto pRenderSampleLocationsVS = CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsVS", SHADER_TYPE_VERTEX, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
+        auto pRenderSampleLocationsPS = CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
+        pRenderSampleLocationsVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        pRenderSampleLocationsPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 
-    m_pRenderScript->Run( FrameAttribs.pDeviceContext, "RenderSampleLocations", m_PostProcessingAttribs.m_uiMaxSamplesInSlice * m_PostProcessingAttribs.m_uiNumEpipolarSlices );
+        PipelineStateDesc PSODesc;
+        PSODesc.Name = "Render sample locations PSO";
+        auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+        GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+		GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
+        GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
+		GraphicsPipeline.DepthStencilDesc  = DSS_DisableDepth;
+		GraphicsPipeline.BlendDesc         = BS_AlphaBlend;
+		GraphicsPipeline.pVS               = pRenderSampleLocationsVS;
+		GraphicsPipeline.pPS               = pRenderSampleLocationsPS;
+        GraphicsPipeline.NumRenderTargets  = 1;
+		GraphicsPipeline.RTVFormats[0]     = m_BackBufferFmt;
+        GraphicsPipeline.DSVFormat         = m_DepthBufferFmt;
+        GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        FrameAttribs.pDevice->CreatePipelineState(PSODesc, &m_pRenderSampleLocationsPSO);
+        m_pRenderSampleLocationsSRB.Release();
+	}
+
+    if (!m_pRenderSampleLocationsSRB)
+    {
+        m_pRenderSampleLocationsPSO->CreateShaderResourceBinding(&m_pRenderSampleLocationsSRB, true);
+        m_pRenderSampleLocationsSRB->BindResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+    }
+
+    DrawAttribs Attribs;
+    Attribs.NumVertices = 4;
+    Attribs.NumInstances = m_PostProcessingAttribs.m_uiMaxSamplesInSlice * m_PostProcessingAttribs.m_uiNumEpipolarSlices;
+    FrameAttribs.pDeviceContext->SetPipelineState(m_pRenderSampleLocationsPSO);
+	FrameAttribs.pDeviceContext->CommitShaderResources(m_pRenderSampleLocationsSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+	FrameAttribs.pDeviceContext->Draw(Attribs);
 }
 
 
@@ -1266,13 +1319,14 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::AuxTextures;
         m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::ExtinctionTexture;
         m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::SliceUVDirAndOriginTex;
+        m_pRenderSampleLocationsSRB.Release();
     }
 
     if( PPAttribs.m_uiMinMaxShadowMapResolution != m_PostProcessingAttribs.m_uiMinMaxShadowMapResolution || 
-        PPAttribs.m_uiNumEpipolarSlices != m_PostProcessingAttribs.m_uiNumEpipolarSlices ||
-        PPAttribs.m_bUse1DMinMaxTree != m_PostProcessingAttribs.m_bUse1DMinMaxTree ||
-        PPAttribs.m_bIs32BitMinMaxMipMap != m_PostProcessingAttribs.m_bIs32BitMinMaxMipMap ||
-        bUseCombinedMinMaxTexture != m_bUseCombinedMinMaxTexture ||
+        PPAttribs.m_uiNumEpipolarSlices         != m_PostProcessingAttribs.m_uiNumEpipolarSlices         ||
+        PPAttribs.m_bUse1DMinMaxTree            != m_PostProcessingAttribs.m_bUse1DMinMaxTree            ||
+        PPAttribs.m_bIs32BitMinMaxMipMap        != m_PostProcessingAttribs.m_bIs32BitMinMaxMipMap        ||
+        bUseCombinedMinMaxTexture               != m_bUseCombinedMinMaxTexture                           ||
         (bUseCombinedMinMaxTexture && 
             (PPAttribs.m_iFirstCascade != m_PostProcessingAttribs.m_iFirstCascade || 
              PPAttribs.m_iNumCascades  != m_PostProcessingAttribs.m_iNumCascades)) )
@@ -1321,14 +1375,6 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
     m_PostProcessingAttribs = PPAttribs;
     m_bUseCombinedMinMaxTexture = bUseCombinedMinMaxTexture;
 
-    if(ResetSRBs)
-    {
-        m_pRenderScript->Run("ResetShaderResourceBindings");
-        m_pRefineSampleLocationsSRB.Release();
-        m_pComputeMinMaxSMLevelSRB[0].Release();
-        m_pComputeMinMaxSMLevelSRB[1].Release();
-    }
-
     if( bRecomputeSctrCoeffs )
     {
         m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::PrecomputedOpticalDepthTex;
@@ -1340,6 +1386,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
 
     if( !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::AuxTextures) )
     {
+        CreateAuxTextures();
         m_pRenderScript->Run( "CreateAuxTextures", m_PostProcessingAttribs.m_uiNumEpipolarSlices, m_PostProcessingAttribs.m_uiMaxSamplesInSlice );
         m_uiUpToDateResourceFlags |= UpToDateResourceFlags::AuxTextures;
         m_ptex2DEpipolarInscatteringRTV.Release();
@@ -1395,6 +1442,15 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         ResetSRBs = true;
     }
 
+
+    if(ResetSRBs)
+    {
+        m_pRenderScript->Run("ResetShaderResourceBindings");
+        m_pRenderSampleLocationsSRB.Release();
+        m_pRefineSampleLocationsSRB.Release();
+        m_pComputeMinMaxSMLevelSRB[0].Release();
+        m_pComputeMinMaxSMLevelSRB[1].Release();
+    }
 
     if( /*m_PostProcessingAttribs.m_bAutoExposure &&*/ !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::LowResLuminamceTex) )
     {
