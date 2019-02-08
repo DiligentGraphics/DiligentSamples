@@ -188,9 +188,9 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceConte
         LayoutElement LayoutElems[] =
         {
             // Attribute 0 - vertex position
-            LayoutElement(0, 0, 3, VT_FLOAT32, False),
+            LayoutElement{0, 0, 3, VT_FLOAT32, False},
             // Attribute 1 - texture coordinates
-            LayoutElement(1, 0, 2, VT_FLOAT32, False)
+            LayoutElement{1, 0, 2, VT_FLOAT32, False}
         };
 
         PSODesc.GraphicsPipeline.pVS = pVS;

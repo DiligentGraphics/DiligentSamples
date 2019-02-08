@@ -241,7 +241,7 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
         CreationAttribs.Source = bIsDX ? g_TextPS_DX : g_TextPS_GL;
         CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
         CreationAttribs.Desc.Name = "AntTwBar: TextPS";
-        ShaderVariableDesc VarDesc[] = {ShaderVariableDesc("g_Font", SHADER_VARIABLE_TYPE_MUTABLE)};
+        ShaderVariableDesc VarDesc[] = {ShaderVariableDesc{"g_Font", SHADER_VARIABLE_TYPE_MUTABLE}};
         CreationAttribs.Desc.VariableDesc = VarDesc;
         CreationAttribs.Desc.NumVariables = _countof(VarDesc);
         m_pDev->CreateShader( CreationAttribs, &m_pTextPS );
@@ -310,9 +310,9 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
     PSODesc.GraphicsPipeline.pPS = m_pTextPS;
     LayoutElement TextLayoutElems[] = 
     {
-        LayoutElement( 0, 0, 3, VT_FLOAT32, False ),
-        LayoutElement( 1, 0, 4, VT_UINT8, True ),
-        LayoutElement( 2, 0, 2, VT_FLOAT32, False ),
+        LayoutElement{ 0, 0, 3, VT_FLOAT32, False },
+        LayoutElement{ 1, 0, 4, VT_UINT8, True },
+        LayoutElement{ 2, 0, 2, VT_FLOAT32, False },
     };
     lineRectLayout.LayoutElements = TextLayoutElems;
     lineRectLayout.NumElements = _countof( TextLayoutElems );
@@ -327,8 +327,8 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
 
     LayoutElement LineRectElems[] = 
     {
-        LayoutElement( 0, 0, 3, VT_FLOAT32, False ),
-        LayoutElement( 1, 0, 4, VT_UINT8, True )
+        LayoutElement{ 0, 0, 3, VT_FLOAT32, False },
+        LayoutElement{ 1, 0, 4, VT_UINT8,   True  }
     };
     lineRectLayout.LayoutElements = LineRectElems;
     lineRectLayout.NumElements = _countof( LineRectElems );

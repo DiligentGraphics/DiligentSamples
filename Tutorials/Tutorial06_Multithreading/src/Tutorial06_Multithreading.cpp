@@ -160,9 +160,9 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
         {
             // Per-vertex data - first buffer slot
             // Attribute 0 - vertex position
-            LayoutElement(0, 0, 3, VT_FLOAT32, False),
+            LayoutElement{0, 0, 3, VT_FLOAT32, False},
             // Attribute 1 - texture coordinates
-            LayoutElement(1, 0, 2, VT_FLOAT32, False)
+            LayoutElement{1, 0, 2, VT_FLOAT32, False}
         };
 
         PSODesc.GraphicsPipeline.pVS = pVS;

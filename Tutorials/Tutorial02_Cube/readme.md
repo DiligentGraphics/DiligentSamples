@@ -134,9 +134,9 @@ as follows:
 LayoutElement LayoutElems[] =
 {
     // Attribute 0 - vertex position
-    LayoutElement(0, 0, 3, VT_FLOAT32, False),
+    LayoutElement{0, 0, 3, VT_FLOAT32, False},
     // Attribute 1 - vertex color
-    LayoutElement(1, 0, 4, VT_FLOAT32, False)
+    LayoutElement{1, 0, 4, VT_FLOAT32, False}
 };
 PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
 PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
