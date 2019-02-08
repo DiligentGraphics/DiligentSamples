@@ -119,6 +119,8 @@ private:
     void ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext);
     void ComputeScatteringCoefficients(IDeviceContext *pDeviceCtx = NULL);
     void CreateAuxTextures();
+    void ResetShaderResourceBindings();
+    void CreateExtinctionTexture(IRenderDevice* pDevice);
 
     RefCntAutoPtr<IPipelineState> CreateScreenSizeQuadPSO(IRenderDevice*               pDevice,
                                                           const char*                  PSOName,
@@ -140,6 +142,8 @@ private:
     const TEXTURE_FORMAT m_BackBufferFmt;
     const TEXTURE_FORMAT m_DepthBufferFmt;
     const TEXTURE_FORMAT m_OffscreenBackBufferFmt;
+
+    static constexpr TEXTURE_FORMAT EpipolarExtinctionFmt = TEX_FORMAT_RGBA8_UNORM;
 
     PostProcessingAttribs m_PostProcessingAttribs;
     bool m_bUseCombinedMinMaxTexture;

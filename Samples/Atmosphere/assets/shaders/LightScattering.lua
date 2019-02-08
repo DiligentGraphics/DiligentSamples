@@ -308,30 +308,6 @@ function CreateAuxTextures(NumSlices, MaxSamplesInSlice)
 
 end
 
-function CreateExtinctionTexture(NumSlices, MaxSamplesInSlice)
-	local TexDesc = {
-        Name = "Epipolar Extinction",
-		Type = "RESOURCE_DIM_TEX_2D", 
-		Width = MaxSamplesInSlice, Height = NumSlices,
-		Format = EpipolarExtinctionFmt,
-		MipLevels = 1,
-		Usage = "USAGE_DEFAULT",
-		BindFlags = {"BIND_RENDER_TARGET", "BIND_SHADER_RESOURCE"},
-		ClearValue = {Color = {r=1, g=1, b=1, a=1}}
-	}
-	-- MaxSamplesInSlice x NumSlices RGBA8_UNORM texture to store extinction
-	-- for every epipolar sample
-	tex2DEpipolarExtinction = Texture.Create(TexDesc)
-	tex2DEpipolarExtinctionSRV = tex2DEpipolarExtinction:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
-	tex2DEpipolarExtinctionRTV = tex2DEpipolarExtinction:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET")
-	tex2DEpipolarExtinctionSRV:SetSampler(LinearClampSampler)
-	extResourceMapping["g_tex2DEpipolarExtinction"] = tex2DEpipolarExtinctionSRV
-
-	ResetShaderResourceBindings()
-
-	-- Force garbage collection to make sure all graphics resources are released
-	collectgarbage()
-end
 
 function CreateLowResLuminanceTexture(LowResLuminanceMips)
 	-- Create low-resolution texture to store image luminance

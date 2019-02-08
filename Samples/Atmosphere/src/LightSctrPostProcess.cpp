@@ -728,11 +728,8 @@ void LightSctrPostProcess :: RenderCoarseUnshadowedInctr(FrameAttribs &FrameAttr
     if( m_PostProcessingAttribs.m_uiExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR && 
         !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::ExtinctionTexture) )
     {
-        // Extinction texture size is num_slices x max_samples_in_slice. So the texture must be re-created when either change.
-        m_pRenderScript->Run(FrameAttribs.pDeviceContext, "CreateExtinctionTexture", m_PostProcessingAttribs.m_uiNumEpipolarSlices, m_PostProcessingAttribs.m_uiMaxSamplesInSlice );
-        m_uiUpToDateResourceFlags |= UpToDateResourceFlags::ExtinctionTexture;
-        m_ptex2DEpipolarExtinctionRTV.Release();
-        m_pRenderScript->GetTextureViewByName( "tex2DEpipolarExtinctionRTV", &m_ptex2DEpipolarExtinctionRTV );
+        // Extinction texture size is num_slices x max_samples_in_slice. So the texture must be re-created when either changes.
+        CreateExtinctionTexture(FrameAttribs.pDevice);
     }
 
     ITextureView *pRTVs[] = {m_ptex2DEpipolarInscatteringRTV, m_ptex2DEpipolarExtinctionRTV};
@@ -1235,6 +1232,39 @@ void LightSctrPostProcess :: RenderSampleLocations(FrameAttribs& FrameAttribs)
 	FrameAttribs.pDeviceContext->Draw(Attribs);
 }
 
+void LightSctrPostProcess :: ResetShaderResourceBindings()
+{
+    m_pRenderScript->Run("ResetShaderResourceBindings");
+    m_pRenderSampleLocationsSRB.Release();
+    m_pRefineSampleLocationsSRB.Release();
+    m_pComputeMinMaxSMLevelSRB[0].Release();
+    m_pComputeMinMaxSMLevelSRB[1].Release();
+}
+
+void LightSctrPostProcess :: CreateExtinctionTexture(IRenderDevice* pDevice)
+{
+    TextureDesc TexDesc;
+    TexDesc.Name        = "Epipolar Extinction",
+	TexDesc.Type        = RESOURCE_DIM_TEX_2D; 
+	TexDesc.Width       = m_PostProcessingAttribs.m_uiMaxSamplesInSlice;
+    TexDesc.Height      = m_PostProcessingAttribs.m_uiNumEpipolarSlices;
+	TexDesc.Format      = EpipolarExtinctionFmt;
+	TexDesc.MipLevels   = 1;
+	TexDesc.Usage       = USAGE_DEFAULT;
+	TexDesc.BindFlags   = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+	TexDesc.ClearValue  = {TEX_FORMAT_UNKNOWN, {1, 1, 1, 1}};
+    // MaxSamplesInSlice x NumSlices RGBA8_UNORM texture to store extinction
+	// for every epipolar sample
+    RefCntAutoPtr<ITexture> tex2DEpipolarExtinction;
+    pDevice->CreateTexture(TexDesc, TextureData{}, &tex2DEpipolarExtinction);
+    auto* tex2DEpipolarExtinctionSRV = tex2DEpipolarExtinction->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    tex2DEpipolarExtinctionSRV->SetSampler(m_pLinearClampSampler);
+    m_pResMapping->AddResource("g_tex2DEpipolarExtinction", tex2DEpipolarExtinctionSRV, false);
+	m_ptex2DEpipolarExtinctionRTV = tex2DEpipolarExtinction->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+
+    m_uiUpToDateResourceFlags |= UpToDateResourceFlags::ExtinctionTexture;
+    ResetShaderResourceBindings();
+}
 
 void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
                                                     PostProcessingAttribs &PPAttribs)
@@ -1301,13 +1331,13 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         m_pUpdateAverageLuminancePS.Release();
     }
 
-    if( PPAttribs.m_uiCascadeProcessingMode != m_PostProcessingAttribs.m_uiCascadeProcessingMode ||
-        bUseCombinedMinMaxTexture != m_bUseCombinedMinMaxTexture ||
-        PPAttribs.m_bEnableLightShafts != m_PostProcessingAttribs.m_bEnableLightShafts ||
-        PPAttribs.m_uiMultipleScatteringMode != m_PostProcessingAttribs.m_uiMultipleScatteringMode  ||
-        PPAttribs.m_uiSingleScatteringMode != m_PostProcessingAttribs.m_uiSingleScatteringMode ||
-        PPAttribs.m_bAutoExposure != m_PostProcessingAttribs.m_bAutoExposure || 
-        PPAttribs.m_uiToneMappingMode != m_PostProcessingAttribs.m_uiToneMappingMode)
+    if( PPAttribs.m_uiCascadeProcessingMode      != m_PostProcessingAttribs.m_uiCascadeProcessingMode   ||
+        bUseCombinedMinMaxTexture                != m_bUseCombinedMinMaxTexture                         ||
+        PPAttribs.m_bEnableLightShafts           != m_PostProcessingAttribs.m_bEnableLightShafts        ||
+        PPAttribs.m_uiMultipleScatteringMode     != m_PostProcessingAttribs.m_uiMultipleScatteringMode  ||
+        PPAttribs.m_uiSingleScatteringMode       != m_PostProcessingAttribs.m_uiSingleScatteringMode    ||
+        PPAttribs.m_bAutoExposure                != m_PostProcessingAttribs.m_bAutoExposure             || 
+        PPAttribs.m_uiToneMappingMode            != m_PostProcessingAttribs.m_uiToneMappingMode)
     {
         for(size_t i=0; i<_countof(m_pFixInsctrAtDepthBreaksPS); ++i)
             m_pFixInsctrAtDepthBreaksPS[i].Release();
@@ -1445,11 +1475,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
 
     if(ResetSRBs)
     {
-        m_pRenderScript->Run("ResetShaderResourceBindings");
-        m_pRenderSampleLocationsSRB.Release();
-        m_pRefineSampleLocationsSRB.Release();
-        m_pComputeMinMaxSMLevelSRB[0].Release();
-        m_pComputeMinMaxSMLevelSRB[1].Release();
+        ResetShaderResourceBindings();
     }
 
     if( /*m_PostProcessingAttribs.m_bAutoExposure &&*/ !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::LowResLuminamceTex) )
