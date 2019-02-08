@@ -47,21 +47,22 @@
 #include "GraphicsAccessories.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "MapHelper.h"
+#include "CommonlyUsedStates.h"
 
 using namespace Diligent;
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-void CreateShader(IRenderDevice *pDevice, 
-                  const Char* FileName, 
-                  const Char* EntryPoint, 
-                  SHADER_TYPE Type, 
-                  const ShaderMacro *Macros, 
-                  SHADER_VARIABLE_TYPE DefaultVarType, 
-                  IShader **ppShader, 
-                  const ShaderVariableDesc *pVarDesc = nullptr, 
-                  Uint32 NumVars = 0)
+void CreateShader(IRenderDevice*            pDevice, 
+                  const Char*               FileName, 
+                  const Char*               EntryPoint, 
+                  SHADER_TYPE               Type, 
+                  const ShaderMacro*        Macros, 
+                  SHADER_VARIABLE_TYPE      DefaultVarType, 
+                  IShader**                 ppShader, 
+                  const ShaderVariableDesc* pVarDesc       = nullptr, 
+                  Uint32                    NumVars        = 0)
 {
     ShaderCreationAttribs Attribs;
     Attribs.EntryPoint = EntryPoint;
@@ -79,11 +80,11 @@ void CreateShader(IRenderDevice *pDevice,
     pDevice->CreateShader( Attribs, ppShader );
 }
 
-LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice, 
-                                             IDeviceContext *pContext,
-                                             TEXTURE_FORMAT BackBufferFmt,
-                                             TEXTURE_FORMAT DepthBufferFmt,
-                                             TEXTURE_FORMAT OffscreenBackBuffer) :
+LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice, 
+                                             IDeviceContext* pContext,
+                                             TEXTURE_FORMAT  BackBufferFmt,
+                                             TEXTURE_FORMAT  DepthBufferFmt,
+                                             TEXTURE_FORMAT  OffscreenBackBuffer) :
     m_bUseCombinedMinMaxTexture(false),
     m_uiSampleRefinementCSThreadGroupSize(0),
     // Using small group size is inefficient because a lot of SIMD lanes become idle
@@ -122,8 +123,8 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice,
         pScriptParser->SetGlobalVariable( "OffscreenBackBufferFmt", GetTextureFormatAttribs(OffscreenBackBuffer).Name );
     } );
     m_pRenderScript->GetSamplerByName( "PointClampSampler", &m_pPointClampSampler );
-    m_pRenderScript->GetSamplerByName( "LinearClampSampler", &m_pLinearClampSampler );
-
+    
+    pDevice->CreateSampler(Sam_LinearClamp, &m_pLinearClampSampler);
 #if 0
     
     // Create samplers
@@ -144,6 +145,15 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice* pDevice,
     V_RETURN( in_pd3dDevice->CreateSamplerState( &SamLinearBorder0Desc, &m_psamLinearBorder0) );
 
 #endif
+
+    {
+        RefCntAutoPtr<IShader> pPrecomputeNetDensityToAtmTopPS;
+        CreateShader(pDevice, "PrecomputeNetDensityToAtmTop.fx", "PrecomputeNetDensityToAtmTopPS", SHADER_TYPE_PIXEL, nullptr, SHADER_VARIABLE_TYPE_STATIC, &pPrecomputeNetDensityToAtmTopPS);
+        pPrecomputeNetDensityToAtmTopPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        TEXTURE_FORMAT RtvFmts[] = {TEX_FORMAT_RG32_FLOAT};
+        m_pPrecomputeNetDensityToAtmTopPSO = CreateScreenSizeQuadPSO(pDevice, "PrecomputeNetDensityToAtmTopPSO", pPrecomputeNetDensityToAtmTopPS, DSS_DisableDepth, BS_Default, 1, RtvFmts, TEX_FORMAT_UNKNOWN);
+        m_pPrecomputeNetDensityToAtmTopPSO->CreateShaderResourceBinding(&m_pPrecomputeNetDensityToAtmTopSRB, true);
+    }
 
     ComputeScatteringCoefficients(pContext);
 
@@ -217,18 +227,90 @@ void LightSctrPostProcess :: DefineMacros(ShaderMacroHelper &Macros)
 }
 
 
-void LightSctrPostProcess::CreatePrecomputedOpticalDepthTexture(IRenderDevice* pDevice, 
-                                                                 IDeviceContext *pDeviceContext)
+RefCntAutoPtr<IPipelineState> LightSctrPostProcess :: CreateScreenSizeQuadPSO(IRenderDevice*               pDevice,
+                                                                              const char*                  PSOName,
+                                                                              IShader*                     PixelShader,
+                                                                              const DepthStencilStateDesc& DSSDesc,
+                                                                              const BlendStateDesc&        BSDesc,
+                                                                              Uint8                        NumRTVs,
+                                                                              TEXTURE_FORMAT               RTVFmts[],
+                                                                              TEXTURE_FORMAT               DSVFmt)
 {
-    // static_cast<int>() is required because Run() gets its arguments by reference
-    // and gcc will try to find references to sm_iNumPrecomputedHeights and 
-    // sm_iNumPrecomputedAngles, which do not exist
-    m_pRenderScript->Run(pDeviceContext, "PrecomputeNetDensityToAtmTop", 
-                         static_cast<int>(sm_iNumPrecomputedHeights), 
-                         static_cast<int>(sm_iNumPrecomputedAngles) );
-    m_uiUpToDateResourceFlags |= UpToDateResourceFlags::PrecomputedOpticaLDepthTex;
-    m_ptex2DOccludedNetDensityToAtmTopSRV.Release();
-    m_pRenderScript->GetTextureViewByName( "tex2DOccludedNetDensityToAtmTopSRV", &m_ptex2DOccludedNetDensityToAtmTopSRV );
+    if (!m_pQuadVS)
+    {
+        CreateShader( pDevice, "ScreenSizeQuadVS.fx", "ScreenSizeQuadVS", SHADER_TYPE_VERTEX, nullptr, SHADER_VARIABLE_TYPE_STATIC, &m_pQuadVS );
+    }
+
+    PipelineStateDesc PSODesc;
+    PSODesc.Name = PSOName;
+    auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+    GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+    GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
+    GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
+    GraphicsPipeline.DepthStencilDesc                     = DSSDesc;
+    GraphicsPipeline.BlendDesc                            = BSDesc;
+    GraphicsPipeline.pVS                                  = m_pQuadVS;
+    GraphicsPipeline.pPS                                  = PixelShader;
+    GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    GraphicsPipeline.NumRenderTargets                     = NumRTVs;
+    GraphicsPipeline.DSVFormat                            = DSVFmt;
+    for (Uint32 rt=0; rt < NumRTVs; ++rt)
+        GraphicsPipeline.RTVFormats[rt] = RTVFmts[rt];
+
+    RefCntAutoPtr<IPipelineState> PSO;
+    pDevice->CreatePipelineState(PSODesc, &PSO);
+    return PSO;
+}
+
+void LightSctrPostProcess::RenderScreenSizeQuad(IDeviceContext*         pDeviceContext, 
+                                                IPipelineState*         PSO,
+                                                IShaderResourceBinding* SRB,
+                                                Uint8                   StencilRef,
+                                                Uint32                  NumQuads)
+{
+	pDeviceContext->SetPipelineState(PSO);
+    pDeviceContext->CommitShaderResources(SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+	pDeviceContext->SetStencilRef(StencilRef);
+
+    DrawAttribs ScreenSizeQuadDrawAttrs;
+    ScreenSizeQuadDrawAttrs.NumVertices = 4;
+	ScreenSizeQuadDrawAttrs.NumInstances = NumQuads;
+	pDeviceContext->Draw(ScreenSizeQuadDrawAttrs);
+}
+
+
+void LightSctrPostProcess::CreatePrecomputedOpticalDepthTexture(IRenderDevice*  pDevice, 
+                                                                IDeviceContext* pDeviceContext)
+{
+    if (!m_ptex2DOccludedNetDensityToAtmTopSRV)
+    {
+	    // Create texture if it has not been created yet. 
+		// Do not recreate texture if it already exists as this may
+		// break static resource bindings.
+        TextureDesc TexDesc;
+        TexDesc.Name        = "Occluded Net Density to Atm Top";
+	    TexDesc.Type        = RESOURCE_DIM_TEX_2D;
+	    TexDesc.Width       = sm_iNumPrecomputedHeights;
+        TexDesc.Height      = sm_iNumPrecomputedAngles;
+	    TexDesc.Format      = TEX_FORMAT_RG32_FLOAT;
+	    TexDesc.MipLevels   = 1;
+	    TexDesc.Usage       = USAGE_DEFAULT;
+	    TexDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+        RefCntAutoPtr<ITexture> tex2DOccludedNetDensityToAtmTop;
+        pDevice->CreateTexture(TexDesc, TextureData{}, &tex2DOccludedNetDensityToAtmTop);
+        m_ptex2DOccludedNetDensityToAtmTopSRV = tex2DOccludedNetDensityToAtmTop->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        m_ptex2DOccludedNetDensityToAtmTopSRV->SetSampler(m_pLinearClampSampler);
+        m_ptex2DOccludedNetDensityToAtmTopRTV = tex2DOccludedNetDensityToAtmTop->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+        m_pResMapping->AddResource("g_tex2DOccludedNetDensityToAtmTop", m_ptex2DOccludedNetDensityToAtmTopSRV, false);
+    }
+
+    ITextureView* pRTVs[] = {m_ptex2DOccludedNetDensityToAtmTopRTV};
+    pDeviceContext->SetRenderTargets(1, pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+	RenderScreenSizeQuad(pDeviceContext, m_pPrecomputeNetDensityToAtmTopPSO, m_pPrecomputeNetDensityToAtmTopSRB, 0);
+
+    m_uiUpToDateResourceFlags |= UpToDateResourceFlags::PrecomputedOpticalDepthTex;
 }
 
 
@@ -499,7 +581,6 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
 
     m_uiUpToDateResourceFlags |= UpToDateResourceFlags::PrecomputedIntegralsTex;
 }
-
 
 void LightSctrPostProcess :: ReconstructCameraSpaceZ(FrameAttribs &FrameAttribs)
 {
@@ -1220,7 +1301,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
 
     if( bRecomputeSctrCoeffs )
     {
-        m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::PrecomputedOpticaLDepthTex;
+        m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::PrecomputedOpticalDepthTex;
         m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::AmbientSkyLightTex;
         m_uiUpToDateResourceFlags &= ~UpToDateResourceFlags::PrecomputedIntegralsTex;
         ResetSRBs = true;
@@ -1269,7 +1350,7 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
     }
 
 
-    if( !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::PrecomputedOpticaLDepthTex) )
+    if( !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::PrecomputedOpticalDepthTex) )
     {
         CreatePrecomputedOpticalDepthTexture(FrameAttribs.pDevice, FrameAttribs.pDeviceContext);
     }
@@ -1664,7 +1745,7 @@ void LightSctrPostProcess :: RenderSun(FrameAttribs &FrameAttribs)
 
 void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext)
 {
-    if( !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::PrecomputedOpticaLDepthTex) )
+    if( !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::PrecomputedOpticalDepthTex) )
     {
         CreatePrecomputedOpticalDepthTexture(pDevice, pContext);
     }

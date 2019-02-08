@@ -88,7 +88,7 @@ public:
                          float4 &f4AmbientLight);
     
     void RenderSun(FrameAttribs &FrameAttribs);
-    IBuffer *GetMediaAttribsCB(){return m_pcbMediaAttribs;}
+    IBuffer* GetMediaAttribsCB(){return m_pcbMediaAttribs;}
     ITextureView* GetPrecomputedNetDensitySRV(){return m_ptex2DOccludedNetDensityToAtmTopSRV;}
     ITextureView* GetAmbientSkyLightSRV(IRenderDevice *pDevice, IDeviceContext *pContext);
 
@@ -118,6 +118,21 @@ private:
     void CreateRandomSphereSamplingTexture(IRenderDevice *pDevice);
     void ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext);
     void ComputeScatteringCoefficients(IDeviceContext *pDeviceCtx = NULL);
+
+    RefCntAutoPtr<IPipelineState> CreateScreenSizeQuadPSO(IRenderDevice*               pDevice,
+                                                          const char*                  PSOName,
+                                                          IShader*                     PixelShader,
+                                                          const DepthStencilStateDesc& DSSDesc,
+                                                          const BlendStateDesc&        BSDesc,
+                                                          Uint8                        NumRTVs,
+                                                          TEXTURE_FORMAT               RTVFmts[],
+                                                          TEXTURE_FORMAT               DSVFmt);
+
+    void RenderScreenSizeQuad(IDeviceContext*         pDeviceContext, 
+                              IPipelineState*         PSO,
+                              IShaderResourceBinding* SRB,
+                              Uint8                   StencilRef,
+                              Uint32                  NumQuads = 1);
 
     void DefineMacros(Diligent::ShaderMacroHelper &Macros);
     
@@ -155,7 +170,9 @@ private:
     static const int sm_iAmbientSkyLightTexDim = 1024;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DAmbientSkyLightSRV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DOccludedNetDensityToAtmTopSRV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DOccludedNetDensityToAtmTopRTV;
 
+    Diligent::RefCntAutoPtr<IShader> m_pQuadVS;
     Diligent::RefCntAutoPtr<IShader> m_pReconstrCamSpaceZPS;
     Diligent::RefCntAutoPtr<IShader> m_pRendedSliceEndpointsPS;
     Diligent::RefCntAutoPtr<IShader> m_pRendedCoordTexPS;
@@ -191,15 +208,17 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pCombineScatteringOrdersCS;
     Diligent::RefCntAutoPtr<IShader> m_pPrecomputeAmbientSkyLightPS;
 
-    Diligent::RefCntAutoPtr<IPipelineState> m_pPrecomputeSingleSctrPSO;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pPrecomputeNetDensityToAtmTopPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pPrecomputeNetDensityToAtmTopSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pPrecomputeSingleSctrPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pPrecomputeSingleSctrSRB;
-    Diligent::RefCntAutoPtr<IPipelineState> m_pComputeSctrRadiancePSO;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pComputeSctrRadiancePSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeSctrRadianceSRB;
-    Diligent::RefCntAutoPtr<IPipelineState> m_pComputeScatteringOrderPSO;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pComputeScatteringOrderPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeScatteringOrderSRB;
-    Diligent::RefCntAutoPtr<IPipelineState> m_pInitHighOrderScatteringPSO, m_pUpdateHighOrderScatteringPSO;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pInitHighOrderScatteringPSO, m_pUpdateHighOrderScatteringPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pInitHighOrderScatteringSRB, m_pUpdateHighOrderScatteringSRB;
-    Diligent::RefCntAutoPtr<IPipelineState> m_pCombineScatteringOrdersPSO;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pCombineScatteringOrdersPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pCombineScatteringOrdersSRB;
 
     Diligent::RefCntAutoPtr<ITexture> m_ptex3DHighOrderSctr, m_ptex3DHighOrderSctr2;
@@ -218,7 +237,7 @@ private:
         AuxTextures                 = 0x001,
         ExtinctionTexture           = 0x002,
         SliceUVDirAndOriginTex      = 0x004,
-        PrecomputedOpticaLDepthTex  = 0x008,
+        PrecomputedOpticalDepthTex  = 0x008,
         LowResLuminamceTex          = 0x010,
         AmbientSkyLightTex          = 0x020,
         PrecomputedIntegralsTex     = 0x040

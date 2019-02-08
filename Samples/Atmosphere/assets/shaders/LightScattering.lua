@@ -483,49 +483,6 @@ function RenderScreenSizeQuad(PSO, SRB, StencilRef, NumQuads)
 end
 
 
------------------------------------[ Precomputing Optical Depth ]-----------------------------------
-PrecomputeNetDensityToAtmTopPS = CreatePixelShader("PrecomputeNetDensityToAtmTop.fx", "PrecomputeNetDensityToAtmTopPS")
-PrecomputeNetDensityToAtmTopPSO = CreateScreenSizeQuadPSO("PrecomputeNetDensityToAtmTop", PrecomputeNetDensityToAtmTopPS, DisableDepthDesc, DefaultBlendDesc, "TEX_FORMAT_RG32_FLOAT")
--- Bind required shader resources
--- All shader resources are static resources, so we bind them once directly to the shader
-PrecomputeNetDensityToAtmTopPS:BindResources(extResourceMapping, {"BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED"})
-PrecomputeNetDensityToAtmTopSRB = PrecomputeNetDensityToAtmTopPSO:CreateShaderResourceBinding(true)
-
-function PrecomputeNetDensityToAtmTop(NumPrecomputedHeights, NumPrecomputedAngles)
-	
-	if tex2DOccludedNetDensityToAtmTop == nil then
-	    -- Create texture if it has not been created yet. 
-		-- Do not recreate texture if it already exists as this may
-		-- break static resource bindings.
-		tex2DOccludedNetDensityToAtmTop = Texture.Create{
-            Name = "Occluded Net Density to Atm Top",
-			Type = "RESOURCE_DIM_TEX_2D", 
-			Width = NumPrecomputedHeights, Height = NumPrecomputedAngles,
-			Format = "TEX_FORMAT_RG32_FLOAT",
-			MipLevels = 1,
-			Usage = "USAGE_DEFAULT",
-			BindFlags = {"BIND_SHADER_RESOURCE", "BIND_RENDER_TARGET"}
-		}
-
-		-- Get SRV
-		tex2DOccludedNetDensityToAtmTopSRV = tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
-		-- Set linear sampler
-		tex2DOccludedNetDensityToAtmTopSRV:SetSampler(LinearClampSampler)
-		-- Add texture to the resource mapping
-		extResourceMapping["g_tex2DOccludedNetDensityToAtmTop"] = tex2DOccludedNetDensityToAtmTopSRV
-	end
-
-	Context.SetRenderTargets( tex2DOccludedNetDensityToAtmTop:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET"), "RESOURCE_STATE_TRANSITION_MODE_TRANSITION" )
-	-- Render quad
-	RenderScreenSizeQuad(PrecomputeNetDensityToAtmTopPSO, PrecomputeNetDensityToAtmTopSRB, 0)
-
-	-- Force garbage collection to make sure all graphics resources are released
-	collectgarbage()
-end
-
-
-
-
 function WindowResize(BackBufferWidth, BackBufferHeight)
 	ptex2DCamSpaceZ = Texture.Create{
         Name = "Cam-space Z",
