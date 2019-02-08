@@ -121,6 +121,7 @@ private:
     void CreateAuxTextures();
     void ResetShaderResourceBindings();
     void CreateExtinctionTexture(IRenderDevice* pDevice);
+    void CreateAmbientSkyLightTexture(IRenderDevice* pDevice);
 
     RefCntAutoPtr<IPipelineState> CreateScreenSizeQuadPSO(IRenderDevice*               pDevice,
                                                           const char*                  PSOName,
@@ -143,7 +144,18 @@ private:
     const TEXTURE_FORMAT m_DepthBufferFmt;
     const TEXTURE_FORMAT m_OffscreenBackBufferFmt;
 
-    static constexpr TEXTURE_FORMAT EpipolarExtinctionFmt = TEX_FORMAT_RGBA8_UNORM;
+    static constexpr TEXTURE_FORMAT CoordinateTexFmt           = TEX_FORMAT_RG32_FLOAT;
+    static constexpr TEXTURE_FORMAT SliceEndpointsFmt          = TEX_FORMAT_RGBA32_FLOAT;
+    static constexpr TEXTURE_FORMAT InterpolationSourceTexFmt  = TEX_FORMAT_RGBA32_UINT;
+    static constexpr TEXTURE_FORMAT EpipolarCamSpaceZFmt       = TEX_FORMAT_R32_FLOAT;
+    static constexpr TEXTURE_FORMAT EpipolarInsctrTexFmt       = TEX_FORMAT_RGBA16_FLOAT;
+    static constexpr TEXTURE_FORMAT EpipolarImageDepthFmt      = TEX_FORMAT_D24_UNORM_S8_UINT;
+    static constexpr TEXTURE_FORMAT EpipolarExtinctionFmt      = TEX_FORMAT_RGBA8_UNORM;
+    static constexpr TEXTURE_FORMAT AmbientSkyLightTexFmt      = TEX_FORMAT_RGBA16_FLOAT;
+    static constexpr TEXTURE_FORMAT LuminanceTexFmt            = TEX_FORMAT_R16_FLOAT;
+    static constexpr TEXTURE_FORMAT SliceUVDirAndOriginTexFmt  = TEX_FORMAT_RGBA32_FLOAT;
+    static constexpr TEXTURE_FORMAT CamSpaceZFmt               = TEX_FORMAT_R32_FLOAT;
+
 
     PostProcessingAttribs m_PostProcessingAttribs;
     bool m_bUseCombinedMinMaxTexture;
@@ -178,6 +190,7 @@ private:
     
     static const int sm_iAmbientSkyLightTexDim = 1024;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DAmbientSkyLightSRV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DAmbientSkyLightRTV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DOccludedNetDensityToAtmTopSRV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DOccludedNetDensityToAtmTopRTV;
 
@@ -216,7 +229,6 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pComputeScatteringOrderCS;
     Diligent::RefCntAutoPtr<IShader> m_pInitHighOrderScatteringCS, m_pUpdateHighOrderScatteringCS;
     Diligent::RefCntAutoPtr<IShader> m_pCombineScatteringOrdersCS;
-    Diligent::RefCntAutoPtr<IShader> m_pPrecomputeAmbientSkyLightPS;
 
     Diligent::RefCntAutoPtr<IPipelineState>         m_pPrecomputeNetDensityToAtmTopPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pPrecomputeNetDensityToAtmTopSRB;
@@ -232,7 +244,10 @@ private:
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pCombineScatteringOrdersSRB;
     Diligent::RefCntAutoPtr<IPipelineState>         m_pRenderSunPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRenderSunSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pPrecomputeAmbientSkyLightPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pPrecomputeAmbientSkyLightSRB;
 
+    
     Diligent::RefCntAutoPtr<ITexture> m_ptex3DHighOrderSctr, m_ptex3DHighOrderSctr2;
 
     Diligent::RefCntAutoPtr<IBuffer> m_pcbPostProcessingAttribs;

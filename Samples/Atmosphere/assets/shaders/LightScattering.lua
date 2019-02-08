@@ -373,27 +373,6 @@ function CreateSliceUVDirAndOriginTexture(NumEpipolarSlices, NumCascades)
 	collectgarbage()
 end
 
-function CreateAmbientSkyLightTexture(AmbientSkyLightTexDim)
-	tex2DAmbientSkyLight = Texture.Create{
-        Name = "Ambient Sky Light",
-		Type = "RESOURCE_DIM_TEX_2D", 
-		Width = AmbientSkyLightTexDim, 
-		Height = 1,
-		Format = AmbientSkyLightTexFmt,
-		MipLevels = 1,
-		Usage = "USAGE_DEFAULT",
-		BindFlags = {"BIND_RENDER_TARGET", "BIND_SHADER_RESOURCE"}
-	}
-	
-	tex2DAmbientSkyLightSRV = tex2DAmbientSkyLight:GetDefaultView("TEXTURE_VIEW_SHADER_RESOURCE")
-	tex2DAmbientSkyLightRTV = tex2DAmbientSkyLight:GetDefaultView("TEXTURE_VIEW_RENDER_TARGET")
-	tex2DAmbientSkyLightSRV:SetSampler(LinearClampSampler)
-
-	ResetShaderResourceBindings()
-	
-	-- Force garbage collection to make sure all graphics resources are released
-	collectgarbage()
-end
 
 -----------------------------------[ Screen Size Quad Rendering ]-----------------------------------
 function CreateShader(File, Entry, ShaderType)
@@ -799,16 +778,4 @@ function UpdateAverageLuminance()
 
 	Context.SetRenderTargets(tex2DAverageLuminanceRTV, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
 	RenderScreenSizeQuad(UpdateAverageLuminancePSO, UpdateAverageLuminanceSRB, 0)
-end
-
-
-function CreatePrecomputeAmbientSkyLightPSO(PrecomputeAmbientSkyLightPS)
-	PrecomputeAmbientSkyLightPSO = CreateScreenSizeQuadPSO("PrecomputeAmbientSkyLight", PrecomputeAmbientSkyLightPS, DisableDepthDesc, DefaultBlendDesc, AmbientSkyLightTexFmt)
-    PrecomputeAmbientSkyLightSRB = PrecomputeAmbientSkyLightPSO:CreateShaderResourceBinding()
-	-- Force garbage collection to make sure all graphics resources are released
-	collectgarbage()
-end
-
-function PrecomputeAmbientSkyLight()
-	RenderScreenSizeQuad(PrecomputeAmbientSkyLightPSO, PrecomputeAmbientSkyLightSRB, 0)
 end

@@ -189,10 +189,7 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice,
 
     CreatePrecomputedOpticalDepthTexture(pDevice, pContext);
 
-    // static_cast<int>() is required because Run() gets its arguments by reference
-    // and gcc will try to find reference to sm_iAmbientSkyLightTexDim, which does not exist
-    m_pRenderScript->Run( "CreateAmbientSkyLightTexture", static_cast<int>(sm_iAmbientSkyLightTexDim) );
-    m_pRenderScript->GetTextureViewByName( "tex2DAmbientSkyLightSRV", &m_ptex2DAmbientSkyLightSRV );
+    CreateAmbientSkyLightTexture(pDevice);
 
     // Create sun rendering shaders and PSO
     {
@@ -1266,6 +1263,25 @@ void LightSctrPostProcess :: CreateExtinctionTexture(IRenderDevice* pDevice)
     ResetShaderResourceBindings();
 }
 
+void LightSctrPostProcess :: CreateAmbientSkyLightTexture(IRenderDevice* pDevice)
+{
+    TextureDesc TexDesc;
+    TexDesc.Name      = "Ambient Sky Light";
+	TexDesc.Type      = RESOURCE_DIM_TEX_2D;
+	TexDesc.Width     = sm_iAmbientSkyLightTexDim;
+	TexDesc.Height    = 1;
+	TexDesc.Format    = AmbientSkyLightTexFmt;
+	TexDesc.MipLevels = 1;
+	TexDesc.Usage     = USAGE_DEFAULT;
+	TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+	RefCntAutoPtr<ITexture> tex2DAmbientSkyLight;
+    pDevice->CreateTexture(TexDesc, TextureData{}, &tex2DAmbientSkyLight);
+
+	m_ptex2DAmbientSkyLightSRV = tex2DAmbientSkyLight->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+	m_ptex2DAmbientSkyLightRTV = tex2DAmbientSkyLight->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+	m_ptex2DAmbientSkyLightSRV->SetSampler(m_pLinearClampSampler);
+}
+
 void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
                                                     PostProcessingAttribs &PPAttribs)
 {
@@ -1331,13 +1347,13 @@ void LightSctrPostProcess :: PerformPostProcessing(FrameAttribs &FrameAttribs,
         m_pUpdateAverageLuminancePS.Release();
     }
 
-    if( PPAttribs.m_uiCascadeProcessingMode      != m_PostProcessingAttribs.m_uiCascadeProcessingMode   ||
-        bUseCombinedMinMaxTexture                != m_bUseCombinedMinMaxTexture                         ||
-        PPAttribs.m_bEnableLightShafts           != m_PostProcessingAttribs.m_bEnableLightShafts        ||
-        PPAttribs.m_uiMultipleScatteringMode     != m_PostProcessingAttribs.m_uiMultipleScatteringMode  ||
-        PPAttribs.m_uiSingleScatteringMode       != m_PostProcessingAttribs.m_uiSingleScatteringMode    ||
-        PPAttribs.m_bAutoExposure                != m_PostProcessingAttribs.m_bAutoExposure             || 
-        PPAttribs.m_uiToneMappingMode            != m_PostProcessingAttribs.m_uiToneMappingMode)
+    if( PPAttribs.m_uiCascadeProcessingMode  != m_PostProcessingAttribs.m_uiCascadeProcessingMode   ||
+        bUseCombinedMinMaxTexture            != m_bUseCombinedMinMaxTexture                         ||
+        PPAttribs.m_bEnableLightShafts       != m_PostProcessingAttribs.m_bEnableLightShafts        ||
+        PPAttribs.m_uiMultipleScatteringMode != m_PostProcessingAttribs.m_uiMultipleScatteringMode  ||
+        PPAttribs.m_uiSingleScatteringMode   != m_PostProcessingAttribs.m_uiSingleScatteringMode    ||
+        PPAttribs.m_bAutoExposure            != m_PostProcessingAttribs.m_bAutoExposure             || 
+        PPAttribs.m_uiToneMappingMode        != m_PostProcessingAttribs.m_uiToneMappingMode)
     {
         for(size_t i=0; i<_countof(m_pFixInsctrAtDepthBreaksPS); ++i)
             m_pFixInsctrAtDepthBreaksPS[i].Release();
@@ -1860,7 +1876,7 @@ void LightSctrPostProcess :: RenderSun(FrameAttribs& FrameAttribs)
     RenderScreenSizeQuad(FrameAttribs.pDeviceContext, m_pRenderSunPSO, m_pRenderSunSRB);
 }
 
-void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext)
+void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice* pDevice, IDeviceContext* pContext)
 {
     if( !(m_uiUpToDateResourceFlags & UpToDateResourceFlags::PrecomputedOpticalDepthTex) )
     {
@@ -1872,28 +1888,25 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
         CreatePrecomputedScatteringLUT(pDevice, pContext);
     }
 
-    if( !m_pPrecomputeAmbientSkyLightPS )
+    if( !m_pPrecomputeAmbientSkyLightPSO )
     {
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", m_uiNumRandomSamplesOnSphere );
         Macros.Finalize();
-        m_pPrecomputeAmbientSkyLightPS = CreateShader( pDevice, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC );
-        m_pRenderScript->Run("CreatePrecomputeAmbientSkyLightPSO", m_pPrecomputeAmbientSkyLightPS);
+        auto pPrecomputeAmbientSkyLightPS = CreateShader( pDevice, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC );
+        pPrecomputeAmbientSkyLightPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+
+        TEXTURE_FORMAT RTVFormats[] = {AmbientSkyLightTexFmt};
+	    m_pPrecomputeAmbientSkyLightPSO = CreateScreenSizeQuadPSO(pDevice, "PrecomputeAmbientSkyLight", pPrecomputeAmbientSkyLightPS, DSS_DisableDepth, BS_Default, 1, RTVFormats, TEX_FORMAT_UNKNOWN);
+
+        m_pPrecomputeAmbientSkyLightPSO->CreateShaderResourceBinding(&m_pPrecomputeAmbientSkyLightSRB, true);
     }
-
-    RefCntAutoPtr<ITextureView> ptex2DAmbientSkyLightRTV;
-    m_pRenderScript->GetTextureViewByName( "tex2DAmbientSkyLightRTV", &ptex2DAmbientSkyLightRTV );
-    // Create 2-D texture, shader resource and target view buffers on the device
     
-    m_pPrecomputeAmbientSkyLightPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
-    RefCntAutoPtr<IShaderResourceBinding> PrecomputeAmbientSkyLightSRB;
-    m_pRenderScript->GetShaderResourceBindingByName( "PrecomputeAmbientSkyLightSRB", &PrecomputeAmbientSkyLightSRB );
-    PrecomputeAmbientSkyLightSRB->InitializeStaticResources();
-
-    ITextureView *pRTVs[] = {ptex2DAmbientSkyLightRTV};
+    // Create 2-D texture, shader resource and target view buffers on the device
+    ITextureView *pRTVs[] = {m_ptex2DAmbientSkyLightRTV};
     pContext->SetRenderTargets(1, pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    m_pRenderScript->Run(pContext, "PrecomputeAmbientSkyLight" );
+    RenderScreenSizeQuad(pContext, m_pPrecomputeAmbientSkyLightPSO, m_pPrecomputeAmbientSkyLightSRB);
     m_uiUpToDateResourceFlags |= UpToDateResourceFlags::AmbientSkyLightTex;
 }
 
