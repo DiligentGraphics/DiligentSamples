@@ -869,46 +869,6 @@ function RenderSampleLocations(TotalSamples)
 	Context.Draw(SampleLocationsDrawAttrs)
 end
 
-SunVS = CreateVertexShader("Sun.fx", "SunVS")
-SunPS = CreatePixelShader("Sun.fx", "SunPS")
-
-function CreateRenderSunPSO()
-    RenderSunPSO = PipelineState.Create
-    {
-	    Name = "Render Sun",
-	    GraphicsPipeline = 
-	    {
-		    RasterizerDesc = 
-		    {
-			    FillMode = "FILL_MODE_SOLID",
-			    CullMode = "CULL_MODE_NONE",
-			    FrontCounterClockwise = true
-		    },
-		    DepthStencilDesc = CmpEqNoWritesDSSDesc,
-		    BlendDesc = DefaultBlendDesc,
-		    pVS = SunVS,
-		    pPS = SunPS,
-		    RTVFormats =  OffscreenBackBufferFmt,
-		    DSVFormat = MainDepthBufferFmt,
-            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
-	    }
-    }
-	SunVS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED")
-	SunPS:BindResources(extResourceMapping, "BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED")
-    RenderSunSRB = RenderSunPSO:CreateShaderResourceBinding(true)
-end
-
-function RenderSun()
-    if RenderSunPSO == nil then
-        CreateRenderSunPSO()
-    end
-	Context.SetPipelineState(RenderSunPSO)
-    Context.CommitShaderResources(RenderSunSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
-
-	ScreenSizeQuadDrawAttrs.NumInstances = 1
-	Context.Draw(ScreenSizeQuadDrawAttrs)
-end
-
 function CreatePrecomputeAmbientSkyLightPSO(PrecomputeAmbientSkyLightPS)
 	PrecomputeAmbientSkyLightPSO = CreateScreenSizeQuadPSO("PrecomputeAmbientSkyLight", PrecomputeAmbientSkyLightPS, DisableDepthDesc, DefaultBlendDesc, AmbientSkyLightTexFmt)
     PrecomputeAmbientSkyLightSRB = PrecomputeAmbientSkyLightPSO:CreateShaderResourceBinding()

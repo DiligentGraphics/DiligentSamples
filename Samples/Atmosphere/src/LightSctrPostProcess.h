@@ -131,8 +131,8 @@ private:
     void RenderScreenSizeQuad(IDeviceContext*         pDeviceContext, 
                               IPipelineState*         PSO,
                               IShaderResourceBinding* SRB,
-                              Uint8                   StencilRef,
-                              Uint32                  NumQuads = 1);
+                              Uint8                   StencilRef = 0,
+                              Uint32                  NumQuads   = 1);
 
     void DefineMacros(Diligent::ShaderMacroHelper &Macros);
     
@@ -220,6 +220,8 @@ private:
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pInitHighOrderScatteringSRB, m_pUpdateHighOrderScatteringSRB;
     Diligent::RefCntAutoPtr<IPipelineState>         m_pCombineScatteringOrdersPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pCombineScatteringOrdersSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRenderSunPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRenderSunSRB;
 
     Diligent::RefCntAutoPtr<ITexture> m_ptex3DHighOrderSctr, m_ptex3DHighOrderSctr2;
 

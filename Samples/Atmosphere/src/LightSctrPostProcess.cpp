@@ -54,15 +54,22 @@ using namespace Diligent;
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-void CreateShader(IRenderDevice*            pDevice, 
-                  const Char*               FileName, 
-                  const Char*               EntryPoint, 
-                  SHADER_TYPE               Type, 
-                  const ShaderMacro*        Macros, 
-                  SHADER_VARIABLE_TYPE      DefaultVarType, 
-                  IShader**                 ppShader, 
-                  const ShaderVariableDesc* pVarDesc       = nullptr, 
-                  Uint32                    NumVars        = 0)
+static const DepthStencilStateDesc DSS_CmpEqNoWrites =
+{    
+	True,                 // DepthEnable
+    False,                // DepthWriteEnable
+	COMPARISON_FUNC_EQUAL // DepthFunc
+};
+
+static
+RefCntAutoPtr<IShader> CreateShader(IRenderDevice*            pDevice, 
+                                    const Char*               FileName, 
+                                    const Char*               EntryPoint, 
+                                    SHADER_TYPE               Type, 
+                                    const ShaderMacro*        Macros, 
+                                    SHADER_VARIABLE_TYPE      DefaultVarType, 
+                                    const ShaderVariableDesc* pVarDesc       = nullptr, 
+                                    Uint32                    NumVars        = 0)
 {
     ShaderCreationAttribs Attribs;
     Attribs.EntryPoint = EntryPoint;
@@ -77,14 +84,16 @@ void CreateShader(IRenderDevice*            pDevice,
     BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\atmosphere;shaders\\atmosphere\\precompute");
     Attribs.pShaderSourceStreamFactory = &BasicSSSFactory;
     Attribs.UseCombinedTextureSamplers = true;
-    pDevice->CreateShader( Attribs, ppShader );
+    RefCntAutoPtr<IShader> pShader;
+    pDevice->CreateShader( Attribs, &pShader );
+    return pShader;
 }
 
 LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice, 
                                              IDeviceContext* pContext,
                                              TEXTURE_FORMAT  BackBufferFmt,
                                              TEXTURE_FORMAT  DepthBufferFmt,
-                                             TEXTURE_FORMAT  OffscreenBackBuffer) :
+                                             TEXTURE_FORMAT  OffscreenBackBufferFmt) :
     m_bUseCombinedMinMaxTexture(false),
     m_uiSampleRefinementCSThreadGroupSize(0),
     // Using small group size is inefficient because a lot of SIMD lanes become idle
@@ -120,7 +129,7 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice,
         // formats must be specified at creation time
         pScriptParser->SetGlobalVariable( "MainBackBufferFmt", GetTextureFormatAttribs(BackBufferFmt).Name );
         pScriptParser->SetGlobalVariable( "MainDepthBufferFmt", GetTextureFormatAttribs(DepthBufferFmt).Name );
-        pScriptParser->SetGlobalVariable( "OffscreenBackBufferFmt", GetTextureFormatAttribs(OffscreenBackBuffer).Name );
+        pScriptParser->SetGlobalVariable( "OffscreenBackBufferFmt", GetTextureFormatAttribs(OffscreenBackBufferFmt).Name );
     } );
     m_pRenderScript->GetSamplerByName( "PointClampSampler", &m_pPointClampSampler );
     
@@ -148,7 +157,7 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice,
 
     {
         RefCntAutoPtr<IShader> pPrecomputeNetDensityToAtmTopPS;
-        CreateShader(pDevice, "PrecomputeNetDensityToAtmTop.fx", "PrecomputeNetDensityToAtmTopPS", SHADER_TYPE_PIXEL, nullptr, SHADER_VARIABLE_TYPE_STATIC, &pPrecomputeNetDensityToAtmTopPS);
+        pPrecomputeNetDensityToAtmTopPS = CreateShader(pDevice, "PrecomputeNetDensityToAtmTop.fx", "PrecomputeNetDensityToAtmTopPS", SHADER_TYPE_PIXEL, nullptr, SHADER_VARIABLE_TYPE_STATIC);
         pPrecomputeNetDensityToAtmTopPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         TEXTURE_FORMAT RtvFmts[] = {TEX_FORMAT_RG32_FLOAT};
         m_pPrecomputeNetDensityToAtmTopPSO = CreateScreenSizeQuadPSO(pDevice, "PrecomputeNetDensityToAtmTopPSO", pPrecomputeNetDensityToAtmTopPS, DSS_DisableDepth, BS_Default, 1, RtvFmts, TEX_FORMAT_UNKNOWN);
@@ -163,6 +172,27 @@ LightSctrPostProcess :: LightSctrPostProcess(IRenderDevice*  pDevice,
     // and gcc will try to find reference to sm_iAmbientSkyLightTexDim, which does not exist
     m_pRenderScript->Run( "CreateAmbientSkyLightTexture", static_cast<int>(sm_iAmbientSkyLightTexDim) );
     m_pRenderScript->GetTextureViewByName( "tex2DAmbientSkyLightSRV", &m_ptex2DAmbientSkyLightSRV );
+
+    // Create sun rendering shaders and PSO
+    {
+        RefCntAutoPtr<IShader> pSunVS = CreateShader(pDevice, "Sun.fx", "SunVS", SHADER_TYPE_VERTEX, nullptr, SHADER_VARIABLE_TYPE_MUTABLE);
+        RefCntAutoPtr<IShader> pSunPS = CreateShader(pDevice, "Sun.fx", "SunPS", SHADER_TYPE_PIXEL, nullptr, SHADER_VARIABLE_TYPE_MUTABLE);
+
+        PipelineStateDesc PSODesc;
+        PSODesc.Name = "Render Sun";
+        auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+        GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
+        GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+        GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
+        GraphicsPipeline.DepthStencilDesc = DSS_CmpEqNoWrites;
+        GraphicsPipeline.pVS = pSunVS;
+        GraphicsPipeline.pPS = pSunPS;
+        GraphicsPipeline.NumRenderTargets = 1;
+        GraphicsPipeline.RTVFormats[0] = OffscreenBackBufferFmt;
+        GraphicsPipeline.DSVFormat = DepthBufferFmt;
+        GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        pDevice->CreatePipelineState(PSODesc, &m_pRenderSunPSO);
+    }
 }
 
 LightSctrPostProcess :: ~LightSctrPostProcess()
@@ -238,7 +268,7 @@ RefCntAutoPtr<IPipelineState> LightSctrPostProcess :: CreateScreenSizeQuadPSO(IR
 {
     if (!m_pQuadVS)
     {
-        CreateShader( pDevice, "ScreenSizeQuadVS.fx", "ScreenSizeQuadVS", SHADER_TYPE_VERTEX, nullptr, SHADER_VARIABLE_TYPE_STATIC, &m_pQuadVS );
+        m_pQuadVS = CreateShader( pDevice, "ScreenSizeQuadVS.fx", "ScreenSizeQuadVS", SHADER_TYPE_VERTEX, nullptr, SHADER_VARIABLE_TYPE_STATIC );
     }
 
     PipelineStateDesc PSODesc;
@@ -361,7 +391,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "PrecomputeSingleScattering.fx", "PrecomputeSingleScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pPrecomputeSingleSctrCS );
+        m_pPrecomputeSingleSctrCS = CreateShader( pDevice, "PrecomputeSingleScattering.fx", "PrecomputeSingleScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pPrecomputeSingleSctrCS;
@@ -376,7 +406,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", m_uiNumRandomSamplesOnSphere );
         Macros.Finalize();
-        CreateShader( pDevice, "ComputeSctrRadiance.fx", "ComputeSctrRadianceCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeSctrRadianceCS );
+        m_pComputeSctrRadianceCS = CreateShader( pDevice, "ComputeSctrRadiance.fx", "ComputeSctrRadianceCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pComputeSctrRadianceCS;
@@ -391,7 +421,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "ComputeScatteringOrder.fx", "ComputeScatteringOrderCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pComputeScatteringOrderCS );
+        m_pComputeScatteringOrderCS = CreateShader( pDevice, "ComputeScatteringOrder.fx", "ComputeScatteringOrderCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pComputeScatteringOrderCS;
@@ -405,7 +435,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "InitHighOrderScattering.fx", "InitHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pInitHighOrderScatteringCS );
+        m_pInitHighOrderScatteringCS = CreateShader( pDevice, "InitHighOrderScattering.fx", "InitHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pInitHighOrderScatteringCS;
@@ -419,7 +449,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "UpdateHighOrderScattering.fx", "UpdateHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pUpdateHighOrderScatteringCS);
+        m_pUpdateHighOrderScatteringCS = CreateShader( pDevice, "UpdateHighOrderScattering.fx", "UpdateHighOrderScatteringCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC);
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pUpdateHighOrderScatteringCS;
@@ -433,7 +463,7 @@ void LightSctrPostProcess :: CreatePrecomputedScatteringLUT(IRenderDevice *pDevi
         DefineMacros(Macros);
         Macros.AddShaderMacro( "THREAD_GROUP_SIZE", ThreadGroupSize );
         Macros.Finalize();
-        CreateShader( pDevice, "CombineScatteringOrders.fx", "CombineScatteringOrdersCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC, &m_pCombineScatteringOrdersCS );
+        m_pCombineScatteringOrdersCS = CreateShader( pDevice, "CombineScatteringOrders.fx", "CombineScatteringOrdersCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_DYNAMIC );
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pCombineScatteringOrdersCS;
@@ -599,7 +629,7 @@ void LightSctrPostProcess :: ReconstructCameraSpaceZ(FrameAttribs &FrameAttribs)
             {"g_tex2DDepthBuffer", SHADER_VARIABLE_TYPE_DYNAMIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "ReconstructCameraSpaceZ.fx", "ReconstructCameraSpaceZPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pReconstrCamSpaceZPS, Vars, _countof(Vars) );
+        m_pReconstrCamSpaceZPS = CreateShader( FrameAttribs.pDevice, "ReconstructCameraSpaceZ.fx", "ReconstructCameraSpaceZPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run("CreateReconstructCameraSpaceZPSO", m_pReconstrCamSpaceZPS );
         // Bind input resources required by the shader
         m_pReconstrCamSpaceZPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
@@ -618,7 +648,7 @@ void LightSctrPostProcess :: RenderSliceEndpoints(FrameAttribs &FrameAttribs)
 
         ShaderVariableDesc Vars[] = { {"cbLightParams", SHADER_VARIABLE_TYPE_STATIC} };
 
-        CreateShader( FrameAttribs.pDevice, "RenderSliceEndPoints.fx", "GenerateSliceEndpointsPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRendedSliceEndpointsPS, Vars, _countof(Vars) );
+        m_pRendedSliceEndpointsPS = CreateShader( FrameAttribs.pDevice, "RenderSliceEndPoints.fx", "GenerateSliceEndpointsPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run("CreateRenderSliceEndPointsPSO", m_pRendedSliceEndpointsPS );
         // Bind input resources required by the shader
         m_pRendedSliceEndpointsPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
@@ -637,7 +667,7 @@ void LightSctrPostProcess :: RenderCoordinateTexture(FrameAttribs &FrameAttribs)
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.Finalize();
-        CreateShader( FrameAttribs.pDevice, "RenderCoordinateTexture.fx", "GenerateCoordinateTexturePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRendedCoordTexPS );
+        m_pRendedCoordTexPS = CreateShader( FrameAttribs.pDevice, "RenderCoordinateTexture.fx", "GenerateCoordinateTexturePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
         m_pRenderScript->Run("CreateRenderCoordinateTexturePSO", m_pRendedCoordTexPS );
         m_pRendedCoordTexPS->BindResources( m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
     }
@@ -662,7 +692,7 @@ void LightSctrPostProcess :: RenderCoarseUnshadowedInctr(FrameAttribs &FrameAttr
             {"cbCameraAttribs", SHADER_VARIABLE_TYPE_STATIC},
             {"cbLightParams", SHADER_VARIABLE_TYPE_STATIC}
         };
-        CreateShader( FrameAttribs.pDevice, "CoarseInsctr.fx", EntryPoint, SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRenderCoarseUnshadowedInsctrPS, Vars, _countof(Vars));
+        m_pRenderCoarseUnshadowedInsctrPS = CreateShader( FrameAttribs.pDevice, "CoarseInsctr.fx", EntryPoint, SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars));
         m_pRenderScript->Run( m_PostProcessingAttribs.m_uiExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR ? 
                                 "CreateRenderCoarseUnshadowedInsctrAndExtinctionPSO" : 
                                 "CreateRenderCoarseUnshadowedInsctrPSO", 
@@ -718,7 +748,7 @@ void LightSctrPostProcess :: RefineSampleLocations(FrameAttribs &FrameAttribs)
             {"cbPostProcessingAttribs", SHADER_VARIABLE_TYPE_STATIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "RefineSampleLocations.fx", "RefineSampleLocationsCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRefineSampleLocationsCS, Vars, _countof(Vars));
+        m_pRefineSampleLocationsCS = CreateShader( FrameAttribs.pDevice, "RefineSampleLocations.fx", "RefineSampleLocationsCS", SHADER_TYPE_COMPUTE, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars));
         PipelineStateDesc PSODesc;
         PSODesc.IsComputePipeline = true;
         PSODesc.ComputePipeline.pCS = m_pRefineSampleLocationsCS;
@@ -749,7 +779,7 @@ void LightSctrPostProcess :: MarkRayMarchingSamples(FrameAttribs &FrameAttribs)
         DefineMacros(Macros);
         Macros.Finalize();
 
-        CreateShader( FrameAttribs.pDevice, "MarkRayMarchingSamples.fx", "MarkRayMarchingSamplesInStencilPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pMarkRayMarchingSamplesInStencilPS );
+        m_pMarkRayMarchingSamplesInStencilPS = CreateShader( FrameAttribs.pDevice, "MarkRayMarchingSamples.fx", "MarkRayMarchingSamplesInStencilPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE );
         m_pRenderScript->Run("CreateMarkRayMarchingSamplesPSO", m_pMarkRayMarchingSamplesInStencilPS );
         m_pMarkRayMarchingSamplesInStencilPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
@@ -777,7 +807,7 @@ void LightSctrPostProcess :: RenderSliceUVDirAndOrig(FrameAttribs &FrameAttribs)
             {"cbPostProcessingAttribs", SHADER_VARIABLE_TYPE_STATIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "SliceUVDirection.fx", "RenderSliceUVDirInShadowMapTexturePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRenderSliceUVDirInSMPS, Vars, _countof(Vars) );
+        m_pRenderSliceUVDirInSMPS = CreateShader( FrameAttribs.pDevice, "SliceUVDirection.fx", "RenderSliceUVDirInShadowMapTexturePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run( "CreateRenderSliceUVDirAndOriginPSO", m_pRenderSliceUVDirInSMPS );
         m_pRenderSliceUVDirInSMPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
@@ -814,7 +844,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
             {"g_tex2DLightSpaceDepthMap", SHADER_VARIABLE_TYPE_DYNAMIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "InitializeMinMaxShadowMap.fx", "InitializeMinMaxShadowMapPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pInitializeMinMaxShadowMapPS, Vars, _countof(Vars) );
+        m_pInitializeMinMaxShadowMapPS = CreateShader( FrameAttribs.pDevice, "InitializeMinMaxShadowMap.fx", "InitializeMinMaxShadowMapPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, Vars, _countof(Vars) );
         auto MinMaxTexFmt = m_ptex2DMinMaxShadowMapSRV[0]->GetTexture()->GetDesc().Format;
         m_pRenderScript->Run( "CreateInitMinMaxShadowMapPSO", m_pInitializeMinMaxShadowMapPS, GetTextureFormatAttribs(MinMaxTexFmt).Name );
         m_pInitializeMinMaxShadowMapPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
@@ -827,7 +857,7 @@ void LightSctrPostProcess :: Build1DMinMaxMipMap(FrameAttribs &FrameAttribs,
         Macros.Finalize();
 
         ShaderVariableDesc VarDesc[] = { {"cbMiscDynamicParams", SHADER_VARIABLE_TYPE_STATIC} };
-        CreateShader( FrameAttribs.pDevice, "ComputeMinMaxShadowMapLevel.fx", "ComputeMinMaxShadowMapLevelPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pComputeMinMaxSMLevelPS, VarDesc, _countof(VarDesc) );
+        m_pComputeMinMaxSMLevelPS = CreateShader( FrameAttribs.pDevice, "ComputeMinMaxShadowMapLevel.fx", "ComputeMinMaxShadowMapLevelPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, VarDesc, _countof(VarDesc) );
         auto MinMaxTexFmt = m_ptex2DMinMaxShadowMapSRV[0]->GetTexture()->GetDesc().Format;
         m_pRenderScript->Run( "CreateComputeMinMaxShadowMapLevelPSO", m_pComputeMinMaxSMLevelPS, GetTextureFormatAttribs(MinMaxTexFmt).Name );
         m_pComputeMinMaxSMLevelSRB[0].Release();
@@ -932,7 +962,7 @@ void LightSctrPostProcess :: DoRayMarching(FrameAttribs &FrameAttribs,
                                             Uint32 uiMaxStepsAlongRay, 
                                             int iCascadeIndex)
 {
-    auto &pDoRayMarchPS = m_pDoRayMarchPS[m_PostProcessingAttribs.m_bUse1DMinMaxTree ? 1 : 0];
+    auto& pDoRayMarchPS = m_pDoRayMarchPS[m_PostProcessingAttribs.m_bUse1DMinMaxTree ? 1 : 0];
     if( !pDoRayMarchPS  )
     {
         ShaderMacroHelper Macros;
@@ -950,7 +980,7 @@ void LightSctrPostProcess :: DoRayMarching(FrameAttribs &FrameAttribs,
             {"cbMiscDynamicParams", SHADER_VARIABLE_TYPE_STATIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "RayMarch.fx", "RayMarchPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &pDoRayMarchPS, Vars, _countof(Vars) );
+        pDoRayMarchPS = CreateShader( FrameAttribs.pDevice, "RayMarch.fx", "RayMarchPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run( "CreateRayMarchPSO", pDoRayMarchPS, m_PostProcessingAttribs.m_bUse1DMinMaxTree );
         pDoRayMarchPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
@@ -993,7 +1023,7 @@ void LightSctrPostProcess :: InterpolateInsctrIrradiance(FrameAttribs &FrameAttr
         DefineMacros(Macros);
         Macros.Finalize();
 
-        CreateShader( FrameAttribs.pDevice, "InterpolateIrradiance.fx", "InterpolateIrradiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pInterpolateIrradiancePS );
+        m_pInterpolateIrradiancePS = CreateShader( FrameAttribs.pDevice, "InterpolateIrradiance.fx", "InterpolateIrradiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE );
         m_pRenderScript->Run( "CreateInterpolateIrradiancePSO", m_pInterpolateIrradiancePS );
         m_pInterpolateIrradiancePS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
@@ -1024,7 +1054,7 @@ void LightSctrPostProcess :: UnwarpEpipolarScattering(FrameAttribs &FrameAttribs
             {"g_tex2DColorBuffer", SHADER_VARIABLE_TYPE_DYNAMIC},
         };
 
-        CreateShader( FrameAttribs.pDevice, "UnwarpEpipolarScattering.fx", "ApplyInscatteredRadiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pUnwarpEpipolarSctrImgPS, Vars, _countof(Vars) );
+        m_pUnwarpEpipolarSctrImgPS = CreateShader( FrameAttribs.pDevice, "UnwarpEpipolarScattering.fx", "ApplyInscatteredRadiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run( "CreateUnwarpEpipolarScatteringPSO", m_pUnwarpEpipolarSctrImgPS );
         m_pUnwarpEpipolarSctrImgPS->BindResources(m_pResMapping, 0);
     }
@@ -1048,7 +1078,7 @@ void LightSctrPostProcess :: UnwarpEpipolarScattering(FrameAttribs &FrameAttribs
             {"g_tex2DColorBuffer", SHADER_VARIABLE_TYPE_DYNAMIC},
         };
 
-        CreateShader( FrameAttribs.pDevice, "UnwarpEpipolarScattering.fx", "ApplyInscatteredRadiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pUnwarpAndRenderLuminancePS, Vars, _countof(Vars) );
+        m_pUnwarpAndRenderLuminancePS = CreateShader( FrameAttribs.pDevice, "UnwarpEpipolarScattering.fx", "ApplyInscatteredRadiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run( "CreateUnwarpAndRenderLuminancePSO", m_pUnwarpAndRenderLuminancePS );
         m_pUnwarpAndRenderLuminancePS->BindResources(m_pResMapping, 0);
     }
@@ -1076,7 +1106,7 @@ void LightSctrPostProcess :: UpdateAverageLuminance(FrameAttribs &FrameAttribs)
             {"cbMiscDynamicParams", SHADER_VARIABLE_TYPE_STATIC}
         };
 
-        CreateShader( FrameAttribs.pDevice, "UpdateAverageLuminance.fx", "UpdateAverageLuminancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pUpdateAverageLuminancePS, Vars, _countof(Vars) );
+        m_pUpdateAverageLuminancePS = CreateShader( FrameAttribs.pDevice, "UpdateAverageLuminance.fx", "UpdateAverageLuminancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
         m_pRenderScript->Run( "CreateUpdateAverageLuminancePSO", m_pUpdateAverageLuminancePS );
         m_pUpdateAverageLuminancePS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
     }
@@ -1118,7 +1148,7 @@ void LightSctrPostProcess :: FixInscatteringAtDepthBreaks(FrameAttribs &FrameAtt
                 {"g_tex2DColorBuffer", SHADER_VARIABLE_TYPE_DYNAMIC}
             };
 
-            CreateShader( FrameAttribs.pDevice, "RayMarch.fx", "FixAndApplyInscatteredRadiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pFixInsctrAtDepthBreaksPS[RenderLum], Vars, _countof(Vars) );
+            m_pFixInsctrAtDepthBreaksPS[RenderLum] = CreateShader( FrameAttribs.pDevice, "RayMarch.fx", "FixAndApplyInscatteredRadiancePS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, Vars, _countof(Vars) );
             m_pFixInsctrAtDepthBreaksPS[RenderLum]->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         }
 
@@ -1142,8 +1172,8 @@ void LightSctrPostProcess :: RenderSampleLocations(FrameAttribs &FrameAttribs)
         DefineMacros(Macros);
         Macros.Finalize();
 
-        CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsVS", SHADER_TYPE_VERTEX, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRenderSampleLocationsVS );
-        CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE, &m_pRenderSampleLocationsPS );
+        m_pRenderSampleLocationsVS = CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsVS", SHADER_TYPE_VERTEX, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
+        m_pRenderSampleLocationsPS = CreateShader( FrameAttribs.pDevice, "RenderSampling.fx", "RenderSampleLocationsPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_MUTABLE);
         m_pRenderScript->Run( FrameAttribs.pDeviceContext, "CreateRenderSampleLocationsPSO", m_pRenderSampleLocationsVS, m_pRenderSampleLocationsPS);
     }
     m_pRenderSampleLocationsVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
@@ -1735,12 +1765,17 @@ void LightSctrPostProcess :: ComputeScatteringCoefficients(IDeviceContext *pDevi
 }
 
 
-void LightSctrPostProcess :: RenderSun(FrameAttribs &FrameAttribs)
+void LightSctrPostProcess :: RenderSun(FrameAttribs& FrameAttribs)
 {
     if( FrameAttribs.pLightAttribs->f4LightScreenPos.w <= 0 )
         return;
 
-    m_pRenderScript->Run(FrameAttribs.pDeviceContext, "RenderSun" );
+    if (!m_pRenderSunSRB)
+    {
+        m_pRenderSunPSO->CreateShaderResourceBinding(&m_pRenderSunSRB, true);
+        m_pRenderSunSRB->BindResources(SHADER_TYPE_PIXEL | SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+    }
+    RenderScreenSizeQuad(FrameAttribs.pDeviceContext, m_pRenderSunPSO, m_pRenderSunSRB);
 }
 
 void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext)
@@ -1760,7 +1795,7 @@ void LightSctrPostProcess :: ComputeAmbientSkyLightTexture(IRenderDevice *pDevic
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro( "NUM_RANDOM_SPHERE_SAMPLES", m_uiNumRandomSamplesOnSphere );
         Macros.Finalize();
-        CreateShader( pDevice, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC, &m_pPrecomputeAmbientSkyLightPS );
+        m_pPrecomputeAmbientSkyLightPS = CreateShader( pDevice, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS", SHADER_TYPE_PIXEL, Macros, SHADER_VARIABLE_TYPE_STATIC );
         m_pRenderScript->Run("CreatePrecomputeAmbientSkyLightPSO", m_pPrecomputeAmbientSkyLightPS);
     }
 
