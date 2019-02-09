@@ -498,7 +498,7 @@ void AtmosphereSample::CreateShadowMap()
     ShadowMapDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
 
 	RefCntAutoPtr<ITexture> ptex2DShadowMap;
-	m_pDevice->CreateTexture(ShadowMapDesc, TextureData(), &ptex2DShadowMap);
+	m_pDevice->CreateTexture(ShadowMapDesc, nullptr, &ptex2DShadowMap);
 
     m_pShadowMapSRV = ptex2DShadowMap->GetDefaultView( TEXTURE_VIEW_SHADER_RESOURCE );
 
@@ -997,11 +997,11 @@ void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
     ColorBuffDesc.MipLevels = 1;
     ColorBuffDesc.Format = TEX_FORMAT_R11G11B10_FLOAT;
     ColorBuffDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
-    m_pDevice->CreateTexture( ColorBuffDesc, TextureData(), &m_pOffscreenColorBuffer );
+    m_pDevice->CreateTexture( ColorBuffDesc, nullptr, &m_pOffscreenColorBuffer );
 
     TextureDesc DepthBuffDesc = ColorBuffDesc;
 	DepthBuffDesc.Name = "Offscreen depth buffer";
     DepthBuffDesc.Format = TEX_FORMAT_D32_FLOAT;
     DepthBuffDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
-    m_pDevice->CreateTexture( DepthBuffDesc, TextureData(), &m_pOffscreenDepthBuffer );
+    m_pDevice->CreateTexture( DepthBuffDesc, nullptr, &m_pOffscreenDepthBuffer );
 }

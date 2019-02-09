@@ -237,7 +237,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
     }
 
     {
@@ -248,7 +248,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
         InstBuffDesc.Usage = USAGE_DEFAULT; 
         InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
-        pDevice->CreateBuffer(InstBuffDesc, BufferData(), &m_InstanceBuffer);
+        pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
         PopulateInstanceBuffer();
     }
 
@@ -272,7 +272,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
     }
 
     // Load texture array
@@ -296,7 +296,7 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext 
             TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
             TexArrDesc.Usage = USAGE_DEFAULT;
             TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
-            m_pDevice->CreateTexture(TexArrDesc, TextureData(), &pTexArray);
+            m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
         }
         // Copy current texture into the texture array
         for(Uint32 mip=0; mip < TexDesc.MipLevels; ++mip)

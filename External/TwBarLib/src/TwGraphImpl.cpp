@@ -132,7 +132,7 @@ static void BindFont(IRenderDevice *_Dev, const CTexFont *_Font, ITexture**_Tex)
     TexData.NumSubresources = 1;
     TexData.pSubResources = &SubRes0Data;
 
-    _Dev->CreateTexture( desc, TexData, _Tex );
+    _Dev->CreateTexture( desc, &TexData, _Tex );
 
     delete[] font32;
 }
@@ -176,12 +176,12 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
         BuffDesc.uiSizeInBytes = 2 * sizeof( CLineRectVtx );
         BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
-        m_pDev->CreateBuffer( BuffDesc, BufferData(), &m_pLineVertexBuffer );
+        m_pDev->CreateBuffer( BuffDesc, nullptr, &m_pLineVertexBuffer );
 
         // Create rect vertex buffer
         BuffDesc.Name = "AntTwBar: Rect VB";
         BuffDesc.uiSizeInBytes = 6 * sizeof(CLineRectVtx);
-        m_pDev->CreateBuffer(BuffDesc, BufferData(), &m_pRectVertexBuffer);
+        m_pDev->CreateBuffer(BuffDesc, nullptr, &m_pRectVertexBuffer);
 
         // Create constant buffer
         BuffDesc.Name = "AntTwBar: const buff";
@@ -189,7 +189,7 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
         BuffDesc.Usage = USAGE_DYNAMIC;
         BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        m_pDev->CreateBuffer(BuffDesc, BufferData(), &m_pConstantBuffer);
+        m_pDev->CreateBuffer(BuffDesc, nullptr, &m_pConstantBuffer);
     }
     catch(const std::runtime_error& )
     {
@@ -708,7 +708,7 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
             BuffDesc.uiSizeInBytes = textObj->m_TextVertexBufferSize * sizeof(CTextVtx) + 6*256; // add a reserve of 256 characters
             BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
             BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
-            m_pDev->CreateBuffer(BuffDesc, BufferData(), &textObj->m_pTextVertexBuffer);
+            m_pDev->CreateBuffer(BuffDesc, nullptr, &textObj->m_pTextVertexBuffer);
         }
 
         if( textObj->m_pTextVertexBuffer!=nullptr )
@@ -737,7 +737,7 @@ void CTwGraphImpl::BuildText(void *_TextObj, const std::string *_TextLines, colo
             BuffDesc.uiSizeInBytes = textObj->m_BgVertexBufferSize * sizeof(CLineRectVtx) + 6*32; // add a reserve of 32 rects
             BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
             BuffDesc.CPUAccessFlags = CPU_ACCESS_NONE;
-            m_pDev->CreateBuffer(BuffDesc, BufferData(), &textObj->m_pBgVertexBuffer);
+            m_pDev->CreateBuffer(BuffDesc, nullptr, &textObj->m_pBgVertexBuffer);
         }
 
         if( textObj->m_pBgVertexBuffer!=nullptr )
@@ -1048,7 +1048,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
         BuffDesc.uiSizeInBytes = 3*_NumTriangles * sizeof(CLineRectVtx);
         try
         {
-            m_pDev->CreateBuffer( BuffDesc, BufferData(), &m_pTrianglesVertexBuffer );
+            m_pDev->CreateBuffer( BuffDesc, nullptr, &m_pTrianglesVertexBuffer );
             m_TrianglesVertexBufferCount = 3 * _NumTriangles;
         }
         catch(const std::runtime_error & )

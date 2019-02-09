@@ -48,7 +48,7 @@ public:
         BuffDesc.BindFlags      = BindFlags;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         BuffDesc.uiSizeInBytes  = Size;
-        pDevice->CreateBuffer(BuffDesc, BufferData(), &m_pBuffer);
+        pDevice->CreateBuffer(BuffDesc, nullptr, &m_pBuffer);
     }
 
     // Returns offset of the allocated region
@@ -349,7 +349,7 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext
             TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
             TexArrDesc.Usage = USAGE_DEFAULT;
             TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
-            m_pDevice->CreateTexture(TexArrDesc, TextureData(), &pTexArray);
+            m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
         }
         // Copy current texture into the texture array
         for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
@@ -738,7 +738,7 @@ void Tutorial10_DataStreaming::CreateInstanceBuffer()
     InstBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
     InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * m_BatchSize;
     m_BatchDataBuffer.Release();
-    m_pDevice->CreateBuffer(InstBuffDesc, BufferData(), &m_BatchDataBuffer);
+    m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_BatchDataBuffer);
 }
 
 void Tutorial10_DataStreaming::SetBatchSize(const void *value, void * clientData)

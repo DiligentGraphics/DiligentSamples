@@ -92,7 +92,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
             CBDesc.Usage = USAGE_DYNAMIC;
             CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
             CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-            pDevice->CreateBuffer( CBDesc, BufferData(), &m_VSConstants );
+            pDevice->CreateBuffer( CBDesc, nullptr, &m_VSConstants );
 
             // Since we did not explcitly specify the type for Constants, default type
             // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
@@ -176,7 +176,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
     }
 
     {
@@ -199,7 +199,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCont
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
     }
 }
 

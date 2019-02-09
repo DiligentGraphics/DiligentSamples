@@ -206,7 +206,7 @@ void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **p
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
     }
 
     {
@@ -229,7 +229,7 @@ void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **p
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
     }
 
     {

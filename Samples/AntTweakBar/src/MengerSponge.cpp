@@ -137,7 +137,7 @@ void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppC
     BuffDesc.Usage = USAGE_DYNAMIC;
     BuffDesc.uiSizeInBytes = sizeof(ShaderConstants);
     BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    m_pDevice->CreateBuffer( BuffDesc, BufferData(), &m_pConstantBuffer );
+    m_pDevice->CreateBuffer( BuffDesc, nullptr, &m_pConstantBuffer );
 
     m_pRenderScript = CreateRenderScriptFromFile( "MengerSponge.lua", m_pDevice, m_pImmediateContext, [&]( ScriptParser *pScriptParser )
     {
@@ -362,7 +362,7 @@ void MengerSpongeSample::BuildSponge(int levelMax, bool aoEnabled)
     BuffData.DataSize = BuffDesc.uiSizeInBytes;
 
     RefCntAutoPtr<IBuffer> pVertexBuffer;
-    m_pDevice->CreateBuffer( BuffDesc, BuffData, &pVertexBuffer );
+    m_pDevice->CreateBuffer( BuffDesc, &BuffData, &pVertexBuffer );
 
     // Create index buffer
     BuffDesc.uiSizeInBytes = (Uint32)indices.size() * sizeof(unsigned int);
@@ -371,7 +371,7 @@ void MengerSpongeSample::BuildSponge(int levelMax, bool aoEnabled)
     BuffData.DataSize = BuffDesc.uiSizeInBytes;
 
     RefCntAutoPtr<IBuffer> pIndexBuffer;
-    m_pDevice->CreateBuffer( BuffDesc, BuffData, &pIndexBuffer );
+    m_pDevice->CreateBuffer( BuffDesc, &BuffData, &pIndexBuffer );
 
     auto SpongeIndicesCount = (unsigned int)indices.size();
 

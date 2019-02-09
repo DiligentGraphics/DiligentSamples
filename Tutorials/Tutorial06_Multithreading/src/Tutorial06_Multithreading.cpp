@@ -241,7 +241,7 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
         // Explicitly transition the buffer to RESOURCE_STATE_VERTEX_BUFFER state
         Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
     }
@@ -266,7 +266,7 @@ void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContex
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
         // Explicitly transition the buffer to RESOURCE_STATE_INDEX_BUFFER1 state
         Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
     }

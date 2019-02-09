@@ -226,7 +226,7 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceConte
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, i < 2 ? VBData : BufferData{}, &VertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, i < 2 ? &VBData : nullptr, &VertexBuffer);
     }
 
     {
@@ -249,7 +249,7 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceConte
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
     }
 
     for (size_t i=0; i < m_Textures.size(); ++i)
@@ -294,7 +294,7 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceConte
         VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER; // We do not really bind the buffer, but D3D11 wants at least one bind flag bit
         VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         VertBuffDesc.uiSizeInBytes = MaxUpdateRegionSize * MaxUpdateRegionSize * 4;
-        pDevice->CreateBuffer(VertBuffDesc, BufferData(), &m_TextureUpdateBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, nullptr, &m_TextureUpdateBuffer);
     }
 }
 

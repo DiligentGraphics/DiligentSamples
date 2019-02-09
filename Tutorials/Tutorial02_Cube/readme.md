@@ -113,7 +113,7 @@ CBDesc.uiSizeInBytes = sizeof(float4x4);
 CBDesc.Usage = USAGE_DYNAMIC;
 CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
 CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-pDevice->CreateBuffer( CBDesc, BufferData(), &m_VSConstants );
+pDevice->CreateBuffer( CBDesc, nullptr, &m_VSConstants );
 ```
 
 Usage and Bind flags are designed after [D3D11 Usage](https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx) 
@@ -201,7 +201,7 @@ VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
 BufferData VBData;
 VBData.pData = CubeVerts;
 VBData.DataSize = sizeof(CubeVerts);
-pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
 ```
 
 Index buffer is initialized in a very similar fashion.

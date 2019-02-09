@@ -21,7 +21,7 @@ IndBuffDesc.uiSizeInBytes = sizeof(Indices);
 BufferData IBData;
 IBData.pData = Indices;
 IBData.DataSize = sizeof(Indices);
-pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
 ```
 
 Note that the contents of `USAGE_STATIC` buffers cannot be changed and initial data must be given at initialization.
@@ -156,7 +156,7 @@ InitData.pSubResources  = subresources;
 InitData.NumSubresources = _countof(subresources);
 
 RefCntAutoPtr<ITexture> Texture;
-Device->CreateTexture(TexDesc, InitData, &Texture);
+Device->CreateTexture(TexDesc, &InitData, &Texture);
 ```
 
 ### Updating textures with `ITexture::UpdateData()`

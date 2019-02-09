@@ -95,7 +95,7 @@ for(int tex=0; tex < NumTextures; ++tex)
         TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
         TexArrDesc.Usage = USAGE_DEFAULT;
         TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
-        m_pDevice->CreateTexture(TexArrDesc, TextureData(), &pTexArray);
+        m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
     }
     // Copy current texture into the texture array
     for(Uint32 mip=0; mip < TexDesc.MipLevels; ++mip)

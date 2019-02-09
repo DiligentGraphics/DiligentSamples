@@ -244,7 +244,7 @@ public:
         IBInitData.pData = IB.data();
         IBInitData.DataSize = IndexBufferDesc.uiSizeInBytes;
         // Create the buffer
-        m_pDevice->CreateBuffer( IndexBufferDesc, IBInitData, &CurrMesh.pIndBuff );
+        m_pDevice->CreateBuffer( IndexBufferDesc, &IBInitData, &CurrMesh.pIndBuff );
         VERIFY(CurrMesh.pIndBuff, "Failed to create index buffer");
 
         // Compute bounding box
@@ -525,7 +525,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     TextureData HeigtMapInitData;
     HeigtMapInitData.pSubResources = InitData.data();
     HeigtMapInitData.NumSubresources = (Uint32)InitData.size();
-    pDevice->CreateTexture(HeightMapDesc, HeigtMapInitData, &ptex2DHeightMap);
+    pDevice->CreateTexture(HeightMapDesc, &HeigtMapInitData, &ptex2DHeightMap);
     VERIFY(ptex2DHeightMap, "Failed to create height map texture");
 
     pResMapping->AddResource( "g_tex2DElevationMap", ptex2DHeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE), true );
@@ -600,7 +600,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     NormalMapDesc.MipLevels = 0;
   
     RefCntAutoPtr<ITexture>  ptex2DNormalMap;
-    pDevice->CreateTexture(NormalMapDesc, TextureData(), &ptex2DNormalMap);
+    pDevice->CreateTexture(NormalMapDesc, nullptr, &ptex2DNormalMap);
     m_ptex2DNormalMapSRV = ptex2DNormalMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     CreateUniformBuffer( pDevice, sizeof( TerrainAttribs ), "Terrain Attribs CB", &m_pcbTerrainAttribs );
@@ -670,7 +670,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     BufferData VBInitData;
     VBInitData.pData = VB.data();
     VBInitData.DataSize = VBDesc.uiSizeInBytes;
-    pDevice->CreateBuffer( VBDesc, VBInitData, &m_pVertBuff );
+    pDevice->CreateBuffer( VBDesc, &VBInitData, &m_pVertBuff );
     VERIFY( m_pVertBuff, "Failed to create VB" );
 }
 

@@ -223,7 +223,7 @@ void Tutorial04_Instancing::Initialize(IRenderDevice *pDevice, IDeviceContext **
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, VBData, &m_CubeVertexBuffer);
+        pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
     }
 
     {
@@ -234,7 +234,7 @@ void Tutorial04_Instancing::Initialize(IRenderDevice *pDevice, IDeviceContext **
         InstBuffDesc.Usage = USAGE_DEFAULT; 
         InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
         InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
-        pDevice->CreateBuffer(InstBuffDesc, BufferData(), &m_InstanceBuffer);
+        pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
         PopulateInstanceBuffer();
     }
 
@@ -258,7 +258,7 @@ void Tutorial04_Instancing::Initialize(IRenderDevice *pDevice, IDeviceContext **
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, IBData, &m_CubeIndexBuffer);
+        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
     }
 
     {
