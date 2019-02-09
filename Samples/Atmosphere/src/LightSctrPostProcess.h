@@ -42,7 +42,6 @@
 #pragma once
 
 #include "Structures.fxh"
-#include "ScriptParser.h"
 #include "ShaderMacroHelper.h"
 
 struct FrameAttribs
@@ -116,12 +115,15 @@ private:
     void CreatePrecomputedOpticalDepthTexture(IRenderDevice *pDevice, IDeviceContext *pContext);
     void CreatePrecomputedScatteringLUT(IRenderDevice *pDevice, IDeviceContext *pContext);
     void CreateRandomSphereSamplingTexture(IRenderDevice *pDevice);
-    void ComputeAmbientSkyLightTexture(IRenderDevice *pDevice, IDeviceContext *pContext);
-    void ComputeScatteringCoefficients(IDeviceContext *pDeviceCtx = NULL);
-    void CreateAuxTextures();
+    void ComputeAmbientSkyLightTexture(IRenderDevice* pDevice, IDeviceContext *pContext);
+    void ComputeScatteringCoefficients(IDeviceContext* pDeviceCtx = nullptr);
+    void CreateAuxTextures(IRenderDevice *pDevice);
     void ResetShaderResourceBindings();
     void CreateExtinctionTexture(IRenderDevice* pDevice);
     void CreateAmbientSkyLightTexture(IRenderDevice* pDevice);
+    void CreateLowResLuminanceTexture(IRenderDevice* pDevice, IDeviceContext* pDeviceCtx);
+    void CreateSliceUVDirAndOriginTexture(IRenderDevice* pDevice);
+    void CreateCamSpaceZTexture(IRenderDevice* pDevice);
 
     RefCntAutoPtr<IPipelineState> CreateScreenSizeQuadPSO(IRenderDevice*               pDevice,
                                                           const char*                  PSOName,
@@ -130,7 +132,7 @@ private:
                                                           const BlendStateDesc&        BSDesc,
                                                           Uint8                        NumRTVs,
                                                           TEXTURE_FORMAT               RTVFmts[],
-                                                          TEXTURE_FORMAT               DSVFmt);
+                                                          TEXTURE_FORMAT               DSVFmt = TEX_FORMAT_UNKNOWN);
 
     void RenderScreenSizeQuad(IDeviceContext*         pDeviceContext, 
                               IPipelineState*         PSO,
@@ -161,8 +163,6 @@ private:
     bool m_bUseCombinedMinMaxTexture;
     Uint32 m_uiSampleRefinementCSThreadGroupSize;
     Uint32 m_uiSampleRefinementCSMinimumThreadGroupSize;
-
-    RefCntAutoPtr<Diligent::ScriptParser> m_pRenderScript;
 
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DMinMaxShadowMapSRV[2];
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DMinMaxShadowMapRTV[2];
@@ -195,30 +195,22 @@ private:
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DOccludedNetDensityToAtmTopRTV;
 
     Diligent::RefCntAutoPtr<IShader> m_pQuadVS;
-    Diligent::RefCntAutoPtr<IShader> m_pReconstrCamSpaceZPS;
-    Diligent::RefCntAutoPtr<IShader> m_pRendedSliceEndpointsPS;
-    Diligent::RefCntAutoPtr<IShader> m_pRendedCoordTexPS;
     Diligent::RefCntAutoPtr<IShader> m_pRefineSampleLocationsCS;
-    Diligent::RefCntAutoPtr<IPipelineState> m_pRefineSampleLocationsPSO;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRefineSampleLocationsPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRefineSampleLocationsSRB;
-    Diligent::RefCntAutoPtr<IShader> m_pRenderCoarseUnshadowedInsctrPS;
-    Diligent::RefCntAutoPtr<IShader> m_pMarkRayMarchingSamplesInStencilPS;
-    Diligent::RefCntAutoPtr<IShader> m_pRenderSliceUVDirInSMPS;
-    Diligent::RefCntAutoPtr<IShader> m_pInitializeMinMaxShadowMapPS;
-    Diligent::RefCntAutoPtr<IShader> m_pComputeMinMaxSMLevelPS;
-    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeMinMaxSMLevelSRB[2];
-    Diligent::RefCntAutoPtr<IShader> m_pDoRayMarchPS[2]; // 0 - min/max optimization disabled; 1 - min/max optimization enabled
-    Diligent::RefCntAutoPtr<IShader> m_pInterpolateIrradiancePS;
-    Diligent::RefCntAutoPtr<IShader> m_pUnwarpEpipolarSctrImgPS;
-    Diligent::RefCntAutoPtr<IShader> m_pUnwarpAndRenderLuminancePS;
-    Diligent::RefCntAutoPtr<IShader> m_pUpdateAverageLuminancePS;
-    Diligent::RefCntAutoPtr<IShader> m_pFixInsctrAtDepthBreaksPS[2];// 0 - perform tone mapping, 1 - render luminance only
-
+    
     Diligent::RefCntAutoPtr<IResourceMapping> m_pResMapping;
 
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DCoordinateTextureRTV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DSliceEndpointsRTV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DEpipolarCamSpaceZRTV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DEpipolarInscatteringRTV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DEpipolarExtinctionRTV;
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DEpipolarImageDSV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DInitialScatteredLightRTV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DAverageLuminanceRTV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DSliceUVDirAndOriginRTV;
+    Diligent::RefCntAutoPtr<ITextureView> m_ptex2DCamSpaceZRTV;
 
     Diligent::RefCntAutoPtr<IPipelineState>         m_pRenderSampleLocationsPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRenderSampleLocationsSRB;
@@ -229,6 +221,37 @@ private:
     Diligent::RefCntAutoPtr<IShader> m_pComputeScatteringOrderCS;
     Diligent::RefCntAutoPtr<IShader> m_pInitHighOrderScatteringCS, m_pUpdateHighOrderScatteringCS;
     Diligent::RefCntAutoPtr<IShader> m_pCombineScatteringOrdersCS;
+
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pReconstrCamSpaceZPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pReconstrCamSpaceZSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRendedSliceEndpointsPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRendedSliceEndpointsSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRendedCoordTexPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRendedCoordTexSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRenderCoarseUnshadowedInsctrPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRenderCoarseUnshadowedInsctrSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pMarkRayMarchingSamplesInStencilPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pMarkRayMarchingSamplesInStencilSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pRenderSliceUVDirInSM_PSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pRenderSliceUVDirInSM_SRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pInitializeMinMaxShadowMapPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pInitializeMinMaxShadowMapSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pComputeMinMaxSMLevelPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pComputeMinMaxSMLevelSRB[2];
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pDoRayMarchPSO[2]; // 0 - min/max optimization disabled; 1 - min/max optimization enabled
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pDoRayMarchSRB[2];
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pInterpolateIrradiancePSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pInterpolateIrradianceSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pUnwarpEpipolarSctrImgPSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pUnwarpEpipolarSctrImgSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pUnwarpAndRenderLuminancePSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pUnwarpAndRenderLuminanceSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pUpdateAverageLuminancePSO;
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pUpdateAverageLuminanceSRB;
+    Diligent::RefCntAutoPtr<IPipelineState>         m_pFixInsctrAtDepthBreaksPSO[3]; // 0 - Luminance Only,
+                                                                                     // 1 - Fix Inscattering
+                                                                                     // 2 - Full Screen Ray Marching
+    Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pFixInsctrAtDepthBreaksSRB[3];
 
     Diligent::RefCntAutoPtr<IPipelineState>         m_pPrecomputeNetDensityToAtmTopPSO;
     Diligent::RefCntAutoPtr<IShaderResourceBinding> m_pPrecomputeNetDensityToAtmTopSRB;

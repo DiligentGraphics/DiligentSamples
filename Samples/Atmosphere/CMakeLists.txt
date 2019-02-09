@@ -66,7 +66,6 @@ set(TERRAIN_SHADERS
 
 set(SHADERS
     assets/shaders/HostSharedTerrainStructs.fxh
-    assets/shaders/LightScattering.lua
     assets/shaders/Structures.fxh
     assets/shaders/Terrain.lua
 )
