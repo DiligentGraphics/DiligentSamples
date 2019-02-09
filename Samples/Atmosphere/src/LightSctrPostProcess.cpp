@@ -1723,7 +1723,12 @@ void LightSctrPostProcess :: CreateExtinctionTexture(IRenderDevice* pDevice)
 	TexDesc.MipLevels   = 1;
 	TexDesc.Usage       = USAGE_DEFAULT;
 	TexDesc.BindFlags   = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
-	TexDesc.ClearValue  = {TEX_FORMAT_UNKNOWN, {1, 1, 1, 1}};
+	TexDesc.ClearValue.Format   = TEX_FORMAT_UNKNOWN;
+    TexDesc.ClearValue.Color[0] = 1;
+    TexDesc.ClearValue.Color[1] = 1;
+    TexDesc.ClearValue.Color[2] = 1;
+    TexDesc.ClearValue.Color[3] = 1;
+    
     // MaxSamplesInSlice x NumSlices RGBA8_UNORM texture to store extinction
 	// for every epipolar sample
     RefCntAutoPtr<ITexture> tex2DEpipolarExtinction;
