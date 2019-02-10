@@ -31,7 +31,9 @@
 #include "MapHelper.h"
 #include "ConvenienceFunctions.h"
 #include "GraphicsUtilities.h"
-#include "LightSctrPostProcess.h"
+#include "EpipolarLightScattering.h"
+
+using namespace Diligent;
 
 SampleBase* CreateSample()
 {
@@ -156,7 +158,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     CreateUniformBuffer( pDevice, sizeof( LightAttribs ), "Light Attribs CB", &m_pcbLightAttribs );
 
     const auto &SCDesc = pSwapChain->GetDesc();
-    m_pLightSctrPP.reset( new LightSctrPostProcess(m_pDevice, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT) );
+    m_pLightSctrPP.reset( new EpipolarLightScattering(m_pDevice, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT) );
     auto *pcMediaScatteringParams = m_pLightSctrPP->GetMediaAttribsCB();
 
     m_EarthHemisphere.Create(m_pElevDataSource.get(), 

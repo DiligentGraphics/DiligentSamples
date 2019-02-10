@@ -29,7 +29,10 @@
 #include "EarthHemisphere.h"
 #include "ElevationDataSource.h"
 
-using namespace Diligent;
+namespace Diligent
+{
+class EpipolarLightScattering;
+}
 
 class AtmosphereSample : public SampleBase
 {
@@ -93,7 +96,7 @@ private:
     EarthHemsiphere m_EarthHemisphere;
     bool m_bIsGLDevice;
 
-    std::unique_ptr<class LightSctrPostProcess> m_pLightSctrPP;
+    std::unique_ptr<Diligent::EpipolarLightScattering> m_pLightSctrPP;
 
     bool m_bEnableLightScattering;
     float m_fScatteringScale;
