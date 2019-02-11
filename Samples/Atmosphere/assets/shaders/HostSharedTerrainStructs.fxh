@@ -25,9 +25,13 @@
 #define HEIGHT_MAP_SCALE 65535.f
 
 #ifdef __cplusplus
-#   define CHECK_STRUCT_ALIGNMENT(s) static_assert( sizeof(s) % 16 == 0, "structure size is not multiple of 16" );
+#   ifndef CHECK_STRUCT_ALIGNMENT
+#       define CHECK_STRUCT_ALIGNMENT(s) static_assert( sizeof(s) % 16 == 0, "sizeof(" #s ") is not multiple of 16" );
+#   endif
 #else
-#   define CHECK_STRUCT_ALIGNMENT(s)
+#   ifndef CHECK_STRUCT_ALIGNMENT
+#       define CHECK_STRUCT_ALIGNMENT(s)
+#   endif
 #endif
 
 struct TerrainAttribs

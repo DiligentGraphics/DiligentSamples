@@ -28,7 +28,7 @@ set(TERRAIN_SHADERS
 
 set(SHADERS
     assets/shaders/HostSharedTerrainStructs.fxh
-	assets/shaders/Structures.fxh
+	../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/Structures.fxh
     assets/shaders/Terrain.lua
 )
 
@@ -75,6 +75,7 @@ target_include_directories(AtmosphereSample
 PRIVATE
     src
     src/Terrain
+    ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public
     assets/shaders
 )
 
@@ -84,6 +85,8 @@ PRIVATE
     TextureLoader
     DiligentFX
 )
+
+add_custom_command(TARGET AtmosphereSample PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/Structures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders")
 
 source_group("assets\\shaders\\terrain" FILES ${TERRAIN_SHADERS})
 source_group("assets\\shaders" FILES ${SHADERS})
