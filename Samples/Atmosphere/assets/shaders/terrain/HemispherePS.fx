@@ -1,5 +1,6 @@
 
 #include "HostSharedTerrainStructs.fxh"
+#include "EpipolarLightScatteringStructures.fxh"
 #include "TerrainShadersCommon.fxh"
 
 cbuffer cbTerrainAttribs

@@ -42,7 +42,8 @@
 #include "pch.h"
 #include "EarthHemisphere.h"
 
-#include "Structures.fxh"
+#include "BasicStructures.fxh"
+#include "EpipolarLightScatteringStructures.fxh"
 #include "ElevationDataSource.h"
 #include "ConvenienceFunctions.h"
 #include "MapHelper.h"

@@ -19,7 +19,7 @@
 #ifndef _TERRAIN_STRCUTS_FXH_
 #define _TERRAIN_STRCUTS_FXH_
 
-#include "Structures.fxh"
+#include "BasicStructures.fxh"
 
 #define PI 3.1415928f
 #define HEIGHT_MAP_SCALE 65535.f
@@ -48,7 +48,7 @@ struct TerrainAttribs
     TerrainAttribs() : 
         m_fElevationScale(0.1f),
 		m_fElevationSamplingInterval(32.f),
-        m_fEarthRadius( AirScatteringAttribs().fEarthRadius ),
+        m_fEarthRadius(6360000.f),
         m_fBaseMtrlTilingScale(200.f),
         m_f4TilingScale(500.f, 800.f, 80.f, 80.f)
     {
