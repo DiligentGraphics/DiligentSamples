@@ -14,26 +14,6 @@ PointClampSampler = Sampler.Create{
     AddressW = "TEXTURE_ADDRESS_CLAMP"
 }
 
-LinearClampSampler = Sampler.Create{
-    Name = "Terrain.lua: linear clamp sampler",
-    MinFilter = "FILTER_TYPE_LINEAR", 
-    MagFilter = "FILTER_TYPE_LINEAR", 
-    MipFilter = "FILTER_TYPE_LINEAR", 
-    AddressU = "TEXTURE_ADDRESS_CLAMP", 
-    AddressV = "TEXTURE_ADDRESS_CLAMP", 
-    AddressW = "TEXTURE_ADDRESS_CLAMP"
-}
-
-LinearWrapSampler = Sampler.Create{
-    Name = "Terrain.lua: linear wrap sampler",
-    MinFilter = "FILTER_TYPE_LINEAR", 
-    MagFilter = "FILTER_TYPE_LINEAR", 
-    MipFilter = "FILTER_TYPE_LINEAR", 
-    AddressU = "TEXTURE_ADDRESS_WRAP", 
-    AddressV = "TEXTURE_ADDRESS_WRAP", 
-    AddressW = "TEXTURE_ADDRESS_WRAP"
-}
-
 ComparisonSampler = Sampler.Create{
     Name = "Terrain.lua: comparison sampler",
     MinFilter = "FILTER_TYPE_COMPARISON_LINEAR", 
@@ -174,74 +154,6 @@ function SetHemispherePS(in_HemispherePS, RTVFormat)
 end
 
 
-function CreateRenderNormalMapShaders()
-
-	local ScreenSizeQuadVS = Shader.Create{
-		FilePath =  "ScreenSizeQuadVS.fx",
-		EntryPoint = "GenerateScreenSizeQuadVS",
-		SearchDirectories = "shaders\\;shaders\\terrain",
-		SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
-        UseCombinedTextureSamplers = true,
-		Desc = {
-			ShaderType = "SHADER_TYPE_VERTEX",
-			Name = "GenerateScreenSizeQuadVS",
-			DefaultVariableType = "SHADER_VARIABLE_TYPE_STATIC"
-		}
-	}
-
-	local GenerateNormalMapPS = Shader.Create{
-		FilePath =  "GenerateNormalMapPS.fx",
-		EntryPoint = "GenerateNormalMapPS",
-		SearchDirectories = "shaders\\;shaders\\terrain",
-		SourceLanguage = "SHADER_SOURCE_LANGUAGE_HLSL",
-        UseCombinedTextureSamplers = true,
-		Desc = {
-			ShaderType = "SHADER_TYPE_PIXEL",
-			Name = "GenerateNormalMapPS",
-			DefaultVariableType = "SHADER_VARIABLE_TYPE_STATIC",
-			VariableDesc = 
-			{ 
-				{Name = "g_tex2DElevationMap", Type = "SHADER_VARIABLE_TYPE_STATIC"}, 
-				{Name = "cbNMGenerationAttribs", Type = "SHADER_VARIABLE_TYPE_STATIC"}, 
-			}
-		}
-	}
-
-	extResourceMapping["g_tex2DElevationMap"]:SetSampler(PointClampSampler)
-	ScreenSizeQuadVS:BindResources(extResourceMapping)
-	GenerateNormalMapPS:BindResources(extResourceMapping)
-
-
-	RenderNormalMapPSO = PipelineState.Create
-	{
-        Name = "Render Normal Map",
-		GraphicsPipeline = 
-		{
-            DepthStencilDesc = 
-			{
-				DepthEnable = false,
-				DepthWriteEnable = false
-			},
-			RasterizerDesc = 
-			{
-				FillMode = "FILL_MODE_SOLID",
-				CullMode = "CULL_MODE_NONE",
-				FrontCounterClockwise = true
-			},
-			pVS = ScreenSizeQuadVS,
-			pPS = GenerateNormalMapPS,
-			RTVFormats = "TEX_FORMAT_RG8_UNORM",
-            PrimitiveTopology = "PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP"
-		}
-	}
-	RenderNormalMapSRB = RenderNormalMapPSO:CreateShaderResourceBinding(true)
-end
-
-
-function SetRenderNormalMapShadersAndStates()
-	Context.SetPipelineState(RenderNormalMapPSO)
-	Context.CommitShaderResources(RenderNormalMapSRB, "RESOURCE_STATE_TRANSITION_MODE_TRANSITION")
-end
 
 function RenderHemisphere(PrecomputedNetDensitySRV, AmbientSkylightSRV, ShadowMapSRV)
 	Context.SetPipelineState(RenderHemispherePSO)

@@ -128,8 +128,7 @@ private:
                          const Diligent::Uint16 *pHeightMap,
                          size_t HeightMapPitch,
                          int iHeightMapDim,
-                         ITexture *ptex2DNormalMap,
-                         IResourceMapping *pResMapping);
+                         ITexture *ptex2DNormalMap);
 
     RenderingParams m_Params;
 
@@ -144,6 +143,7 @@ private:
 	Diligent::RefCntAutoPtr<ITextureView> m_ptex2DTilesSRV[NUM_TILE_TEXTURES];
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DTilNormalMapsSRV[NUM_TILE_TEXTURES];
 
+    Diligent::RefCntAutoPtr<Diligent::IResourceMapping> m_pResMapping;
     Diligent::RefCntAutoPtr<IShader> m_pHemispherePS;
     RefCntAutoPtr<Diligent::ISampler> m_pComparisonSampler;
 

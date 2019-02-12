@@ -52,6 +52,7 @@
 #include "BasicShaderSourceStreamFactory.h"
 #include "ShaderMacroHelper.h"
 #include "TextureUtilities.h"
+#include "CommonlyUsedStates.h"
 
 using namespace Diligent;
 
@@ -477,8 +478,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
                                        const Uint16 *pHeightMap,
                                        size_t HeightMapPitch,
                                        int iHeightMapDim,
-                                       ITexture *ptex2DNormalMap,
-                                       IResourceMapping *pResMapping)
+                                       ITexture *ptex2DNormalMap)
 {
     TextureDesc HeightMapDesc;
     HeightMapDesc.Name = "Height map texture";
@@ -529,15 +529,73 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     pDevice->CreateTexture(HeightMapDesc, &HeigtMapInitData, &ptex2DHeightMap);
     VERIFY(ptex2DHeightMap, "Failed to create height map texture");
 
-    pResMapping->AddResource( "g_tex2DElevationMap", ptex2DHeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE), true );
+    m_pResMapping->AddResource( "g_tex2DElevationMap", ptex2DHeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE), true );
     
     RefCntAutoPtr<IBuffer> pcbNMGenerationAttribs;
     CreateUniformBuffer(pDevice, sizeof(NMGenerationAttribs), "NM Generation Attribs CB", &pcbNMGenerationAttribs);
 
-    pResMapping->AddResource( "cbNMGenerationAttribs", pcbNMGenerationAttribs, true );
-    m_pTerrainScript->Run( pContext, "CreateRenderNormalMapShaders" );
+    m_pResMapping->AddResource( "cbNMGenerationAttribs", pcbNMGenerationAttribs, true );
+    
+    
+    ShaderCreationAttribs ShaderCreateInfo;
+    BasicShaderSourceStreamFactory BasicSSSFactory("shaders\\;shaders\\terrain");
+    ShaderCreateInfo.pShaderSourceStreamFactory = &BasicSSSFactory;
+    ShaderCreateInfo.FilePath                   = "ScreenSizeQuadVS.fx";
+    ShaderCreateInfo.EntryPoint                 = "GenerateScreenSizeQuadVS";
+	ShaderCreateInfo.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCreateInfo.UseCombinedTextureSamplers = true;
+    ShaderCreateInfo.Desc.ShaderType            = SHADER_TYPE_VERTEX;
+    ShaderCreateInfo.Desc.Name                  = "GenerateScreenSizeQuadVS";
+    ShaderCreateInfo.Desc.DefaultVariableType   = SHADER_VARIABLE_TYPE_STATIC;
+    RefCntAutoPtr<IShader> pScreenSizeQuadVS;
+    pDevice->CreateShader(ShaderCreateInfo, &pScreenSizeQuadVS);
+    
 
-    m_pTerrainScript->Run( pContext, "SetRenderNormalMapShadersAndStates" );
+    ShaderCreateInfo.FilePath        = "GenerateNormalMapPS.fx";
+    ShaderCreateInfo.EntryPoint      = "GenerateNormalMapPS";
+    ShaderCreateInfo.Desc.ShaderType = SHADER_TYPE_PIXEL;
+
+    ShaderVariableDesc ShaderVars[] = 
+    {
+        {"g_tex2DElevationMap",   SHADER_VARIABLE_TYPE_STATIC},
+        {"cbNMGenerationAttribs", SHADER_VARIABLE_TYPE_STATIC}
+    };
+    
+    StaticSamplerDesc StaticSamplers[] = 
+    {
+        {"g_tex2DElevationMap", Sam_PointClamp}
+    };
+        
+    ShaderCreateInfo.Desc.NumVariables = _countof(ShaderVars);
+    ShaderCreateInfo.Desc.VariableDesc = ShaderVars;
+    ShaderCreateInfo.Desc.NumStaticSamplers = _countof(StaticSamplers);
+    ShaderCreateInfo.Desc.StaticSamplers = StaticSamplers;
+    RefCntAutoPtr<IShader> pGenerateNormalMapPS;
+    pDevice->CreateShader(ShaderCreateInfo, &pGenerateNormalMapPS);
+
+    pScreenSizeQuadVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+    pGenerateNormalMapPS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+
+    PipelineStateDesc PSODesc;
+    PSODesc.Name = "Render Normal Map";
+    auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+    GraphicsPipeline.DepthStencilDesc.DepthEnable      = false;
+    GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = false;
+	GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+	GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
+	GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
+    GraphicsPipeline.pVS                = pScreenSizeQuadVS;
+    GraphicsPipeline.pPS                = pGenerateNormalMapPS;
+    GraphicsPipeline.NumRenderTargets   = 1;
+    GraphicsPipeline.RTVFormats[0]      = TEX_FORMAT_RG8_UNORM;
+    GraphicsPipeline.PrimitiveTopology  = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    RefCntAutoPtr<IPipelineState> pRenderNormalMapPSO;
+    pDevice->CreatePipelineState(PSODesc, &pRenderNormalMapPSO);
+    RefCntAutoPtr<IShaderResourceBinding> pRenderNormalMapSRB;
+    pRenderNormalMapPSO->CreateShaderResourceBinding(&pRenderNormalMapSRB, true);
+
+    pContext->SetPipelineState(pRenderNormalMapPSO);
+	pContext->CommitShaderResources(pRenderNormalMapSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     const auto &NormalMapDesc = ptex2DNormalMap->GetDesc();
     for(Uint32 uiMipLevel = 0; uiMipLevel < NormalMapDesc.MipLevels; ++uiMipLevel)
@@ -563,7 +621,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     }
 
     // Remove elevation map from resource mapping to release the resource
-    pResMapping->RemoveResourceByName( "g_tex2DElevationMap" );
+    m_pResMapping->RemoveResourceByName( "g_tex2DElevationMap" );
 
     // Restore default render target
     pContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -606,7 +664,6 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
 
     CreateUniformBuffer( pDevice, sizeof( TerrainAttribs ), "Terrain Attribs CB", &m_pcbTerrainAttribs );
 
-    RefCntAutoPtr<IResourceMapping> pResMapping;
     ResourceMappingDesc ResMappingDesc;
     ResourceMappingEntry pEntries[] = 
     { 
@@ -618,12 +675,12 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
         {} 
     };
     ResMappingDesc.pEntries = pEntries;
-    pDevice->CreateResourceMapping( ResMappingDesc, &pResMapping );
+    pDevice->CreateResourceMapping( ResMappingDesc, &m_pResMapping );
 
     RefCntAutoPtr<ITexture> ptex2DMtrlMask;
     CreateTextureFromFile(MaterialMaskPath, TextureLoadInfo(), pDevice, &ptex2DMtrlMask);
     auto ptex2DMtrlMaskSRV = ptex2DMtrlMask->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    pResMapping->AddResource("g_tex2DMtrlMap", ptex2DMtrlMaskSRV, true);
+    m_pResMapping->AddResource("g_tex2DMtrlMap", ptex2DMtrlMaskSRV, true);
 
     // Load tiles
     IDeviceObject* ptex2DTileDiffuseSRV[NUM_TILE_TEXTURES] = {};
@@ -645,18 +702,18 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
             ptex2DTileNMSRV[iTileTex] = ptex2DTileNM[iTileTex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         }
 	}
-    pResMapping->AddResourceArray("g_tex2DTileDiffuse", 0,  ptex2DTileDiffuseSRV, NUM_TILE_TEXTURES, true);
-    pResMapping->AddResourceArray("g_tex2DTileNM", 0, ptex2DTileNMSRV, NUM_TILE_TEXTURES, true);
+    m_pResMapping->AddResourceArray("g_tex2DTileDiffuse", 0,  ptex2DTileDiffuseSRV, NUM_TILE_TEXTURES, true);
+    m_pResMapping->AddResourceArray("g_tex2DTileNM", 0, ptex2DTileNMSRV, NUM_TILE_TEXTURES, true);
 
 
     m_pTerrainScript = CreateRenderScriptFromFile( "shaders\\Terrain.lua", pDevice, pContext, [&]( ScriptParser *pScriptParser )
     {
-        pScriptParser->SetGlobalVariable( "extResourceMapping", pResMapping );
+        pScriptParser->SetGlobalVariable( "extResourceMapping", m_pResMapping );
     } );
 
     m_pTerrainScript->GetSamplerByName( "ComparisonSampler", &m_pComparisonSampler );
 
-    RenderNormalMap( pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap, pResMapping );
+    RenderNormalMap( pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap);
 
     m_pTerrainScript->Run( pContext, "CreateHemisphereShaders" );
 
