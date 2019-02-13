@@ -110,15 +110,15 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )
     {
         m_uiShadowMapResolution = 512;
-        m_PPAttribs.m_iFirstCascade = 2;
-        m_PPAttribs.m_uiSingleScatteringMode = SINGLE_SCTR_MODE_LUT;
+        m_PPAttribs.iFirstCascadeToRayMarch = 2;
+        m_PPAttribs.uiSingleScatteringMode = SINGLE_SCTR_MODE_LUT;
         m_TerrainRenderParams.m_iNumShadowCascades = 4;
         m_TerrainRenderParams.m_iNumRings = 10;
         m_TerrainRenderParams.m_TexturingMode = RenderingParams::TM_MATERIAL_MASK;
     }
 
-    m_f4CustomRlghBeta = m_PPAttribs.m_f4CustomRlghBeta;
-    m_f4CustomMieBeta = m_PPAttribs.m_f4CustomMieBeta;
+    m_f4CustomRlghBeta = m_PPAttribs.f4CustomRlghBeta;
+    m_f4CustomMieBeta = m_PPAttribs.f4CustomMieBeta;
 
 	m_strRawDEMDataFile = "Terrain\\HeightMap.tif";
     m_strMtrlMaskFile = "Terrain\\Mask.png";
@@ -221,7 +221,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 
     // Light scattering GUI controls
     {
-        TwAddVarRW( bar, "Enable light shafts", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bEnableLightShafts, "group=Scattering" );
+        TwAddVarRW( bar, "Enable light shafts", TW_TYPE_BOOLCPP, &m_PPAttribs.bEnableLightShafts, "group=Scattering" );
 
         // Define a new enum type for the tweak bar
         TwEnumVal LightSctrTech[] = // array used to describe the shadow map resolution
@@ -230,7 +230,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
             { LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE, "Brute force" }
         };
         TwType LightSctrTechType = TwDefineEnum( "Light scattering tech", LightSctrTech, _countof( LightSctrTech ) );
-        TwAddVarRW( bar, "Light scattering tech", LightSctrTechType, &m_PPAttribs.m_uiLightSctrTechnique, "group=Scattering" );
+        TwAddVarRW( bar, "Light scattering tech", LightSctrTechType, &m_PPAttribs.uiLightSctrTechnique, "group=Scattering" );
 
         TwEnumVal Pow2Values[] =
         {
@@ -248,26 +248,26 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
             { 2048, "2048" }
         };
         TwType BigPow2Enum = TwDefineEnum( "Large powers of two", Pow2Values + 7, 5 );
-        TwAddVarRW( bar, "NumSlices", BigPow2Enum, &m_PPAttribs.m_uiNumEpipolarSlices, "group=Scattering label=\'Num slices\'" );
-        TwAddVarRW( bar, "MaxSamples", BigPow2Enum, &m_PPAttribs.m_uiMaxSamplesInSlice, "group=Scattering label=\'Max samples\'" );
+        TwAddVarRW( bar, "NumSlices", BigPow2Enum, &m_PPAttribs.uiNumEpipolarSlices, "group=Scattering label=\'Num slices\'" );
+        TwAddVarRW( bar, "MaxSamples", BigPow2Enum, &m_PPAttribs.uiMaxSamplesInSlice, "group=Scattering label=\'Max samples\'" );
         TwType SmallPow2Enum = TwDefineEnum( "Small powers of two", Pow2Values+2, 5 );
-        TwAddVarRW( bar, "IntialStep", SmallPow2Enum, &m_PPAttribs.m_uiInitialSampleStepInSlice, "group=Scattering label=\'Initial step\'" );
+        TwAddVarRW( bar, "IntialStep", SmallPow2Enum, &m_PPAttribs.uiInitialSampleStepInSlice, "group=Scattering label=\'Initial step\'" );
         
-        TwAddVarRW( bar, "ShowSampling", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bShowSampling, "group=Scattering label=\'Show Sampling\'" );
-        TwAddVarRW( bar, "RefinementThreshold", TW_TYPE_FLOAT, &m_PPAttribs.m_fRefinementThreshold, "group=Scattering label=\'Refinement Threshold\' min=0.01 max=0.5 step=0.01" );
-        TwAddVarRW( bar, "1DMinMaxOptimization", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bUse1DMinMaxTree, "group=Scattering label=\'Use 1D min/max trees\'" );
-        TwAddVarRW( bar, "OptimizeSampleLocations", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bOptimizeSampleLocations, "group=Scattering label=\'Optimize Sample Locations\'" );
-        TwAddVarRW( bar, "CorrectScattering", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bCorrectScatteringAtDepthBreaks, "group=Scattering label=\'Correct Scattering At Depth Breaks\'" );
-        TwAddVarRW( bar, "ShowDepthBreaks", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bShowDepthBreaks, "group=Scattering label=\'Show Depth Breaks\'" );
-        TwAddVarRW( bar, "LightingOnly", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bShowLightingOnly, "group=Scattering label=\'Lighting Only\'" );
+        TwAddVarRW( bar, "ShowSampling", TW_TYPE_BOOLCPP, &m_PPAttribs.bShowSampling, "group=Scattering label=\'Show Sampling\'" );
+        TwAddVarRW( bar, "RefinementThreshold", TW_TYPE_FLOAT, &m_PPAttribs.fRefinementThreshold, "group=Scattering label=\'Refinement Threshold\' min=0.01 max=0.5 step=0.01" );
+        TwAddVarRW( bar, "1DMinMaxOptimization", TW_TYPE_BOOLCPP, &m_PPAttribs.bUse1DMinMaxTree, "group=Scattering label=\'Use 1D min/max trees\'" );
+        TwAddVarRW( bar, "OptimizeSampleLocations", TW_TYPE_BOOLCPP, &m_PPAttribs.bOptimizeSampleLocations, "group=Scattering label=\'Optimize Sample Locations\'" );
+        TwAddVarRW( bar, "CorrectScattering", TW_TYPE_BOOLCPP, &m_PPAttribs.bCorrectScatteringAtDepthBreaks, "group=Scattering label=\'Correct Scattering At Depth Breaks\'" );
+        TwAddVarRW( bar, "ShowDepthBreaks", TW_TYPE_BOOLCPP, &m_PPAttribs.bShowDepthBreaks, "group=Scattering label=\'Show Depth Breaks\'" );
+        TwAddVarRW( bar, "LightingOnly", TW_TYPE_BOOLCPP, &m_PPAttribs.bShowLightingOnly, "group=Scattering label=\'Lighting Only\'" );
         //TwAddVarRW( bar, "ScatteringScale", TW_TYPE_FLOAT, &m_fScatteringScale, "group=Scattering label=\'Scattering scale\' min=0 max=2 step=0.1" );
 
-        TwAddVarRW( bar, "NumIntegrationSteps", TW_TYPE_UINT32, &m_PPAttribs.m_uiInstrIntegralSteps, "min=5 max=100 step=5 group=Advanced label=\'Num Integrtion Steps\'" );
+        TwAddVarRW( bar, "NumIntegrationSteps", TW_TYPE_UINT32, &m_PPAttribs.uiInstrIntegralSteps, "min=5 max=100 step=5 group=Advanced label=\'Num Integrtion Steps\'" );
         TwDefine( "Settings/Advanced group=Scattering" );
 
         {
             TwType EpipoleSamplingDensityEnum = TwDefineEnum( "Epipole sampling density enum", Pow2Values, 4 );
-            TwAddVarRW( bar, "EpipoleSamplingDensity", EpipoleSamplingDensityEnum, &m_PPAttribs.m_uiEpipoleSamplingDensityFactor, "group=Advanced label=\'Epipole sampling density\'" );
+            TwAddVarRW( bar, "EpipoleSamplingDensity", EpipoleSamplingDensityEnum, &m_PPAttribs.uiEpipoleSamplingDensityFactor, "group=Advanced label=\'Epipole sampling density\'" );
         }
         {
             TwEnumVal SinglSctrMode[] =
@@ -277,7 +277,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 { SINGLE_SCTR_MODE_LUT, "Look-up table" }
             };
             TwType SinglSctrModeEnum = TwDefineEnum( "Single scattering mode enum", SinglSctrMode, _countof(SinglSctrMode) );
-            TwAddVarRW( bar, "SingleSctrMode", SinglSctrModeEnum, &m_PPAttribs.m_uiSingleScatteringMode, "group=Advanced label=\'Single scattering\'" );
+            TwAddVarRW( bar, "SingleSctrMode", SinglSctrModeEnum, &m_PPAttribs.uiSingleScatteringMode, "group=Advanced label=\'Single scattering\'" );
         }
         {
             TwEnumVal MultSctrMode[] =
@@ -287,7 +287,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 { MULTIPLE_SCTR_MODE_OCCLUDED, "Occluded" }
             };
             TwType MultSctrModeEnum = TwDefineEnum( "Higher-order scattering mode enum", MultSctrMode, _countof( MultSctrMode ) );
-            TwAddVarRW( bar, "MultipleSctrMode", MultSctrModeEnum, &m_PPAttribs.m_uiMultipleScatteringMode, "group=Advanced label=\'Higher-order scattering\'" );
+            TwAddVarRW( bar, "MultipleSctrMode", MultSctrModeEnum, &m_PPAttribs.uiMultipleScatteringMode, "group=Advanced label=\'Higher-order scattering\'" );
         }
         {
             TwEnumVal CascadeProcessingMode[] =
@@ -297,10 +297,10 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 { CASCADE_PROCESSING_MODE_MULTI_PASS_INST, "Multi-pass inst" }
             };
             TwType CascadeProcessingModeEnum = TwDefineEnum( "Cascade processing mode enum", CascadeProcessingMode, _countof( CascadeProcessingMode ) );
-            TwAddVarRW( bar, "CascadeProcessingMode", CascadeProcessingModeEnum, &m_PPAttribs.m_uiCascadeProcessingMode, "group=Advanced label=\'Cascade processing mode\'" );
+            TwAddVarRW( bar, "CascadeProcessingMode", CascadeProcessingModeEnum, &m_PPAttribs.uiCascadeProcessingMode, "group=Advanced label=\'Cascade processing mode\'" );
         }
-        TwAddVarRW( bar, "FirstCascadeToRayMarch", TW_TYPE_INT32, &m_PPAttribs.m_iFirstCascade, "min=0 max=8 step=1 group=Advanced label=\'Start cascade\'" );
-        TwAddVarRW( bar, "Is32BitMinMaxShadowMap", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bIs32BitMinMaxMipMap, "group=Advanced label=\'Use 32-bit float min/max SM\'" );
+        TwAddVarRW( bar, "FirstCascadeToRayMarch", TW_TYPE_INT32, &m_PPAttribs.iFirstCascadeToRayMarch, "min=0 max=8 step=1 group=Advanced label=\'Start cascade\'" );
+        TwAddVarRW( bar, "Is32BitMinMaxShadowMap", TW_TYPE_BOOLCPP, &m_PPAttribs.bIs32BitMinMaxMipMap, "group=Advanced label=\'Use 32-bit float min/max SM\'" );
         {
             TwEnumVal RefinementCriterion[] =
             {
@@ -308,7 +308,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 { REFINEMENT_CRITERION_INSCTR_DIFF, "Scattering difference" }
             };
             TwType CascadeProcessingModeEnum = TwDefineEnum( "Refinement criterion enum", RefinementCriterion, _countof( RefinementCriterion ) );
-            TwAddVarRW( bar, "RefinementCriterion", CascadeProcessingModeEnum, &m_PPAttribs.m_uiRefinementCriterion, "group=Advanced label=\'Refinement criterion\'" );
+            TwAddVarRW( bar, "RefinementCriterion", CascadeProcessingModeEnum, &m_PPAttribs.uiRefinementCriterion, "group=Advanced label=\'Refinement criterion\'" );
         }
         {
             TwEnumVal ExtinctionEvalMode[] =
@@ -317,11 +317,11 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 { EXTINCTION_EVAL_MODE_EPIPOLAR, "Epipolar" }
             };
             TwType ExtinctionEvalModeEnum = TwDefineEnum( "Extinction eval mode enum", ExtinctionEvalMode, _countof( ExtinctionEvalMode ) );
-            TwAddVarRW( bar, "ExtinctionEval", ExtinctionEvalModeEnum, &m_PPAttribs.m_uiExtinctionEvalMode, "group=Advanced label=\'Extinction eval mode\'" );
+            TwAddVarRW( bar, "ExtinctionEval", ExtinctionEvalModeEnum, &m_PPAttribs.uiExtinctionEvalMode, "group=Advanced label=\'Extinction eval mode\'" );
         }
-        TwAddVarRW( bar, "AerosolDensity", TW_TYPE_FLOAT, &m_PPAttribs.m_fAerosolDensityScale, "group=Advanced label=\'Aerosol density\' min=0.1 max=5.0 step=0.1" );
-        TwAddVarRW( bar, "AerosolAbsorption", TW_TYPE_FLOAT, &m_PPAttribs.m_fAerosolAbsorbtionScale, "group=Advanced label=\'Aerosol absorption\' min=0.0 max=5.0 step=0.1" );
-        TwAddVarRW( bar, "UseCustomSctrCoeffs", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bUseCustomSctrCoeffs, "group=Advanced label=\'Use custom scattering coeffs\'" );
+        TwAddVarRW( bar, "AerosolDensity", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolDensityScale, "group=Advanced label=\'Aerosol density\' min=0.1 max=5.0 step=0.1" );
+        TwAddVarRW( bar, "AerosolAbsorption", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolAbsorbtionScale, "group=Advanced label=\'Aerosol absorption\' min=0.0 max=5.0 step=0.1" );
+        TwAddVarRW( bar, "UseCustomSctrCoeffs", TW_TYPE_BOOLCPP, &m_PPAttribs.bUseCustomSctrCoeffs, "group=Advanced label=\'Use custom scattering coeffs\'" );
 
         #define RLGH_COLOR_SCALE 5e-5f
         #define MIE_COLOR_SCALE 5e-5f
@@ -368,8 +368,8 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                     [](void *clientData)
                     {
                         AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                        pTheSample->m_PPAttribs.m_f4CustomRlghBeta = pTheSample->m_f4CustomRlghBeta;
-                        pTheSample->m_PPAttribs.m_f4CustomMieBeta = pTheSample->m_f4CustomMieBeta;
+                        pTheSample->m_PPAttribs.f4CustomRlghBeta = pTheSample->m_f4CustomRlghBeta;
+                        pTheSample->m_PPAttribs.f4CustomMieBeta = pTheSample->m_f4CustomMieBeta;
                     }, 
                     this, "group=Advanced label=\'Update coefficients\'");
     }
@@ -388,13 +388,13 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 {TONE_MAPPING_ADAPTIVE_LOG,      "Adaptive log"}
             };
             TwType ToneMappingModeEnum = TwDefineEnum( "Tone mapping mode enum", ToneMappingMode, _countof( ToneMappingMode ) );
-            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.m_uiToneMappingMode, "group=ToneMapping label=\'Mode\'" );
+            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.uiToneMappingMode, "group=ToneMapping label=\'Mode\'" );
         }
-        TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.m_fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
-        TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.m_fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
-        TwAddVarRW( bar, "MiddleGray", TW_TYPE_FLOAT, &m_PPAttribs.m_fMiddleGray, "group=ToneMapping label=\'Middle Gray\' min=0.01 max=1.0 step=0.01" );
-        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
-        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOLCPP, &m_PPAttribs.m_bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
+        TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
+        TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
+        TwAddVarRW( bar, "MiddleGray", TW_TYPE_FLOAT, &m_PPAttribs.fMiddleGray, "group=ToneMapping label=\'Middle Gray\' min=0.01 max=1.0 step=0.01" );
+        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOLCPP, &m_PPAttribs.bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
+        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOLCPP, &m_PPAttribs.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
     }
 
     const auto& RG16UAttribs = pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );
@@ -405,7 +405,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
     {
         int32_t IsVisible = 0;
         TwSetParam( bar, "1DMinMaxOptimization", "visible", TW_PARAM_INT32, 1, &IsVisible );
-        m_PPAttribs.m_bUse1DMinMaxTree = FALSE;
+        m_PPAttribs.bUse1DMinMaxTree = FALSE;
     }
 
     if( !RG16USupported || !RG32FSupported )
@@ -414,10 +414,10 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         TwSetParam( bar, "Is32BitMinMaxShadowMap", "visible", TW_PARAM_INT32, 1, &IsVisible );
 
         if( RG16USupported && !RG32FSupported )
-            m_PPAttribs.m_bIs32BitMinMaxMipMap = FALSE;
+            m_PPAttribs.bIs32BitMinMaxMipMap = FALSE;
 
         if( !RG16USupported && RG32FSupported )
-            m_PPAttribs.m_bIs32BitMinMaxMipMap = TRUE;
+            m_PPAttribs.bIs32BitMinMaxMipMap = TRUE;
     }
 }
 
@@ -437,7 +437,7 @@ void AtmosphereSample::UpdateGUI()
         TwSetParam( bar, "ToneMapping", "visible", TW_PARAM_INT32, 1, &IsVisible );
     }
 
-    bool bIsEpipolarSampling = m_PPAttribs.m_uiLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING;
+    bool bIsEpipolarSampling = m_PPAttribs.uiLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING;
     TwSetEnabled( bar, "NumSlices", bIsEpipolarSampling );
     TwSetEnabled( bar, "MaxSamples", bIsEpipolarSampling );
     TwSetEnabled( bar, "IntialStep", bIsEpipolarSampling );
@@ -447,27 +447,27 @@ void AtmosphereSample::UpdateGUI()
     TwSetEnabled( bar, "OptimizeSampleLocations", bIsEpipolarSampling );
     TwSetEnabled( bar, "ShowSampling", bIsEpipolarSampling );
     TwSetEnabled( bar, "CorrectScattering", bIsEpipolarSampling );
-    TwSetEnabled( bar, "ShowDepthBreaks", bIsEpipolarSampling && m_PPAttribs.m_bCorrectScatteringAtDepthBreaks != 0);
-    TwSetEnabled( bar, "NumIntegrationSteps", !m_PPAttribs.m_bEnableLightShafts && m_PPAttribs.m_uiSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION );
+    TwSetEnabled( bar, "ShowDepthBreaks", bIsEpipolarSampling && m_PPAttribs.bCorrectScatteringAtDepthBreaks != 0);
+    TwSetEnabled( bar, "NumIntegrationSteps", !m_PPAttribs.bEnableLightShafts && m_PPAttribs.uiSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION );
 
     {
-        int32_t IsVisible = m_PPAttribs.m_bUseCustomSctrCoeffs ? 1 : 0;
+        int32_t IsVisible = m_PPAttribs.bUseCustomSctrCoeffs ? 1 : 0;
         TwSetParam( bar, "RayleighColor", "visible", TW_PARAM_INT32, 1, &IsVisible );
         TwSetParam( bar, "MieColor", "visible", TW_PARAM_INT32, 1, &IsVisible );
         TwSetParam( bar, "UpdateCoeffsBtn", "visible", TW_PARAM_INT32, 1, &IsVisible );
     }
 
-    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                     m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
-                                     m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                     m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
+    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                                     m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
+                                     m_PPAttribs.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                                     m_PPAttribs.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
 
-    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_MODE_EXP ||
-                                        m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
-                                        m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                        m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                        m_PPAttribs.m_uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
-    TwSetEnabled( bar, "LightAdaptation", m_PPAttribs.m_bAutoExposure ? true : false );
+    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_EXP ||
+                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
+                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
+    TwSetEnabled( bar, "LightAdaptation", m_PPAttribs.bAutoExposure ? true : false );
 }
 
 AtmosphereSample::~AtmosphereSample()
@@ -581,7 +581,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         float fMaxLightShaftsDist = 3e+5f;
         // Ray marching always starts at the camera position, not at the near plane.
         // So we must make sure that the first cascade used for ray marching covers the camera position
-        CurrCascade.f4StartEndZ.x = (iCascade == m_PPAttribs.m_iFirstCascade) ? 0 : std::min(fCascadeNearZ, fMaxLightShaftsDist);
+        CurrCascade.f4StartEndZ.x = (iCascade == m_PPAttribs.iFirstCascadeToRayMarch) ? 0 : std::min(fCascadeNearZ, fMaxLightShaftsDist);
         CurrCascade.f4StartEndZ.y = std::min(fCascadeFarZ, fMaxLightShaftsDist);
         CascadeFrustumProjMatrix = mCameraProj;
         SetNearFarClipPlanes( CascadeFrustumProjMatrix, fCascadeNearZ, fCascadeFarZ, m_bIsGLDevice);
@@ -594,7 +594,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
         float3 f3MinXYZ(f3CameraPosInLightSpace), f3MaxXYZ(f3CameraPosInLightSpace);
         
         // First cascade used for ray marching must contain camera within it
-        if( iCascade != m_PPAttribs.m_iFirstCascade )
+        if( iCascade != m_PPAttribs.iFirstCascadeToRayMarch )
         {
             f3MinXYZ = float3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
             f3MaxXYZ = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -694,8 +694,7 @@ void AtmosphereSample::Render()
 
 
     // m_iFirstCascade must be initialized before calling RenderShadowMap()!
-    m_PPAttribs.m_iFirstCascade = std::min(m_PPAttribs.m_iFirstCascade, m_TerrainRenderParams.m_iNumShadowCascades - 1);
-    m_PPAttribs.m_fFirstCascade = (float)m_PPAttribs.m_iFirstCascade;
+    m_PPAttribs.iFirstCascadeToRayMarch = std::min(m_PPAttribs.iFirstCascadeToRayMarch, m_TerrainRenderParams.m_iNumShadowCascades - 1);
 
 	RenderShadowMap(m_pImmediateContext, LightAttrs, m_mCameraView, m_mCameraProj);
     
@@ -771,22 +770,22 @@ void AtmosphereSample::Render()
         FrameAttribs.pLightAttribs = &LightAttrs;
         FrameAttribs.pCameraAttribs = &CamAttribs;
 
-        m_PPAttribs.m_iNumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
-        m_PPAttribs.m_fNumCascades = (float)m_TerrainRenderParams.m_iNumShadowCascades;
+        m_PPAttribs.iNumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
+        m_PPAttribs.fNumCascades = (float)m_TerrainRenderParams.m_iNumShadowCascades;
 
         FrameAttribs.pcbLightAttribs = m_pcbLightAttribs;
         FrameAttribs.pcbCameraAttribs = m_pcbCameraAttribs;
 
-        m_PPAttribs.m_fMaxShadowMapStep = static_cast<float>(m_uiShadowMapResolution / 4);
+        m_PPAttribs.fMaxShadowMapStep = static_cast<float>(m_uiShadowMapResolution / 4);
         
-        m_PPAttribs.m_f2ShadowMapTexelSize = float2( 1.f / static_cast<float>(m_uiShadowMapResolution), 1.f / static_cast<float>(m_uiShadowMapResolution) );
-        m_PPAttribs.m_uiShadowMapResolution = m_uiShadowMapResolution;
+        m_PPAttribs.f2ShadowMapTexelSize = float2( 1.f / static_cast<float>(m_uiShadowMapResolution), 1.f / static_cast<float>(m_uiShadowMapResolution) );
+        m_PPAttribs.uiMaxSamplesOnTheRay = m_uiShadowMapResolution;
         // During the ray marching, on each step we move by the texel size in either horz 
         // or vert direction. So resolution of min/max mipmap should be the same as the 
         // resolution of the original shadow map
-        m_PPAttribs.m_uiMinMaxShadowMapResolution = m_uiShadowMapResolution;
-        m_PPAttribs.m_uiInitialSampleStepInSlice = std::min( m_PPAttribs.m_uiInitialSampleStepInSlice, m_PPAttribs.m_uiMaxSamplesInSlice );
-        m_PPAttribs.m_uiEpipoleSamplingDensityFactor = std::min( m_PPAttribs.m_uiEpipoleSamplingDensityFactor, m_PPAttribs.m_uiInitialSampleStepInSlice );
+        m_PPAttribs.uiMinMaxShadowMapResolution = m_uiShadowMapResolution;
+        m_PPAttribs.uiInitialSampleStepInSlice = std::min( m_PPAttribs.uiInitialSampleStepInSlice, m_PPAttribs.uiMaxSamplesInSlice );
+        m_PPAttribs.uiEpipoleSamplingDensityFactor = std::min( m_PPAttribs.uiEpipoleSamplingDensityFactor, m_PPAttribs.uiInitialSampleStepInSlice );
 
         FrameAttribs.ptex2DSrcColorBufferSRV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         FrameAttribs.ptex2DSrcColorBufferRTV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
