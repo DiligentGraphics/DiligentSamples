@@ -701,28 +701,9 @@ void AtmosphereSample::Render()
     
     LightAttrs.ShadowAttribs.bVisualizeCascades = m_bVisualizeCascades ? TRUE : FALSE;
 
-    // Calculate location of the sun on the screen
-    float4 &f4LightPosPS = LightAttrs.f4LightScreenPos;
-    f4LightPosPS = LightAttrs.f4DirOnLight * mViewProj;
-    f4LightPosPS.x /= f4LightPosPS.w;
-    f4LightPosPS.y /= f4LightPosPS.w;
-    f4LightPosPS.z /= f4LightPosPS.w;
-    float fDistToLightOnScreen = length( (float2&)f4LightPosPS );
-    float fMaxDist = 100;
-
-    if( fDistToLightOnScreen > fMaxDist )
-        (float2&)f4LightPosPS *= fMaxDist/fDistToLightOnScreen;
-
-    const auto& SCDesc = m_pSwapChain->GetDesc();
-    // Note that in fact the outermost visible screen pixels do not lie exactly on the boundary (+1 or -1), but are biased by
-    // 0.5 screen pixel size inwards. Using these adjusted boundaries improves precision and results in
-    // smaller number of pixels which require inscattering correction
-    LightAttrs.bIsLightOnScreen = fabs(f4LightPosPS.x) <= 1.f - 1.f/(float)SCDesc.Width && 
-                                    fabs(f4LightPosPS.y) <= 1.f - 1.f/(float)SCDesc.Height;
-
     {
-        MapHelper<LightAttribs> pLightAttribs( m_pImmediateContext, m_pcbLightAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
-        *pLightAttribs = LightAttrs;
+        MapHelper<LightAttribs> LightAttribsCBData( m_pImmediateContext, m_pcbLightAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
+        *LightAttribsCBData = LightAttrs;
     }
 
     // The first time GetAmbientSkyLightSRV() is called, the ambient sky light texture 
@@ -753,16 +734,19 @@ void AtmosphereSample::Render()
         
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+    CameraAttribs CamAttribs;
+    CamAttribs.mViewProjT = transposeMatrix( mViewProj );
+    CamAttribs.mProjT = transposeMatrix( m_mCameraProj );
+    CamAttribs.mViewProjInvT = transposeMatrix( inverseMatrix(mViewProj) );
+    float fNearPlane = 0.f, fFarPlane = 0.f;
+    GetNearFarPlaneFromProjMatrix( m_mCameraProj, fNearPlane, fFarPlane, m_bIsGLDevice);
+    CamAttribs.fNearPlaneZ = fNearPlane;
+    CamAttribs.fFarPlaneZ = fFarPlane * 0.999999f;
+    CamAttribs.f4CameraPos = m_f3CameraPos;
+
     {
-        MapHelper<CameraAttribs> CamAttribs( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
-        CamAttribs->mViewProjT = transposeMatrix( mViewProj );
-        CamAttribs->mProjT = transposeMatrix( m_mCameraProj );
-        CamAttribs->mViewProjInvT = transposeMatrix( inverseMatrix(mViewProj) );
-        float fNearPlane = 0.f, fFarPlane = 0.f;
-        GetNearFarPlaneFromProjMatrix( m_mCameraProj, fNearPlane, fFarPlane, m_bIsGLDevice);
-        CamAttribs->fNearPlaneZ = fNearPlane;
-        CamAttribs->fFarPlaneZ = fFarPlane * 0.999999f;
-        CamAttribs->f4CameraPos = m_f3CameraPos;
+        MapHelper<CameraAttribs> CamAttribsCBData( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
+        *CamAttribsCBData = CamAttribs;
     }    
 
     // Render terrain
@@ -785,6 +769,7 @@ void AtmosphereSample::Render()
         FrameAttribs.pDeviceContext = m_pImmediateContext;
         FrameAttribs.dElapsedTime = m_fElapsedTime;
         FrameAttribs.pLightAttribs = &LightAttrs;
+        FrameAttribs.pCameraAttribs = &CamAttribs;
 
         m_PPAttribs.m_iNumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
         m_PPAttribs.m_fNumCascades = (float)m_TerrainRenderParams.m_iNumShadowCascades;
@@ -808,7 +793,7 @@ void AtmosphereSample::Render()
         FrameAttribs.ptex2DSrcDepthBufferSRV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         FrameAttribs.ptex2DSrcDepthBufferDSV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         FrameAttribs.ptex2DShadowMapSRV      = m_pShadowMapSRV;
-        FrameAttribs.pDstRTV                 = 0;// mpBackBufferRTV;
+        FrameAttribs.pDstRTV                 = nullptr;// mpBackBufferRTV;
 
         // Then perform the post processing, swapping the inverseworld view  projection matrix axes.
         m_pLightSctrPP->PerformPostProcessing(FrameAttribs, m_PPAttribs);
