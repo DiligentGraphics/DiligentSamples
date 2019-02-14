@@ -688,7 +688,7 @@ void AtmosphereSample::Render()
     LightAttrs.f4Direction.w = 0;
 
     float4 f4ExtraterrestrialSunColor = float4(10,10,10,10);
-    LightAttrs.f4ExtraterrestrialSunColor = f4ExtraterrestrialSunColor;// *m_fScatteringScale;
+    LightAttrs.f4Intensity = f4ExtraterrestrialSunColor;// *m_fScatteringScale;
     LightAttrs.f4AmbientLight = float4( 0, 0, 0, 0 );
 
     

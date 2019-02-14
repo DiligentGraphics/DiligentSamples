@@ -272,9 +272,9 @@ void HemispherePS(in float4 f4Pos : SV_Position,
 
 
     // Attenuate extraterrestrial sun color with the extinction factor
-    float3 f3SunLight = g_LightAttribs.f4ExtraterrestrialSunColor.rgb * VSOut.f3SunLightExtinction;
+    float3 f3SunLight = g_LightAttribs.f4Intensity.rgb * VSOut.f3SunLightExtinction;
     // Ambient sky light is not pre-multiplied with the sun intensity
-    float3 f3AmbientSkyLight = g_LightAttribs.f4ExtraterrestrialSunColor.rgb * VSOut.f3AmbientSkyLight;
+    float3 f3AmbientSkyLight = g_LightAttribs.f4Intensity.rgb * VSOut.f3AmbientSkyLight;
     // Account for occlusion by the ground plane
     f3AmbientSkyLight *= saturate((1.0 + dot(EarthNormal, f3Normal))/2.f);
 
