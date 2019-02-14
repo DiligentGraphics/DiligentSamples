@@ -283,7 +283,7 @@ void HemispherePS(in float4 f4Pos : SV_Position,
 
     int Cascade = 0;
     float fLightAmount = ComputeShadowAmount( VSOut.f3PosInLightViewSpace.xyz, VSOut.fCameraSpaceZ, Cascade );
-    float DiffuseIllumination = max(0.0, dot(f3Normal, g_LightAttribs.f4DirOnLight.xyz));
+    float DiffuseIllumination = max(0.0, dot(f3Normal, -g_LightAttribs.f4Direction.xyz));
     
     float3 f3CascadeColor = float3(0.0, 0.0, 0.0);
     if( g_LightAttribs.ShadowAttribs.bVisualizeCascades )

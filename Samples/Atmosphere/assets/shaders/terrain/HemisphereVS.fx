@@ -38,7 +38,7 @@ void GetSunLightExtinctionAndSkyLight(in float3 f3PosWS,
     float fDistToCentre = length(f3DirFromEarthCentre);
     f3DirFromEarthCentre /= fDistToCentre;
     float fHeightAboveSurface = fDistToCentre - g_MediaParams.fEarthRadius;
-    float fCosZenithAngle = dot(f3DirFromEarthCentre, g_LightAttribs.f4DirOnLight.xyz);
+    float fCosZenithAngle = dot(f3DirFromEarthCentre, -g_LightAttribs.f4Direction.xyz);
 
     float fRelativeHeightAboveSurface = fHeightAboveSurface / g_MediaParams.fAtmTopHeight;
     float2 f2ParticleDensityToAtmTop = g_tex2DOccludedNetDensityToAtmTop.SampleLevel( g_tex2DOccludedNetDensityToAtmTop_sampler, float2(fRelativeHeightAboveSurface, fCosZenithAngle*0.5 + 0.5), 0 );

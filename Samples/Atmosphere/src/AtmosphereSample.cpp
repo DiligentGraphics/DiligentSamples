@@ -524,8 +524,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
     ShadowMapAttribs& ShadowMapAttribs = LightAttribs.ShadowAttribs;
     const auto& DevCaps = m_pDevice->GetDeviceCaps();
 
-    float3 v3DirOnLight = (float3&)LightAttribs.f4DirOnLight;
-    float3 v3LightDirection = -v3DirOnLight;
+    float3 v3LightDirection = (const float3&)LightAttribs.f4Direction;
 
     // Declare working vectors
     float3 vLightSpaceX, vLightSpaceY, vLightSpaceZ;
@@ -685,14 +684,14 @@ void AtmosphereSample::Render()
     float4x4 mViewProj = m_mCameraView * m_mCameraProj;
 
     LightAttribs LightAttrs;
-    LightAttrs.f4DirOnLight = -m_f3LightDir;
-    LightAttrs.f4DirOnLight.w = 0;
+    LightAttrs.f4Direction = m_f3LightDir;
+    LightAttrs.f4Direction.w = 0;
 
     float4 f4ExtraterrestrialSunColor = float4(10,10,10,10);
     LightAttrs.f4ExtraterrestrialSunColor = f4ExtraterrestrialSunColor;// *m_fScatteringScale;
     LightAttrs.f4AmbientLight = float4( 0, 0, 0, 0 );
 
-
+    
     // m_iFirstCascade must be initialized before calling RenderShadowMap()!
     m_PPAttribs.iFirstCascadeToRayMarch = std::min(m_PPAttribs.iFirstCascadeToRayMarch, m_TerrainRenderParams.m_iNumShadowCascades - 1);
 

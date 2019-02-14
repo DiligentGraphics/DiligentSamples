@@ -58,7 +58,7 @@ struct ShadowMapAttribs
 	BOOL bVisualizeCascades;
 
     // float3 f3Padding;
-    // Stupid OpenGL compiler does not handle 3-component vectors properly
+    // OpenGL compiler does not handle 3-component vectors properly
     // and screws up the structure layout.
     // Opengl.org suggests not using vec3 at all
     int Padding0;
@@ -70,7 +70,7 @@ CHECK_STRUCT_ALIGNMENT(ShadowMapAttribs)
 
 struct LightAttribs
 {
-    float4 f4DirOnLight;
+    float4 f4Direction;
     float4 f4AmbientLight;
     float4 f4ExtraterrestrialSunColor;
 
