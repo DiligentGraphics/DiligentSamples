@@ -24,7 +24,6 @@
 #pragma once 
 
 #include "SampleBase.h"
-#include "ScriptParser.h"
 #include "BasicMath.h"
 #include "EarthHemisphere.h"
 #include "ElevationDataSource.h"
@@ -82,7 +81,7 @@ private:
     bool m_bVisualizeCascades;
 
     RenderingParams m_TerrainRenderParams;
-    EpipolarLightScatteringAttribs m_PPAttribs;
+    Diligent::EpipolarLightScatteringAttribs m_PPAttribs;
 	Diligent::String m_strRawDEMDataFile;
 	Diligent::String m_strMtrlMaskFile;
     Diligent::String m_strTileTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];

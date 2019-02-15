@@ -44,7 +44,6 @@
 #include <vector>
 #include "AdvancedMath.h"
 #include "HostSharedTerrainStructs.fxh"
-#include "ScriptParser.h"
 
 // Structure describing terrain rendering parameters
 struct RenderingParams
@@ -131,8 +130,6 @@ private:
 
     RenderingParams m_Params;
 
-    RefCntAutoPtr<Diligent::ScriptParser> m_pTerrainScript;
-
     Diligent::RefCntAutoPtr<IRenderDevice> m_pDevice;
 
     Diligent::RefCntAutoPtr<IBuffer> m_pVertBuff;
@@ -143,7 +140,12 @@ private:
     Diligent::RefCntAutoPtr<ITextureView> m_ptex2DTilNormalMapsSRV[NUM_TILE_TEXTURES];
 
     Diligent::RefCntAutoPtr<Diligent::IResourceMapping> m_pResMapping;
-    Diligent::RefCntAutoPtr<IShader> m_pHemispherePS;
+    Diligent::RefCntAutoPtr<Diligent::IShader> m_pHemisphereVS;
+    
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState>         m_pHemisphereZOnlyPSO;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_pHemisphereZOnlySRB;
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState>         m_pHemispherePSO;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_pHemisphereSRB;
     RefCntAutoPtr<Diligent::ISampler> m_pComparisonSampler;
 
     std::vector<RingSectorMesh> m_SphereMeshes;

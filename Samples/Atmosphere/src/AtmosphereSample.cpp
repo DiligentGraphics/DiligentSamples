@@ -29,7 +29,6 @@
 #include <vector>
 #include "AtmosphereSample.h"
 #include "MapHelper.h"
-#include "ConvenienceFunctions.h"
 #include "GraphicsUtilities.h"
 
 using namespace Diligent;

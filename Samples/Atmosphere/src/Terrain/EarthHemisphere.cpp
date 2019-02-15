@@ -42,11 +42,13 @@
 #include "pch.h"
 #include "EarthHemisphere.h"
 
+namespace Diligent
+{
 #include "BasicStructures.fxh"
 #include "ToneMappingStructures.fxh"
 #include "EpipolarLightScatteringStructures.fxh"
+}
 #include "ElevationDataSource.h"
-#include "ConvenienceFunctions.h"
 #include "MapHelper.h"
 #include "GraphicsAccessories.h"
 #include "GraphicsUtilities.h"
@@ -706,20 +708,81 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     m_pResMapping->AddResourceArray("g_tex2DTileDiffuse", 0,  ptex2DTileDiffuseSRV, NUM_TILE_TEXTURES, true);
     m_pResMapping->AddResourceArray("g_tex2DTileNM", 0, ptex2DTileNMSRV, NUM_TILE_TEXTURES, true);
 
-
-    m_pTerrainScript = CreateRenderScriptFromFile( "shaders\\Terrain.lua", pDevice, pContext, [&]( ScriptParser *pScriptParser )
-    {
-        pScriptParser->SetGlobalVariable( "extResourceMapping", m_pResMapping );
-    } );
-
-    m_pTerrainScript->GetSamplerByName( "ComparisonSampler", &m_pComparisonSampler );
+    m_pDevice->CreateSampler(Sam_ComparsionLinearClamp, &m_pComparisonSampler);
 
     RenderNormalMap( pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap);
 
-    m_pTerrainScript->Run( pContext, "CreateHemisphereShaders" );
+    BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\terrain;");
+    
+    {
+        ShaderCreationAttribs CreateAttribs;
+        CreateAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
+		CreateAttribs.FilePath       = "HemisphereVS.fx";
+		CreateAttribs.EntryPoint     = "HemisphereVS";
+		CreateAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+        CreateAttribs.UseCombinedTextureSamplers = true;
+        CreateAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        CreateAttribs.Desc.Name = "HemisphereVS";
+        CreateAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
+        ShaderVariableDesc Vars[] = 
+        {
+			{"cbCameraAttribs",                      SHADER_VARIABLE_TYPE_MUTABLE}, 
+			{"cbLightAttribs",                       SHADER_VARIABLE_TYPE_MUTABLE}, 
+			{"cbTerrainAttribs",                     SHADER_VARIABLE_TYPE_MUTABLE},
+			{"cbParticipatingMediaScatteringParams", SHADER_VARIABLE_TYPE_STATIC},
+			{"g_tex2DOccludedNetDensityToAtmTop",    SHADER_VARIABLE_TYPE_DYNAMIC},
+			{"g_tex2DAmbientSkylight",               SHADER_VARIABLE_TYPE_DYNAMIC} 
+        };
+        CreateAttribs.Desc.VariableDesc = Vars;
+        CreateAttribs.Desc.NumVariables = _countof(Vars);
+        pDevice->CreateShader(CreateAttribs, &m_pHemisphereVS);
+        m_pHemisphereVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+    }
+
+    
+    {
+        ShaderCreationAttribs CreateAttribs;
+        CreateAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
+		CreateAttribs.FilePath                   = "HemisphereZOnlyVS.fx";
+		CreateAttribs.EntryPoint                 = "HemisphereZOnlyVS";
+		CreateAttribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+        CreateAttribs.UseCombinedTextureSamplers = true;
+        CreateAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        CreateAttribs.Desc.Name = "HemisphereZOnlyVS";
+        CreateAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
+        ShaderVariableDesc Vars[] = 
+        {
+            {"cbCameraAttribs", SHADER_VARIABLE_TYPE_STATIC}
+        };
+        CreateAttribs.Desc.VariableDesc = Vars;
+        CreateAttribs.Desc.NumVariables = _countof(Vars);
+        Diligent::RefCntAutoPtr<Diligent::IShader> pHemisphereZOnlyVS;
+        pDevice->CreateShader(CreateAttribs, &pHemisphereZOnlyVS);
+        pHemisphereZOnlyVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+
+        PipelineStateDesc PSODesc;
+        PSODesc.Name = "Render Hemisphere Z Only";
+        auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+		GraphicsPipeline.DepthStencilDesc = DSS_Default;
+		GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
+		GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+		GraphicsPipeline.RasterizerDesc.DepthClipEnable       = false;
+		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = false;
+        LayoutElement Inputs[] =
+        {
+            {0, 0, 3, VT_FLOAT32, False, 0, (3+2)*4}
+        };
+        GraphicsPipeline.InputLayout.LayoutElements = Inputs;
+        GraphicsPipeline.InputLayout.NumElements = _countof(Inputs);
+        GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
+        GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        GraphicsPipeline.pVS = pHemisphereZOnlyVS;
+        pDevice->CreatePipelineState(PSODesc, &m_pHemisphereZOnlyPSO);
+        m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
+    }
 
     std::vector<HemisphereVertex> VB;
-    GenerateSphereGeometry(pDevice, AirScatteringAttribs().fEarthRadius, m_Params.m_iRingDimension, m_Params.m_iNumRings, pDataSource, m_Params.m_TerrainAttribs.m_fElevationSamplingInterval, m_Params.m_TerrainAttribs.m_fElevationScale, VB, m_SphereMeshes);
+    GenerateSphereGeometry(pDevice, Diligent::AirScatteringAttribs().fEarthRadius, m_Params.m_iRingDimension, m_Params.m_iNumRings, pDataSource, m_Params.m_TerrainAttribs.m_fElevationSamplingInterval, m_Params.m_TerrainAttribs.m_fElevationScale, VB, m_SphereMeshes);
 
     BufferDesc VBDesc;
     VBDesc.Name = "Hemisphere vertex buffer";
@@ -747,7 +810,8 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         m_Params.m_bSmoothShadows     != NewParams.m_bSmoothShadows ||
         m_Params.DstRTVFormat         != NewParams.DstRTVFormat )
     {
-        m_pHemispherePS.Release();
+        m_pHemispherePSO.Release();
+        m_pHemisphereSRB.Release();
     }
 
     m_Params = NewParams;
@@ -759,7 +823,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
     }
 #endif
 
-    if( !m_pHemispherePS )
+    if (!m_pHemispherePSO)
     {
         ShaderCreationAttribs Attrs;
         Attrs.FilePath = "HemispherePS.fx";
@@ -814,9 +878,34 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Attrs.Desc.VariableDesc = ShaderVars;
         Attrs.Desc.NumVariables = _countof(ShaderVars);
 
-        m_pDevice->CreateShader( Attrs, &m_pHemispherePS );
-        m_pTerrainScript->Run( "SetHemispherePS", m_pHemispherePS, GetTextureFormatAttribs(m_Params.DstRTVFormat).Name );
-    }
+        RefCntAutoPtr<IShader> pHemispherePS;
+        m_pDevice->CreateShader( Attrs, &pHemispherePS );
+        pHemispherePS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+
+        LayoutElement Inputs[] = 
+        {
+			{ 0, 0, 3, VT_FLOAT32},
+			{ 1, 0, 2, VT_FLOAT32}
+	    };
+
+        PipelineStateDesc PSODesc;
+		PSODesc.Name = "RenderHemisphere";
+        auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+		GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
+		GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
+        GraphicsPipeline.InputLayout.LayoutElements = Inputs;
+        GraphicsPipeline.InputLayout.NumElements = _countof(Inputs);
+        GraphicsPipeline.pVS = m_pHemisphereVS;
+        GraphicsPipeline.pPS = pHemispherePS;
+        GraphicsPipeline.RTVFormats[0] = m_Params.DstRTVFormat;
+        GraphicsPipeline.NumRenderTargets = 1;
+        GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
+        GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        m_pDevice->CreatePipelineState(PSODesc, &m_pHemispherePSO);
+        m_pHemispherePSO->CreateShaderResourceBinding(&m_pHemisphereSRB, true);
+        m_pHemisphereSRB->BindResources(SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING);
+	}
 
 
     ViewFrustumExt ViewFrustum;
@@ -855,11 +944,20 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
     pContext->SetVertexBuffers( 0, 1, ppBuffers, offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
     if( bZOnlyPass )
-        m_pTerrainScript->Run( pContext, "RenderHemisphereShadow" );
+    {
+	    pContext->SetPipelineState(m_pHemisphereZOnlyPSO);
+	    pContext->CommitShaderResources(m_pHemisphereZOnlySRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }
     else
     {
         pShadowMapSRV->SetSampler( m_pComparisonSampler );
-        m_pTerrainScript->Run( pContext, "RenderHemisphere", pPrecomputedNetDensitySRV, pAmbientSkylightSRV, pShadowMapSRV );
+	    pContext->SetPipelineState(m_pHemispherePSO);
+	
+	    m_pHemisphereSRB->GetVariable(SHADER_TYPE_VERTEX, "g_tex2DOccludedNetDensityToAtmTop")->Set(pPrecomputedNetDensitySRV);
+	    m_pHemisphereSRB->GetVariable(SHADER_TYPE_VERTEX, "g_tex2DAmbientSkylight")->Set(pAmbientSkylightSRV);
+	    m_pHemisphereSRB->GetVariable(SHADER_TYPE_PIXEL, "g_tex2DShadowMap")->Set(pShadowMapSRV);
+	
+	    pContext->CommitShaderResources(m_pHemisphereSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
     for(auto MeshIt = m_SphereMeshes.begin();  MeshIt != m_SphereMeshes.end(); ++MeshIt)

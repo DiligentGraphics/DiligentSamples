@@ -31,7 +31,6 @@ set(SHADERS
 	../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
-    assets/shaders/Terrain.lua
 )
 
 set(TERRAIN_TEXTURES
@@ -54,7 +53,6 @@ set(TERRAIN_TILES
 set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
 add_sample_app("AtmosphereSample" "Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
-target_link_libraries(AtmosphereSample PRIVATE RenderScript)
 
 set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/terrain"
