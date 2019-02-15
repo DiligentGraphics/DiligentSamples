@@ -26,7 +26,7 @@
 
 #ifdef __cplusplus
 #   ifndef CHECK_STRUCT_ALIGNMENT
-#       define CHECK_STRUCT_ALIGNMENT(s) static_assert( sizeof(s) % 16 == 0, "sizeof(" #s ") is not multiple of 16" );
+#       define CHECK_STRUCT_ALIGNMENT(s) static_assert( sizeof(s) % 16 == 0, "sizeof(" #s ") is not multiple of 16" )
 #   endif
 #else
 #   ifndef CHECK_STRUCT_ALIGNMENT
@@ -63,7 +63,7 @@ struct TerrainAttribs
     }
 #endif
 };
-CHECK_STRUCT_ALIGNMENT(TerrainAttribs)
+CHECK_STRUCT_ALIGNMENT(TerrainAttribs);
 
 struct NMGenerationAttribs
 {
@@ -72,7 +72,7 @@ struct NMGenerationAttribs
     float m_fElevationScale;
     float m_fDummy;
 };
-CHECK_STRUCT_ALIGNMENT(NMGenerationAttribs)
+CHECK_STRUCT_ALIGNMENT(NMGenerationAttribs);
 
 
 #endif //_TERRAIN_STRCUTS_FXH_

@@ -28,11 +28,8 @@
 #include "BasicMath.h"
 #include "EarthHemisphere.h"
 #include "ElevationDataSource.h"
+#include "EpipolarLightScattering.h"
 
-namespace Diligent
-{
-class EpipolarLightScattering;
-}
 
 class AtmosphereSample : public SampleBase
 {
@@ -85,7 +82,7 @@ private:
     bool m_bVisualizeCascades;
 
     RenderingParams m_TerrainRenderParams;
-    PostProcessingAttribs m_PPAttribs;
+    EpipolarLightScatteringAttribs m_PPAttribs;
 	Diligent::String m_strRawDEMDataFile;
 	Diligent::String m_strMtrlMaskFile;
     Diligent::String m_strTileTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];

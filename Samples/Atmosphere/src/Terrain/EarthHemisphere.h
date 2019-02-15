@@ -44,7 +44,6 @@
 #include <vector>
 #include "AdvancedMath.h"
 #include "HostSharedTerrainStructs.fxh"
-#include "EpipolarLightScatteringStructures.fxh"
 #include "ScriptParser.h"
 
 // Structure describing terrain rendering parameters

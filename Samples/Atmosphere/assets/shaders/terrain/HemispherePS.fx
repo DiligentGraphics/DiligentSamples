@@ -1,5 +1,6 @@
 
 #include "HostSharedTerrainStructs.fxh"
+#include "ToneMappingStructures.fxh"
 #include "EpipolarLightScatteringStructures.fxh"
 #include "TerrainShadersCommon.fxh"
 

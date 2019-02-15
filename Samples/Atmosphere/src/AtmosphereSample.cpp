@@ -31,7 +31,6 @@
 #include "MapHelper.h"
 #include "ConvenienceFunctions.h"
 #include "GraphicsUtilities.h"
-#include "EpipolarLightScattering.h"
 
 using namespace Diligent;
 
@@ -388,13 +387,13 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
                 {TONE_MAPPING_ADAPTIVE_LOG,      "Adaptive log"}
             };
             TwType ToneMappingModeEnum = TwDefineEnum( "Tone mapping mode enum", ToneMappingMode, _countof( ToneMappingMode ) );
-            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.uiToneMappingMode, "group=ToneMapping label=\'Mode\'" );
+            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.ToneMapping.uiToneMappingMode, "group=ToneMapping label=\'Mode\'" );
         }
-        TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
-        TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
-        TwAddVarRW( bar, "MiddleGray", TW_TYPE_FLOAT, &m_PPAttribs.fMiddleGray, "group=ToneMapping label=\'Middle Gray\' min=0.01 max=1.0 step=0.01" );
-        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOLCPP, &m_PPAttribs.bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
-        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOLCPP, &m_PPAttribs.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
+        TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
+        TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
+        TwAddVarRW( bar, "MiddleGray", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fMiddleGray, "group=ToneMapping label=\'Middle Gray\' min=0.01 max=1.0 step=0.01" );
+        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOLCPP, &m_PPAttribs.ToneMapping.bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
+        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOLCPP, &m_PPAttribs.ToneMapping.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
     }
 
     const auto& RG16UAttribs = pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );
@@ -457,17 +456,17 @@ void AtmosphereSample::UpdateGUI()
         TwSetParam( bar, "UpdateCoeffsBtn", "visible", TW_PARAM_INT32, 1, &IsVisible );
     }
 
-    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                     m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
-                                     m_PPAttribs.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                     m_PPAttribs.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
-
-    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_EXP ||
-                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
-                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                        m_PPAttribs.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
-    TwSetEnabled( bar, "LightAdaptation", m_PPAttribs.bAutoExposure ? true : false );
+    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                                     m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
+                                     m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                                     m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
+    
+    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_EXP ||
+                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
+                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
+    TwSetEnabled( bar, "LightAdaptation", m_PPAttribs.ToneMapping.bAutoExposure ? true : false );
 }
 
 AtmosphereSample::~AtmosphereSample()
@@ -761,7 +760,7 @@ void AtmosphereSample::Render()
 	
     if( m_bEnableLightScattering )
     {
-        FrameAttribs FrameAttribs;
+        EpipolarLightScattering::FrameAttribs FrameAttribs;
 
         FrameAttribs.pDevice = m_pDevice;
         FrameAttribs.pDeviceContext = m_pImmediateContext;

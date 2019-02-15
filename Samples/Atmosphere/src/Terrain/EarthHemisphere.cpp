@@ -43,6 +43,7 @@
 #include "EarthHemisphere.h"
 
 #include "BasicStructures.fxh"
+#include "ToneMappingStructures.fxh"
 #include "EpipolarLightScatteringStructures.fxh"
 #include "ElevationDataSource.h"
 #include "ConvenienceFunctions.h"
