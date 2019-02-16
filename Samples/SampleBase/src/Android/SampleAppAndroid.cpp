@@ -25,7 +25,8 @@
 #include "RenderDeviceGLES.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 class SampleAppAndroid final : public SampleApp
 {
@@ -60,7 +61,7 @@ public:
         LOGI( "Trimming memory" );
         m_RenderDeviceGLES->Invalidate();
     }
-        
+
     virtual int32_t HandleInput( AInputEvent* event )override final
     {
         if( AInputEvent_getType( event ) == AINPUT_EVENT_TYPE_MOTION )
@@ -135,7 +136,7 @@ public:
         }
         return 0;
     }
-    
+
 private:
     RefCntAutoPtr<IRenderDeviceGLES> m_RenderDeviceGLES;
 };
@@ -144,3 +145,6 @@ NativeAppBase* CreateApplication()
 {
     return new SampleAppAndroid;
 }
+
+}
+
