@@ -210,8 +210,8 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 
         TwAddVarRW( bar, "Show cascades", TW_TYPE_BOOLCPP, &m_bVisualizeCascades, "group=Shadows" );
         TwAddVarRW( bar, "Partitioning factor", TW_TYPE_FLOAT, &m_fCascadePartitioningFactor, "min=0 max=1 step=0.01 group=Shadows" );
-        TwAddVarRW( bar, "Find best cascade", TW_TYPE_BOOLCPP, &m_TerrainRenderParams.m_bBestCascadeSearch, "group=Shadows" );
-        TwAddVarRW( bar, "Smooth shadows", TW_TYPE_BOOLCPP, &m_TerrainRenderParams.m_bSmoothShadows, "group=Shadows" );
+        TwAddVarRW( bar, "Find best cascade", TW_TYPE_BOOL32, &m_TerrainRenderParams.m_bBestCascadeSearch, "group=Shadows" );
+        TwAddVarRW( bar, "Smooth shadows", TW_TYPE_BOOL32, &m_TerrainRenderParams.m_bSmoothShadows, "group=Shadows" );
         TwAddVarCB( bar, "Num cascades", TW_TYPE_INT32, SetNumCascadesCB, GetNumCascadesCB, this, "min=1 max=8 group=Shadows" );
     }
 
@@ -219,7 +219,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 
     // Light scattering GUI controls
     {
-        TwAddVarRW( bar, "Enable light shafts", TW_TYPE_BOOLCPP, &m_PPAttribs.bEnableLightShafts, "group=Scattering" );
+        TwAddVarRW( bar, "Enable light shafts", TW_TYPE_BOOL32, &m_PPAttribs.bEnableLightShafts, "group=Scattering" );
 
         // Define a new enum type for the tweak bar
         TwEnumVal LightSctrTech[] = // array used to describe the shadow map resolution
@@ -251,13 +251,13 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         TwType SmallPow2Enum = TwDefineEnum( "Small powers of two", Pow2Values+2, 5 );
         TwAddVarRW( bar, "IntialStep", SmallPow2Enum, &m_PPAttribs.uiInitialSampleStepInSlice, "group=Scattering label=\'Initial step\'" );
         
-        TwAddVarRW( bar, "ShowSampling", TW_TYPE_BOOLCPP, &m_PPAttribs.bShowSampling, "group=Scattering label=\'Show Sampling\'" );
+        TwAddVarRW( bar, "ShowSampling", TW_TYPE_BOOL32, &m_PPAttribs.bShowSampling, "group=Scattering label=\'Show Sampling\'" );
         TwAddVarRW( bar, "RefinementThreshold", TW_TYPE_FLOAT, &m_PPAttribs.fRefinementThreshold, "group=Scattering label=\'Refinement Threshold\' min=0.01 max=0.5 step=0.01" );
-        TwAddVarRW( bar, "1DMinMaxOptimization", TW_TYPE_BOOLCPP, &m_PPAttribs.bUse1DMinMaxTree, "group=Scattering label=\'Use 1D min/max trees\'" );
-        TwAddVarRW( bar, "OptimizeSampleLocations", TW_TYPE_BOOLCPP, &m_PPAttribs.bOptimizeSampleLocations, "group=Scattering label=\'Optimize Sample Locations\'" );
-        TwAddVarRW( bar, "CorrectScattering", TW_TYPE_BOOLCPP, &m_PPAttribs.bCorrectScatteringAtDepthBreaks, "group=Scattering label=\'Correct Scattering At Depth Breaks\'" );
-        TwAddVarRW( bar, "ShowDepthBreaks", TW_TYPE_BOOLCPP, &m_PPAttribs.bShowDepthBreaks, "group=Scattering label=\'Show Depth Breaks\'" );
-        TwAddVarRW( bar, "LightingOnly", TW_TYPE_BOOLCPP, &m_PPAttribs.bShowLightingOnly, "group=Scattering label=\'Lighting Only\'" );
+        TwAddVarRW( bar, "1DMinMaxOptimization", TW_TYPE_BOOL32, &m_PPAttribs.bUse1DMinMaxTree, "group=Scattering label=\'Use 1D min/max trees\'" );
+        TwAddVarRW( bar, "OptimizeSampleLocations", TW_TYPE_BOOL32, &m_PPAttribs.bOptimizeSampleLocations, "group=Scattering label=\'Optimize Sample Locations\'" );
+        TwAddVarRW( bar, "CorrectScattering", TW_TYPE_BOOL32, &m_PPAttribs.bCorrectScatteringAtDepthBreaks, "group=Scattering label=\'Correct Scattering At Depth Breaks\'" );
+        TwAddVarRW( bar, "ShowDepthBreaks", TW_TYPE_BOOL32, &m_PPAttribs.bShowDepthBreaks, "group=Scattering label=\'Show Depth Breaks\'" );
+        TwAddVarRW( bar, "LightingOnly", TW_TYPE_BOOL32, &m_PPAttribs.bShowLightingOnly, "group=Scattering label=\'Lighting Only\'" );
         //TwAddVarRW( bar, "ScatteringScale", TW_TYPE_FLOAT, &m_fScatteringScale, "group=Scattering label=\'Scattering scale\' min=0 max=2 step=0.1" );
 
         TwAddVarRW( bar, "NumIntegrationSteps", TW_TYPE_UINT32, &m_PPAttribs.uiInstrIntegralSteps, "min=5 max=100 step=5 group=Advanced label=\'Num Integrtion Steps\'" );
@@ -298,7 +298,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
             TwAddVarRW( bar, "CascadeProcessingMode", CascadeProcessingModeEnum, &m_PPAttribs.uiCascadeProcessingMode, "group=Advanced label=\'Cascade processing mode\'" );
         }
         TwAddVarRW( bar, "FirstCascadeToRayMarch", TW_TYPE_INT32, &m_PPAttribs.iFirstCascadeToRayMarch, "min=0 max=8 step=1 group=Advanced label=\'Start cascade\'" );
-        TwAddVarRW( bar, "Is32BitMinMaxShadowMap", TW_TYPE_BOOLCPP, &m_PPAttribs.bIs32BitMinMaxMipMap, "group=Advanced label=\'Use 32-bit float min/max SM\'" );
+        TwAddVarRW( bar, "Is32BitMinMaxShadowMap", TW_TYPE_BOOL32, &m_PPAttribs.bIs32BitMinMaxMipMap, "group=Advanced label=\'Use 32-bit float min/max SM\'" );
         {
             TwEnumVal RefinementCriterion[] =
             {
@@ -319,7 +319,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         }
         TwAddVarRW( bar, "AerosolDensity", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolDensityScale, "group=Advanced label=\'Aerosol density\' min=0.1 max=5.0 step=0.1" );
         TwAddVarRW( bar, "AerosolAbsorption", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolAbsorbtionScale, "group=Advanced label=\'Aerosol absorption\' min=0.0 max=5.0 step=0.1" );
-        TwAddVarRW( bar, "UseCustomSctrCoeffs", TW_TYPE_BOOLCPP, &m_PPAttribs.bUseCustomSctrCoeffs, "group=Advanced label=\'Use custom scattering coeffs\'" );
+        TwAddVarRW( bar, "UseCustomSctrCoeffs", TW_TYPE_BOOL32, &m_PPAttribs.bUseCustomSctrCoeffs, "group=Advanced label=\'Use custom scattering coeffs\'" );
 
         #define RLGH_COLOR_SCALE 5e-5f
         #define MIE_COLOR_SCALE 5e-5f
@@ -391,8 +391,8 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
         TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
         TwAddVarRW( bar, "MiddleGray", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fMiddleGray, "group=ToneMapping label=\'Middle Gray\' min=0.01 max=1.0 step=0.01" );
-        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOLCPP, &m_PPAttribs.ToneMapping.bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
-        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOLCPP, &m_PPAttribs.ToneMapping.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
+        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOL32, &m_PPAttribs.ToneMapping.bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
+        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOL32, &m_PPAttribs.ToneMapping.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
     }
 
     const auto& RG16UAttribs = pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );

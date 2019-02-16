@@ -69,15 +69,15 @@ struct RenderingParams
     TEXTURE_FORMAT DstRTVFormat;
 
     RenderingParams() : 
-		m_TexturingMode(TM_MATERIAL_MASK_NM),
-        m_iRingDimension(65),
-        m_iNumRings(15),
+		m_TexturingMode     (TM_MATERIAL_MASK_NM),
+        m_iRingDimension    (65),
+        m_iNumRings         (15),
         m_iNumShadowCascades(6),
-        m_bBestCascadeSearch(TRUE),
-        m_bSmoothShadows(TRUE),
-        m_iColOffset(1356), 
-        m_iRowOffset(924),
-        DstRTVFormat(TEX_FORMAT_R11G11B10_FLOAT)
+        m_bBestCascadeSearch(1),
+        m_bSmoothShadows    (1),
+        m_iColOffset        (1356), 
+        m_iRowOffset        (924),
+        DstRTVFormat        (TEX_FORMAT_R11G11B10_FLOAT)
 	{}
 };
 
