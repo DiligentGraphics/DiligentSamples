@@ -26,24 +26,29 @@
 #include "SampleBase.h"
 #include "BasicMath.h"
 
-class Tutorial07_GeometryShader : public SampleBase
+namespace Diligent
+{
+
+class Tutorial07_GeometryShader final : public SampleBase
 {
 public:
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial07: Geometry Shader";}
+    virtual void Initialize(IRenderDevice*   pDevice, 
+                            IDeviceContext** ppContexts, 
+                            Uint32           NumDeferredCtx, 
+                            ISwapChain*      pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial07: Geometry Shader";}
 
 private:
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_ShaderConstants;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
-    Diligent::float4x4 m_WorldViewProjMatrix;
+    RefCntAutoPtr<IPipelineState> m_pPSO;
+    RefCntAutoPtr<IBuffer> m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer> m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer> m_ShaderConstants;
+    RefCntAutoPtr<ITextureView> m_TextureSRV;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    float4x4 m_WorldViewProjMatrix;
     float m_LineWidth = 3.f;
 };
+
+}

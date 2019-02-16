@@ -30,7 +30,8 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -96,7 +97,10 @@ static const Vertex CubeVerts[] =
     {float3(-1,+1,+1), float2(1,0)}
 };
 
-void Tutorial11_ResourceUpdates::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial11_ResourceUpdates::Initialize(IRenderDevice*    pDevice,
+                                            IDeviceContext**  ppContexts,
+                                            Uint32            NumDeferredCtx,
+                                            ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -379,7 +383,7 @@ void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width,
         for(Uint32 i=0; i < Width; ++i)
         {
             for(int c=0; c < 4; ++c)
-                pData[i*4 + c + j*Stride] = ( abs(static_cast<int>(i) - static_cast<int>(Width/2)) * x_scale + abs(static_cast<int>(j) - static_cast<int>(Height/2)) * y_scale + c*c_scale) & 0xFF;
+                pData[i*4 + c + j*Stride] = ( ::abs(static_cast<int>(i) - static_cast<int>(Width/2)) * x_scale + ::abs(static_cast<int>(j) - static_cast<int>(Height/2)) * y_scale + c*c_scale) & 0xFF;
         }
     }
 }
@@ -505,4 +509,6 @@ void Tutorial11_ResourceUpdates::Update(double CurrTime, double ElapsedTime)
             MapTexture(3, deviceType == DeviceType::D3D11);
         }
     }
+}
+
 }

@@ -31,7 +31,8 @@
 #include "RenderDeviceFactoryD3D11.h"
 #include "RenderDeviceFactoryD3D12.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 class SampleAppUWP final : public SampleApp
 {
@@ -224,4 +225,6 @@ private:
 NativeAppBase* CreateApplication()
 {
     return new SampleAppUWP;
+}
+
 }

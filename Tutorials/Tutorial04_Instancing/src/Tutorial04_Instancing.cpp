@@ -30,14 +30,18 @@
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
     return new Tutorial04_Instancing();
 }
 
-void Tutorial04_Instancing::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial04_Instancing::Initialize(IRenderDevice*    pDevice,
+                                       IDeviceContext**  ppContexts,
+                                       Uint32            NumDeferredCtx,
+                                       ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -398,4 +402,6 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
 
     // Global rotation matrix
     m_RotationMatrix = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(static_cast<float>(CurrTime)*0.25f);
+}
+
 }

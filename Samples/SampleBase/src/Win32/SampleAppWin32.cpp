@@ -107,6 +107,9 @@ INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND hwndDlg,
 
 }
 
+namespace Diligent
+{
+
 class SampleAppWin32 final : public SampleApp
 {
 public:
@@ -242,4 +245,6 @@ private:
 NativeAppBase* CreateApplication()
 {
     return new SampleAppWin32;
+}
+
 }

@@ -30,7 +30,8 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -986,4 +987,6 @@ void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
     DepthBuffDesc.Format = TEX_FORMAT_D32_FLOAT;
     DepthBuffDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
     m_pDevice->CreateTexture( DepthBuffDesc, nullptr, &m_pOffscreenDepthBuffer );
+}
+
 }

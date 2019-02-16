@@ -31,32 +31,35 @@
 #include "BasicMath.h"
 #include "ThreadSignal.h"
 
-class Tutorial06_Multithreading : public SampleBase
+namespace Diligent
+{
+
+class Tutorial06_Multithreading final : public SampleBase
 {
 public:
     ~Tutorial06_Multithreading()override;
-    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
-                                                Diligent::EngineCreationAttribs &Attribs, 
-                                                Diligent::Uint32 &NumDeferredContexts)override;
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial06: Multithreaded rendering";}
+    virtual void GetEngineInitializationAttribs(DeviceType              DevType, 
+                                                EngineCreationAttribs&  Attribs, 
+                                                Uint32&                 NumDeferredContexts)override final;
+    virtual void Initialize(IRenderDevice*   pDevice, 
+                            IDeviceContext** ppContexts, 
+                            Uint32           NumDeferredCtx, 
+                            ISwapChain*      pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial06: Multithreaded rendering";}
 
 private:
-    static void SetGridSize(const void *value, void * clientData);
-    static void GetGridSize(void *value, void * clientData);
-    static void SetWorkerThreadCount(const void *value, void * clientData);
-    static void GetWorkerThreadCount(void *value, void * clientData);
+    static void SetGridSize(const void* value, void* clientData);
+    static void GetGridSize(void* value, void* clientData);
+    static void SetWorkerThreadCount(const void* value, void* clientData);
+    static void GetWorkerThreadCount(void* value, void * clientData);
     void PopulateInstanceData();
     void StartWorkerThreads();
     void StopWorkerThreads();
-    void RenderSubset(Diligent::IDeviceContext *pCtx, Diligent::Uint32 Subset);
+    void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
 
-    static void WorkerThreadFunc(Tutorial06_Multithreading *pThis, Diligent::Uint32 ThreadNum);
+    static void WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum);
 
     ThreadingTools::Signal m_RenderSubsetSignal;
     ThreadingTools::Signal m_ExecuteCommandListsSignal;
@@ -65,19 +68,19 @@ private:
     std::atomic_int m_NumThreadsCompleted;
     std::atomic_int m_NumThreadsReady;
     std::vector<std::thread> m_WorkerThreads;
-    std::vector< Diligent::RefCntAutoPtr<Diligent::ICommandList> > m_CmdLists;
+    std::vector< RefCntAutoPtr<ICommandList> > m_CmdLists;
 
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_InstanceConstants;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
+    RefCntAutoPtr<IPipelineState> m_pPSO;
+    RefCntAutoPtr<IBuffer>        m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>        m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>        m_InstanceConstants;
+    RefCntAutoPtr<IBuffer>        m_VSConstants;
         
     static constexpr int NumTextures = 4;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
-    Diligent::float4x4 m_ViewProjMatrix;
-    Diligent::float4x4 m_RotationMatrix;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
+    RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
+    float4x4 m_ViewProjMatrix;
+    float4x4 m_RotationMatrix;
     int m_GridSize = 5;
 
     int m_MaxThreads = 8;
@@ -85,8 +88,10 @@ private:
 
     struct InstanceData
     {
-        Diligent::float4x4 Matrix;
+        float4x4 Matrix;
         int TextureInd;
     };
     std::vector<InstanceData> m_InstanceData;
 };
+
+}

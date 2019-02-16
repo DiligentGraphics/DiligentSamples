@@ -27,35 +27,40 @@
 #include "ScriptParser.h"
 #include "BasicMath.h"
 
-class MengerSpongeSample : public SampleBase
+namespace Diligent
+{
+
+class MengerSpongeSample final : public SampleBase
 {
 public:
     ~MengerSpongeSample();
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "AntTweakBar Sample";}
+    virtual void Initialize(IRenderDevice*    pDevice, 
+                            IDeviceContext**  ppContexts, 
+                            Uint32            NumDeferredCtx, 
+                            ISwapChain*       pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "AntTweakBar Sample";}
 
 private:
-    static void SetSpongeLevelCB( const void *value, void * /*clientData*/ );
-    static void GetSpongeLevelCB( void *value, void * /*clientData*/ );
-    static void SetSpongeAOCB( const void *value, void * /*clientData*/ );
-    static void GetSpongeAOCB( void *value, void * /*clientData*/ );
+    static void SetSpongeLevelCB( const void* value, void* /*clientData*/ );
+    static void GetSpongeLevelCB( void* value, void* /*clientData*/ );
+    static void SetSpongeAOCB( const void* value, void* /*clientData*/ );
+    static void GetSpongeAOCB( void* value, void* /*clientData*/ );
     void BuildSponge( int levelMax, bool aoEnabled );
-    void SetShaderConstants( const Diligent::float4x4& world, const Diligent::float4x4& view, const Diligent::float4x4& proj );
+    void SetShaderConstants( const float4x4& world, const float4x4& view, const float4x4& proj );
     
-    Diligent::Quaternion m_SpongeRotation; // model rotation
+    Quaternion m_SpongeRotation; // model rotation
     int m_SpongeLevel;           // number of recursions
     bool m_SpongeAO;             // apply ambient occlusion
-    Diligent::float3 m_LightDir;          // light direction vector
+    float3 m_LightDir;          // light direction vector
     float m_CamDistance;         // camera distance
     float m_BackgroundColor[4];  // background color
     bool m_Animate;              // enable animation
     float m_AnimationSpeed;      // animation speed
 
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pConstantBuffer;
-    Diligent::RefCntAutoPtr<Diligent::ScriptParser> m_pRenderScript;
+    RefCntAutoPtr<IBuffer> m_pConstantBuffer;
+    RefCntAutoPtr<ScriptParser> m_pRenderScript;
 };
+
+}

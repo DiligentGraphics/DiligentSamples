@@ -32,7 +32,8 @@
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -44,7 +45,9 @@ Tutorial06_Multithreading::~Tutorial06_Multithreading()
     StopWorkerThreads();
 }
 
-void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
+void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType             DevType,
+                                                               EngineCreationAttribs& Attribs,
+                                                               Uint32&                NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
@@ -57,7 +60,10 @@ void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType DevTyp
 #endif
 }
 
-void Tutorial06_Multithreading::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial06_Multithreading::Initialize(IRenderDevice*    pDevice,
+                                           IDeviceContext**  ppContexts,
+                                           Uint32            NumDeferredCtx,
+                                           ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -565,4 +571,6 @@ void Tutorial06_Multithreading::Update(double CurrTime, double ElapsedTime)
 
     // Global rotation matrix
     m_RotationMatrix = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(static_cast<float>(CurrTime)*0.25f);
+}
+
 }

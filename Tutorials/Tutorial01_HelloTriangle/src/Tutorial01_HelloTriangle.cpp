@@ -23,7 +23,8 @@
 
 #include "Tutorial01_HelloTriangle.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -77,7 +78,10 @@ float4 main(PSInput In) : SV_Target
 )";
 
 
-void Tutorial01_HelloTriangle::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial01_HelloTriangle::Initialize(IRenderDevice*    pDevice,
+                                          IDeviceContext**  ppContexts,
+                                          Uint32            NumDeferredCtx,
+                                          ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -156,4 +160,6 @@ void Tutorial01_HelloTriangle::Render()
 void Tutorial01_HelloTriangle::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+}
+
 }

@@ -31,7 +31,8 @@
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -49,7 +50,10 @@ struct InstanceData
 
 }
 
-void Tutorial05_TextureArray::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial05_TextureArray::Initialize(IRenderDevice*    pDevice,
+                                         IDeviceContext**  ppContexts,
+                                         Uint32            NumDeferredCtx,
+                                         ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -442,4 +446,6 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
 
     // Global rotation matrix
     m_RotationMatrix = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(static_cast<float>(CurrTime)*0.25f);
+}
+
 }

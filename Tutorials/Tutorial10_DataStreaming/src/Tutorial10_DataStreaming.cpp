@@ -33,7 +33,8 @@
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 class StreamingBuffer
 {
@@ -125,7 +126,9 @@ Tutorial10_DataStreaming::~Tutorial10_DataStreaming()
     StopWorkerThreads();
 }
 
-void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
+void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType              DevType,
+                                                              EngineCreationAttribs&  Attribs,
+                                                              Uint32&                 NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
@@ -147,7 +150,10 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType DevType
 #endif
 }
 
-void Tutorial10_DataStreaming::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
+                                          IDeviceContext**  ppContexts,
+                                          Uint32            NumDeferredCtx,
+                                          ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -772,4 +778,6 @@ void Tutorial10_DataStreaming::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdatePolygons(static_cast<float>(ElapsedTime));
+}
+
 }

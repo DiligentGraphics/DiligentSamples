@@ -26,7 +26,8 @@
 #include "SampleApp.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 class SampleAppMacOS final : public SampleApp
 {
@@ -155,4 +156,6 @@ private:
 NativeAppBase* CreateApplication()
 {
     return new SampleAppMacOS;
+}
+
 }

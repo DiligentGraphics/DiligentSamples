@@ -33,7 +33,8 @@
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -45,7 +46,9 @@ Tutorial09_Quads::~Tutorial09_Quads()
     StopWorkerThreads();
 }
 
-void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
+void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType             DevType,
+                                                      EngineCreationAttribs& Attribs,
+                                                      Uint32&                NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
@@ -67,7 +70,10 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType DevType, Engine
 #endif
 }
 
-void Tutorial09_Quads::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial09_Quads::Initialize(IRenderDevice*    pDevice,
+                                  IDeviceContext**  ppContexts,
+                                  Uint32            NumDeferredCtx,
+                                  ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -619,4 +625,6 @@ void Tutorial09_Quads::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateQuads(static_cast<float>(ElapsedTime));
+}
+
 }

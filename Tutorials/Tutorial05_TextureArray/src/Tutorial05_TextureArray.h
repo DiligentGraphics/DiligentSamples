@@ -26,33 +26,38 @@
 #include "SampleBase.h"
 #include "BasicMath.h"
 
-class Tutorial05_TextureArray : public SampleBase
+namespace Diligent
+{
+
+class Tutorial05_TextureArray final: public SampleBase
 {
 public:
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial05: Texture Array";}
+    virtual void Initialize(IRenderDevice*   pDevice, 
+                            IDeviceContext** ppContexts, 
+                            Uint32           NumDeferredCtx, 
+                            ISwapChain*      pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial05: Texture Array";}
 
 private:
-    static void SetGridSize(const void *value, void * clientData);
-    static void GetGridSize(void *value, void * clientData);
+    static void SetGridSize(const void *value, void* clientData);
+    static void GetGridSize(void *value, void* clientData);
     void PopulateInstanceBuffer();
 
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_InstanceBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB;
-    Diligent::float4x4 m_ViewProjMatrix;
-    Diligent::float4x4 m_RotationMatrix;
+    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
+    RefCntAutoPtr<IBuffer>                m_VSConstants;
+    RefCntAutoPtr<ITextureView>           m_TextureSRV;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    float4x4 m_ViewProjMatrix;
+    float4x4 m_RotationMatrix;
     int m_GridSize = 5;
     static constexpr int MaxGridSize = 32;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
     static constexpr int NumTextures = 4;
 };
+
+}

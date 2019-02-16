@@ -29,7 +29,8 @@
 #include "AntTweakBar.h"
 #include "ShaderMacroHelper.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -60,7 +61,10 @@ namespace
     };
 }
 
-void Tutorial08_Tessellation::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
+                                         IDeviceContext**  ppContexts,
+                                         Uint32            NumDeferredCtx,
+                                         ISwapChain*       pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if(!deviceCaps.bTessellationSupported)
@@ -344,4 +348,6 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = m_WorldViewMatrix * Proj;
+}
+
 }

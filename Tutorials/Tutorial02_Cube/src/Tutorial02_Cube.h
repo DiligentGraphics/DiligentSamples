@@ -26,22 +26,27 @@
 #include "SampleBase.h"
 #include "BasicMath.h"
 
-class Tutorial02_Cube : public SampleBase
+namespace Diligent
+{
+
+class Tutorial02_Cube final : public SampleBase
 {
 public:
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial02: Cube";}
+    virtual void Initialize(IRenderDevice*   pDevice, 
+                            IDeviceContext** ppContexts, 
+                            Uint32           NumDeferredCtx, 
+                            ISwapChain*      pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial02: Cube";}
 
 private:
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_pSRB;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeVertexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_CubeIndexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_VSConstants;
-    Diligent::float4x4 m_WorldViewProjMatrix;
+    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_VSConstants;
+    float4x4                              m_WorldViewProjMatrix;
 };
+
+}

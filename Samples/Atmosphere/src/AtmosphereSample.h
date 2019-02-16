@@ -29,38 +29,40 @@
 #include "ElevationDataSource.h"
 #include "EpipolarLightScattering.h"
 
+namespace Diligent
+{
 
-class AtmosphereSample : public SampleBase
+class AtmosphereSample final : public SampleBase
 {
 public:
     AtmosphereSample();
     ~AtmosphereSample();
 
-    virtual void GetEngineInitializationAttribs(Diligent::DeviceType             DevType, 
-                                                Diligent::EngineCreationAttribs& Attribs, 
-                                                Diligent::Uint32&                NumDeferredContexts)override;
+    virtual void GetEngineInitializationAttribs(DeviceType             DevType, 
+                                                EngineCreationAttribs& Attribs, 
+                                                Uint32&                NumDeferredContexts)override final;
 
-    virtual void Initialize(Diligent::IRenderDevice*        pDevice, 
-                            Diligent::IDeviceContext**      ppContexts, 
-                            Diligent::Uint32                NumDeferredCtx, 
-                            Diligent::ISwapChain*           pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual void WindowResize(Diligent::Uint32 Width, Diligent::Uint32 Height)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Atmosphere Sample";}
+    virtual void Initialize(IRenderDevice*    pDevice, 
+                            IDeviceContext**  ppContexts, 
+                            Uint32            NumDeferredCtx, 
+                            ISwapChain*       pSwapChain)override  final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
+    virtual const Char* GetSampleName()const override final{return "Atmosphere Sample";}
     
 private:
     void CreateShadowMap();
     void ReleaseShadowMap();
-    void RenderShadowMap(Diligent::IDeviceContext*  pContext,
-                         Diligent::LightAttribs&    LightAttribs,
-                         const float4x4&            mCameraView,
-                         const float4x4&            mCameraProj);
+    void RenderShadowMap(IDeviceContext*  pContext,
+                         LightAttribs&    LightAttribs,
+                         const float4x4&  mCameraView,
+                         const float4x4&  mCameraProj);
 
-    static void SetNumCascadesCB(const void* value, void * clientData);
-    static void GetNumCascadesCB(void* value, void * clientData);
-    static void SetShadowMapResCB(const void *value, void * clientData);
-    static void GetShadowMapResCB(void *value, void * clientData);
+    static void SetNumCascadesCB(const void* value, void* clientData);
+    static void GetNumCascadesCB(void* value, void* clientData);
+    static void SetShadowMapResCB(const void* value, void* clientData);
+    static void GetShadowMapResCB(void* value, void* clientData);
 
     void UpdateGUI();
 
@@ -68,40 +70,42 @@ private:
     Quaternion m_SpongeRotation; // model rotation
 #endif
 
-    Diligent::float3 m_f3LightDir;       // light direction vector
-    Diligent::float3 m_f3CameraDir;      // tmp camera view direction vector
-    Diligent::float3 m_f3CameraPos;
-    Diligent::float4x4 m_mCameraView;
-    Diligent::float4x4 m_mCameraProj;
+    float3 m_f3LightDir;       // light direction vector
+    float3 m_f3CameraDir;      // tmp camera view direction vector
+    float3 m_f3CameraPos;
+    float4x4 m_mCameraView;
+    float4x4 m_mCameraProj;
 
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pcbCameraAttribs;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pcbLightAttribs;
-    std::vector<Diligent::RefCntAutoPtr<Diligent::ITextureView>> m_pShadowMapDSVs;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_pShadowMapSRV;
+    RefCntAutoPtr<IBuffer> m_pcbCameraAttribs;
+    RefCntAutoPtr<IBuffer> m_pcbLightAttribs;
+    std::vector<RefCntAutoPtr<ITextureView>> m_pShadowMapDSVs;
+    RefCntAutoPtr<ITextureView> m_pShadowMapSRV;
 
-    Diligent::Uint32 m_uiShadowMapResolution;
+    Uint32 m_uiShadowMapResolution;
     float m_fCascadePartitioningFactor;
     bool m_bVisualizeCascades;
 
     RenderingParams m_TerrainRenderParams;
-    Diligent::EpipolarLightScatteringAttribs m_PPAttribs;
-	Diligent::String m_strRawDEMDataFile;
-	Diligent::String m_strMtrlMaskFile;
-    Diligent::String m_strTileTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];
-    Diligent::String m_strNormalMapTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];
+    EpipolarLightScatteringAttribs m_PPAttribs;
+	String m_strRawDEMDataFile;
+	String m_strMtrlMaskFile;
+    String m_strTileTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];
+    String m_strNormalMapTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES];
 
     float m_fMinElevation, m_fMaxElevation;
 	std::unique_ptr<ElevationDataSource> m_pElevDataSource;
     EarthHemsiphere m_EarthHemisphere;
     bool m_bIsGLDevice;
 
-    std::unique_ptr<Diligent::EpipolarLightScattering> m_pLightSctrPP;
+    std::unique_ptr<EpipolarLightScattering> m_pLightSctrPP;
 
     bool m_bEnableLightScattering;
     float m_fScatteringScale;
     float m_fElapsedTime;
-    Diligent::float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
+    float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
 
-    Diligent::RefCntAutoPtr<Diligent::ITexture>  m_pOffscreenColorBuffer;
-    Diligent::RefCntAutoPtr<Diligent::ITexture>  m_pOffscreenDepthBuffer;
+    RefCntAutoPtr<ITexture>  m_pOffscreenColorBuffer;
+    RefCntAutoPtr<ITexture>  m_pOffscreenDepthBuffer;
 };
+
+}

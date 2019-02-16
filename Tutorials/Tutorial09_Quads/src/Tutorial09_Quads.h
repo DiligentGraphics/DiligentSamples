@@ -31,37 +31,40 @@
 #include "BasicMath.h"
 #include "ThreadSignal.h"
 
-class Tutorial09_Quads : public SampleBase
+namespace Diligent
+{
+
+class Tutorial09_Quads final : public SampleBase
 {
 public:
     ~Tutorial09_Quads()override;
-    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
-                                                Diligent::EngineCreationAttribs &Attribs, 
-                                                Diligent::Uint32 &NumDeferredContexts)override;
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial09: Quads";}
+    virtual void GetEngineInitializationAttribs(DeviceType DevType, 
+                                                EngineCreationAttribs &Attribs, 
+                                                Uint32 &NumDeferredContexts)override final;
+    virtual void Initialize(IRenderDevice*   pDevice, 
+                            IDeviceContext** ppContexts, 
+                            Uint32           NumDeferredCtx, 
+                            ISwapChain*      pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial09: Quads";}
 
 private:
-    static void SetNumQuads(const void *value, void * clientData);
+    static void SetNumQuads(const void* value, void* clientData);
     static void GetNumQuads(void *value, void * clientData);
-    static void SetBatchSize(const void *value, void * clientData);
-    static void GetBatchSize(void *value, void * clientData);
-    static void SetWorkerThreadCount(const void *value, void * clientData);
-    static void GetWorkerThreadCount(void *value, void * clientData);
+    static void SetBatchSize(const void* value, void* clientData);
+    static void GetBatchSize(void* value, void* clientData);
+    static void SetWorkerThreadCount(const void* value, void* clientData);
+    static void GetWorkerThreadCount(void* value, void* clientData);
     void InitializeQuads();
     void CreateInstanceBuffer();
     void UpdateQuads(float elapsedTime);
     void StartWorkerThreads();
     void StopWorkerThreads();
     template<bool UseBatch>
-    void RenderSubset(Diligent::IDeviceContext *pCtx, Diligent::Uint32 Subset);
+    void RenderSubset(IDeviceContext *pCtx, Uint32 Subset);
 
-    static void WorkerThreadFunc(Tutorial09_Quads *pThis, Diligent::Uint32 ThreadNum);
+    static void WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNum);
 
     ThreadingTools::Signal m_RenderSubsetSignal;
     ThreadingTools::Signal m_ExecuteCommandListsSignal;
@@ -70,18 +73,18 @@ private:
     std::atomic_int m_NumThreadsCompleted;
     std::atomic_int m_NumThreadsReady;
     std::vector<std::thread> m_WorkerThreads;
-    std::vector< Diligent::RefCntAutoPtr<Diligent::ICommandList> > m_CmdLists;
+    std::vector< RefCntAutoPtr<ICommandList> > m_CmdLists;
 
     static constexpr int NumStates = 5;
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO[2][NumStates];
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_QuadAttribsCB;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_BatchDataBuffer;
+    RefCntAutoPtr<IPipelineState> m_pPSO[2][NumStates];
+    RefCntAutoPtr<IBuffer> m_QuadAttribsCB;
+    RefCntAutoPtr<IBuffer> m_BatchDataBuffer;
 
     static constexpr int NumTextures = 4;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[NumTextures];
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_BatchSRB;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TextureSRV[NumTextures];
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_TexArraySRV;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
+    RefCntAutoPtr<IShaderResourceBinding> m_BatchSRB;
+    RefCntAutoPtr<ITextureView> m_TextureSRV[NumTextures];
+    RefCntAutoPtr<ITextureView> m_TexArraySRV;
     int m_NumQuads = 1000;
     int m_BatchSize = 5;
 
@@ -90,8 +93,8 @@ private:
 
     struct QuadData
     {
-        Diligent::float2 Pos;
-        Diligent::float2 MoveDir;
+        float2 Pos;
+        float2 MoveDir;
         float Size;
         float Angle;
         float RotSpeed;
@@ -102,8 +105,10 @@ private:
 
     struct InstanceData
     {
-        Diligent::float4 QuadRotationAndScale;
-        Diligent::float2 QuadCenter;
+        float4 QuadRotationAndScale;
+        float2 QuadCenter;
         float TexArrInd;
     };
 };
+
+}

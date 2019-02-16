@@ -51,7 +51,8 @@
 
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleApp::SampleApp() :
     m_TheSample(CreateSample()),
@@ -464,4 +465,6 @@ void SampleApp::Render()
 void SampleApp::Present()
 {
     m_pSwapChain->Present(m_bVSync ? 1 : 0);
+}
+
 }

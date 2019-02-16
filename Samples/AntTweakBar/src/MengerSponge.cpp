@@ -44,8 +44,6 @@
 //  
 //
 //  ---------------------------------------------------------------------------
-#include "pch.h"
-
 #include "AntTweakBar.h"
 
 #include <cmath>
@@ -54,7 +52,8 @@
 #include "MapHelper.h"
 #include "ConvenienceFunctions.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -438,4 +437,6 @@ void MengerSpongeSample::Update(double CurrTime, double ElapsedTime)
             angle += 2.0f*FLOAT_PI;
         m_SpongeRotation = RotationFromAxisAngle(axis, angle);
     }
+}
+
 }

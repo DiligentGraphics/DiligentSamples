@@ -25,18 +25,23 @@
 
 #include "SampleBase.h"
 
-class Tutorial01_HelloTriangle : public SampleBase
+namespace Diligent
+{
+
+class Tutorial01_HelloTriangle final : public SampleBase
 {
 public:
 
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial01: Hello Triangle";}
+    virtual void Initialize(IRenderDevice*      pDevice, 
+                            IDeviceContext**    ppContexts, 
+                            Uint32              NumDeferredCtx, 
+                            ISwapChain*         pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial01: Hello Triangle";}
 
 private:
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO;
+    RefCntAutoPtr<IPipelineState> m_pPSO;
 };
+
+}

@@ -26,25 +26,28 @@
 #include "SampleBase.h"
 #include "BasicMath.h"
 
+namespace Diligent
+{
+
 class Tutorial08_Tessellation : public SampleBase
 {
 public:
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
-    virtual void Render()override;
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual const Diligent::Char* GetSampleName()const override{return "Tutorial08: Tessellation";}
+    virtual void Initialize(IRenderDevice*   pDevice, 
+                            IDeviceContext** ppContexts, 
+                            Uint32           NumDeferredCtx, 
+                            ISwapChain*      pSwapChain)override final;
+    virtual void Render()override final;
+    virtual void Update(double CurrTime, double ElapsedTime)override final;
+    virtual const Char* GetSampleName()const override final{return "Tutorial08: Tessellation";}
 
 private:
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pPSO[2];
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_ShaderConstants;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_SRB[2];
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_HeightMapSRV;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ColorMapSRV;
-    Diligent::float4x4 m_WorldViewProjMatrix;
-    Diligent::float4x4 m_WorldViewMatrix;
+    RefCntAutoPtr<IPipelineState>         m_pPSO[2];
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB[2];
+    RefCntAutoPtr<IBuffer>                m_ShaderConstants;
+    RefCntAutoPtr<ITextureView>           m_HeightMapSRV;
+    RefCntAutoPtr<ITextureView>           m_ColorMapSRV;
+    float4x4 m_WorldViewProjMatrix;
+    float4x4 m_WorldViewMatrix;
     bool m_Animate = true;
     bool m_Wireframe = false;
     float m_RotationAngle = 0;
@@ -55,3 +58,5 @@ private:
     unsigned int m_HeightMapWidth = 0;
     unsigned int m_HeightMapHeight = 0;
 };
+
+}

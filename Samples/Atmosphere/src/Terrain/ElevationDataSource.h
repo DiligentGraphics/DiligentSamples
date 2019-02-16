@@ -47,21 +47,24 @@
 #include "HierarchyArray.h"
 #include "DynamicQuadTreeNode.h"
 
+namespace Diligent
+{
+
 // Class implementing elevation data source
 class ElevationDataSource
 {
 public:
     // Creates data source from the specified raw data file
-    ElevationDataSource(const Diligent::Char* strSrcDemFile);
+    ElevationDataSource(const Char* strSrcDemFile);
     virtual ~ElevationDataSource(void);
 
-	void GetDataPtr(const Diligent::Uint16* &pDataPtr, size_t &Pitch);
+	void GetDataPtr(const Uint16* &pDataPtr, size_t &Pitch);
     
     // Returns minimal height of the whole terrain
-    Diligent::Uint16 GetGlobalMinElevation()const;
+    Uint16 GetGlobalMinElevation()const;
 
     // Returns maximal height of the whole terrain
-    Diligent::Uint16 GetGlobalMaxElevation()const;
+    Uint16 GetGlobalMaxElevation()const;
 
     void RecomputePatchMinMaxElevations(const QuadTreeNodeLocation &pos);
     
@@ -70,7 +73,7 @@ public:
 
     float GetInterpolatedHeight(float fCol, float fRow, int iStep = 1)const;
     
-    Diligent::float3 ComputeSurfaceNormal(float fCol, float fRow,
+    float3 ComputeSurfaceNormal(float fCol, float fRow,
                                           float fSampleSpacing,
                                           float fHeightScale, 
                                           int iStep = 1)const;
@@ -79,20 +82,22 @@ public:
     unsigned int GetNumRows()const{return m_iNumRows;}
 
 private:
-    inline Diligent::Uint16 GetElevSample(Diligent::Int32 i, Diligent::Int32 j)const;
-    inline Diligent::Uint16& GetElevSample(Diligent::Int32 i, Diligent::Int32 j);
+    inline Uint16 GetElevSample(Int32 i, Int32 j)const;
+    inline Uint16& GetElevSample(Int32 i, Int32 j);
 
     // Calculates min/max elevations for all patches in the tree
     void CalculateMinMaxElevations();
     
     // Hierarchy array storing minimal and maximal heights for quad tree nodes
-    HierarchyArray< std::pair<Diligent::Uint16, Diligent::Uint16> > m_MinMaxElevation;
+    HierarchyArray< std::pair<Uint16, Uint16> > m_MinMaxElevation;
     
     int m_iNumLevels;
     int m_iPatchSize;
     int m_iColOffset, m_iRowOffset;
     
     // The whole terrain height map
-    std::vector<Diligent::Uint16> m_TheHeightMap;
-    Diligent::Uint32 m_iNumCols, m_iNumRows, m_iStride;
+    std::vector<Uint16> m_TheHeightMap;
+    Uint32 m_iNumCols, m_iNumRows, m_iStride;
 };
+
+}

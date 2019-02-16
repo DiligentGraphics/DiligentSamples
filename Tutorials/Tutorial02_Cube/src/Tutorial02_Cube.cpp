@@ -26,7 +26,8 @@
 #include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -34,7 +35,10 @@ SampleBase* CreateSample()
 }
 
 
-void Tutorial02_Cube::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial02_Cube::Initialize(IRenderDevice*    pDevice,
+                                 IDeviceContext**  ppContexts,
+                                 Uint32            NumDeferredCtx,
+                                 ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -254,4 +258,6 @@ void Tutorial02_Cube::Update(double CurrTime, double ElapsedTime)
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
+}
+
 }

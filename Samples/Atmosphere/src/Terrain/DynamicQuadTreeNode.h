@@ -44,6 +44,9 @@
 #include <memory>
 #include <cassert>
 
+namespace Diligent
+{
+
 // Structure describing quad tree node location
 struct QuadTreeNodeLocation
 {
@@ -261,4 +264,6 @@ void DynamicQuadTreeNode<NodeDataType>::DestroyDescendants()
     m_pRBDescendant.reset();
     m_pLTDescendant.reset();
     m_pRTDescendant.reset();
+}
+
 }

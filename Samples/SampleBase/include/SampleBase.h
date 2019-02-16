@@ -30,39 +30,42 @@
 #include "DeviceContext.h"
 #include "SwapChain.h"
 
+namespace Diligent
+{
+
 class SampleBase
 {
 public:
     virtual ~SampleBase(){}
 
-    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, Diligent::EngineCreationAttribs &Attribs, Diligent::Uint32 &NumDeferredContexts);
+    virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs& Attribs, Uint32& NumDeferredContexts);
 
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain) = 0;
+    virtual void Initialize(IRenderDevice*      pDevice, 
+                            IDeviceContext**    ppContexts, 
+                            Uint32              NumDeferredCtx, 
+                            ISwapChain*         pSwapChain) = 0;
 
     virtual void Render() = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
-    virtual void WindowResize(Diligent::Uint32 Width, Diligent::Uint32 Height){}
-    virtual bool HandleNativeMessage(const void *pNativeMsgData) { return false; }
-    virtual const Diligent::Char* GetSampleName()const{return "Diligent Engine Sample";}
-    void SetUIScale(Diligent::Int32 UIScale){m_UIScale = UIScale;};
-    Diligent::Int32 GetUIScale()const{return m_UIScale;}
+    virtual void WindowResize(Uint32 Width, Uint32 Height){}
+    virtual bool HandleNativeMessage(const void* pNativeMsgData) { return false; }
+    virtual const Char* GetSampleName()const{return "Diligent Engine Sample";}
+    void SetUIScale(Int32 UIScale){m_UIScale = UIScale;};
+    Int32 GetUIScale()const{return m_UIScale;}
     virtual void ProcessCommandLine(const char *CmdLine){}
 
 protected:
-    Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
-    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
-    std::vector<Diligent::RefCntAutoPtr<Diligent::IDeviceContext> > m_pDeferredContexts;
-    Diligent::RefCntAutoPtr<Diligent::ISwapChain> m_pSwapChain;
-    float m_fFPS = 0;
+    RefCntAutoPtr<IRenderDevice>                m_pDevice;
+    RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
+    std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
+    RefCntAutoPtr<ISwapChain>                   m_pSwapChain;
+    float  m_fFPS = 0;
     double m_LastFPSTime = 0;
-    Diligent::Uint32 m_uiNumFramesRendered = 0;
-    Diligent::Int32 m_UIScale = 1;
+    Uint32 m_uiNumFramesRendered = 0;
+    Int32  m_UIScale = 1;
 };
 
-inline void SampleBase::Update( double CurrTime, double ElapsedTime )
+inline void SampleBase::Update(double CurrTime, double ElapsedTime)
 {
     ++m_uiNumFramesRendered;
     static const double dFPSInterval = 0.5;
@@ -74,17 +77,19 @@ inline void SampleBase::Update( double CurrTime, double ElapsedTime )
     }
 }
 
-inline void SampleBase::Initialize(Diligent::IRenderDevice *pDevice, 
-                                   Diligent::IDeviceContext **ppContexts, 
-                                   Diligent::Uint32 NumDeferredCtx, 
-                                   Diligent::ISwapChain *pSwapChain)
+inline void SampleBase::Initialize(IRenderDevice*   pDevice, 
+                                   IDeviceContext** ppContexts, 
+                                   Uint32           NumDeferredCtx, 
+                                   ISwapChain*      pSwapChain)
 {
     m_pDevice = pDevice;
     m_pSwapChain = pSwapChain;
     m_pImmediateContext = ppContexts[0];
     m_pDeferredContexts.resize(NumDeferredCtx);
-    for(Diligent::Uint32 ctx=0; ctx < NumDeferredCtx; ++ctx)
+    for (Uint32 ctx=0; ctx < NumDeferredCtx; ++ctx)
         m_pDeferredContexts[ctx] = ppContexts[1+ctx];
 }
 
 extern SampleBase* CreateSample();
+
+}

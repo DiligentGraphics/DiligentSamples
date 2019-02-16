@@ -44,6 +44,9 @@
 #include <vector>
 #include "DynamicQuadTreeNode.h"
 
+namespace Diligent
+{
+
 // Template class implementing hierarchy array, which is a quad tree indexed by 
 // quad tree node location
 template <class T>
@@ -81,5 +84,4 @@ private:
 	std::vector<std::vector<T> > m_data;
 };
 
-
-// end of file
+}

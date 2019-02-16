@@ -29,7 +29,8 @@
 #   include "EngineD3D11Attribs.h"
 #endif
 
-using namespace Diligent;
+namespace Diligent
+{
 
 void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
 {
@@ -98,4 +99,6 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
     }
 
     NumDeferredContexts = 0;
+}
+
 }

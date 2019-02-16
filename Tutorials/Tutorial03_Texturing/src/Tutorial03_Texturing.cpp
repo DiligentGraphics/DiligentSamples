@@ -27,14 +27,18 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
     return new Tutorial03_Texturing();
 }
 
-void Tutorial03_Texturing::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial03_Texturing::Initialize(IRenderDevice*   pDevice,
+                                      IDeviceContext** ppContexts,
+                                      Uint32           NumDeferredCtx,
+                                      ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -300,4 +304,6 @@ void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
+}
+
 }

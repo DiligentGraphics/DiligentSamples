@@ -34,12 +34,15 @@
 #include "SwapChain.h"
 #include "SampleBase.h"
 
+namespace Diligent
+{
+
 class SampleApp : public NativeAppBase
 {
 public:
     SampleApp();
     ~SampleApp();
-    virtual void ProcessCommandLine(const char *CmdLine)override final;
+    virtual void ProcessCommandLine(const char* CmdLine)override final;
     virtual const char* GetAppTitle()const override final { return m_AppTitle.c_str(); }
     virtual void Update(double CurrTime, double ElapsedTime)override;
     virtual void WindowResize(int width, int height)override;
@@ -56,7 +59,7 @@ protected:
     );
     void InitializeSample();
 
-    virtual void SetFullscreenMode(const Diligent::DisplayModeAttribs &DisplayMode)
+    virtual void SetFullscreenMode(const DisplayModeAttribs& DisplayMode)
     { 
         m_bFullScreenMode = true;
         m_pSwapChain->SetFullscreenMode(DisplayMode); 
@@ -67,19 +70,21 @@ protected:
         m_pSwapChain->SetWindowedMode(); 
     }
 
-    Diligent::DeviceType m_DeviceType = Diligent::DeviceType::Undefined;
-    Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
-    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
-    std::vector<Diligent::RefCntAutoPtr<Diligent::IDeviceContext> > m_pDeferredContexts;
-    Diligent::RefCntAutoPtr<Diligent::ISwapChain> m_pSwapChain;
-    Diligent::HardwareAdapterAttribs m_AdapterAttribs;
-    std::vector<Diligent::DisplayModeAttribs> m_DisplayModes;
+    DeviceType m_DeviceType = DeviceType::Undefined;
+    RefCntAutoPtr<IRenderDevice>                m_pDevice;
+    RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
+    std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
+    RefCntAutoPtr<ISwapChain>                   m_pSwapChain;
+    HardwareAdapterAttribs                      m_AdapterAttribs;
+    std::vector<DisplayModeAttribs>             m_DisplayModes;
 
     std::unique_ptr<SampleBase> m_TheSample;
     std::string m_AppTitle;
-    Diligent::Int32 m_UIScale = 1;
+    Int32 m_UIScale = 1;
     std::string m_AdapterDetailsString;
     int m_SelectedDisplayMode = 0;
     bool m_bVSync = false;
     bool m_bFullScreenMode = false;
 };
+
+}

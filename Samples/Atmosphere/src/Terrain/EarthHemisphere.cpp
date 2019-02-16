@@ -59,7 +59,8 @@ namespace Diligent
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 struct HemisphereVertex
 {
@@ -970,4 +971,6 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
             pContext->Draw(DrawAttrs);
         }
     }
+}
+
 }

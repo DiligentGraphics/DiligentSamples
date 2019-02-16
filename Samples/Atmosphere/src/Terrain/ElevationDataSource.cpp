@@ -49,7 +49,8 @@
 #include "BasicFileStream.h"
 #include "TextureUtilities.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 // Creates data source from the specified raw data file
 ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
@@ -269,4 +270,6 @@ void ElevationDataSource::GetDataPtr(const Uint16* &pDataPtr, size_t &Pitch)
 {
 	pDataPtr = &m_TheHeightMap[0];
 	Pitch = m_iStride;
+}
+
 }

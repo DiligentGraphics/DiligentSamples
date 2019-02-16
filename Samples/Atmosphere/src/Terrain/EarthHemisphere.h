@@ -53,18 +53,17 @@
 #include "RefCntAutoPtr.h"
 
 #include "AdvancedMath.h"
-using Diligent::float4;
-using Diligent::float4x4;
 
 namespace Diligent
 {
+
+// Include structures in Diligent namespace
 #include "../../assets/shaders/HostSharedTerrainStructs.fxh"
-}
 
 // Structure describing terrain rendering parameters
 struct RenderingParams
 {
-    Diligent::TerrainAttribs m_TerrainAttribs;
+    TerrainAttribs m_TerrainAttribs;
 
     enum TEXTURING_MODE
     {
@@ -82,7 +81,7 @@ struct RenderingParams
     int m_bBestCascadeSearch;
     int m_bSmoothShadows;
     int m_iColOffset, m_iRowOffset;
-    Diligent::TEXTURE_FORMAT DstRTVFormat;
+    TEXTURE_FORMAT DstRTVFormat;
 
     RenderingParams() : 
 		m_TexturingMode     (TM_MATERIAL_MASK_NM),
@@ -93,15 +92,15 @@ struct RenderingParams
         m_bSmoothShadows    (1),
         m_iColOffset        (1356), 
         m_iRowOffset        (924),
-        DstRTVFormat        (Diligent::TEX_FORMAT_R11G11B10_FLOAT)
+        DstRTVFormat        (TEX_FORMAT_R11G11B10_FLOAT)
 	{}
 };
 
 struct RingSectorMesh
 {
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> pIndBuff;
-    Diligent::Uint32 uiNumIndices;
-    Diligent::BoundBox BndBox;
+    RefCntAutoPtr<IBuffer> pIndBuff;
+    Uint32 uiNumIndices;
+    BoundBox BndBox;
     RingSectorMesh() : uiNumIndices(0){}
 };
 
@@ -117,59 +116,61 @@ public:
     EarthHemsiphere& operator = (EarthHemsiphere&&)      = delete;
 
     // Renders the model
-	void Render(Diligent::IDeviceContext*   pContext,
-                const RenderingParams&      NewParams,
-                const Diligent::float3&     vCameraPosition, 
-                const Diligent::float4x4&   CameraViewProjMatrix,
-                Diligent::ITextureView*     pShadowMapSRV,
-                Diligent::ITextureView*     pPrecomputedNetDensitySRV,
-                Diligent::ITextureView*     pAmbientSkylightSRV,
-                bool bZOnlyPass);
+	void Render(IDeviceContext*         pContext,
+                const RenderingParams&  NewParams,
+                const float3&           vCameraPosition, 
+                const float4x4&         CameraViewProjMatrix,
+                ITextureView*           pShadowMapSRV,
+                ITextureView*           pPrecomputedNetDensitySRV,
+                ITextureView*           pAmbientSkylightSRV,
+                bool                    bZOnlyPass);
 
     // Creates device resources
     void Create(class ElevationDataSource* pDataSource,
-                const RenderingParams&     Params,
-                Diligent::IRenderDevice*   pDevice,
-                Diligent::IDeviceContext*  pContext,
-                const char*                MaterialMaskPath,
-				const char*                TileTexturePath[],
-                const char*                TileNormalMapPath[],
-                Diligent::IBuffer*         pcbCameraAttribs,
-                Diligent::IBuffer*         pcbLightAttribs,
-                Diligent::IBuffer*         pcMediaScatteringParams);
+                const RenderingParams&  Params,
+                IRenderDevice*          pDevice,
+                IDeviceContext*         pContext,
+                const char*             MaterialMaskPath,
+				const char*             TileTexturePath[],
+                const char*             TileNormalMapPath[],
+                IBuffer*                pcbCameraAttribs,
+                IBuffer*                pcbLightAttribs,
+                IBuffer*                pcMediaScatteringParams);
 
     enum {NUM_TILE_TEXTURES = 1 + 4};// One base material + 4 masked materials
 
 private:
 
-    void RenderNormalMap(Diligent::IRenderDevice*  pd3dDevice,
-                         Diligent::IDeviceContext* pd3dImmediateContext,
-                         const Diligent::Uint16*   pHeightMap,
-                         size_t                    HeightMapPitch,
-                         int                       HeightMapDim,
-                         Diligent::ITexture*       ptex2DNormalMap);
+    void RenderNormalMap(IRenderDevice*  pd3dDevice,
+                         IDeviceContext* pd3dImmediateContext,
+                         const Uint16*   pHeightMap,
+                         size_t          HeightMapPitch,
+                         int             HeightMapDim,
+                         ITexture*       ptex2DNormalMap);
 
     RenderingParams m_Params;
 
-    Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDevice;
+    RefCntAutoPtr<IRenderDevice> m_pDevice;
 
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pcbTerrainAttribs;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pVertBuff;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ptex2DNormalMapSRV, m_ptex2DMtrlMaskSRV;
+    RefCntAutoPtr<IBuffer> m_pcbTerrainAttribs;
+    RefCntAutoPtr<IBuffer> m_pVertBuff;
+    RefCntAutoPtr<ITextureView> m_ptex2DNormalMapSRV, m_ptex2DMtrlMaskSRV;
         
-	Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ptex2DTilesSRV[NUM_TILE_TEXTURES];
-    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_ptex2DTilNormalMapsSRV[NUM_TILE_TEXTURES];
+	RefCntAutoPtr<ITextureView> m_ptex2DTilesSRV[NUM_TILE_TEXTURES];
+    RefCntAutoPtr<ITextureView> m_ptex2DTilNormalMapsSRV[NUM_TILE_TEXTURES];
 
-    Diligent::RefCntAutoPtr<Diligent::IResourceMapping> m_pResMapping;
-    Diligent::RefCntAutoPtr<Diligent::IShader> m_pHemisphereVS;
+    RefCntAutoPtr<IResourceMapping> m_pResMapping;
+    RefCntAutoPtr<IShader> m_pHemisphereVS;
     
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState>         m_pHemisphereZOnlyPSO;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_pHemisphereZOnlySRB;
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState>         m_pHemispherePSO;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> m_pHemisphereSRB;
-    Diligent::RefCntAutoPtr<Diligent::ISampler> m_pComparisonSampler;
+    RefCntAutoPtr<IPipelineState>         m_pHemisphereZOnlyPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pHemisphereZOnlySRB;
+    RefCntAutoPtr<IPipelineState>         m_pHemispherePSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pHemisphereSRB;
+    RefCntAutoPtr<ISampler> m_pComparisonSampler;
 
     std::vector<RingSectorMesh> m_SphereMeshes;
     
-    Diligent::Uint32 m_ValidShaders;
+    Uint32 m_ValidShaders;
 };
+
+}

@@ -28,7 +28,8 @@
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 SampleBase* CreateSample()
 {
@@ -45,7 +46,10 @@ struct Constants
 };
 }
 
-void Tutorial07_GeometryShader::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void Tutorial07_GeometryShader::Initialize(IRenderDevice*    pDevice,
+                                           IDeviceContext**  ppContexts,
+                                           Uint32            NumDeferredCtx,
+                                           ISwapChain*       pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if(!deviceCaps.bGeometryShadersSupported)
@@ -344,4 +348,6 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
+}
+
 }

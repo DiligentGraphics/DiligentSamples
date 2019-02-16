@@ -24,7 +24,8 @@
 #include "SampleApp.h"
 #include "AntTweakBar.h"
 
-using namespace Diligent;
+namespace Diligent
+{
 
 class SampleAppLinux final : public SampleApp
 {
@@ -74,4 +75,6 @@ public:
 NativeAppBase* CreateApplication()
 {
     return new SampleAppLinux;
+}
+
 }
