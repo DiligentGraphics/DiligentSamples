@@ -70,17 +70,17 @@ public:
 
     float GetInterpolatedHeight(float fCol, float fRow, int iStep = 1)const;
     
-    float3 ComputeSurfaceNormal(float fCol, float fRow,
-                                float fSampleSpacing,
-                                float fHeightScale, 
-                                int iStep = 1)const;
+    Diligent::float3 ComputeSurfaceNormal(float fCol, float fRow,
+                                          float fSampleSpacing,
+                                          float fHeightScale, 
+                                          int iStep = 1)const;
 
     unsigned int GetNumCols()const{return m_iNumCols;}
     unsigned int GetNumRows()const{return m_iNumRows;}
 
 private:
-    inline Diligent::Uint16 GetElevSample( Diligent::Int32 i, Diligent::Int32 j )const;
-    inline Diligent::Uint16& GetElevSample( Diligent::Int32 i, Diligent::Int32 j );
+    inline Diligent::Uint16 GetElevSample(Diligent::Int32 i, Diligent::Int32 j)const;
+    inline Diligent::Uint16& GetElevSample(Diligent::Int32 i, Diligent::Int32 j);
 
     // Calculates min/max elevations for all patches in the tree
     void CalculateMinMaxElevations();

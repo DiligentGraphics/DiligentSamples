@@ -39,7 +39,8 @@
 // responsibility to update it.
 //--------------------------------------------------------------------------------------
 
-#include "pch.h"
+#include <algorithm>
+
 #include "EarthHemisphere.h"
 
 namespace Diligent
@@ -48,6 +49,7 @@ namespace Diligent
 #include "ToneMappingStructures.fxh"
 #include "EpipolarLightScatteringStructures.fxh"
 }
+
 #include "ElevationDataSource.h"
 #include "MapHelper.h"
 #include "GraphicsAccessories.h"
@@ -58,7 +60,6 @@ namespace Diligent
 #include "CommonlyUsedStates.h"
 
 using namespace Diligent;
-
 
 struct HemisphereVertex
 {
@@ -270,7 +271,7 @@ public:
     }
 
 private:
-    Diligent::RefCntAutoPtr<IRenderDevice> m_pDevice;
+    RefCntAutoPtr<IRenderDevice> m_pDevice;
     std::vector<RingSectorMesh> &m_RingMeshes;
     const std::vector<HemisphereVertex> &m_VB;
     const int m_iGridDimenion;
@@ -756,7 +757,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
         };
         CreateAttribs.Desc.VariableDesc = Vars;
         CreateAttribs.Desc.NumVariables = _countof(Vars);
-        Diligent::RefCntAutoPtr<Diligent::IShader> pHemisphereZOnlyVS;
+        RefCntAutoPtr<IShader> pHemisphereZOnlyVS;
         pDevice->CreateShader(CreateAttribs, &pHemisphereZOnlyVS);
         pHemisphereZOnlyVS->BindResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 

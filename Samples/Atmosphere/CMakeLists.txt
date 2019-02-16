@@ -14,7 +14,6 @@ set(INCLUDE
     src/Terrain/EarthHemisphere.h
     src/Terrain/ElevationDataSource.h
     src/Terrain/HierarchyArray.h
-    src/pch.h
 )
 
 set(TERRAIN_SHADERS
@@ -77,7 +76,7 @@ PRIVATE
     src/Terrain
     ../../../DiligentFX/Shaders/Common/public/
     ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public
-    assets/shaders
+    ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public
 )
 
 target_link_libraries(AtmosphereSample

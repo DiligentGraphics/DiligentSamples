@@ -21,12 +21,11 @@
  *  of the possibility of such damages.
  */
 
-#include "pch.h"
+#include <cmath>
+#include <algorithm>
 
 #include "AntTweakBar.h"
 
-#include <cmath>
-#include <vector>
 #include "AtmosphereSample.h"
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
@@ -39,7 +38,7 @@ SampleBase* CreateSample()
 }
 
 // Callback function called by AntTweakBar to set the sponge recursion level
-void AtmosphereSample::SetNumCascadesCB(const void *value, void * clientData)
+void AtmosphereSample::SetNumCascadesCB(const void* value, void* clientData)
 {
     AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
     pTheSample->m_TerrainRenderParams.m_iNumShadowCascades = *static_cast<const int *>(value);

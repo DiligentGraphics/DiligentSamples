@@ -36,28 +36,31 @@ public:
     AtmosphereSample();
     ~AtmosphereSample();
 
-    virtual void GetEngineInitializationAttribs(Diligent::DeviceType DevType, 
+    virtual void GetEngineInitializationAttribs(Diligent::DeviceType             DevType, 
                                                 Diligent::EngineCreationAttribs& Attribs, 
-                                                Diligent::Uint32& NumDeferredContexts)override;
+                                                Diligent::Uint32&                NumDeferredContexts)override;
 
-    virtual void Initialize(Diligent::IRenderDevice *pDevice, 
-                            Diligent::IDeviceContext **ppContexts, 
-                            Diligent::Uint32 NumDeferredCtx, 
-                            Diligent::ISwapChain *pSwapChain)override;
+    virtual void Initialize(Diligent::IRenderDevice*        pDevice, 
+                            Diligent::IDeviceContext**      ppContexts, 
+                            Diligent::Uint32                NumDeferredCtx, 
+                            Diligent::ISwapChain*           pSwapChain)override;
     virtual void Render()override;
     virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual void WindowResize( Uint32 Width, Uint32 Height )override;
+    virtual void WindowResize(Diligent::Uint32 Width, Diligent::Uint32 Height)override;
     virtual const Diligent::Char* GetSampleName()const override{return "Atmosphere Sample";}
     
 private:
     void CreateShadowMap();
     void ReleaseShadowMap();
-    void RenderShadowMap( IDeviceContext *pContext, LightAttribs &LightAttribs, const float4x4 &mCameraView, const float4x4 &mCameraProj );
+    void RenderShadowMap(Diligent::IDeviceContext*  pContext,
+                         Diligent::LightAttribs&    LightAttribs,
+                         const float4x4&            mCameraView,
+                         const float4x4&            mCameraProj);
 
-    static void SetNumCascadesCB( const void *value, void * clientData );
-    static void GetNumCascadesCB( void *value, void * clientData );
-    static void SetShadowMapResCB( const void *value, void * clientData );
-    static void GetShadowMapResCB( void *value, void * clientData );
+    static void SetNumCascadesCB(const void* value, void * clientData);
+    static void GetNumCascadesCB(void* value, void * clientData);
+    static void SetShadowMapResCB(const void *value, void * clientData);
+    static void GetShadowMapResCB(void *value, void * clientData);
 
     void UpdateGUI();
 
@@ -65,16 +68,16 @@ private:
     Quaternion m_SpongeRotation; // model rotation
 #endif
 
-    float3 m_f3LightDir;          // light direction vector
-    float3 m_f3CameraDir;      // tmp camera view direction vector
-    float3 m_f3CameraPos;
-    float4x4 m_mCameraView;
-    float4x4 m_mCameraProj;
+    Diligent::float3 m_f3LightDir;       // light direction vector
+    Diligent::float3 m_f3CameraDir;      // tmp camera view direction vector
+    Diligent::float3 m_f3CameraPos;
+    Diligent::float4x4 m_mCameraView;
+    Diligent::float4x4 m_mCameraProj;
 
-    RefCntAutoPtr<Diligent::IBuffer> m_pcbCameraAttribs;
-    RefCntAutoPtr<Diligent::IBuffer> m_pcbLightAttribs;
-    std::vector< RefCntAutoPtr<Diligent::ITextureView> > m_pShadowMapDSVs;
-    RefCntAutoPtr<Diligent::ITextureView> m_pShadowMapSRV;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pcbCameraAttribs;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pcbLightAttribs;
+    std::vector<Diligent::RefCntAutoPtr<Diligent::ITextureView>> m_pShadowMapDSVs;
+    Diligent::RefCntAutoPtr<Diligent::ITextureView> m_pShadowMapSRV;
 
     Diligent::Uint32 m_uiShadowMapResolution;
     float m_fCascadePartitioningFactor;
@@ -97,8 +100,8 @@ private:
     bool m_bEnableLightScattering;
     float m_fScatteringScale;
     float m_fElapsedTime;
-    float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
+    Diligent::float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
 
-    RefCntAutoPtr<ITexture>  m_pOffscreenColorBuffer;
-    RefCntAutoPtr<ITexture>  m_pOffscreenDepthBuffer;
+    Diligent::RefCntAutoPtr<Diligent::ITexture>  m_pOffscreenColorBuffer;
+    Diligent::RefCntAutoPtr<Diligent::ITexture>  m_pOffscreenDepthBuffer;
 };

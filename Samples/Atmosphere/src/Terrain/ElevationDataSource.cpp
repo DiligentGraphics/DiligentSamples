@@ -39,8 +39,7 @@
 // responsibility to update it.
 //--------------------------------------------------------------------------------------
 
-#include "pch.h"
-
+#include <algorithm>
 #include <cmath>
 
 #include "ElevationDataSource.h"
