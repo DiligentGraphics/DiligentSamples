@@ -761,16 +761,16 @@ void AtmosphereSample::Render()
     {
         EpipolarLightScattering::FrameAttribs FrameAttribs;
 
-        FrameAttribs.pDevice = m_pDevice;
+        FrameAttribs.pDevice        = m_pDevice;
         FrameAttribs.pDeviceContext = m_pImmediateContext;
-        FrameAttribs.dElapsedTime = m_fElapsedTime;
-        FrameAttribs.pLightAttribs = &LightAttrs;
+        FrameAttribs.dElapsedTime   = m_fElapsedTime;
+        FrameAttribs.pLightAttribs  = &LightAttrs;
         FrameAttribs.pCameraAttribs = &CamAttribs;
 
         m_PPAttribs.iNumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
         m_PPAttribs.fNumCascades = (float)m_TerrainRenderParams.m_iNumShadowCascades;
 
-        FrameAttribs.pcbLightAttribs = m_pcbLightAttribs;
+        FrameAttribs.pcbLightAttribs  = m_pcbLightAttribs;
         FrameAttribs.pcbCameraAttribs = m_pcbCameraAttribs;
 
         m_PPAttribs.fMaxShadowMapStep = static_cast<float>(m_uiShadowMapResolution / 4);
@@ -791,7 +791,7 @@ void AtmosphereSample::Render()
         FrameAttribs.ptex2DShadowMapSRV      = m_pShadowMapSRV;
         FrameAttribs.pDstRTV                 = nullptr;// mpBackBufferRTV;
 
-        // Then perform the post processing, swapping the inverseworld view  projection matrix axes.
+        // Perform the post processing
         m_pLightSctrPP->PerformPostProcessing(FrameAttribs, m_PPAttribs);
     }
 }
