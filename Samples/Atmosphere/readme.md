@@ -2,7 +2,5 @@
 
 ![](Screenshot.png)
 
-The sample implements physically-based atmospheric light scattering model and demonstrates how 
-Diligent Engine can be used to accomplish various rendering tasks: loading textures from files,
-using complex shaders, rendering to textures, using compute shaders and unordered access views, etc.
-
+This sample demonstrates how to integrate [Epipolar Light Scattering](https://github.com/DiligentGraphics/DiligentFX/tree/master/Postprocess/EpipolarLightScattering)
+post-processing effect into an application to render physically-based atmosphere.
