@@ -198,6 +198,12 @@ void SampleApp::InitializeDiligentEngine(
             LoadGraphicsEngineVk(GetEngineFactoryVk);
 #endif
             EngineVkAttribs EngVkAttribs;
+#if PLATFORM_ANDROID
+            EngVkAttribs.EnabledFeatures.samplerAnisotropy = false;
+            EngVkAttribs.EnabledFeatures.geometryShader = false;
+            EngVkAttribs.EnabledFeatures.tessellationShader = false;
+#endif
+
 #ifdef _DEBUG
             EngVkAttribs.EnableValidation = true;
 #endif

@@ -64,7 +64,13 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
         case DeviceType::Vulkan:
         {
             EngineVkAttribs &EngVkAttribs = static_cast<EngineVkAttribs&>(Attribs);
+#if PLATFORM_ANDROID
+            EngVkAttribs.EnabledFeatures.samplerAnisotropy = false;
+            EngVkAttribs.EnabledFeatures.geometryShader = false;
+            EngVkAttribs.EnabledFeatures.tessellationShader = false;
+#else
             EngVkAttribs.EnabledFeatures.multiViewport = true;
+#endif
         }
         break;
 #endif
