@@ -46,6 +46,20 @@ struct Constants
 };
 }
 
+void Tutorial07_GeometryShader::GetEngineInitializationAttribs(DeviceType              DevType,
+                                                               EngineCreationAttribs&  Attribs,
+                                                               Uint32&                 NumDeferredContexts)
+{
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
+#if VULKAN_SUPPORTED
+    if(DevType == DeviceType::Vulkan)
+    {
+        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        VkAttrs.EnabledFeatures.geometryShader = true;
+    }
+#endif
+}
+
 void Tutorial07_GeometryShader::Initialize(IRenderDevice*    pDevice,
                                            IDeviceContext**  ppContexts,
                                            Uint32            NumDeferredCtx,

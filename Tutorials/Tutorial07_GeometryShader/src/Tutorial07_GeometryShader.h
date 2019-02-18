@@ -32,6 +32,9 @@ namespace Diligent
 class Tutorial07_GeometryShader final : public SampleBase
 {
 public:
+    virtual void GetEngineInitializationAttribs(DeviceType             DevType, 
+                                                EngineCreationAttribs& Attribs, 
+                                                Uint32&                NumDeferredContexts)override final;
     virtual void Initialize(IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 
                             Uint32           NumDeferredCtx, 
