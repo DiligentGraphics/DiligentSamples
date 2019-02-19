@@ -275,7 +275,7 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
         LayoutElement LayoutElem[] =
         {
             // Attribute 0 - PolygonXY
-            LayoutElement{0, 0, 2, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_VERTEX}
+            LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX}
         };
         PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElem;
         PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElem);
@@ -298,13 +298,13 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
         LayoutElement BatchLayoutElems[] =
         {
             // Attribute 0 - PolygonXY
-            LayoutElement{0, 0, 2, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_VERTEX},
+            LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX},
             // Attribute 1 - PolygonRotationAndScale
-            LayoutElement{1, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{1, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
             // Attribute 2 - PolygonCenter
-            LayoutElement{2, 1, 2, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{2, 1, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
             // Attribute 3 - TexArrInd
-            LayoutElement{3, 1, 1, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE}
+            LayoutElement{3, 1, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE}
         };
         PSODesc.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
         PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(BatchLayoutElems);

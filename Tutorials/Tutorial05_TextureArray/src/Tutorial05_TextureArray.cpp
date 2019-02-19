@@ -154,15 +154,15 @@ void Tutorial05_TextureArray::Initialize(IRenderDevice*    pDevice,
             // Per-instance data - second buffer slot
             // We will use four attributes to encode instance-specific 4x4 transformation matrix
             // Attribute 2 - first row
-            LayoutElement{2, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{2, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
             // Attribute 3 - second row
-            LayoutElement{3, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{3, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
             // Attribute 4 - third row
-            LayoutElement{4, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{4, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
             // Attribute 5 - fourth row
-            LayoutElement{5, 1, 4, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
             // Attribute 6 - texture array index
-            LayoutElement{6, 1, 1, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+            LayoutElement{6, 1, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
         };
 
         PSODesc.GraphicsPipeline.pVS = pVS;

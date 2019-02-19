@@ -64,7 +64,7 @@ LayoutElement LayoutElems[] =
 {
     // ...
     // Attribute 6 - texture array index
-    LayoutElement{6, 1, 1, VT_FLOAT32, False, 0, 0, LayoutElement::FREQUENCY_PER_INSTANCE},
+    LayoutElement{6, 1, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
 };
 ```
 

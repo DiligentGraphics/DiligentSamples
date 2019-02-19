@@ -311,7 +311,7 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
     LayoutElement TextLayoutElems[] = 
     {
         LayoutElement{ 0, 0, 3, VT_FLOAT32, False },
-        LayoutElement{ 1, 0, 4, VT_UINT8, True },
+        LayoutElement{ 1, 0, 4, VT_UINT8,   True  },
         LayoutElement{ 2, 0, 2, VT_FLOAT32, False },
     };
     lineRectLayout.LayoutElements = TextLayoutElems;
