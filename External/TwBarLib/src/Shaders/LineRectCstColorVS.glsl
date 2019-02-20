@@ -29,7 +29,15 @@ out gl_PerVertex
 };
 #endif
 
-layout(location = 1) out vec4 Color;
+#if (GL_ES && __VERSION__ <= 300)
+    // GLES3.0 only supports layout location qualifiers for VS inputs
+    #define OUT_LOCATION(x)
+#else
+    // Compiling glsl to SPIRV with glslang will fail if locations are not specified
+    #define OUT_LOCATION(x) layout(location = x)
+#endif
+
+OUT_LOCATION(0) out vec4 Color;
 
 void main() 
 {
