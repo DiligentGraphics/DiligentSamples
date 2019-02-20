@@ -6,7 +6,7 @@
 //
 //  ---------------------------------------------------------------------------
 
-#if (GL_ES && __VERSION__ <= 300)
+#if (defined(GL_ES) && __VERSION__ <= 300)
     // GLES3.0 only supports layout location qualifiers for FS outputs
     #define IN_LOCATION(x)
 #else

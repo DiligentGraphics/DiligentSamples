@@ -18,7 +18,7 @@
 "layout( location = 1 ) in vec4 in_color;\n"
 "layout( location = 2 ) in vec2 in_tex;\n"
 "\n"
-"#if (GL_ES && __VERSION__ <= 300)\n"
+"#if (defined(GL_ES) && __VERSION__ <= 300)\n"
 "    // GLES3.0 only supports layout location qualifiers for VS inputs\n"
 "    #define OUT_LOCATION(x)\n"
 "#else\n"

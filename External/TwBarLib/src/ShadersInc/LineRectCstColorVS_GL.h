@@ -29,7 +29,7 @@
 "};\n"
 "#endif\n"
 "\n"
-"#if (GL_ES && __VERSION__ <= 300)\n"
+"#if (defined(GL_ES) && __VERSION__ <= 300)\n"
 "    // GLES3.0 only supports layout location qualifiers for VS inputs\n"
 "    #define OUT_LOCATION(x)\n"
 "#else\n"

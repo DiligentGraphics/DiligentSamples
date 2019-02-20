@@ -108,6 +108,14 @@ post-processing effect into an application to render physically-based atmosphere
 Please refer to Build and Run Instructions section of the
 [master repository's readme](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md#build-and-run-instructions).
 
+<a name="contributing"></a>
+# Contributing
+
+To contribute your code, submit a [Pull Request](https://github.com/DiligentGraphics/DiligentCore/pulls) 
+to this repository. **Diligent Engine** is licensed under the [Apache 2.0 license](License.txt) that guarantees 
+that code in the **DiligentCore** repository is free of Intellectual Property encumbrances. In submitting code to
+this repository, you are agreeing that the code is free of any Intellectual Property claims.  
+
 # Version History
 
 ## v2.4.a

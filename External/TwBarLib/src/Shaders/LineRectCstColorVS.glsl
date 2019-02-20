@@ -29,7 +29,7 @@ out gl_PerVertex
 };
 #endif
 
-#if (GL_ES && __VERSION__ <= 300)
+#if (defined(GL_ES) && __VERSION__ <= 300)
     // GLES3.0 only supports layout location qualifiers for VS inputs
     #define OUT_LOCATION(x)
 #else
