@@ -11,7 +11,8 @@ struct PSInput
     float2 uv : TEX_COORD;
 };
 
-PSInput main(in uint VertID : SV_VertexID) 
+void main(in uint VertID : SV_VertexID,
+          out PSInput PSIn) 
 {
     float4 pos_uv[4];
     pos_uv[0] = float4(-1.0,+1.0, 0.0,0.0);
@@ -23,8 +24,6 @@ PSInput main(in uint VertID : SV_VertexID)
     float2x2 mat = MatrixFromRows(g_QuadRotationAndScale.xy, g_QuadRotationAndScale.zw);
     pos = mul(pos, mat);
     pos += g_QuadCenter.xy;
-    PSInput ps;
-    ps.Pos = float4(pos, 0.0, 1.0);
-    ps.uv = pos_uv[VertID].zw;
-    return ps;
+    PSIn.Pos = float4(pos, 0.0, 1.0);
+    PSIn.uv = pos_uv[VertID].zw;
 }

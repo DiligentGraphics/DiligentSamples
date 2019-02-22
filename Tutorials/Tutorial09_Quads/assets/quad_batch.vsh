@@ -6,10 +6,11 @@ struct PSInput
     float TexIndex : TEX_ARRAY_INDEX;
 };
 
-PSInput main(in uint VertID : SV_VertexID,
-             in float4 QuadRotationAndScale : ATTRIB0,
-             in float2 QuadCenter : ATTRIB1,
-             in float TexArrInd : ATTRIB2)
+void main(in uint VertID : SV_VertexID,
+          in float4 QuadRotationAndScale : ATTRIB0,
+          in float2 QuadCenter : ATTRIB1,
+          in float TexArrInd : ATTRIB2,
+          out PSInput PSIn)
 {
     float4 pos_uv[4];
     pos_uv[0] = float4(-1.0,+1.0, 0.0,0.0);
@@ -21,9 +22,7 @@ PSInput main(in uint VertID : SV_VertexID,
     float2x2 mat = MatrixFromRows(QuadRotationAndScale.xy, QuadRotationAndScale.zw);
     pos = mul(pos, mat);
     pos += QuadCenter.xy;
-    PSInput ps;
-    ps.Pos = float4(pos, 0.0, 1.0);
-    ps.uv = pos_uv[VertID].zw;
-    ps.TexIndex = TexArrInd;
-    return ps;
+    PSIn.Pos = float4(pos, 0.0, 1.0);
+    PSIn.uv = pos_uv[VertID].zw;
+    PSIn.TexIndex = TexArrInd;
 }

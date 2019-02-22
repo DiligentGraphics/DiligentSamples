@@ -28,15 +28,15 @@ struct PSInput
     float2 uv : TEX_COORD; 
 };
 
-PSInput main(float3 pos : ATTRIB0, 
-             float2 uv : ATTRIB1,
-             // Instance-specific attributes
-             float4 matr_row0 : ATTRIB2,
-             float4 matr_row1 : ATTRIB3,
-             float4 matr_row2 : ATTRIB4,
-             float4 matr_row3 : ATTRIB5) 
+void main(float3 pos : ATTRIB0, 
+          float2 uv : ATTRIB1,
+          // Instance-specific attributes
+          float4 matr_row0 : ATTRIB2,
+          float4 matr_row1 : ATTRIB3,
+          float4 matr_row2 : ATTRIB4,
+          float4 matr_row3 : ATTRIB5,
+          out PSInput PSIn) 
 {
-    PSInput ps; 
     // HLSL matrices are row-major while GLSL matrices are column-major. We will
     // use convenience function MatrixFromRows() appropriately defined by the engine
     float4x4 InstanceMatr = MatrixFromRows(matr_row0, matr_row1, matr_row2, matr_row3);
@@ -45,9 +45,8 @@ PSInput main(float3 pos : ATTRIB0,
     // Apply instance-specific transformation
     TransformedPos = mul(TransformedPos, InstanceMatr);
     // Apply view-projection matrix
-    ps.Pos = mul( TransformedPos, g_ViewProj);
-    ps.uv = uv;
-    return ps;
+    PSIn.Pos = mul( TransformedPos, g_ViewProj);
+    PSIn.uv = uv;
 }
 ```
 

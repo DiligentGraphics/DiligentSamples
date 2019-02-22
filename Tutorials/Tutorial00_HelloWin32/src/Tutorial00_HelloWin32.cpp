@@ -80,7 +80,8 @@ struct PSInput
     float3 Color : COLOR; 
 };
 
-PSInput main(uint VertId : SV_VertexID) 
+void main(uint VertId : SV_VertexID,
+          out PSInput PSIn) 
 {
     float4 Pos[3];
     Pos[0] = float4(-0.5, -0.5, 0.0, 1.0);
@@ -92,10 +93,8 @@ PSInput main(uint VertId : SV_VertexID)
     Col[1] = float3(0.0, 1.0, 0.0); // green
     Col[2] = float3(0.0, 0.0, 1.0); // blue
 
-    PSInput ps; 
-    ps.Pos = Pos[VertId];
-    ps.Color = Col[VertId];
-    return ps;
+    PSIn.Pos = Pos[VertId];
+    PSIn.Color = Col[VertId];
 }
 )";
 
@@ -107,9 +106,9 @@ struct PSInput
     float3 Color : COLOR; 
 };
 
-float4 main(PSInput In) : SV_Target
+float4 main(PSInput PSIn) : SV_Target
 {
-    return float4(In.Color.rgb, 1.0);
+    return float4(PSIn.Color.rgb, 1.0);
 }
 )";
 

@@ -35,15 +35,17 @@ struct PSInput
     float2 uv : TEX_COORD; 
 };
 
-PSInput main(float3 pos : ATTRIB0, 
-             float2 uv : ATTRIB1) 
+void main(float3 pos : ATTRIB0, 
+          float2 uv  : ATTRIB1,
+          out PSInput PSIn) 
 {
-    PSInput ps; 
+    // Apply rotation
     float4 TransformedPos = mul( float4(pos,1.0),g_Rotation);
+    // Apply instance-specific transformation
     TransformedPos = mul(TransformedPos, g_InstanceMatr);
-    ps.Pos = mul( TransformedPos, g_ViewProj);
-    ps.uv = uv;
-    return ps;
+    // Apply view-projection matrix
+    PSIn.Pos = mul( TransformedPos, g_ViewProj);
+    PSIn.uv = uv;
 }
 ```
 

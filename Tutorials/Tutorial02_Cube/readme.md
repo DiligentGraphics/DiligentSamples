@@ -11,12 +11,16 @@ This tutorial uses a little bit more complicated vertex shader that reads two at
 input vertex buffer, a `float3` position and a `float4` color:
 
 ```hlsl
-PSInput main(float3 pos : ATTRIB0, 
-             float4 color : ATTRIB1) 
+void main(float3 pos   : ATTRIB0, 
+          float4 color : ATTRIB1,
+          out PSInput PSIn) 
 ```
 
 By convention, **vertex shader inputs should be labeled as ATTRIBn, where n is the attribute number.** The 
 attributes must match the input layout defined in the pipeline state object.
+Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex 
+shader output variable name must match exactly the name of the pixel shader input variable. If the variable has 
+structure type (like in this example), the structure declarations must also be indentical.
 The shader also uses a world-view-projection matrix defined in a constant (uniform) buffer called `Constants` to
 transform vertex positions:
 
@@ -41,13 +45,12 @@ struct PSInput
     float4 Color : COLOR0; 
 };
 
-PSInput main(float3 pos : ATTRIB0, 
-             float4 color : ATTRIB1) 
+void main(float3 pos   : ATTRIB0, 
+          float4 color : ATTRIB1,
+          out PSInput PSIn) 
 {
-    PSInput ps; 
-    ps.Pos = mul( float4(pos,1.0), g_WorldViewProj);
-    ps.Color = color;
-    return ps;
+    PSIn.Pos = mul( float4(pos,1.0), g_WorldViewProj);
+    PSIn.Color = color;
 }
 ```
 

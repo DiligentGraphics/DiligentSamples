@@ -22,13 +22,12 @@ struct PSInput
     float2 uv : TEX_COORD; 
 };
 
-PSInput main(float3 pos : ATTRIB0, 
-             float2 uv : ATTRIB1) 
+void main(float3 pos : ATTRIB0, 
+          float2 uv  : ATTRIB1,
+          out PSInput PSIn) 
 {
-    PSInput ps; 
-    ps.Pos = mul( float4(pos,1.0), g_WorldViewProj);
-    ps.uv = uv;
-    return ps;
+    PSIn.Pos = mul( float4(pos,1.0), g_WorldViewProj);
+    PSIn.uv = uv;
 }
 ```
 
@@ -45,9 +44,9 @@ struct PSInput
     float2 uv : TEX_COORD; 
 };
 
-float4 main(PSInput ps_in) : SV_TARGET
+float4 main(PSInput PSIn) : SV_TARGET
 {
-    return g_Texture.Sample(g_Texture_sampler, ps_in.uv); 
+    return g_Texture.Sample(g_Texture_sampler, PSIn.uv); 
 }
 ```
 

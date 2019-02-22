@@ -23,13 +23,13 @@ struct PSInput
     float TexIndex : TEX_ARRAY_INDEX;
 };
 
-PSInput main(// ...
-             // ...
-             float TexArrInd : ATTRIB6) 
+void main(// ...
+          // ...
+          float TexArrInd : ATTRIB6,
+          out PSInput PSIn) 
 {
     // ...
-    ps.TexIndex = TexArrInd;
-    return ps;
+    PSIn.TexIndex = TexArrInd;
 }
 ```
 
@@ -48,9 +48,9 @@ struct PSInput
     float TexIndex : TEX_ARRAY_INDEX;
 };
 
-float4 main(PSInput ps_in) : SV_TARGET
+float4 main(PSInput PSIn) : SV_TARGET
 {
-    return g_Texture.Sample(g_Texture_sampler, float3(ps_in.uv, ps_in.TexIndex)); 
+    return g_Texture.Sample(g_Texture_sampler, float3(PSIn.uv, PSIn.TexIndex)); 
 }
 ```
 

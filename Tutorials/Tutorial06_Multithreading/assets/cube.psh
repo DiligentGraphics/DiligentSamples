@@ -7,7 +7,7 @@ struct PSInput
     float2 uv : TEX_COORD; 
 };
 
-float4 main(PSInput ps_in) : SV_TARGET
+float4 main(PSInput PSIn) : SV_TARGET
 {
-    return g_Texture.Sample(g_Texture_sampler, ps_in.uv);
+    return g_Texture.Sample(g_Texture_sampler, PSIn.uv);
 }

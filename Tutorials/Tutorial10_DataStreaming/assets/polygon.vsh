@@ -11,15 +11,14 @@ struct PSInput
     float2 uv : TEX_COORD;
 };
 
-PSInput main(in float2 PolygonXY : ATTRIB0) 
+void main(in float2 PolygonXY : ATTRIB0,
+          out PSInput PSIn) 
 {
     float2 pos = PolygonXY.xy;
     float2x2 mat = MatrixFromRows(g_QuadRotationAndScale.xy, g_QuadRotationAndScale.zw);
     pos = mul(pos, mat);
     pos += g_QuadCenter.xy;
-    PSInput ps;
-    ps.Pos = float4(pos, 0.0, 1.0);
+    PSIn.Pos = float4(pos, 0.0, 1.0);
     const float sqrt2 = 1.414213562373095;
-    ps.uv = PolygonXY * sqrt2 * 0.5 + 0.5;
-    return ps;
+    PSIn.uv = PolygonXY * sqrt2 * 0.5 + 0.5;
 }

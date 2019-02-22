@@ -11,17 +11,18 @@ struct PSInput
 };
 
 // Vertex shader takes two inputs: vertex position and uv coordinates.
-// By convention, Diligent Engine expects vertex shader inputs to 
-// be labeled as ATTRIBn, where n is the attribute number
-PSInput main(float3 pos : ATTRIB0, 
-             float2 uv : ATTRIB1,
-             // Instance-specific attributes
-             float4 matr_row0 : ATTRIB2,
-             float4 matr_row1 : ATTRIB3,
-             float4 matr_row2 : ATTRIB4,
-             float4 matr_row3 : ATTRIB5) 
+// Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex
+// shader output variable name must match exactly the name of the pixel shader input variable.
+// If the variable has structure type (like in this example), the structure declarations must also be indentical.
+void main(float3 pos : ATTRIB0, 
+          float2 uv : ATTRIB1,
+          // Instance-specific attributes
+          float4 matr_row0 : ATTRIB2,
+          float4 matr_row1 : ATTRIB3,
+          float4 matr_row2 : ATTRIB4,
+          float4 matr_row3 : ATTRIB5,
+          out PSInput PSIn) 
 {
-    PSInput ps; 
     // HLSL matrices are row-major while GLSL matrices are column-major. We will
     // use convenience function MatrixFromRows() appropriately defined by the engine
     float4x4 InstanceMatr = MatrixFromRows(matr_row0, matr_row1, matr_row2, matr_row3);
@@ -30,7 +31,6 @@ PSInput main(float3 pos : ATTRIB0,
     // Apply instance-specific transformation
     TransformedPos = mul(TransformedPos, InstanceMatr);
     // Apply view-projection matrix
-    ps.Pos = mul( TransformedPos, g_ViewProj);
-    ps.uv = uv;
-    return ps;
+    PSIn.Pos = mul( TransformedPos, g_ViewProj);
+    PSIn.uv = uv;
 }
