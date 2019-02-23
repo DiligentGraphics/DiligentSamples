@@ -25,65 +25,18 @@ cbuffer QuadAttribs
     float4 g_QuadCenter;
 };
 
-struct PSInput 
-{ 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
-};
-
-void main(in uint VertID : SV_VertexID,
-          out PSInput PSIn) 
+struct VSInput
 {
-    float4 pos_uv[4];
-    pos_uv[0] = float4(-1.0,+1.0, 0.0,0.0);
-    pos_uv[1] = float4(-1.0,-1.0, 0.0,1.0);
-    pos_uv[2] = float4(+1.0,+1.0, 1.0,0.0);
-    pos_uv[3] = float4(+1.0,-1.0, 1.0,1.0);
-
-    float2 pos = pos_uv[VertID].xy;
-    float2x2 mat = MatrixFromRows(g_QuadRotationAndScale.xy, g_QuadRotationAndScale.zw);
-    pos = mul(pos, mat);
-    pos += g_QuadCenter.xy;
-    PSIn.Pos = float4(pos, 0.0, 1.0);
-    PSIn.uv = pos_uv[VertID].zw;
-}
-```
-
-`MatrixFromRows()` is a function defined by the engine that creates a matrix from rows, in an API-spesific fashion.
-
-Non-batched pixel shader is straightforward and simply samples the texture:
-
-```hlsl
-Texture2D g_Texture;
-SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+    uint VertID : SV_VertexID;
+};
 
 struct PSInput 
 { 
     float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
+    float2 uv  : TEX_COORD;
 };
 
-float4 main(PSInput PSIn) : SV_TARGET
-{
-    return g_Texture.Sample(g_Texture_sampler, PSIn.uv).rgbg;
-}
-```
-
-In batched mode, instancing is used to rendered a number of quads in the same draw call. The quad
-attributes (rotation, scale, translation) are fetched by the vertex shader from the vertex buffer:
-
-```hlsl
-struct PSInput 
-{ 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
-    float TexIndex : TEX_ARRAY_INDEX;
-};
-
-void main(in uint VertID : SV_VertexID,
-          in float4 QuadRotationAndScale : ATTRIB0,
-          in float2 QuadCenter : ATTRIB1,
-          in float TexArrInd : ATTRIB2,
+void main(in  VSInput VSIn,
           out PSInput PSIn)
 {
     float4 pos_uv[4];
@@ -92,13 +45,76 @@ void main(in uint VertID : SV_VertexID,
     pos_uv[2] = float4(+1.0,+1.0, 1.0,0.0);
     pos_uv[3] = float4(+1.0,-1.0, 1.0,1.0);
 
-    float2 pos = pos_uv[VertID].xy;
-    float2x2 mat = MatrixFromRows(QuadRotationAndScale.xy, QuadRotationAndScale.zw);
+    float2 pos = pos_uv[VSIn.VertID].xy;
+    float2x2 mat = MatrixFromRows(g_QuadRotationAndScale.xy, g_QuadRotationAndScale.zw);
     pos = mul(pos, mat);
-    pos += QuadCenter.xy;
+    pos += g_QuadCenter.xy;
     PSIn.Pos = float4(pos, 0.0, 1.0);
-    PSIn.uv = pos_uv[VertID].zw;
-    PSIn.TexIndex = TexArrInd;
+    PSIn.uv = pos_uv[VSIn.VertID].zw;
+}
+```
+
+`MatrixFromRows()` is a function defined by the engine that creates a matrix from rows, in an API-spesific fashion.
+
+Non-batched pixel shader is straightforward and simply samples the texture:
+
+```hlsl
+Texture2D    g_Texture;
+SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+
+struct PSInput 
+{ 
+    float4 Pos : SV_POSITION; 
+    float2 uv : TEX_COORD;
+};
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    PSOut.Color = g_Texture.Sample(g_Texture_sampler, PSIn.uv).rgbg;
+}
+```
+
+In batched mode, instancing is used to rendered a number of quads in the same draw call. The quad
+attributes (rotation, scale, translation) are fetched by the vertex shader from the vertex buffer:
+
+```hlsl
+struct VSInput
+{
+    uint   VertID               : SV_VertexID;
+    float4 QuadRotationAndScale : ATTRIB0;
+    float2 QuadCenter           : ATTRIB1;
+    float  TexArrInd            : ATTRIB2;
+};
+
+struct PSInput 
+{ 
+    float4 Pos     : SV_POSITION; 
+    float2 uv      : TEX_COORD;
+    float TexIndex : TEX_ARRAY_INDEX;
+};
+
+void main(in  VSInput VSIn,
+          out PSInput PSIn)
+{
+    float4 pos_uv[4];
+    pos_uv[0] = float4(-1.0,+1.0, 0.0,0.0);
+    pos_uv[1] = float4(-1.0,-1.0, 0.0,1.0);
+    pos_uv[2] = float4(+1.0,+1.0, 1.0,0.0);
+    pos_uv[3] = float4(+1.0,-1.0, 1.0,1.0);
+
+    float2 pos = pos_uv[VSIn.VertID].xy;
+    float2x2 mat = MatrixFromRows(VSIn.QuadRotationAndScale.xy, VSIn.QuadRotationAndScale.zw);
+    pos = mul(pos, mat);
+    pos += VSIn.QuadCenter.xy;
+    PSIn.Pos = float4(pos, 0.0, 1.0);
+    PSIn.uv = pos_uv[VSIn.VertID].zw;
+    PSIn.TexIndex = VSIn.TexArrInd;
 }
 ```
 
@@ -107,18 +123,24 @@ the pixel shader that uses the index to select texture array slice:
 
 ```hlsl
 Texture2DArray g_Texture;
-SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+SamplerState   g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
 
 struct PSInput
 {
-    float4 Pos : SV_POSITION;
-    float2 uv : TEX_COORD;
+    float4 Pos     : SV_POSITION;
+    float2 uv      : TEX_COORD;
     float TexIndex : TEX_ARRAY_INDEX;
 };
 
-float4 main(PSInput ps_in) : SV_TARGET
+struct PSOutput
 {
-    return g_Texture.Sample(g_Texture_sampler, float3(ps_in.uv, ps_in.TexIndex)).rgbg;
+    float4 Color : SV_TARGET;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    PSOut.Color = g_Texture.Sample(g_Texture_sampler, float3(PSIn.uv, PSIn.TexIndex)).rgbg;
 }
 ```
 

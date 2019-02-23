@@ -18,18 +18,22 @@ array index that it passes to the pixel shader:
 ```hlsl
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD; 
+    float4 Pos     : SV_POSITION; 
+    float2 UV      : TEX_COORD; 
     float TexIndex : TEX_ARRAY_INDEX;
 };
 
-void main(// ...
-          // ...
-          float TexArrInd : ATTRIB6,
+struct VSInput
+{
+    // ...
+    float  TexArrInd : ATTRIB6;
+};
+
+void main(in  VSInput VSIn
           out PSInput PSIn) 
 {
     // ...
-    PSIn.TexIndex = TexArrInd;
+    PSIn.TexIndex = VSIn.TexArrInd;
 }
 ```
 
@@ -39,18 +43,24 @@ coordinate, where the third component defines the slice.
 
 ```hlsl
 Texture2DArray g_Texture;
-SamplerState g_Texture_sampler;
+SamplerState   g_Texture_sampler;
 
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD; 
-    float TexIndex : TEX_ARRAY_INDEX;
+    float4 Pos      : SV_POSITION; 
+    float2 UV       : TEX_COORD; 
+    float  TexIndex : TEX_ARRAY_INDEX;
 };
 
-float4 main(PSInput PSIn) : SV_TARGET
+struct PSOutput
 {
-    return g_Texture.Sample(g_Texture_sampler, float3(PSIn.uv, PSIn.TexIndex)); 
+    float4 Color : SV_TARGET;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    PSOut.Color = g_Texture.Sample(g_Texture_sampler, float3(PSIn.UV, PSIn.TexIndex)); 
 }
 ```
 

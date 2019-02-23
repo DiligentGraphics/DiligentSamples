@@ -5,17 +5,21 @@ cbuffer VSConstants
     GlobalConstants g_Constants;
 };
 
-TerrainVSOut TerrainVS(uint BlockID : SV_VertexID)
+struct TerrainVSIn
 {
-    uint BlockHorzOrder = BlockID % g_Constants.NumHorzBlocks;
-    uint BlockVertOrder = BlockID / g_Constants.NumHorzBlocks;
+    uint BlockID : SV_VertexID;
+};
+
+void TerrainVS(in  TerrainVSIn  VSIn,
+               out TerrainVSOut VSOut)
+{
+    uint BlockHorzOrder = VSIn.BlockID % g_Constants.NumHorzBlocks;
+    uint BlockVertOrder = VSIn.BlockID / g_Constants.NumHorzBlocks;
     
     float2 BlockOffset = float2( 
         float(BlockHorzOrder) / g_Constants.fNumHorzBlocks,
         float(BlockVertOrder) / g_Constants.fNumVertBlocks
     );
 
-    TerrainVSOut Out;
-    Out.BlockOffset = BlockOffset;
-    return Out;
+    VSOut.BlockOffset = BlockOffset;
 }

@@ -58,13 +58,19 @@ As it was already mentioned, fragment shader computes the distance to the
 closest edge and uses this value to determine the edge intensity.
 
 ```hlsl
-float4 main(GSOutput ps_in) : SV_TARGET
+struct PSOutput
 {
-    float4 Color = g_Texture.Sample(g_Texture_sampler, ps_in.VSOut.uv);
+    float4 Color : SV_TARGET;
+};
+
+void main(in  GSOutput PSIn, 
+          out PSOutput PSOut)
+{
+    float4 Color = g_Texture.Sample(g_Texture_sampler, PSIn.VSOut.UV);
     
     // Compute distance to the closest edge
-    float minDist = min(ps_in.DistToEdges.x, ps_in.DistToEdges.y);
-    minDist = min(minDist, ps_in.DistToEdges.z);
+    float minDist = min(PSIn.DistToEdges.x, PSIn.DistToEdges.y);
+    minDist = min(minDist, PSIn.DistToEdges.z);
 
     float lineWidth = g_Constants.LineWidth;
     float lineIntensity = saturate((lineWidth - minDist) / lineWidth);
@@ -72,7 +78,7 @@ float4 main(GSOutput ps_in) : SV_TARGET
     float3 EdgeColor = float3(0.0, 0.0, 0.0);
     Color.rgb = lerp(Color.rgb, EdgeColor, lineIntensity);
 
-    return Color;
+    PSOut.Color = Color;
 }
 ```
 

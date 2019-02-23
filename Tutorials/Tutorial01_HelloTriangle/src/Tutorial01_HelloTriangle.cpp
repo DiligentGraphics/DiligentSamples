@@ -40,11 +40,11 @@ SampleBase* CreateSample()
 static const char* VSSource = R"(
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
+    float4 Pos   : SV_POSITION; 
     float3 Color : COLOR; 
 };
 
-void main(uint VertId : SV_VertexID,
+void main(in  uint    VertId : SV_VertexID,
           out PSInput PSIn) 
 {
     float4 Pos[3];
@@ -57,7 +57,7 @@ void main(uint VertId : SV_VertexID,
     Col[1] = float3(0.0, 1.0, 0.0); // green
     Col[2] = float3(0.0, 0.0, 1.0); // blue
 
-    PSIn.Pos = Pos[VertId];
+    PSIn.Pos   = Pos[VertId];
     PSIn.Color = Col[VertId];
 }
 )";
@@ -66,13 +66,19 @@ void main(uint VertId : SV_VertexID,
 static const char* PSSource = R"(
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
+    float4 Pos   : SV_POSITION; 
     float3 Color : COLOR; 
 };
 
-float4 main(PSInput PSIn) : SV_Target
+struct PSOutput
+{ 
+    float4 Color : SV_TARGET; 
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
 {
-    return float4(PSIn.Color.rgb, 1.0);
+    PSOut.Color = float4(PSIn.Color.rgb, 1.0);
 }
 )";
 

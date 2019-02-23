@@ -11,8 +11,13 @@ This tutorial uses a little bit more complicated vertex shader that reads two at
 input vertex buffer, a `float3` position and a `float4` color:
 
 ```hlsl
-void main(float3 pos   : ATTRIB0, 
-          float4 color : ATTRIB1,
+struct VSInput
+{
+    float3 Pos   : ATTRIB0;
+    float4 Color : ATTRIB1;
+};
+
+void main(in  VSInput VSIn,
           out PSInput PSIn) 
 ```
 
@@ -39,18 +44,23 @@ cbuffer Constants
     float4x4 g_WorldViewProj;
 };
 
+struct VSInput
+{
+    float3 Pos   : ATTRIB0;
+    float4 Color : ATTRIB1;
+};
+
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
+    float4 Pos   : SV_POSITION; 
     float4 Color : COLOR0; 
 };
 
-void main(float3 pos   : ATTRIB0, 
-          float4 color : ATTRIB1,
+void main(in  VSInput VSIn,
           out PSInput PSIn) 
 {
-    PSIn.Pos = mul( float4(pos,1.0), g_WorldViewProj);
-    PSIn.Color = color;
+    PSIn.Pos   = mul( float4(VSIn.Pos,1.0), g_WorldViewProj);
+    PSIn.Color = VSIn.Color;
 }
 ```
 

@@ -16,18 +16,23 @@ cbuffer Constants
     float4x4 g_WorldViewProj;
 };
 
+struct VSInput
+{
+    float3 Pos : ATTRIB0;
+    float2 UV  : ATTRIB1;
+};
+
 struct PSInput 
 { 
     float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD; 
+    float2 UV  : TEX_COORD; 
 };
 
-void main(float3 pos : ATTRIB0, 
-          float2 uv  : ATTRIB1,
+void main(in  VSInput VSIn,
           out PSInput PSIn) 
 {
-    PSIn.Pos = mul( float4(pos,1.0), g_WorldViewProj);
-    PSIn.uv = uv;
+    PSIn.Pos = mul( float4(VSIn.Pos,1.0), g_WorldViewProj);
+    PSIn.UV  = VSIn.UV;
 }
 ```
 
@@ -35,18 +40,24 @@ Pixel shader defines a 2D texture named `g_Texture` and a texture sampler named 
 the texture using UV coordinates from the vertex shader and writes the resulting color to the render target:
 
 ```hlsl
-Texture2D g_Texture;
+Texture2D    g_Texture;
 SamplerState g_Texture_sampler;
 
 struct PSInput 
 { 
     float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD; 
+    float2 UV : TEX_COORD; 
 };
 
-float4 main(PSInput PSIn) : SV_TARGET
+struct PSOutput
 {
-    return g_Texture.Sample(g_Texture_sampler, PSIn.uv); 
+    float4 Color : SV_TARGET;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    PSOut.Color = g_Texture.Sample(g_Texture_sampler, PSIn.UV); 
 }
 ```
 

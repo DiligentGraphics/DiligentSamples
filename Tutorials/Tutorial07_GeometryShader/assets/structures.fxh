@@ -1,7 +1,7 @@
 struct VSOutput
 { 
     float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD; 
+    float2 UV : TEX_COORD; 
 };
 
 struct GSOutput
