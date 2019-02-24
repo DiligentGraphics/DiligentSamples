@@ -85,6 +85,12 @@ flags to efficiently stream varying amounts of data to GPU.
 This tutorial demonstrates different ways to update buffers and textures in Diligent Engine and explains 
 important internal details and performance implications related to each method.
 
+## [Tutorial 12 - Render Target](Tutorials/Tutorial12_RenderTarget)
+
+![](Tutorials/Tutorial12_RenderTarget/Screenshot.png)
+
+This tutorial demonstrates how to render a 3d cube into an offscreen render target and do a simple
+fish-eye post-processing effect.
 
 # Samples
 
