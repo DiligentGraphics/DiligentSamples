@@ -731,14 +731,19 @@ void AtmosphereSample::Render()
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     CameraAttribs CamAttribs;
-    CamAttribs.mViewProjT = transposeMatrix( mViewProj );
-    CamAttribs.mProjT = transposeMatrix( m_mCameraProj );
+    CamAttribs.mViewT        = transposeMatrix( m_mCameraView );
+    CamAttribs.mProjT        = transposeMatrix( m_mCameraProj );
+    CamAttribs.mViewProjT    = transposeMatrix( mViewProj );
     CamAttribs.mViewProjInvT = transposeMatrix( inverseMatrix(mViewProj) );
     float fNearPlane = 0.f, fFarPlane = 0.f;
     GetNearFarPlaneFromProjMatrix( m_mCameraProj, fNearPlane, fFarPlane, m_bIsGLDevice);
     CamAttribs.fNearPlaneZ = fNearPlane;
     CamAttribs.fFarPlaneZ = fFarPlane * 0.999999f;
-    CamAttribs.f4CameraPos = m_f3CameraPos;
+    CamAttribs.f4Position = m_f3CameraPos;
+    CamAttribs.f4ViewportSize.x = static_cast<float>(m_pSwapChain->GetDesc().Width);
+    CamAttribs.f4ViewportSize.y = static_cast<float>(m_pSwapChain->GetDesc().Height);
+    CamAttribs.f4ViewportSize.z = 1.f / CamAttribs.f4ViewportSize.x;
+    CamAttribs.f4ViewportSize.w = 1.f / CamAttribs.f4ViewportSize.y;
 
     {
         MapHelper<CameraAttribs> CamAttribsCBData( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
