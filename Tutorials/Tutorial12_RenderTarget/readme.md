@@ -1,7 +1,7 @@
 # Tutorial12 - Render Target
 
 This tutorial is a mix of Tutorial01 and Tutorial02 which demonstrates how to render a 3d cube into
-an offscreen render target and do a simple fish-eye post-processing effect. Note that this tutorial
+an offscreen render target and do a simple distortion post-processing effect. Note that this tutorial
 assumes that you are familiar with all basics covered from Tutorial01 to Tutorial03.
 
 ![](Screenshot.png)
@@ -32,15 +32,13 @@ struct PSInput
 void main(in  VSInput VSIn,
           out PSInput PSIn)
 {
-    float3 Pos[] =
-    {
-        ...
-    };
+    float3 Pos[8];
+    Pos[0] = float3(-1.0, -1.0, -1.0);
+    Pos[1] = ...
 
-    float3 Color[] =
-    {
-        ...
-    };
+    float3 Color[8];
+    Color[0] = float3(0.0, 0.0, 0.0);
+    Color[1] = ...
 
     uint Indices[] =
     {
@@ -49,7 +47,7 @@ void main(in  VSInput VSIn,
 
     uint VertexID = Indices[VSIn.VertexID];
     PSIn.Pos = mul(float4(Pos[VertexID], 1.0), g_WorldViewProj);
-    PSIn.Color = float4(Color[VertexID], 1.0f);
+    PSIn.Color = float4(Color[VertexID], 1.0);
 }
 ```
 
@@ -107,13 +105,12 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
 #if defined(DESKTOP_GL) || defined(GL_ES)
-    float2 UV = float2(PSIn.UV.s, 1.0 - PSIn.UV.t);
+    float2 UV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
 #else
     float2 UV = PSIn.UV;
 #endif
 
-    float Factor = (UV.x - 0.5) * (UV.x - 0.5) + (UV.y - 0.5) * (UV.y - 0.5);
-    float2 DistortedUV = 2.0f * sqrt(Factor) * (UV - float2(0.5)) + float2(0.5);
+    float2 DistortedUV = UV + float2(sin(UV.y*30.0)*0.1 * sin(g_Time.x*3.0), sin(UV.x*20.0)*0.02 * sin(g_Time.x*2.0));
     PSOut.Color = g_Texture.Sample(g_Texture_sampler, DistortedUV);
 }
 ```
@@ -125,8 +122,8 @@ color and depth formats match those we'll use for our render target's texture at
 
 ```cpp
 PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0] = TEX_FORMAT_RGBA8_UNORM;
-PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
+PSODesc.GraphicsPipeline.RTVFormats[0] = RenderTargetFormat;
+PSODesc.GraphicsPipeline.DSVFormat = DepthBufferFormat;
 PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 ```
 
@@ -142,7 +139,7 @@ RTColorDesc.Type = RESOURCE_DIM_TEX_2D;
 RTColorDesc.Width = pSwapChain->GetDesc().Width;
 RTColorDesc.Height = pSwapChain->GetDesc().Height;
 RTColorDesc.MipLevels = 1;
-RTColorDesc.Format = TEX_FORMAT_RGBA8_UNORM;
+RTColorDesc.Format = RenderTargetFormat;
 RTColorDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
 pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
 m_pRTColorAttachment = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
@@ -154,7 +151,7 @@ depth texture attachment.
 ```cpp
 RefCntAutoPtr<ITexture> pRTDepth;
 TextureDesc RTDepthDesc = RTColorDesc;
-RTDepthDesc.Format = TEX_FORMAT_D32_FLOAT;
+RTDepthDesc.Format = DepthBufferFormat;
 RTDepthDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
 pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
 m_pRTDepthAttachment = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
@@ -238,7 +235,7 @@ m_pImmediateContext->ClearRenderTarget(m_pRTColorAttachment, ClearColor, RESOURC
 m_pImmediateContext->ClearDepthStencil(m_pRTDepthAttachment, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
-The rendering of our cubes should look quite similar to other tutorials.
+The rendering of our cube should look quite similar to other tutorials.
 ```cpp
 {
     MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);

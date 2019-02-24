@@ -90,7 +90,7 @@ important internal details and performance implications related to each method.
 ![](Tutorials/Tutorial12_RenderTarget/Screenshot.png)
 
 This tutorial demonstrates how to render a 3d cube into an offscreen render target and do a simple
-fish-eye post-processing effect.
+post-processing effect.
 
 # Samples
 
