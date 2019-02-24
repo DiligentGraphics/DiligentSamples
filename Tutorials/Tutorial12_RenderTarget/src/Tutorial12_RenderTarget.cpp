@@ -233,6 +233,21 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
             CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
 
             pDevice->CreateShader(CreationAttribs, &pRTPS);
+
+            // Create dynamic uniform buffer that will store our transformation matrix
+            // Dynamic buffers can be frequently updated by the CPU
+            BufferDesc CBDesc;
+            CBDesc.Name           = "RTPS constants CB";
+            CBDesc.uiSizeInBytes  = sizeof(float4);
+            CBDesc.Usage          = USAGE_DYNAMIC;
+            CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
+            CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+            pDevice->CreateBuffer( CBDesc, nullptr, &m_PSConstants );
+
+            // Since we did not explcitly specify the type for Constants, default type
+            // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
+            // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
+            pRTPS->GetShaderVariable("Constants")->Set(m_PSConstants);
         }
 
         RTPSODesc.GraphicsPipeline.pVS = pRTVS;
@@ -261,6 +276,12 @@ void Tutorial12_RenderTarget::Render()
         // Map the cube's constant buffer and fill it in with its model-view-projection matrix
         MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         *CBConstants = transposeMatrix(m_WorldViewProjMatrix);
+    }
+
+    {
+        // Map the render target PS constant buffer and fill it in with current time
+        MapHelper<float4> CBConstants(m_pImmediateContext, m_PSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        *CBConstants = float4(m_fCurrentTime, 0 , 0, 0);
     }
 
     // Set the cube's pipeline state
@@ -298,6 +319,7 @@ void Tutorial12_RenderTarget::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
 
+    m_fCurrentTime = static_cast<float>(CurrTime);
     // Set cube world view matrix
     float4x4 CubeWorldView = rotationY(-static_cast<float>(CurrTime)) * rotationX(PI_F * 0.1f) *  translationMatrix(0.0f, 0.0f, 5.0f);
     float NearPlane = 0.1f;

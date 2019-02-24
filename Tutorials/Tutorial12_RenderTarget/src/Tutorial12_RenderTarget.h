@@ -46,11 +46,13 @@ private:
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
+    RefCntAutoPtr<IBuffer>                m_PSConstants;
     RefCntAutoPtr<IPipelineState>         m_pRTPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRTSRB;
     RefCntAutoPtr<ITextureView>           m_pColorRTV;
     RefCntAutoPtr<ITextureView>           m_pDepthDSV;
     float4x4                              m_WorldViewProjMatrix;
+    float                                 m_fCurrentTime = 0.f;
 };
 
 }
