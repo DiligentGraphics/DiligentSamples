@@ -23,12 +23,12 @@ void main(in  PSInput  PSIn,
     // of the top left. When sampling a regular texture, there is no visible difference since the texture data
     // is also uploaded starting from that lower-left corner. When sampling a framebuffer attachment, there is
     // a visible difference, though. Hence we need to flip the Y coordinate of the frame buffer attachment.
-    float2 UV = float2(PSIn.UV.s, 1.0 - PSIn.UV.t);
+    float2 UV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
 #else
     float2 UV = PSIn.UV;
 #endif
 
     float Factor = (UV.x - 0.5) * (UV.x - 0.5) + (UV.y - 0.5) * (UV.y - 0.5);
-    float2 DistortedUV = 2.0f * sqrt(Factor) * (UV - float2(0.5)) + float2(0.5);
+    float2 DistortedUV = 2.0 * sqrt(Factor) * (UV - float2(0.5, 0.5)) + float2(0.5, 0.5);
     PSOut.Color = g_Texture.Sample(g_Texture_sampler, DistortedUV);
 }

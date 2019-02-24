@@ -20,31 +20,27 @@ struct PSInput
 void main(in  VSInput VSIn,
           out PSInput PSIn)
 {
-    float3 Pos[] =
-    {
-        float3(-1, -1, -1),
-        float3(-1, +1, -1),
-        float3(+1, +1, -1),
-        float3(+1, -1, -1),
-        float3(-1, -1, +1),
-        float3(-1, +1, +1),
-        float3(+1, +1, +1),
-        float3(+1, -1, +1)
-    };
+    float3 Pos[8];
+    Pos[0] = float3(-1.0, -1.0, -1.0);
+    Pos[1] = float3(-1.0, +1.0, -1.0);
+    Pos[2] = float3(+1.0, +1.0, -1.0);
+    Pos[3] = float3(+1.0, -1.0, -1.0);
+    Pos[4] = float3(-1.0, -1.0, +1.0);
+    Pos[5] = float3(-1.0, +1.0, +1.0);
+    Pos[6] = float3(+1.0, +1.0, +1.0);
+    Pos[7] = float3(+1.0, -1.0, +1.0);
 
-    float3 Color[] =
-    {
-        float3(0, 0, 0),
-        float3(0, 1, 0),
-        float3(1, 1, 0),
-        float3(1, 0, 0),
-        float3(0, 0, 1),
-        float3(0, 1, 1),
-        float3(1, 1, 1),
-        float3(1, 0, 1)
-    };
+    float3 Color[8];
+    Color[0] = float3(0.0, 0.0, 0.0);
+    Color[1] = float3(0.0, 1.0, 0.0);
+    Color[2] = float3(1.0, 1.0, 0.0);
+    Color[3] = float3(1.0, 0.0, 0.0);
+    Color[4] = float3(0.0, 0.0, 1.0);
+    Color[5] = float3(0.0, 1.0, 1.0);
+    Color[6] = float3(1.0, 1.0, 1.0);
+    Color[7] = float3(1.0, 0.0, 1.0);
 
-    uint Indices[] =
+    int Indices[] =
     {
         2,0,1, 2,3,0,
         4,6,5, 4,7,6,
@@ -54,7 +50,7 @@ void main(in  VSInput VSIn,
         3,6,7, 3,2,6
     };
 
-    uint VertexID = Indices[VSIn.VertexID];
+    int VertexID = Indices[VSIn.VertexID];
     PSIn.Pos = mul(float4(Pos[VertexID], 1.0), g_WorldViewProj);
-    PSIn.Color = float4(Color[VertexID], 1.0f);
+    PSIn.Color = float4(Color[VertexID], 1.0);
 }

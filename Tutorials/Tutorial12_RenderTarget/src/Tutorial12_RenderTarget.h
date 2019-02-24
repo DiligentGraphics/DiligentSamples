@@ -41,13 +41,15 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial12: Render Target";}
 
 private:
+    static constexpr TEXTURE_FORMAT       RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
+    static constexpr TEXTURE_FORMAT       DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
     RefCntAutoPtr<IPipelineState>         m_pRTPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRTSRB;
-    RefCntAutoPtr<ITextureView>           m_pRTColorAttachment;
-    RefCntAutoPtr<ITextureView>           m_pRTDepthAttachment;
+    RefCntAutoPtr<ITextureView>           m_pColorRTV;
+    RefCntAutoPtr<ITextureView>           m_pDepthDSV;
     float4x4                              m_WorldViewProjMatrix;
 };
 

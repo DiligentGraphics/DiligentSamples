@@ -25,6 +25,7 @@
 #include "MapHelper.h"
 #include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
+#include "CommonlyUsedStates.h"
 
 namespace Diligent
 {
@@ -52,9 +53,9 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
         // This tutorial will render to a single render target
         PSODesc.GraphicsPipeline.NumRenderTargets = 1;
         // Set render target format which is the format of the render target's color buffer
-        PSODesc.GraphicsPipeline.RTVFormats[0] = TEX_FORMAT_RGBA8_UNORM;
+        PSODesc.GraphicsPipeline.RTVFormats[0] = RenderTargetFormat;
         // Set depth buffer format which is the format of the render target's depth buffer
-        PSODesc.GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
+        PSODesc.GraphicsPipeline.DSVFormat = DepthBufferFormat;
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
         PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         // Cull back faces
@@ -132,26 +133,36 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
         // The render target's attachments only have one mipmap
         RTColorDesc.MipLevels = 1;
         // The render target's color buffer format is 8 bits RGBA
-        RTColorDesc.Format = TEX_FORMAT_RGBA8_UNORM;
+        RTColorDesc.Format = RenderTargetFormat;
         // The render target's color buffer can be bound as a shader resource and as a render target
         RTColorDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+        // Define optimal clear value
+        RTColorDesc.ClearValue.Format = RTColorDesc.Format;
+        RTColorDesc.ClearValue.Color[0] = 0.350f;
+        RTColorDesc.ClearValue.Color[1] = 0.350f;
+        RTColorDesc.ClearValue.Color[2] = 0.350f;
+        RTColorDesc.ClearValue.Color[3] = 1.f;
         // Let's create the render target's color buffer
         pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
-        // Store the render target color attachment
-        m_pRTColorAttachment = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+        // Store the render target view
+        m_pColorRTV = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
 
         // Render target depth attachment
         RefCntAutoPtr<ITexture> pRTDepth;
         // Render target depth attachment descriptor
         TextureDesc RTDepthDesc = RTColorDesc;
-        // The render target's depth buffer format is 8 bits RGBA
-        RTDepthDesc.Format = TEX_FORMAT_D32_FLOAT;
+        // The render target's depth buffer format is 32-bit float
+        RTDepthDesc.Format = DepthBufferFormat;
+        // Define optimal clear value
+        RTDepthDesc.ClearValue.Format = RTDepthDesc.Format;
+        RTDepthDesc.ClearValue.DepthStencil.Depth = 1;
+        RTDepthDesc.ClearValue.DepthStencil.Stencil = 0;
         // The render target's depth buffer can be bound as a shader resource and as a render target
         RTDepthDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
         // Let's create the render target's depth buffer
         pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
-        // Store the render target color attachment
-        m_pRTDepthAttachment = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+        // Store the depth-stencil view
+        m_pDepthDSV = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
 
         // Pipeline state object encompasses configuration of all GPU stages
         PipelineStateDesc RTPSODesc;
@@ -216,7 +227,7 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
             // Define static sampler for g_Texture. Static samplers should be used whenever possible
             StaticSamplerDesc StaticSamplers[] =
             {
-                { "g_Texture", { FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP } }
+                { "g_Texture", Sam_LinearClamp }
             };
             CreationAttribs.Desc.StaticSamplers = StaticSamplers;
             CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
@@ -242,9 +253,9 @@ void Tutorial12_RenderTarget::Render()
 {
     // Clear the render target's buffers
     const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f };
-    m_pImmediateContext->SetRenderTargets(1, &m_pRTColorAttachment, m_pRTDepthAttachment, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearRenderTarget(m_pRTColorAttachment, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(m_pRTDepthAttachment, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->SetRenderTargets(1, &m_pColorRTV, m_pDepthDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(m_pColorRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearDepthStencil(m_pDepthDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {
         // Map the cube's constant buffer and fill it in with its model-view-projection matrix
