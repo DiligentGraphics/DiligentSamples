@@ -29,7 +29,7 @@
 namespace Diligent
 {
 
-class Tutorial04_Instancing : public SampleBase
+class Tutorial04_Instancing final : public SampleBase
 {
 public:
     virtual void Initialize(IRenderDevice*   pDevice, 

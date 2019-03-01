@@ -36,7 +36,7 @@ void main(in  uint    VertId : SV_VertexID,
 }
 ```
 The shader is written in HLSL. Diligent Engine uses shader source code converter to translate HLSL
-into GLSL when needed. It can also uses shaders authored in GLSL, but there is no GLSL to HLSL converter.
+into GLSL when needed. It can also use shaders authored in GLSL, but there is no GLSL to HLSL converter.
 
 Pixel (fragment) shader simply interpolates vertex colors and is also written in HLSL:
 
@@ -82,12 +82,12 @@ PSODesc.IsComputePipeline = false;
 ```
 
 Next, we need to describe which outputs the pipeline state uses. This one has one output, the screen,
-whose format can be queried through the swap chain object. It does not use the depth buffer:
+whose format can be queried through the swap chain object:
 
 ```cpp
 PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
+PSODesc.GraphicsPipeline.RTVFormats[0]    = pSwapChain->GetDesc().ColorBufferFormat;
+PSODesc.GraphicsPipeline.DSVFormat        = pSwapChain->GetDesc().DepthBufferFormat;
 ```
 
 Next, we need to define what kind of primitives the pipeline can render, which are triangles in our case:
@@ -111,22 +111,25 @@ PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 The pipeline state also allows configuring several other states (rasterizer state, blend state, input layout etc.),
 but default values will work for now.
 
-On the next step, we need to create shader objects. To create a shader, populate `ShaderCreationAttribs` structure.
+On the next step, we need to create shader objects. To create a shader, populate `ShaderCreateInfo` structure.
 
 ```cpp
-ShaderCreationAttribs CreationAttribs;
+ShaderCreateInfo ShaderCI;
 ```
 
 The shaders are authored in HLSL, so we need to tell the system:
 
 ```cpp
-CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 ```
 
-In this tutorial we use combined texture samplers:
+When running in OpenGL mode, Diligent converts HLSL to GLSL. Since there are no separate
+texture samplers in GLSL, Diligent uses emulated combined samplers 
+(g_Texture + g_Texture_sampler pair). Event though this pixel shader does not use textures,
+we still need to indicate we are using combined texture samplers, otherwise conversion will fail:
 
 ```cpp
-CreationAttribs.UseCombinedTextureSamplers = true;
+ShaderCI.UseCombinedTextureSamplers = true;
 ```
 
 In this example, vertex and pixel shaders are created from the source. The code is self-explanatory:
@@ -135,21 +138,21 @@ In this example, vertex and pixel shaders are created from the source. The code 
 // Create vertex shader
 RefCntAutoPtr<IShader> pVS;
 {
-    CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-    CreationAttribs.EntryPoint = "main";
-    CreationAttribs.Desc.Name = "Triangle vertex shader";
-    CreationAttribs.Source = VSSource;
-    pDevice->CreateShader(CreationAttribs, &pVS);
+    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+    ShaderCI.EntryPoint      = "main";
+    ShaderCI.Desc.Name       = "Triangle vertex shader";
+    ShaderCI.Source          = VSSource;
+    pDevice->CreateShader(ShaderCI, &pVS);
 }
 
 // Create pixel shader
 RefCntAutoPtr<IShader> pPS;
 {
-    CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-    CreationAttribs.EntryPoint = "main";
-    CreationAttribs.Desc.Name = "Triangle pixel shader";
-    CreationAttribs.Source = PSSource;
-    pDevice->CreateShader(CreationAttribs, &pPS);
+    ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+    ShaderCI.EntryPoint      = "main";
+    ShaderCI.Desc.Name       = "Triangle pixel shader";
+    ShaderCI.Source          = PSSource;
+    pDevice->CreateShader(ShaderCI, &pPS);
 }
 ```
 
@@ -181,7 +184,8 @@ m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOUR
 
 Passing `nullptr` makes the engine clear default (i.e. the swap chain's) render 
 and depth buffers. Clearing the depth buffer is not really necessary, but we will 
-keep it here for consistency.
+keep it here for consistency. Using `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` flag tells the
+engine to perform required state transitions.
 
 Next, we need to set our pipeline state in the immediate device context:
 

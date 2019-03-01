@@ -85,10 +85,10 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_BatchSRB;
     RefCntAutoPtr<ITextureView> m_TextureSRV[NumTextures];
     RefCntAutoPtr<ITextureView> m_TexArraySRV;
-    int m_NumQuads = 1000;
+    int m_NumQuads  = 1000;
     int m_BatchSize = 5;
 
-    int m_MaxThreads = 8;
+    int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
 
     struct QuadData

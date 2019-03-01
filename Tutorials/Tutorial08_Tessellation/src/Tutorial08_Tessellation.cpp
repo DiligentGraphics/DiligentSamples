@@ -104,136 +104,90 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
         PSODesc.IsComputePipeline = false; 
 
         // This tutorial will render to a single render target
-        PSODesc.GraphicsPipeline.NumRenderTargets = 1;
+        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
         // Set render target format which is the format of the swap chain's color buffer
-        PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
+        PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
         // Set depth buffer format which is the format of the swap chain's back buffer
-        PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
+        PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
         // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
         // Cull back faces. For some reason, in OpenGL the order is reversed
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
         // Enable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
         // Create dynamic uniform buffer that will store shader constants
         CreateUniformBuffer(pDevice, sizeof(GlobalConstants), "Global shader constants CB", &m_ShaderConstants);
 
-        ShaderCreationAttribs CreationAttribs;
+        ShaderCreateInfo ShaderCI;
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL behind the scene
-        CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
-        // We will be using combined texture samplers
-        CreationAttribs.UseCombinedTextureSamplers = true;
+        // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+        ShaderCI.UseCombinedTextureSamplers = true;
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
         BasicShaderSourceStreamFactory BasicSSSFactory;
-        CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
-        // Define variable type that will be used by default
-        CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
+        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            CreationAttribs.EntryPoint = "TerrainVS";
-            CreationAttribs.Desc.Name = "Terrain VS";
-            CreationAttribs.FilePath = "terrain.vsh";
-            pDevice->CreateShader(CreationAttribs, &pVS);
-            pVS->GetShaderVariable("VSConstants")->Set(m_ShaderConstants);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+            ShaderCI.EntryPoint      = "TerrainVS";
+            ShaderCI.Desc.Name       = "Terrain VS";
+            ShaderCI.FilePath        = "terrain.vsh";
+            pDevice->CreateShader(ShaderCI, &pVS);
+            
         }
 
         // Create geometry shader
         RefCntAutoPtr<IShader> pGS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_GEOMETRY;
-            CreationAttribs.EntryPoint = "TerrainGS";
-            CreationAttribs.Desc.Name = "Terrain GS";
-            CreationAttribs.FilePath = "terrain.gsh";
-            pDevice->CreateShader(CreationAttribs, &pGS);
-            pGS->GetShaderVariable("GSConstants")->Set(m_ShaderConstants);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_GEOMETRY;
+            ShaderCI.EntryPoint      = "TerrainGS";
+            ShaderCI.Desc.Name       = "Terrain GS";
+            ShaderCI.FilePath        = "terrain.gsh";
+            pDevice->CreateShader(ShaderCI, &pGS);
         }
 
         // Create hull shader
         RefCntAutoPtr<IShader> pHS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_HULL;
-            CreationAttribs.EntryPoint = "TerrainHS";
-            CreationAttribs.Desc.Name = "Terrain HS";
-            CreationAttribs.FilePath = "terrain.hsh";
-
-            ShaderVariableDesc Vars[] = 
-            {
-                {"g_HeightMap", SHADER_VARIABLE_TYPE_MUTABLE}
-            };
-            CreationAttribs.Desc.VariableDesc = Vars;
-            CreationAttribs.Desc.NumVariables = _countof(Vars);
-
-            // Define static sampler for g_Texture. Static samplers should be used whenever possible
-            SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
-            StaticSamplerDesc StaticSamplers[] = 
-            {
-                {"g_HeightMap", SamLinearClampDesc}
-            };
-            CreationAttribs.Desc.StaticSamplers = StaticSamplers;
-            CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
-
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_HULL;
+            ShaderCI.EntryPoint      = "TerrainHS";
+            ShaderCI.Desc.Name       = "Terrain HS";
+            ShaderCI.FilePath        = "terrain.hsh";
             MacroHelper.AddShaderMacro("BLOCK_SIZE", m_BlockSize);
-            CreationAttribs.Macros = MacroHelper;
-
-            pDevice->CreateShader(CreationAttribs, &pHS);
-            pHS->GetShaderVariable("HSConstants")->Set(m_ShaderConstants);
+            ShaderCI.Macros          = MacroHelper;
+            pDevice->CreateShader(ShaderCI, &pHS);
         }
 
         // Create domain shader
         RefCntAutoPtr<IShader> pDS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_DOMAIN;
-            CreationAttribs.EntryPoint = "TerrainDS";
-            CreationAttribs.Desc.Name = "Terrain DS";
-            CreationAttribs.FilePath = "terrain.dsh";
-            CreationAttribs.Macros = nullptr;
-            
-            pDevice->CreateShader(CreationAttribs, &pDS);
-            pDS->GetShaderVariable("DSConstants")->Set(m_ShaderConstants);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_DOMAIN;
+            ShaderCI.EntryPoint      = "TerrainDS";
+            ShaderCI.Desc.Name       = "Terrain DS";
+            ShaderCI.FilePath        = "terrain.dsh";
+            ShaderCI.Macros          = nullptr;
+            pDevice->CreateShader(ShaderCI, &pDS);
         }
 
         // Create pixel shader
         RefCntAutoPtr<IShader> pPS, pWirePS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            CreationAttribs.EntryPoint = "TerrainPS";
-            CreationAttribs.Desc.Name = "Terrain PS";
-            CreationAttribs.FilePath = "terrain.psh";
-            // Shader variables should typically be mutable, which means they are expected
-            // to change on a per-instance basis
-            ShaderVariableDesc Vars[] = 
-            {
-                {"g_Texture", SHADER_VARIABLE_TYPE_MUTABLE}
-            };
-            CreationAttribs.Desc.VariableDesc = Vars;
-            CreationAttribs.Desc.NumVariables = _countof(Vars);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.EntryPoint      = "TerrainPS";
+            ShaderCI.Desc.Name       = "Terrain PS";
+            ShaderCI.FilePath        = "terrain.psh";
+            pDevice->CreateShader(ShaderCI, &pPS);
 
-            // Define static sampler for g_Texture. Static samplers should be used whenever possible
-            SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
-            StaticSamplerDesc StaticSamplers[] = 
-            {
-                {"g_Texture", SamLinearClampDesc}
-            };
-            CreationAttribs.Desc.StaticSamplers = StaticSamplers;
-            CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
-
-            pDevice->CreateShader(CreationAttribs, &pPS);
-
-            CreationAttribs.EntryPoint = "WireTerrainPS";
-            CreationAttribs.Desc.Name = "Wireframe Terrain PS";
-            CreationAttribs.FilePath = "terrain_wire.psh";
-            pDevice->CreateShader(CreationAttribs, &pWirePS);
-
-            pWirePS->GetShaderVariable("PSConstants")->Set(m_ShaderConstants);
+            ShaderCI.EntryPoint = "WireTerrainPS";
+            ShaderCI.Desc.Name  = "Wireframe Terrain PS";
+            ShaderCI.FilePath   = "terrain_wire.psh";
+            pDevice->CreateShader(ShaderCI, &pWirePS);
         }
 
         PSODesc.GraphicsPipeline.pVS = pVS;
@@ -241,11 +195,42 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
         PSODesc.GraphicsPipeline.pDS = pDS;
         PSODesc.GraphicsPipeline.pPS = pPS;
 
+        // Define variable type that will be used by default
+        PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+        ShaderResourceVariableDesc Vars[] = 
+        {
+            {SHADER_TYPE_HULL | SHADER_TYPE_DOMAIN,  "g_HeightMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+            {SHADER_TYPE_PIXEL,                      "g_Texture",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+        };
+        PSODesc.ResourceLayout.Variables    = Vars;
+        PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+        // Define static sampler for g_Texture. Static samplers should be used whenever possible
+        SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+        StaticSamplerDesc StaticSamplers[] = 
+        {
+            {SHADER_TYPE_HULL | SHADER_TYPE_DOMAIN, "g_HeightMap", SamLinearClampDesc},
+            {SHADER_TYPE_PIXEL,                     "g_Texture",   SamLinearClampDesc}
+        };
+        PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+        PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+
         pDevice->CreatePipelineState(PSODesc, &m_pPSO[0]);
 
         PSODesc.GraphicsPipeline.pGS = pGS;
         PSODesc.GraphicsPipeline.pPS = pWirePS;
         pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
+
+        for (Uint32 i = 0; i < _countof(m_pPSO); ++i)
+        {
+            m_pPSO[i]->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "VSConstants")->Set(m_ShaderConstants);
+            m_pPSO[i]->GetStaticShaderVariable(SHADER_TYPE_HULL,   "HSConstants")->Set(m_ShaderConstants);
+            m_pPSO[i]->GetStaticShaderVariable(SHADER_TYPE_DOMAIN, "DSConstants")->Set(m_ShaderConstants);
+        }
+        m_pPSO[1]->GetStaticShaderVariable(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
+        m_pPSO[1]->GetStaticShaderVariable(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
     }
 
     {
@@ -256,7 +241,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
         RefCntAutoPtr<ITexture> HeightMap;
         CreateTextureFromFile("ps_height_1k.png", loadInfo, m_pDevice, &HeightMap);
         const auto HMDesc = HeightMap->GetDesc();
-        m_HeightMapWidth = HMDesc.Width;
+        m_HeightMapWidth  = HMDesc.Width;
         m_HeightMapHeight = HMDesc.Height;
         // Get shader resource view from the texture
         m_HeightMapSRV = HeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -278,9 +263,9 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
     {
         m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i], true);
         // Set texture SRV in the SRB
-        m_SRB[i]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_ColorMapSRV);
+        m_SRB[i]->GetVariable(SHADER_TYPE_PIXEL,  "g_Texture")->Set(m_ColorMapSRV);
         m_SRB[i]->GetVariable(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
-        m_SRB[i]->GetVariable(SHADER_TYPE_HULL, "g_HeightMap")->Set(m_HeightMapSRV);
+        m_SRB[i]->GetVariable(SHADER_TYPE_HULL,   "g_HeightMap")->Set(m_HeightMapSRV);
     }
 
     // Create a tweak bar
@@ -339,6 +324,7 @@ void Tutorial08_Tessellation::Render()
 
     DrawAttribs DrawAttrs;
     DrawAttrs.NumVertices = NumHorzBlocks * NumVertBlocks;
+    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

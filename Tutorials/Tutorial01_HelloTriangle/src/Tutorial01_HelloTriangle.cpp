@@ -34,8 +34,8 @@ SampleBase* CreateSample()
 // For this tutorial, we will use simple vertex shader
 // that creates a procedural triangle
 
-// Diligent Engine can use HLSL source for all supported platforms
-// It will convert HLSL to GLSL for OpenGL/Vulkan
+// Diligent Engine can use HLSL source on all supported platforms.
+// It will convert HLSL to GLSL in OpenGL mode, while Vulkan backend will compile it directly to SPIRV.
 
 static const char* VSSource = R"(
 struct PSInput 
@@ -93,49 +93,50 @@ void Tutorial01_HelloTriangle::Initialize(IRenderDevice*    pDevice,
     // Pipeline state object encompasses configuration of all GPU stages
 
     PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues
-    // It is always a good idea to give objects descriptive names
+    // Pipeline state name is used by the engine to report issues.
+    // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Simple triangle PSO"; 
 
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false; 
 
     // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets = 1;
+    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-    // This tutorial will not use depth buffer
-    PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
+    // Use the depth buffer format from the swap chain
+    PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Primitive topology must be specified
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // No back face culling for this tutorial
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
-    ShaderCreationAttribs CreationAttribs;
+    ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL behind the scene
-    CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    CreationAttribs.UseCombinedTextureSamplers = true;
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
     // Create vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
-        CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        CreationAttribs.EntryPoint = "main";
-        CreationAttribs.Desc.Name = "Triangle vertex shader";
-        CreationAttribs.Source = VSSource;
-        pDevice->CreateShader(CreationAttribs, &pVS);
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Triangle vertex shader";
+        ShaderCI.Source          = VSSource;
+        pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     // Create pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
-        CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        CreationAttribs.EntryPoint = "main";
-        CreationAttribs.Desc.Name = "Triangle pixel shader";
-        CreationAttribs.Source = PSSource;
-        pDevice->CreateShader(CreationAttribs, &pPS);
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Triangle pixel shader";
+        ShaderCI.Source          = PSSource;
+        pDevice->CreateShader(ShaderCI, &pPS);
     }
 
     // Finally, create the pipeline state
@@ -149,10 +150,11 @@ void Tutorial01_HelloTriangle::Render()
 {
     // Clear the back buffer 
     const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Let the engine perform required state transitions
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Set pipeline state in the immediate context
+    // Set the pipeline state in the immediate context
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. Even though in this example we don't really 
     // have any resources, this call also sets the shaders in OpenGL backend.

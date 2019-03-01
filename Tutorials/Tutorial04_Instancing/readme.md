@@ -88,7 +88,9 @@ LayoutElement LayoutElems[] =
 ```
 
 Note that the last four attributes come from the vertex stream #1 and that `FREQUENCY_PER_INSTANCE`
-indicates that these are per-instance attributes.
+indicates that these are per-instance attributes. `LayoutElement::AutoOffset` and `LayoutElement::AutoStride` are
+special values that instruct the engine to automatically compute element offset and buffer stride assuming that
+elements are tightly packed.
 
 ## Vertex and Index Buffers
 
@@ -97,9 +99,9 @@ that will store per-instance transformation matrices:
 
 ```cpp
 BufferDesc InstBuffDesc;
-InstBuffDesc.Name = "Instance data buffer";
-InstBuffDesc.Usage = USAGE_DEFAULT; 
-InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+InstBuffDesc.Name          = "Instance data buffer";
+InstBuffDesc.Usage         = USAGE_DEFAULT; 
+InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
 InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
 pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
 ```
@@ -130,7 +132,9 @@ Both buffers need to be bound to the pipeline before calling rendering command:
 ```cpp
 Uint32 offsets[] = {0, 0};
 IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
-m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets,
+                                      RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                      SET_VERTEX_BUFFERS_FLAG_RESET);
 m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
@@ -138,8 +142,8 @@ Number of instances is specified by the `NumInstances` member of `DrawAttribs` s
 
 ```cpp
 DrawAttribs DrawAttrs;
-DrawAttrs.IsIndexed = true;
-DrawAttrs.IndexType = VT_UINT32; // Index type
+DrawAttrs.IsIndexed  = true;
+DrawAttrs.IndexType  = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
 // Number of instances
 DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; 

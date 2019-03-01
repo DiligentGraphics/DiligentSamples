@@ -57,14 +57,14 @@ private:
     RefCntAutoPtr<IBuffer> m_VSConstants;
     RefCntAutoPtr<IBuffer> m_TextureUpdateBuffer;
     void DrawCube(const float4x4& WVPMatrix, IBuffer *pVertexBuffer, IShaderResourceBinding *pSRB);
-    static constexpr const size_t NumTextures = 4;
+    static constexpr const size_t NumTextures         = 4;
     static constexpr const Uint32 MaxUpdateRegionSize = 128;
-    static constexpr const Uint32 MaxMapRegionSize = 128;
+    static constexpr const Uint32 MaxMapRegionSize    = 128;
     std::array<RefCntAutoPtr<ITexture>,               NumTextures> m_Textures;
     std::array<RefCntAutoPtr<IShaderResourceBinding>, NumTextures> m_SRBs;
     double m_LastTextureUpdateTime = 0;
-    double m_LastBufferUpdateTime = 0;
-    double m_LastMapTime = 0;
+    double m_LastBufferUpdateTime  = 0;
+    double m_LastMapTime           = 0;
     std::mt19937 m_gen{0}; //Use 0 as the seed to always generate the same sequence
     double m_CurrTime;
 };

@@ -102,8 +102,8 @@ for(int tex=0; tex < NumTextures; ++tex)
 		//	Create texture array
         auto TexArrDesc = TexDesc;
         TexArrDesc.ArraySize = NumTextures;
-        TexArrDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
-        TexArrDesc.Usage = USAGE_DEFAULT;
+        TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
+        TexArrDesc.Usage     = USAGE_DEFAULT;
         TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
         m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
     }

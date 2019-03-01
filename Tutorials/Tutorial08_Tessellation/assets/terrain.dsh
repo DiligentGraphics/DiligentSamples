@@ -1,7 +1,7 @@
 #include "structures.fxh"
 
 Texture2D<float> g_HeightMap;
-SamplerState g_HeightMap_sampler;
+SamplerState     g_HeightMap_sampler;
 
 
 cbuffer DSConstants

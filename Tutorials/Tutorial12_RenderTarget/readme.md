@@ -135,12 +135,12 @@ our cubes, the primary color output will be rendered in our color texture attach
 ```cpp
 RefCntAutoPtr<ITexture> pRTColor;
 TextureDesc RTColorDesc;
-RTColorDesc.Type = RESOURCE_DIM_TEX_2D;
-RTColorDesc.Width = pSwapChain->GetDesc().Width;
-RTColorDesc.Height = pSwapChain->GetDesc().Height;
-RTColorDesc.MipLevels = 1;
-RTColorDesc.Format = RenderTargetFormat;
-RTColorDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+RTColorDesc.Type        = RESOURCE_DIM_TEX_2D;
+RTColorDesc.Width       = pSwapChain->GetDesc().Width;
+RTColorDesc.Height      = pSwapChain->GetDesc().Height;
+RTColorDesc.MipLevels   = 1;
+RTColorDesc.Format      = RenderTargetFormat;
+RTColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
 pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
 m_pRTColorAttachment = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
 ```
@@ -151,48 +151,35 @@ depth texture attachment.
 ```cpp
 RefCntAutoPtr<ITexture> pRTDepth;
 TextureDesc RTDepthDesc = RTColorDesc;
-RTDepthDesc.Format = DepthBufferFormat;
-RTDepthDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
+RTDepthDesc.Format      = DepthBufferFormat;
+RTDepthDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
 pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
 m_pRTDepthAttachment = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
 ```
 
 We also need to create additional shaders that will handle our simple post-processing effect.
 ```cpp
-ShaderCreationAttribs CreationAttribs;
-CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+ShaderCreateInfo CreationAttribs;
+CreationAttribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
 CreationAttribs.UseCombinedTextureSamplers = true;
 BasicShaderSourceStreamFactory BasicSSSFactory;
 CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
-CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
 
 RefCntAutoPtr<IShader> pRTVS;
 {
     CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-    CreationAttribs.EntryPoint = "main";
-    CreationAttribs.Desc.Name = "Render Target VS";
-    CreationAttribs.FilePath = "rendertarget.vsh";
+    CreationAttribs.EntryPoint      = "main";
+    CreationAttribs.Desc.Name       = "Render Target VS";
+    CreationAttribs.FilePath        = "rendertarget.vsh";
     pDevice->CreateShader(CreationAttribs, &pRTVS);
 }
 
 RefCntAutoPtr<IShader> pRTPS;
 {
     CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-    CreationAttribs.EntryPoint = "main";
-    CreationAttribs.Desc.Name = "Render Target PS";
-    CreationAttribs.FilePath = "rendertarget.psh";
-    ShaderVariableDesc Vars[] =
-    {
-        { "g_Texture", SHADER_VARIABLE_TYPE_MUTABLE }
-    };
-    CreationAttribs.Desc.VariableDesc = Vars;
-    CreationAttribs.Desc.NumVariables = _countof(Vars);
-    StaticSamplerDesc StaticSamplers[] =
-    {
-        { "g_Texture", { FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP } }
-    };
-    CreationAttribs.Desc.StaticSamplers = StaticSamplers;
-    CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
+    CreationAttribs.EntryPoint      = "main";
+    CreationAttribs.Desc.Name       = "Render Target PS";
+    CreationAttribs.FilePath        = "rendertarget.psh";
     pDevice->CreateShader(CreationAttribs, &pRTPS);
 }
 ```
@@ -203,15 +190,36 @@ required to render our small post-processing effect.
 ```cpp
 PipelineStateDesc RTPSODesc;
 RTPSODesc.Name = "Render Target PSO";
-RTPSODesc.IsComputePipeline = false;
-RTPSODesc.GraphicsPipeline.NumRenderTargets = 1;
-RTPSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-RTPSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
-RTPSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-RTPSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+RTPSODesc.IsComputePipeline                             = false;
+RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+RTPSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
+RTPSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
+RTPSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+RTPSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
 RTPSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 RTPSODesc.GraphicsPipeline.pVS = pRTVS;
 RTPSODesc.GraphicsPipeline.pPS = pRTPS;
+
+// Define variable type that will be used by default
+RTPSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+// Shader variables should typically be mutable, which means they are expected
+// to change on a per-instance basis
+ShaderResourceVariableDesc Vars[] =
+{
+    { SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+};
+RTPSODesc.ResourceLayout.Variables    = Vars;
+RTPSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+// Define static sampler for g_Texture. Static samplers should be used whenever possible
+StaticSamplerDesc StaticSamplers[] =
+{
+    { SHADER_TYPE_PIXEL, "g_Texture", Sam_LinearClamp }
+};
+RTPSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+
 pDevice->CreatePipelineState(RTPSODesc, &m_pRTPSO);
 ```
 
@@ -246,7 +254,7 @@ m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MOD
 
 DrawAttribs DrawAttrs;
 DrawAttrs.NumVertices = 36;
-DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
+DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES;
 m_pImmediateContext->Draw(DrawAttrs);
 ```
 
@@ -264,6 +272,6 @@ m_pImmediateContext->CommitShaderResources(m_pRTSRB, RESOURCE_STATE_TRANSITION_M
 
 DrawAttribs RTDrawAttrs;
 RTDrawAttrs.NumVertices = 4;
-RTDrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
+RTDrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
 m_pImmediateContext->Draw(RTDrawAttrs);
 ```

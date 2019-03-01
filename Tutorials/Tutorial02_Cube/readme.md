@@ -72,9 +72,9 @@ In this tutorial, we will be using depth buffer, so besides color output, we nee
 the format of the depth output in the `PSODesc`:
 
 ```cpp
-PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
-PSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
+PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
+PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
 PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 ```
 
@@ -90,30 +90,21 @@ provides default implementation for the interface that should be sufficient in m
 
 ```cpp
 BasicShaderSourceStreamFactory BasicSSSFactory;
-CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
+ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
 ```
 
 The constructor of class `BasicShaderSourceStreamFactory` takes a list of directories where source files
 will be looked up. 
 
-Our shader has one variable that needs to be bound by the application, a uniform buffer `Constants`.
-Shader variables can be assigned one of three types, static, dynamic, or mutable. Please read
-[this post](http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
-for details. If no explicit type is provided for a variable, default type will be used:
-
-```cpp
-CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
-```
-
 Other than using the shader source factory instead of the source code string, vertex shader
 initialization is the same as in Tutorial01:
 
 ```cpp
-CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-CreationAttribs.EntryPoint = "main";
-CreationAttribs.Desc.Name = "Cube VS";
-CreationAttribs.FilePath = "cube.vsh";
-pDevice->CreateShader(CreationAttribs, &pVS);
+ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+ShaderCI.EntryPoint      = "main";
+ShaderCI.Desc.Name       = "Cube VS";
+ShaderCI.FilePath        = "cube.vsh";
+pDevice->CreateShader(ShaderCI, &pVS);
 ```
 
 This time our shader uses a resource - a uniform buffer. So the first step is to create the buffer
@@ -121,23 +112,16 @@ that will hold the transformation matrix. To create a buffer, populate `BufferDe
 
 ```cpp
 BufferDesc CBDesc;
-CBDesc.Name = "VS constants CB";
-CBDesc.uiSizeInBytes = sizeof(float4x4);
-CBDesc.Usage = USAGE_DYNAMIC;
-CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
+CBDesc.Name           = "VS constants CB";
+CBDesc.uiSizeInBytes  = sizeof(float4x4);
+CBDesc.Usage          = USAGE_DYNAMIC;
+CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
 CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
 pDevice->CreateBuffer( CBDesc, nullptr, &m_VSConstants );
 ```
 
 Usage and Bind flags are designed after [D3D11 Usage](https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx) 
 and [D3D11 Bind Flags](https://msdn.microsoft.com/en-us/library/windows/desktop/ff476085(v=vs.85).aspx).
-
-`Constants` uniform buffer is a static variable. Static variables are bound directly to the shader and 
-cannot be changed once bound (only the binding cannot be changed. The contents of the buffer is modifiable):
-
-```cpp
-pVS->GetShaderVariable("Constants")->Set(m_VSConstants);
-```
 
 Since our vertex shader reads attributes from the vertex buffer, the pipeline state 
 must define how the attributes are fetched from the buffer. The two attributes are defined
@@ -155,6 +139,23 @@ PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
 PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
 ```
 
+Our shader has one variable that needs to be bound by the application, a uniform buffer `Constants`.
+Shader variables can be assigned one of three types, static, dynamic, or mutable. Please read
+[this post](http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
+for details. If no explicit type is provided for a variable, default type will be used:
+
+```cpp
+PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+```
+
+`Constants` uniform buffer is a static resource variable. Static variables are bound directly to the pipeline state and 
+cannot be changed once bound:
+
+```cpp
+m_pPSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+```
+
+Notice that only the binding cannot be changed. The contents of the buffer is modifiable.
 
 ## Creating Vertex and Index Buffers
 
@@ -202,17 +203,17 @@ Vertex CubeVerts[8] =
 ```
 
 Similar to unifrom buffer, to create a vertex buffer, we populate `BufferDesc` structure. Since
-data in the buffer will never change, we create the buffer with static usage (`USAGE_STATIC`)
+the data in the buffer will never change, we create the buffer with static usage (`USAGE_STATIC`)
 and provide initial data to `CreateBuffer()`:
 
 ```cpp
 BufferDesc VertBuffDesc;
-VertBuffDesc.Name = "Cube vertex buffer";
-VertBuffDesc.Usage = USAGE_STATIC;
-VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+VertBuffDesc.Name          = "Cube vertex buffer";
+VertBuffDesc.Usage         = USAGE_STATIC;
+VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
 VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
 BufferData VBData;
-VBData.pData = CubeVerts;
+VBData.pData    = CubeVerts;
 VBData.DataSize = sizeof(CubeVerts);
 pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
 ```
@@ -269,8 +270,8 @@ Finally, this time the draw call is an indexed one:
 
 ```cpp
 DrawAttribs DrawAttrs;
-DrawAttrs.IsIndexed = true; // This is an indexed draw call
-DrawAttrs.IndexType = VT_UINT32; // Index type
+DrawAttrs.IsIndexed   = true; // This is an indexed draw call
+DrawAttrs.IndexType  = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
 // Verify the state of vertex and index buffers
 DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;

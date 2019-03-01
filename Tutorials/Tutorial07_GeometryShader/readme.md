@@ -92,11 +92,10 @@ initialzation of the geometry shader:
 RefCntAutoPtr<IShader> pGS;
 {
     CreationAttribs.Desc.ShaderType = SHADER_TYPE_GEOMETRY;
-    CreationAttribs.EntryPoint = "main";
-    CreationAttribs.Desc.Name = "Cube GS";
-    CreationAttribs.FilePath = "cube.gsh";
+    CreationAttribs.EntryPoint      = "main";
+    CreationAttribs.Desc.Name       = "Cube GS";
+    CreationAttribs.FilePath        = "cube.gsh";
     pDevice->CreateShader(CreationAttribs, &pGS);
-    pGS->GetShaderVariable("GSConstants")->Set(m_ShaderConstants);
 }
 
 // ...

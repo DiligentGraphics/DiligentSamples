@@ -10,14 +10,14 @@
 
 
  
-Texture2D g_Font;
+Texture2D    g_Font;
 SamplerState g_Font_sampler;
 
 struct TextPSInput 
 { 
-    float4 Pos : SV_POSITION; 
+    float4 Pos   : SV_POSITION; 
     float4 Color : COLOR0; 
-    float2 Tex : TEXCOORD0; 
+    float2 Tex   : TEXCOORD0; 
 };
    
 float4 main(TextPSInput input) : SV_TARGET

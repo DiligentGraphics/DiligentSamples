@@ -68,74 +68,41 @@ to GLSL.
 
 ## Initializing the Pipeline State
 
-Pipeline state initialization is in fact the same as in Tutorial02. What is worth discussion is 
-creating the pixel shader:
+This time our pixel shader uses a resource that needs to be set by the application - 
+a texture variable `g_Texture`, so when creating the pipeline state, we need to define
+the resource layout. For this example, we want `g_Texture` to be a mutable resource variable:
 
 ```cpp
-RefCntAutoPtr<IShader> pPS;
-       
-CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-CreationAttribs.EntryPoint = "main";
-CreationAttribs.Desc.Name = "Cube PS";
-CreationAttribs.FilePath = "cube.psh";
-// Shader variables should typically be mutable, which means they are expected
-// to change on a per-instance basis
-ShaderVariableDesc Vars[] = 
+ShaderResourceVariableDesc Vars[] = 
 {
-    {"g_Texture", SHADER_VARIABLE_TYPE_MUTABLE}
+    {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
 };
-CreationAttribs.Desc.VariableDesc = Vars;
-CreationAttribs.Desc.NumVariables = _countof(Vars);
-
-// Define static sampler for g_Texture. Static samplers should be used whenever possible
-SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
-StaticSamplerDesc StaticSamplers[] = 
-{
-    {"g_Texture", SamLinearClampDesc}
-};
-CreationAttribs.Desc.StaticSamplers = StaticSamplers;
-CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
-
-pDevice->CreateShader(CreationAttribs, &pPS);
+PSODesc.ResourceLayout.Variables    = Vars;
+PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 ```
 
-This time our pixel shader uses a resource that needs to be set by the application - 
-a texture variable `g_Texture`. For this example, we want it to be a mutable variable.
 Mutable resources are set through the object called *shader resource binding*, or SRB. SRB
 encompasses all resources specific to an object instance. As an example, if your character shader uses 
 a shadow map, diffuse and normal maps, then shadow map should typically be static resource as
 it is the same for all object instances, while normal and diffuse maps should be mutable as
 they are character-specific.
-
-Shader variable type can be specified with `ShaderVariableDesc` structure:
-
-```cpp
-ShaderVariableDesc Vars[] = 
-{
-    {"g_Texture", SHADER_VARIABLE_TYPE_MUTABLE}
-};
-CreationAttribs.Desc.VariableDesc = Vars;
-CreationAttribs.Desc.NumVariables = _countof(Vars);
-```
-
+Shader variable type is defined by `ShaderResourceVariableDesc` structure.
 Recall that if shader variable type is not specified, default type defined by `DefaultVariableType`
 is used.
 
 As it was mentioned earlier, a sampler can be attached to a texture view at run time. However, in 
 most cases samplers do not change dynamically and it is known beforehand what kind of
-sampling is required. Diligent Engine uses *static samplers* that can be specified during shader
-compilation stage:
+sampling is required. Diligent Engine uses *static samplers* that can be specified when creating a PSO:
 
 ```cpp
 SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
                                 TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
 StaticSamplerDesc StaticSamplers[] = 
 {
-    {"g_Texture", SamLinearClampDesc}
+    {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
 };
-CreationAttribs.Desc.StaticSamplers = StaticSamplers;
-CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
+PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 ```
 
 If static sampler is specified for a texture, the sampler set in the shader resource view is ignored.
@@ -153,8 +120,8 @@ RefCntAutoPtr<ITexture> Tex;
 CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
 ```
 
-To bound a texture to the shader, we need to use the texture's shader resource view. Default SRV
-addresses the entire texture:
+To bound a texture to a shader resource variable, we need to use the texture's shader resource view (SRV).
+ Default SRV addresses the entire texture:
 
 ```cpp
 // Get shader resource view from the texture
@@ -166,24 +133,27 @@ m_TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 Shader resource binding object is created by the pipeline state:
 
 ```cpp
-m_pPSO->CreateShaderResourceBinding(&m_SRB);
+m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
 ```
 
-Once SRB is created, we can set shader resource view:
+The second parameter of `CreateShaderResourceBinding()` tellse the engine to automatically initialize all static
+resource variables in the SRB by copying bindings from the pipeline state.
+
+Once SRB is created, we can set the shader resource view:
 
 ```cpp
 m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 ```
 
-A mutable resource can only be bound once to a SRB object. If multiple variations are required,
-a number of SRB objects should be created. For a very frequently changning resource, dynamic
+A mutable resource can only be bound once to an SRB object. If multiple variations are required,
+a number of SRB objects should be created. For a very frequently changning resources, dynamic
 variables can be used. Dynamic resoruces can be bound multiple times to the same SRB object,
 but are less efficient from performance point of view. Refer to 
 [this post](http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
 for more details.
 Do not confuse shader variable type with resource usage. Shader variable type is all about
-binding resources to a shader. It has nothing to do with the ability to change resource contents which
-is controlled by the resource usage
+binding resources to shader variables. It has nothing to do with the ability to change the resource 
+contents which is controlled by the resource usage.
 
 ## Vertex and Index Buffers
 
@@ -192,7 +162,7 @@ is that cube vertices cannot be shared between faces as texture UV coordinates n
 
 # Rendering
 
-Render function is also very similar to that of Tutorial02. This time however we have a SRB
+Render function is also very similar to that of Tutorial02. This time however we have an SRB
 object that encompasses resources to be committed:
 
 ```cpp

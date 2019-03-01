@@ -93,9 +93,9 @@ private:
     RefCntAutoPtr<ITextureView> m_TextureSRV[NumTextures];
     RefCntAutoPtr<ITextureView> m_TexArraySRV;
     int m_NumPolygons = 1000;
-    int m_BatchSize = 5;
+    int m_BatchSize   = 5;
 
-    int m_MaxThreads = 8;
+    int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
 
     struct PolygonData

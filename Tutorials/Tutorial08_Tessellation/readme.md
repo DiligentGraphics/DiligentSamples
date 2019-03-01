@@ -52,7 +52,7 @@ void TerrainVS(in  TerrainVSIn  VSIn,
 }
 ```
 
-Note that the vertex shader includes structures.fxh file that contains definitons of structures
+Note that the vertex shader includes `structures.fxh` file that contains definitons of structures
 used by the shaders.
 
 ### Hull shader
@@ -147,7 +147,7 @@ Pixel shader simpy samples the color texture and is quite straightforward:
 ```hlsl
 #include "structures.fxh"
 
-Texture2D g_Texture;
+Texture2D    g_Texture;
 SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
 
 float4 TerrainPS(TerrainDSOut ps_in) : SV_TARGET
@@ -180,5 +180,6 @@ Rendering is done as usual, with one primitive being one patch:
 ```cpp
 DrawAttribs DrawAttrs;
 DrawAttrs.NumVertices = NumHorzBlocks * NumVertBlocks;
+DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES;
 m_pImmediateContext->Draw(DrawAttrs);
 ```

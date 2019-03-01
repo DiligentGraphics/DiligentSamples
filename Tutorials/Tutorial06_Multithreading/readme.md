@@ -69,7 +69,7 @@ for(int tex=0; tex < NumTextures; ++tex)
 }
 ```
 
-This example illustrates the expect usage of mutable shader resources: the app creates 
+This example illustrates the expected usage of mutable shader resources: the app creates 
 several SRB objects encompassing different resource bindings.
 
 ## Explicit state transitoins
@@ -204,7 +204,7 @@ pCtx->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIF
 ```
 
 Note that render targets are set and transitioned to correct states by the main thread, so we use
-RESOURCE_STATE_TRANSITION_MODE_VERIFY flag to double-check the states are correct.
+`RESOURCE_STATE_TRANSITION_MODE_VERIFY` flag to double-check the states are correct.
 
 2. The rendering procedure iterates through all the instances in the allotted subset, and for every instance
 does the following:
@@ -219,10 +219,10 @@ does the following:
 
 ```cpp
 DrawAttribs DrawAttrs;
-DrawAttrs.IsIndexed = true;
-DrawAttrs.IndexType = VT_UINT32;
+DrawAttrs.IsIndexed  = true;
+DrawAttrs.IndexType  = VT_UINT32;
 DrawAttrs.NumIndices = 36;
-DrawAttrs.Topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+DrawAttrs.Flags      = DRAW_FLAG_VERIFY_STATES;
 
 pCtx->SetPipelineState(m_pPSO);
 for(size_t inst = StartInst; inst < EndInst; ++inst)

@@ -14,9 +14,9 @@ The most basic way to supply data into a buffer is to provide it at initializati
 ```cpp
 // Create index buffer
 BufferDesc IndBuffDesc;
-IndBuffDesc.Name = "Cube index buffer";
-IndBuffDesc.Usage = USAGE_STATIC;
-IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
+IndBuffDesc.Name          = "Cube index buffer";
+IndBuffDesc.Usage         = USAGE_STATIC;
+IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
 IndBuffDesc.uiSizeInBytes = sizeof(Indices);
 BufferData IBData;
 IBData.pData = Indices;
@@ -142,17 +142,17 @@ this is the only way.
 
 ```cpp
 TexDesc TexDesc;
-TexDesc.Type = RESOURCE_DIM_TEX_2D;
-TexDesc.Format = TEX_FORMAT_RGBA8_UNORM_SRGB;
-TexDesc.Width  = 1024;
-TexDesc.Height = 1024;
+TexDesc.Type      = RESOURCE_DIM_TEX_2D;
+TexDesc.Format    = TEX_FORMAT_RGBA8_UNORM_SRGB;
+TexDesc.Width     = 1024;
+TexDesc.Height    = 1024;
 TexDesc.MipLevels = 1;
 TexDesc.BindFlags = BIND_SHADER_RESOURCE;
-TexDesc.Usage = USAGE_STATIC;
+TexDesc.Usage     = USAGE_STATIC;
 
 TextureData InitData;
  // Pointer to subresouce data, one for every mip level
-InitData.pSubResources  = subresources;
+InitData.pSubResources   = subresources;
 InitData.NumSubresources = _countof(subresources);
 
 RefCntAutoPtr<ITexture> Texture;

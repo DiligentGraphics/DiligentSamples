@@ -51,69 +51,73 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
         // This is a graphics pipeline
         PSODesc.IsComputePipeline = false; 
         // This tutorial will render to a single render target
-        PSODesc.GraphicsPipeline.NumRenderTargets = 1;
+        PSODesc.GraphicsPipeline.NumRenderTargets            = 1;
         // Set render target format which is the format of the render target's color buffer
-        PSODesc.GraphicsPipeline.RTVFormats[0] = RenderTargetFormat;
+        PSODesc.GraphicsPipeline.RTVFormats[0]               = RenderTargetFormat;
         // Set depth buffer format which is the format of the render target's depth buffer
-        PSODesc.GraphicsPipeline.DSVFormat = DepthBufferFormat;
+        PSODesc.GraphicsPipeline.DSVFormat                   = DepthBufferFormat;
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSODesc.GraphicsPipeline.PrimitiveTopology           = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         // Cull back faces
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode     = CULL_MODE_BACK;
         // Enable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
-        ShaderCreationAttribs CreationAttribs;
+        ShaderCreateInfo ShaderCI;
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL behind the scene
-        CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        // We will be using combined texture samplers
-        CreationAttribs.UseCombinedTextureSamplers = true;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+        
+        // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+        ShaderCI.UseCombinedTextureSamplers = true;
+
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
         BasicShaderSourceStreamFactory BasicSSSFactory;
-        CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
-        // Define variable type that will be used by default
-        CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
+        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
 
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            CreationAttribs.EntryPoint = "main";
-            CreationAttribs.Desc.Name = "Cube VS";
-            CreationAttribs.FilePath = "cube.vsh";
-            pDevice->CreateShader(CreationAttribs, &pVS);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Cube VS";
+            ShaderCI.FilePath        = "cube.vsh";
+            pDevice->CreateShader(ShaderCI, &pVS);
 
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
             BufferDesc CBDesc;
-            CBDesc.Name = "VS constants CB";
-            CBDesc.uiSizeInBytes = sizeof(float4x4);
-            CBDesc.Usage = USAGE_DYNAMIC;
-            CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
+            CBDesc.Name           = "VS constants CB";
+            CBDesc.uiSizeInBytes  = sizeof(float4x4);
+            CBDesc.Usage          = USAGE_DYNAMIC;
+            CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
             CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
             pDevice->CreateBuffer( CBDesc, nullptr, &m_VSConstants );
-
-            // Since we did not explcitly specify the type for Constants, default type
-            // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-            // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
-            pVS->GetShaderVariable("Constants")->Set(m_VSConstants);
         }
 
         // Create pixel shader
         RefCntAutoPtr<IShader> pPS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            CreationAttribs.EntryPoint = "main";
-            CreationAttribs.Desc.Name = "Cube PS";
-            CreationAttribs.FilePath = "cube.psh";
-            pDevice->CreateShader(CreationAttribs, &pPS);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Cube PS";
+            ShaderCI.FilePath        = "cube.psh";
+            pDevice->CreateShader(ShaderCI, &pPS);
         }
 
         PSODesc.GraphicsPipeline.pVS = pVS;
         PSODesc.GraphicsPipeline.pPS = pPS;
+
+        // Define variable type that will be used by default
+        PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
         pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+
+        // Since we did not explcitly specify the type for Constants, default type
+        // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
+        // to the pipeline state object.
+        m_pPSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 
         // Create shader resource binding object and bind all static resources in it
         m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
@@ -125,17 +129,17 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
         // Render target color attachment descriptor
         TextureDesc RTColorDesc;
         // The render target's attachments are 2D textures
-        RTColorDesc.Type = RESOURCE_DIM_TEX_2D;
+        RTColorDesc.Type        = RESOURCE_DIM_TEX_2D;
         // The render target's attachments' width is that of the swap chain
-        RTColorDesc.Width = pSwapChain->GetDesc().Width;
+        RTColorDesc.Width       = pSwapChain->GetDesc().Width;
         // The render target's attachments' height is that of the swap chain
-        RTColorDesc.Height = pSwapChain->GetDesc().Height;
+        RTColorDesc.Height      = pSwapChain->GetDesc().Height;
         // The render target's attachments only have one mipmap
-        RTColorDesc.MipLevels = 1;
+        RTColorDesc.MipLevels   = 1;
         // The render target's color buffer format is 8 bits RGBA
-        RTColorDesc.Format = RenderTargetFormat;
+        RTColorDesc.Format      = RenderTargetFormat;
         // The render target's color buffer can be bound as a shader resource and as a render target
-        RTColorDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+        RTColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
         // Define optimal clear value
         RTColorDesc.ClearValue.Format = RTColorDesc.Format;
         RTColorDesc.ClearValue.Color[0] = 0.350f;
@@ -172,67 +176,50 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
         // This is a graphics pipeline
         RTPSODesc.IsComputePipeline = false;
         // This tutorial will render to a single render target
-        RTPSODesc.GraphicsPipeline.NumRenderTargets = 1;
+        RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
         // Set render target format which is the format of the swap chain's color buffer
-        RTPSODesc.GraphicsPipeline.RTVFormats[0] = pSwapChain->GetDesc().ColorBufferFormat;
+        RTPSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
         // Set depth buffer format which is the format of the swap chain's back buffer
-        RTPSODesc.GraphicsPipeline.DSVFormat = pSwapChain->GetDesc().DepthBufferFormat;
+        RTPSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-        RTPSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        RTPSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         // Cull back faces
-        RTPSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+        RTPSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
         // Enable depth testing
         RTPSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
-        ShaderCreationAttribs CreationAttribs;
+        ShaderCreateInfo ShaderCI;
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL behind the scene
-        CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        // Enforce the use of combined texture samplers for OpenGL backends
-        CreationAttribs.UseCombinedTextureSamplers = true;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+        // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+        ShaderCI.UseCombinedTextureSamplers = true;
+
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
         BasicShaderSourceStreamFactory BasicSSSFactory;
-        CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
-        // Define variable type that will be used by default
-        CreationAttribs.Desc.DefaultVariableType = SHADER_VARIABLE_TYPE_STATIC;
+        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
 
         // Create vertex shader
         RefCntAutoPtr<IShader> pRTVS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            CreationAttribs.EntryPoint = "main";
-            CreationAttribs.Desc.Name = "Render Target VS";
-            CreationAttribs.FilePath = "rendertarget.vsh";
-            pDevice->CreateShader(CreationAttribs, &pRTVS);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Render Target VS";
+            ShaderCI.FilePath        = "rendertarget.vsh";
+            pDevice->CreateShader(ShaderCI, &pRTVS);
         }
 
         // Create pixel shader
         RefCntAutoPtr<IShader> pRTPS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            CreationAttribs.EntryPoint = "main";
-            CreationAttribs.Desc.Name = "Render Target PS";
-            CreationAttribs.FilePath = "rendertarget.psh";
-
-            // Shader variables should typically be mutable, which means they are expected
-            // to change on a per-instance basis
-            ShaderVariableDesc Vars[] =
-            {
-                { "g_Texture", SHADER_VARIABLE_TYPE_MUTABLE }
-            };
-            CreationAttribs.Desc.VariableDesc = Vars;
-            CreationAttribs.Desc.NumVariables = _countof(Vars);
-
-            // Define static sampler for g_Texture. Static samplers should be used whenever possible
-            StaticSamplerDesc StaticSamplers[] =
-            {
-                { "g_Texture", Sam_LinearClamp }
-            };
-            CreationAttribs.Desc.StaticSamplers = StaticSamplers;
-            CreationAttribs.Desc.NumStaticSamplers = _countof(StaticSamplers);
-
-            pDevice->CreateShader(CreationAttribs, &pRTPS);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Render Target PS";
+            ShaderCI.FilePath        = "rendertarget.psh";
+            
+            pDevice->CreateShader(ShaderCI, &pRTPS);
 
             // Create dynamic uniform buffer that will store our transformation matrix
             // Dynamic buffers can be frequently updated by the CPU
@@ -243,16 +230,37 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
             CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
             CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
             pDevice->CreateBuffer( CBDesc, nullptr, &m_PSConstants );
-
-            // Since we did not explcitly specify the type for Constants, default type
-            // (SHADER_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-            // through the shader (http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
-            pRTPS->GetShaderVariable("Constants")->Set(m_PSConstants);
         }
 
         RTPSODesc.GraphicsPipeline.pVS = pRTVS;
         RTPSODesc.GraphicsPipeline.pPS = pRTPS;
+
+        // Define variable type that will be used by default
+        RTPSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+        // Shader variables should typically be mutable, which means they are expected
+        // to change on a per-instance basis
+        ShaderResourceVariableDesc Vars[] =
+        {
+            { SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+        };
+        RTPSODesc.ResourceLayout.Variables    = Vars;
+        RTPSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+        // Define static sampler for g_Texture. Static samplers should be used whenever possible
+        StaticSamplerDesc StaticSamplers[] =
+        {
+            { SHADER_TYPE_PIXEL, "g_Texture", Sam_LinearClamp }
+        };
+        RTPSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+        RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+
         pDevice->CreatePipelineState(RTPSODesc, &m_pRTPSO);
+
+        // Since we did not explcitly specify the type for Constants, default type
+        // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
+        // to the pipeline state object.
+        m_pRTPSO->GetStaticShaderVariable(SHADER_TYPE_PIXEL, "Constants")->Set(m_PSConstants);
 
         // Since we are using mutable variable, we must create shader resource binding object
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
@@ -293,7 +301,7 @@ void Tutorial12_RenderTarget::Render()
     // Draw the cube's vertices
     DrawAttribs DrawAttrs;
     DrawAttrs.NumVertices = 36;
-    DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
+    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
     m_pImmediateContext->Draw(DrawAttrs);
 
     // Clear the default render target's buffers
@@ -311,7 +319,7 @@ void Tutorial12_RenderTarget::Render()
     // Draw the render target's vertices
     DrawAttribs RTDrawAttrs;
     RTDrawAttrs.NumVertices = 4;
-    RTDrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
+    RTDrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
     m_pImmediateContext->Draw(RTDrawAttrs);
 }
 

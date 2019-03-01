@@ -55,9 +55,9 @@ private:
     float4x4 m_ViewProjMatrix;
     float4x4 m_RotationMatrix;
     int m_GridSize = 5;
-    static constexpr int MaxGridSize = 32;
+    static constexpr int MaxGridSize  = 32;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
-    static constexpr int NumTextures = 4;
+    static constexpr int NumTextures  = 4;
 };
 
 }
