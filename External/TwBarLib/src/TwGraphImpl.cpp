@@ -978,10 +978,10 @@ void CTwGraphImpl::ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int
         m_D3DDev->RSSetViewports(1, &vp);
         */
             
-        m_ViewportAndScissorRects[0].left = _X0;
-        m_ViewportAndScissorRects[0].right = _X0 + _Width - 1;
-        m_ViewportAndScissorRects[0].top = _Y0;
-        m_ViewportAndScissorRects[0].bottom = _Y0 + _Height - 1;
+        m_ViewportAndScissorRects[0].left   = max(_X0, 0);
+        m_ViewportAndScissorRects[0].right  = max(_X0 + _Width - 1, 0);
+        m_ViewportAndScissorRects[0].top    = max(_Y0, 0);
+        m_ViewportAndScissorRects[0].bottom = max(_Y0 + _Height - 1, 0);
         if( m_ViewportAndScissorRects[1] == m_FullRect )
             m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight); // viewport clipping only
         else
@@ -1009,10 +1009,10 @@ void CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
 {
     if( _Width>0 && _Height>0 )
     {
-        m_ViewportAndScissorRects[1].left = _X0 - 2;
-        m_ViewportAndScissorRects[1].right = _X0 + _Width - 3;
-        m_ViewportAndScissorRects[1].top = _Y0 - 1;
-        m_ViewportAndScissorRects[1].bottom = _Y0 + _Height - 1;
+        m_ViewportAndScissorRects[1].left   = max(_X0 - 2, 0);
+        m_ViewportAndScissorRects[1].right  = max(_X0 + _Width - 3, 0);
+        m_ViewportAndScissorRects[1].top    = max(_Y0 - 1, 0);
+        m_ViewportAndScissorRects[1].bottom = max(_Y0 + _Height - 1, 0);
 
         if( m_ViewportAndScissorRects[0] == m_FullRect )
             m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects+1, m_WndWidth, m_WndHeight); // no viewport clipping
