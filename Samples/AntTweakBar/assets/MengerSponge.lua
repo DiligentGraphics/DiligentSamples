@@ -59,8 +59,7 @@ ResMapping = ResourceMapping.Create{
 	{Name = "Constants", pObject = extConstantBuffer}
 }
 
-MainVS:BindResources(ResMapping)
-MainPS:BindResources(ResMapping)
+PSO:BindStaticResources(ResMapping)
 
 SRB = PSO:CreateShaderResourceBinding(true)
 
