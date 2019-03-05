@@ -39,7 +39,7 @@ public:
     ~AtmosphereSample();
 
     virtual void GetEngineInitializationAttribs(DeviceType             DevType, 
-                                                EngineCreationAttribs& Attribs, 
+                                                EngineCreateInfo& Attribs, 
                                                 Uint32&                NumDeferredContexts)override final;
 
     virtual void Initialize(IRenderDevice*    pDevice, 

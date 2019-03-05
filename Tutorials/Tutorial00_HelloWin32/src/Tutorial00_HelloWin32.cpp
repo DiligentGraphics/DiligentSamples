@@ -54,10 +54,10 @@
 #   define VULKAN_SUPPORTED 1
 #endif
 
-#include "Graphics/GraphicsEngineD3D11/interface/RenderDeviceFactoryD3D11.h"
-#include "Graphics/GraphicsEngineD3D12/interface/RenderDeviceFactoryD3D12.h"
+#include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
+#include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
 #include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"
-#include "Graphics/GraphicsEngineVulkan/interface/RenderDeviceFactoryVk.h"
+#include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
 
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
@@ -142,7 +142,7 @@ public:
 #if D3D11_SUPPORTED
             case DeviceType::D3D11:
             {
-                EngineD3D11Attribs DeviceAttribs;
+                EngineD3D11CreateInfo DeviceAttribs;
 #if ENGINE_DLL
                 GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
                 // Load the dll and import GetEngineFactoryD3D11() function
@@ -164,7 +164,7 @@ public:
                 // Load the dll and import GetEngineFactoryD3D12() function
                 LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
-                EngineD3D12Attribs EngD3D12Attribs;
+                EngineD3D12CreateInfo EngD3D12Attribs;
                 auto *pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
@@ -201,7 +201,7 @@ public:
             // Load the dll and import GetEngineFactoryVk() function
             LoadGraphicsEngineVk(GetEngineFactoryVk);
 #endif
-            EngineVkAttribs EngVkAttribs;
+            EngineVkCreateInfo EngVkAttribs;
 #ifdef _DEBUG
             EngVkAttribs.EnableValidation = true;
 #endif

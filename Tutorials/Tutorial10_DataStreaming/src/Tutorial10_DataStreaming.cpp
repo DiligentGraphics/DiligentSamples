@@ -126,23 +126,23 @@ Tutorial10_DataStreaming::~Tutorial10_DataStreaming()
     StopWorkerThreads();
 }
 
-void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType              DevType,
-                                                              EngineCreationAttribs&  Attribs,
-                                                              Uint32&                 NumDeferredContexts)
+void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType         DevType,
+                                                              EngineCreateInfo&  Attribs,
+                                                              Uint32&            NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
 #if D3D12_SUPPORTED
     if (DevType == DeviceType::D3D12)
     {
-        EngineD3D12Attribs &EngD3D12Attribs = static_cast<EngineD3D12Attribs &>(Attribs);
+        EngineD3D12CreateInfo &EngD3D12Attribs = static_cast<EngineD3D12CreateInfo &>(Attribs);
         EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
     }
 #endif
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize = 128 << 20;
         VkAttrs.DynamicHeapPageSize = 2 << 20;
         VkAttrs.NumCommandsToFlushCmdBuffer = 8192;

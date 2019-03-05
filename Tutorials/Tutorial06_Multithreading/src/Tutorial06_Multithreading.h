@@ -38,9 +38,9 @@ class Tutorial06_Multithreading final : public SampleBase
 {
 public:
     ~Tutorial06_Multithreading()override;
-    virtual void GetEngineInitializationAttribs(DeviceType              DevType, 
-                                                EngineCreationAttribs&  Attribs, 
-                                                Uint32&                 NumDeferredContexts)override final;
+    virtual void GetEngineInitializationAttribs(DeviceType         DevType, 
+                                                EngineCreateInfo&  Attribs, 
+                                                Uint32&            NumDeferredContexts)override final;
     virtual void Initialize(IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 
                             Uint32           NumDeferredCtx, 

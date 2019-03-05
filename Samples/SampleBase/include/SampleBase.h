@@ -38,7 +38,7 @@ class SampleBase
 public:
     virtual ~SampleBase(){}
 
-    virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs& Attribs, Uint32& NumDeferredContexts);
+    virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, Uint32& NumDeferredContexts);
 
     virtual void Initialize(IRenderDevice*      pDevice, 
                             IDeviceContext**    ppContexts, 
@@ -59,10 +59,10 @@ protected:
     RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
     std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
     RefCntAutoPtr<ISwapChain>                   m_pSwapChain;
-    float  m_fFPS = 0;
-    double m_LastFPSTime = 0;
+    float  m_fFPS                = 0;
+    double m_LastFPSTime         = 0;
     Uint32 m_uiNumFramesRendered = 0;
-    Int32  m_UIScale = 1;
+    Int32  m_UIScale             = 1;
 };
 
 inline void SampleBase::Update(double CurrTime, double ElapsedTime)

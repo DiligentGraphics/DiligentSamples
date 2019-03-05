@@ -81,13 +81,13 @@ AtmosphereSample::AtmosphereSample() :
     m_fElapsedTime(0.f)
 {}
 
-void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs& Attribs, Uint32& NumDeferredContexts)
+void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs, Uint32& NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.EnabledFeatures.depthClamp = true;
         VkAttrs.EnabledFeatures.shaderStorageImageExtendedFormats = true;
     }

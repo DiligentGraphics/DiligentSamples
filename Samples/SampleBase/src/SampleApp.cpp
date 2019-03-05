@@ -30,11 +30,11 @@
 #include "StringTools.h"
 
 #if D3D11_SUPPORTED
-#   include "RenderDeviceFactoryD3D11.h"
+#   include "EngineFactoryD3D11.h"
 #endif
 
 #if D3D12_SUPPORTED
-#   include "RenderDeviceFactoryD3D12.h"
+#   include "EngineFactoryD3D12.h"
 #endif
 
 #if GL_SUPPORTED || GLES_SUPPORTED
@@ -42,7 +42,7 @@
 #endif
 
 #if VULKAN_SUPPORTED
-#   include "RenderDeviceFactoryVk.h"
+#   include "EngineFactoryVk.h"
 #endif
 
 #if METAL_SUPPORTED
@@ -91,7 +91,7 @@ void SampleApp::InitializeDiligentEngine(
 #if D3D11_SUPPORTED
         case DeviceType::D3D11:
         {
-            EngineD3D11Attribs DeviceAttribs;
+            EngineD3D11CreateInfo DeviceAttribs;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, DeviceAttribs, NumDeferredCtx);
 
 #if ENGINE_DLL
@@ -146,7 +146,7 @@ void SampleApp::InitializeDiligentEngine(
             m_DisplayModes.resize(NumDisplayModes);
             pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
 
-            EngineD3D12Attribs EngD3D12Attribs;
+            EngineD3D12CreateInfo EngD3D12Attribs;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs, NumDeferredCtx);
             ppContexts.resize(1 + NumDeferredCtx);
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
@@ -197,10 +197,11 @@ void SampleApp::InitializeDiligentEngine(
             // Load the dll and import GetEngineFactoryVk() function
             LoadGraphicsEngineVk(GetEngineFactoryVk);
 #endif
-            EngineVkAttribs EngVkAttribs;
+            EngineVkCreateInfo EngVkAttribs;
 #ifdef _DEBUG
             EngVkAttribs.EnableValidation = true;
 #endif
+            EngVkAttribs.EnabledFeatures.multiViewport = true;
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, NumDeferredCtx);
             ppContexts.resize(1 + NumDeferredCtx);

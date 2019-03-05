@@ -25,22 +25,18 @@
 #include "SampleBase.h"
 #include "Errors.h"
 
-#if D3D11_SUPPORTED
-#   include "EngineD3D11Attribs.h"
-#endif
-
 namespace Diligent
 {
 
-void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreationAttribs &Attribs, Uint32 &NumDeferredContexts)
+void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, Uint32& NumDeferredContexts)
 {
     switch (DevType)
     {
 #if D3D11_SUPPORTED
         case DeviceType::D3D11:
         {
-            EngineD3D11Attribs &DeviceAttribs = static_cast<EngineD3D11Attribs &>(Attribs);
-            DeviceAttribs.DebugFlags = 
+            EngineD3D11CreateInfo& EngineD3D11CI = static_cast<EngineD3D11CreateInfo&>(EngineCI);
+            EngineD3D11CI.DebugFlags = 
                 (Uint32)EngineD3D11DebugFlags::VerifyCommittedShaderResources |
                 (Uint32)EngineD3D11DebugFlags::VerifyCommittedResourceRelevance;
         }
@@ -50,12 +46,12 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
 #if D3D12_SUPPORTED
         case DeviceType::D3D12:
         {
-            EngineD3D12Attribs &EngD3D12Attribs = static_cast<EngineD3D12Attribs &>(Attribs);
-            EngD3D12Attribs.GPUDescriptorHeapDynamicSize[0] = 32768;
-            EngD3D12Attribs.GPUDescriptorHeapSize[1] = 128;
-            EngD3D12Attribs.GPUDescriptorHeapDynamicSize[1] = 2048-128;
-            EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[0] = 32;
-            EngD3D12Attribs.DynamicDescriptorAllocationChunkSize[1] = 8; // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
+            EngineD3D12CreateInfo& EngineD3D12CI = static_cast<EngineD3D12CreateInfo &>(EngineCI);
+            EngineD3D12CI.GPUDescriptorHeapDynamicSize[0]         = 32768;
+            EngineD3D12CI.GPUDescriptorHeapSize[1]                = 128;
+            EngineD3D12CI.GPUDescriptorHeapDynamicSize[1]         = 2048-128;
+            EngineD3D12CI.DynamicDescriptorAllocationChunkSize[0] = 32;
+            EngineD3D12CI.DynamicDescriptorAllocationChunkSize[1] = 8; // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
         }
         break;
 #endif
@@ -63,7 +59,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreati
 #if VULKAN_SUPPORTED
         case DeviceType::Vulkan:
         {
-            // EngineVkAttribs &EngVkAttribs = static_cast<EngineVkAttribs&>(Attribs);
+            // EngineVkCreateInfo& EngVkAttribs = static_cast<EngineVkCreateInfo&>(EngineCI);
         }
         break;
 #endif

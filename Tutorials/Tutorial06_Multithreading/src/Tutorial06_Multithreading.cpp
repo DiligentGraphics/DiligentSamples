@@ -45,16 +45,16 @@ Tutorial06_Multithreading::~Tutorial06_Multithreading()
     StopWorkerThreads();
 }
 
-void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType             DevType,
-                                                               EngineCreationAttribs& Attribs,
-                                                               Uint32&                NumDeferredContexts)
+void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType        DevType,
+                                                               EngineCreateInfo& Attribs,
+                                                               Uint32&           NumDeferredContexts)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
     NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkAttribs&>(Attribs);
+        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
     }
 #endif
