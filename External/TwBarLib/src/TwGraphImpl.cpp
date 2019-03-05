@@ -315,12 +315,12 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
 
     PSODesc.Name = "AntTwBar: text PSO";
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Text)]);
-    m_pPSO[static_cast<int>(PSO_ID::Text)]->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Text)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     PSODesc.Name = "AntTwBar: text cst color PSO";
     PSODesc.GraphicsPipeline.pVS = m_pTextCstColorVS;
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::TextCstColor)]);
-    m_pPSO[static_cast<int>(PSO_ID::TextCstColor)]->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::TextCstColor)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     LayoutElement LineRectElems[] = 
     {
@@ -337,13 +337,13 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
     PSODesc.ResourceLayout.Variables    = nullptr;
     PSODesc.ResourceLayout.NumVariables = 0;
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Line)]);
-    m_pPSO[static_cast<int>(PSO_ID::Line)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Line)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     PSODesc.Name = "AntTwBar: line antialiased PSO";
     //RasterizerDesc.AntialiasedLineEnable = true;
     RasterizerDesc.AntialiasedLineEnable = False;
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::LineAA)]);
-    m_pPSO[static_cast<int>(PSO_ID::LineAA)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::LineAA)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     PSODesc.GraphicsPipeline.pPS = m_pLineRectPS;
     PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -351,7 +351,7 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
     PSODesc.GraphicsPipeline.pVS = m_pLineRectCstColorVS;
     PSODesc.Name = "AntTwBar: triangle cst color PSO";
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Triangle_CstColor)]);
-    m_pPSO[static_cast<int>(PSO_ID::Triangle_CstColor)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Triangle_CstColor)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     PSODesc.GraphicsPipeline.pVS = m_pLineRectVS;
 
@@ -359,22 +359,22 @@ int CTwGraphImpl::Init(int BackBufferFormat, int DepthStencilFormat)
     //RSDesc.MultisampleEnable = true;
     PSODesc.Name = "AntTwBar: line rect multisample PSO";
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Triangle_Multisample)]);
-    m_pPSO[static_cast<int>(PSO_ID::Triangle_Multisample)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Triangle_Multisample)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     RasterizerDesc.CullMode = CULL_MODE_NONE;
     PSODesc.Name = "AntTwBar: line rect cull none PSO";
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)]);
-    m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     RasterizerDesc.CullMode = CULL_MODE_BACK;
     PSODesc.Name = "AntTwBar: line rect cull CW PSO";
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Triangle_CullCW)]);
-    m_pPSO[static_cast<int>(PSO_ID::Triangle_CullCW)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Triangle_CullCW)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     RasterizerDesc.CullMode = CULL_MODE_FRONT;
     PSODesc.Name = "AntTwBar: line rect cull CCW PSO";
     m_pDev->CreatePipelineState(PSODesc, &m_pPSO[static_cast<int>(PSO_ID::Triangle_CullCCW)]);
-    m_pPSO[static_cast<int>(PSO_ID::Triangle_CullCCW)]->BindStaticResources( m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
+    m_pPSO[static_cast<int>(PSO_ID::Triangle_CullCCW)]->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED );
 
     for (int i=0; i < static_cast<int>(PSO_ID::NumIDs); ++i)
     {
@@ -543,7 +543,7 @@ void CTwGraphImpl::DrawLine(int _X0, int _Y0, int _X1, int _Y1, color32 _Color0,
         IShaderResourceBinding* pSRB = m_pSRB[PsoId];
         m_pDevImmContext->SetPipelineState(pPSO);
 
-        pPSO->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        pPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         DrawAttribs DrawAttrs(2, DRAW_FLAG_VERIFY_STATES);
@@ -616,7 +616,7 @@ void CTwGraphImpl::DrawRect(int _X0, int _Y0, int _X1, int _Y1, color32 _Color00
         IPipelineState* pPSO = m_pPSO[static_cast<int>(PSO_ID::Triangle_CullNone)];
         IShaderResourceBinding* pSRB = m_pSRB[static_cast<int>(PSO_ID::Triangle_CullNone)];
         m_pDevImmContext->SetPipelineState(pPSO);
-        pPSO->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        pPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         DrawAttribs DrawAttrs(6, DRAW_FLAG_VERIFY_STATES);
@@ -919,7 +919,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         IPipelineState* pPSO = m_pPSO[PsoId];
         IShaderResourceBinding* pSRB = m_pSRB[PsoId];
 
-        pPSO->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        pPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->SetPipelineState(pPSO);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -953,7 +953,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
         IPipelineState* pPSO = m_pPSO[PsoId];
         IShaderResourceBinding* pSRB = m_pSRB[PsoId];
         m_pDevImmContext->SetPipelineState(pPSO);
-        pPSO->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        pPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pDevImmContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         DrawAttribs DrawAttrs(textObj->m_NbTextVerts, DRAW_FLAG_VERIFY_STATES);
@@ -1115,7 +1115,7 @@ void CTwGraphImpl::DrawTriangles(int _NumTriangles, int *_Vertices, color32 *_Co
         
         IPipelineState* pLineRectPSO = m_pPSO[PsoId];
         IShaderResourceBinding* pLineRectSRB = m_pSRB[PsoId];
-        pLineRectPSO->BindStaticResources(m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        pLineRectPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResourceMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING | BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         
         m_pDevImmContext->SetPipelineState(pLineRectPSO);
         m_pDevImmContext->CommitShaderResources(pLineRectSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

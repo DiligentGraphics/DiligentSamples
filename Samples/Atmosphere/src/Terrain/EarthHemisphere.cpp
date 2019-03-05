@@ -593,7 +593,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     GraphicsPipeline.PrimitiveTopology  = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     RefCntAutoPtr<IPipelineState> pRenderNormalMapPSO;
     pDevice->CreatePipelineState(PSODesc, &pRenderNormalMapPSO);
-    pRenderNormalMapPSO->BindStaticResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+    pRenderNormalMapPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 
     RefCntAutoPtr<IShaderResourceBinding> pRenderNormalMapSRB;
     pRenderNormalMapPSO->CreateShaderResourceBinding(&pRenderNormalMapSRB, true);
@@ -760,7 +760,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
         GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         GraphicsPipeline.pVS = pHemisphereZOnlyVS;
         pDevice->CreatePipelineState(PSODesc, &m_pHemisphereZOnlyPSO);
-        m_pHemisphereZOnlyPSO->BindStaticResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        m_pHemisphereZOnlyPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
     }
 
@@ -896,7 +896,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
         GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         m_pDevice->CreatePipelineState(PSODesc, &m_pHemispherePSO);
-        m_pHemispherePSO->BindStaticResources(m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
+        m_pHemispherePSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemispherePSO->CreateShaderResourceBinding(&m_pHemisphereSRB, true);
         m_pHemisphereSRB->BindResources(SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING);
 	}

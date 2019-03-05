@@ -59,7 +59,7 @@ ResMapping = ResourceMapping.Create{
 	{Name = "Constants", pObject = extConstantBuffer}
 }
 
-PSO:BindStaticResources(ResMapping)
+PSO:BindStaticResources("SHADER_TYPE_VERTEX", ResMapping)
 
 SRB = PSO:CreateShaderResourceBinding(true)
 
