@@ -38,7 +38,7 @@
 #endif
 
 #if GL_SUPPORTED || GLES_SUPPORTED
-#   include "RenderDeviceFactoryOpenGL.h"
+#   include "EngineFactoryOpenGL.h"
 #endif
 
 #if VULKAN_SUPPORTED
