@@ -46,7 +46,7 @@
 #endif
 
 #if METAL_SUPPORTED
-#   include "RenderDeviceFactoryMtl.h"
+#   include "EngineFactoryMtl.h"
 #endif
 
 #include "AntTweakBar.h"
@@ -218,7 +218,7 @@ void SampleApp::InitializeDiligentEngine(
 #if METAL_SUPPORTED
         case DeviceType::Metal:
         {
-            EngineMtlAttribs MtlAttribs;
+            EngineMtlCreateInfo MtlAttribs;
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, NumDeferredCtx);
             ppContexts.resize(1 + NumDeferredCtx);
