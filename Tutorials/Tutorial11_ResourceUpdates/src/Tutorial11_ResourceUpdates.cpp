@@ -204,9 +204,10 @@ void Tutorial11_ResourceUpdates::Initialize(IRenderDevice*    pDevice,
         // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
         // to the pipeline state object.
         m_pPSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
-
+        
         PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
         pDevice->CreatePipelineState(PSODesc, &m_pPSO_NoCull);
+        m_pPSO_NoCull->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     }
 
     for(Uint32 i=0; i < _countof(m_CubeVertexBuffer); ++i)
