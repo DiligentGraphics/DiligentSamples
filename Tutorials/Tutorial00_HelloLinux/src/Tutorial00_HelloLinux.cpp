@@ -55,10 +55,10 @@
 #   define GL_SUPPORTED 1
 #endif
 
-#include "Graphics/GraphicsEngineOpenGL/interface/RenderDeviceFactoryOpenGL.h"
+#include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
 
 #if VULKAN_SUPPORTED
-#   include "Graphics/GraphicsEngineVulkan/interface/RenderDeviceFactoryVk.h"
+#   include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
 #endif
 
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
@@ -160,7 +160,7 @@ public:
         Uint32 NumDeferredCtx = 0;
         // Declare function pointer
         auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
-        EngineGLAttribs CreationAttribs;
+        EngineGLCreateInfo CreationAttribs;
         CreationAttribs.pNativeWndHandle = reinterpret_cast<void*>(static_cast<size_t>(NativeWindowHandle));
         CreationAttribs.pDisplay = display;
         pFactoryOpenGL->CreateDeviceAndSwapChainGL(
@@ -172,7 +172,7 @@ public:
 #if VULKAN_SUPPORTED
     bool InitVulkan(XCBInfo& xcbInfo)
     {
-        EngineVkAttribs EngVkAttribs;
+        EngineVkCreateInfo EngVkAttribs;
 #ifdef _DEBUG
         EngVkAttribs.EnableValidation = true;
 #endif
@@ -209,29 +209,29 @@ public:
         // Disable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
-        ShaderCreationAttribs CreationAttribs;
+        ShaderCreateInfo ShaderCI;
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL behind the scene
-        CreationAttribs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        CreationAttribs.UseCombinedTextureSamplers = true;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+        ShaderCI.UseCombinedTextureSamplers = true;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            CreationAttribs.EntryPoint = "main";
-            CreationAttribs.Desc.Name = "Triangle vertex shader";
-            CreationAttribs.Source = VSSource;
-            m_pDevice->CreateShader(CreationAttribs, &pVS);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.Desc.Name = "Triangle vertex shader";
+            ShaderCI.Source = VSSource;
+            m_pDevice->CreateShader(ShaderCI, &pVS);
         }
 
         // Create pixel shader
         RefCntAutoPtr<IShader> pPS;
         {
-            CreationAttribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            CreationAttribs.EntryPoint = "main";
-            CreationAttribs.Desc.Name = "Triangle pixel shader";
-            CreationAttribs.Source = PSSource;
-            m_pDevice->CreateShader(CreationAttribs, &pPS);
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.Desc.Name = "Triangle pixel shader";
+            ShaderCI.Source = PSSource;
+            m_pDevice->CreateShader(ShaderCI, &pPS);
         }
 
         // Finally, create the pipeline state
