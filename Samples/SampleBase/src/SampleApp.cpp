@@ -171,7 +171,7 @@ void SampleApp::InitializeDiligentEngine(
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
             auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
-            EngineGLAttribs CreationAttribs;
+            EngineGLCreateInfo CreationAttribs;
             CreationAttribs.pNativeWndHandle = NativeWindowHandle;
 #if PLATFORM_LINUX
             CreationAttribs.pDisplay = display;

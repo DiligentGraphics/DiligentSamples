@@ -184,7 +184,7 @@ public:
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
             auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
-            EngineGLAttribs CreationAttribs;
+            EngineGLCreateInfo CreationAttribs;
             CreationAttribs.pNativeWndHandle = NativeWindowHandle;
             pFactoryOpenGL->CreateDeviceAndSwapChainGL(
                 CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
