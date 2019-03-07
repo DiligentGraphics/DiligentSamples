@@ -28,8 +28,8 @@
 #include "RenderDeviceD3D11.h"
 #include "SwapChainD3D12.h"
 #include "SwapChainD3D11.h"
-#include "RenderDeviceFactoryD3D11.h"
-#include "RenderDeviceFactoryD3D12.h"
+#include "EngineFactoryD3D11.h"
+#include "EngineFactoryD3D12.h"
 
 namespace Diligent
 {
