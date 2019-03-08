@@ -40,15 +40,21 @@ void main(in  VSInput VSIn,
     Color[6] = float3(1.0, 1.0, 1.0);
     Color[7] = float3(1.0, 0.0, 1.0);
 
-    int Indices[] =
-    {
-        2,0,1, 2,3,0,
-        4,6,5, 4,7,6,
-        0,7,4, 0,3,7,
-        1,0,4, 1,4,5,
-        1,5,2, 5,6,2,
-        3,6,7, 3,2,6
-    };
+    // OpenGLES does not allow array initialization of the
+    // form float Indices[] = {1,2, ... }
+    int Indices[36];
+    Indices[0]  = 2;  Indices[1]  = 0;  Indices[2]  = 1;
+    Indices[3]  = 2;  Indices[4]  = 3;  Indices[5]  = 0;
+    Indices[6]  = 4;  Indices[7]  = 6;  Indices[8]  = 5;
+    Indices[9]  = 4;  Indices[10] = 7;  Indices[11] = 6;
+    Indices[12] = 0;  Indices[13] = 7;  Indices[14] = 4;
+    Indices[15] = 0;  Indices[16] = 3;  Indices[17] = 7;
+    Indices[18] = 1;  Indices[19] = 0;  Indices[20] = 4;
+    Indices[21] = 1;  Indices[22] = 4;  Indices[23] = 5;
+    Indices[24] = 1;  Indices[25] = 5;  Indices[26] = 2;
+    Indices[27] = 5;  Indices[28] = 6;  Indices[29] = 2;
+    Indices[30] = 3;  Indices[31] = 6;  Indices[32] = 7;
+    Indices[33] = 3;  Indices[34] = 2;  Indices[35] = 6;
 
     int VertexID = Indices[VSIn.VertexID];
     PSIn.Pos = mul(float4(Pos[VertexID], 1.0), g_WorldViewProj);

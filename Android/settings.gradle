@@ -1,5 +1,6 @@
 include 'Common', ':AntTweakBar', ':Atmosphere', ':Tutorial01_HelloTriangle', ':Tutorial02_Cube',
         ':Tutorial03_Texturing', ':Tutorial04_Instancing', ':Tutorial05_TextureArray',
         ':Tutorial06_Multithreading', ':Tutorial07_GeometryShader', ':Tutorial08_Tessellation',
-        ':Tutorial09_Quads', ':Tutorial10_DataStreaming', ':Tutorial11_ResourceUpdates'
+        ':Tutorial09_Quads', ':Tutorial10_DataStreaming', ':Tutorial11_ResourceUpdates',
+        ':Tutorial12_RenderTarget'
 project(':Common').projectDir = new File(settingsDir, '../../Common/NativeApp/Android')
