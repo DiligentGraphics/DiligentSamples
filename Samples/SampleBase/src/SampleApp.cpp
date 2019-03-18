@@ -236,8 +236,9 @@ void SampleApp::InitializeDiligentEngine(
     }
 
     m_pImmediateContext.Attach(ppContexts[0]);
+    auto NumDeferredCtx = ppContexts.size() - 1;
     m_pDeferredContexts.resize(NumDeferredCtx);
-    for (Diligent::Uint32 ctx = 0; ctx < NumDeferredCtx; ++ctx)
+    for (Uint32 ctx = 0; ctx < NumDeferredCtx; ++ctx)
         m_pDeferredContexts[ctx].Attach(ppContexts[1 + ctx]);
 }
 
