@@ -38,9 +38,8 @@ public:
     AtmosphereSample();
     ~AtmosphereSample();
 
-    virtual void GetEngineInitializationAttribs(DeviceType             DevType, 
-                                                EngineCreateInfo& Attribs, 
-                                                Uint32&                NumDeferredContexts)override final;
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
+                                                EngineCreateInfo& Attribs)override final;
 
     virtual void Initialize(IRenderDevice*    pDevice, 
                             IDeviceContext**  ppContexts, 

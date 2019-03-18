@@ -33,8 +33,7 @@ class Tutorial08_Tessellation final : public SampleBase
 {
 public:
     virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
-                                                EngineCreateInfo& Attribs, 
-                                                Uint32&           NumDeferredContexts)override final;
+                                                EngineCreateInfo& Attribs)override final;
     virtual void Initialize(IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 
                             Uint32           NumDeferredCtx, 

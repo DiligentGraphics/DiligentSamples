@@ -81,9 +81,9 @@ AtmosphereSample::AtmosphereSample() :
     m_fElapsedTime(0.f)
 {}
 
-void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs, Uint32& NumDeferredContexts)
+void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {
@@ -524,23 +524,17 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
 
     float3 v3LightDirection = (const float3&)LightAttribs.f4Direction;
 
-    // Declare working vectors
     float3 vLightSpaceX, vLightSpaceY, vLightSpaceZ;
 
-    // Compute an inverse vector for the direction on the sun
     vLightSpaceZ = v3LightDirection;
-    // And a vector for X light space
     vLightSpaceX = float3( 1.0f, 0.0, 0.0 );
-    // Compute the cross products
     vLightSpaceY = cross(vLightSpaceX, vLightSpaceZ);
     vLightSpaceX = cross(vLightSpaceZ, vLightSpaceY);
-    // And then normalize them
+
     vLightSpaceX = normalize( vLightSpaceX );
     vLightSpaceY = normalize( vLightSpaceY );
     vLightSpaceZ = normalize( vLightSpaceZ );
 
-    // Declare a world to light space transformation matrix
-    // Initialize to an identity matrix
     float4x4 WorldToLightViewSpaceMatr =
         ViewMatrixFromBasis( vLightSpaceX, vLightSpaceY, vLightSpaceZ );
 

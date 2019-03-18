@@ -47,11 +47,10 @@ Tutorial09_Quads::~Tutorial09_Quads()
 }
 
 void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                      EngineCreateInfo& Attribs,
-                                                      Uint32&           NumDeferredContexts)
+                                                      EngineCreateInfo& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
-    NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
+    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
 #if D3D12_SUPPORTED
     if (DevType == DeviceType::D3D12)
     {

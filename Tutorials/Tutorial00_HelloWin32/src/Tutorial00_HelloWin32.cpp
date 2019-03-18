@@ -136,7 +136,6 @@ public:
     {
         SwapChainDesc SCDesc;
         SCDesc.SamplesCount = 1;
-        Uint32 NumDeferredCtx = 0;
         switch (m_DeviceType)
         {
 #if D3D11_SUPPORTED
@@ -149,7 +148,7 @@ public:
                 LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
                 auto *pFactoryD3D11 = GetEngineFactoryD3D11();
-                pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
+                pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
@@ -166,7 +165,7 @@ public:
 #endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
                 auto *pFactoryD3D12 = GetEngineFactoryD3D12();
-                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
+                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
@@ -206,7 +205,7 @@ public:
             EngVkAttribs.EnableValidation = true;
 #endif
             auto *pFactoryVk = GetEngineFactoryVk();
-            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext, NumDeferredCtx);
+            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);

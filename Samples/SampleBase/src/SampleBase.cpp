@@ -28,7 +28,7 @@
 namespace Diligent
 {
 
-void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, Uint32& NumDeferredContexts)
+void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI)
 {
     switch (DevType)
     {
@@ -92,8 +92,6 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
             LOG_ERROR_AND_THROW("Unknown device type");
             break;
     }
-
-    NumDeferredContexts = 0;
 }
 
 }

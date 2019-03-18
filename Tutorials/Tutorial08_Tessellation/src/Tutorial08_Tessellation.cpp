@@ -62,10 +62,9 @@ namespace
 }
 
 void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType         DevType,
-                                                             EngineCreateInfo&  Attribs,
-                                                             Uint32&            NumDeferredContexts)
+                                                             EngineCreateInfo&  Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {

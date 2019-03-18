@@ -176,8 +176,8 @@ public:
 #ifdef _DEBUG
         EngVkAttribs.EnableValidation = true;
 #endif
-        auto *pFactoryVk = GetEngineFactoryVk();
-        pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext, 0);
+        auto* pFactoryVk = GetEngineFactoryVk();
+        pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
         SwapChainDesc SCDesc;
         SCDesc.SamplesCount = 1;
         pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, &xcbInfo, &m_pSwapChain);

@@ -38,7 +38,7 @@ class SampleBase
 public:
     virtual ~SampleBase(){}
 
-    virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, Uint32& NumDeferredContexts);
+    virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI);
 
     virtual void Initialize(IRenderDevice*      pDevice, 
                             IDeviceContext**    ppContexts, 

@@ -84,15 +84,14 @@ void SampleApp::InitializeDiligentEngine(
 
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
-    Uint32 NumDeferredCtx = 0;
     std::vector<IDeviceContext*> ppContexts;
     switch (m_DeviceType)
     {
 #if D3D11_SUPPORTED
         case DeviceType::D3D11:
         {
-            EngineD3D11CreateInfo DeviceAttribs;
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, DeviceAttribs, NumDeferredCtx);
+            EngineD3D11CreateInfo EngineCI;
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
 
 #if ENGINE_DLL
             GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
@@ -114,8 +113,8 @@ void SampleApp::InitializeDiligentEngine(
             m_DisplayModes.resize(NumDisplayModes);
             pFactoryD3D11->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
 
-            ppContexts.resize(1 + NumDeferredCtx);
-            pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
+            ppContexts.resize(1 + EngineCI.NumDeferredContexts);
+            pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
 
             if(NativeWindowHandle != nullptr)
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
@@ -147,9 +146,9 @@ void SampleApp::InitializeDiligentEngine(
             pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
 
             EngineD3D12CreateInfo EngD3D12Attribs;
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs, NumDeferredCtx);
-            ppContexts.resize(1 + NumDeferredCtx);
-            pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs);
+            ppContexts.resize(1 + EngD3D12Attribs.NumDeferredContexts);
+            pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
@@ -176,13 +175,13 @@ void SampleApp::InitializeDiligentEngine(
 #if PLATFORM_LINUX
             CreationAttribs.pDisplay = display;
 #endif
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, NumDeferredCtx);
-            if (NumDeferredCtx != 0)
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs);
+            if (CreationAttribs.NumDeferredContexts != 0)
             {
                 LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");
-                NumDeferredCtx = 0;
+                CreationAttribs.NumDeferredContexts = 0;
             }
-            ppContexts.resize(1 + NumDeferredCtx);
+            ppContexts.resize(1 + CreationAttribs.NumDeferredContexts);
             pFactoryOpenGL->CreateDeviceAndSwapChainGL(
                 CreationAttribs, &m_pDevice, ppContexts.data(), SCDesc, &m_pSwapChain);
         }
@@ -203,10 +202,10 @@ void SampleApp::InitializeDiligentEngine(
 #endif
             EngVkAttribs.EnabledFeatures.multiViewport = true;
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, NumDeferredCtx);
-            ppContexts.resize(1 + NumDeferredCtx);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs);
+            ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
             auto *pFactoryVk = GetEngineFactoryVk();
-            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
+            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
@@ -220,10 +219,10 @@ void SampleApp::InitializeDiligentEngine(
         {
             EngineMtlCreateInfo MtlAttribs;
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, NumDeferredCtx);
-            ppContexts.resize(1 + NumDeferredCtx);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs);
+            ppContexts.resize(1 + MtlAttribs.NumDeferredContexts);
             auto *pFactoryMtl = GetEngineFactoryMtl();
-            pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data(), NumDeferredCtx);
+            pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);

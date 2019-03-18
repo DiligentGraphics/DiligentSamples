@@ -46,11 +46,10 @@ Tutorial06_Multithreading::~Tutorial06_Multithreading()
 }
 
 void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                               EngineCreateInfo& Attribs,
-                                                               Uint32&           NumDeferredContexts)
+                                                               EngineCreateInfo& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, NumDeferredContexts);
-    NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
+    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {
