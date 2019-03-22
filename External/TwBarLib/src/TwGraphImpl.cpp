@@ -996,7 +996,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
             // Do not set multiple scissor rects as it requires multiViewport feature on Vulkan
             //m_pDevImmContext->SetScissorRects(2, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight);
 
-            Rect CombinedRect;
+            Diligent::Rect CombinedRect;
             CombinedRect.left   = max(m_ViewportAndScissorRects[0].left,    m_ViewportAndScissorRects[1].left);
             CombinedRect.right  = min(m_ViewportAndScissorRects[0].right,   m_ViewportAndScissorRects[1].right);
             CombinedRect.top    = max(m_ViewportAndScissorRects[0].top,     m_ViewportAndScissorRects[1].top);
@@ -1045,7 +1045,7 @@ bool CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
             // Do not set multiple scissor rects as it requires multiViewport feature on Vulkan
             //m_pDevImmContext->SetScissorRects(2, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight);
 
-            Rect CombinedRect;
+            Diligent::Rect CombinedRect;
             CombinedRect.left   = max(m_ViewportAndScissorRects[0].left,    m_ViewportAndScissorRects[1].left);
             CombinedRect.right  = min(m_ViewportAndScissorRects[0].right,   m_ViewportAndScissorRects[1].right);
             CombinedRect.top    = max(m_ViewportAndScissorRects[0].top,     m_ViewportAndScissorRects[1].top);
