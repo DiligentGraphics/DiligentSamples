@@ -46,9 +46,9 @@ public:
     virtual void        BuildText(void *TextObj, const std::string *_TextLines, color32 *_LineColors, color32 *_LineBgColors, int _NbLines, const CTexFont *_Font, int _Sep, int _BgWidth) = 0;
     virtual void        DrawText(void *TextObj, int X, int Y, color32 Color, color32 BgColor) = 0;
 
-    virtual void        ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int _OffsetX, int _OffsetY) = 0;
+    virtual bool        ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int _OffsetX, int _OffsetY) = 0;
     virtual void        RestoreViewport() = 0;
-    virtual void        SetScissor(int _X0, int _Y0, int _Width, int _Height) = 0;
+    virtual bool        SetScissor(int _X0, int _Y0, int _Width, int _Height) = 0;
 
     virtual             ~ITwGraph() {}  // required by gcc
 };

@@ -43,9 +43,9 @@ public:
     virtual void                BuildText(void *_TextObj, const std::string *_TextLines, color32 *_LineColors, color32 *_LineBgColors, int _NbLines, const CTexFont *_Font, int _Sep, int _BgWidth);
     virtual void                DrawText(void *_TextObj, int X, int Y, color32 _Color, color32 _BgColor);
 
-    virtual void                ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int _OffsetX, int _OffsetY);
+    virtual bool                ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int _OffsetX, int _OffsetY);
     virtual void                RestoreViewport();
-    virtual void                SetScissor(int _X0, int _Y0, int _Width, int _Height);
+    virtual bool                SetScissor(int _X0, int _Y0, int _Width, int _Height);
 
 protected:
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice> m_pDev;

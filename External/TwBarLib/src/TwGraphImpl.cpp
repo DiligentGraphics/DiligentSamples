@@ -963,7 +963,7 @@ void CTwGraphImpl::DrawText(void *TextObj, int X, int Y, color32 Color, color32 
 
 //  ---------------------------------------------------------------------------
 
-void CTwGraphImpl::ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int _OffsetX, int _OffsetY)
+ bool CTwGraphImpl::ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int _OffsetX, int _OffsetY)
 {
     if( _Width>0 && _Height>0 )
     {
@@ -982,8 +982,15 @@ void CTwGraphImpl::ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int
         m_ViewportAndScissorRects[0].right  = max(_X0 + _Width - 1, 0);
         m_ViewportAndScissorRects[0].top    = max(_Y0, 0);
         m_ViewportAndScissorRects[0].bottom = max(_Y0 + _Height - 1, 0);
+
+        m_OffsetX = _X0 + _OffsetX;
+        m_OffsetY = _Y0 + _OffsetY;
+
         if( m_ViewportAndScissorRects[1] == m_FullRect )
+        {
             m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight); // viewport clipping only
+            return m_ViewportAndScissorRects[0].IsValid();
+        }
         else
         {
             // Do not set multiple scissor rects as it requires multiViewport feature on Vulkan
@@ -997,10 +1004,12 @@ void CTwGraphImpl::ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int
             CombinedRect.right  = max(CombinedRect.left, CombinedRect.right);
             CombinedRect.bottom = max(CombinedRect.top,  CombinedRect.bottom);
             m_pDevImmContext->SetScissorRects(1, &CombinedRect, m_WndWidth, m_WndHeight);
+            return CombinedRect.IsValid();
         }
-
-        m_OffsetX = _X0 + _OffsetX;
-        m_OffsetY = _Y0 + _OffsetY;
+    }
+    else
+    {
+        return false;
     }
 }
 
@@ -1017,7 +1026,7 @@ void CTwGraphImpl::RestoreViewport()
 
 //  ---------------------------------------------------------------------------
 
-void CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
+bool CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
 {
     if( _Width>0 && _Height>0 )
     {
@@ -1027,7 +1036,10 @@ void CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
         m_ViewportAndScissorRects[1].bottom = max(_Y0 + _Height - 1, 0);
 
         if( m_ViewportAndScissorRects[0] == m_FullRect )
+        {
             m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects+1, m_WndWidth, m_WndHeight); // no viewport clipping
+            return m_ViewportAndScissorRects[1].IsValid();
+        }
         else
         {
             // Do not set multiple scissor rects as it requires multiViewport feature on Vulkan
@@ -1041,12 +1053,14 @@ void CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
             CombinedRect.right  = max(CombinedRect.left, CombinedRect.right);
             CombinedRect.bottom = max(CombinedRect.top,  CombinedRect.bottom);
             m_pDevImmContext->SetScissorRects(1, &CombinedRect, m_WndWidth, m_WndHeight);
+            return CombinedRect.IsValid();
         }
     }
     else
     {
         m_ViewportAndScissorRects[1] = m_FullRect;
         m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight); // apply viewport clipping only
+        return m_ViewportAndScissorRects[0].IsValid();
     }
 }
 

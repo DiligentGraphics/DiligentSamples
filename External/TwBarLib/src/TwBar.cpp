@@ -5125,8 +5125,10 @@ void CTwBar::Draw(int _DrawPart)
                     {
                         r.m_Y0 = y0;
                         r.m_Y1 = y1;
-                        Gr->ChangeViewport(r.m_XMin, r.m_YMin, r.m_XMax-r.m_XMin+1, r.m_YMax-r.m_YMin+1, 0, y0-r.m_YMin+1);
-                        sProxy->m_CustomDrawCallback(r.m_XMax-r.m_XMin, y1-y0, sProxy->m_StructExtData, sProxy->m_StructClientData, this, r.m_Var);
+                        if(Gr->ChangeViewport(r.m_XMin, r.m_YMin, r.m_XMax-r.m_XMin+1, r.m_YMax-r.m_YMin+1, 0, y0-r.m_YMin+1))
+                        {
+                            sProxy->m_CustomDrawCallback(r.m_XMax-r.m_XMin, y1-y0, sProxy->m_StructExtData, sProxy->m_StructClientData, this, r.m_Var);
+                        }
                         Gr->RestoreViewport();
                     }
                 }
