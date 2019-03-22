@@ -985,7 +985,19 @@ void CTwGraphImpl::ChangeViewport(int _X0, int _Y0, int _Width, int _Height, int
         if( m_ViewportAndScissorRects[1] == m_FullRect )
             m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight); // viewport clipping only
         else
-            m_pDevImmContext->SetScissorRects(2, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight);
+        {
+            // Do not set multiple scissor rects as it requires multiViewport feature on Vulkan
+            //m_pDevImmContext->SetScissorRects(2, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight);
+
+            Rect CombinedRect;
+            CombinedRect.left   = max(m_ViewportAndScissorRects[0].left,    m_ViewportAndScissorRects[1].left);
+            CombinedRect.right  = min(m_ViewportAndScissorRects[0].right,   m_ViewportAndScissorRects[1].right);
+            CombinedRect.top    = max(m_ViewportAndScissorRects[0].top,     m_ViewportAndScissorRects[1].top);
+            CombinedRect.bottom = min(m_ViewportAndScissorRects[0].bottom,  m_ViewportAndScissorRects[1].bottom);
+            CombinedRect.right  = max(CombinedRect.left, CombinedRect.right);
+            CombinedRect.bottom = max(CombinedRect.top,  CombinedRect.bottom);
+            m_pDevImmContext->SetScissorRects(1, &CombinedRect, m_WndWidth, m_WndHeight);
+        }
 
         m_OffsetX = _X0 + _OffsetX;
         m_OffsetY = _Y0 + _OffsetY;
@@ -1017,7 +1029,19 @@ void CTwGraphImpl::SetScissor(int _X0, int _Y0, int _Width, int _Height)
         if( m_ViewportAndScissorRects[0] == m_FullRect )
             m_pDevImmContext->SetScissorRects(1, m_ViewportAndScissorRects+1, m_WndWidth, m_WndHeight); // no viewport clipping
         else
-            m_pDevImmContext->SetScissorRects(2, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight);
+        {
+            // Do not set multiple scissor rects as it requires multiViewport feature on Vulkan
+            //m_pDevImmContext->SetScissorRects(2, m_ViewportAndScissorRects, m_WndWidth, m_WndHeight);
+
+            Rect CombinedRect;
+            CombinedRect.left   = max(m_ViewportAndScissorRects[0].left,    m_ViewportAndScissorRects[1].left);
+            CombinedRect.right  = min(m_ViewportAndScissorRects[0].right,   m_ViewportAndScissorRects[1].right);
+            CombinedRect.top    = max(m_ViewportAndScissorRects[0].top,     m_ViewportAndScissorRects[1].top);
+            CombinedRect.bottom = min(m_ViewportAndScissorRects[0].bottom,  m_ViewportAndScissorRects[1].bottom);
+            CombinedRect.right  = max(CombinedRect.left, CombinedRect.right);
+            CombinedRect.bottom = max(CombinedRect.top,  CombinedRect.bottom);
+            m_pDevImmContext->SetScissorRects(1, &CombinedRect, m_WndWidth, m_WndHeight);
+        }
     }
     else
     {

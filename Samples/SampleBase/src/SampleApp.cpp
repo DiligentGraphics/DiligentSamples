@@ -200,7 +200,6 @@ void SampleApp::InitializeDiligentEngine(
 #ifdef _DEBUG
             EngVkAttribs.EnableValidation = true;
 #endif
-            EngVkAttribs.EnabledFeatures.multiViewport = true;
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs);
             ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
