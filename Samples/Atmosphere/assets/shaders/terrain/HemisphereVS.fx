@@ -25,10 +25,10 @@ cbuffer cbParticipatingMediaScatteringParams
 }
 
 Texture2D< float2 > g_tex2DOccludedNetDensityToAtmTop;
-SamplerState g_tex2DOccludedNetDensityToAtmTop_sampler;
+SamplerState        g_tex2DOccludedNetDensityToAtmTop_sampler;
 
 Texture2D< float3 > g_tex2DAmbientSkylight;
-SamplerState g_tex2DAmbientSkylight_sampler;
+SamplerState        g_tex2DAmbientSkylight_sampler;
 
 void GetSunLightExtinctionAndSkyLight(in float3 f3PosWS,
                                       out float3 f3Extinction,

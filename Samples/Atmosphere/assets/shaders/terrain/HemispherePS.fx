@@ -24,20 +24,20 @@ cbuffer cbLightAttribs
 
 
 // Normal map stores only x,y components. z component is calculated as sqrt(1 - x^2 - y^2)
-Texture2D g_tex2DNormalMap;
+Texture2D    g_tex2DNormalMap;
 SamplerState g_tex2DNormalMap_sampler; // Linear Mirror
 
-Texture2D< float4 > g_tex2DMtrlMap;
-SamplerState g_tex2DMtrlMap_sampler; // Linear Mirror
+Texture2D<float4> g_tex2DMtrlMap;
+SamplerState      g_tex2DMtrlMap_sampler; // Linear Mirror
 
-Texture2DArray < float >  g_tex2DShadowMap;
+Texture2DArray<float>   g_tex2DShadowMap;
 SamplerComparisonState g_tex2DShadowMap_sampler; // Comparison
 
-Texture2D< float3 > g_tex2DTileDiffuse[5];   // Material diffuse
-SamplerState g_tex2DTileDiffuse_sampler;   
+Texture2D<float3> g_tex2DTileDiffuse[5];   // Material diffuse
+SamplerState      g_tex2DTileDiffuse_sampler;   
 
-Texture2D< float3 > g_tex2DTileNM[5];   // Material NM
-SamplerState g_tex2DTileNM_sampler;   
+Texture2D<float3> g_tex2DTileNM[5];   // Material NM
+SamplerState      g_tex2DTileNM_sampler;   
 
 
 

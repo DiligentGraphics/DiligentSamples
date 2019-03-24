@@ -557,6 +557,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     ShaderCI.FilePath        = "GenerateNormalMapPS.fx";
     ShaderCI.EntryPoint      = "GenerateNormalMapPS";
     ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+    ShaderCI.Desc.Name       = "GenerateNormalMapPS";
 
     RefCntAutoPtr<IShader> pGenerateNormalMapPS;
     pDevice->CreateShader(ShaderCI, &pGenerateNormalMapPS);
@@ -570,14 +571,8 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
         {SHADER_TYPE_PIXEL, "cbNMGenerationAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC}
     };
     
-    StaticSamplerDesc StaticSamplers[] = 
-    {
-        {SHADER_TYPE_PIXEL, "g_tex2DElevationMap", Sam_PointClamp}
-    };
-    PSODesc.ResourceLayout.NumVariables      = _countof(ShaderVars);
-    PSODesc.ResourceLayout.Variables         = ShaderVars;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSODesc.ResourceLayout.NumVariables = _countof(ShaderVars);
+    PSODesc.ResourceLayout.Variables    = ShaderVars;
 
     PSODesc.Name = "Render Normal Map";
     auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
