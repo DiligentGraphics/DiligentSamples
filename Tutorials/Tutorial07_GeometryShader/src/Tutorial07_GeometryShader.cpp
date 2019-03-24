@@ -67,7 +67,7 @@ void Tutorial07_GeometryShader::Initialize(IRenderDevice*    pDevice,
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if(!deviceCaps.bGeometryShadersSupported)
     {
-        throw std::runtime_error("Geometry shaders are required to run this sample");
+        throw std::runtime_error("Geometry shaders are not supported");
     }
 
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);

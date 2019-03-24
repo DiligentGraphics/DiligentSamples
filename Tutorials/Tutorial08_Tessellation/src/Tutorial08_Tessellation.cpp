@@ -86,6 +86,10 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
     {
         throw std::runtime_error("Hardware tessellation is not supported");
     }
+    if(!deviceCaps.bGeometryShadersSupported)
+    {
+        throw std::runtime_error("Geometry shaders are required to run this tutorial");
+    }
 
     SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
