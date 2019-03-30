@@ -31,17 +31,13 @@ namespace Diligent
 class SampleAppIOS final : public SampleApp
 {
 public:
-    SampleAppIOS()
+    virtual void Initialize(int deviceType, void* layer)override final
     {
-        m_DeviceType = DeviceType::OpenGLES;
-    }
-
-    virtual void OnGLContextCreated(void *eaglLayer)override final
-    {
-        InitializeDiligentEngine(eaglLayer);
+        m_DeviceType = static_cast<Diligent::DeviceType>(deviceType);
+        InitializeDiligentEngine(layer);
         InitializeSample();
     }
-    
+
     virtual void Render()override
     {
         /*m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
@@ -56,23 +52,23 @@ public:
                 case TwEvent::RMB_PRESSED:
                     TwMouseButton(TW_MOUSE_PRESSED, event.type == TwEvent::LMB_PRESSED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
                     break;
-                    
+
                 case TwEvent::LMB_RELEASED:
                 case TwEvent::RMB_RELEASED:
                     TwMouseButton(TW_MOUSE_RELEASED, event.type == TwEvent::LMB_RELEASED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
                     break;
-                    
+
                 case TwEvent::MOUSE_MOVE:
                     TwMouseMotion(event.mouseX, event.mouseY);
                     break;
-                    
+
                 case TwEvent::KEY_PRESSED:
                     TwKeyPressed(event.key, 0);
                     break;
             }
             TwBarEvents.pop();
         }*/
-        
+
         SampleApp::Render();
     }
 
@@ -81,18 +77,18 @@ public:
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
         TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
     }
-    
+
     virtual void OnTouchMoved(float x, float y)override final
     {
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
     }
-    
+
     virtual void OnTouchEnded(float x, float y)override final
     {
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
         TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
     }
-    
+
 private:
     /*
     // Unfortunately TwBar library calls rendering
@@ -112,7 +108,7 @@ private:
         int mouseX = 0;
         int mouseY = 0;
         int key = 0;
-        
+
         TwEvent(EVENT_TYPE _type) : type(_type){}
         TwEvent(int x, int y) : type(MOUSE_MOVE), mouseX(x), mouseY(y){}
         TwEvent(int k) : type(KEY_PRESSED), key(k){}
