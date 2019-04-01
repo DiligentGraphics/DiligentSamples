@@ -3,7 +3,7 @@
 This tutorial extends Tutorial02 and demonstrates how to apply a texture to a 3D object. It shows how to load a texture 
 from file, create shader resource binding object and how to sample a texture in the shader.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 ## Shaders
 

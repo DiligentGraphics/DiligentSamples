@@ -26,7 +26,7 @@ index and uniform buffers.
 
 ## [Tutorial 03 - Texturing](Tutorials/Tutorial03_Texturing)
 
-![](Tutorials/Tutorial03_Texturing/Screenshot.png)
+![](Tutorials/Tutorial03_Texturing/Animation_Large.gif)
 
 This tutorial demonstrates how to apply a texture to a 3D object. It shows how to load a texture from file, create shader resource
 binding object and how to sample a texture in the shader.
