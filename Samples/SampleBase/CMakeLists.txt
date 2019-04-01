@@ -120,7 +120,8 @@ get_supported_backends(ENGINE_LIBRARIES)
 
 target_link_libraries(SampleBase 
 PRIVATE 
-    BuildSettings 
+    BuildSettings
+    TextureLoader
 PUBLIC
     NativeAppBase
     TwBarLib 

@@ -33,6 +33,7 @@
 #include "DeviceContext.h"
 #include "SwapChain.h"
 #include "SampleBase.h"
+#include "ScreenCapture.h"
 
 namespace Diligent
 {
@@ -49,6 +50,11 @@ public:
     virtual void Render()override;
     virtual void Present()override;
     virtual void SelectDeviceType(){};
+    virtual void GetDesiredInitialWindowSize(int& width, int& height)override final
+    {
+        width  = m_InitialWindowWidth;
+        height = m_InitialWindowHeight;
+    }
 
 protected:
     void InitializeDiligentEngine(
@@ -79,12 +85,29 @@ protected:
     std::vector<DisplayModeAttribs>             m_DisplayModes;
 
     std::unique_ptr<SampleBase> m_TheSample;
+    
+    int m_InitialWindowWidth  = 0;
+    int m_InitialWindowHeight = 0;
+
     std::string m_AppTitle;
-    Int32 m_UIScale = 1;
+    Int32       m_UIScale = 1;
     std::string m_AdapterDetailsString;
-    int m_SelectedDisplayMode = 0;
-    bool m_bVSync = false;
-    bool m_bFullScreenMode = false;
+    int         m_SelectedDisplayMode = 0;
+    bool        m_bVSync              = false;
+    bool        m_bFullScreenMode     = false;
+    double      m_CurrentTime         = 0;
+
+    struct ScreenCaptureInfo
+    {
+        bool            AllowCapture    = false;
+        std::string     Directory;
+        std::string     FileName        = "frame";
+        double          CaptureFPS      = 30;
+        double          LastCaptureTime = 0;
+        Uint32          FramesToCapture = 0;
+        Uint32          CurrentFrame    = 0;
+    }m_ScreenCaptureInfo;
+    std::unique_ptr<ScreenCapture> m_pScreenCapture;
 };
 
 }

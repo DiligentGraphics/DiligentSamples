@@ -23,11 +23,15 @@
 
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
 #include "Errors.h"
 #include "StringTools.h"
+#include "MapHelper.h"
+#include "Image.h"
+#include "FileWrapper.h"
 
 #if D3D11_SUPPORTED
 #   include "EngineFactoryD3D11.h"
@@ -84,6 +88,9 @@ void SampleApp::InitializeDiligentEngine(
 
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
+    if (m_ScreenCaptureInfo.AllowCapture)
+        SCDesc.Usage |= SWAP_CHAIN_USAGE_COPY_SOURCE;
+
     std::vector<IDeviceContext*> ppContexts;
     switch (m_DeviceType)
     {
@@ -239,6 +246,11 @@ void SampleApp::InitializeDiligentEngine(
     m_pDeferredContexts.resize(NumDeferredCtx);
     for (Uint32 ctx = 0; ctx < NumDeferredCtx; ++ctx)
         m_pDeferredContexts[ctx].Attach(ppContexts[1 + ctx]);
+
+    if (m_ScreenCaptureInfo.AllowCapture)
+    {
+        m_pScreenCapture.reset(new ScreenCapture(m_pDevice));
+    }
 }
 
 void SampleApp::InitializeSample()
@@ -345,58 +357,105 @@ void SampleApp::InitializeSample()
 #endif
 }
 
-void SampleApp::ProcessCommandLine(const char* CmdLine)
-{
-    const auto* Key = "mode=";
-    const auto* pos = strstr(CmdLine, Key);
-    if (pos != nullptr)
-    {
-        pos += strlen(Key);
-        size_t len = 0;
-        while(pos[len] != 0 && pos[len] != ' ')
-            ++len;
 
-        if (StrCmpNoCase(pos, "D3D11", len) == 0)
-        {
-#if D3D11_SUPPORTED
-            m_DeviceType = DeviceType::D3D11;
-#else
-            LOG_ERROR_AND_THROW("Direct3D11 is not supported. Please select another device type");
-#endif
-        }
-        else if (StrCmpNoCase(pos, "D3D12", len) == 0)
-        {
-#if D3D12_SUPPORTED
-            m_DeviceType = DeviceType::D3D12;
-#else
-            LOG_ERROR_AND_THROW("Direct3D12 is not supported. Please select another device type");
-#endif
-        }
-        else if (StrCmpNoCase(pos, "GL", len) == 0)
-        {
-#if GL_SUPPORTED || GLES_SUPPORTED
-            m_DeviceType = DeviceType::OpenGL;
-#else
-            LOG_ERROR_AND_THROW("OpenGL is not supported. Please select another device type");
-#endif
-        }
-        else if (StrCmpNoCase(pos, "VK", len) == 0)
-        {
-#if VULKAN_SUPPORTED
-            m_DeviceType = DeviceType::Vulkan;
-#else
-            LOG_ERROR_AND_THROW("Vulkan is not supported. Please select another device type");
-#endif
-        }
-        else
-        {
-            LOG_ERROR_AND_THROW("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, VK");
-        }
+std::string GetArgument(const char* &pos, const char* ArgName)
+{
+    size_t ArgNameLen = 0;
+    while(pos[ArgNameLen] != 0 && pos[ArgNameLen] != ' ')
+        ++ArgNameLen;
+
+    if (StrCmpNoCase(pos, ArgName, ArgNameLen) == 0)
+    {
+        pos += ArgNameLen;
+        while(*pos != 0 && *pos == ' ')
+            ++pos;
+        std::string Arg;
+        while(*pos != 0 && *pos != ' ')
+            Arg.push_back(*(pos++));
+        return Arg;
     }
     else
     {
+        return std::string{};
+    }
+}
+
+void SampleApp::ProcessCommandLine(const char* CmdLine)
+{
+    const auto* pos = strchr(CmdLine, '-');
+    while(pos != nullptr)
+    {
+        ++pos;
+        std::string Arg;
+        if ( !(Arg = GetArgument(pos, "mode")).empty() )
+        {
+            if (StrCmpNoCase(Arg.c_str(), "D3D11", Arg.length()) == 0)
+            {
+#if D3D11_SUPPORTED
+                m_DeviceType = DeviceType::D3D11;
+#else
+                LOG_ERROR_AND_THROW("Direct3D11 is not supported. Please select another device type");
+#endif
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "D3D12", Arg.length()) == 0)
+            {
+#if D3D12_SUPPORTED
+                m_DeviceType = DeviceType::D3D12;
+#else
+                LOG_ERROR_AND_THROW("Direct3D12 is not supported. Please select another device type");
+#endif
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "GL", Arg.length()) == 0)
+            {
+#if GL_SUPPORTED || GLES_SUPPORTED
+                m_DeviceType = DeviceType::OpenGL;
+#else
+                LOG_ERROR_AND_THROW("OpenGL is not supported. Please select another device type");
+#endif
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "VK", Arg.length()) == 0)
+            {
+#if VULKAN_SUPPORTED
+                m_DeviceType = DeviceType::Vulkan;
+#else
+                LOG_ERROR_AND_THROW("Vulkan is not supported. Please select another device type");
+#endif
+            }
+            else
+            {
+                LOG_ERROR_AND_THROW("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, VK");
+            }
+        }
+        else if ( !(Arg = GetArgument(pos, "capture_path")).empty() )
+        {
+            m_ScreenCaptureInfo.Directory = std::move(Arg);
+            m_ScreenCaptureInfo.AllowCapture = true;
+        }
+        else if ( !(Arg = GetArgument(pos, "capture_name")).empty() )
+        {
+            m_ScreenCaptureInfo.FileName = std::move(Arg);
+            m_ScreenCaptureInfo.AllowCapture = true;
+        }
+        else if ( !(Arg = GetArgument(pos, "capture_fps")).empty() )
+        {
+            m_ScreenCaptureInfo.CaptureFPS = atof(Arg.c_str());
+        }
+        else if ( !(Arg = GetArgument(pos, "width")).empty() )
+        {
+            m_InitialWindowWidth = atoi(Arg.c_str());
+        }
+        else if ( !(Arg = GetArgument(pos, "height")).empty() )
+        {
+            m_InitialWindowHeight = atoi(Arg.c_str());
+        }
+
+        pos = strchr(pos, '-');
+    }
+    
+    if (m_DeviceType == DeviceType::Undefined)
+    {
         SelectDeviceType();
-        if(m_DeviceType == DeviceType::Undefined)
+        if (m_DeviceType == DeviceType::Undefined)
         {
 #if D3D12_SUPPORTED
             m_DeviceType = DeviceType::D3D12;
@@ -448,6 +507,7 @@ void SampleApp::WindowResize(int width, int height)
 
 void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
+    m_CurrentTime = CurrTime;
     m_TheSample->Update(CurrTime, ElapsedTime);
 }
 
@@ -464,7 +524,52 @@ void SampleApp::Render()
 
 void SampleApp::Present()
 {
+    if (m_pScreenCapture && m_ScreenCaptureInfo.FramesToCapture > 0)
+    {
+        if (m_CurrentTime - m_ScreenCaptureInfo.LastCaptureTime >= 1.0 / m_ScreenCaptureInfo.CaptureFPS)
+        {
+            m_pScreenCapture->Capture(m_pSwapChain, m_pImmediateContext, m_ScreenCaptureInfo.CurrentFrame);
+            
+            m_ScreenCaptureInfo.LastCaptureTime = m_CurrentTime;
+
+            --m_ScreenCaptureInfo.FramesToCapture;
+            ++m_ScreenCaptureInfo.CurrentFrame;
+        }
+    }
+
     m_pSwapChain->Present(m_bVSync ? 1 : 0);
+
+    if (m_pScreenCapture)
+    {
+        while(auto Capture = m_pScreenCapture->GetCapture())
+        {
+            MappedTextureSubresource TexData;
+            m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_SYNCHRONIZE, nullptr, TexData);
+            const auto& TexDesc = Capture.pTexture->GetDesc();
+            RefCntAutoPtr<IDataBlob> pEncodedImage;
+            Image::Encode(TexDesc.Width, TexDesc.Height, TexDesc.Format, TexData.pData, TexData.Stride, EImageFileFormat::png, 1.f, &pEncodedImage);
+            m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
+            m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
+            std::stringstream FileNameSS;
+            FileNameSS << m_ScreenCaptureInfo.Directory << '/' << m_ScreenCaptureInfo.FileName
+                       << Capture.Id << ".png";
+            auto FileName = FileNameSS.str();
+            FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
+            if (pFile)
+            {
+                auto res = pFile->Write(pEncodedImage->GetDataPtr(), pEncodedImage->GetSize());
+                if (!res)
+                {
+                    LOG_ERROR("Failed to write screen capture file '", FileName, "'.");
+                }
+                pFile.Close();
+            }
+            else
+            {
+                LOG_ERROR("Failed to create screen capture file '", FileName, "'. Verify that the directory exists and the app has sufficient rights to write to this directory.");
+            }
+        }
+    }
 }
 
 }

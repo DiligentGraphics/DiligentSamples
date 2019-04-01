@@ -21,6 +21,8 @@
 *  of the possibility of such damages.
 */
 
+#include <limits>
+
 #include "SampleApp.h"
 #include "AntTweakBar.h"
 #include "resources/Win32AppResource.h"
@@ -127,7 +129,32 @@ public:
                         return 0;
                     }
                 }
-            // Send all other WM_SYSKEYDOWN messages to the default WndProc.
+                // Send all other WM_SYSKEYDOWN messages to the default WndProc.
+            break;
+
+            case WM_KEYDOWN:
+                switch (wParam)
+                {
+                    case VK_F2:
+                    {
+                        if (m_ScreenCaptureInfo.AllowCapture)
+                            m_ScreenCaptureInfo.FramesToCapture = std::numeric_limits<decltype(m_ScreenCaptureInfo.FramesToCapture)>::max();
+                        return 0;
+                    }
+
+                    case VK_F3:
+                    {
+                        m_ScreenCaptureInfo.FramesToCapture = 0;
+                        return 0;
+                    }
+
+                    case VK_F4:
+                    {
+                        if (m_ScreenCaptureInfo.AllowCapture && m_ScreenCaptureInfo.FramesToCapture == 0)
+                            m_ScreenCaptureInfo.FramesToCapture = 1;
+                        return 0;
+                    }
+                }
             break;
         }
 
