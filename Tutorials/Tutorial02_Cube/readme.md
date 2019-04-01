@@ -3,7 +3,7 @@
 This tutorial builds on top of Tutorial01 and demonstrates how to render an actual 3D object, a cube. 
 It shows how to load shaders from files, create and use vertex, index and uniform buffers.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 ## Shaders
 

@@ -19,7 +19,7 @@ This tutorial shows how to render simple triangle using Diligent Engine API.
 
 ## [Tutorial 02 - Cube](Tutorials/Tutorial02_Cube)
 
-![](Tutorials/Tutorial02_Cube/Screenshot.png)
+![](Tutorials/Tutorial02_Cube/Animation_Large.gif)
 
 This tutorial demonstrates how to render an actual 3D object, a cube. It shows how to load shaders from files, create and use vertex, 
 index and uniform buffers.
