@@ -579,7 +579,8 @@ void SampleApp::Present()
             m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
             std::stringstream FileNameSS;
             FileNameSS << m_ScreenCaptureInfo.Directory << '/' << m_ScreenCaptureInfo.FileName
-                       << Capture.Id << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : "png");
+                       << std::setw(3) << std::setfill('0') << Capture.Id
+                       << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : ".png");
             auto FileName = FileNameSS.str();
             FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
             if (pFile)
