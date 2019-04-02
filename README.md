@@ -117,20 +117,20 @@ Please refer to Build and Run Instructions section in the
 Command line options:
 
 * **-mode** {*d3d11*|*d3d12*|*vk*|*gl*} - select rendering back-end (exmple: *-mode d3d12*).
-* **-width** *value* - set desired window width (example: *-width 1023*).
+* **-width** *value* - set desired window width (example: *-width 1024*).
 * **-height** *value* - set desired window height (example: *-height 768*).
 * **-capture_path** *path* - path to the folder where screen captures will be saved. Specifying this parameter enables screen capture (example: *-capture_path .*).
 * **-capture_name** *name* - screen capture file name. Specifying this parameter enables screen capture (example: *-capture_name frame*).
-* **-capture_fps** *fps*   - recording fps when capturing frame sequence (example: *-capture_fps 15*). Default value: 15.
+* **-capture_fps** *fps*   - recording fps when capturing frame sequence (example: *-capture_fps 10*). Default value: 15.
 * **-capture_frames** *value* - number of frames to capture after the app starts (example: *-capture_frames 50*).
 * **-capture_format** {*jpg*|*png*} - image file format (example: *-capture_format jpg*). Default value: jpg.
 * **-capture_quality** *value* - jpeg quality (example: *-capture_quality 80*). Default value: 95.
 
 When image capture is enabled the following hot keys are available:
 
-* F2 starts frame capture recording.
-* F3 finishes frame capture recroding.
-* F4 saves single screenshot.
+* **F2** starts frame capture recording.
+* **F3** finishes frame capture recroding.
+* **F4** saves single screenshot.
 
 To record multiple frames after the app starts, use command line like this:
 
