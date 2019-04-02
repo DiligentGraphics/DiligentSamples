@@ -111,20 +111,20 @@ post-processing effect into an application to render physically-based atmosphere
 
 # Build and Run Instructions
 
-Please refer to Build and Run Instructions section of the
+Please refer to Build and Run Instructions section in the
 [master repository's readme](https://github.com/DiligentGraphics/DiligentEngine/blob/master/README.md#build-and-run-instructions).
 
 Command line options:
 
 * **-mode** {*d3d11*|*d3d12*|*vk*|*gl*} - select rendering back-end (exmple: *-mode d3d12*).
-* **-width** <value> - set desired window width (example: *-width 1023*).
-* **-height** <value> - set desired window height (example: *-height 768*).
-* **-capture_path** <path> - path to the folder where screen captures will be saved. Specifying this parameter enables screen capture (example: *-capture_path .*).
-* **-capture_name** <name> - screen capture file name. Specifying this parameter enables screen capture (example: *-capture_name frame*).
-* **-capture_fps** <fps>   - recording fps when capturing frame sequence (example: *-capture_fps 15*). Default value: 15.
-* **-capture_frames** <value> - number of frames to capture after the app starts (example: *-capture_frames 50*).
+* **-width** *value* - set desired window width (example: *-width 1023*).
+* **-height** *value* - set desired window height (example: *-height 768*).
+* **-capture_path** *path* - path to the folder where screen captures will be saved. Specifying this parameter enables screen capture (example: *-capture_path .*).
+* **-capture_name** *name* - screen capture file name. Specifying this parameter enables screen capture (example: *-capture_name frame*).
+* **-capture_fps** *fps*   - recording fps when capturing frame sequence (example: *-capture_fps 15*). Default value: 15.
+* **-capture_frames** *value* - number of frames to capture after the app starts (example: *-capture_frames 50*).
 * **-capture_format** {*jpg*|*png*} - image file format (example: *-capture_format jpg*). Default value: jpg.
-* **-capture_quality** <value> - jpeg quality (example: *-capture_quality 80*). Default value: 95.
+* **-capture_quality** *value* - jpeg quality (example: *-capture_quality 80*). Default value: 95.
 
 When image capture is enabled the following hot keys are available:
 
