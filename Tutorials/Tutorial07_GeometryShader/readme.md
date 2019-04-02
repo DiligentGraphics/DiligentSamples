@@ -2,7 +2,7 @@
 
 This tutorial is based on Tutorial03 and shows how to use geometry shader to render smooth wireframe.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 Geometry shader is a programmable stage that resides between vertex and pixel shaders (it can also 
 be used with hardware tessellation, in which case it resides between domain shader and pixel shader). 

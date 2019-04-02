@@ -440,6 +440,10 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         {
             m_ScreenCaptureInfo.CaptureFPS = atof(Arg.c_str());
         }
+        else if ( !(Arg = GetArgument(pos, "capture_frames")).empty() )
+        {
+            m_ScreenCaptureInfo.FramesToCapture = atoi(Arg.c_str());
+        }
         else if ( !(Arg = GetArgument(pos, "width")).empty() )
         {
             m_InitialWindowWidth = atoi(Arg.c_str());

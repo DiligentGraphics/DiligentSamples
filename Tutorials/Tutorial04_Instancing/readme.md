@@ -3,7 +3,7 @@
 This tutorial extends Tutorial03 and demonstrates how to use instancing to render multiple copies
 of one object using unique transformation matrix for every copy.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 Instancing is a very widely used technique. It allows rendering multiple copies of one object (trees 
 in a forest or characters in a crowd), using just single draw call. 

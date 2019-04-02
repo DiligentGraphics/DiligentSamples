@@ -33,27 +33,27 @@ binding object and how to sample a texture in the shader.
 
 ## [Tutorial 04 - Instancing](Tutorials/Tutorial04_Instancing)
 
-![](Tutorials/Tutorial04_Instancing/Screenshot.png)
+![](Tutorials/Tutorial04_Instancing/Animation_Large.gif)
 
 This tutorial demonstrates how to use instancing to render multiple copies of one object
 using unique transformation matrix for every copy.
 
 ## [Tutorial 05 - Texture Array](Tutorials/Tutorial05_TextureArray)
 
-![](Tutorials/Tutorial05_TextureArray/Screenshot.png)
+![](Tutorials/Tutorial05_TextureArray/Animation_Large.gif)
 
 This tutorial demonstrates how to combine instancing with texture arrays to 
 use unique texture for every instance.
 
 ## [Tutorial 06 - Multithreading](Tutorials/Tutorial06_Multithreading)
 
-![](Tutorials/Tutorial06_Multithreading/Screenshot.png)
+![](Tutorials/Tutorial06_Multithreading/Animation_Large.gif)
 
 This tutorial shows how to generate command lists in parallel from multiple threads.
 
 ## [Tutorial 07 - Geometry Shader](Tutorials/Tutorial07_GeometryShader)
 
-![](Tutorials/Tutorial07_GeometryShader/Screenshot.png)
+![](Tutorials/Tutorial07_GeometryShader/Animation_Large.gif)
 
 This tutorial shows how to use geometry shader to render smooth wireframe.
 

@@ -3,7 +3,7 @@
 This tutorial demonstrates how to combine instancing shown in Tutotial04 with texture arrays to 
 use unique texture for every instance.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 Texture array is a special kind of texture that consists of multiple 2D (or 1D) textures sharing the same
 format, size, and the number of mip levels. Every individual texture in the array is called *slice*. Slices can
