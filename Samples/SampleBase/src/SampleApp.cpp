@@ -380,6 +380,10 @@ std::string GetArgument(const char* &pos, const char* ArgName)
     }
 }
 
+// Command line example to capture frames:
+//
+//     -mode d3d11 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format jpg -capture_quality 100 -capture_frames 3
+//
 void SampleApp::ProcessCommandLine(const char* CmdLine)
 {
     const auto* pos = strchr(CmdLine, '-');
@@ -443,6 +447,25 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         else if ( !(Arg = GetArgument(pos, "capture_frames")).empty() )
         {
             m_ScreenCaptureInfo.FramesToCapture = atoi(Arg.c_str());
+        }
+        else if ( !(Arg = GetArgument(pos, "capture_format")).empty() )
+        {
+            if (StrCmpNoCase(Arg.c_str(), "jpeg", Arg.length()) == 0 || StrCmpNoCase(Arg.c_str(), "jpg", Arg.length()) == 0)
+            {
+                m_ScreenCaptureInfo.FileFormat = EImageFileFormat::jpeg;
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "png", Arg.length()) == 0)
+            {
+                m_ScreenCaptureInfo.FileFormat = EImageFileFormat::png;
+            }
+            else
+            {
+                LOG_ERROR_MESSAGE("Unknown capture format. The following are allowed values: 'jpeg', 'jpg', 'png'");
+            }
+        }
+        else if ( !(Arg = GetArgument(pos, "capture_quality")).empty() )
+        {
+            m_ScreenCaptureInfo.JpegQuality = atoi(Arg.c_str());
         }
         else if ( !(Arg = GetArgument(pos, "width")).empty() )
         {
@@ -551,12 +574,12 @@ void SampleApp::Present()
             m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_SYNCHRONIZE, nullptr, TexData);
             const auto& TexDesc = Capture.pTexture->GetDesc();
             RefCntAutoPtr<IDataBlob> pEncodedImage;
-            Image::Encode(TexDesc.Width, TexDesc.Height, TexDesc.Format, TexData.pData, TexData.Stride, EImageFileFormat::png, 1.f, &pEncodedImage);
+            Image::Encode(TexDesc.Width, TexDesc.Height, TexDesc.Format, TexData.pData, TexData.Stride, m_ScreenCaptureInfo.FileFormat, m_ScreenCaptureInfo.JpegQuality, &pEncodedImage);
             m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
             m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
             std::stringstream FileNameSS;
             FileNameSS << m_ScreenCaptureInfo.Directory << '/' << m_ScreenCaptureInfo.FileName
-                       << Capture.Id << ".png";
+                       << Capture.Id << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : "png");
             auto FileName = FileNameSS.str();
             FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
             if (pFile)
