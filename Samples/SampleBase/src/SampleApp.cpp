@@ -384,6 +384,10 @@ std::string GetArgument(const char* &pos, const char* ArgName)
 //
 //     -mode d3d11 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format jpg -capture_quality 100 -capture_frames 3
 //
+// Image magick command to create animated gif:
+//
+//     magick convert  -delay 6  -loop 0 -resize 240x180   frame*.png   Animation.gif
+//
 void SampleApp::ProcessCommandLine(const char* CmdLine)
 {
     const auto* pos = strchr(CmdLine, '-');
