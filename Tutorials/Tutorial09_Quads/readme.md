@@ -2,7 +2,7 @@
 
 This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 The tutorial is based on [Tutorial06 - Multithreading](../Tutorial06_Multithreading), but renders
 2D quads instead of 3D cubes and changes the states frequently. It also demonstrates *Pipeline State

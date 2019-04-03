@@ -66,7 +66,7 @@ rendering algorithm.
 
 ## [Tutorial 09 - Quads](Tutorials/Tutorial09_Quads)
 
-![](Tutorials/Tutorial09_Quads/Screenshot.png)
+![](Tutorials/Tutorial09_Quads/Animation_Large.gif)
 
 This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
 
