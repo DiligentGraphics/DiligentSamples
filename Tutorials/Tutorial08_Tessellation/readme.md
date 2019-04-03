@@ -3,7 +3,7 @@
 This tutorial shows how to use hardware tessellation to implement simple adaptive terrain 
 rendering algorithm.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 Hardware tessellation allows 3D application to generate geometry entirely on the GPU by using 
 two programmable stages (hull shader and domain shader) and a fixed-function tessellator. 

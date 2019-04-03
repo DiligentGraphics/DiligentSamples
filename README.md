@@ -59,7 +59,7 @@ This tutorial shows how to use geometry shader to render smooth wireframe.
 
 ## [Tutorial 08 - Tessellation](Tutorials/Tutorial08_Tessellation)
 
-![](Tutorials/Tutorial08_Tessellation/Screenshot.png)
+![](Tutorials/Tutorial08_Tessellation/Animation_Large.gif)
 
 This tutorial shows how to use hardware tessellation to implement simple adaptive terrain 
 rendering algorithm.
