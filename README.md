@@ -103,7 +103,7 @@ to create simple user interface.
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)
 
-![](Samples/Atmosphere/Screenshot.png)
+![](Samples/Atmosphere/Animation_Large.gif)
 
 This sample demonstrates how to integrate
 [Epipolar Light Scattering](https://github.com/DiligentGraphics/DiligentFX/tree/master/Postprocess/EpipolarLightScattering)
