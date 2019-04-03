@@ -125,6 +125,7 @@ Command line options:
 * **-capture_frames** *value* - number of frames to capture after the app starts (example: *-capture_frames 50*).
 * **-capture_format** {*jpg*|*png*} - image file format (example: *-capture_format jpg*). Default value: jpg.
 * **-capture_quality** *value* - jpeg quality (example: *-capture_quality 80*). Default value: 95.
+* **-capture_alpha** *value* - when saving png, whether to write alpha channel (example: *-capture_alpha 1*). Default value: false.
 
 When image capture is enabled the following hot keys are available:
 
@@ -145,56 +146,6 @@ To contribute your code, submit a [Pull Request](https://github.com/DiligentGrap
 to this repository. **Diligent Engine** is licensed under the [Apache 2.0 license](License.txt) that guarantees 
 that code in the **DiligentCore** repository is free of Intellectual Property encumbrances. In submitting code to
 this repository, you are agreeing that the code is free of any Intellectual Property claims.  
-
-# Version History
-
-## v2.4.a
-
-* Added rendering backend selection dialog on Win32 and Mac
-
-## v2.3.a
-
-* Added Tutorial 10 - Streaming
-* Added Tutorial 11 - Resource Updates
-
-## v2.3
-
-* Implemented Vulkan backend
-* Added fullscreen mode selection dialog box
-* Implemented fullscreen mode toggle on UWP with shift + enter
-* Implemented fullscreen window toggle on Win32 with alt + enter
-* Added tutorial 09 - Quads
-
-## v2.2
-
-* Enabled MacOS and iOS platforms
-* Fixed multiple issues with OpenGL/GLES
-
-## v2.1.b
-
-* Removed legacy VS projects and solutions
-* Added tutorials:
-  * 01 - Hello Triangle
-  * 02 - Cube
-  * 03 - Texturing
-  * 04 - Instancing
-  * 05 - Texture Array
-  * 06 - Multithreading
-  * 07 - Geometry Shader
-  * 08 - Tessellation
-
-## v2.1.a
-
-* Refactored build system to use CMake and Gradle for Android
-* Added support for Linux platform
-
-## v2.1
-
-## v2.0.alpha
-
-## v1.0.0
-
-Initial release
 
 
 ------------------------------

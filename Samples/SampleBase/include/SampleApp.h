@@ -109,6 +109,7 @@ protected:
         Uint32           CurrentFrame    = 0;
         EImageFileFormat FileFormat      = EImageFileFormat::png;
         int              JpegQuality     = 95;
+        bool             KeepAlpha       = false;
 
     }m_ScreenCaptureInfo;
     std::unique_ptr<ScreenCapture> m_pScreenCapture;

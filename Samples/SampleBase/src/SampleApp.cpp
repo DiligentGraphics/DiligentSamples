@@ -382,7 +382,7 @@ std::string GetArgument(const char* &pos, const char* ArgName)
 
 // Command line example to capture frames:
 //
-//     -mode d3d11 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format jpg -capture_quality 100 -capture_frames 3
+//     -mode d3d11 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format jpg -capture_quality 100 -capture_frames 3 -capture_alpha 0
 //
 // Image magick command to create animated gif:
 //
@@ -470,6 +470,10 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         else if ( !(Arg = GetArgument(pos, "capture_quality")).empty() )
         {
             m_ScreenCaptureInfo.JpegQuality = atoi(Arg.c_str());
+        }
+        else if ( !(Arg = GetArgument(pos, "capture_alpha")).empty() )
+        {
+            m_ScreenCaptureInfo.KeepAlpha = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
         }
         else if ( !(Arg = GetArgument(pos, "width")).empty() )
         {
@@ -578,7 +582,16 @@ void SampleApp::Present()
             m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_SYNCHRONIZE, nullptr, TexData);
             const auto& TexDesc = Capture.pTexture->GetDesc();
             RefCntAutoPtr<IDataBlob> pEncodedImage;
-            Image::Encode(TexDesc.Width, TexDesc.Height, TexDesc.Format, TexData.pData, TexData.Stride, m_ScreenCaptureInfo.FileFormat, m_ScreenCaptureInfo.JpegQuality, &pEncodedImage);
+            Image::EncodeInfo Info;
+            Info.Width      = TexDesc.Width;
+            Info.Height     = TexDesc.Height;
+            Info.TexFormat  = TexDesc.Format;
+            Info.KeepAlpha  = m_ScreenCaptureInfo.KeepAlpha;
+            Info.pData      = TexData.pData;
+            Info.Stride     = TexData.Stride;
+            Info.FileFormat = m_ScreenCaptureInfo.FileFormat;
+            Info.JpegQuality= m_ScreenCaptureInfo.JpegQuality;
+            Image::Encode(Info, &pEncodedImage);
             m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
             m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
             std::stringstream FileNameSS;
