@@ -3,7 +3,7 @@
 This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
 flags to efficiently stream varying amounts of data to GPU.
 
-![](Screenshot.png)
+![](Animation_Large.gif)
 
 The tutorial is based on [Tutorial09 - Quads](../Tutorial09_Quads), but instead of quads it renders polygons
 with varying number of vertices, streaming geometry of every polygon at every draw call.

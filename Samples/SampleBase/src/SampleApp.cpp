@@ -386,7 +386,7 @@ std::string GetArgument(const char* &pos, const char* ArgName)
 //
 // Image magick command to create animated gif:
 //
-//     magick convert  -delay 6  -loop 0 -resize 240x180   frame*.png   Animation.gif
+//     magick convert  -delay 6  -loop 0 -layers Optimize -compress LZW -strip -resize 240x180   frame*.png   Animation.gif
 //
 void SampleApp::ProcessCommandLine(const char* CmdLine)
 {
