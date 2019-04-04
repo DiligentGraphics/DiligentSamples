@@ -337,7 +337,7 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
 
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
-    // Set cube world view matrix
+    // Set world view matrix
     if (m_Animate)
     {
         m_RotationAngle += static_cast<float>(ElapsedTime) * 0.2f;
