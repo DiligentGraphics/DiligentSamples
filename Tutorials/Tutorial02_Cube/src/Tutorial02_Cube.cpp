@@ -250,7 +250,7 @@ void Tutorial02_Cube::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube world view matrix
-    float4x4 CubeWorldView = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(PI_F*0.1f) * 
+    float4x4 CubeWorldView = rotationY( static_cast<float>(CurrTime) * 1.0f) * rotationX(-PI_F*0.1f) * 
         translationMatrix(0.f, 0.0f, 5.0f);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;

@@ -329,7 +329,7 @@ void Tutorial12_RenderTarget::Update(double CurrTime, double ElapsedTime)
 
     m_fCurrentTime = static_cast<float>(CurrTime);
     // Set cube world view matrix
-    float4x4 CubeWorldView = rotationY(-static_cast<float>(CurrTime)) * rotationX(PI_F * 0.1f) *  translationMatrix(0.0f, 0.0f, 5.0f);
+    float4x4 CubeWorldView = rotationY(static_cast<float>(CurrTime)) * rotationX(-PI_F * 0.1f) *  translationMatrix(0.0f, 0.0f, 5.0f);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);

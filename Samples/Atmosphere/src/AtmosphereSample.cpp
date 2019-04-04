@@ -182,13 +182,6 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
 #endif
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    // Add variables to the tweak bar
-#if 0
-    float3 axis(-1, 1, 0);
-    m_SpongeRotation = RotationFromAxisAngle(axis, FLOAT_PI/4);
-    TwAddVarRW(bar, "Rotation", TW_TYPE_QUAT4F, &m_SpongeRotation, "opened=true axisz=-z group=Sponge");
-#endif
-
     TwAddVarRW(bar, "FPS", TW_TYPE_FLOAT, &m_fFPS, "readonly=true");
 
     TwAddVarRW(bar, "Light direction", TW_TYPE_DIR3F, &m_f3LightDir, "opened=true axisz=-z showval=false");

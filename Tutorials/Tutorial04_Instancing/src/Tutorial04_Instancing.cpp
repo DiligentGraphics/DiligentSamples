@@ -391,7 +391,7 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube view matrix
-    float4x4 View = rotationX(+0.6f) * translationMatrix(0.f, 0.f, 4.0f);
+    float4x4 View = rotationX(-0.6f) * translationMatrix(0.f, 0.f, 4.0f);
 
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
@@ -402,7 +402,7 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = rotationY( -static_cast<float>(CurrTime) * 1.0f) * rotationX(static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = rotationY( static_cast<float>(CurrTime) * 1.0f) * rotationX(-static_cast<float>(CurrTime)*0.25f);
 }
 
 }

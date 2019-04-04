@@ -340,12 +340,12 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
     // Set cube world view matrix
     if (m_Animate)
     {
-        m_RotationAngle -= static_cast<float>(ElapsedTime) * 0.2f;
-        if(m_RotationAngle < -PI_F*2.f)
-            m_RotationAngle += PI_F*2.f;
+        m_RotationAngle += static_cast<float>(ElapsedTime) * 0.2f;
+        if(m_RotationAngle > PI_F*2.f)
+            m_RotationAngle -= PI_F*2.f;
     }
 
-    m_WorldViewMatrix = rotationY(m_RotationAngle) * rotationX(PI_F*0.1f) * translationMatrix(0.f, 0.0f, m_Distance);
+    m_WorldViewMatrix = rotationY(m_RotationAngle) * rotationX(-PI_F*0.1f) * translationMatrix(0.f, 0.0f, m_Distance);
     float NearPlane = 0.1f;
     float FarPlane = 1000.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);

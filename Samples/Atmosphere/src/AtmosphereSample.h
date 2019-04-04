@@ -65,10 +65,6 @@ private:
 
     void UpdateGUI();
 
-#if 0
-    Quaternion m_SpongeRotation; // model rotation
-#endif
-
     float3 m_f3LightDir;       // light direction vector
     float3 m_f3CameraDir;      // tmp camera view direction vector
     float3 m_f3CameraPos;

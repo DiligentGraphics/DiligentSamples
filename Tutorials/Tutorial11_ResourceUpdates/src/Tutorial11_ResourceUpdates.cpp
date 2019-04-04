@@ -349,7 +349,7 @@ void Tutorial11_ResourceUpdates::Render()
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
 
-    auto CubeRotation = rotationY( -static_cast<float>(m_CurrTime) * 0.5f) * rotationX(PI_F * 0.1f) * translationMatrix(0, 0, 12.0f);
+    auto CubeRotation = rotationY( static_cast<float>(m_CurrTime) * 0.5f) * rotationX(-PI_F * 0.1f) * translationMatrix(0, 0, 12.0f);
 
     DrawCube(CubeRotation * translationMatrix(-2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[2]);
     DrawCube(CubeRotation * translationMatrix(+2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[3]);
