@@ -583,7 +583,7 @@ int main (int argc, char ** argv)
     DevType = DeviceType::Vulkan;
     if (argc > 1)
     {
-        const auto* Key = "mode=";
+        const auto* Key = "-mode ";
         const auto* pos = strstr(argv[1], Key);
         if (pos != nullptr)
         {

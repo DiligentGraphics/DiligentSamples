@@ -225,7 +225,7 @@ public:
 
     bool ProcessCommandLine(const char *CmdLine)
     {
-        const auto* Key = "mode=";
+        const auto* Key = "-mode ";
         const auto *pos = strstr(CmdLine, Key);
         if (pos != nullptr)
         {
