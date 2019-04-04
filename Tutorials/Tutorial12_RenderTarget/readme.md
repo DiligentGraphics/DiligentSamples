@@ -1,55 +1,24 @@
 # Tutorial12 - Render Target
 
-This tutorial is a mix of Tutorial01 and Tutorial02 which demonstrates how to render a 3d cube into
-an offscreen render target and do a simple distortion post-processing effect. Note that this tutorial
+This tutorial demonstrates how to render a 3d textured cube into an offscreen render 
+target and do a simple distortion post-processing effect. Note that this tutorial
 assumes that you are familiar with all basics covered from Tutorial01 to Tutorial03.
 
 ![](Screenshot.png)
 
-## Shaders
+## Cube Resources
 
-The cube's vertex shader generates the geometry procedurally using an array of hard-coded vertex
-positions in screen space and colors. The shader also uses a world-view-projection matrix defined
-in a constant (uniform) buffer called `Constants` to transform vertex positions:
+Initialization of all cube-related resources and states is almost identical to how it is done
+in Tutorial 03. The only difference is that this time the rendering of our cube will be done
+into our offscreen render target, and we must ensure that the PSO uses corresponding formats:
 
-```hlsl
-cbuffer Constants
-{
-    float4x4 g_WorldViewProj;
-};
-
-struct VSInput
-{
-    uint VertexID : SV_VertexID;
-};
-
-struct PSInput
-{
-    float4 Pos    : SV_POSITION;
-    float4 Color  : COLOR0;
-};
-
-void main(in  VSInput VSIn,
-          out PSInput PSIn)
-{
-    float3 Pos[8];
-    Pos[0] = float3(-1.0, -1.0, -1.0);
-    Pos[1] = ...
-
-    float3 Color[8];
-    Color[0] = float3(0.0, 0.0, 0.0);
-    Color[1] = ...
-
-    uint Indices[] =
-    {
-        ...
-    };
-
-    uint VertexID = Indices[VSIn.VertexID];
-    PSIn.Pos = mul(float4(Pos[VertexID], 1.0), g_WorldViewProj);
-    PSIn.Color = float4(Color[VertexID], 1.0);
-}
+```cpp
+PSODesc.GraphicsPipeline.NumRenderTargets = 1;
+PSODesc.GraphicsPipeline.RTVFormats[0]    = RenderTargetFormat;
+PSODesc.GraphicsPipeline.DSVFormat        = DepthBufferFormat;
 ```
+
+## Shaders
 
 The render target's vertex shader generates the geometry procedurally using an array of hard-coded
 vertex positions and UV coordinates.
@@ -70,16 +39,23 @@ void main(in  VSInput VSIn,
           out PSInput PSIn)
 {
     float4 Pos[4];
-    ... 
+    Pos[0] = float4(-1.0, -1.0, 0.0, 1.0);
+    Pos[1] = float4(-1.0, +1.0, 0.0, 1.0);
+    Pos[2] = float4(+1.0, -1.0, 0.0, 1.0);
+    Pos[3] = float4(+1.0, +1.0, 0.0, 1.0);
 
     float2 UV[4];
-    ...
+    UV[0] = float2(+0.0, +1.0);
+    UV[1] = float2(+0.0, +0.0);
+    UV[2] = float2(+1.0, +1.0);
+    UV[3] = float2(+1.0, +0.0);
 
     PSIn.Pos = Pos[VSIn.VertexID];
-    PSIn.UV = UV[VSIn.VertexID];
+    PSIn.UV  = UV[VSIn.VertexID];
 }
-
 ```
+
+Note that `float4 Pos[4] = {...};` construct does not translate well to GLSL.
 
 Unlike other graphics API's, OpenGL has its texture coordinates origin at the bottom-left corner instead of the top left.
 When sampling a regular texture, there is no visible difference since the texture data is also uploaded starting from
@@ -115,49 +91,10 @@ void main(in  PSInput  PSIn,
 }
 ```
 
-## Initializing the Pipeline State
+## Initializing shaders and pipeline states
 
-Since the rendering of our cubes will be done into our render target, we must ensure that the
-color and depth formats match those we'll use for our render target's texture attachments.
+First we need to create the shaders that will handle our simple post-processing effect.
 
-```cpp
-PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0] = RenderTargetFormat;
-PSODesc.GraphicsPipeline.DSVFormat = DepthBufferFormat;
-PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-```
-
-## Creating Render Target
-
-A render target is basically defined by the texture attachments it is composed of. When rendering
-our cubes, the primary color output will be rendered in our color texture attachment.
-
-```cpp
-RefCntAutoPtr<ITexture> pRTColor;
-TextureDesc RTColorDesc;
-RTColorDesc.Type        = RESOURCE_DIM_TEX_2D;
-RTColorDesc.Width       = pSwapChain->GetDesc().Width;
-RTColorDesc.Height      = pSwapChain->GetDesc().Height;
-RTColorDesc.MipLevels   = 1;
-RTColorDesc.Format      = RenderTargetFormat;
-RTColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
-pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
-m_pRTColorAttachment = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
-```
-
-If we need to use depth testing - which is the case in our tutorial - we also need to use a
-depth texture attachment.
-
-```cpp
-RefCntAutoPtr<ITexture> pRTDepth;
-TextureDesc RTDepthDesc = RTColorDesc;
-RTDepthDesc.Format      = DepthBufferFormat;
-RTDepthDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
-pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
-m_pRTDepthAttachment = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
-```
-
-We also need to create additional shaders that will handle our simple post-processing effect.
 ```cpp
 ShaderCreateInfo CreationAttribs;
 CreationAttribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -223,9 +160,41 @@ RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 pDevice->CreatePipelineState(RTPSODesc, &m_pRTPSO);
 ```
 
-Eventually, we need to setup our shader resource bindings so that our post-processing effect will get a handle to our color attachment.
+## Creating Offscreen Render Target
+
+An offscreen render target is used to render the cube into and then sampled by the post-processing shader.
+We want the size of our render targets to match the window size, so we override `WindowResize()` method and
+create a new render target every time when the window resizes.
 
 ```cpp
+RefCntAutoPtr<ITexture> pRTColor;
+TextureDesc RTColorDesc;
+RTColorDesc.Type        = RESOURCE_DIM_TEX_2D;
+RTColorDesc.Width       = pSwapChain->GetDesc().Width;
+RTColorDesc.Height      = pSwapChain->GetDesc().Height;
+RTColorDesc.MipLevels   = 1;
+RTColorDesc.Format      = RenderTargetFormat;
+RTColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
+m_pRTColorRTV = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+```
+
+We also need to create a depth buffer.
+
+```cpp
+RefCntAutoPtr<ITexture> pRTDepth;
+TextureDesc RTDepthDesc = RTColorDesc;
+RTDepthDesc.Format      = DepthBufferFormat;
+RTDepthDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
+pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
+m_pRTDepthDSV = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+```
+
+Since we are using mutable variables, we need to create a new SRB and set new 
+texture to `g_Texture` shader variable:
+
+```cpp
+m_pRTSRB.Release();
 m_pRTPSO->CreateShaderResourceBinding(&m_pRTSRB, true);
 m_pRTSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 ```
@@ -233,33 +202,20 @@ m_pRTSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultV
 ## Rendering
 
 There are few changes that we need to make to our rendering procedure compared to the other tutorials.
-At the beginning of the frame, we need to activate our render target and clear our color and depth
-attachments.
+At the beginning of the frame, we need to activate our offscreen render target and clear color and depth
+buffers.
 
 ```cpp
 const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f };
-m_pImmediateContext->SetRenderTargets(1, &m_pRTColorAttachment, m_pRTDepthAttachment, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearRenderTarget(m_pRTColorAttachment, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(m_pRTDepthAttachment, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->SetRenderTargets(1, &m_pRTColorRTV, m_pRTDepthDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearRenderTarget(m_pRTColorRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(m_pRTDepthDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
-The rendering of our cube should look quite similar to other tutorials.
-```cpp
-{
-    MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-    *CBConstants = transposeMatrix(m_WorldViewProjMatrix);
-}
-m_pImmediateContext->SetPipelineState(m_pPSO);
-m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+The rendering of our cube looks similar to other tutorials.
 
-DrawAttribs DrawAttrs;
-DrawAttrs.NumVertices = 36;
-DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES;
-m_pImmediateContext->Draw(DrawAttrs);
-```
-
-After we're done rendering our cubes, we need to deactivate our render target and draw a fullscreen quad
-using our post-processing effet shader.
+After we're done rendering the cube, we need to deactivate our offscreen render target and draw a fullscreen quad
+using our post-processing effect shader.
 
 ```cpp
 const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };
