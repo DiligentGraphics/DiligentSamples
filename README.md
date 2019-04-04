@@ -87,7 +87,7 @@ important internal details and performance implications related to each method.
 
 ## [Tutorial 12 - Render Target](Tutorials/Tutorial12_RenderTarget)
 
-![](Tutorials/Tutorial12_RenderTarget/Screenshot.png)
+![](Tutorials/Tutorial12_RenderTarget/Animation_Large.gif)
 
 This tutorial demonstrates how to render a 3d cube into an offscreen render target and do a simple
 post-processing effect.
