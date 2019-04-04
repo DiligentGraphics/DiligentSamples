@@ -128,7 +128,7 @@ void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppC
     m_BackgroundColor[1] = 0;
     m_BackgroundColor[2] = 0.5f;
     m_BackgroundColor[3] = 1;
-    m_Animate = false;                       // enable animation
+    m_Animate = true;                      // enable animation
     m_AnimationSpeed = 0.2f;               // animation speed
 
     BufferDesc BuffDesc;
