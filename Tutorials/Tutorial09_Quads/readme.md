@@ -158,11 +158,11 @@ for (int tex = 0; tex < NumTextures; ++tex)
     // Create one Shader Resource Binding for every texture
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex]);
-    m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+    m_SRB[tex]->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
 }
 
 m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB);
-m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
+m_BatchSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 ```
 
 Note that we create one SRB per texture for non-batched mode and just one SRB for batched mode.

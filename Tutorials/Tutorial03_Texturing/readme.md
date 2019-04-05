@@ -142,7 +142,7 @@ resource variables in the SRB by copying bindings from the pipeline state.
 Once SRB is created, we can set the shader resource view:
 
 ```cpp
-m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
+m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 ```
 
 A mutable resource can only be bound once to an SRB object. If multiple variations are required,

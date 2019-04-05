@@ -196,7 +196,7 @@ texture to `g_Texture` shader variable:
 ```cpp
 m_pRTSRB.Release();
 m_pRTPSO->CreateShaderResourceBinding(&m_pRTSRB, true);
-m_pRTSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+m_pRTSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 ```
 
 ## Rendering

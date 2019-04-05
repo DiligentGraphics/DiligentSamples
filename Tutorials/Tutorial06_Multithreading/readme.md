@@ -65,7 +65,7 @@ for(int tex=0; tex < NumTextures; ++tex)
 {
     // Create one Shader Resource Binding for every texture
     m_pPSO->CreateShaderResourceBinding(&m_SRB[tex]);
-    m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+    m_SRB[tex]->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
 }
 ```
 

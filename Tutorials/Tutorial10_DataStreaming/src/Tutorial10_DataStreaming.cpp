@@ -286,7 +286,7 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
             // Since we did not explcitly specify the type for Constants, default type 
             // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
             // to the pipeline state object.
-            m_pPSO[0][state]->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "PolygonAttribs")->Set(m_PolygonAttribsCB);
+            m_pPSO[0][state]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "PolygonAttribs")->Set(m_PolygonAttribsCB);
 
             if (state > 0)
                 VERIFY(m_pPSO[0][state]->IsCompatibleWith(m_pPSO[0][0]), "PSOs are expected to be compatible");
@@ -382,11 +382,11 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
         // Create one Shader Resource Binding for every texture
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
         m_pPSO[0][0]->CreateShaderResourceBinding(&m_SRB[tex], true);
-        m_SRB[tex]->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
+        m_SRB[tex]->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV[tex]);
     }
 
     m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB, true);
-    m_BatchSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
+    m_BatchSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");

@@ -129,7 +129,7 @@ void Tutorial02_Cube::Initialize(IRenderDevice*    pDevice,
         // Since we did not explcitly specify the type for Constants, default type
         // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
         // through the pipeline state object.
-        m_pPSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+        m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
         
         // Create shader resource binding object and bind all static resources in it
         m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);

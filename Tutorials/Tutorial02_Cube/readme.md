@@ -152,7 +152,7 @@ PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATI
 cannot be changed once bound:
 
 ```cpp
-m_pPSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 ```
 
 Notice that only the binding cannot be changed. The contents of the buffer is modifiable.

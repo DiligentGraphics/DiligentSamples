@@ -228,12 +228,12 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
 
         for (Uint32 i = 0; i < _countof(m_pPSO); ++i)
         {
-            m_pPSO[i]->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "VSConstants")->Set(m_ShaderConstants);
-            m_pPSO[i]->GetStaticShaderVariable(SHADER_TYPE_HULL,   "HSConstants")->Set(m_ShaderConstants);
-            m_pPSO[i]->GetStaticShaderVariable(SHADER_TYPE_DOMAIN, "DSConstants")->Set(m_ShaderConstants);
+            m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")->Set(m_ShaderConstants);
+            m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_HULL,   "HSConstants")->Set(m_ShaderConstants);
+            m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_DOMAIN, "DSConstants")->Set(m_ShaderConstants);
         }
-        m_pPSO[1]->GetStaticShaderVariable(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
-        m_pPSO[1]->GetStaticShaderVariable(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
+        m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
+        m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
     }
 
     {
@@ -266,9 +266,9 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
     {
         m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i], true);
         // Set texture SRV in the SRB
-        m_SRB[i]->GetVariable(SHADER_TYPE_PIXEL,  "g_Texture")->Set(m_ColorMapSRV);
-        m_SRB[i]->GetVariable(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
-        m_SRB[i]->GetVariable(SHADER_TYPE_HULL,   "g_HeightMap")->Set(m_HeightMapSRV);
+        m_SRB[i]->GetVariableByName(SHADER_TYPE_PIXEL,  "g_Texture")->Set(m_ColorMapSRV);
+        m_SRB[i]->GetVariableByName(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
+        m_SRB[i]->GetVariableByName(SHADER_TYPE_HULL,   "g_HeightMap")->Set(m_HeightMapSRV);
     }
 
     // Create a tweak bar

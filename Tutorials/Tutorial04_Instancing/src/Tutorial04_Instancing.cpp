@@ -157,7 +157,7 @@ void Tutorial04_Instancing::Initialize(IRenderDevice*    pDevice,
         // Since we did not explcitly specify the type for Constants, default type 
         // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
         // to the pipeline state object.
-        m_pPSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+        m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     }
 
     {
@@ -280,7 +280,7 @@ void Tutorial04_Instancing::Initialize(IRenderDevice*    pDevice,
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
     // Set texture SRV in the SRB
-    m_SRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
+    m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");

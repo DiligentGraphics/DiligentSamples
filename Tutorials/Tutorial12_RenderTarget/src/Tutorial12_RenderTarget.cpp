@@ -136,7 +136,7 @@ void Tutorial12_RenderTarget::CreateCubeResources()
         // Since we did not explcitly specify the type for Constants, default type
         // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
         // through the pipeline state object.
-        m_pCubePSO->GetStaticShaderVariable(SHADER_TYPE_VERTEX, "Constants")->Set(m_CubeVSConstants);
+        m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_CubeVSConstants);
     }
 
     {
@@ -247,7 +247,7 @@ void Tutorial12_RenderTarget::CreateCubeResources()
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pCubePSO->CreateShaderResourceBinding(&m_pCubeSRB, true);
     // Set texture SRV in the SRB
-    m_pCubeSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
+    m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
 void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
@@ -350,7 +350,7 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
     // Since we did not explcitly specify the type for Constants, default type
     // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
     // to the pipeline state object.
-    m_pRTPSO->GetStaticShaderVariable(SHADER_TYPE_PIXEL, "Constants")->Set(m_RTPSConstants);
+    m_pRTPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "Constants")->Set(m_RTPSConstants);
 }
 
 void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
@@ -406,7 +406,7 @@ void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
     m_pRTPSO->CreateShaderResourceBinding(&m_pRTSRB, true);
 
     // Set render target color texture SRV in the SRB
-    m_pRTSRB->GetVariable(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_pRTSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
 // Render a frame
