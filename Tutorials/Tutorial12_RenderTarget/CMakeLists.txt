@@ -13,6 +13,7 @@ set(INCLUDE
 set(SHADERS
     assets/cube.vsh
     assets/cube.psh
+    assets/DGLogo.png
     assets/rendertarget.vsh
     assets/rendertarget.psh
 )
