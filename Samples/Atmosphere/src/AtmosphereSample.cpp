@@ -94,7 +94,7 @@ void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, Engine
 #endif
 }
 
-void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if(!deviceCaps.bComputeShadersSupported)
@@ -102,7 +102,7 @@ void AtmosphereSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppCon
         throw std::runtime_error("Compute shaders are required to run this sample");
     }
 
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     m_bIsGLDevice = deviceCaps.IsGLDevice();
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )

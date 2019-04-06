@@ -34,7 +34,8 @@ class MengerSpongeSample final : public SampleBase
 {
 public:
     ~MengerSpongeSample();
-    virtual void Initialize(IRenderDevice*    pDevice, 
+    virtual void Initialize(IEngineFactory*   pEngineFactory,
+                            IRenderDevice*    pDevice, 
                             IDeviceContext**  ppContexts, 
                             Uint32            NumDeferredCtx, 
                             ISwapChain*       pSwapChain)override final;

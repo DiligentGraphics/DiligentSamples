@@ -28,7 +28,6 @@
 
 #include "Tutorial10_DataStreaming.h"
 #include "MapHelper.h"
-#include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
@@ -149,12 +148,13 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType        
 #endif
 }
 
-void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
+void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
+                                          IRenderDevice*    pDevice,
                                           IDeviceContext**  ppContexts,
                                           Uint32            NumDeferredCtx,
                                           ISwapChain*       pSwapChain)
 {
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
 
@@ -210,8 +210,9 @@ void Tutorial10_DataStreaming::Initialize(IRenderDevice*    pDevice,
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
-        BasicShaderSourceStreamFactory BasicSSSFactory;
-        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS, pVSBatched;
         {

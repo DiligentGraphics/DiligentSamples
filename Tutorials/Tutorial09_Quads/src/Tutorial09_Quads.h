@@ -40,7 +40,8 @@ public:
     ~Tutorial09_Quads()override;
     virtual void GetEngineInitializationAttribs(DeviceType          DevType, 
                                                 EngineCreateInfo&   Attribs)override final;
-    virtual void Initialize(IRenderDevice*   pDevice, 
+    virtual void Initialize(IEngineFactory*  pEngineFactory,
+                            IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 
                             Uint32           NumDeferredCtx, 
                             ISwapChain*      pSwapChain)override final;

@@ -89,12 +89,13 @@ accesses platform-specific files through `IShaderSourceInputStreamFactory` inter
 provides default implementation for the interface that should be sufficient in most cases.
 
 ```cpp
-BasicShaderSourceStreamFactory BasicSSSFactory;
-ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 ```
 
-The constructor of class `BasicShaderSourceStreamFactory` takes a list of directories where source files
-will be looked up. 
+`CreateDefaultShaderSourceStreamFactory` method optionally takes a semicolon-separated list of
+directories where source files will be looked up. 
 
 Other than using the shader source factory instead of the source code string, vertex shader
 initialization is the same as in Tutorial01:

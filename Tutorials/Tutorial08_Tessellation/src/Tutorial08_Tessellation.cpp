@@ -23,7 +23,6 @@
 
 #include "Tutorial08_Tessellation.h"
 #include "MapHelper.h"
-#include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
@@ -76,7 +75,8 @@ void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType         
 }
 
 
-void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
+void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
+                                         IRenderDevice*    pDevice,
                                          IDeviceContext**  ppContexts,
                                          Uint32            NumDeferredCtx,
                                          ISwapChain*       pSwapChain)
@@ -91,7 +91,7 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
         throw std::runtime_error("Geometry shaders are required to run this tutorial");
     }
 
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     ShaderMacroHelper MacroHelper;
     
@@ -132,8 +132,9 @@ void Tutorial08_Tessellation::Initialize(IRenderDevice*    pDevice,
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
-        BasicShaderSourceStreamFactory BasicSSSFactory;
-        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
         {

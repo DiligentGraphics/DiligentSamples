@@ -25,6 +25,7 @@
 
 #include <vector>
 
+#include "EngineFactory.h"
 #include "RefCntAutoPtr.h"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
@@ -40,7 +41,8 @@ public:
 
     virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI);
 
-    virtual void Initialize(IRenderDevice*      pDevice, 
+    virtual void Initialize(IEngineFactory*     pEngineFactory,
+                            IRenderDevice*      pDevice, 
                             IDeviceContext**    ppContexts, 
                             Uint32              NumDeferredCtx, 
                             ISwapChain*         pSwapChain) = 0;
@@ -55,6 +57,7 @@ public:
     virtual void ProcessCommandLine(const char *CmdLine){}
 
 protected:
+    RefCntAutoPtr<IEngineFactory>               m_pEngineFactory;
     RefCntAutoPtr<IRenderDevice>                m_pDevice;
     RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
     std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
@@ -77,13 +80,15 @@ inline void SampleBase::Update(double CurrTime, double ElapsedTime)
     }
 }
 
-inline void SampleBase::Initialize(IRenderDevice*   pDevice, 
+inline void SampleBase::Initialize(IEngineFactory*  pEngineFactory,
+                                   IRenderDevice*   pDevice, 
                                    IDeviceContext** ppContexts, 
                                    Uint32           NumDeferredCtx, 
                                    ISwapChain*      pSwapChain)
 {
-    m_pDevice = pDevice;
-    m_pSwapChain = pSwapChain;
+    m_pEngineFactory    = pEngineFactory;
+    m_pDevice           = pDevice;
+    m_pSwapChain        = pSwapChain;
     m_pImmediateContext = ppContexts[0];
     m_pDeferredContexts.resize(NumDeferredCtx);
     for (Uint32 ctx=0; ctx < NumDeferredCtx; ++ctx)

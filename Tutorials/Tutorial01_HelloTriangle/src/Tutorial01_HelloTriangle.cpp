@@ -83,12 +83,13 @@ void main(in  PSInput  PSIn,
 )";
 
 
-void Tutorial01_HelloTriangle::Initialize(IRenderDevice*    pDevice,
+void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
+                                          IRenderDevice*    pDevice,
                                           IDeviceContext**  ppContexts,
                                           Uint32            NumDeferredCtx,
                                           ISwapChain*       pSwapChain)
 {
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     // Pipeline state object encompasses configuration of all GPU stages
 

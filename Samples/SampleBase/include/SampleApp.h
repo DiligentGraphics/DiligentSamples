@@ -29,6 +29,7 @@
 
 #include "NativeAppBase.h"
 #include "RefCntAutoPtr.h"
+#include "EngineFactory.h"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
@@ -78,6 +79,7 @@ protected:
     }
 
     DeviceType m_DeviceType = DeviceType::Undefined;
+    RefCntAutoPtr<IEngineFactory>               m_pEngineFactory;
     RefCntAutoPtr<IRenderDevice>                m_pDevice;
     RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
     std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;

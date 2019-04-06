@@ -114,9 +114,9 @@ void MengerSpongeSample::GetSpongeAOCB(void *value, void * clientData)
     *static_cast<bool *>(value) = pTheSample->m_SpongeAO;
 }
 
-void MengerSpongeSample::Initialize(IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void MengerSpongeSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     m_SpongeLevel = 2;                       // number of recursions
     m_SpongeAO = true;                      // apply ambient occlusion

@@ -23,7 +23,6 @@
 
 #include "Tutorial03_Texturing.h"
 #include "MapHelper.h"
-#include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 
@@ -35,12 +34,13 @@ SampleBase* CreateSample()
     return new Tutorial03_Texturing();
 }
 
-void Tutorial03_Texturing::Initialize(IRenderDevice*   pDevice,
+void Tutorial03_Texturing::Initialize(IEngineFactory*  pEngineFactory,
+                                      IRenderDevice*   pDevice,
                                       IDeviceContext** ppContexts,
                                       Uint32           NumDeferredCtx,
                                       ISwapChain*      pSwapChain)
 {
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     {
         // Pipeline state object encompasses configuration of all GPU stages
@@ -76,8 +76,9 @@ void Tutorial03_Texturing::Initialize(IRenderDevice*   pDevice,
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
-        BasicShaderSourceStreamFactory BasicSSSFactory;
-        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
         {

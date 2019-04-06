@@ -105,7 +105,8 @@ void SampleApp::InitializeDiligentEngine(
             // Load the dll and import GetEngineFactoryD3D11() function
             LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
-            auto *pFactoryD3D11 = GetEngineFactoryD3D11();
+            auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+            m_pEngineFactory = pFactoryD3D11;
             Uint32 NumAdapters = 0;
             pFactoryD3D11->EnumerateHardwareAdapters(NumAdapters, 0);
             std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
@@ -137,7 +138,8 @@ void SampleApp::InitializeDiligentEngine(
             // Load the dll and import GetEngineFactoryD3D12() function
             LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
-            auto *pFactoryD3D12 = GetEngineFactoryD3D12();
+            auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+            m_pEngineFactory = pFactoryD3D12;
             Uint32 NumAdapters = 0;
             pFactoryD3D12->EnumerateHardwareAdapters(NumAdapters, 0);
             std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
@@ -176,7 +178,8 @@ void SampleApp::InitializeDiligentEngine(
             // Load the dll and import GetEngineFactoryOpenGL() function
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
-            auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
+            auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
+            m_pEngineFactory = pFactoryOpenGL;
             EngineGLCreateInfo CreationAttribs;
             CreationAttribs.pNativeWndHandle = NativeWindowHandle;
 #if PLATFORM_LINUX
@@ -210,7 +213,8 @@ void SampleApp::InitializeDiligentEngine(
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs);
             ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
-            auto *pFactoryVk = GetEngineFactoryVk();
+            auto* pFactoryVk = GetEngineFactoryVk();
+            m_pEngineFactory = pFactoryVk;
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
@@ -281,7 +285,7 @@ void SampleApp::InitializeSample()
     Uint32 NumDeferredCtx = static_cast<Uint32>(m_pDeferredContexts.size());
     for (size_t ctx = 0; ctx < m_pDeferredContexts.size(); ++ctx)
         ppContexts[1 + ctx] = m_pDeferredContexts[ctx];
-    m_TheSample->Initialize(m_pDevice, ppContexts.data(), NumDeferredCtx, m_pSwapChain);
+    m_TheSample->Initialize(m_pEngineFactory, m_pDevice, ppContexts.data(), NumDeferredCtx, m_pSwapChain);
 
     m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
     TwWindowSize(SCDesc.Width, SCDesc.Height);

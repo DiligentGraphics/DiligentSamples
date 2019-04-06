@@ -54,7 +54,6 @@ namespace Diligent
 #include "MapHelper.h"
 #include "GraphicsAccessories.h"
 #include "GraphicsUtilities.h"
-#include "BasicShaderSourceStreamFactory.h"
 #include "ShaderMacroHelper.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
@@ -542,9 +541,11 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
     m_pResMapping->AddResource( "cbNMGenerationAttribs", pcbNMGenerationAttribs, true );
     
     
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders\\;shaders\\terrain", &pShaderSourceFactory);
+
     ShaderCreateInfo ShaderCI;
-    BasicShaderSourceStreamFactory BasicSSSFactory("shaders\\;shaders\\terrain");
-    ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     ShaderCI.FilePath                   = "ScreenSizeQuadVS.fx";
     ShaderCI.EntryPoint                 = "GenerateScreenSizeQuadVS";
 	ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -708,11 +709,12 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
 
     RenderNormalMap( pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap);
 
-    BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\terrain;");
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pShaderSourceFactory);
     
     {
         ShaderCreateInfo ShaderCI;
-        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 		ShaderCI.FilePath       = "HemisphereVS.fx";
 		ShaderCI.EntryPoint     = "HemisphereVS";
 		ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -726,7 +728,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     
     {
         ShaderCreateInfo ShaderCI;
-        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 		ShaderCI.FilePath                   = "HemisphereZOnlyVS.fx";
 		ShaderCI.EntryPoint                 = "HemisphereZOnlyVS";
 		ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -810,8 +812,9 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Attrs.Desc.Name        = "HemispherePS";
         Attrs.UseCombinedTextureSamplers = true;
         Attrs.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        BasicShaderSourceStreamFactory BasicSSSFactory("shaders;shaders\\terrain;");
-        Attrs.pShaderSourceStreamFactory = &BasicSSSFactory;
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pShaderSourceFactory);
+        Attrs.pShaderSourceStreamFactory = pShaderSourceFactory;
 
         StaticSamplerDesc StaticSamplers[5];
         StaticSamplers[0].ShaderStages  = SHADER_TYPE_PIXEL;

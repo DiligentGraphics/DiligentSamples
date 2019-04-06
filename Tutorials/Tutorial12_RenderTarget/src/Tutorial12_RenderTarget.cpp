@@ -23,7 +23,6 @@
 
 #include "Tutorial12_RenderTarget.h"
 #include "MapHelper.h"
-#include "BasicShaderSourceStreamFactory.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
@@ -70,8 +69,9 @@ void Tutorial12_RenderTarget::CreateCubeResources()
 
         // In this tutorial, we will load shaders from file. To be able to do that,
         // we need to create a shader source stream factory
-        BasicShaderSourceStreamFactory BasicSSSFactory;
-        ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
         // Create vertex shader
         RefCntAutoPtr<IShader> pVS;
         {
@@ -250,12 +250,13 @@ void Tutorial12_RenderTarget::CreateCubeResources()
     m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
-void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
+void Tutorial12_RenderTarget::Initialize(IEngineFactory*   pEngineFactory,
+                                         IRenderDevice*    pDevice,
                                          IDeviceContext**  ppContexts,
                                          Uint32            NumDeferredCtx,
                                          ISwapChain*       pSwapChain)
 {
-    SampleBase::Initialize(pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
     
     CreateCubeResources();
 
@@ -288,8 +289,9 @@ void Tutorial12_RenderTarget::Initialize(IRenderDevice*    pDevice,
 
     // In this tutorial, we will load shaders from file. To be able to do that,
     // we need to create a shader source stream factory
-    BasicShaderSourceStreamFactory BasicSSSFactory;
-    ShaderCI.pShaderSourceStreamFactory = &BasicSSSFactory;
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     // Create vertex shader
     RefCntAutoPtr<IShader> pRTVS;

@@ -32,7 +32,8 @@ class Tutorial01_HelloTriangle final : public SampleBase
 {
 public:
 
-    virtual void Initialize(IRenderDevice*    pDevice, 
+    virtual void Initialize(IEngineFactory*   pEngineFactory,
+                            IRenderDevice*    pDevice, 
                             IDeviceContext**  ppContexts, 
                             Uint32            NumDeferredCtx, 
                             ISwapChain*       pSwapChain)override final;

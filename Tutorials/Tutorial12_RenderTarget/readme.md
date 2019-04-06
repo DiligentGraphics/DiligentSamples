@@ -100,7 +100,7 @@ ShaderCreateInfo CreationAttribs;
 CreationAttribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
 CreationAttribs.UseCombinedTextureSamplers = true;
 BasicShaderSourceStreamFactory BasicSSSFactory;
-CreationAttribs.pShaderSourceStreamFactory = &BasicSSSFactory;
+CreationAttribs.pShaderSourceStreamFactory = pShaderSourceFactory;
 
 RefCntAutoPtr<IShader> pRTVS;
 {
