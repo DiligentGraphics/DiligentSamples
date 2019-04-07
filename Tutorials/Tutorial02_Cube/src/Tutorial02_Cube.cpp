@@ -240,7 +240,7 @@ void Tutorial02_Cube::Render()
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     // Verify the state of vertex and index buffers
-    DrawAttrs.Flags      = DRAW_FLAG_VERIFY_STATES;
+    DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

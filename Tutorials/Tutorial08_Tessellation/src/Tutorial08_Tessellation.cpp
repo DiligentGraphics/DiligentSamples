@@ -328,7 +328,7 @@ void Tutorial08_Tessellation::Render()
 
     DrawAttribs DrawAttrs;
     DrawAttrs.NumVertices = NumHorzBlocks * NumVertBlocks;
-    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES;
+    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

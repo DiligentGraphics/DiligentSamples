@@ -589,7 +589,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     DrawAttribs DrawAttrs;
     DrawAttrs.IsIndexed = true;
     DrawAttrs.IndexType = VT_UINT32;
-    DrawAttrs.Flags     = DRAW_FLAG_VERIFY_STATES;
+    DrawAttrs.Flags     = DRAW_FLAG_VERIFY_ALL;
 
     Uint32 NumSubsets = 1 + m_NumWorkerThreads;
     const Uint32 TotalPolygons = static_cast<Uint32>(m_Polygons.size());

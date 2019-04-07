@@ -449,7 +449,7 @@ void Tutorial12_RenderTarget::Render()
     DrawAttrs.IsIndexed   = true;      // This is indexed draw call
     DrawAttrs.IndexType   = VT_UINT32; // Index type
     DrawAttrs.NumVertices = 36;
-    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
+    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->Draw(DrawAttrs);
 
     // Clear the default render target's buffers
@@ -467,7 +467,7 @@ void Tutorial12_RenderTarget::Render()
     // Draw the render target's vertices
     DrawAttribs RTDrawAttrs;
     RTDrawAttrs.NumVertices = 4;
-    RTDrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
+    RTDrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->Draw(RTDrawAttrs);
 }
 

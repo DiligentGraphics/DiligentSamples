@@ -228,6 +228,6 @@ m_pImmediateContext->CommitShaderResources(m_pRTSRB, RESOURCE_STATE_TRANSITION_M
 
 DrawAttribs RTDrawAttrs;
 RTDrawAttrs.NumVertices = 4;
-RTDrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES; // Verify the state of vertex and index buffers
+RTDrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify all states
 m_pImmediateContext->Draw(RTDrawAttrs);
 ```

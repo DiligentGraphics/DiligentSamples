@@ -411,7 +411,7 @@ void Tutorial05_TextureArray::Render()
     DrawAttrs.NumIndices   = 36;
     DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // Specify number of instances
     // Verify the state of vertex and index buffers
-    DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
+    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->Draw(DrawAttrs);
 }
 

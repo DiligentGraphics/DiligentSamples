@@ -448,7 +448,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     }
     DrawAttribs DrawAttrs;
-    DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
+    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     DrawAttrs.NumIndices = 4;
 
     Uint32 NumSubsets = 1 + m_NumWorkerThreads;

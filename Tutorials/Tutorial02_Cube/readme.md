@@ -274,10 +274,11 @@ DrawAttribs DrawAttrs;
 DrawAttrs.IsIndexed   = true; // This is an indexed draw call
 DrawAttrs.IndexType  = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
-// Verify the state of vertex and index buffers
-DrawAttrs.Flags = DRAW_FLAG_VERIFY_STATES;
+// Verify the state of vertex and index buffers as well as consistence of 
+// render targets and correctness of draw command arguments
+DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
 m_pImmediateContext->Draw(DrawAttrs);
 ```
 
-We want the engine to verify that the states of vertex and index buffers are correct,
-so we use `DRAW_FLAG_VERIFY_STATES` flag.
+We want the engine to verify that the states are correct,
+so we use `DRAW_FLAG_VERIFY_ALL` flag.

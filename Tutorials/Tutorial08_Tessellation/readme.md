@@ -180,6 +180,6 @@ Rendering is done as usual, with one primitive being one patch:
 ```cpp
 DrawAttribs DrawAttrs;
 DrawAttrs.NumVertices = NumHorzBlocks * NumVertBlocks;
-DrawAttrs.Flags       = DRAW_FLAG_VERIFY_STATES;
+DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL;
 m_pImmediateContext->Draw(DrawAttrs);
 ```

@@ -222,7 +222,7 @@ DrawAttribs DrawAttrs;
 DrawAttrs.IsIndexed  = true;
 DrawAttrs.IndexType  = VT_UINT32;
 DrawAttrs.NumIndices = 36;
-DrawAttrs.Flags      = DRAW_FLAG_VERIFY_STATES;
+DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
 
 pCtx->SetPipelineState(m_pPSO);
 for(size_t inst = StartInst; inst < EndInst; ++inst)

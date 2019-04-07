@@ -616,7 +616,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice* pDevice,
             NMGenerationAttribs->m_iMIPLevel = static_cast<int>(uiMipLevel);
         }
 
-        DrawAttribs DrawAttrs(4, DRAW_FLAG_VERIFY_STATES);
+        DrawAttribs DrawAttrs(4, DRAW_FLAG_VERIFY_ALL);
         pContext->Draw( DrawAttrs );
     }
 
@@ -957,7 +957,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         if(GetBoxVisibility<false>(ViewFrustum, MeshIt->BndBox) != BoxVisibility::Invisible)
         {
             pContext->SetIndexBuffer(MeshIt->pIndBuff, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            DrawAttribs DrawAttrs(MeshIt->uiNumIndices, VT_UINT32, DRAW_FLAG_VERIFY_STATES);
+            DrawAttribs DrawAttrs(MeshIt->uiNumIndices, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
             pContext->Draw(DrawAttrs);
         }
     }

@@ -454,7 +454,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     DrawAttrs.IsIndexed  = true;      // This is an indexed draw call
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
-    DrawAttrs.Flags      = DRAW_FLAG_VERIFY_STATES;
+    DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
 
     // Set pipeline state
     pCtx->SetPipelineState(m_pPSO);

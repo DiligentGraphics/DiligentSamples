@@ -66,7 +66,7 @@ SRB = PSO:CreateShaderResourceBinding(true)
 DrawAttrs = DrawAttribs.Create{
 	IsIndexed = true,
 	IndexType = "VT_UINT32",
-    Flags = "DRAW_FLAG_VERIFY_STATES"
+    Flags = "DRAW_FLAG_VERIFY_ALL"
 }
 
 function SetNumIndices(NumIndices)
