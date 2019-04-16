@@ -393,8 +393,8 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNu
     for (;;)
     {
         // Wait for the signal
-        auto SignalledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
-        if(SignalledValue < 0)
+        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+        if(SignaledValue < 0)
             return;
         
         // Render current subset using the deferred context

@@ -159,8 +159,8 @@ Every worker thread starts by waiting for the signal from the main thread (a neg
 value is an exit signal):
 
 ```cpp
-auto SignalledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
-if(SignalledValue < 0)
+auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+if (SignaledValue < 0)
     return;
 ```
 
