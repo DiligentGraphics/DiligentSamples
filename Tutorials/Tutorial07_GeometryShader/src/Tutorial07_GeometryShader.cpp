@@ -319,7 +319,7 @@ void Tutorial07_GeometryShader::Render()
     {
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> Consts(m_pImmediateContext, m_ShaderConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        Consts->WorldViewProj = transposeMatrix(m_WorldViewProjMatrix);
+        Consts->WorldViewProj = m_WorldViewProjMatrix.Transpose();
         
         const auto &SCDesc = m_pSwapChain->GetDesc();
         Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f/static_cast<float>(SCDesc.Width), 1.f/static_cast<float>(SCDesc.Height));
@@ -355,13 +355,13 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube world view matrix
-    float4x4 CubeWorldView = rotationY( static_cast<float>(CurrTime) * 1.0f) * rotationX(-PI_F*0.1f) * 
-        translationMatrix(0.f, 0.0f, 5.0f);
+    float4x4 CubeWorldView = float4x4::RotationY_D3D( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX_D3D(-PI_F*0.1f) * 
+        float4x4::TranslationD3D(0.f, 0.0f, 5.0f);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
-    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
 }

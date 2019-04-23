@@ -319,8 +319,8 @@ void Tutorial09_Quads::InitializeQuads()
     std::uniform_real_distribution<float> scale_distr(0.01f, 0.05f);
     std::uniform_real_distribution<float> pos_distr(-0.95f, +0.95f);
     std::uniform_real_distribution<float> move_dir_distr(-0.1f, +0.1f);
-    std::uniform_real_distribution<float> angle_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
-    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
+    std::uniform_real_distribution<float> angle_distr(-PI_F, +PI_F);
+    std::uniform_real_distribution<float> rot_distr(-PI_F*0.5f, +PI_F*0.5f);
     std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
     std::uniform_int_distribution<Int32> state_distr(0, NumStates - 1);
 
@@ -345,7 +345,7 @@ void Tutorial09_Quads::UpdateQuads(float elapsedTime)
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
-    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
+    std::uniform_real_distribution<float> rot_distr(-PI_F*0.5f, +PI_F*0.5f);
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
         auto &CurrInst = m_Quads[quad];
@@ -493,7 +493,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
                 float2x2 RotMatr(cosAngle, -sinAngle,
                     sinAngle, cosAngle);
                 auto Matr = ScaleMatr * RotMatr;
-                float4 QuadRotationAndScale(Matr._m00, Matr._m10, Matr._m01, Matr._m11);
+                float4 QuadRotationAndScale(Matr.m00, Matr.m10, Matr.m01, Matr.m11);
 
                 if (UseBatch)
                 {

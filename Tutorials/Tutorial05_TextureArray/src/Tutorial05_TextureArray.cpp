@@ -344,7 +344,7 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
-    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
+    std::uniform_real_distribution<float> rot_distr(-PI_F, +PI_F);
     std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
 
     float BaseScale = 0.6f / fGridSize;
@@ -362,9 +362,9 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
-                float4x4 rotation = rotationX(rot_distr(gen)) * rotationY(rot_distr(gen)) * rotationZ(rot_distr(gen));
+                float4x4 rotation = float4x4::RotationX_D3D(rot_distr(gen)) * float4x4::RotationY_D3D(rot_distr(gen)) * float4x4::RotationZ_D3D(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix = rotation * scaleMatrix(scale, scale, scale) * translationMatrix(xOffset, yOffset, zOffset);
+                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::TranslationD3D(xOffset, yOffset, zOffset);
                 auto &CurrInst = InstanceData[instId++];
                 CurrInst.Matrix = matrix;
                 // Texture array index
@@ -389,8 +389,8 @@ void Tutorial05_TextureArray::Render()
     {
         // Map the buffer and write current world-view-projection matrix
         MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants[0] = transposeMatrix(m_ViewProjMatrix);
-        CBConstants[1] = transposeMatrix(m_RotationMatrix);
+        CBConstants[0] = m_ViewProjMatrix.Transpose();
+        CBConstants[1] = m_RotationMatrix.Transpose();
     }
 
     // Bind vertex & instance buffers
@@ -438,18 +438,18 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube view matrix
-    float4x4 View = rotationX(-0.6f) * translationMatrix(0.f, 0.f, 4.0f);
+    float4x4 View = float4x4::RotationX_D3D(-0.6f) * float4x4::TranslationD3D(0.f, 0.f, 4.0f);
 
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
-    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute view-projection matrix
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = rotationY( static_cast<float>(CurrTime) * 1.0f) * rotationX(-static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = float4x4::RotationY_D3D( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX_D3D(-static_cast<float>(CurrTime)*0.25f);
 }
 
 }

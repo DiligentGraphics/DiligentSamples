@@ -421,8 +421,8 @@ void Tutorial10_DataStreaming::InitializePolygonGeometry()
         auto& PolygonGeo = m_PolygonGeo[NumVerts];
         PolygonGeo.Verts.reserve(NumVerts);
         PolygonGeo.Inds.reserve( (NumVerts-2)*3);
-        float ArcLen = static_cast<float>(M_PI*2.0) / static_cast<float>(NumVerts);
-        float Angle = ((NumVerts % 2) == 1) ? (float)M_PI/2.f : (float)M_PI/2.f - ArcLen/2.f;
+        float ArcLen = PI_F*2.f / static_cast<float>(NumVerts);
+        float Angle = ((NumVerts % 2) == 1) ? PI_F/2.f : PI_F/2.f - ArcLen/2.f;
         for(Uint32 v=0; v < NumVerts; ++v, Angle += ArcLen)
         {
             PolygonGeo.Verts.emplace_back( float2{cosf(Angle), sinf(Angle)} );
@@ -446,8 +446,8 @@ void Tutorial10_DataStreaming::InitializePolygons()
     std::uniform_real_distribution<float> scale_distr(0.01f, 0.05f);
     std::uniform_real_distribution<float> pos_distr(-0.95f, +0.95f);
     std::uniform_real_distribution<float> move_dir_distr(-0.1f, +0.1f);
-    std::uniform_real_distribution<float> angle_distr(-static_cast<float>(M_PI), +static_cast<float>(M_PI));
-    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
+    std::uniform_real_distribution<float> angle_distr(-PI_F, +PI_F);
+    std::uniform_real_distribution<float> rot_distr(-PI_F*0.5f, +PI_F*0.5f);
     std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
     std::uniform_int_distribution<Int32> state_distr(0, NumStates - 1);
     std::uniform_int_distribution<Int32> num_verts_distr(MinPolygonVerts, MaxPolygonVerts);
@@ -490,7 +490,7 @@ void Tutorial10_DataStreaming::UpdatePolygons(float elapsedTime)
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
-    std::uniform_real_distribution<float> rot_distr(-static_cast<float>(M_PI)*0.5f, +static_cast<float>(M_PI)*0.5f);
+    std::uniform_real_distribution<float> rot_distr(-PI_F*0.5f, +PI_F*0.5f);
     for (int Polygon = 0; Polygon < m_NumPolygons; ++Polygon)
     {
         auto &CurrInst = m_Polygons[Polygon];
@@ -641,7 +641,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
                 float2x2 RotMatr(cosAngle, -sinAngle,
                     sinAngle, cosAngle);
                 auto Matr = ScaleMatr * RotMatr;
-                float4 PolygonRotationAndScale(Matr._m00, Matr._m10, Matr._m01, Matr._m11);
+                float4 PolygonRotationAndScale(Matr.m00, Matr.m10, Matr.m01, Matr.m11);
 
                 if (UseBatch)
                 {

@@ -307,8 +307,8 @@ void Tutorial08_Tessellation::Render()
         Consts->LengthScale = 10.f;
         Consts->HeightScale = Consts->LengthScale / 25.f;
 
-        Consts->WorldView = transposeMatrix(m_WorldViewMatrix);
-        Consts->WorldViewProj = transposeMatrix(m_WorldViewProjMatrix);
+        Consts->WorldView     = m_WorldViewMatrix.Transpose();
+        Consts->WorldViewProj = m_WorldViewProjMatrix.Transpose();
 
         Consts->TessDensity = m_TessDensity;
         Consts->AdaptiveTessellation = m_AdaptiveTessellation ? 1 : 0;
@@ -346,12 +346,12 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
             m_RotationAngle -= PI_F*2.f;
     }
 
-    m_WorldViewMatrix = rotationY(m_RotationAngle) * rotationX(-PI_F*0.1f) * translationMatrix(0.f, 0.0f, m_Distance);
+    m_WorldViewMatrix = float4x4::RotationY_D3D(m_RotationAngle) * float4x4::RotationX_D3D(-PI_F*0.1f) * float4x4::TranslationD3D(0.f, 0.0f, m_Distance);
     float NearPlane = 0.1f;
     float FarPlane = 1000.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
-    auto Proj = Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = m_WorldViewMatrix * Proj;
 }

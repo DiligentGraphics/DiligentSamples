@@ -255,18 +255,13 @@ public:
 
         // Compute bounding box
         auto &BB = CurrMesh.BndBox;
-        BB.fMaxX =BB.fMaxY = BB.fMaxZ = -FLT_MAX;
-        BB.fMinX =BB.fMinY = BB.fMinZ = +FLT_MAX;
+        BB.Max = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        BB.Min = float3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
         for(auto Ind = IB.begin(); Ind != IB.end(); ++Ind)
         {
-            const auto &CurrVert = m_VB[*Ind].f3WorldPos;
-            BB.fMinX = std::min(BB.fMinX, CurrVert.x);
-            BB.fMinY = std::min(BB.fMinY, CurrVert.y);
-            BB.fMinZ = std::min(BB.fMinZ, CurrVert.z);
-
-            BB.fMaxX = std::max(BB.fMaxX, CurrVert.x);
-            BB.fMaxY = std::max(BB.fMaxY, CurrVert.y);
-            BB.fMaxZ = std::max(BB.fMaxZ, CurrVert.z);
+            const auto& CurrVert = m_VB[*Ind].f3WorldPos;
+            BB.Min = std::min(BB.Min, CurrVert);
+            BB.Max = std::max(BB.Max, CurrVert);
         }
     }
 

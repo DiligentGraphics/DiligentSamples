@@ -277,7 +277,7 @@ void FillSpongeBuffers(int level, int levelMax, std::vector<Vertex>& vertices, s
         float aoRatio = pow(3.0f, level) * 0.02f;
         if (aoRatio > 0.4999f)
             aoRatio = 0.4999f;
-        float4x4 xform = scaleMatrix( scale, scale, scale ) * translationMatrix( center );
+        float4x4 xform = float4x4::Scale( scale, scale, scale ) * float4x4::TranslationD3D( center );
         AppendCubeToBuffers(vertices, indices, xform, aoRatio, aoEdges, faceColors);
     }
     else
@@ -386,8 +386,8 @@ void MengerSpongeSample::SetShaderConstants(const float4x4& world, const float4x
 {
     MapHelper<ShaderConstants> MappedData( m_pImmediateContext, m_pConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD );
     ShaderConstants *cst = MappedData;
-    cst->WorldViewProjT = transposeMatrix( world * view * proj );
-    cst->WorldNormT = transposeMatrix( world );
+    cst->WorldViewProjT = ( world * view * proj ).Transpose();
+    cst->WorldNormT = world.Transpose();
     cst->LightDir = (1.0f / length(m_LightDir)) * m_LightDir;
     cst->LightCoeff = 0.85f;
 }
@@ -405,10 +405,10 @@ void MengerSpongeSample::Render()
     const auto& SCDesc = m_pSwapChain->GetDesc();
     // Set world/view/proj matrices and global shader constants
     float aspectRatio = (float)SCDesc.Width / SCDesc.Height;
-    float4x4 proj = Projection(FLOAT_PI/4, aspectRatio, 0.1f, 100.0f, DeviceCaps.IsGLDevice());
+    float4x4 proj = float4x4::ProjectionD3D(FLOAT_PI/4, aspectRatio, 0.1f, 100.0f, DeviceCaps.IsGLDevice());
     float dist = m_CamDistance + 0.4f;
     float3 camPosInv ( dist * 0.3f, dist * 0.0f, dist * 2.0f );
-    float4x4 view = translationMatrix(camPosInv);
+    float4x4 view = float4x4::TranslationD3D(camPosInv);
     float4x4 world = QuaternionToMatrix(m_SpongeRotation);
     SetShaderConstants(world, view, proj);
 
