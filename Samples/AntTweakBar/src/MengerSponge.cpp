@@ -61,7 +61,6 @@ SampleBase* CreateSample()
 }
 
 
-const float FLOAT_PI = 3.14159265f;
 struct Vertex
 {
     float3 Position;
@@ -152,7 +151,7 @@ void MengerSpongeSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevic
 
     // Init model rotation
     float3 axis(-1, 1, 0);
-    m_SpongeRotation = RotationFromAxisAngle(axis, FLOAT_PI/4);
+    m_SpongeRotation = RotationFromAxisAngle(axis, PI_F/4.f);
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("TweakBar");
@@ -405,7 +404,7 @@ void MengerSpongeSample::Render()
     const auto& SCDesc = m_pSwapChain->GetDesc();
     // Set world/view/proj matrices and global shader constants
     float aspectRatio = (float)SCDesc.Width / SCDesc.Height;
-    float4x4 proj = float4x4::ProjectionD3D(FLOAT_PI/4, aspectRatio, 0.1f, 100.0f, DeviceCaps.IsGLDevice());
+    float4x4 proj = float4x4::ProjectionD3D(PI_F/4.f, aspectRatio, 0.1f, 100.0f, DeviceCaps.IsGLDevice());
     float dist = m_CamDistance + 0.4f;
     float3 camPosInv ( dist * 0.3f, dist * 0.0f, dist * 2.0f );
     float4x4 view = float4x4::TranslationD3D(camPosInv);
@@ -431,10 +430,10 @@ void MengerSpongeSample::Update(double CurrTime, double ElapsedTime)
         if (length(axis) < 1.0e-6f) 
             axis[1] = 1;
         angle += m_AnimationSpeed * dt;
-        if (angle >= 2.0f*FLOAT_PI)
-            angle -= 2.0f*FLOAT_PI;
+        if (angle >= 2.0f*PI_F)
+            angle -= 2.0f*PI_F;
         else if (angle <= 0)
-            angle += 2.0f*FLOAT_PI;
+            angle += 2.0f*PI_F;
         m_SpongeRotation = RotationFromAxisAngle(axis, angle);
     }
 }
