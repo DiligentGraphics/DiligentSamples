@@ -70,10 +70,12 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     int barSize[2] = {224 * m_UIScale, 400 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    TwAddVarRW(bar, "Rotation",        TW_TYPE_QUAT4F,  &m_Rotation,        "opened=true axisz=-z");
-    TwAddVarRW(bar, "Light direction", TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
-    TwAddVarRW(bar, "Light Color",     TW_TYPE_COLOR4F, &m_LightColor,      "opened=false");
-    TwAddVarRW(bar, "Light Intensity", TW_TYPE_FLOAT,   &m_LightIntensity,  "min=0.1 max=5.0 step=0.1");
+    TwAddVarRW(bar, "Rotation",           TW_TYPE_QUAT4F,  &m_Rotation,        "opened=true axisz=-z");
+    TwAddVarRW(bar, "Light direction",    TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
+    TwAddVarRW(bar, "Light Color",        TW_TYPE_COLOR4F, &m_LightColor,      "opened=false");
+    TwAddVarRW(bar, "Light Intensity",    TW_TYPE_FLOAT,   &m_LightIntensity,  "min=0.1 max=5.0 step=0.1");
+    TwAddVarRW(bar, "Occlusion strength", TW_TYPE_FLOAT,   &m_RenderParams.OcclusionStrength, "min=0.0 max=1.0 step=0.01");
+    TwAddVarRW(bar, "Emission scale",     TW_TYPE_FLOAT,   &m_RenderParams.EmissionScale,     "min=0.0 max=1.0 step=0.01");
 
 
     TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
