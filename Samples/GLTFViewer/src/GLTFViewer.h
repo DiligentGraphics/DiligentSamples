@@ -26,6 +26,7 @@
 #include "SampleBase.h"
 #include "GLTFLoader.h"
 #include "GLTF_PBR_Renderer.h"
+#include "BasicMath.h"
 
 namespace Diligent
 {
@@ -46,10 +47,16 @@ public:
 private:
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
+    Quaternion m_Rotation;
+    float3     m_LightDirection;
+    float4     m_LightColor      = float4(1,1,1,1);
+    float      m_LightIntensity  = 1;
+
+
     std::unique_ptr<GLTF_PBR_Renderer> m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>       m_Model;
-    RefCntAutoPtr<IBuffer> m_CameraAttribs;
-    RefCntAutoPtr<IBuffer> m_LightAttribs;
+    RefCntAutoPtr<IBuffer> m_CameraAttribsCB;
+    RefCntAutoPtr<IBuffer> m_LightAttribsCB;
 };
 
 }

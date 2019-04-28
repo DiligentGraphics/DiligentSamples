@@ -151,7 +151,7 @@ void MengerSpongeSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevic
 
     // Init model rotation
     float3 axis(-1, 1, 0);
-    m_SpongeRotation = RotationFromAxisAngle(axis, PI_F/4.f);
+    m_SpongeRotation = Quaternion::RotationFromAxisAngle(axis, PI_F/4.f);
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("TweakBar");
@@ -408,7 +408,7 @@ void MengerSpongeSample::Render()
     float dist = m_CamDistance + 0.4f;
     float3 camPosInv ( dist * 0.3f, dist * 0.0f, dist * 2.0f );
     float4x4 view = float4x4::TranslationD3D(camPosInv);
-    float4x4 world = QuaternionToMatrix(m_SpongeRotation);
+    float4x4 world = m_SpongeRotation.ToMatrix();
     SetShaderConstants(world, view, proj);
 
     // Draw the sponge
@@ -426,7 +426,7 @@ void MengerSpongeSample::Update(double CurrTime, double ElapsedTime)
     {
         float3 axis;
         float angle = 0;
-        AxisAngleFromRotation(axis, angle, m_SpongeRotation);
+        m_SpongeRotation.GetAxisAngle(axis, angle);
         if (length(axis) < 1.0e-6f) 
             axis[1] = 1;
         angle += m_AnimationSpeed * dt;
@@ -434,7 +434,7 @@ void MengerSpongeSample::Update(double CurrTime, double ElapsedTime)
             angle -= 2.0f*PI_F;
         else if (angle <= 0)
             angle += 2.0f*PI_F;
-        m_SpongeRotation = RotationFromAxisAngle(axis, angle);
+        m_SpongeRotation = Quaternion::RotationFromAxisAngle(axis, angle);
     }
 }
 

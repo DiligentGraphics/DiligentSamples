@@ -42,28 +42,52 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
     auto BackBufferFmt  = m_pSwapChain->GetDesc().ColorBufferFormat;
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
-    m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, BackBufferFmt, DepthBufferFmt));
+    GLTF_PBR_Renderer::CreateInfo RendererCI;
+    RendererCI.RTVFmt = BackBufferFmt;
+    RendererCI.DSVFmt = DepthBufferFmt;
+    RendererCI.AllowDebugView = true;
+    m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
 
-    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribs);
-    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs),  "Light attribs buffer", &m_LightAttribs);
+    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs),  "Light attribs buffer",  &m_LightAttribsCB);
+    StateTransitionDesc Barriers [] =
+    {
+        {m_CameraAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
+        {m_LightAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
+    };
+    m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+
 
     m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, "models/DamagedHelmet.gltf"));
-    m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribs, m_LightAttribs);
+    m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
+
+    float3 axis(-1, 1, 0);
+    m_Rotation = Quaternion::RotationFromAxisAngle(axis, PI_F/4.f);
+    m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
+    int barSize[2] = {224 * m_UIScale, 400 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+
+    TwAddVarRW(bar, "Rotation",        TW_TYPE_QUAT4F,  &m_Rotation,        "opened=true axisz=-z");
+    TwAddVarRW(bar, "Light direction", TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
+    TwAddVarRW(bar, "Light Color",     TW_TYPE_COLOR4F, &m_LightColor,      "opened=false");
+    TwAddVarRW(bar, "Light Intensity", TW_TYPE_FLOAT,   &m_LightIntensity,  "min=0.1 max=5.0 step=0.1");
+
 
     TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
     {
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),        "None"       },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),   "Base Color" },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),   "Normal Map" },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),   "Occlusion"  },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),    "Emissive"   },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallicity), "Metallicity"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),   "Roughness"  },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),         "None"       },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),    "Base Color" },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),    "Normal Map" },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),    "Occlusion"  },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),     "Emissive"   },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic),     "Metallic"   },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),    "Roughness"  },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor), "Diffuse color"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor),"Specular color (R0)"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),"Reflectance90"}
     };
     TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
     TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
@@ -82,8 +106,10 @@ void GLTFViewer::Render()
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
     {
-        float4x4 CameraView = //float4x4::RotationY_D3D( static_cast<float>(TMP_CurrTime) * 1.0f) * float4x4::RotationX_D3D(-PI_F*0.1f) * 
-            float4x4::TranslationD3D(0.f, 0.0f, 5.0f);
+        float4x4 CameraView = m_Rotation.ToMatrix() * float4x4::TranslationD3D(0.f, 0.0f, 5.0f);
+        float4x4 CameraWorld = CameraView.Inverse();
+        float4 CamWorld = float4(0,0,0,1) * CameraWorld;
+        float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
         float NearPlane = 0.1f;
         float FarPlane = 100.f;
         float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
@@ -92,8 +118,17 @@ void GLTFViewer::Render()
         // Compute world-view-projection matrix
         auto CameraViewProj = CameraView * Proj;
 
-        MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD);
-        CamAttribs->mViewProjT = CameraViewProj.Transpose();
+        {
+            MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+            CamAttribs->mViewProjT = CameraViewProj.Transpose();
+            CamAttribs->f4Position = float4(CameraWorldPos, 1);
+        }
+
+        {
+            MapHelper<LightAttribs> lightAttribs(m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+            lightAttribs->f4Direction = m_LightDirection;
+            lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
+        }
     }
 
     m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams);
@@ -104,7 +139,6 @@ void GLTFViewer::Render()
 void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
-    TMP_CurrTime = CurrTime;
 }
 
 }
