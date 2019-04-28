@@ -80,16 +80,19 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
     {
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),         "None"       },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),    "Base Color" },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),    "Normal Map" },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),    "Occlusion"  },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),     "Emissive"   },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic),     "Metallic"   },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),    "Roughness"  },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor), "Diffuse color"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor),"Specular color (R0)"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),"Reflectance90"}
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),            "None"       },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),       "Base Color" },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),       "Normal Map" },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),       "Occlusion"  },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),        "Emissive"   },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic),        "Metallic"   },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),       "Roughness"  },
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor),    "Diffuse color"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor),   "Specular color (R0)"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),   "Reflectance90"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::MeshNormal),      "Mesh normal"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::PerturbedNormal), "Perturbed normal"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV),           "n*v"}
     };
     TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
     TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
