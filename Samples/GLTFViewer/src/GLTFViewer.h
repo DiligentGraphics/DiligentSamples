@@ -45,18 +45,25 @@ public:
     virtual const Char* GetSampleName()const override final{return "GLTF Viewer";}
 
 private:
+    void CreateEnvMapPSO();
+
+
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
     Quaternion m_Rotation;
     float3     m_LightDirection;
     float4     m_LightColor      = float4(1,1,1,1);
-    float      m_LightIntensity  = 1;
-
+    float      m_LightIntensity  = 10;
+    bool       m_ShowEnvironment = true;
 
     std::unique_ptr<GLTF_PBR_Renderer> m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>       m_Model;
     RefCntAutoPtr<IBuffer> m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer> m_LightAttribsCB;
+    RefCntAutoPtr<IPipelineState>         m_EnvMapPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
+    RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
+    RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
 };
 
 }

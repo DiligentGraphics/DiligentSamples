@@ -143,7 +143,6 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
             ShaderCI.Desc.Name       = "Terrain VS";
             ShaderCI.FilePath        = "terrain.vsh";
             pDevice->CreateShader(ShaderCI, &pVS);
-            
         }
 
         // Create geometry shader

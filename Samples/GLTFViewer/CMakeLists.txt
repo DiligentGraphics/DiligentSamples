@@ -10,12 +10,31 @@ set(INCLUDE
     src/GLTFViewer.h
 )
 
+set(SHADERS
+    assets/shaders/env_map.vsh
+    assets/shaders/env_map.psh
+    ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh
+    ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMapping.fxh
+    ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
+)
+
 set(ASSETS
     assets/models/DamagedHelmet.gltf
+    assets/textures/papermill.ktx
 )
 
 add_sample_app("GLTFViewer" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(GLTFViewer PRIVATE AssetLoader DiligentFX)
+
+target_include_directories(GLTFViewer PRIVATE
+    ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/
+)
+
+add_custom_command(TARGET GLTFViewer PRE_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMapping.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+)
 
 set_source_files_properties(${ASSETS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "."
