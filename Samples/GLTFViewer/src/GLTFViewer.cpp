@@ -77,9 +77,8 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
         {m_CameraAttribsCB,        RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
         {m_LightAttribsCB,         RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
         {m_EnvMapRenderAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
-        {EnvironmentMap,           RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE},
+        {EnvironmentMap,           RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true}
     };
-    Barriers[2].UpdateResourceState = true;
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
 
