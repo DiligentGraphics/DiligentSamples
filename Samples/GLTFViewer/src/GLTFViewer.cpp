@@ -111,29 +111,52 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     TwAddVarRW(bar, "Average log lum",    TW_TYPE_FLOAT,   &m_RenderParams.AverageLogLum,     "group='Tone mapping' min=0.01 max=10.0 step=0.01");
     TwAddVarRW(bar, "Middle gray",        TW_TYPE_FLOAT,   &m_RenderParams.MiddleGray,        "group='Tone mapping' min=0.01 max=1.0 step=0.01");
     TwAddVarRW(bar, "White point",        TW_TYPE_FLOAT,   &m_RenderParams.WhitePoint,        "group='Tone mapping' min=0.1  max=20.0 step=0.1");
-    TwAddVarRW(bar, "Show environment",   TW_TYPE_BOOLCPP, &m_ShowEnvironment,                "");
-    
-
-    TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
     {
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),            "None"       },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),       "Base Color" },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),       "Normal Map" },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),       "Occlusion"  },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),        "Emissive"   },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic),        "Metallic"   },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),       "Roughness"  },
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor),    "Diffuse color"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor),   "Specular color (R0)"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),   "Reflectance90"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::MeshNormal),      "Mesh normal"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::PerturbedNormal), "Perturbed normal"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV),           "n*v"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseIBL),      "Diffuse IBL"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularIBL),     "Specular IBL"}
-    };
-    TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
-    TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
+        TwEnumVal BackgroundMode[] = // array used to describe the shadow map resolution
+        {
+            {static_cast<int>(BackgroundMode::None),              "None"             },
+            {static_cast<int>(BackgroundMode::EnvironmentMap),    "Environmen Map"   },
+            {static_cast<int>(BackgroundMode::Irradiance),        "Irradiance"       },
+            {static_cast<int>(BackgroundMode::PrefilteredEnvMap), "PrefilteredEnvMap"}
+        };
+        TwType BackgroundModeTwType = TwDefineEnum( "Background mode", BackgroundMode, _countof( BackgroundMode ) );
+        TwAddVarCB( bar, "Background mode", BackgroundModeTwType,
+            []( const void *value, void * clientData )
+            {
+                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
+                pViewer->m_BackgroundMode = static_cast<GLTFViewer::BackgroundMode>(*reinterpret_cast<const int*>(value));
+                pViewer->CreateEnvMapSRB();
+            },
+            [](void *value, void * clientData)
+            {
+                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
+                *reinterpret_cast<int*>(value) = static_cast<int>(pViewer->m_BackgroundMode);
+            },
+            this, "");
+    }
+    
+    {
+        TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
+        {
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),            "None"       },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),       "Base Color" },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),       "Normal Map" },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),       "Occlusion"  },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),        "Emissive"   },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic),        "Metallic"   },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),       "Roughness"  },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor),    "Diffuse color"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor),   "Specular color (R0)"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),   "Reflectance90"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::MeshNormal),      "Mesh normal"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::PerturbedNormal), "Perturbed normal"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV),           "n*v"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseIBL),      "Diffuse IBL"},
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularIBL),     "Specular IBL"}
+        };
+        TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
+        TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
+    }
 }
 
 void GLTFViewer::CreateEnvMapPSO()
@@ -194,8 +217,35 @@ void GLTFViewer::CreateEnvMapPSO()
     m_pDevice->CreatePipelineState(PSODesc, &m_EnvMapPSO);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs")->Set(m_EnvMapRenderAttribsCB);
-    m_EnvMapPSO->CreateShaderResourceBinding(&m_EnvMapSRB, true);
-    m_EnvMapSRB->GetVariableByName(SHADER_TYPE_PIXEL, "EnvMap")->Set(m_EnvironmentMapSRV);
+    CreateEnvMapSRB();
+}
+
+void GLTFViewer::CreateEnvMapSRB()
+{
+    if(m_BackgroundMode != BackgroundMode::None)
+    {
+        m_EnvMapSRB.Release();
+        m_EnvMapPSO->CreateShaderResourceBinding(&m_EnvMapSRB, true);
+        ITextureView* pEnvMapSRV = nullptr;
+        switch(m_BackgroundMode)
+        {
+            case BackgroundMode::EnvironmentMap:
+                pEnvMapSRV = m_EnvironmentMapSRV;
+            break;
+
+            case BackgroundMode::Irradiance:
+                pEnvMapSRV = m_GLTFRenderer->GetIrradianceCubeSRV();
+            break;
+
+            case BackgroundMode::PrefilteredEnvMap:
+                pEnvMapSRV = m_GLTFRenderer->GetPrefilteredEnvMapSRV();
+            break;
+
+            default:
+                UNEXPECTED("Unexpected background mode");
+        }
+        m_EnvMapSRB->GetVariableByName(SHADER_TYPE_PIXEL, "EnvMap")->Set(pEnvMapSRV);
+    }
 }
 
 GLTFViewer::~GLTFViewer()
@@ -240,7 +290,7 @@ void GLTFViewer::Render()
 
     m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams);
 
-    if (m_ShowEnvironment)
+    if (m_BackgroundMode != BackgroundMode::None)
     {
         {
             MapHelper<EnvMapRenderAttribs> EnvMapAttribs(m_pImmediateContext, m_EnvMapRenderAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
