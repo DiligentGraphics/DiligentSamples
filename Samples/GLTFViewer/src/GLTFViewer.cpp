@@ -58,7 +58,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     RefCntAutoPtr<ITexture> EnvironmentMap;
-    CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{}, m_pDevice, &EnvironmentMap);
+    CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
     m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     auto BackBufferFmt  = m_pSwapChain->GetDesc().ColorBufferFormat;
@@ -67,6 +67,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     RendererCI.RTVFmt = BackBufferFmt;
     RendererCI.DSVFmt = DepthBufferFmt;
     RendererCI.AllowDebugView = true;
+    RendererCI.UseIBL         = true;
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs),       "Camera attribs buffer",         &m_CameraAttribsCB);
@@ -81,7 +82,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     };
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-
+    m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
     m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, "models/DamagedHelmet.gltf"));
     m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
@@ -106,6 +107,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     TwAddVarRW(bar, "Light Intensity",    TW_TYPE_FLOAT,   &m_LightIntensity,  "min=0.0 max=50.0 step=0.1");
     TwAddVarRW(bar, "Occlusion strength", TW_TYPE_FLOAT,   &m_RenderParams.OcclusionStrength, "min=0.0 max=1.0 step=0.01");
     TwAddVarRW(bar, "Emission scale",     TW_TYPE_FLOAT,   &m_RenderParams.EmissionScale,     "min=0.0 max=1.0 step=0.01");
+    TwAddVarRW(bar, "IBL scale",          TW_TYPE_FLOAT,   &m_RenderParams.IBLScale,          "min=0.0 max=1.0 step=0.01");
     TwAddVarRW(bar, "Average log lum",    TW_TYPE_FLOAT,   &m_RenderParams.AverageLogLum,     "group='Tone mapping' min=0.01 max=10.0 step=0.01");
     TwAddVarRW(bar, "Middle gray",        TW_TYPE_FLOAT,   &m_RenderParams.MiddleGray,        "group='Tone mapping' min=0.01 max=1.0 step=0.01");
     TwAddVarRW(bar, "White point",        TW_TYPE_FLOAT,   &m_RenderParams.WhitePoint,        "group='Tone mapping' min=0.1  max=20.0 step=0.1");
@@ -126,7 +128,9 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
         {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),   "Reflectance90"},
         {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::MeshNormal),      "Mesh normal"},
         {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::PerturbedNormal), "Perturbed normal"},
-        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV),           "n*v"}
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV),           "n*v"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseIBL),      "Diffuse IBL"},
+        {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularIBL),     "Specular IBL"}
     };
     TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
     TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
