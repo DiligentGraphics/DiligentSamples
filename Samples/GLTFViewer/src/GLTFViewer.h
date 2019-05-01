@@ -54,7 +54,7 @@ private:
         EnvironmentMap,
         Irradiance,
         PrefilteredEnvMap
-    }m_BackgroundMode = BackgroundMode::EnvironmentMap;
+    }m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
@@ -62,6 +62,7 @@ private:
     float3     m_LightDirection;
     float4     m_LightColor      = float4(1,1,1,1);
     float      m_LightIntensity  = 10;
+    float      m_EnvMapMipLevel  = 1.f;
 
     std::unique_ptr<GLTF_PBR_Renderer> m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>       m_Model;

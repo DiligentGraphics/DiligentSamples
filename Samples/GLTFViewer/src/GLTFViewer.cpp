@@ -48,7 +48,7 @@ namespace
         ToneMappingAttribs TMAttribs;
 
         float AverageLogLum;
-        float Unusued0;
+        float MipLevel;
         float Unusued1;
         float Unusued2;
     };
@@ -134,6 +134,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
             },
             this, "");
     }
+    TwAddVarRW(bar, "Env map mip", TW_TYPE_FLOAT, &m_EnvMapMipLevel, "min=0.0 max=7.0 step=0.1");
     
     {
         TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
@@ -301,6 +302,7 @@ void GLTFViewer::Render()
             EnvMapAttribs->TMAttribs.fWhitePoint          = m_RenderParams.WhitePoint;
             EnvMapAttribs->TMAttribs.fLuminanceSaturation = 1.0;
             EnvMapAttribs->AverageLogLum = m_RenderParams.AverageLogLum;
+            EnvMapAttribs->MipLevel      =  m_EnvMapMipLevel;
         }
         m_pImmediateContext->SetPipelineState(m_EnvMapPSO);
         m_pImmediateContext->CommitShaderResources(m_EnvMapSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
