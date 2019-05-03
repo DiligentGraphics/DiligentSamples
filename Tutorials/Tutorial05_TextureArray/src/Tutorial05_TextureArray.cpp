@@ -362,9 +362,9 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
-                float4x4 rotation = float4x4::RotationX_D3D(rot_distr(gen)) * float4x4::RotationY_D3D(rot_distr(gen)) * float4x4::RotationZ_D3D(rot_distr(gen));
+                float4x4 rotation = float4x4::RotationX(rot_distr(gen)) * float4x4::RotationY(rot_distr(gen)) * float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::TranslationD3D(xOffset, yOffset, zOffset);
+                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
                 auto &CurrInst = InstanceData[instId++];
                 CurrInst.Matrix = matrix;
                 // Texture array index
@@ -438,18 +438,18 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube view matrix
-    float4x4 View = float4x4::RotationX_D3D(-0.6f) * float4x4::TranslationD3D(0.f, 0.f, 4.0f);
+    float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute view-projection matrix
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = float4x4::RotationY_D3D( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX_D3D(-static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
 }
 
 }

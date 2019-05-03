@@ -348,17 +348,17 @@ void Tutorial11_ResourceUpdates::Render()
     float NearPlane = 0.1f;
     float FarPlane  = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
 
-    auto CubeRotation = float4x4::RotationY_D3D( static_cast<float>(m_CurrTime) * 0.5f) * float4x4::RotationX_D3D(-PI_F * 0.1f) * float4x4::TranslationD3D(0, 0, 12.0f);
+    auto CubeRotation = float4x4::RotationY( static_cast<float>(m_CurrTime) * 0.5f) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0, 0, 12.0f);
 
-    DrawCube(CubeRotation * float4x4::TranslationD3D(-2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[2]);
-    DrawCube(CubeRotation * float4x4::TranslationD3D(+2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[3]);
+    DrawCube(CubeRotation * float4x4::Translation(-2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[2]);
+    DrawCube(CubeRotation * float4x4::Translation(+2.f, -2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[3]);
     
-    DrawCube(CubeRotation * float4x4::TranslationD3D(-4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[0]);
+    DrawCube(CubeRotation * float4x4::Translation(-4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[0], m_SRBs[0]);
     m_pImmediateContext->SetPipelineState(m_pPSO_NoCull);
-    DrawCube(CubeRotation * float4x4::TranslationD3D( 0.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[1], m_SRBs[0]);
-    DrawCube(CubeRotation * float4x4::TranslationD3D(+4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[2], m_SRBs[1]);
+    DrawCube(CubeRotation * float4x4::Translation( 0.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[1], m_SRBs[0]);
+    DrawCube(CubeRotation * float4x4::Translation(+4.f, +2.f, 0.f) * Proj, m_CubeVertexBuffer[2], m_SRBs[1]);
 }
 
 void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint32 Stride)

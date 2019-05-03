@@ -355,13 +355,13 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube world view matrix
-    float4x4 CubeWorldView = float4x4::RotationY_D3D( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX_D3D(-PI_F*0.1f) * 
-        float4x4::TranslationD3D(0.f, 0.0f, 5.0f);
+    float4x4 CubeWorldView = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F*0.1f) * 
+        float4x4::Translation(0.f, 0.0f, 5.0f);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
 }
