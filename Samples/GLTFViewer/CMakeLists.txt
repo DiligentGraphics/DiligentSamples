@@ -18,8 +18,10 @@ set(SHADERS
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
 )
 
+file(GLOB_RECURSE MODELS LIST_DIRECTORIES false assets/models/*.*)
+
 set(ASSETS
-    assets/models/DamagedHelmet.gltf
+    ${MODELS}
     assets/textures/papermill.ktx
 )
 

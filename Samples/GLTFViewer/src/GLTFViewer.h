@@ -47,6 +47,7 @@ public:
 private:
     void CreateEnvMapPSO();
     void CreateEnvMapSRB();
+    void LoadModel(const char* Path);
 
     enum class BackgroundMode
     {
@@ -58,11 +59,16 @@ private:
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
-    Quaternion m_Rotation;
+    Quaternion m_CameraRotation;
+    Quaternion m_ModelRotation;
+    float4x4   m_ModelTransform;
+    float      m_CameraDist      = 0.9f;
     float3     m_LightDirection;
     float4     m_LightColor      = float4(1,1,1,1);
-    float      m_LightIntensity  = 10;
+    float      m_LightIntensity  = 3.f;
     float      m_EnvMapMipLevel  = 1.f;
+    int        m_SelectedModel   = 0;
+    static const std::pair<const char*, const char*> GLTFModels[];
 
     std::unique_ptr<GLTF_PBR_Renderer> m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>       m_Model;

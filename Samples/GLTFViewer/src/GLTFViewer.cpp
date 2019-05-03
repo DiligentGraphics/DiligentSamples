@@ -29,6 +29,7 @@
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
 #include "ShaderMacroHelper.h"
+#include "FileSystem.h"
 
 namespace Diligent
 {
@@ -53,6 +54,34 @@ namespace
         float Unusued2;
     };
 }
+
+const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
+{
+    {"Damaged Helmet",      "models/DamagedHelmet/DamagedHelmet.gltf"},
+    {"Metal Rough Spheres", "models/MetalRoughSpheres/MetalRoughSpheres.gltf"},
+    {"Flight Helmet",       "models/FlightHelmet/FlightHelmet.gltf"}
+};
+
+void GLTFViewer::LoadModel(const char* Path)
+{
+    if (m_Model)
+    {
+        m_GLTFRenderer->ReleaseResourceBindings(*m_Model);
+    }
+
+    m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, Path));
+    m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
+
+	// Center and scale model
+    float3 ModelDim{m_Model->aabb[0][0], m_Model->aabb[1][1], m_Model->aabb[2][2]};
+	float Scale = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
+	auto Translate = -float3(m_Model->aabb[3][0], m_Model->aabb[3][1], m_Model->aabb[3][2]);
+	Translate += -0.5f * ModelDim;
+    float4x4 InvYAxis = float4x4::Identity();
+    InvYAxis._22 = -1;
+    m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+}
+
 void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
@@ -68,6 +97,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     RendererCI.DSVFmt = DepthBufferFmt;
     RendererCI.AllowDebugView = true;
     RendererCI.UseIBL         = true;
+    RendererCI.FrontCCW       = true;
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs),       "Camera attribs buffer",         &m_CameraAttribsCB);
@@ -83,44 +113,75 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
-    m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, "models/DamagedHelmet.gltf"));
-    m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
-    auto Rotation = float4x4::RotationX_GL(PI_F);
-    for(auto& Node : m_Model->Nodes)
-        Node->Matrix *= Rotation;
+    LoadModel(GLTFModels[m_SelectedModel].second);
 
     CreateEnvMapPSO();
 
-    float3 axis(0, 0.15f, 1.f);
-    m_Rotation = Quaternion::RotationFromAxisAngle(axis, PI_F);
+    float3 axis(1.0f, 0.0f, 0.f);
+    m_CameraRotation = Quaternion::RotationFromAxisAngle(axis, PI_F);
     m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 500 * m_UIScale};
+    int barSize[2] = {250 * m_UIScale, 550 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    TwAddVarRW(bar, "Rotation",           TW_TYPE_QUAT4F,  &m_Rotation,        "opened=true axisz=-z");
+    {
+        TwEnumVal ModelEnumVals[_countof(GLTFModels)];
+        for(int i=0; i < _countof(GLTFModels); ++i)
+            ModelEnumVals[i] = TwEnumVal{i, GLTFModels[i].first};
+        TwType ModelEnumTwType = TwDefineEnum( "Model", ModelEnumVals, _countof(ModelEnumVals) );
+        TwAddVarCB( bar, "Model", ModelEnumTwType,
+            []( const void *value, void * clientData )
+            {
+                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
+                pViewer->m_SelectedModel = *reinterpret_cast<const int*>(value);
+                pViewer->LoadModel(pViewer->GLTFModels[pViewer->m_SelectedModel].second);
+            },
+            [](void *value, void * clientData)
+            {
+                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
+                *reinterpret_cast<int*>(value) = static_cast<int>(pViewer->m_SelectedModel);
+            },
+            this, "");
+    }
+#ifdef PLATFORM_WIN32
+    TwAddButton(bar, "Load model", 
+                [](void *clientData)
+                {
+                    auto FileName = FileSystem::OpenFileDialog("Select GLTF file", "glTF files\0*.gltf;*.glb\0");
+                    if (!FileName.empty())
+                    {
+                        auto* pViewer = reinterpret_cast<GLTFViewer*>( clientData );
+                        pViewer->LoadModel(FileName.c_str());
+                    }
+                }, 
+                this, "");
+#endif
+
+    TwAddVarRW(bar, "Camera Rotation",    TW_TYPE_QUAT4F,  &m_CameraRotation,  "opened=true axisz=-z");
+    TwAddVarRW(bar, "Model Rotation",     TW_TYPE_QUAT4F,  &m_ModelRotation,   "opened=true axisz=-z");
     TwAddVarRW(bar, "Light direction",    TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
-    TwAddVarRW(bar, "Light Color",        TW_TYPE_COLOR4F, &m_LightColor,      "opened=false");
-    TwAddVarRW(bar, "Light Intensity",    TW_TYPE_FLOAT,   &m_LightIntensity,  "min=0.0 max=50.0 step=0.1");
-    TwAddVarRW(bar, "Occlusion strength", TW_TYPE_FLOAT,   &m_RenderParams.OcclusionStrength, "min=0.0 max=1.0 step=0.01");
-    TwAddVarRW(bar, "Emission scale",     TW_TYPE_FLOAT,   &m_RenderParams.EmissionScale,     "min=0.0 max=1.0 step=0.01");
-    TwAddVarRW(bar, "IBL scale",          TW_TYPE_FLOAT,   &m_RenderParams.IBLScale,          "min=0.0 max=1.0 step=0.01");
+    TwAddVarRW(bar, "Camera dist",        TW_TYPE_FLOAT,   &m_CameraDist,      "min=0.1 max=5.0 step=0.1");
+    TwAddVarRW(bar, "Light Color",        TW_TYPE_COLOR4F, &m_LightColor,      "group='Lighting' opened=false");
+    TwAddVarRW(bar, "Light Intensity",    TW_TYPE_FLOAT,   &m_LightIntensity,  "group='Lighting' min=0.0 max=50.0 step=0.1");
+    TwAddVarRW(bar, "Occlusion strength", TW_TYPE_FLOAT,   &m_RenderParams.OcclusionStrength, "group='Lighting' min=0.0 max=1.0 step=0.01");
+    TwAddVarRW(bar, "Emission scale",     TW_TYPE_FLOAT,   &m_RenderParams.EmissionScale,     "group='Lighting' min=0.0 max=1.0 step=0.01");
+    TwAddVarRW(bar, "IBL scale",          TW_TYPE_FLOAT,   &m_RenderParams.IBLScale,          "group='Lighting' min=0.0 max=1.0 step=0.01");
     TwAddVarRW(bar, "Average log lum",    TW_TYPE_FLOAT,   &m_RenderParams.AverageLogLum,     "group='Tone mapping' min=0.01 max=10.0 step=0.01");
     TwAddVarRW(bar, "Middle gray",        TW_TYPE_FLOAT,   &m_RenderParams.MiddleGray,        "group='Tone mapping' min=0.01 max=1.0 step=0.01");
     TwAddVarRW(bar, "White point",        TW_TYPE_FLOAT,   &m_RenderParams.WhitePoint,        "group='Tone mapping' min=0.1  max=20.0 step=0.1");
     {
-        TwEnumVal BackgroundMode[] = // array used to describe the shadow map resolution
+        TwEnumVal BackgroundModeEnumVals[] =
         {
             {static_cast<int>(BackgroundMode::None),              "None"             },
             {static_cast<int>(BackgroundMode::EnvironmentMap),    "Environmen Map"   },
             {static_cast<int>(BackgroundMode::Irradiance),        "Irradiance"       },
             {static_cast<int>(BackgroundMode::PrefilteredEnvMap), "PrefilteredEnvMap"}
         };
-        TwType BackgroundModeTwType = TwDefineEnum( "Background mode", BackgroundMode, _countof( BackgroundMode ) );
-        TwAddVarCB( bar, "Background mode", BackgroundModeTwType,
+        TwType BackgroundModeEnumTwType = TwDefineEnum( "Background mode", BackgroundModeEnumVals, _countof(BackgroundModeEnumVals) );
+        TwAddVarCB( bar, "Background mode", BackgroundModeEnumTwType,
             []( const void *value, void * clientData )
             {
                 GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
@@ -141,6 +202,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
         {
             {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),            "None"       },
             {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),       "Base Color" },
+            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Transparency),    "Transparency"},
             {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),       "Normal Map" },
             {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),       "Occlusion"  },
             {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),        "Emissive"   },
@@ -261,34 +323,33 @@ void GLTFViewer::Render()
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
+    float4x4 CameraView = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
+    float4x4 CameraWorld = CameraView.Inverse();
+    float4 CamWorld = float4(0,0,0,1) * CameraWorld;
+    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+    float NearPlane = 0.1f;
+    float FarPlane = 100.f;
+    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
+    // Projection matrix differs between DX and OpenGL
+    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
+    // Compute world-view-projection matrix
+    auto CameraViewProj = CameraView * Proj;
+
     {
-        float4x4 CameraView = m_Rotation.ToMatrix() * float4x4::TranslationD3D(0.f, 0.0f, 4.0f);
-        float4x4 CameraWorld = CameraView.Inverse();
-        float4 CamWorld = float4(0,0,0,1) * CameraWorld;
-        float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
-        float NearPlane = 0.1f;
-        float FarPlane = 100.f;
-        float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-        // Projection matrix differs between DX and OpenGL
-        auto Proj = float4x4::ProjectionD3D(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
-        // Compute world-view-projection matrix
-        auto CameraViewProj = CameraView * Proj;
-
-        {
-            MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-            CamAttribs->mProjT        = Proj.Transpose();
-            CamAttribs->mViewProjT    = CameraViewProj.Transpose();
-            CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
-            CamAttribs->f4Position = float4(CameraWorldPos, 1);
-        }
-
-        {
-            MapHelper<LightAttribs> lightAttribs(m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-            lightAttribs->f4Direction = m_LightDirection;
-            lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
-        }
+        MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        CamAttribs->mProjT        = Proj.Transpose();
+        CamAttribs->mViewProjT    = CameraViewProj.Transpose();
+        CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
+        CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
 
+    {
+        MapHelper<LightAttribs> lightAttribs(m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        lightAttribs->f4Direction = m_LightDirection;
+        lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
+    }
+
+    m_RenderParams.ModelTransform = m_ModelTransform * m_ModelRotation.ToMatrix();
     m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams);
 
     if (m_BackgroundMode != BackgroundMode::None)
