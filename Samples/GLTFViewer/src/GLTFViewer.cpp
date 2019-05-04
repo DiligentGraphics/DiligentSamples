@@ -62,7 +62,8 @@ const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
     {"Metal Rough Spheres", "models/MetalRoughSpheres/MetalRoughSpheres.gltf"},
     {"Flight Helmet",       "models/FlightHelmet/FlightHelmet.gltf"},
     {"Cesium Man",          "models/CesiumMan/CesiumMan.gltf"},
-    {"Boom Box",            "models/BoomBoxWithAxes/BoomBoxWithAxes.gltf"}
+    {"Boom Box",            "models/BoomBoxWithAxes/BoomBoxWithAxes.gltf"},
+    {"Normal Tangent Test", "models/NormalTangentTest/NormalTangentTest.gltf"}
 };
 
 void GLTFViewer::LoadModel(const char* Path)
