@@ -21,6 +21,7 @@
  *  of the possibility of such damages.
  */
 
+#include <cmath>
 #include "GLTFViewer.h"
 #include "MapHelper.h"
 #include "BasicMath.h"
@@ -64,9 +65,20 @@ const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
 
 void GLTFViewer::LoadModel(const char* Path)
 {
+    TwBar* bar = TwGetBarByName("Settings");
+
     if (m_Model)
     {
+	    if (!m_Model->Animations.empty())
+        {
+            TwRemoveVar(bar, "Play");
+            TwRemoveVar(bar, "Active Animation");
+        }
+
         m_GLTFRenderer->ReleaseResourceBindings(*m_Model);
+        m_PlayAnimation  = false;
+        m_AnimationIndex = 0;
+        m_AnimationTimers.clear();
     }
 
     m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, Path));
@@ -80,6 +92,19 @@ void GLTFViewer::LoadModel(const char* Path)
     float4x4 InvYAxis = float4x4::Identity();
     InvYAxis._22 = -1;
     m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+
+    if (!m_Model->Animations.empty())
+    {
+        TwAddVarRW(bar, "Play", TW_TYPE_BOOLCPP, &m_PlayAnimation, "group='Animation'");
+        std::vector<TwEnumVal> AnimationEnumVals(m_Model->Animations.size());
+        for (int i=0; i < m_Model->Animations.size(); ++i)
+            AnimationEnumVals.emplace_back(TwEnumVal{i, m_Model->Animations[i].Name.c_str()});
+        TwType AnimationsEnumTwType = TwDefineEnum( "AnimationsEnum", AnimationEnumVals.data(), static_cast<unsigned int>(AnimationEnumVals.size()));
+        TwAddVarRW( bar, "Active Animation", AnimationsEnumTwType, &m_AnimationIndex, "group='Animation'");
+        m_AnimationTimers.resize(m_Model->Animations.size());
+        m_AnimationIndex = 0;
+        m_PlayAnimation  = true;
+	}
 }
 
 void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
@@ -114,8 +139,6 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
 
-    LoadModel(GLTFModels[m_SelectedModel].second);
-
     CreateEnvMapPSO();
 
     float3 axis(1.0f, 0.0f, 0.f);
@@ -124,7 +147,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {250 * m_UIScale, 550 * m_UIScale};
+    int barSize[2] = {250 * m_UIScale, 600 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     {
@@ -220,6 +243,8 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
         TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
         TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
     }
+
+    LoadModel(GLTFModels[m_SelectedModel].second);
 }
 
 void GLTFViewer::CreateEnvMapPSO()
@@ -319,7 +344,7 @@ GLTFViewer::~GLTFViewer()
 void GLTFViewer::Render()
 {
     // Clear the back buffer 
-    const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f }; 
+    const float ClearColor[] = { 0.032f,  0.032f,  0.032f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
@@ -377,6 +402,14 @@ void GLTFViewer::Render()
 void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+
+    if (!m_Model->Animations.empty() && m_PlayAnimation)
+    {
+        float& AnimationTimer = m_AnimationTimers[m_AnimationIndex];
+		AnimationTimer += static_cast<float>(ElapsedTime);
+        AnimationTimer = std::fmod(AnimationTimer, m_Model->Animations[m_AnimationIndex].End);
+		m_Model->UpdateAnimation(m_AnimationIndex, AnimationTimer);
+    }
 }
 
 }

@@ -23,6 +23,7 @@
 
 #pragma once 
 
+#include <vector>
 #include "SampleBase.h"
 #include "GLTFLoader.h"
 #include "GLTF_PBR_Renderer.h"
@@ -69,6 +70,10 @@ private:
     float      m_EnvMapMipLevel  = 1.f;
     int        m_SelectedModel   = 0;
     static const std::pair<const char*, const char*> GLTFModels[];
+
+    bool               m_PlayAnimation   = false;
+    int                m_AnimationIndex  = 0;
+    std::vector<float> m_AnimationTimers;
 
     std::unique_ptr<GLTF_PBR_Renderer> m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>       m_Model;
