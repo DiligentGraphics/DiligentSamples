@@ -60,7 +60,9 @@ const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
 {
     {"Damaged Helmet",      "models/DamagedHelmet/DamagedHelmet.gltf"},
     {"Metal Rough Spheres", "models/MetalRoughSpheres/MetalRoughSpheres.gltf"},
-    {"Flight Helmet",       "models/FlightHelmet/FlightHelmet.gltf"}
+    {"Flight Helmet",       "models/FlightHelmet/FlightHelmet.gltf"},
+    {"Cesium Man",          "models/CesiumMan/CesiumMan.gltf"},
+    {"Boom Box",            "models/BoomBoxWithAxes/BoomBoxWithAxes.gltf"}
 };
 
 void GLTFViewer::LoadModel(const char* Path)
