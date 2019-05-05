@@ -353,7 +353,6 @@ void GLTFViewer::Render()
     
     float4x4 CameraView = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
     float4x4 CameraWorld = CameraView.Inverse();
-    float4 CamWorld = float4(0,0,0,1) * CameraWorld;
     float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
