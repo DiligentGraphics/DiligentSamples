@@ -54,37 +54,37 @@ set_source_files_properties(${SHADERS} PROPERTIES
 
 set_source_files_properties(${TEXTURES} PROPERTIES
     VS_DEPLOYMENT_LOCATION "textures"
-    MACOSX_PACKAGE_LOCATION "textures"
+    MACOSX_PACKAGE_LOCATION "Resources/textures"
 )
 
 set_source_files_properties(${BOOM_BOX_MODEL} PROPERTIES
     VS_DEPLOYMENT_LOCATION "models/BoomBoxWithAxes"
-    MACOSX_PACKAGE_LOCATION "models/BoomBoxWithAxes"
+    MACOSX_PACKAGE_LOCATION "Resources/models/BoomBoxWithAxes"
 )
 
 set_source_files_properties(${CESIUM_MAN_MODEL} PROPERTIES
     VS_DEPLOYMENT_LOCATION "models/CesiumMan"
-    MACOSX_PACKAGE_LOCATION "models/CesiumMan"
+    MACOSX_PACKAGE_LOCATION "Resources/models/CesiumMan"
 )
 
 set_source_files_properties(${DAMAGED_HELMENT_MODEL} PROPERTIES
     VS_DEPLOYMENT_LOCATION "models/DamagedHelmet"
-    MACOSX_PACKAGE_LOCATION "models/DamagedHelmet"
+    MACOSX_PACKAGE_LOCATION "Resources/models/DamagedHelmet"
 )
 
 set_source_files_properties(${FLIGHT_HELMENT_MODEL} PROPERTIES
     VS_DEPLOYMENT_LOCATION "models/FlightHelmet"
-    MACOSX_PACKAGE_LOCATION "models/FlightHelmet"
+    MACOSX_PACKAGE_LOCATION "Resources/models/FlightHelmet"
 )
 
 set_source_files_properties(${METAL_ROUGH_SPHERES_MODEL} PROPERTIES
     VS_DEPLOYMENT_LOCATION "models/MetalRoughSpheres"
-    MACOSX_PACKAGE_LOCATION "models/MetalRoughSpheres"
+    MACOSX_PACKAGE_LOCATION "Resources/models/MetalRoughSpheres"
 )
 
 set_source_files_properties(${NORMAL_TANGENT_TEST_MODEL} PROPERTIES
     VS_DEPLOYMENT_LOCATION "models/NormalTangentTest"
-    MACOSX_PACKAGE_LOCATION "models/NormalTangentTest"
+    MACOSX_PACKAGE_LOCATION "Resources/models/NormalTangentTest"
 )
 
 source_group("assets" FILES ${ASSETS})
