@@ -96,7 +96,6 @@ private:
     std::unique_ptr<EpipolarLightScattering> m_pLightSctrPP;
 
     bool m_bEnableLightScattering;
-    float m_fScatteringScale;
     float m_fElapsedTime;
     float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
 

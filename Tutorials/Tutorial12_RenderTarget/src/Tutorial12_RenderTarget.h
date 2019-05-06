@@ -40,7 +40,7 @@ public:
     virtual void Render()override final;
     virtual void Update(double CurrTime, double ElapsedTime)override final;
     virtual const Char* GetSampleName()const override final{return "Tutorial12: Render Target";}
-    virtual void WindowResize(Uint32 Width, Uint32 Height);
+    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
 
 private:
     void CreateCubeResources();

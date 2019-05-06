@@ -77,7 +77,6 @@ AtmosphereSample::AtmosphereSample() :
     m_bVisualizeCascades(false),
     m_bIsGLDevice(false),
     m_bEnableLightScattering(true),
-    m_fScatteringScale(0.5f),
     m_fElapsedTime(0.f)
 {}
 
