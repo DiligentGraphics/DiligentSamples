@@ -109,7 +109,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
     {
         m_uiShadowMapResolution = 512;
         m_PPAttribs.iFirstCascadeToRayMarch = 2;
-        m_PPAttribs.uiSingleScatteringMode = SINGLE_SCTR_MODE_LUT;
+        m_PPAttribs.iSingleScatteringMode = SINGLE_SCTR_MODE_LUT;
         m_TerrainRenderParams.m_iNumShadowCascades = 4;
         m_TerrainRenderParams.m_iNumRings = 10;
         m_TerrainRenderParams.m_TexturingMode = RenderingParams::TM_MATERIAL_MASK;
@@ -221,7 +221,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
             { LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE, "Brute force" }
         };
         TwType LightSctrTechType = TwDefineEnum( "Light scattering tech", LightSctrTech, _countof( LightSctrTech ) );
-        TwAddVarRW( bar, "Light scattering tech", LightSctrTechType, &m_PPAttribs.uiLightSctrTechnique, "group=Scattering" );
+        TwAddVarRW( bar, "Light scattering tech", LightSctrTechType, &m_PPAttribs.iLightSctrTechnique, "group=Scattering" );
 
         TwEnumVal Pow2Values[] =
         {
@@ -268,7 +268,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                 { SINGLE_SCTR_MODE_LUT, "Look-up table" }
             };
             TwType SinglSctrModeEnum = TwDefineEnum( "Single scattering mode enum", SinglSctrMode, _countof(SinglSctrMode) );
-            TwAddVarRW( bar, "SingleSctrMode", SinglSctrModeEnum, &m_PPAttribs.uiSingleScatteringMode, "group=Advanced label=\'Single scattering\'" );
+            TwAddVarRW( bar, "SingleSctrMode", SinglSctrModeEnum, &m_PPAttribs.iSingleScatteringMode, "group=Advanced label=\'Single scattering\'" );
         }
         {
             TwEnumVal MultSctrMode[] =
@@ -278,7 +278,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                 { MULTIPLE_SCTR_MODE_OCCLUDED, "Occluded" }
             };
             TwType MultSctrModeEnum = TwDefineEnum( "Higher-order scattering mode enum", MultSctrMode, _countof( MultSctrMode ) );
-            TwAddVarRW( bar, "MultipleSctrMode", MultSctrModeEnum, &m_PPAttribs.uiMultipleScatteringMode, "group=Advanced label=\'Higher-order scattering\'" );
+            TwAddVarRW( bar, "MultipleSctrMode", MultSctrModeEnum, &m_PPAttribs.iMultipleScatteringMode, "group=Advanced label=\'Higher-order scattering\'" );
         }
         {
             TwEnumVal CascadeProcessingMode[] =
@@ -288,7 +288,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                 { CASCADE_PROCESSING_MODE_MULTI_PASS_INST, "Multi-pass inst" }
             };
             TwType CascadeProcessingModeEnum = TwDefineEnum( "Cascade processing mode enum", CascadeProcessingMode, _countof( CascadeProcessingMode ) );
-            TwAddVarRW( bar, "CascadeProcessingMode", CascadeProcessingModeEnum, &m_PPAttribs.uiCascadeProcessingMode, "group=Advanced label=\'Cascade processing mode\'" );
+            TwAddVarRW( bar, "CascadeProcessingMode", CascadeProcessingModeEnum, &m_PPAttribs.iCascadeProcessingMode, "group=Advanced label=\'Cascade processing mode\'" );
         }
         TwAddVarRW( bar, "FirstCascadeToRayMarch", TW_TYPE_INT32, &m_PPAttribs.iFirstCascadeToRayMarch, "min=0 max=8 step=1 group=Advanced label=\'Start cascade\'" );
         TwAddVarRW( bar, "Is32BitMinMaxShadowMap", TW_TYPE_BOOL32, &m_PPAttribs.bIs32BitMinMaxMipMap, "group=Advanced label=\'Use 32-bit float min/max SM\'" );
@@ -299,7 +299,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                 { REFINEMENT_CRITERION_INSCTR_DIFF, "Scattering difference" }
             };
             TwType CascadeProcessingModeEnum = TwDefineEnum( "Refinement criterion enum", RefinementCriterion, _countof( RefinementCriterion ) );
-            TwAddVarRW( bar, "RefinementCriterion", CascadeProcessingModeEnum, &m_PPAttribs.uiRefinementCriterion, "group=Advanced label=\'Refinement criterion\'" );
+            TwAddVarRW( bar, "RefinementCriterion", CascadeProcessingModeEnum, &m_PPAttribs.iRefinementCriterion, "group=Advanced label=\'Refinement criterion\'" );
         }
         {
             TwEnumVal ExtinctionEvalMode[] =
@@ -308,7 +308,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                 { EXTINCTION_EVAL_MODE_EPIPOLAR, "Epipolar" }
             };
             TwType ExtinctionEvalModeEnum = TwDefineEnum( "Extinction eval mode enum", ExtinctionEvalMode, _countof( ExtinctionEvalMode ) );
-            TwAddVarRW( bar, "ExtinctionEval", ExtinctionEvalModeEnum, &m_PPAttribs.uiExtinctionEvalMode, "group=Advanced label=\'Extinction eval mode\'" );
+            TwAddVarRW( bar, "ExtinctionEval", ExtinctionEvalModeEnum, &m_PPAttribs.iExtinctionEvalMode, "group=Advanced label=\'Extinction eval mode\'" );
         }
         TwAddVarRW( bar, "AerosolDensity", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolDensityScale, "group=Advanced label=\'Aerosol density\' min=0.1 max=5.0 step=0.1" );
         TwAddVarRW( bar, "AerosolAbsorption", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolAbsorbtionScale, "group=Advanced label=\'Aerosol absorption\' min=0.0 max=5.0 step=0.1" );
@@ -379,7 +379,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                 {TONE_MAPPING_ADAPTIVE_LOG,      "Adaptive log"}
             };
             TwType ToneMappingModeEnum = TwDefineEnum( "Tone mapping mode enum", ToneMappingMode, _countof( ToneMappingMode ) );
-            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.ToneMapping.uiToneMappingMode, "group=ToneMapping label=\'Mode\'" );
+            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.ToneMapping.iToneMappingMode, "group=ToneMapping label=\'Mode\'" );
         }
         TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
         TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
@@ -428,7 +428,7 @@ void AtmosphereSample::UpdateGUI()
         TwSetParam( bar, "ToneMapping", "visible", TW_PARAM_INT32, 1, &IsVisible );
     }
 
-    bool bIsEpipolarSampling = m_PPAttribs.uiLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING;
+    bool bIsEpipolarSampling = m_PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING;
     TwSetEnabled( bar, "NumSlices", bIsEpipolarSampling );
     TwSetEnabled( bar, "MaxSamples", bIsEpipolarSampling );
     TwSetEnabled( bar, "IntialStep", bIsEpipolarSampling );
@@ -439,7 +439,7 @@ void AtmosphereSample::UpdateGUI()
     TwSetEnabled( bar, "ShowSampling", bIsEpipolarSampling );
     TwSetEnabled( bar, "CorrectScattering", bIsEpipolarSampling );
     TwSetEnabled( bar, "ShowDepthBreaks", bIsEpipolarSampling && m_PPAttribs.bCorrectScatteringAtDepthBreaks != 0);
-    TwSetEnabled( bar, "NumIntegrationSteps", !m_PPAttribs.bEnableLightShafts && m_PPAttribs.uiSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION );
+    TwSetEnabled( bar, "NumIntegrationSteps", !m_PPAttribs.bEnableLightShafts && m_PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION );
 
     {
         int32_t IsVisible = m_PPAttribs.bUseCustomSctrCoeffs ? 1 : 0;
@@ -448,16 +448,16 @@ void AtmosphereSample::UpdateGUI()
         TwSetParam( bar, "UpdateCoeffsBtn", "visible", TW_PARAM_INT32, 1, &IsVisible );
     }
 
-    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                     m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
-                                     m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                     m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
+    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                                     m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
+                                     m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                                     m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
     
-    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_EXP ||
-                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
-                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                        m_PPAttribs.ToneMapping.uiToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
+    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_EXP ||
+                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
+                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
     TwSetEnabled( bar, "LightAdaptation", m_PPAttribs.ToneMapping.bAutoExposure ? true : false );
 }
 

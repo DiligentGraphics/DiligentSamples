@@ -57,7 +57,7 @@ private:
     float m_TessDensity             = 32;
     float m_Distance                = 10.f;
     bool m_AdaptiveTessellation     = true;
-    unsigned int m_BlockSize        = 32;
+             int m_BlockSize        = 32;
     unsigned int m_HeightMapWidth   = 0;
     unsigned int m_HeightMapHeight  = 0;
 };

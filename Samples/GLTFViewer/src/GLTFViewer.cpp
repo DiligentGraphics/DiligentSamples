@@ -383,7 +383,7 @@ void GLTFViewer::Render()
     {
         {
             MapHelper<EnvMapRenderAttribs> EnvMapAttribs(m_pImmediateContext, m_EnvMapRenderAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-            EnvMapAttribs->TMAttribs.uiToneMappingMode    = TONE_MAPPING_MODE_UNCHARTED2;
+            EnvMapAttribs->TMAttribs.iToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
             EnvMapAttribs->TMAttribs.bAutoExposure        = 0;
             EnvMapAttribs->TMAttribs.fMiddleGray          = m_RenderParams.MiddleGray;
             EnvMapAttribs->TMAttribs.bLightAdaptation     = 0;
