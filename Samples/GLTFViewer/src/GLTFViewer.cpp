@@ -72,7 +72,7 @@ void GLTFViewer::LoadModel(const char* Path)
 
     if (m_Model)
     {
-	    if (!m_Model->Animations.empty())
+        if (!m_Model->Animations.empty())
         {
             TwRemoveVar(bar, "Play");
             TwRemoveVar(bar, "Active Animation");
@@ -87,11 +87,11 @@ void GLTFViewer::LoadModel(const char* Path)
     m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, Path));
     m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
-	// Center and scale model
+    // Center and scale model
     float3 ModelDim{m_Model->aabb[0][0], m_Model->aabb[1][1], m_Model->aabb[2][2]};
-	float Scale = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
-	auto Translate = -float3(m_Model->aabb[3][0], m_Model->aabb[3][1], m_Model->aabb[3][2]);
-	Translate += -0.5f * ModelDim;
+    float Scale = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
+    auto Translate = -float3(m_Model->aabb[3][0], m_Model->aabb[3][1], m_Model->aabb[3][2]);
+    Translate += -0.5f * ModelDim;
     float4x4 InvYAxis = float4x4::Identity();
     InvYAxis._22 = -1;
     m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
@@ -107,7 +107,7 @@ void GLTFViewer::LoadModel(const char* Path)
         m_AnimationTimers.resize(m_Model->Animations.size());
         m_AnimationIndex = 0;
         m_PlayAnimation  = true;
-	}
+    }
 }
 
 void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
@@ -121,8 +121,8 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     auto BackBufferFmt  = m_pSwapChain->GetDesc().ColorBufferFormat;
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt = BackBufferFmt;
-    RendererCI.DSVFmt = DepthBufferFmt;
+    RendererCI.RTVFmt         = BackBufferFmt;
+    RendererCI.DSVFmt         = DepthBufferFmt;
     RendererCI.AllowDebugView = true;
     RendererCI.UseIBL         = true;
     RendererCI.FrontCCW       = true;
@@ -144,8 +144,8 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     CreateEnvMapPSO();
 
-    float3 axis(1.0f, 0.0f, 0.f);
-    m_CameraRotation = Quaternion::RotationFromAxisAngle(axis, PI_F);
+    m_CameraRotation  = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
+    m_ModelRotation   = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
     m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
 
     // Create a tweak bar
@@ -408,9 +408,9 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     if (!m_Model->Animations.empty() && m_PlayAnimation)
     {
         float& AnimationTimer = m_AnimationTimers[m_AnimationIndex];
-		AnimationTimer += static_cast<float>(ElapsedTime);
+        AnimationTimer += static_cast<float>(ElapsedTime);
         AnimationTimer = std::fmod(AnimationTimer, m_Model->Animations[m_AnimationIndex].End);
-		m_Model->UpdateAnimation(m_AnimationIndex, AnimationTimer);
+        m_Model->UpdateAnimation(m_AnimationIndex, AnimationTimer);
     }
 }
 
