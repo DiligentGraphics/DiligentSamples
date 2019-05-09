@@ -13,6 +13,9 @@ target_include_directories(Tutorial00_HelloLinux PRIVATE "../../../DiligentCore"
 
 set_target_properties(Tutorial00_HelloLinux PROPERTIES
     FOLDER Tutorials
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
 )
 
 target_link_libraries(Tutorial00_HelloLinux PRIVATE GL X11 GraphicsEngineOpenGL-shared)
