@@ -400,7 +400,6 @@ void GLTFViewer::Render()
 }
 
 
-// Rotating sponge
 void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);

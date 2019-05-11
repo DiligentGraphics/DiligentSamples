@@ -38,7 +38,6 @@ SampleBase* CreateSample()
     return new AtmosphereSample();
 }
 
-// Callback function called by AntTweakBar to set the sponge recursion level
 void AtmosphereSample::SetNumCascadesCB(const void* value, void* clientData)
 {
     AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
@@ -47,7 +46,6 @@ void AtmosphereSample::SetNumCascadesCB(const void* value, void* clientData)
 }
 
 
-// Callback function called by AntTweakBar to get the sponge recursion level
 void AtmosphereSample::GetNumCascadesCB(void *value, void * clientData)
 {
     AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
@@ -936,7 +934,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     {
         float3 axis;
         float angle = 0;
-        AxisAngleFromRotation(axis, angle, m_SpongeRotation);
+        AxisAngleFromRotation(axis, angle, m_Rotation);
         if (length(axis) < 1.0e-6f) 
             axis[1] = 1;
         angle += m_AnimationSpeed * dt;
@@ -944,7 +942,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
             angle -= 2.0f*FLOAT_PI;
         else if (angle <= 0)
             angle += 2.0f*FLOAT_PI;
-        m_SpongeRotation = RotationFromAxisAngle(axis, angle);
+        m_Rotation = RotationFromAxisAngle(axis, angle);
     }
 #endif
     UpdateGUI();
