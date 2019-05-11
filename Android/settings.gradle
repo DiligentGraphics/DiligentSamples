@@ -1,6 +1,7 @@
 include 'Common',
         ':AntTweakBar',
         ':Atmosphere',
+        ':GLTFViewer',
         ':Tutorial01_HelloTriangle',
         ':Tutorial02_Cube',
         ':Tutorial03_Texturing',
