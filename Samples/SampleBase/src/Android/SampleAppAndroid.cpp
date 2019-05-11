@@ -21,6 +21,8 @@
 *  of the possibility of such damages.
 */
 
+#include "AndroidFileSystem.h"
+#include "EngineFactoryOpenGL.h"
 #include "SampleApp.h"
 #include "RenderDeviceGLES.h"
 #include "AntTweakBar.h"
@@ -36,10 +38,12 @@ public:
         m_DeviceType = DeviceType::OpenGLES;
     }
 
-    virtual void Initialize(ANativeWindow* window)override final
+    virtual void Initialize(android_app* app)override final
     {
-        SampleApp::Initialize(window);
-        InitializeDiligentEngine(window);
+        GetEngineFactoryOpenGL()->InitAndroidFileSystem(app->activity, GetNativeActivityClassName());
+        AndroidFileSystem::Init(app->activity, GetNativeActivityClassName());
+        SampleApp::Initialize(app);
+        InitializeDiligentEngine(app->window);
         m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
         m_TheSample->SetUIScale(3);
         InitializeSample();

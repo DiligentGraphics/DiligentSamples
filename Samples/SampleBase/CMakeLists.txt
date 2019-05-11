@@ -134,7 +134,7 @@ PUBLIC
 if(PLATFORM_UNIVERSAL_WINDOWS)
     target_link_libraries(SampleBase PRIVATE dxguid.lib)
 elseif(PLATFORM_ANDROID)
-    target_link_libraries(SampleBase PRIVATE GLESv3 PUBLIC NativeAppGlue)
+    target_link_libraries(SampleBase PRIVATE GLESv3 PUBLIC native_app_glue)
 elseif(PLATFORM_LINUX)
     target_link_libraries(SampleBase PRIVATE GL X11)
 elseif(PLATFORM_MACOS OR PLATFORM_IOS)
