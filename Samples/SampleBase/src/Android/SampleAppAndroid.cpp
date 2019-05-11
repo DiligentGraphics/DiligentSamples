@@ -38,12 +38,12 @@ public:
         m_DeviceType = DeviceType::OpenGLES;
     }
 
-    virtual void Initialize(android_app* app)override final
+    virtual void Initialize()override final
     {
-        GetEngineFactoryOpenGL()->InitAndroidFileSystem(app->activity, GetNativeActivityClassName());
-        AndroidFileSystem::Init(app->activity, GetNativeActivityClassName());
-        SampleApp::Initialize(app);
-        InitializeDiligentEngine(app->window);
+        GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
+        AndroidFileSystem::Init(app_->activity, native_activity_class_name_.c_str());
+        SampleApp::Initialize();
+        InitializeDiligentEngine(app_->window);
         m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
         m_TheSample->SetUIScale(3);
         InitializeSample();
