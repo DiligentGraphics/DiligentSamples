@@ -110,9 +110,19 @@ void GLTFViewer::LoadModel(const char* Path)
     }
 }
 
+void GLTFViewer::ResetView()
+{
+    m_CameraYaw   = 0;
+    m_CameraPitch = 0;
+    m_ModelRotation = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
+}
+
+
 void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
+    ResetView();
 
     RefCntAutoPtr<ITexture> EnvironmentMap;
     CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
@@ -190,10 +200,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
                 [](void *clientData)
                 {
                     auto* pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                    for(Uint32 i=0; i < _countof(pViewer->m_Rotations); ++i)
-                    {
-                        pViewer->m_Rotations[i] = RotationAngles{};
-                    }
+                    pViewer->ResetView();
                 }, 
                 this, "");
     TwAddVarRW(bar, "Light direction",    TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
@@ -415,27 +422,33 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         constexpr float RotationSpeed = 0.005f;
         float fYawDelta   = mouseState.DeltaX * RotationSpeed;
         float fPitchDelta = mouseState.DeltaY * RotationSpeed;
-        for (Uint32 i=0; i < 3; ++i)
+        if (mouseState.ButtonMask & MOUSE_LEFT_BUTTON)
         {
-            if (mouseState.ButtonMask & (1 << i))
-            {
-                m_Rotations[i].yaw   += fYawDelta;
-                m_Rotations[i].pitch += fPitchDelta;
-            }
+            m_CameraYaw   += fYawDelta;
+            m_CameraPitch += fPitchDelta;
         }
+
+        // Apply extra rotations to adjust the view to match Khronos GLTF viewer
+        m_CameraRotation =
+            Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_CameraPitch) *
+            Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_CameraYaw)   *
+            Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
+
+        if (mouseState.ButtonMask & MOUSE_RIGHT_BUTTON)
+        {
+            auto CameraView = m_CameraRotation.ToMatrix();
+            auto CameraWorld = CameraView.Transpose();
+
+            float3 CameraRight = float3::MakeVector(CameraWorld[0]);
+            float3 CameraUp    = float3::MakeVector(CameraWorld[1]);
+            m_ModelRotation = 
+                Quaternion::RotationFromAxisAngle(CameraRight, -fPitchDelta) *
+                Quaternion::RotationFromAxisAngle(CameraUp,    -fYawDelta)   *
+                m_ModelRotation;
+        }
+
         m_CameraDist -= mouseState.WheelDelta * 0.25f;
     }
-
-    // Apply extra rotations to adjust the view to match Khronos GLTF viewer
-    m_CameraRotation =
-        Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_Rotations[0].pitch) *
-        Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_Rotations[0].yaw)   *
-        Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
-    m_ModelRotation = 
-        Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f) *
-        Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_Rotations[2].pitch) * 
-        Quaternion::RotationFromAxisAngle(float3{0,1,0}, m_Rotations[2].yaw);
-
 
     SampleBase::Update(CurrTime, ElapsedTime);
 
