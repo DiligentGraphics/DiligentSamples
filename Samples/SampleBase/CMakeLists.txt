@@ -5,10 +5,12 @@ project(SampleBase)
 if(PLATFORM_WIN32)
     set(SOURCE 
         src/Win32/SampleAppWin32.cpp
+        src/Win32/InputControllerWin32.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE 
         include/SampleApp.h
+        include/Win32/InputControllerWin32.h
     )
     set(WIN32_RESOURCES
         src/Win32/resources/Win32AppResource.h
@@ -93,8 +95,13 @@ elseif(PLATFORM_IOS)
 
 endif()
 
-list(APPEND SOURCE src/SampleBase.cpp)
-list(APPEND INCLUDE include/SampleBase.h)
+list(APPEND SOURCE
+    src/SampleBase.cpp
+)
+list(APPEND INCLUDE
+    include/InputController.h
+    include/SampleBase.h
+)
 
 
 add_library(SampleBase STATIC ${SOURCE} ${INCLUDE})

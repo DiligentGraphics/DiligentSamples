@@ -144,8 +144,6 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     CreateEnvMapPSO();
 
-    m_CameraRotation  = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
-    m_ModelRotation   = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
     m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
 
     // Create a tweak bar
@@ -186,8 +184,18 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
                 this, "");
 #endif
 
-    TwAddVarRW(bar, "Camera Rotation",    TW_TYPE_QUAT4F,  &m_CameraRotation,  "opened=true axisz=-z");
-    TwAddVarRW(bar, "Model Rotation",     TW_TYPE_QUAT4F,  &m_ModelRotation,   "opened=true axisz=-z");
+    TwAddVarRO(bar, "Camera Rotation",    TW_TYPE_QUAT4F,  &m_CameraRotation,  "opened=true axisz=-z");
+    TwAddVarRO(bar, "Model Rotation",     TW_TYPE_QUAT4F,  &m_ModelRotation,   "opened=true axisz=-z");
+    TwAddButton(bar, "Reset view", 
+                [](void *clientData)
+                {
+                    auto* pViewer = reinterpret_cast<GLTFViewer*>( clientData );
+                    for(Uint32 i=0; i < _countof(pViewer->m_Rotations); ++i)
+                    {
+                        pViewer->m_Rotations[i] = RotationAngles{};
+                    }
+                }, 
+                this, "");
     TwAddVarRW(bar, "Light direction",    TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
     TwAddVarRW(bar, "Camera dist",        TW_TYPE_FLOAT,   &m_CameraDist,      "min=0.1 max=5.0 step=0.1");
     TwAddVarRW(bar, "Light Color",        TW_TYPE_COLOR4F, &m_LightColor,      "group='Lighting' opened=false");
@@ -402,6 +410,33 @@ void GLTFViewer::Render()
 
 void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
+    {
+        const auto& mouseState = m_InputController.GetMouseState();
+        constexpr float RotationSpeed = 0.5f;
+        float fYawDelta   = mouseState.DeltaX * RotationSpeed * static_cast<float>(ElapsedTime);
+        float fPitchDelta = mouseState.DeltaY * RotationSpeed * static_cast<float>(ElapsedTime);
+        for (Uint32 i=0; i < 3; ++i)
+        {
+            if (mouseState.ButtonMask & (1 << i))
+            {
+                m_Rotations[i].yaw   += fYawDelta;
+                m_Rotations[i].pitch += fPitchDelta;
+            }
+        }
+        m_CameraDist += mouseState.WheelDelta * 10.f * static_cast<float>(ElapsedTime);
+    }
+
+    // Apply extra rotations to adjust the view to match Khronos GLTF viewer
+    m_CameraRotation =
+        Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_Rotations[0].pitch) *
+        Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_Rotations[0].yaw)   *
+        Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
+    m_ModelRotation = 
+        Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f) *
+        Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_Rotations[2].pitch) * 
+        Quaternion::RotationFromAxisAngle(float3{0,1,0}, m_Rotations[2].yaw);
+
+
     SampleBase::Update(CurrTime, ElapsedTime);
 
     if (!m_Model->Animations.empty() && m_PlayAnimation)
@@ -411,6 +446,11 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         AnimationTimer = std::fmod(AnimationTimer, m_Model->Animations[m_AnimationIndex].End);
         m_Model->UpdateAnimation(m_AnimationIndex, AnimationTimer);
     }
+}
+
+bool GLTFViewer::HandleNativeMessage(const void* pNativeMsgData)
+{
+    return m_InputController.HandleNativeMessage(pNativeMsgData);
 }
 
 }

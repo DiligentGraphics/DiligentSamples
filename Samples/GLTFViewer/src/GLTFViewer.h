@@ -25,6 +25,7 @@
 
 #include <vector>
 #include "SampleBase.h"
+#include "InputController.h"
 #include "GLTFLoader.h"
 #include "GLTF_PBR_Renderer.h"
 #include "BasicMath.h"
@@ -44,6 +45,7 @@ public:
     virtual void Render()override final;
     virtual void Update(double CurrTime, double ElapsedTime)override final;
     virtual const Char* GetSampleName()const override final{return "GLTF Viewer";}
+    virtual bool HandleNativeMessage(const void* pNativeMsgData)override final;
 
 private:
     void CreateEnvMapPSO();
@@ -60,8 +62,8 @@ private:
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
-    Quaternion m_CameraRotation;
-    Quaternion m_ModelRotation;
+    Quaternion m_CameraRotation = {0,0,0,1};
+    Quaternion m_ModelRotation  = {0,0,0,1};
     float4x4   m_ModelTransform;
     float      m_CameraDist      = 0.9f;
     float3     m_LightDirection;
@@ -83,6 +85,14 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
     RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
+
+    struct RotationAngles
+    {
+        float yaw   = 0;
+        float pitch = 0;
+    }m_Rotations[3]; // camera, light, model
+
+    InputController                       m_InputController;
 };
 
 }
