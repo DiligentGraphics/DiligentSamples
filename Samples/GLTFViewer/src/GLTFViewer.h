@@ -90,7 +90,7 @@ private:
     {
         float yaw   = 0;
         float pitch = 0;
-    }m_Rotations[3]; // camera, light, model
+    }m_Rotations[3]; // camera (LMB), unused (MBM), model (RMB)
 
     InputController                       m_InputController;
 };
