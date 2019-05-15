@@ -25,7 +25,6 @@
 
 #include <vector>
 #include "SampleBase.h"
-#include "InputController.h"
 #include "GLTFLoader.h"
 #include "GLTF_PBR_Renderer.h"
 #include "BasicMath.h"
@@ -45,7 +44,6 @@ public:
     virtual void Render()override final;
     virtual void Update(double CurrTime, double ElapsedTime)override final;
     virtual const Char* GetSampleName()const override final{return "GLTF Viewer";}
-    virtual bool HandleNativeMessage(const void* pNativeMsgData)override final;
 
 private:
     void CreateEnvMapPSO();
@@ -89,7 +87,6 @@ private:
 
     float m_CameraYaw   = 0;
     float m_CameraPitch = 0;
-    InputController                       m_InputController;
 };
 
 }

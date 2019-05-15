@@ -30,6 +30,7 @@
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
+#include "InputController.h"
 
 namespace Diligent
 {
@@ -50,7 +51,11 @@ public:
     virtual void Render() = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
     virtual void WindowResize(Uint32 Width, Uint32 Height){}
-    virtual bool HandleNativeMessage(const void* pNativeMsgData) { return false; }
+    virtual bool HandleNativeMessage(const void* pNativeMsgData)
+    {
+        return m_InputController.HandleNativeMessage(pNativeMsgData);
+    }
+
     virtual const Char* GetSampleName()const{return "Diligent Engine Sample";}
     void SetUIScale(Int32 UIScale){m_UIScale = UIScale;};
     Int32 GetUIScale()const{return m_UIScale;}
@@ -66,6 +71,8 @@ protected:
     double m_LastFPSTime         = 0;
     Uint32 m_uiNumFramesRendered = 0;
     Int32  m_UIScale             = 1;
+
+    InputController m_InputController;
 };
 
 inline void SampleBase::Update(double CurrTime, double ElapsedTime)

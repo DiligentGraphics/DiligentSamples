@@ -461,9 +461,4 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     }
 }
 
-bool GLTFViewer::HandleNativeMessage(const void* pNativeMsgData)
-{
-    return m_InputController.HandleNativeMessage(pNativeMsgData);
-}
-
 }

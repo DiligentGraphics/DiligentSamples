@@ -997,9 +997,4 @@ void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )
     m_pDevice->CreateTexture( DepthBuffDesc, nullptr, &m_pOffscreenDepthBuffer );
 }
 
-bool AtmosphereSample::HandleNativeMessage(const void* pNativeMsgData)
-{
-    return m_InputController.HandleNativeMessage(pNativeMsgData);
-}
-
 }

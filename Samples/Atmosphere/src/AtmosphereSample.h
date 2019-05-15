@@ -28,7 +28,6 @@
 #include "EarthHemisphere.h"
 #include "ElevationDataSource.h"
 #include "EpipolarLightScattering.h"
-#include "InputController.h"
 
 namespace Diligent
 {
@@ -51,7 +50,6 @@ public:
     virtual void Update(double CurrTime, double ElapsedTime)override final;
     virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
     virtual const Char* GetSampleName()const override final{return "Atmosphere Sample";}
-    virtual bool HandleNativeMessage(const void* pNativeMsgData)override final;
 
 private:
     void CreateShadowMap();
@@ -114,8 +112,6 @@ private:
         {},
         {2.16f, -0.06f}
     }; // camera (LMB), unused (MBM), light (RMB)
-
-    InputController          m_InputController;
 };
 
 }
