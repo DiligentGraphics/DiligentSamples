@@ -60,6 +60,11 @@ public:
     void SetUIScale(Int32 UIScale){m_UIScale = UIScale;};
     Int32 GetUIScale()const{return m_UIScale;}
     virtual void ProcessCommandLine(const char *CmdLine){}
+    
+    InputController& GetInputController()
+    {
+        return m_InputController;
+    }
 
 protected:
     RefCntAutoPtr<IEngineFactory>               m_pEngineFactory;

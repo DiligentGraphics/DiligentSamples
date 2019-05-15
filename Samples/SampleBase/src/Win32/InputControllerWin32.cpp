@@ -36,6 +36,9 @@ InputKeys MapCameraKeyWnd(UINT nKey)
         case VK_SHIFT:
             return InputKeys::ShiftDown;
 
+        case VK_MENU:
+            return InputKeys::AltDown;
+
         case VK_LEFT:
         case 'A':
             return InputKeys::MoveLeft;
@@ -85,11 +88,11 @@ InputControllerWin32::InputControllerWin32(bool SmoothMouseMotion) :
 
 bool InputControllerWin32::IsKeyDown( Uint8 key )
 {
-    return( ( key & KEY_IS_DOWN_MASK ) == KEY_IS_DOWN_MASK );
+    return( ( key & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN ) == INPUT_KEY_STATE_FLAG_KEY_IS_DOWN );
 }
 bool InputControllerWin32::WasKeyDown( Uint8 key )
 {
-    return( ( key & KEY_WAS_DOWN_MASK ) == KEY_WAS_DOWN_MASK );
+    return( ( key & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN ) == INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN );
 }
 
 const MouseState& InputControllerWin32::GetMouseState()
@@ -123,7 +126,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         case WM_KEYDOWN:
         {
             // Map this key to a InputKeys enum and update the
-            // state of m_aKeys[] by adding the KEY_WAS_DOWN_MASK|KEY_IS_DOWN_MASK mask
+            // state of m_aKeys[] by adding the INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN|INPUT_KEY_STATE_FLAG_KEY_IS_DOWN mask
             // only if the key is not down
             auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
             if( mappedKey < InputKeys::Unknown )
@@ -131,7 +134,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
                 auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
                 if( !IsKeyDown( Key ) )
                 {
-                    Key = KEY_WAS_DOWN_MASK | KEY_IS_DOWN_MASK;
+                    Key = INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN | INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
                     ++m_NumKeysDown;
                 }
             }
@@ -142,14 +145,14 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         case WM_KEYUP:
         {
             // Map this key to a InputKeys enum and update the
-            // state of m_aKeys[] by removing the KEY_IS_DOWN_MASK mask.
+            // state of m_aKeys[] by removing the INPUT_KEY_STATE_FLAG_KEY_IS_DOWN mask.
             auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
             if( mappedKey < InputKeys::Unknown )
             {
                 auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
                 if( IsKeyDown(Key) )
                 {
-                    Key &= ~KEY_IS_DOWN_MASK;
+                    Key &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
                     --m_NumKeysDown;
                 }
             }
@@ -167,15 +170,15 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
                 // Update member var state
                 if( ( uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONDBLCLK ) )
                 {
-                    m_MouseState.ButtonMask |= MOUSE_LEFT_BUTTON;
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
                 }
                 if( ( uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONDBLCLK ) )
                 {
-                    m_MouseState.ButtonMask |= MOUSE_MIDDLE_BUTTON;
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
                 }
                 if( ( uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONDBLCLK )  )
                 {
-                    m_MouseState.ButtonMask |= MOUSE_RIGHT_BUTTON;
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
                 }
 
                 // Capture the mouse, so if the mouse button is 
@@ -197,19 +200,19 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
                 // Update member var state
                 if( uMsg == WM_LBUTTONUP )
                 {
-                    m_MouseState.ButtonMask &= ~MOUSE_LEFT_BUTTON;
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
                 }
                 if( uMsg == WM_MBUTTONUP )
                 {
-                    m_MouseState.ButtonMask &= ~MOUSE_MIDDLE_BUTTON;
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
                 }
                 if( uMsg == WM_RBUTTONUP )
                 {
-                    m_MouseState.ButtonMask &= ~MOUSE_RIGHT_BUTTON;
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
                 }
 
                 // Release the capture if no mouse buttons down
-                if( (m_MouseState.ButtonMask & (MOUSE_LEFT_BUTTON | MOUSE_MIDDLE_BUTTON | MOUSE_RIGHT_BUTTON)) == 0 )
+                if( (m_MouseState.ButtonFlags & (MouseState::BUTTON_FLAG_LEFT | MouseState::BUTTON_FLAG_MIDDLE | MouseState::BUTTON_FLAG_RIGHT)) == 0 )
                 {
                     ReleaseCapture();
                 }
@@ -222,13 +225,13 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         {
             if( ( HWND )lParam != hWnd )
             {
-                if( ( m_MouseState.ButtonMask & MOUSE_LEFT_BUTTON ) ||
-                    ( m_MouseState.ButtonMask & MOUSE_MIDDLE_BUTTON ) ||
-                    ( m_MouseState.ButtonMask & MOUSE_RIGHT_BUTTON ) )
+                if( ( m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT ) ||
+                    ( m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_MIDDLE ) ||
+                    ( m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT ) )
                 {
-                    m_MouseState.ButtonMask &= ~MOUSE_LEFT_BUTTON;
-                    m_MouseState.ButtonMask &= ~MOUSE_MIDDLE_BUTTON;
-                    m_MouseState.ButtonMask &= ~MOUSE_RIGHT_BUTTON;
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
                     ReleaseCapture();
                 }
             }

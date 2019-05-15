@@ -17,40 +17,35 @@
 
 #pragma once
 
-#include "BasicMath.h"
+#include "BasicTypes.h"
 #include "FlagEnum.h"
 
 namespace Diligent
 {
-    
-enum MOUSE_BUTTON_MASK : Uint8
-{
-    MOUSE_BUTTON_NONE   = 0x00,
-    MOUSE_LEFT_BUTTON   = 0x01,
-    MOUSE_MIDDLE_BUTTON = 0x02,
-    MOUSE_RIGHT_BUTTON  = 0x04,
-    MOUSE_WHEEL         = 0x08
-};
-DEFINE_FLAG_ENUM_OPERATORS(MOUSE_BUTTON_MASK)
-
-enum KEY_STATE_MASK : Uint8
-{
-    KEY_IS_DOWN_MASK  = 0x01,
-    KEY_WAS_DOWN_MASK = 0x80
-};
-DEFINE_FLAG_ENUM_OPERATORS(KEY_STATE_MASK)
 
 struct MouseState
 {
-    Float32           DeltaX        = 0;
-    Float32           DeltaY        = 0;
-    MOUSE_BUTTON_MASK ButtonMask    = MOUSE_BUTTON_NONE;
-    Float32           WheelDelta    = 0;
+    enum BUTTON_FLAGS : Uint8
+    {
+        BUTTON_FLAG_NONE    = 0x00,
+        BUTTON_FLAG_LEFT    = 0x01,
+        BUTTON_FLAG_MIDDLE  = 0x02,
+        BUTTON_FLAG_RIGHT   = 0x04,
+        BUTTON_FLAG_WHEEL   = 0x08
+    };
+
+    Float32      DeltaX        = 0;
+    Float32      DeltaY        = 0;
+    BUTTON_FLAGS ButtonFlags   = BUTTON_FLAG_NONE;
+    Float32      WheelDelta    = 0;
 };
+DEFINE_FLAG_ENUM_OPERATORS(MouseState::BUTTON_FLAGS)
+
 
 enum class InputKeys
 {
-    MoveLeft = 0,
+    Unknown = 0,
+    MoveLeft,
     MoveRight,
     MoveForward,
     MoveBackward,
@@ -59,11 +54,19 @@ enum class InputKeys
     Reset,
     ControlDown,
     ShiftDown,
+    AltDown,
     ZoomIn,
     ZoomOut,
-    Unknown,
     TotalKeys
 };
+
+enum INPUT_KEY_STATE_FLAGS : Uint8
+{
+    INPUT_KEY_STATE_FLAG_KEY_IS_DOWN  = 0x01,
+    INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN = 0x80
+};
+DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
+
 
 }
 
@@ -72,6 +75,12 @@ enum class InputKeys
     namespace Diligent
     {
         using InputController = InputControllerWin32;
+    }
+#elif PLATFORM_UNIVERSAL_WINDOWS
+    #include "UWP/InputControllerUWP.h"
+    namespace Diligent
+    {
+        using InputController = InputControllerUWP;
     }
 #else
     namespace Diligent

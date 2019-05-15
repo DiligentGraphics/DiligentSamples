@@ -880,7 +880,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
         float fPitchDelta = mouseState.DeltaY;
         for (Uint32 i=0; i < 3; ++i)
         {
-            if (mouseState.ButtonMask & (1 << i))
+            if (mouseState.ButtonFlags & (1 << i))
             {
                 m_Rotations[i].yaw   += fYawDelta   * RotationSpeed[i];
                 m_Rotations[i].pitch += fPitchDelta * RotationSpeed[i];

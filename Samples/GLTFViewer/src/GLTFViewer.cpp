@@ -422,7 +422,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         constexpr float RotationSpeed = 0.005f;
         float fYawDelta   = mouseState.DeltaX * RotationSpeed;
         float fPitchDelta = mouseState.DeltaY * RotationSpeed;
-        if (mouseState.ButtonMask & MOUSE_LEFT_BUTTON)
+        if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
         {
             m_CameraYaw   += fYawDelta;
             m_CameraPitch += fPitchDelta;
@@ -434,7 +434,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
             Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_CameraYaw)   *
             Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 
-        if (mouseState.ButtonMask & MOUSE_RIGHT_BUTTON)
+        if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT)
         {
             auto CameraView = m_CameraRotation.ToMatrix();
             auto CameraWorld = CameraView.Transpose();

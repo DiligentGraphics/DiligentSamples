@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "BasicMath.h"
-
 namespace Diligent
 {
     
@@ -31,13 +29,13 @@ public:
 
     const MouseState& GetMouseState();
 
-    KEY_STATE_MASK GetKeyState(InputKeys Key)const
+    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
     {
         return m_Keys[static_cast<size_t>(Key)];
     }
 
 private:
-    KEY_STATE_MASK m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};  // State of input - KEY_WAS_DOWN_MASK | KEY_IS_DOWN_MASK
+    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};  // State of input - KEY_WAS_DOWN_MASK | KEY_IS_DOWN_MASK
 
     static bool IsKeyDown(Uint8 key);
     static bool WasKeyDown(Uint8 key);
