@@ -106,6 +106,11 @@ private:
     {
         float yaw   = 0;
         float pitch = 0;
+        RotationAngles(float y, float p) :
+            yaw(y),
+            pitch(p)
+        {}
+        RotationAngles(){}
     }m_Rotations[3] = 
     {
         {0.23f, 0.18f},
