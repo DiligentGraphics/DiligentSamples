@@ -77,8 +77,6 @@ void InputControllerEventHandlerUWP::ClearState()
 {
     std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
     auto& mouseState = m_SharedControllerState->mouseState;
-    mouseState.DeltaX     = 0;
-    mouseState.DeltaY     = 0;
     mouseState.WheelDelta = 0;
     for(Uint32 i=0; i < _countof(m_SharedControllerState->keySates); ++i)
     {
@@ -128,8 +126,8 @@ void InputControllerEventHandlerUWP::OnPointerMoved(
 
     if (m_LastMousePosX >= 0 && m_LastMousePosY >= 0)
     {
-        mouseState.DeltaX = pointerPosition.X - m_LastMousePosX;
-        mouseState.DeltaY = pointerPosition.Y - m_LastMousePosY;
+        mouseState.PosX = static_cast<float>(pointerPosition.X);
+        mouseState.PosY = static_cast<float>(pointerPosition.Y);
     }
     m_LastMousePosX = pointerPosition.X;
     m_LastMousePosY = pointerPosition.Y;
@@ -158,11 +156,11 @@ void InputControllerEventHandlerUWP::OnMouseMoved(
     _In_ MouseEventArgs^ args
     )
 {
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
-    // Handle Mouse Input via dedicated relative movement handler.
-    mouseState.DeltaX = static_cast<float>(args->MouseDelta.X);
-    mouseState.DeltaY = static_cast<float>(args->MouseDelta.Y);
+    //std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
+    //auto& mouseState = m_SharedControllerState->mouseState;
+    //// Handle Mouse Input via dedicated relative movement handler.
+    //mouseState.DeltaX = static_cast<float>(args->MouseDelta.X);
+    //mouseState.DeltaY = static_cast<float>(args->MouseDelta.Y);
 }
 
 //----------------------------------------------------------------------

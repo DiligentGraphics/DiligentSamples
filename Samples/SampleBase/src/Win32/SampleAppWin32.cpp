@@ -170,6 +170,7 @@ public:
             WPARAM wParam;
             LPARAM lParam;
         }MsgData = {hWnd, message, wParam, lParam};
+        m_TheSample->GetInputController().HandleNativeMessage(&MsgData);
         return m_TheSample->HandleNativeMessage(&MsgData);
     }
 

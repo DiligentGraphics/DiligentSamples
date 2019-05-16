@@ -51,10 +51,7 @@ public:
     virtual void Render() = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
     virtual void WindowResize(Uint32 Width, Uint32 Height){}
-    virtual bool HandleNativeMessage(const void* pNativeMsgData)
-    {
-        return m_InputController.HandleNativeMessage(pNativeMsgData);
-    }
+    virtual bool HandleNativeMessage(const void* pNativeMsgData){return false;}
 
     virtual const Char* GetSampleName()const{return "Diligent Engine Sample";}
     void SetUIScale(Int32 UIScale){m_UIScale = UIScale;};

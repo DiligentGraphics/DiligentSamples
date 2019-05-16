@@ -34,9 +34,9 @@ struct MouseState
         BUTTON_FLAG_WHEEL   = 0x08
     };
 
-    Float32      DeltaX        = 0;
-    Float32      DeltaY        = 0;
-    BUTTON_FLAGS ButtonFlags   = BUTTON_FLAG_NONE;
+    Float32      PosX         = 0;
+    Float32      PosY         = 0;
+    BUTTON_FLAGS ButtonFlags  = BUTTON_FLAG_NONE;
     Float32      WheelDelta    = 0;
 };
 DEFINE_FLAG_ENUM_OPERATORS(MouseState::BUTTON_FLAGS)
@@ -89,14 +89,9 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
         class DummyInputController
         {
         public:
-            bool HandleNativeMessage(const void* ) {return false;}
+            const MouseState& GetMouseState()const{return m_MouseState;}
 
-            const MouseState& GetMouseState(){return m_MouseState;}
-
-            KEY_STATE_MASK GetKeyState(InputKeys Key)const
-            {
-                return static_cast<KEY_STATE_MASK>(0);
-            }
+            INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const{return INPUT_KEY_STATE_FLAG_KEY_NONE;}
 
         private:
             MouseState m_MouseState;

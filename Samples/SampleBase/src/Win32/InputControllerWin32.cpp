@@ -77,13 +77,9 @@ InputKeys MapCameraKeyWnd(UINT nKey)
     }
 }
 
-InputControllerWin32::InputControllerWin32(bool SmoothMouseMotion) : 
-    m_SmoothMouseMotion(SmoothMouseMotion)
+InputControllerWin32::InputControllerWin32()
 {
-    POINT MousePosition;
-    GetCursorPos( &MousePosition );
-    m_LastMousePosX = MousePosition.x;
-    m_LastMousePosY = MousePosition.y;
+    UpdateMousePos();
 }
 
 bool InputControllerWin32::IsKeyDown( Uint8 key )
@@ -97,7 +93,7 @@ bool InputControllerWin32::WasKeyDown( Uint8 key )
 
 const MouseState& InputControllerWin32::GetMouseState()
 {
-    UpdateMouseDelta();
+    UpdateMousePos();
     return m_MouseState;
 }
 
@@ -184,11 +180,8 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
                 // Capture the mouse, so if the mouse button is 
                 // released outside the window, we'll get the WM_LBUTTONUP message
                 SetCapture( hWnd );
-                POINT LastMousePosition;
-                GetCursorPos( &LastMousePosition );
-                m_LastMousePosX = LastMousePosition.x;
-                m_LastMousePosY = LastMousePosition.y;
-                
+                UpdateMousePos();
+               
                 MsgHandled = true;
                 break;
             }
@@ -250,19 +243,12 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
     return MsgHandled;
 }
 
-void InputControllerWin32::UpdateMouseDelta()
+void InputControllerWin32::UpdateMousePos()
 {
-    POINT ptCurMousePos;
-
-    // Get current position of mouse
-    GetCursorPos( &ptCurMousePos );
-
-    // Calc how far it's moved since last frame
-    Int32 CurMouseDeltaX = ptCurMousePos.x - m_LastMousePosX;
-    Int32 CurMouseDeltaY = ptCurMousePos.y - m_LastMousePosY;
-
-    m_LastMousePosX = ptCurMousePos.x;
-    m_LastMousePosY = ptCurMousePos.y;
+    POINT MousePosition;
+    GetCursorPos( &MousePosition );
+    m_MouseState.PosX = static_cast<float>(MousePosition.x);
+    m_MouseState.PosY = static_cast<float>(MousePosition.y);
 
     /*if( m_bResetCursorAfterMove )
     {
@@ -282,14 +268,6 @@ void InputControllerWin32::UpdateMouseDelta()
         SetCursorPos( ptCenter.x, ptCenter.y );
         m_ptLastMousePosition = ptCenter;
     }*/
-
-    // Smooth the relative mouse data over a few frames so it isn't 
-    // jerky when moving slowly at low frame rates.
-    float fFramesToSmoothMouseData = 2.f;
-    float fPercentOfNew = m_SmoothMouseMotion ? 1.0f / fFramesToSmoothMouseData : 1.0f;
-    float fPercentOfOld = 1.0f - fPercentOfNew;
-    m_MouseState.DeltaX = m_MouseState.DeltaX * fPercentOfOld + static_cast<float>(CurMouseDeltaX) * fPercentOfNew;
-    m_MouseState.DeltaY = m_MouseState.DeltaY * fPercentOfOld + static_cast<float>(CurMouseDeltaY) * fPercentOfNew;
 }
 
 }

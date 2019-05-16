@@ -23,7 +23,7 @@ namespace Diligent
 class InputControllerWin32
 {
 public:
-    InputControllerWin32(bool SmoothMouseMotion = false);
+    InputControllerWin32();
 
     bool HandleNativeMessage(const void* MsgData);
 
@@ -39,13 +39,9 @@ private:
 
     static bool IsKeyDown(Uint8 key);
     static bool WasKeyDown(Uint8 key);
-    void UpdateMouseDelta();
+    void UpdateMousePos();
 
     Uint32 m_NumKeysDown = 0;
-    Int32 m_LastMousePosX = 0;
-    Int32 m_LastMousePosY = 0;
-
-    const bool m_SmoothMouseMotion;
 
     MouseState m_MouseState;
 };

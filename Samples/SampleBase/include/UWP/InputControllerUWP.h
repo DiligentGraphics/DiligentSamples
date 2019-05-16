@@ -33,8 +33,6 @@ public:
         INPUT_KEY_STATE_FLAGS keySates[static_cast<size_t>(InputKeys::TotalKeys)] = {};
     };
 
-    bool HandleNativeMessage(const void* MsgData){return false;}
-
     MouseState GetMouseState()
     {
         std::lock_guard<std::mutex> lock(m_State->mtx);

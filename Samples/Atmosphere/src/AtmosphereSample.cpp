@@ -876,8 +876,18 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     {
         const auto& mouseState = m_InputController.GetMouseState();
         constexpr float RotationSpeed[3] = {0.005f, 0.005f, 0.001f};
-        float fYawDelta   = mouseState.DeltaX;
-        float fPitchDelta = mouseState.DeltaY;
+        float DeltaX = 0;
+        float DeltaY = 0;
+        if (m_LastMousePosX >= 0 && m_LastMousePosY >= 0)
+        {
+            DeltaX = mouseState.PosX - m_LastMousePosX;
+            DeltaY = mouseState.PosY - m_LastMousePosY;
+        }
+        m_LastMousePosX = mouseState.PosX;
+        m_LastMousePosY = mouseState.PosY;
+
+        float fYawDelta   = DeltaX;
+        float fPitchDelta = DeltaY;
         for (Uint32 i=0; i < 3; ++i)
         {
             if (mouseState.ButtonFlags & (1 << i))
