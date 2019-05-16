@@ -280,7 +280,7 @@ void TwEventUWPHelper::OnPointerExited(
 }
 
 //----------------------------------------------------------------------
-char VirtualKeyToChar(VirtualKey Key, bool bAltPressed, bool bShiftPressed, bool bCtrlPressed)
+static char VirtualKeyToChar(VirtualKey Key, bool bAltPressed, bool bShiftPressed, bool bCtrlPressed)
 {
     int Char = 0;
     if( bShiftPressed )

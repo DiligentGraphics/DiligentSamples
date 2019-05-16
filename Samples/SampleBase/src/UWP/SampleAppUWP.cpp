@@ -23,6 +23,7 @@
 
 #include "SampleApp.h"
 #include "TwEventUWP.h"
+#include "InputControllerEventHandlerUWP.h"
 #include <AntTweakBar.h>
 #include "RenderDeviceD3D12.h"
 #include "RenderDeviceD3D11.h"
@@ -45,6 +46,7 @@ public:
     virtual void OnSetWindow(Windows::UI::Core::CoreWindow^ window)override final
     {
         m_TwEventHandler = TwEventUWPHelper::Create(window);
+        m_InputControllerEventHandlerUWP = InputControllerEventHandlerUWP::Create(window, m_TheSample->GetInputController().GetSharedState());
     }
 
     virtual void OnWindowSizeChanged()override final
@@ -57,6 +59,12 @@ public:
             m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
             TwWindowSize(SCDesc.Width, SCDesc.Height);
         }
+    }
+
+    virtual void Update(double CurrTime, double ElapsedTime)override
+    {
+        SampleApp::Update(CurrTime, ElapsedTime);
+        m_InputControllerEventHandlerUWP->ClearState();
     }
 
     virtual void Render()override
@@ -217,6 +225,8 @@ public:
 
 private:
     TwEventUWPHelper^ m_TwEventHandler;
+    InputControllerEventHandlerUWP^ m_InputControllerEventHandlerUWP;
+
     Microsoft::WRL::ComPtr<IDXGISwapChain3>	m_swapChain;
     bool m_SampleInitialized = false;
 };
