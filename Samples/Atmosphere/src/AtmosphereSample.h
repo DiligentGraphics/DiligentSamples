@@ -117,8 +117,7 @@ private:
         {},
         {2.16f, -0.06f}
     }; // camera (LMB), unused (MBM), light (RMB)
-    float m_LastMousePosX = -1;
-    float m_LastMousePosY = -1;
+    MouseState m_LastMouseState;
 };
 
 }

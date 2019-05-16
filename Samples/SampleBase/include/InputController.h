@@ -34,10 +34,10 @@ struct MouseState
         BUTTON_FLAG_WHEEL   = 0x08
     };
 
-    Float32      PosX         = 0;
-    Float32      PosY         = 0;
+    Float32      PosX         = -1;
+    Float32      PosY         = -1;
     BUTTON_FLAGS ButtonFlags  = BUTTON_FLAG_NONE;
-    Float32      WheelDelta    = 0;
+    Float32      WheelDelta   = 0;
 };
 DEFINE_FLAG_ENUM_OPERATORS(MouseState::BUTTON_FLAGS)
 
@@ -88,6 +88,12 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
     namespace Diligent
     {
         using InputController = InputControllerMacOS;
+    }
+#elif PLATFORM_IOS
+    #include "iOS/InputControllerIOS.h"
+    namespace Diligent
+    {
+        using InputController = InputControllerIOS;
     }
 #else
     namespace Diligent

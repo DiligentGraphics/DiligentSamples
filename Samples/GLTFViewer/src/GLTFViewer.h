@@ -85,10 +85,9 @@ private:
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
     RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
 
-    float m_LastMousePosX = -1;
-    float m_LastMousePosY = -1;
-    float m_CameraYaw   = 0;
-    float m_CameraPitch = 0;
+    MouseState m_LastMouseState;
+    float      m_CameraYaw   = 0;
+    float      m_CameraPitch = 0;
 };
 
 }

@@ -40,80 +40,36 @@ public:
 
     virtual void Render()override
     {
-        /*m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr);
-        // Handle all TwBar events here as the event handlers call draw commands
-        // and thus cannot be used in the UI thread
-        while(!TwBarEvents.empty())
-        {
-            const auto& event = TwBarEvents.front();
-            switch (event.type)
-            {
-                case TwEvent::LMB_PRESSED:
-                case TwEvent::RMB_PRESSED:
-                    TwMouseButton(TW_MOUSE_PRESSED, event.type == TwEvent::LMB_PRESSED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
-                    break;
-
-                case TwEvent::LMB_RELEASED:
-                case TwEvent::RMB_RELEASED:
-                    TwMouseButton(TW_MOUSE_RELEASED, event.type == TwEvent::LMB_RELEASED ? TW_MOUSE_LEFT : TW_MOUSE_RIGHT);
-                    break;
-
-                case TwEvent::MOUSE_MOVE:
-                    TwMouseMotion(event.mouseX, event.mouseY);
-                    break;
-
-                case TwEvent::KEY_PRESSED:
-                    TwKeyPressed(event.key, 0);
-                    break;
-            }
-            TwBarEvents.pop();
-        }*/
-
         SampleApp::Render();
     }
 
     virtual void OnTouchBegan(float x, float y)override final
     {
+        m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Released);
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
-        TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
+        auto handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
+        if (!handled)
+        {
+            m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Pressed);
+        }
     }
 
     virtual void OnTouchMoved(float x, float y)override final
     {
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
+        m_TheSample->GetInputController().OnMouseMove(x, y);
     }
 
     virtual void OnTouchEnded(float x, float y)override final
     {
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
         TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
+        m_TheSample->GetInputController().OnMouseMove(x, y);
+        m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Released);
     }
 
 private:
-    /*
-    // Unfortunately TwBar library calls rendering
-    // functions from event handlers, which does not work on MacOS
-    // as UI events and rendering are handled by separate threads
-    struct TwEvent
-    {
-        enum EVENT_TYPE
-        {
-            LMB_PRESSED,
-            LMB_RELEASED,
-            RMB_PRESSED,
-            RMB_RELEASED,
-            MOUSE_MOVE,
-            KEY_PRESSED
-        }type;
-        int mouseX = 0;
-        int mouseY = 0;
-        int key = 0;
 
-        TwEvent(EVENT_TYPE _type) : type(_type){}
-        TwEvent(int x, int y) : type(MOUSE_MOVE), mouseX(x), mouseY(y){}
-        TwEvent(int k) : type(KEY_PRESSED), key(k){}
-    };
-    std::queue<TwEvent> TwBarEvents;*/
 };
 
 NativeAppBase* CreateApplication()

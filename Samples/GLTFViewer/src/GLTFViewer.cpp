@@ -420,16 +420,16 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
     {
         const auto& mouseState = m_InputController.GetMouseState();
-        constexpr float RotationSpeed = 0.005f;
         float MouseDeltaX = 0;
         float MouseDeltaY = 0;
-        if (m_LastMousePosX >= 0 && m_LastMousePosY >= 0)
+        if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
+           (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
         {
-            MouseDeltaX = mouseState.PosX - m_LastMousePosX;
-            MouseDeltaY = mouseState.PosY - m_LastMousePosY;
+            MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
+            MouseDeltaY = mouseState.PosY - m_LastMouseState.PosY;
         }
-        m_LastMousePosX = mouseState.PosX;
-        m_LastMousePosY = mouseState.PosY;
+
+        constexpr float RotationSpeed = 0.005f;
         float fYawDelta   = MouseDeltaX * RotationSpeed;
         float fPitchDelta = MouseDeltaY * RotationSpeed;
         if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
@@ -458,6 +458,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         }
 
         m_CameraDist -= mouseState.WheelDelta * 0.25f;
+        m_LastMouseState = mouseState;
     }
 
     if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)

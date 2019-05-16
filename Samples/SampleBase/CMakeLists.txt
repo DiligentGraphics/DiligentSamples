@@ -91,10 +91,12 @@ elseif(PLATFORM_MACOS)
 
 elseif(PLATFORM_IOS)
     set(SOURCE
+        src/IOS/InputControllerIOS.cpp
         src/IOS/SampleAppIOS.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE
+        include/IOS/InputControllerIOS.h
         include/SampleApp.h
     )
 
