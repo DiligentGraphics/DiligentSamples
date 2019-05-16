@@ -346,7 +346,9 @@ void InputControllerEventHandlerUWP::OnKeyDown(
     if (inputKey != InputKeys::Unknown && inputKey < InputKeys::TotalKeys)
     {
         std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-        m_SharedControllerState->keySates[static_cast<size_t>(inputKey)] |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+        auto& keyState = m_SharedControllerState->keySates[static_cast<size_t>(inputKey)];
+        keyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+        keyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
     }
 }
 
