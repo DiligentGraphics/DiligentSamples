@@ -83,6 +83,12 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
     {
         using InputController = InputControllerUWP;
     }
+#elif PLATFORM_MACOS
+    #include "MacOS/InputControllerMacOS.h"
+    namespace Diligent
+    {
+        using InputController = InputControllerMacOS;
+    }
 #else
     namespace Diligent
     {

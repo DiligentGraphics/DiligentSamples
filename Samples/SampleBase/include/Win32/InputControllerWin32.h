@@ -35,7 +35,7 @@ public:
     }
 
 private:
-    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};  // State of input - KEY_WAS_DOWN_MASK | KEY_IS_DOWN_MASK
+    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
 
     static bool IsKeyDown(Uint8 key);
     static bool WasKeyDown(Uint8 key);

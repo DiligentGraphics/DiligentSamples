@@ -80,10 +80,12 @@ elseif(PLATFORM_LINUX)
 elseif(PLATFORM_MACOS)
 
     set(SOURCE
+        src/MacOS/InputControllerMacOS.cpp
         src/MacOS/SampleAppMacOS.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE
+        Include/MacOS/InputControllerMacOS.h
         include/SampleApp.h
     )
 
