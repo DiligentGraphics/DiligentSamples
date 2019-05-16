@@ -879,11 +879,12 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
         float MouseDeltaX = 0;
         float MouseDeltaY = 0;
         if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
-            (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
+            m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
         {
             MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
             MouseDeltaY = mouseState.PosY - m_LastMouseState.PosY;
         }
+        m_LastMouseState = mouseState;
 
         float fYawDelta   = MouseDeltaX;
         float fPitchDelta = MouseDeltaY;
@@ -907,8 +908,6 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
         m_f3LightDir.x = std::cos(-m_Rotations[2].yaw) * std::cos(m_Rotations[2].pitch);
         m_f3LightDir.z = std::sin(-m_Rotations[2].yaw) * std::cos(m_Rotations[2].pitch);
         m_f3LightDir.y = std::sin(m_Rotations[2].pitch);
-
-        m_LastMouseState = mouseState;
     }
 
 

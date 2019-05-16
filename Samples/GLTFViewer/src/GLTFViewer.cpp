@@ -423,11 +423,12 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         float MouseDeltaX = 0;
         float MouseDeltaY = 0;
         if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
-           (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
+            m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
         {
             MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
             MouseDeltaY = mouseState.PosY - m_LastMouseState.PosY;
         }
+        m_LastMouseState = mouseState;
 
         constexpr float RotationSpeed = 0.005f;
         float fYawDelta   = MouseDeltaX * RotationSpeed;
@@ -436,6 +437,8 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         {
             m_CameraYaw   += fYawDelta;
             m_CameraPitch += fPitchDelta;
+            m_CameraPitch = std::max(m_CameraPitch, -PI_F / 2.f);
+            m_CameraPitch = std::min(m_CameraPitch, +PI_F / 2.f);
         }
 
         // Apply extra rotations to adjust the view to match Khronos GLTF viewer
@@ -458,7 +461,6 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         }
 
         m_CameraDist -= mouseState.WheelDelta * 0.25f;
-        m_LastMouseState = mouseState;
     }
 
     if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)
