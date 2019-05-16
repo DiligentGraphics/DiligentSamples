@@ -421,17 +421,17 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     {
         const auto& mouseState = m_InputController.GetMouseState();
         constexpr float RotationSpeed = 0.005f;
-        float DeltaX = 0;
-        float DeltaY = 0;
+        float MouseDeltaX = 0;
+        float MouseDeltaY = 0;
         if (m_LastMousePosX >= 0 && m_LastMousePosY >= 0)
         {
-            DeltaX = mouseState.PosX - m_LastMousePosX;
-            DeltaY = mouseState.PosY - m_LastMousePosY;
+            MouseDeltaX = mouseState.PosX - m_LastMousePosX;
+            MouseDeltaY = mouseState.PosY - m_LastMousePosY;
         }
         m_LastMousePosX = mouseState.PosX;
         m_LastMousePosY = mouseState.PosY;
-        float fYawDelta   = DeltaX * RotationSpeed;
-        float fPitchDelta = DeltaY * RotationSpeed;
+        float fYawDelta   = MouseDeltaX * RotationSpeed;
+        float fPitchDelta = MouseDeltaY * RotationSpeed;
         if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
         {
             m_CameraYaw   += fYawDelta;
