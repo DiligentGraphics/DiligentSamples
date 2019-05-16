@@ -114,7 +114,8 @@ void GLTFViewer::ResetView()
 {
     m_CameraYaw   = 0;
     m_CameraPitch = 0;
-    m_ModelRotation = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
+    m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
+    m_CameraRotation = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 }
 
 
@@ -449,6 +450,9 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
         m_CameraDist -= mouseState.WheelDelta * 0.25f;
     }
+
+    if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)
+        ResetView();
 
     SampleBase::Update(CurrTime, ElapsedTime);
 

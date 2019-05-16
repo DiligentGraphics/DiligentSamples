@@ -129,7 +129,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
             // state of m_aKeys[] by adding the INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN|INPUT_KEY_STATE_FLAG_KEY_IS_DOWN mask
             // only if the key is not down
             auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
-            if( mappedKey < InputKeys::Unknown )
+            if (mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
             {
                 auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
                 if( !IsKeyDown( Key ) )
@@ -147,7 +147,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
             // Map this key to a InputKeys enum and update the
             // state of m_aKeys[] by removing the INPUT_KEY_STATE_FLAG_KEY_IS_DOWN mask.
             auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
-            if( mappedKey < InputKeys::Unknown )
+            if( mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
             {
                 auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
                 if( IsKeyDown(Key) )
