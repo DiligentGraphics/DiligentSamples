@@ -45,8 +45,8 @@ public:
 
     virtual void OnTouchBegan(float x, float y)override final
     {
-        m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Released);
         TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
+        m_TheSample->GetInputController().OnMouseMove(x, y);
         auto handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
         if (!handled)
         {
