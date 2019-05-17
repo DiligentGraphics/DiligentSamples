@@ -48,6 +48,7 @@ void InputControllerLinux::ClearState()
             KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
         }
     }
+    m_MouseState.WheelDelta = 0;
 }
 
 int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed)
@@ -188,24 +189,48 @@ int InputControllerLinux::HandleXEvent(void* xevent)
         case ButtonPress:
         {
             auto* xbe = reinterpret_cast<XButtonEvent *>(event);
-            if (xbe->button == Button1)
-                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
-            if (xbe->button == Button2)
-                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
-            if (xbe->button == Button3)
-                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+            switch(xbe->button)
+            {
+                case Button1:
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
+                break;
+
+                case Button2:
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
+                break;
+
+                case Button3:
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+                break;
+
+                case Button4:
+                    m_MouseState.WheelDelta += 1;
+                break;
+
+                case Button5:
+                    m_MouseState.WheelDelta -= 1;
+                break;
+            }
             return 1;
         }
 
         case ButtonRelease: 
         {
             auto* xbe = reinterpret_cast<XButtonEvent *>(event);
-            if (xbe->button == Button1)
-                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
-            if (xbe->button == Button2)
-                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
-            if (xbe->button == Button3)
-                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+            switch(xbe->button)
+            {
+                case Button1:
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
+                break;
+
+                case Button2:
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+                break;
+
+                case Button3:
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+                break;
+            }
             return 1;
         }
 
@@ -258,12 +283,28 @@ int InputControllerLinux::HandleXCBEvent(void* xcb_event)
         case XCB_BUTTON_PRESS:
         {
             xcb_button_press_event_t *press = (xcb_button_press_event_t *)event;
-            if (press->detail == XCB_BUTTON_INDEX_1)
-                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
-            if (press->detail == XCB_BUTTON_INDEX_2)
-                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
-            if (press->detail == XCB_BUTTON_INDEX_3)
-                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+            switch(press->detail)
+            {
+                case XCB_BUTTON_INDEX_1:
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
+                break;
+
+                case XCB_BUTTON_INDEX_2:
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
+                break;
+
+                case XCB_BUTTON_INDEX_3:
+                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+                break;
+
+                case XCB_BUTTON_INDEX_4:
+                    m_MouseState.WheelDelta += 1;
+                break;
+
+                case XCB_BUTTON_INDEX_5:
+                    m_MouseState.WheelDelta -= 1;
+                break;
+            }
             return 1;
         }
         break;
@@ -271,12 +312,20 @@ int InputControllerLinux::HandleXCBEvent(void* xcb_event)
         case XCB_BUTTON_RELEASE:
         {
             xcb_button_release_event_t *press = (xcb_button_release_event_t *)event;
-            if (press->detail == XCB_BUTTON_INDEX_1)
-                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
-            if (press->detail == XCB_BUTTON_INDEX_2)
-                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
-            if (press->detail == XCB_BUTTON_INDEX_3)
-                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+            switch(press->detail)
+            {
+                case XCB_BUTTON_INDEX_1:
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
+                break;
+
+                case XCB_BUTTON_INDEX_2:
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+                break;
+
+                case XCB_BUTTON_INDEX_3:
+                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+                break;
+            }
             return 1;
         }
         break;

@@ -81,7 +81,9 @@ public:
     virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
     {
         int handled = TwEventXCB(event);
-        if (!handled)
+        auto EventType = event->response_type & 0x7f;
+        // Always handle mouse move, button release and key release events
+        if (!handled || EventType == XCB_MOTION_NOTIFY || EventType == XCB_BUTTON_RELEASE || EventType == XCB_KEY_RELEASE)
         {
             handled = m_TheSample->GetInputController().HandleXCBEvent(event);
         }
