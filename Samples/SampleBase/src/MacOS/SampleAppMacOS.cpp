@@ -112,8 +112,6 @@ public:
         }
 
         SampleApp::Update(CurrTime, ElapsedTime);
-
-        inputController.ClearState();
     }
 
     virtual void WindowResize(int width, int height)override
