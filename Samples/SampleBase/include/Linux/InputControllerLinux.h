@@ -15,47 +15,34 @@
  *  of the possibility of such damages.
  */
 
-#include "InputController.h"
-#include <algorithm>
+#pragma once
 
 namespace Diligent
 {
     
-void InputControllerIOS::OnMouseButtonEvent(MouseButtonEvent Event)
+class InputControllerLinux
 {
-    switch (Event)
+public:
+    const MouseState& GetMouseState()
     {
-        case MouseButtonEvent::LMB_Pressed:
-            m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
-            break;
-
-        case MouseButtonEvent::LMB_Released:
-            m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
-            break;
-
-        case MouseButtonEvent::RMB_Pressed:
-            m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
-            break;
-
-        case MouseButtonEvent::RMB_Released:
-            m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
-            break;
-
-        default:
-            break;
+        return m_MouseState;
     }
-}
 
-void InputControllerIOS::ClearState()
-{
-    for(Uint32 i=0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
+    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
     {
-        auto& key = m_Keys[i];
-        if (key & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
-        {
-            key &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-        }
+        return m_Keys[static_cast<size_t>(Key)];
     }
-}
+
+    int HandleXEvent(void* xevent);
+    int HandleXCBEvent(void* xcb_event);
+
+    void ClearState();
+    
+private:
+    int HandleXKeyEvevnt(void* xevent);
+
+    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
+    MouseState m_MouseState;
+};
 
 }

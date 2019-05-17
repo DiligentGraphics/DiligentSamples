@@ -95,6 +95,12 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
     {
         using InputController = InputControllerIOS;
     }
+#elif PLATFORM_LINUX
+    #include "Linux/InputControllerLinux.h"
+    namespace Diligent
+    {
+        using InputController = InputControllerLinux;
+    }
 #else
     namespace Diligent
     {

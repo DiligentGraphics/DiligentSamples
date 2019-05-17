@@ -49,7 +49,19 @@ public:
 
     virtual int HandleXEvent(XEvent *xev)override final
     {
-        return TwEventX11(xev);
+        auto handled = TwEventX11(xev);
+        // Always handle mouse move, button release and key release events
+        if(!handled || xev->type == ButtonRelease || xev->type == MotionNotify || xev->type == KeyRelease)
+        {
+            handled = m_TheSample->GetInputController().HandleXEvent(xev);
+        }
+        return handled;
+    }
+
+    virtual void Update(double CurrTime, double ElapsedTime)override
+    {
+        SampleApp::Update(CurrTime, ElapsedTime);
+        m_TheSample->GetInputController().ClearState();
     }
 
 #if VULKAN_SUPPORTED
@@ -67,7 +79,11 @@ public:
     }
     virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
     {
-        TwEventXCB(event);
+        int handled = TwEventXCB(event);
+        if (!handled)
+        {
+            handled = m_TheSample->GetInputController().HandleXCBEvent(event);
+        }
     }
 #endif
 };

@@ -71,10 +71,12 @@ elseif(PLATFORM_ANDROID)
     )
 elseif(PLATFORM_LINUX)
     set(SOURCE 
+        src/Linux/InputControllerLinux.cpp
         src/Linux/SampleAppLinux.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE 
+        include/Linux/InputControllerLinux.h
         include/SampleApp.h
     )
 elseif(PLATFORM_MACOS)
