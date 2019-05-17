@@ -103,6 +103,10 @@ public:
                     }
                 }
                 break;
+
+                case TwEvent::KEY_RELEASED:
+                    inputController.OnKeyReleased(event.key);
+                break;
             }
             TwBarEvents.pop();
         }
@@ -145,7 +149,13 @@ public:
     void OnKeyPressed(int key)override final
     {
         std::lock_guard<std::mutex> lock(AppMutex);
-        TwBarEvents.emplace(key);
+        TwBarEvents.emplace(TwEvent::KEY_PRESSED, key);
+    }
+
+    void OnKeyReleased(int key)override final
+    {
+        std::lock_guard<std::mutex> lock(AppMutex);
+        TwBarEvents.emplace(TwEvent::KEY_RELEASED, key);
     }
 
 private:
@@ -165,7 +175,8 @@ private:
             RMB_PRESSED,
             RMB_RELEASED,
             MOUSE_MOVE,
-            KEY_PRESSED
+            KEY_PRESSED,
+            KEY_RELEASED
         }type;
         int mouseX = 0;
         int mouseY = 0;
@@ -173,7 +184,7 @@ private:
 
         TwEvent(EVENT_TYPE _type) : type(_type){}
         TwEvent(int x, int y) : type(MOUSE_MOVE), mouseX(x), mouseY(y){}
-        TwEvent(int k) : type(KEY_PRESSED), key(k){}
+        TwEvent(EVENT_TYPE _type, int k) : type(_type), key(k){}
     };
     std::queue<TwEvent> TwBarEvents;
 };

@@ -19,7 +19,7 @@
 
 namespace Diligent
 {
-    
+
 class InputControllerMacOS
 {
 public:
@@ -32,7 +32,7 @@ public:
     {
         return m_Keys[static_cast<size_t>(Key)];
     }
-    
+
     enum class MouseButtonEvent
     {
         LMB_Pressed,
@@ -41,17 +41,20 @@ public:
         RMB_Released
     };
     void OnMouseButtonEvent(MouseButtonEvent Event);
-    
+
     void OnMouseMove(int MouseX, int MouseY)
     {
         m_MouseState.PosX = static_cast<float>(MouseX);
         m_MouseState.PosY = static_cast<float>(MouseY);
     }
-    
+
     void OnKeyPressed(int key);
+    void OnKeyReleased(int key);
     void ClearState();
-    
+
 private:
+    void ProcessKeyEvent(int key, bool IsKeyPressed);
+
     INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
     MouseState m_MouseState;
 };

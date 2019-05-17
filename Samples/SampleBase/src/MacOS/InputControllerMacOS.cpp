@@ -60,50 +60,75 @@ void InputControllerMacOS::ClearState()
 
 void InputControllerMacOS::OnKeyPressed(int key)
 {
+    ProcessKeyEvent(key, true);
+}
+
+void InputControllerMacOS::OnKeyReleased(int key)
+{
+    ProcessKeyEvent(key, false);
+}
+
+void InputControllerMacOS::ProcessKeyEvent(int key, bool IsKeyPressed)
+{
+    auto UpdateKeyState = [&](InputKeys Key)
+    {
+        auto& KeyState = m_Keys[static_cast<size_t>(Key)];
+        if(IsKeyPressed)
+        {
+            KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+            KeyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+        }
+        else
+        {
+            KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            KeyState |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+        }
+    };
+
     switch(key)
     {
         case 'w':
         case 63232:
         case 264:
-            m_Keys[static_cast<size_t>(InputKeys::MoveForward)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::MoveForward);
             break;
 
         case 's':
         case 63233:
         case 258:
-            m_Keys[static_cast<size_t>(InputKeys::MoveBackward)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::MoveBackward);
             break;
 
         case 'a':
         case 260:
-            m_Keys[static_cast<size_t>(InputKeys::MoveLeft)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::MoveLeft);
             break;
 
         case 'd':
         case 262:
-            m_Keys[static_cast<size_t>(InputKeys::MoveRight)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::MoveRight);
             break;
 
         case 'e':
         case 265:
-            m_Keys[static_cast<size_t>(InputKeys::MoveDown)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::MoveDown);
             break;
 
         case 'q':
         case 259:
-            m_Keys[static_cast<size_t>(InputKeys::MoveUp)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::MoveUp);
             break;
 
         case 263:
-            m_Keys[static_cast<size_t>(InputKeys::Reset)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::Reset);
             break;
 
         case 269:
-            m_Keys[static_cast<size_t>(InputKeys::ZoomOut)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::ZoomOut);
             break;
 
         case 270:
-            m_Keys[static_cast<size_t>(InputKeys::ZoomIn)] = INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            UpdateKeyState(InputKeys::ZoomIn);
             break;
     }
 }
