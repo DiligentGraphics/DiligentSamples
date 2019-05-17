@@ -20,18 +20,9 @@
 namespace Diligent
 {
 
-class InputControllerMacOS
+class InputControllerMacOS : public InputControllerBase
 {
 public:
-    const MouseState& GetMouseState()
-    {
-        return m_MouseState;
-    }
-
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
-    {
-        return m_Keys[static_cast<size_t>(Key)];
-    }
 
     enum class MouseButtonEvent
     {
@@ -50,13 +41,9 @@ public:
 
     void OnKeyPressed(int key);
     void OnKeyReleased(int key);
-    void ClearState();
 
 private:
     void ProcessKeyEvent(int key, bool IsKeyPressed);
-
-    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
-    MouseState m_MouseState;
 };
 
 }

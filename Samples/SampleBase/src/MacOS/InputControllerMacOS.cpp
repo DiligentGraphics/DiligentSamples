@@ -46,18 +46,6 @@ void InputControllerMacOS::OnMouseButtonEvent(MouseButtonEvent Event)
     }
 }
 
-void InputControllerMacOS::ClearState()
-{
-    for(Uint32 i=0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
-    {
-        auto& key = m_Keys[i];
-        if (key & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
-        {
-            key &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-        }
-    }
-}
-
 void InputControllerMacOS::OnKeyPressed(int key)
 {
     ProcessKeyEvent(key, true);

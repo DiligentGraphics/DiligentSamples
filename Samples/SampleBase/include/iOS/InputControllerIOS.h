@@ -19,20 +19,10 @@
 
 namespace Diligent
 {
-    
-class InputControllerIOS
+
+class InputControllerIOS : public InputControllerBase
 {
 public:
-    const MouseState& GetMouseState()
-    {
-        return m_MouseState;
-    }
-
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
-    {
-        return m_Keys[static_cast<size_t>(Key)];
-    }
-    
     enum class MouseButtonEvent
     {
         LMB_Pressed,
@@ -41,18 +31,12 @@ public:
         RMB_Released
     };
     void OnMouseButtonEvent(MouseButtonEvent Event);
-    
+
     void OnMouseMove(float MouseX, float MouseY)
     {
         m_MouseState.PosX = MouseX;
         m_MouseState.PosY = MouseY;
     }
-    
-    void ClearState();
-    
-private:
-    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
-    MouseState m_MouseState;
 };
 
 }

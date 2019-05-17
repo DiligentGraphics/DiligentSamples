@@ -46,16 +46,4 @@ void InputControllerIOS::OnMouseButtonEvent(MouseButtonEvent Event)
     }
 }
 
-void InputControllerIOS::ClearState()
-{
-    for(Uint32 i=0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
-    {
-        auto& key = m_Keys[i];
-        if (key & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
-        {
-            key &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-        }
-    }
-}
-
 }
