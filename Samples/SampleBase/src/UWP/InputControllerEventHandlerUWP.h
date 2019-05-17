@@ -27,22 +27,10 @@ ref class InputControllerEventHandlerUWP
 internal:
     static InputControllerEventHandlerUWP^ InputControllerEventHandlerUWP::Create(
                                    _In_ Windows::UI::Core::CoreWindow^ window,
-                                   std::shared_ptr<InputControllerUWP::ControllerState> controllerState);
+                                   std::shared_ptr<InputControllerUWP::SharedControllerState> SharedState);
 
     InputControllerEventHandlerUWP(_In_ Windows::UI::Core::CoreWindow^ window,
-                                   std::shared_ptr<InputControllerUWP::ControllerState> controllerState);
-    
-    const MouseState& GetMouseState()
-    {
-        return m_SharedControllerState->mouseState;
-    }
-
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
-    {
-        return m_SharedControllerState->keySates[static_cast<size_t>(Key)];
-    }
-
-    void ClearState();
+                                   std::shared_ptr<InputControllerUWP::SharedControllerState> SharedState);
 
 protected:
     void OnPointerPressed(
@@ -83,7 +71,7 @@ protected:
 
 protected private:
 
-    std::shared_ptr<InputControllerUWP::ControllerState> m_SharedControllerState;
+    std::shared_ptr<InputControllerUWP::SharedControllerState> m_SharedState;
 
     float m_LastMousePosX = -1;
     float m_LastMousePosY = -1;

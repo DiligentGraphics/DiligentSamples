@@ -94,7 +94,7 @@ bool InputControllerWin32::WasKeyDown( Uint8 key )
 const MouseState& InputControllerWin32::GetMouseState()
 {
     UpdateMousePos();
-    return m_MouseState;
+    return InputControllerBase::GetMouseState();
 }
 
 bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
@@ -149,6 +149,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
                 if( IsKeyDown(Key) )
                 {
                     Key &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+                    Key |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
                     --m_NumKeysDown;
                 }
             }

@@ -26,32 +26,94 @@ namespace Diligent
 class InputControllerUWP
 {
 public:
-    struct ControllerState
+    class SharedControllerState : private InputControllerBase
     {
+    public:
+        MouseState GetMouseState()
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            return InputControllerBase::GetMouseState();
+        }
+
+        INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            return InputControllerBase::GetKeyState(Key);
+        }
+
+        void ClearState()
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            InputControllerBase::ClearState();
+        }
+
+        void OnKeyDown(InputKeys Key)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto& keyState = m_Keys[static_cast<size_t>(Key)];
+            keyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+            keyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+        }
+
+        void OnKeyUp(InputKeys Key)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto& keyState = m_Keys[static_cast<size_t>(Key)];
+            keyState &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+            keyState |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+        }
+
+        void MouseButtonPressed(MouseState::BUTTON_FLAGS Flags)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            m_MouseState.ButtonFlags |= Flags;
+        }
+
+        void MouseButtonReleased(MouseState::BUTTON_FLAGS Flags)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            m_MouseState.ButtonFlags &= ~Flags;
+        }
+
+        void SetMousePose(float x, float y)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            m_MouseState.PosX = x;
+            m_MouseState.PosY = y;
+        }
+
+        void SetMouseWheelDetlta(float w)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            m_MouseState.WheelDelta = w;
+        }
+
+    private:
         std::mutex mtx;
-        MouseState mouseState;
-        INPUT_KEY_STATE_FLAGS keySates[static_cast<size_t>(InputKeys::TotalKeys)] = {};
     };
 
     MouseState GetMouseState()
     {
-        std::lock_guard<std::mutex> lock(m_State->mtx);
-        return m_State->mouseState;
+        return m_SharedState->GetMouseState();
     }
 
     INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
     {
-        std::lock_guard<std::mutex> lock(m_State->mtx);
-        return m_State->keySates[static_cast<size_t>(Key)];
+        return m_SharedState->GetKeyState(Key);
     }
 
-    std::shared_ptr<ControllerState> GetSharedState()
+    std::shared_ptr<SharedControllerState> GetSharedState()
     {
-        return m_State;
+        return m_SharedState;
+    }
+
+    void ClearState()
+    {
+        m_SharedState->ClearState();
     }
 
 private:
-    std::shared_ptr<ControllerState> m_State{new ControllerState};
+    std::shared_ptr<SharedControllerState> m_SharedState{new SharedControllerState};
 };
 
 }

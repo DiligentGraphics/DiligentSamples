@@ -20,7 +20,7 @@
 namespace Diligent
 {
     
-class InputControllerWin32
+class InputControllerWin32 : public InputControllerBase
 {
 public:
     InputControllerWin32();
@@ -29,21 +29,13 @@ public:
 
     const MouseState& GetMouseState();
 
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
-    {
-        return m_Keys[static_cast<size_t>(Key)];
-    }
-
 private:
-    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
-
     static bool IsKeyDown(Uint8 key);
     static bool WasKeyDown(Uint8 key);
+
     void UpdateMousePos();
 
     Uint32 m_NumKeysDown = 0;
-
-    MouseState m_MouseState;
 };
 
 }

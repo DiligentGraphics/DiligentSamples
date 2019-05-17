@@ -61,12 +61,6 @@ public:
         }
     }
 
-    virtual void Update(double CurrTime, double ElapsedTime)override
-    {
-        SampleApp::Update(CurrTime, ElapsedTime);
-        m_InputControllerEventHandlerUWP->ClearState();
-    }
-
     virtual void Render()override
     {
         // Don't try to render anything before the first Update.

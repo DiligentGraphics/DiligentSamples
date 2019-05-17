@@ -36,14 +36,14 @@ using namespace Windows::System;
 namespace Diligent
 {
 
-InputControllerEventHandlerUWP^ InputControllerEventHandlerUWP::Create(_In_ CoreWindow^ window, std::shared_ptr<InputControllerUWP::ControllerState> controllerState)
+InputControllerEventHandlerUWP^ InputControllerEventHandlerUWP::Create(_In_ CoreWindow^ window, std::shared_ptr<InputControllerUWP::SharedControllerState> controllerState)
 {
     auto p = ref new InputControllerEventHandlerUWP(window, controllerState);
     return static_cast<InputControllerEventHandlerUWP^>(p);
 }
 
-InputControllerEventHandlerUWP::InputControllerEventHandlerUWP(_In_ CoreWindow^ window, std::shared_ptr<InputControllerUWP::ControllerState> controllerState) :
-    m_SharedControllerState(std::move(controllerState))
+InputControllerEventHandlerUWP::InputControllerEventHandlerUWP(_In_ CoreWindow^ window, std::shared_ptr<InputControllerUWP::SharedControllerState> controllerState) :
+    m_SharedState(std::move(controllerState))
 {
     window->PointerPressed +=
         ref new TypedEventHandler<CoreWindow^, PointerEventArgs^>(this, &InputControllerEventHandlerUWP::OnPointerPressed);
@@ -73,19 +73,6 @@ InputControllerEventHandlerUWP::InputControllerEventHandlerUWP(_In_ CoreWindow^ 
 #endif
 }
 
-void InputControllerEventHandlerUWP::ClearState()
-{
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
-    mouseState.WheelDelta = 0;
-    for(Uint32 i=0; i < _countof(m_SharedControllerState->keySates); ++i)
-    {
-        auto& key = m_SharedControllerState->keySates[i];
-        if (key & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
-            key &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-    }
-}
-
 void InputControllerEventHandlerUWP::OnPointerPressed(
     _In_ CoreWindow^ /* sender */,
     _In_ PointerEventArgs^ args
@@ -96,16 +83,17 @@ void InputControllerEventHandlerUWP::OnPointerPressed(
     Point pointerPosition = point->Position;
     PointerPointProperties^ pointProperties = point->Properties;
 
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
+    MouseState::BUTTON_FLAGS Flags = MouseState::BUTTON_FLAG_NONE;
     if(pointProperties->IsLeftButtonPressed)
-        mouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
+        Flags |= MouseState::BUTTON_FLAG_LEFT;
 
     if(pointProperties->IsRightButtonPressed)
-        mouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+        Flags |= MouseState::BUTTON_FLAG_RIGHT;
 
     if(pointProperties->IsMiddleButtonPressed)
-        mouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
+        Flags |= MouseState::BUTTON_FLAG_MIDDLE;
+
+    m_SharedState->MouseButtonPressed(Flags);
 }
 
 //----------------------------------------------------------------------
@@ -121,14 +109,8 @@ void InputControllerEventHandlerUWP::OnPointerMoved(
     PointerPointProperties^ pointProperties = point->Properties;
     auto pointerDevice = point->PointerDevice;
 
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
+    m_SharedState->SetMousePose(pointerPosition.X, pointerPosition.Y);
 
-    if (m_LastMousePosX >= 0 && m_LastMousePosY >= 0)
-    {
-        mouseState.PosX = static_cast<float>(pointerPosition.X);
-        mouseState.PosY = static_cast<float>(pointerPosition.Y);
-    }
     m_LastMousePosX = pointerPosition.X;
     m_LastMousePosY = pointerPosition.Y;
 }
@@ -145,9 +127,7 @@ void InputControllerEventHandlerUWP::OnPointerWheelChanged(
     PointerPointProperties^ pointProperties = point->Properties;
     auto pointerDevice = point->PointerDevice;
 
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
-    mouseState.WheelDelta = static_cast<float>(pointProperties->MouseWheelDelta) / static_cast<float>(WHEEL_DELTA);
+    m_SharedState->SetMouseWheelDetlta(static_cast<float>(pointProperties->MouseWheelDelta) / static_cast<float>(WHEEL_DELTA));
 }
 //----------------------------------------------------------------------
 
@@ -156,8 +136,8 @@ void InputControllerEventHandlerUWP::OnMouseMoved(
     _In_ MouseEventArgs^ args
     )
 {
-    //std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    //auto& mouseState = m_SharedControllerState->mouseState;
+    //std::lock_guard<std::mutex> lock(m_SharedState->mtx);
+    //auto& mouseState = m_SharedState->mouseState;
     //// Handle Mouse Input via dedicated relative movement handler.
     //mouseState.DeltaX = static_cast<float>(args->MouseDelta.X);
     //mouseState.DeltaY = static_cast<float>(args->MouseDelta.Y);
@@ -175,17 +155,17 @@ void InputControllerEventHandlerUWP::OnPointerReleased(
     Point pointerPosition = point->Position;
     PointerPointProperties^ pointProperties = point->Properties;
 
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
-
+    MouseState::BUTTON_FLAGS Flags = MouseState::BUTTON_FLAG_NONE;
     if(!pointProperties->IsLeftButtonPressed)
-        mouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
+        Flags |= MouseState::BUTTON_FLAG_LEFT;
 
     if(!pointProperties->IsRightButtonPressed)
-        mouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+        Flags |= MouseState::BUTTON_FLAG_RIGHT;
 
     if(!pointProperties->IsMiddleButtonPressed)
-        mouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+        Flags |= MouseState::BUTTON_FLAG_MIDDLE;
+
+    m_SharedState->MouseButtonReleased(Flags);
 }
 
 //----------------------------------------------------------------------
@@ -200,17 +180,17 @@ void InputControllerEventHandlerUWP::OnPointerExited(
     Point pointerPosition = point->Position;
     PointerPointProperties^ pointProperties = point->Properties;
 
-    std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-    auto& mouseState = m_SharedControllerState->mouseState;
-
+    MouseState::BUTTON_FLAGS Flags = MouseState::BUTTON_FLAG_NONE;
     if(!pointProperties->IsLeftButtonPressed)
-        mouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
+        Flags |= MouseState::BUTTON_FLAG_LEFT;
 
     if(!pointProperties->IsRightButtonPressed)
-        mouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+        Flags |= MouseState::BUTTON_FLAG_RIGHT;
 
     if(!pointProperties->IsMiddleButtonPressed)
-        mouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+        Flags |= MouseState::BUTTON_FLAG_MIDDLE;
+
+    m_SharedState->MouseButtonReleased(Flags);
 }
 
 namespace
@@ -345,10 +325,7 @@ void InputControllerEventHandlerUWP::OnKeyDown(
     auto inputKey = VirtualKeyToInputKey(args->VirtualKey);
     if (inputKey != InputKeys::Unknown && inputKey < InputKeys::TotalKeys)
     {
-        std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-        auto& keyState = m_SharedControllerState->keySates[static_cast<size_t>(inputKey)];
-        keyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-        keyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+        m_SharedState->OnKeyDown(inputKey);
     }
 }
 
@@ -362,10 +339,7 @@ void InputControllerEventHandlerUWP::OnKeyUp(
     auto inputKey = VirtualKeyToInputKey(args->VirtualKey);
     if (inputKey != InputKeys::Unknown && inputKey < InputKeys::TotalKeys)
     {
-        std::lock_guard<std::mutex> lock(m_SharedControllerState->mtx);
-        auto& keyState = m_SharedControllerState->keySates[static_cast<size_t>(inputKey)];
-        keyState &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
-        keyState |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+        m_SharedState->OnKeyUp(inputKey);
     }
 }
 

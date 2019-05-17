@@ -71,7 +71,7 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
 class InputControllerBase
 {
 public:
-    const MouseState& GetMouseState()
+    const MouseState& GetMouseState()const
     {
         return m_MouseState;
     }
