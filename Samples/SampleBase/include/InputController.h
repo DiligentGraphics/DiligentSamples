@@ -101,6 +101,12 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
     {
         using InputController = InputControllerLinux;
     }
+#elif PLATFORM_ANDROID
+    #include "Android/InputControllerAndroid.h"
+    namespace Diligent
+    {
+        using InputController = InputControllerAndroid;
+    }
 #else
     namespace Diligent
     {

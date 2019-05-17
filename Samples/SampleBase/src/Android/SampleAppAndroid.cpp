@@ -92,9 +92,10 @@ public:
                     v.Value(fX, fY);
                     TwMouseMotion((short)fX, (short)fY);
                     int Handled = TwMouseButton( TW_MOUSE_PRESSED, TW_MOUSE_LEFT );
-
-                    //TransformPosition( v );
-                    //tap_camera_.BeginDrag( v );
+                    if (!Handled)
+                    {
+                        m_TheSample->GetInputController().BeginDrag(fX, fY);
+                    }
                 }
                 else if( dragState & ndk_helper::GESTURE_STATE_MOVE )
                 {
@@ -103,14 +104,12 @@ public:
                     float fX = 0, fY = 0;
                     v.Value(fX, fY);
                     int Handled = TwMouseMotion((short)fX, (short)fY);
-                    //TransformPosition( v );
-                    //tap_camera_.Drag( v );
+                    m_TheSample->GetInputController().DragMove(fX, fY);
                 }
                 else if( dragState & ndk_helper::GESTURE_STATE_END )
                 {
                     int Handled = TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
-
-                    //tap_camera_.EndDrag();
+                    m_TheSample->GetInputController().EndDrag();
                 }
 
                 //Handle pinch state

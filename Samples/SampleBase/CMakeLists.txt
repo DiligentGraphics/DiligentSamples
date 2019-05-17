@@ -63,10 +63,12 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
 
 elseif(PLATFORM_ANDROID)
     set(SOURCE
+        src/Android/InputControllerAndroid.cpp
         src/Android/SampleAppAndroid.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE 
+        include/Android/InputControllerAndroid.h
         include/SampleApp.h
     )
 elseif(PLATFORM_LINUX)
