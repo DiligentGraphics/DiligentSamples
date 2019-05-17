@@ -29,7 +29,7 @@
 #endif
 
 #include <xcb/xcb.h>
-//#include "xcb_keysyms/xcb_keysyms.h"
+#include "../../../External/TwBarLib/src/xcb_keysyms/xcb_keysyms.h"
 
 #include "InputController.h"
 #include "DebugUtilities.h"
@@ -50,24 +50,13 @@ void InputControllerLinux::ClearState()
     }
 }
 
-int InputControllerLinux::HandleXKeyEvevnt(void* xevent)
+int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed)
 {
-    auto* event = reinterpret_cast<XEvent*>(xevent);
-
-    KeySym keysym;
-    constexpr size_t buff_sz = 80;
-    char buffer[buff_sz];
-        
-    int num_char = XLookupString((XKeyEvent *)event, buffer, buff_sz, &keysym, 0);
-
-    VERIFY_EXPR(event->type == KeyPress || event->type == KeyRelease);
-    
     int handled = 0;
-
     auto UpdateKeyState = [&](InputKeys Key)
     {
         auto& KeyState = m_Keys[static_cast<size_t>(Key)];
-        if (event->type == KeyPress)
+        if (IsKeyPressed)
         {
             KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
             KeyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
@@ -80,12 +69,12 @@ int InputControllerLinux::HandleXKeyEvevnt(void* xevent)
         handled = 1;
     };
 
-    if (event->xkey.state & ControlMask)
-        UpdateKeyState(InputKeys::ControlDown);
-    if (event->xkey.state & ShiftMask)
-        UpdateKeyState(InputKeys::ShiftDown);
-    if (event->xkey.state & Mod1Mask)
-        UpdateKeyState(InputKeys::AltDown);
+    //if (event->xkey.state & ControlMask)
+    //    UpdateKeyState(InputKeys::ControlDown);
+    //if (event->xkey.state & ShiftMask)
+    //    UpdateKeyState(InputKeys::ShiftDown);
+    //if (event->xkey.state & Mod1Mask)
+    //    UpdateKeyState(InputKeys::AltDown);
 
     switch (keysym)
     {
@@ -189,13 +178,11 @@ int InputControllerLinux::HandleXEvent(void* xevent)
     switch (event->type)
     {
         case KeyPress:
-        {
-            return HandleXKeyEvevnt(xevent);
-        }
-
         case KeyRelease:
         {
-            return HandleXKeyEvevnt(xevent);
+            KeySym keysym;
+            int num_char = XLookupString((XKeyEvent *)event, nullptr, 0, &keysym, 0);
+            return HandleKeyEvevnt(keysym, event->type == KeyPress);
         }
 
         case ButtonPress:
@@ -237,9 +224,76 @@ int InputControllerLinux::HandleXEvent(void* xevent)
     return 0;
 }
 
+
+void InputControllerLinux::InitXCBKeysms(void* connection)
+{
+    VERIFY_EXPR(m_XCBKeySymbols == nullptr);
+    m_XCBKeySymbols = xcb_key_symbols_alloc(reinterpret_cast<xcb_connection_t*>(connection));
+}
+
+InputControllerLinux::~InputControllerLinux()
+{
+    if (m_XCBKeySymbols != nullptr)
+    {
+        xcb_key_symbols_free(reinterpret_cast<xcb_key_symbols_t*>(m_XCBKeySymbols));
+    }
+}
+
 int InputControllerLinux::HandleXCBEvent(void* xcb_event)
 {
     auto* event = reinterpret_cast<xcb_generic_event_t*>(xcb_event);
+
+    const auto event_type = event->response_type & 0x7f;
+    switch (event_type)
+    {
+        case XCB_MOTION_NOTIFY:
+        {
+            xcb_motion_notify_event_t *motion = (xcb_motion_notify_event_t *)event;
+            m_MouseState.PosX = static_cast<float>(motion->event_x);
+            m_MouseState.PosY = static_cast<float>(motion->event_y);
+            return 1;
+        }
+        break;
+
+        case XCB_BUTTON_PRESS:
+        {
+            xcb_button_press_event_t *press = (xcb_button_press_event_t *)event;
+            if (press->detail == XCB_BUTTON_INDEX_1)
+                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
+            if (press->detail == XCB_BUTTON_INDEX_2)
+                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
+            if (press->detail == XCB_BUTTON_INDEX_3)
+                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+            return 1;
+        }
+        break;
+
+        case XCB_BUTTON_RELEASE:
+        {
+            xcb_button_release_event_t *press = (xcb_button_release_event_t *)event;
+            if (press->detail == XCB_BUTTON_INDEX_1)
+                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
+            if (press->detail == XCB_BUTTON_INDEX_2)
+                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+            if (press->detail == XCB_BUTTON_INDEX_3)
+                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+            return 1;
+        }
+        break;
+
+        case XCB_KEY_PRESS:
+        case XCB_KEY_RELEASE:
+        {
+            xcb_keysym_t keysym = xcb_key_press_lookup_keysym(
+                reinterpret_cast<xcb_key_symbols_t*>(m_XCBKeySymbols),
+                reinterpret_cast<xcb_key_press_event_t*>(event), 0);
+            return HandleKeyEvevnt(keysym, event_type == XCB_KEY_PRESS);
+        }
+        break;
+
+        default:
+            break;
+    }
 
     return 0;
 }

@@ -75,6 +75,7 @@ public:
         }xcbInfo = {connection, window};
         InitializeDiligentEngine(nullptr, &xcbInfo);
         TwInitXCBKeysms(connection);
+        m_TheSample->GetInputController().InitXCBKeysms(connection);
         InitializeSample();
     }
     virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
