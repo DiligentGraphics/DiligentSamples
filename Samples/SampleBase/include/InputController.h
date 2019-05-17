@@ -68,6 +68,37 @@ enum INPUT_KEY_STATE_FLAGS : Uint8
 };
 DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
 
+class InputControllerBase
+{
+public:
+    const MouseState& GetMouseState()
+    {
+        return m_MouseState;
+    }
+
+    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
+    {
+        return m_Keys[static_cast<size_t>(Key)];
+    }
+
+    void ClearState()
+    {
+        m_MouseState.WheelDelta = 0;
+
+        for(Uint32 i=0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
+        {
+            auto& KeyState = m_Keys[i];
+            if (KeyState & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
+            {
+                KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+            }
+        }
+    }
+
+protected:
+    MouseState m_MouseState;
+    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
+};
 
 }
 

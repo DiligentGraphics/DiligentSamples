@@ -17,24 +17,17 @@
 
 #pragma once
 
+#include "BasicMath.h"
+
 namespace Diligent
 {
 
-class InputControllerAndroid
+class InputControllerAndroid : public InputControllerBase
 {
 public:
-    const MouseState& GetMouseState()
-    {
-        return m_MouseState;
-    }
-
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
-    {
-        return m_Keys[static_cast<size_t>(Key)];
-    }
-
     void BeginDrag(float x, float y)
     {
+        EndPinch();
         m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
         m_MouseState.PosX = x;
         m_MouseState.PosY = y;
@@ -47,15 +40,18 @@ public:
 
     void DragMove(float x, float y)
     {
+        m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
         m_MouseState.PosX = x;
         m_MouseState.PosY = y;
     }
 
-    //void ClearState();
+    void StartPinch(float x0, float y0, float x1, float y1);
+    void PinchMove(float x0, float y0, float x1, float y1);
+    void EndPinch();
 
 private:
-    MouseState m_MouseState;
-    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
+    float2 m_PrvePinchPoint0;
+    float2 m_PrvePinchPoint1;
 };
 
 }

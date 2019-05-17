@@ -37,20 +37,6 @@
 namespace Diligent
 {
 
-
-void InputControllerLinux::ClearState()
-{
-    for(Uint32 i=0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
-    {
-        auto& KeyState = m_Keys[i];
-        if (KeyState & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
-        {
-            KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-        }
-    }
-    m_MouseState.WheelDelta = 0;
-}
-
 int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed)
 {
     int handled = 0;

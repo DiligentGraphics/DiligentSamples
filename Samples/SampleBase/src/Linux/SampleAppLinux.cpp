@@ -58,12 +58,6 @@ public:
         return handled;
     }
 
-    virtual void Update(double CurrTime, double ElapsedTime)override
-    {
-        SampleApp::Update(CurrTime, ElapsedTime);
-        m_TheSample->GetInputController().ClearState();
-    }
-
 #if VULKAN_SUPPORTED
     virtual void InitVulkan(xcb_connection_t* connection, uint32_t window)override final
     {

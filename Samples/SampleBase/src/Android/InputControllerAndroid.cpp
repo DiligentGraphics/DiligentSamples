@@ -20,4 +20,25 @@
 namespace Diligent
 {
 
+void InputControllerAndroid::StartPinch(float x0, float y0, float x1, float y1)
+{
+    EndDrag();
+    m_PrvePinchPoint0 = float2{x0, y0};
+    m_PrvePinchPoint1 = float2{x1, y1};
+}
+
+void InputControllerAndroid::PinchMove(float x0, float y0, float x1, float y1)
+{
+    float PrevDist = length(m_PrvePinchPoint0 - m_PrvePinchPoint1);
+    m_PrvePinchPoint0 = float2{x0, y0};
+    m_PrvePinchPoint1 = float2{x1, y1};
+    float NewDist = length(m_PrvePinchPoint0 - m_PrvePinchPoint1);
+    m_MouseState.WheelDelta = (NewDist - PrevDist) / 100.f;
+}
+
+void InputControllerAndroid::EndPinch()
+{
+    m_MouseState.WheelDelta = 0;
+}
+
 }

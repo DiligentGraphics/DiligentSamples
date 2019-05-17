@@ -548,6 +548,7 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
     m_CurrentTime = CurrTime;
     m_TheSample->Update(CurrTime, ElapsedTime);
+    m_TheSample->GetInputController().ClearState();
 }
 
 void SampleApp::Render()

@@ -20,31 +20,18 @@
 namespace Diligent
 {
 
-class InputControllerLinux
+class InputControllerLinux : public InputControllerBase
 {
 public:
     ~InputControllerLinux();
-    const MouseState& GetMouseState()
-    {
-        return m_MouseState;
-    }
-
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
-    {
-        return m_Keys[static_cast<size_t>(Key)];
-    }
 
     int HandleXEvent(void* xevent);
     int HandleXCBEvent(void* xcb_event);
 
-    void ClearState();
     void InitXCBKeysms(void* connection);
 
 private:
     int HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed);
-
-    MouseState m_MouseState;
-    INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
 
     void* m_XCBKeySymbols = nullptr;
 };

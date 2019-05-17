@@ -119,8 +119,10 @@ public:
                     ndk_helper::Vec2 v1;
                     ndk_helper::Vec2 v2;
                     pinch_detector_.GetPointers( v1, v2 );
-                    //TransformPosition( v1 );
-                    //TransformPosition( v2 );
+                    float fX1 = 0, fY1 = 0, fX2 = 0, fY2 = 0;
+                    v1.Value(fX1, fY1);
+                    v2.Value(fX2, fY2);
+                    m_TheSample->GetInputController().StartPinch(fX1, fY1, fX2, fY2);
                     //tap_camera_.BeginPinch( v1, v2 );
                 }
                 else if( pinchState & ndk_helper::GESTURE_STATE_MOVE )
@@ -130,9 +132,15 @@ public:
                     ndk_helper::Vec2 v1;
                     ndk_helper::Vec2 v2;
                     pinch_detector_.GetPointers( v1, v2 );
-                    //TransformPosition( v1 );
-                    //TransformPosition( v2 );
+                    float fX1 = 0, fY1 = 0, fX2 = 0, fY2 = 0;
+                    v1.Value(fX1, fY1);
+                    v2.Value(fX2, fY2);
+                    m_TheSample->GetInputController().PinchMove(fX1, fY1, fX2, fY2);
                     //tap_camera_.Pinch( v1, v2 );
+                }
+                else if( pinchState & ndk_helper::GESTURE_STATE_END )
+                {
+                    m_TheSample->GetInputController().EndPinch();
                 }
             }
             return 1;
