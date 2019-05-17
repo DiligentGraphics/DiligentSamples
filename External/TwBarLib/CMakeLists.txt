@@ -125,7 +125,6 @@ PRIVATE
     Common 
     GraphicsEngineInterface
     PlatformInterface
-    XCBKeySyms
 )
 
 target_include_directories(TwBarLib
@@ -191,7 +190,7 @@ target_compile_definitions(TwBarLib PUBLIC -DTW_STATIC)
 if(PLATFORM_LINUX)
     target_compile_definitions(TwBarLib PUBLIC _UNIX PRIVATE __PLACEMENT_NEW_INLINE)
     target_compile_options(TwBarLib PRIVATE -fno-strict-aliasing)
-    target_link_libraries(TwBarLib PRIVATE glew-static)
+    target_link_libraries(TwBarLib PRIVATE XCBKeySyms glew-static)
 endif()
 
 if(PLATFORM_MACOS)
