@@ -29,7 +29,7 @@
 #endif
 
 #include <xcb/xcb.h>
-#include "../../../External/TwBarLib/src/xcb_keysyms/xcb_keysyms.h"
+#include "xcb_keysyms/xcb_keysyms.h"
 
 #include "InputController.h"
 #include "DebugUtilities.h"

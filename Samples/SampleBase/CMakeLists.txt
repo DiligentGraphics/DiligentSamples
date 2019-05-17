@@ -152,7 +152,7 @@ if(PLATFORM_UNIVERSAL_WINDOWS)
 elseif(PLATFORM_ANDROID)
     target_link_libraries(SampleBase PRIVATE GLESv3 PUBLIC native_app_glue)
 elseif(PLATFORM_LINUX)
-    target_link_libraries(SampleBase PRIVATE GL X11)
+    target_link_libraries(SampleBase PRIVATE XCBKeySyms GL X11)
 elseif(PLATFORM_MACOS OR PLATFORM_IOS)
 
 endif()

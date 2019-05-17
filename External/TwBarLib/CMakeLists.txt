@@ -31,7 +31,7 @@ elseif(PLATFORM_ANDROID)
         COMPILE_FLAGS "-x c++"
     )
 elseif(PLATFORM_LINUX)
-    list(APPEND SOURCE src/TwEventX11.c src/TwEventXCB.c src/xcb_keysyms/xcb_keysyms.h src/xcb_keysyms/xcb_keysyms.c)
+    list(APPEND SOURCE src/TwEventX11.c src/TwEventXCB.c)
 endif()
 
 set(PRIVATE_HEADERS 
@@ -120,11 +120,12 @@ if(MSVC)
 endif()
 
 target_link_libraries(TwBarLib 
-PRIVATE 
+PRIVATE
     BuildSettings 
     Common 
     GraphicsEngineInterface
     PlatformInterface
+    XCBKeySyms
 )
 
 target_include_directories(TwBarLib
