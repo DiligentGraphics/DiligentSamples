@@ -107,6 +107,11 @@ public:
         return m_SharedState->GetKeyState(Key);
     }
 
+    bool IsKeyDown(InputKeys Key)const
+    {
+        return m_SharedState->IsKeyDown(Key);
+    }
+
     std::shared_ptr<SharedControllerState> GetSharedState()
     {
         return m_SharedState;
