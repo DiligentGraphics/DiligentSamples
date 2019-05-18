@@ -82,21 +82,25 @@ int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed
 
         case XK_Up:
         case 'w':
+        case 'W':
             UpdateKeyState(InputKeys::MoveForward);
         break;
 
         case XK_Down:
         case 's':
+        case 'S':
             UpdateKeyState(InputKeys::MoveBackward);
         break;
 
         case XK_Right:
         case 'd':
+        case 'D':
             UpdateKeyState(InputKeys::MoveRight);
         break;
 
         case XK_Left:
         case 'a':
+        case 'A':
             UpdateKeyState(InputKeys::MoveLeft);
         break;
 
@@ -106,11 +110,13 @@ int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed
 
         case XK_Page_Up:
         case 'e':
+        case 'E':
             UpdateKeyState(InputKeys::MoveUp);
         break;
 
         case XK_Page_Down:
         case 'q':
+        case 'Q':
             UpdateKeyState(InputKeys::MoveDown);
         break;
 
