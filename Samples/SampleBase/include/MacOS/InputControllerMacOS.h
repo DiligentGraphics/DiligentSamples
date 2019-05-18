@@ -41,6 +41,7 @@ public:
 
     void OnKeyPressed(int key);
     void OnKeyReleased(int key);
+    void OnFlagsChanged(bool ShiftPressed, bool CtrlPressed, bool AltPressed);
 
 private:
     void ProcessKeyEvent(int key, bool IsKeyPressed);

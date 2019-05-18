@@ -107,6 +107,10 @@ public:
                 case TwEvent::KEY_RELEASED:
                     inputController.OnKeyReleased(event.key);
                 break;
+
+                case TwEvent::FLAGS_CHANGED:
+                    inputController.OnFlagsChanged(event.key & 0x01, event.key & 0x02, event.key & 0x04);
+                break;
             }
             TwBarEvents.pop();
         }
@@ -156,6 +160,15 @@ public:
         TwBarEvents.emplace(TwEvent::KEY_RELEASED, key);
     }
 
+    virtual void OnFlagsChanged(bool ShiftPressed, bool ControlPressed, bool AltPressed)override final
+    {
+        std::lock_guard<std::mutex> lock(AppMutex);
+        TwBarEvents.emplace(TwEvent::FLAGS_CHANGED,
+                            (ShiftPressed   ? 0x01 : 0) |
+                            (ControlPressed ? 0x02 : 0) |
+                            (AltPressed     ? 0x04 : 0));
+    }
+
 private:
     // Render functions are called from high-priority Display Link thread,
     // so all methods must be protected by mutex
@@ -174,7 +187,8 @@ private:
             RMB_RELEASED,
             MOUSE_MOVE,
             KEY_PRESSED,
-            KEY_RELEASED
+            KEY_RELEASED,
+            FLAGS_CHANGED
         }type;
         int mouseX = 0;
         int mouseY = 0;
