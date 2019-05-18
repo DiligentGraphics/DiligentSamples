@@ -30,12 +30,7 @@ public:
     const MouseState& GetMouseState();
 
 private:
-    static bool IsKeyDown(Uint8 key);
-    static bool WasKeyDown(Uint8 key);
-
     void UpdateMousePos();
-
-    Uint32 m_NumKeysDown = 0;
 };
 
 }

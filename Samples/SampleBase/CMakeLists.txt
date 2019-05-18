@@ -107,9 +107,12 @@ elseif(PLATFORM_IOS)
 endif()
 
 list(APPEND SOURCE
+    src/FirstPersonCamera.cpp
     src/SampleBase.cpp
 )
+
 list(APPEND INCLUDE
+    include/FirstPersonCamera.h
     include/InputController.h
     include/SampleBase.h
 )

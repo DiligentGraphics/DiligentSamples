@@ -82,15 +82,6 @@ InputControllerWin32::InputControllerWin32()
     UpdateMousePos();
 }
 
-bool InputControllerWin32::IsKeyDown( Uint8 key )
-{
-    return( ( key & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN ) == INPUT_KEY_STATE_FLAG_KEY_IS_DOWN );
-}
-bool InputControllerWin32::WasKeyDown( Uint8 key )
-{
-    return( ( key & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN ) == INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN );
-}
-
 const MouseState& InputControllerWin32::GetMouseState()
 {
     UpdateMousePos();
@@ -127,12 +118,9 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
             auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
             if (mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
             {
-                auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
-                if( !IsKeyDown( Key ) )
-                {
-                    Key = INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN | INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
-                    ++m_NumKeysDown;
-                }
+                auto& Key = m_Keys[static_cast<Int32>(mappedKey)];
+                Key &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+                Key |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
             }
             MsgHandled = true;
             break;
@@ -146,12 +134,8 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
             if( mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
             {
                 auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
-                if( IsKeyDown(Key) )
-                {
-                    Key &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
-                    Key |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
-                    --m_NumKeysDown;
-                }
+                Key &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
+                Key |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
             }
             MsgHandled = true;
             break;

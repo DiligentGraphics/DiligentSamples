@@ -81,6 +81,11 @@ public:
         return m_Keys[static_cast<size_t>(Key)];
     }
 
+    bool IsKeyDown(InputKeys Key)const
+    {
+        return (GetKeyState(Key) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0;
+    }
+
     void ClearState()
     {
         m_MouseState.WheelDelta = 0;
