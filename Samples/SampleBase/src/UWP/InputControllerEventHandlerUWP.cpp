@@ -305,8 +305,8 @@ InputKeys VirtualKeyToInputKey(VirtualKey Key)
                     case 's': return InputKeys::MoveBackward;
                     case 'a': return InputKeys::MoveLeft;
                     case 'd': return InputKeys::MoveRight;
-                    case 'q': return InputKeys::MoveUp;
-                    case 'e': return InputKeys::MoveDown;
+                    case 'e': return InputKeys::MoveUp;
+                    case 'q': return InputKeys::MoveDown;
                 }
             }
         }
