@@ -80,19 +80,47 @@ void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
         }
     }
 
-    // Make a rotation matrix based on the camera's yaw & pitch
-    float4x4 CameraRotation = float4x4::RotationY(-m_fYawAngle) * float4x4::RotationX(-m_fPitchAngle);
-    float4x4 WorldRotation = float4x4::RotationX(m_fPitchAngle) * float4x4::RotationY(m_fYawAngle);
+    float4x4 ReferenceRotation
+    {
+            m_ReferenceRightAxis.x,  m_ReferenceUpAxis.x,  m_ReferenceAheadAxis.x,   0,
+            m_ReferenceRightAxis.y,  m_ReferenceUpAxis.y,  m_ReferenceAheadAxis.y,   0,
+            m_ReferenceRightAxis.z,  m_ReferenceUpAxis.z,  m_ReferenceAheadAxis.z,   0,
+                                 0,                    0,                       0,   1
+    };
+
+    float4x4 CameraRotation = float4x4::RotationArbitrary(m_ReferenceUpAxis,    -m_fYawAngle) *
+                              float4x4::RotationArbitrary(m_ReferenceRightAxis, -m_fPitchAngle) *
+                              ReferenceRotation;
+    float4x4 WorldRotation = CameraRotation.Transpose();
  
     float3 PosDeltaWorld = PosDelta * WorldRotation;
     m_Pos += PosDeltaWorld;
 
     m_ViewMatrix = float4x4::Translation(-m_Pos) * CameraRotation;
     m_WorldMatrix = WorldRotation * float4x4::Translation(m_Pos);
+}
 
-    VERIFY_EXPR(float3(0, 0, 1) * WorldRotation == GetWorldAhead());
-    VERIFY_EXPR(float3(0, 1, 0) * WorldRotation == GetWorldUp());
-    VERIFY_EXPR(float3(1, 0, 0) * WorldRotation == GetWorldRight());
+void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis)
+{
+    m_ReferenceRightAxis = normalize(ReferenceRightAxis);
+    m_ReferenceUpAxis    = ReferenceUpAxis - dot(ReferenceUpAxis, m_ReferenceRightAxis) * m_ReferenceRightAxis;
+    auto UpLen = length(m_ReferenceUpAxis);
+    constexpr float Epsilon = 1e-5f;
+    if (UpLen < Epsilon)
+    {
+        UpLen = Epsilon;
+        LOG_WARNING_MESSAGE("Right and Up axes are collinear");
+    }
+    m_ReferenceUpAxis /= UpLen;
+
+    m_ReferenceAheadAxis = cross(m_ReferenceRightAxis, m_ReferenceUpAxis);
+    auto AheadLen = length(m_ReferenceAheadAxis);
+    if (AheadLen < Epsilon)
+    {
+        AheadLen = Epsilon;
+        LOG_WARNING_MESSAGE("Ahead axis is not well defined");
+    }
+    m_ReferenceAheadAxis /= AheadLen;
 }
 
 void FirstPersonCamera::SetLookAt(const float3 &LookAt)

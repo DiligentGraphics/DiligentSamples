@@ -60,12 +60,19 @@ public:
     };
     const ProjectionAttribs& GetProjAttribs() { return m_ProjAttribs;  }
 
+    void SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis);
+
 protected:
     ProjectionAttribs m_ProjAttribs;
 
     MouseState m_LastMouseState;
 
+    float3   m_ReferenceRightAxis = float3{1, 0, 0};
+    float3   m_ReferenceUpAxis    = float3{0, 1, 0};
+    float3   m_ReferenceAheadAxis = float3{0, 0, 1};
+
     float3   m_Pos;
+    
     float4x4 m_ViewMatrix;
     float4x4 m_WorldMatrix;
     float4x4 m_ProjMatrix;
