@@ -35,7 +35,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 	target_link_libraries(${APP_NAME}
 	PRIVATE
 		NativeAppBase
-		BuildSettings
+		Diligent-BuildSettings
 		SampleBase 
 	)
 	set_common_target_properties(${APP_NAME})

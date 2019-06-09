@@ -121,10 +121,10 @@ endif()
 
 target_link_libraries(TwBarLib 
 PRIVATE
-    BuildSettings 
-    Common 
-    GraphicsEngineInterface
-    PlatformInterface
+    Diligent-BuildSettings 
+    Diligent-Common 
+    Diligent-GraphicsEngineInterface
+    Diligent-PlatformInterface
 )
 
 target_include_directories(TwBarLib

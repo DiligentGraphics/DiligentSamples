@@ -23,4 +23,4 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial05_TextureArray" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial05_TextureArray PRIVATE TextureLoader)
+target_link_libraries(Tutorial05_TextureArray PRIVATE Diligent-TextureLoader)

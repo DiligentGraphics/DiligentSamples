@@ -22,4 +22,4 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial07_GeometryShader" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial07_GeometryShader PRIVATE TextureLoader)
+target_link_libraries(Tutorial07_GeometryShader PRIVATE Diligent-TextureLoader)

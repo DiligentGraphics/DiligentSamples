@@ -25,7 +25,7 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial09_Quads" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial09_Quads PRIVATE TextureLoader)
+target_link_libraries(Tutorial09_Quads PRIVATE Diligent-TextureLoader)
 if(PLATFORM_LINUX)
     target_link_libraries(Tutorial09_Quads PRIVATE pthread)
 endif()

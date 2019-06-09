@@ -23,7 +23,7 @@ set(ASSETS
 )
 
 add_sample_app("AntTweakBarSample" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(AntTweakBarSample PRIVATE RenderScript)
+target_link_libraries(AntTweakBarSample PRIVATE Diligent-RenderScript)
 
 set_source_files_properties(${ASSETS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "."

@@ -34,7 +34,7 @@ set(ASSETS
 )
 
 add_sample_app("GLTFViewer" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(GLTFViewer PRIVATE AssetLoader DiligentFX)
+target_link_libraries(GLTFViewer PRIVATE Diligent-AssetLoader DiligentFX)
 
 target_include_directories(GLTFViewer PRIVATE
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/

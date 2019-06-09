@@ -81,8 +81,8 @@ PRIVATE
 
 target_link_libraries(AtmosphereSample
 PRIVATE
-    GraphicsAccessories
-    TextureLoader
+    Diligent-GraphicsAccessories
+    Diligent-TextureLoader
     DiligentFX
 )
 

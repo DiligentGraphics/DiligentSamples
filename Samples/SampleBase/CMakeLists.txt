@@ -141,14 +141,14 @@ get_supported_backends(ENGINE_LIBRARIES)
 
 target_link_libraries(SampleBase 
 PRIVATE 
-    BuildSettings
+    Diligent-BuildSettings
 PUBLIC
     NativeAppBase
     TwBarLib 
-    Common 
-    GraphicsTools
-    TextureLoader
-    TargetPlatform
+    Diligent-Common 
+    Diligent-GraphicsTools
+    Diligent-TextureLoader
+    Diligent-TargetPlatform
     ${ENGINE_LIBRARIES}
 )
 
