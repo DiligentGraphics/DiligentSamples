@@ -150,6 +150,15 @@ To record multiple frames after the app starts, use command line like this:
 -mode d3d12 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format png -capture_frames 50
 ```
 
+# License
+
+See [Apache 2.0 license](License.txt).
+
+This project has some third-party dependencies, each of which may have independent licensing:
+
+* [AntTweakBar](http://anttweakbar.sourceforge.net/doc): A simple user interface library.
+
+
 <a name="contributing"></a>
 # Contributing
 
