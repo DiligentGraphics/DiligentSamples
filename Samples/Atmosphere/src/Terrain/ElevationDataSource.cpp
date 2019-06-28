@@ -48,6 +48,7 @@
 #include "Image.h"
 #include "BasicFileStream.h"
 #include "TextureUtilities.h"
+#include "GraphicsAccessories.h"
 
 namespace Diligent
 {
@@ -88,11 +89,11 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
     // Load the data
     m_TheHeightMap.resize( size_t{m_iStride} * size_t{m_iNumRows} );
     
-    VERIFY( ImgInfo.BitsPerPixel == 16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected" );
+    VERIFY( ImgInfo.ComponentType == VT_UINT16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected" );
     auto *pSrcImgData = reinterpret_cast<Uint8*>( pImageData->GetDataPtr() );
     for (Uint32 row = 0; row < ImgInfo.Height; row++, pSrcImgData += ImgInfo.RowStride)
     {
-        memcpy( &m_TheHeightMap[row*m_iStride], pSrcImgData, size_t{ImgInfo.Width}*size_t{ImgInfo.BitsPerPixel}/8 );
+        memcpy( &m_TheHeightMap[row*m_iStride], pSrcImgData, size_t{ImgInfo.Width} * size_t{GetValueSize(ImgInfo.ComponentType)} );
     }
 
     // Duplicate the last row and column
