@@ -103,9 +103,9 @@ struct ShadowMapAttribs
 
 struct LightAttribs
 {
-    float4 f4Direction;
-    float4 f4AmbientLight;
-    float4 f4Intensity; // Extraterrestrial sun radiance
+    float4 f4Direction      DEFAULT_VALUE(float4(0, 0,-1, 0));
+    float4 f4AmbientLight   DEFAULT_VALUE(float4(0, 0, 0, 0));
+    float4 f4Intensity      DEFAULT_VALUE(float4(1, 1, 1, 1));
 
     ShadowMapAttribs ShadowAttribs;
 };

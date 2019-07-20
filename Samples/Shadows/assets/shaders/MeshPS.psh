@@ -1,0 +1,41 @@
+#include "BasicStructures.fxh"
+#include "Shadows.fxh"
+
+Texture2D    g_tex2DDiffuse;
+SamplerState g_tex2DDiffuse_sampler;
+
+cbuffer cbLightAttribs
+{
+    LightAttribs g_LightAttribs;
+}
+
+
+struct VSOutput
+{
+    float4 PositionPS 	: SV_Position;
+    float3 PositionWS 	: POSITIONWS;
+    float3 NormalWS 	: NORMALWS;
+    float2 TexCoord 	: TEXCOORD;
+    float DepthVS		: DEPTHVS;
+};
+
+float4 MeshPS(VSOutput VSOut) : SV_TARGET
+{
+    // Normalize after interpolation
+    float3 normalWS = normalize(VSOut.NormalWS);
+
+    float3 diffuseAlbedo = g_tex2DDiffuse.Sample(g_tex2DDiffuse_sampler, VSOut.TexCoord).rgb;
+
+    float nDotL = saturate(dot(normalWS, -g_LightAttribs.f4Direction.xyz));
+    //uint2 screenPos = uint2(VSOut.PositionPS.xy);
+	float3 shadowVisibility = 1.0; //ShadowVisibility(VSOut.PositionWS, VSOut.DepthVS, nDotL, normalWS, screenPos);
+
+	float3 lighting = float3(0.0, 0.0, 0.0);
+
+    // Add in the primary directional light
+    lighting += nDotL * g_LightAttribs.f4Intensity.xyz * diffuseAlbedo * (1.0f / 3.14159) * shadowVisibility;
+
+    lighting += float3(0.2, 0.5, 1.0) * 0.1 * diffuseAlbedo;
+
+    return float4(max(lighting, 0.0001), 1.0f);
+}
