@@ -40,19 +40,19 @@ float4 MeshPS(VSOutput VSOut) : SV_TARGET
 #   if SHADOW_MODE == SHADOW_MODE_PCF
         Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler, VSOut.PosInLightViewSpace, VSOut.CameraSpaceZ);
 #   else
-        Shadow = SampleFilterableShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DFilterableShadowMap, g_tex2DFilterableShadowMap_sampler, VSOut.PosInLightViewSpace, In.CameraSpaceZ);
+        Shadow = SampleFilterableShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DFilterableShadowMap, g_tex2DFilterableShadowMap_sampler, VSOut.PosInLightViewSpace, VSOut.CameraSpaceZ);
 #   endif
 
-	float3 lighting = (nDotL * g_LightAttribs.f4Intensity.xyz * Shadow.fLightAmount + g_LightAttribs.f4AmbientLight.xyz) * diffuseAlbedo;
+	float3 Color = (nDotL * g_LightAttribs.f4Intensity.xyz * Shadow.fLightAmount + g_LightAttribs.f4AmbientLight.xyz) * diffuseAlbedo;
 
-    //if (g_LightAttribs.ShadowAttribs.bVisualizeShadowing)
-    //{
-    //    Color = lerp(Color, float3(Shadow.fLightAmount, Shadow.fLightAmount, Shadow.fLightAmount), 0.99);
-    //}
-    //if (g_LightAttribs.ShadowAttribs.bVisualizeCascades)
-    //{
-    //    Color = lerp(Color, GetCascadeColor(Shadow), 0.1);
-    //}
+    if (g_LightAttribs.ShadowAttribs.bVisualizeShadowing)
+    {
+        Color = lerp(Color, float3(Shadow.fLightAmount, Shadow.fLightAmount, Shadow.fLightAmount), 0.99);
+    }
+    if (g_LightAttribs.ShadowAttribs.bVisualizeCascades)
+    {
+        Color = lerp(Color, GetCascadeColor(Shadow), 0.1);
+    }
 
-    return float4(max(lighting, 0.0001), 1.0f);
+    return float4(Color, 1.0);
 }

@@ -110,7 +110,7 @@ float GetNextCascadeBlendAmount(ShadowMapAttribs    ShadowAttribs,
 #endif
 
     return saturate(1.0 - fDistToTransitionEdge / ShadowAttribs.fCascadeTransitionRegion) * 
-           saturate(NextCscdSamplingInfo.fMinDistToMargin / ShadowAttribs.fCascadeTransitionRegion); // Make sure that we don't sample outside of the next cascade
+           saturate(NextCscdSamplingInfo.fMinDistToMargin / 0.01); // Make sure that we don't sample outside of the next cascade
 }
 
 float2 ComputeReceiverPlaneDepthBias(float3 ShadowUVDepthDX,

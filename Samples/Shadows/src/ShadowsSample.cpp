@@ -28,6 +28,7 @@
 #include "CommonlyUsedStates.h"
 #include "StringTools.h"
 #include "GraphicsUtilities.h"
+#include "AntTweakBar.h"
 
 namespace Diligent
 {
@@ -53,6 +54,14 @@ void ShadowsSample::GetEngineInitializationAttribs(DeviceType         DevType,
         VkAttrs.EnabledFeatures.depthClamp        = true;
     }
 #endif
+#if D3D12_SUPPORTED
+    if(DevType == DeviceType::D3D12)
+    {
+        auto& D3D12Attrs = static_cast<EngineD3D12CreateInfo&>(Attribs);
+        D3D12Attrs.GPUDescriptorHeapSize[1] = 1024; // Sampler descriptors
+        D3D12Attrs.GPUDescriptorHeapDynamicSize[1] = 1024;
+    }
+#endif
 }
 
 void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
@@ -66,10 +75,12 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
 
     CreateUniformBuffer(pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
     CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
-    CreatePipelineStates(pDevice);
+    CreatePipelineStates();
 
-    m_LightAttribs.ShadowAttribs.iNumCascades = 4;
-    m_LightAttribs.ShadowAttribs.fFixedDepthBias = 1e-3f;
+    m_LightAttribs.ShadowAttribs.iNumCascades               = 4;
+    m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 5e-3f;
+    m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
+    m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
     m_LightAttribs.f4Direction    = float3(0.753204405f, -0.243520901f, -0.611060560f);
     m_LightAttribs.f4Intensity    = float4(1, 1, 1, 1);
     m_LightAttribs.f4AmbientLight = float4(0.2f, 0.2f, 0.2f, 1);
@@ -81,8 +92,192 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
     CreateShadowMap();
+
+    InitUI();
 }
 
+void ShadowsSample::InitUI()
+{
+    TwBar *bar = TwNewBar("TweakBar");
+   
+    TwDefine(" GLOBAL help='Terrain demo' "); // Message added to the help bar.
+    int barSize[2] = {300, 800};
+#ifdef ANDROID
+    barSize[0] = 800;
+    barSize[1] = 1000;
+#endif
+    TwDefine("TweakBar label='General' position = '10 10'");
+    TwSetParam(bar, nullptr, "size", TW_PARAM_INT32, 2, barSize);
+
+    {
+        TwEnumVal enumVals[] =
+        {
+            { 0, "512" },
+            { 1, "1024" },
+            { 2, "2048" }
+        };
+        TwType enumType = TwDefineEnum("Shadow map size", enumVals, _countof(enumVals));
+        TwAddVarCB(bar, "Shadow map size", enumType,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_ShadowSetting.Resolution = 512 << *reinterpret_cast<const int*>(value);
+                This->CreateShadowMap();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                int& val = *reinterpret_cast<int*>(value);
+                val = 0;
+                while((512 << val) != This->m_ShadowSetting.Resolution)
+                    ++val;
+            },
+            this, "");
+    }
+
+    {
+        TwEnumVal enumVals[] =
+        {
+            { 0, "16-bit" },
+            { 1, "32-bit" }
+        };
+        TwType enumType = TwDefineEnum("Shadow map format", enumVals, _countof(enumVals));
+        TwAddVarCB(bar, "Format", enumType,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_ShadowSetting.Format = *reinterpret_cast<const int*>(value) == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
+                This->CreatePipelineStates();
+                This->CreateShadowMap();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<int*>(value) = This->m_ShadowSetting.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
+            },
+            this, "");
+        TwAddVarCB(bar, "Filterable Format", enumType,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_ShadowSetting.Is32BitFilterableFmt = *reinterpret_cast<const int*>(value) != 0;
+                This->CreateShadowMap();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<int*>(value) = This->m_ShadowSetting.Is32BitFilterableFmt ? 1 : 0;
+            },
+            this, "");
+    }
+
+    TwAddVarCB(bar, "Num cascades", TW_TYPE_INT32, [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_LightAttribs.ShadowAttribs.iNumCascades = *reinterpret_cast<const int*>(value);
+                This->CreateShadowMap();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<int*>(value) = This->m_LightAttribs.ShadowAttribs.iNumCascades;
+            },
+            this, "min=1 max=8");
+
+    {
+        TwEnumVal enumVals[] =
+        {
+            { 1, "PCF" },
+            { 2, "VSM" },
+            { 3, "EVSM2" },
+            { 4, "EVSM4" }
+        };
+        TwType enumType = TwDefineEnum("Shadow mode", enumVals, _countof(enumVals));
+        TwAddVarCB(bar, "Shadow mode", enumType,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_ShadowSetting.iShadowMode = *reinterpret_cast<const int*>(value);
+                This->CreatePipelineStates();
+                This->CreateShadowMap();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<int*>(value) = This->m_ShadowSetting.iShadowMode;
+            },
+            this, "group=Filtering");
+    }
+    {
+        TwEnumVal enumVals[] =
+        {
+            { 0, "World-constant"},
+            { 2, "Fixed 2x2"     },
+            { 3, "Fixed 3x3"     },
+            { 5, "Fixed 5x5"     },
+            { 7, "Fixed 7x7"     }
+        };
+        TwType enumType = TwDefineEnum("Shadow filter size", enumVals, _countof(enumVals));
+        TwAddVarCB(bar, "Shadow filter size", enumType,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_LightAttribs.ShadowAttribs.iFixedFilterSize = *reinterpret_cast<const int*>(value);
+                This->CreatePipelineStates();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<int*>(value) = This->m_LightAttribs.ShadowAttribs.iFixedFilterSize;
+            },
+            this, "group=Filtering");
+    }
+
+    TwAddVarRW(bar, "Filter world size", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fFilterWorldSize, "min=0 max=0.25 step=0.001 group=Filtering");
+    TwAddVarCB(bar, "Filter across cascades", TW_TYPE_BOOLCPP,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_ShadowSetting.FilterAcrossCascades = *reinterpret_cast<const bool*>(value);
+                This->CreatePipelineStates();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<bool*>(value) = This->m_ShadowSetting.FilterAcrossCascades;
+            },
+            this, "group=Filtering");
+    TwAddVarRW(bar, "Cascade transition region", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadeTransitionRegion, "min=0 max=0.5 step=0.01 group=Filtering");
+
+    TwAddVarRW(bar, "Partitioning Factor", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor, "min=0 max=1 step=0.01 group='Cascade allocation'");
+    TwAddVarRW(bar, "Snap cascades", TW_TYPE_BOOLCPP, &m_ShadowSetting.SnapCascades, "group='Cascade allocation'");
+    TwAddVarRW(bar, "Stabilize extents", TW_TYPE_BOOLCPP, &m_ShadowSetting.StabilizeExtents, "group='Cascade allocation'");
+    TwAddVarRW(bar, "Equalize extents", TW_TYPE_BOOLCPP, &m_ShadowSetting.EqualizeExtents, "group='Cascade allocation'");
+    TwAddVarCB(bar, "Use best cascade", TW_TYPE_BOOLCPP,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                This->m_ShadowSetting.SearchBestCascade = *reinterpret_cast<const bool*>(value);
+                This->CreatePipelineStates();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
+                *reinterpret_cast<bool*>(value) = This->m_ShadowSetting.SearchBestCascade;
+            },
+            this, "group='Cascade allocation'");
+
+    TwAddVarRW(bar, "Max depth bias slope", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fReceiverPlaneDepthBiasClamp, "min=0 max=20 step=0.01 group=PCF");
+    TwAddVarRW(bar, "Fixed depth bias", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fFixedDepthBias, "min=0 max=1 step=0.00001 group=PCF");
+
+    TwAddVarRW(bar, "Positive EVSM Exponent", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fEVSMPositiveExponent, "min=0.1 max=40 step=0.1 group='VSM/EVSM'");
+    TwAddVarRW(bar, "Negative EVSM Exponent", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fEVSMNegativeExponent, "min=0.1 max=40 step=0.1 group='VSM/EVSM'");
+    TwAddVarRW(bar, "VSM Bias", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fVSMBias, "min=0 max=1 step=0.00001 group='VSM/EVSM'");
+    TwAddVarRW(bar, "Light bleeding reduction", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, "min=0 max=0.99 step=0.01 group='VSM/EVSM'");
+
+    TwAddVarRW(bar, "Visualize cascades", TW_TYPE_BOOL32, &m_LightAttribs.ShadowAttribs.bVisualizeCascades, "group='Visualization'");
+    TwAddVarRW(bar, "Shadows only", TW_TYPE_BOOL32,  &m_LightAttribs.ShadowAttribs.bVisualizeShadowing, "group='Visualization'");
+}
 
 
 void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT*  VertexElement,
@@ -139,7 +334,7 @@ void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VE
     Layout.NumElements    = static_cast<Uint32>(Elements.size());
 }
 
-void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
+void ShadowsSample::CreatePipelineStates()
 {
     ShaderCreateInfo ShaderCI;
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -149,7 +344,7 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
     ShaderCI.UseCombinedTextureSamplers = true;
 
     ShaderMacroHelper Macros;
-    Macros.AddShaderMacro("SHADOW_MODE",             m_ShadowSetting.iShadowMode);
+    Macros.AddShaderMacro( "SHADOW_MODE",            m_ShadowSetting.iShadowMode);
     Macros.AddShaderMacro( "SHADOW_FILTER_SIZE",     m_LightAttribs.ShadowAttribs.iFixedFilterSize);
     Macros.AddShaderMacro( "FILTER_ACROSS_CASCADES", m_ShadowSetting.FilterAcrossCascades);
     Macros.AddShaderMacro( "BEST_CASCADE_SEARCH",    m_ShadowSetting.SearchBestCascade );
@@ -280,7 +475,7 @@ void ShadowsSample::InitializeResourceBindings()
             }
             else
             {
-                pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DFilterableShadowMap")->Set(m_ShadowMapMgr.GetSRV());
+                pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DFilterableShadowMap")->Set(m_ShadowMapMgr.GetFilterableSRV());
             }
             m_SRBs[mat] = std::move(pSRB);
         }
@@ -397,15 +592,15 @@ void ShadowsSample::Render()
         CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
 
-    // Note that Vulkan requires shadow map to be transitioned to DEPTH_READ state, not SHADER_RESOURCE
-    m_pImmediateContext->TransitionShaderResources(m_RenderMeshPSO[0], m_SRBs[0]);
-
     DrawMesh(m_pImmediateContext, false);
 }
 
 
 void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass)
 {
+    // Note that Vulkan requires shadow map to be transitioned to DEPTH_READ state, not SHADER_RESOURCE
+    pCtx->TransitionShaderResources((bIsShadowPass ? m_RenderMeshShadowPSO : m_RenderMeshPSO)[0], (bIsShadowPass ? m_ShadowSRBs : m_SRBs)[0]);
+
     //uint32 partCount = 0;
     for (Uint32 meshIdx = 0; meshIdx < m_Mesh.GetNumMeshes(); ++meshIdx)
     {
@@ -464,7 +659,6 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
     }
 
 
-    m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 1.f;
     ShadowMapManager::DistributeCascadeInfo DistrInfo;
     DistrInfo.pCameraView = &m_Camera.GetViewMatrix();
     DistrInfo.pCameraProj = &m_Camera.GetProjMatrix();

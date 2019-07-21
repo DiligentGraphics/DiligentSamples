@@ -48,15 +48,16 @@ public:
                             ISwapChain*       pSwapChain)override final;
     virtual void Render()override final;
     virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "AntTweakBar Sample";}
+    virtual const Char* GetSampleName()const override final{return "Shadows Sample";}
     virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
 
 private:
     void DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass);
-    void CreatePipelineStates(IRenderDevice*    pDevice);
+    void CreatePipelineStates();
     void InitializeResourceBindings();
     void CreateShadowMap();
     void RenderShadowMap();
+    void InitUI();
 
     static void DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT*  VertexElement,
                                                           Uint32                           Stride,
@@ -65,14 +66,14 @@ private:
 
     struct ShadowSettings
     {
-        bool  SnapCascades     = true;
-        bool  StabilizeExtents = true;
-        bool  EqualizeExtents  = true;
-        bool  SearchBestCascade = true;
+        bool  SnapCascades         = true;
+        bool  StabilizeExtents     = true;
+        bool  EqualizeExtents      = true;
+        bool  SearchBestCascade    = true;
         bool  FilterAcrossCascades = true;
-        int   Resolution       = 2048;
-        TEXTURE_FORMAT Format  = TEX_FORMAT_D16_UNORM;
-        int   iShadowMode      = SHADOW_MODE_PCF;
+        int   Resolution           = 2048;
+        TEXTURE_FORMAT Format      = TEX_FORMAT_D16_UNORM;
+        int   iShadowMode          = SHADOW_MODE_PCF;
 
         bool   Is32BitFilterableFmt = true;
     }m_ShadowSetting;
