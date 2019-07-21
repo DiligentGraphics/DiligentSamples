@@ -34,7 +34,7 @@ VSOutput MeshVS(in VSInput input)
     VSOut.DepthVS = VSOut.PositionPS.w;
 
     // Rotate the normal into world space
-    VSOut.NormalWS = float3(0.0, 0.0, 1.0);//normalize(mul(input.NormalOS, (float3x3)World));
+    VSOut.NormalWS = input.Normal;
 
     // Pass along the texture coordinate
     VSOut.TexCoord = input.TexCoord;

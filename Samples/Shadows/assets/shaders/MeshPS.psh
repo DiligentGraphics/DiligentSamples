@@ -33,7 +33,7 @@ float4 MeshPS(VSOutput VSOut) : SV_TARGET
 	float3 lighting = float3(0.0, 0.0, 0.0);
 
     // Add in the primary directional light
-    lighting += nDotL * g_LightAttribs.f4Intensity.xyz * diffuseAlbedo * (1.0f / 3.14159) * shadowVisibility;
+    lighting += nDotL * g_LightAttribs.f4Intensity.xyz * diffuseAlbedo * shadowVisibility;
 
     lighting += float3(0.2, 0.5, 1.0) * 0.1 * diffuseAlbedo;
 

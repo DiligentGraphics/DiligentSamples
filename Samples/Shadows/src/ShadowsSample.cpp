@@ -51,8 +51,10 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
     CreatePipelineStates(pDevice);
 
-    m_Camera.SetPos(float3(-60, 0, -0.5f));
-    m_Camera.SetRotation(PI_F/2.f, 0);
+    m_LightAttribs.f4Direction = float3(-0.803294539f, -0.128133044f, -0.581647396f);
+
+    m_Camera.SetPos(float3(70, 10, 0.f));
+    m_Camera.SetRotation(-PI_F/2.f, 0);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
@@ -170,7 +172,7 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
 
         StaticSamplerDesc StaticSamplers[] =
         {
-            {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", Sam_Aniso4xClamp}
+            {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", Sam_Aniso4xWrap}
         };
         PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
         PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
@@ -272,8 +274,8 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass)
         pCtx->SetVertexBuffers(0, 1, pVBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         auto* pIB = m_Mesh.GetMeshIndexBuffer(meshIdx);
-        VERIFY(m_Mesh.GetIBFormat(meshIdx) == VT_UINT16, "This sample expects 16-bit index buffers");
-
+        auto IBFormat = m_Mesh.GetIBFormat(meshIdx);
+        
         pCtx->SetIndexBuffer(pIB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
         auto PSOIndex = m_PSOIndex[SubMesh.VertexBuffers[0]];
@@ -288,7 +290,8 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass)
                 const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
                 pCtx->CommitShaderResources(m_SRBs[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-                DrawAttribs drawAttrs(Subset.IndexCount, VT_UINT16, DRAW_FLAG_VERIFY_ALL);
+                DrawAttribs drawAttrs(Subset.IndexCount, IBFormat, DRAW_FLAG_VERIFY_ALL);
+                drawAttrs.FirstIndexLocation = Subset.IndexStart;
                 pCtx->Draw(drawAttrs);
             }
         }
