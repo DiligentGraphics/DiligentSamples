@@ -949,7 +949,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
 
     for(auto MeshIt = m_SphereMeshes.begin();  MeshIt != m_SphereMeshes.end(); ++MeshIt)
     {
-        if(GetBoxVisibility<false>(ViewFrustum, MeshIt->BndBox) != BoxVisibility::Invisible)
+        if(GetBoxVisibility(ViewFrustum, MeshIt->BndBox) != BoxVisibility::Invisible)
         {
             pContext->SetIndexBuffer(MeshIt->pIndBuff, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             DrawAttribs DrawAttrs(MeshIt->uiNumIndices, VT_UINT32, DRAW_FLAG_VERIFY_ALL);

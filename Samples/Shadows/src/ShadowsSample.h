@@ -52,7 +52,7 @@ public:
     virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
 
 private:
-    void DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass);
+    void DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const struct ViewFrustumExt& Frustum);
     void CreatePipelineStates();
     void InitializeResourceBindings();
     void CreateShadowMap();

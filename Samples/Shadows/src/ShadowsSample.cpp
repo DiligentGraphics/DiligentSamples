@@ -29,6 +29,7 @@
 #include "StringTools.h"
 #include "GraphicsUtilities.h"
 #include "AntTweakBar.h"
+#include "AdvancedMath.h"
 
 namespace Diligent
 {
@@ -442,7 +443,7 @@ void ShadowsSample::CreatePipelineStates()
         // behind the near cascade clip plane!
         PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_FRONT;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
         PSODesc.ResourceLayout.StaticSamplers            = nullptr;
         PSODesc.ResourceLayout.NumStaticSamplers         = 0;
         PSODesc.ResourceLayout.Variables                 = nullptr;
@@ -555,7 +556,9 @@ void ShadowsSample::RenderShadowMap()
         m_pImmediateContext->SetRenderTargets(0, nullptr, pCascadeDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawMesh(m_pImmediateContext, true);
+        ViewFrustumExt Frutstum;
+        ExtractViewFrustumPlanesFromMatrix(WorldToLightProjSpaceMatr, Frutstum, m_pDevice->GetDeviceCaps().IsGLDevice());
+        DrawMesh(m_pImmediateContext, true, Frutstum);
     }
 
     if (m_ShadowSetting.iShadowMode > SHADOW_MODE_PCF)
@@ -579,13 +582,12 @@ void ShadowsSample::Render()
         *LightData = m_LightAttribs;
     }
 
+    const auto& CameraView  = m_Camera.GetViewMatrix();
+    const auto& CameraWorld = m_Camera.GetWorldMatrix();
+    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+    const auto& Proj = m_Camera.GetProjMatrix();
+    auto CameraViewProj = CameraView * Proj;
     {
-        const auto& CameraView  = m_Camera.GetViewMatrix();
-        const auto& CameraWorld = m_Camera.GetWorldMatrix();
-        float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
-        const auto& Proj = m_Camera.GetProjMatrix();
-        auto CameraViewProj = CameraView * Proj;
-
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
         CamAttribs->mProjT        = Proj.Transpose();
         CamAttribs->mViewProjT    = CameraViewProj.Transpose();
@@ -593,19 +595,26 @@ void ShadowsSample::Render()
         CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
 
-    DrawMesh(m_pImmediateContext, false);
+    ViewFrustumExt Frutstum;
+    ExtractViewFrustumPlanesFromMatrix(CameraViewProj, Frutstum, m_pDevice->GetDeviceCaps().IsGLDevice());
+    DrawMesh(m_pImmediateContext, false, Frutstum);
 }
 
 
-void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass)
+void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const ViewFrustumExt& Frustum)
 {
     // Note that Vulkan requires shadow map to be transitioned to DEPTH_READ state, not SHADER_RESOURCE
     pCtx->TransitionShaderResources((bIsShadowPass ? m_RenderMeshShadowPSO : m_RenderMeshPSO)[0], (bIsShadowPass ? m_ShadowSRBs : m_SRBs)[0]);
 
-    //uint32 partCount = 0;
     for (Uint32 meshIdx = 0; meshIdx < m_Mesh.GetNumMeshes(); ++meshIdx)
     {
         const auto& SubMesh = m_Mesh.GetMesh(meshIdx);
+        BoundBox BB;
+        BB.Min = SubMesh.BoundingBoxCenter - SubMesh.BoundingBoxExtents * 0.5f;
+        BB.Max = SubMesh.BoundingBoxCenter + SubMesh.BoundingBoxExtents * 0.5f;
+        // Notice that for shadow pass we test against frustum with open near plane
+        if (GetBoxVisibility(Frustum, BB, bIsShadowPass ? FRUSTUM_PLANE_FLAG_OPEN_NEAR : FRUSTUM_PLANE_FLAG_FULL_FRUSTUM) == BoxVisibility::Invisible)
+            continue;
 
         IBuffer* pVBs[]  = {m_Mesh.GetMeshVertexBuffer(meshIdx, 0)};
         Uint32 Offsets[] = {0};
@@ -623,15 +632,12 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass)
         // Draw all subsets
         for(Uint32 subsetIdx = 0; subsetIdx < SubMesh.NumSubsets; ++subsetIdx)
         {
-            //if(meshData.FrustumTests[partCount++])
-            {
-                const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
-                pCtx->CommitShaderResources((bIsShadowPass ? m_ShadowSRBs : m_SRBs)[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+            const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
+            pCtx->CommitShaderResources((bIsShadowPass ? m_ShadowSRBs : m_SRBs)[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-                DrawAttribs drawAttrs(static_cast<Uint32>(Subset.IndexCount), IBFormat, DRAW_FLAG_VERIFY_ALL);
-                drawAttrs.FirstIndexLocation = static_cast<Uint32>(Subset.IndexStart);
-                pCtx->Draw(drawAttrs);
-            }
+            DrawAttribs drawAttrs(static_cast<Uint32>(Subset.IndexCount), IBFormat, DRAW_FLAG_VERIFY_ALL);
+            drawAttrs.FirstIndexLocation = static_cast<Uint32>(Subset.IndexStart);
+            pCtx->Draw(drawAttrs);
         }
     }
 }
