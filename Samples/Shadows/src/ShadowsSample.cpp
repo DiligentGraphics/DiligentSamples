@@ -81,9 +81,9 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 5e-3f;
     m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
     m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
-    m_LightAttribs.f4Direction    = float3(0.753204405f, -0.243520901f, -0.611060560f);
+    m_LightAttribs.f4Direction    = float3(0.734249115f, -0.423396081f, -0.530692577f);
     m_LightAttribs.f4Intensity    = float4(1, 1, 1, 1);
-    m_LightAttribs.f4AmbientLight = float4(0.2f, 0.2f, 0.2f, 1);
+    m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
 
     m_Camera.SetPos(float3(70, 10, 0.f));
     m_Camera.SetRotation(-PI_F/2.f, 0);
@@ -442,10 +442,11 @@ void ShadowsSample::CreatePipelineStates()
         // behind the near cascade clip plane!
         PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 
-        PSODesc.ResourceLayout.StaticSamplers     = nullptr;
-        PSODesc.ResourceLayout.NumStaticSamplers  = 0;
-        PSODesc.ResourceLayout.Variables          = nullptr;
-        PSODesc.ResourceLayout.NumVariables       = 0;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_FRONT;
+        PSODesc.ResourceLayout.StaticSamplers            = nullptr;
+        PSODesc.ResourceLayout.NumStaticSamplers         = 0;
+        PSODesc.ResourceLayout.Variables                 = nullptr;
+        PSODesc.ResourceLayout.NumVariables              = 0;
         RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
         m_pDevice->CreatePipelineState(PSODesc, &pRenderMeshShadowPSO);
         pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
@@ -569,7 +570,7 @@ void ShadowsSample::Render()
     // Reset default framebuffer
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     // Clear the back buffer 
-    const float ClearColor[] = { 0.032f,  0.032f,  0.032f, 1.0f }; 
+    const float ClearColor[] = { 0.1f,  0.1f,  0.1f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
