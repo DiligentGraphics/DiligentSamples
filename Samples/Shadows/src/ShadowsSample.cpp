@@ -41,6 +41,20 @@ ShadowsSample::~ShadowsSample()
 {
 }
 
+void ShadowsSample::GetEngineInitializationAttribs(DeviceType         DevType,
+                                                   EngineCreateInfo&  Attribs)
+{
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
+#if VULKAN_SUPPORTED
+    if(DevType == DeviceType::Vulkan)
+    {
+        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+        VkAttrs.EnabledFeatures.samplerAnisotropy = true;
+        VkAttrs.EnabledFeatures.depthClamp        = true;
+    }
+#endif
+}
+
 void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
@@ -55,6 +69,7 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     CreatePipelineStates(pDevice);
 
     m_LightAttribs.ShadowAttribs.iNumCascades = 4;
+    m_LightAttribs.ShadowAttribs.fFixedDepthBias = 1e-3f;
     m_LightAttribs.f4Direction    = float3(0.753204405f, -0.243520901f, -0.611060560f);
     m_LightAttribs.f4Intensity    = float4(1, 1, 1, 1);
     m_LightAttribs.f4AmbientLight = float4(0.2f, 0.2f, 0.2f, 1);
@@ -382,14 +397,8 @@ void ShadowsSample::Render()
         CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
 
-    StateTransitionDesc SMBarrier
-    {
-        (m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF ? m_ShadowMapMgr.GetSRV() : m_ShadowMapMgr.GetFilterableSRV())->GetTexture(), 
-        RESOURCE_STATE_UNKNOWN,
-        RESOURCE_STATE_SHADER_RESOURCE,
-        true
-    };
-    m_pImmediateContext->TransitionResourceStates(1, &SMBarrier);
+    // Note that Vulkan requires shadow map to be transitioned to DEPTH_READ state, not SHADER_RESOURCE
+    m_pImmediateContext->TransitionShaderResources(m_RenderMeshPSO[0], m_SRBs[0]);
 
     DrawMesh(m_pImmediateContext, false);
 }

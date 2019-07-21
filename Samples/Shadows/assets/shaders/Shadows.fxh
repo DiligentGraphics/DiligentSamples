@@ -410,7 +410,7 @@ float FilterShadowMapVaryingPCF(in Texture2DArray<float>  tex2DShadowMap,
             const float DepthClamp = 1e-8;
             float fDepth = max(SamplingInfo.fDepth + dot(f2UV - f2CenterTexel, f2ReceiverPlaneDepthBias), DepthClamp);
             f2UV *= ShadowAttribs.f4ShadowMapDim.zw;
-            if (f2UV.x > 0.0 && f2UV.y > 0.0 && f2UV.x < 1.0 & f2UV.y < 1.0)
+            if (f2UV.x > 0.0 && f2UV.y > 0.0 && f2UV.x < 1.0 && f2UV.y < 1.0)
             {
                 Sum += tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(f2UV, SamplingInfo.iCascadeIdx), fDepth) * Weight;
                 TotalWeight += Weight;
