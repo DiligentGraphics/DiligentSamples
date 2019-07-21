@@ -74,12 +74,8 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     FileSystem::SplitFilePath(MeshFileName, &Directory, nullptr);
     m_Mesh.LoadGPUResources(Directory.c_str(), pDevice, m_pImmediateContext);
 
-    CreateUniformBuffer(pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
-    CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
-    CreatePipelineStates();
-
     m_LightAttribs.ShadowAttribs.iNumCascades               = 4;
-    m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 5e-3f;
+    m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 0.0025f;
     m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
     m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
     m_LightAttribs.f4Direction    = float3(0.734249115f, -0.423396081f, -0.530692577f);
@@ -92,9 +88,45 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
+    CreateUniformBuffer(pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
+    CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
+    CreatePipelineStates();
+
     CreateShadowMap();
 
     InitUI();
+}
+
+void ShadowsSample::UpdateUIControlStates()
+{
+    auto* bar = TwGetBarByName("TweakBar");
+    auto EnableControl = [bar](const char* Name, bool Enable)
+    {
+        int IsReadOnly = Enable ? 0 : 1;
+        TwSetParam(bar, Name, "readonly", TW_PARAM_INT32, 1, &IsReadOnly);
+    };
+    auto SetGroupState = [bar](const char* Name, bool Opened)
+    {
+        int IsOpened = Opened ? 1 : 0;
+        TwSetParam(bar, Name, "opened", TW_PARAM_INT32, 1, &IsOpened);
+    };
+    bool IsPCF = m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF;
+    EnableControl("Max depth bias slope", IsPCF);
+    EnableControl("Fixed depth bias", IsPCF);
+    SetGroupState("PCF", IsPCF);
+
+    bool IsVSM = m_ShadowSetting.iShadowMode == SHADOW_MODE_VSM   ||
+                 m_ShadowSetting.iShadowMode == SHADOW_MODE_EVSM2 ||
+                 m_ShadowSetting.iShadowMode == SHADOW_MODE_EVSM4;
+    EnableControl("Positive EVSM Exponent", IsVSM);
+    EnableControl("Negative EVSM Exponent", IsVSM);
+    EnableControl("VSM Bias", IsVSM);
+    EnableControl("Light bleeding reduction", IsVSM);
+    SetGroupState("VSM/EVSM", IsVSM);
+
+    EnableControl("Filterable Format", IsVSM);
+
+    EnableControl("Filter world size", m_LightAttribs.ShadowAttribs.iFixedFilterSize == 0);
 }
 
 void ShadowsSample::InitUI()
@@ -201,6 +233,7 @@ void ShadowsSample::InitUI()
                 This->m_ShadowSetting.iShadowMode = *reinterpret_cast<const int*>(value);
                 This->CreatePipelineStates();
                 This->CreateShadowMap();
+                This->UpdateUIControlStates();
             },
             [](void *value, void* clientData)
             {
@@ -225,6 +258,7 @@ void ShadowsSample::InitUI()
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
                 This->m_LightAttribs.ShadowAttribs.iFixedFilterSize = *reinterpret_cast<const int*>(value);
                 This->CreatePipelineStates();
+                This->UpdateUIControlStates();
             },
             [](void *value, void* clientData)
             {
@@ -278,6 +312,8 @@ void ShadowsSample::InitUI()
 
     TwAddVarRW(bar, "Visualize cascades", TW_TYPE_BOOL32, &m_LightAttribs.ShadowAttribs.bVisualizeCascades, "group='Visualization'");
     TwAddVarRW(bar, "Shadows only", TW_TYPE_BOOL32,  &m_LightAttribs.ShadowAttribs.bVisualizeShadowing, "group='Visualization'");
+
+    UpdateUIControlStates();
 }
 
 
@@ -493,6 +529,13 @@ void ShadowsSample::InitializeResourceBindings()
 void ShadowsSample::CreateShadowMap()
 {
     m_LightAttribs.ShadowAttribs.fNumCascades = static_cast<float>(m_LightAttribs.ShadowAttribs.iNumCascades);
+    if (m_ShadowSetting.Resolution >= 2048)
+        m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.0025f;
+    else if (m_ShadowSetting.Resolution >= 1024)
+        m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.005f;
+    else
+        m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.0075f;
+
     ShadowMapManager::InitInfo SMMgrInitInfo;
     SMMgrInitInfo.Fmt         = m_ShadowSetting.Format;
     SMMgrInitInfo.Resolution  = m_ShadowSetting.Resolution;
