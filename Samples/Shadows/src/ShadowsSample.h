@@ -27,6 +27,7 @@
 #include "BasicMath.h"
 #include "DXSDKMeshLoader.h"
 #include "FirstPersonCamera.h"
+#include "ShadowMapManager.h"
 
 namespace Diligent
 {
@@ -50,16 +51,36 @@ public:
 private:
     void DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass);
     void CreatePipelineStates(IRenderDevice*    pDevice);
-    DXSDKMesh m_Mesh;
+    void InitializeResourceBindings();
+    void CreateShadowMap();
+    void RenderShadowMap();
 
     static void DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT*  VertexElement,
                                                           Uint32                           Stride,
                                                           InputLayoutDesc&                 Layout,
                                                           std::vector<LayoutElement>&      Elements);
 
+    struct ShadowSettings
+    {
+        bool  SnapCascades     = true;
+        bool  StabilizeExtents = true;
+        bool  EqualizeExtents  = true;
+        bool  SearchBestCascade = true;
+        bool  FilterAcrossCascades = true;
+        int   Resolution       = 2048;
+        TEXTURE_FORMAT Format  = TEX_FORMAT_D16_UNORM;
+        int   iShadowMode      = SHADOW_MODE_PCF;
+
+        bool   Is32BitFilterableFmt = true;
+    }m_ShadowSetting;
+
+    DXSDKMesh                                          m_Mesh;
+
     LightAttribs                                       m_LightAttribs;
     FirstPersonCamera                                  m_Camera;
     MouseState                                         m_LastMouseState;
+    
+    ShadowMapManager                                   m_ShadowMapMgr;
 
     RefCntAutoPtr<IBuffer>                             m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer>                             m_LightAttribsCB;
@@ -67,6 +88,10 @@ private:
     std::vector<RefCntAutoPtr<IPipelineState>>         m_RenderMeshPSO;
     std::vector<RefCntAutoPtr<IPipelineState>>         m_RenderMeshShadowPSO;
     std::vector<RefCntAutoPtr<IShaderResourceBinding>> m_SRBs;
+    std::vector<RefCntAutoPtr<IShaderResourceBinding>> m_ShadowSRBs;
+
+    RefCntAutoPtr<ISampler>                            m_pComparisonSampler;
+    RefCntAutoPtr<ISampler>                            m_pFilterableShadowMapSampler;
 };
 
 }

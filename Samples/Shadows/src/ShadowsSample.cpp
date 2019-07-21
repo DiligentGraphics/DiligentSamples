@@ -37,6 +37,9 @@ SampleBase* CreateSample()
     return new ShadowsSample();
 }
 
+ShadowsSample::~ShadowsSample()
+{
+}
 
 void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
 {
@@ -51,13 +54,18 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
     CreatePipelineStates(pDevice);
 
-    m_LightAttribs.f4Direction = float3(-0.803294539f, -0.128133044f, -0.581647396f);
+    m_LightAttribs.ShadowAttribs.iNumCascades = 4;
+    m_LightAttribs.f4Direction    = float3(0.753204405f, -0.243520901f, -0.611060560f);
+    m_LightAttribs.f4Intensity    = float4(1, 1, 1, 1);
+    m_LightAttribs.f4AmbientLight = float4(0.2f, 0.2f, 0.2f, 1);
 
     m_Camera.SetPos(float3(70, 10, 0.f));
     m_Camera.SetRotation(-PI_F/2.f, 0);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
+
+    CreateShadowMap();
 }
 
 
@@ -126,7 +134,10 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
     ShaderCI.UseCombinedTextureSamplers = true;
 
     ShaderMacroHelper Macros;
-    //Macros.AddShaderMacro("TONE_MAPPING_MODE", "TONE_MAPPING_MODE_UNCHARTED2");
+    Macros.AddShaderMacro("SHADOW_MODE",             m_ShadowSetting.iShadowMode);
+    Macros.AddShaderMacro( "SHADOW_FILTER_SIZE",     m_LightAttribs.ShadowAttribs.iFixedFilterSize);
+    Macros.AddShaderMacro( "FILTER_ACROSS_CASCADES", m_ShadowSetting.FilterAcrossCascades);
+    Macros.AddShaderMacro( "BEST_CASCADE_SEARCH",    m_ShadowSetting.SearchBestCascade );
     ShaderCI.Macros = Macros;
 
     ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -142,6 +153,15 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
     ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
     RefCntAutoPtr<IShader> pPS;
     m_pDevice->CreateShader(ShaderCI, &pPS);
+
+    Macros.AddShaderMacro("SHADOW_PASS", true);
+    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+    ShaderCI.Desc.Name       = "Mesh VS";
+    ShaderCI.EntryPoint      = "MeshVS";
+    ShaderCI.FilePath        = "MeshVS.vsh";
+    ShaderCI.Macros          = Macros;
+    RefCntAutoPtr<IShader> pShadowVS;
+    m_pDevice->CreateShader(ShaderCI, &pShadowVS);
 
     m_PSOIndex.resize(m_Mesh.GetNumVBs());
     m_RenderMeshPSO.clear();
@@ -179,7 +199,8 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
 
         ShaderResourceVariableDesc Vars[] = 
         {
-            {SHADER_TYPE_PIXEL, "g_tex2DDiffuse",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+            {SHADER_TYPE_PIXEL, "g_tex2DDiffuse",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+            {SHADER_TYPE_PIXEL, m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
         };
         PSODesc.ResourceLayout.Variables    = Vars;
         PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -198,13 +219,23 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
         m_pDevice->CreatePipelineState(PSODesc, &pRenderMeshPSO);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,  "cbLightAttribs")->Set(m_LightAttribsCB);
+        pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbLightAttribs")->Set(m_LightAttribsCB);
 
         PSODesc.Name = "Mesh Shadow PSO";
         PSODesc.GraphicsPipeline.pPS        = nullptr;
-        PSODesc.ResourceLayout.StaticSamplers    = nullptr;
-        PSODesc.ResourceLayout.NumStaticSamplers = 0;
-        PSODesc.ResourceLayout.Variables         = nullptr;
-        PSODesc.ResourceLayout.NumVariables      = 0;
+        PSODesc.GraphicsPipeline.pVS        = pShadowVS;
+        PSODesc.GraphicsPipeline.NumRenderTargets = 0;
+        PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
+        PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowSetting.Format;
+
+        // It is crucial to disable depth clip to allow shadows from objects
+        // behind the near cascade clip plane!
+        PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+
+        PSODesc.ResourceLayout.StaticSamplers     = nullptr;
+        PSODesc.ResourceLayout.NumStaticSamplers  = 0;
+        PSODesc.ResourceLayout.Variables          = nullptr;
+        PSODesc.ResourceLayout.NumVariables       = 0;
         RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
         m_pDevice->CreatePipelineState(PSODesc, &pRenderMeshShadowPSO);
         pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
@@ -212,28 +243,121 @@ void ShadowsSample::CreatePipelineStates(IRenderDevice* pDevice)
         m_RenderMeshPSO.emplace_back(std::move(pRenderMeshPSO));
         m_RenderMeshShadowPSO.emplace_back(std::move(pRenderMeshShadowPSO));
     }
-    
+}
+
+void ShadowsSample::InitializeResourceBindings()
+{
     m_SRBs.clear();
+    m_ShadowSRBs.clear();
     m_SRBs.resize(m_Mesh.GetNumMaterials());
+    m_ShadowSRBs.resize(m_Mesh.GetNumMaterials());
     for(Uint32 mat = 0; mat < m_Mesh.GetNumMaterials(); ++mat)
     {
-        const auto& Mat = m_Mesh.GetMaterial(mat);
-        RefCntAutoPtr<IShaderResourceBinding> pSRB;
-        m_RenderMeshPSO[0]->CreateShaderResourceBinding(&pSRB, true);
-        VERIFY(Mat.pDiffuseRV != nullptr, "Material must have diffuse color texture");
-        pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DDiffuse")->Set(Mat.pDiffuseRV);
-        m_SRBs[mat] = std::move(pSRB);
+        {
+            const auto& Mat = m_Mesh.GetMaterial(mat);
+            RefCntAutoPtr<IShaderResourceBinding> pSRB;
+            m_RenderMeshPSO[0]->CreateShaderResourceBinding(&pSRB, true);
+            VERIFY(Mat.pDiffuseRV != nullptr, "Material must have diffuse color texture");
+            pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DDiffuse")->Set(Mat.pDiffuseRV);
+            if (m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF)
+            {
+                pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DShadowMap")->Set(m_ShadowMapMgr.GetSRV());
+            }
+            else
+            {
+                pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DFilterableShadowMap")->Set(m_ShadowMapMgr.GetSRV());
+            }
+            m_SRBs[mat] = std::move(pSRB);
+        }
+
+        {
+            RefCntAutoPtr<IShaderResourceBinding> pShadowSRB;
+            m_RenderMeshShadowPSO[0]->CreateShaderResourceBinding(&pShadowSRB, true);
+            m_ShadowSRBs[mat] = std::move(pShadowSRB);
+        }
     }
 }
 
-ShadowsSample::~ShadowsSample()
+void ShadowsSample::CreateShadowMap()
 {
+    m_LightAttribs.ShadowAttribs.fNumCascades = static_cast<float>(m_LightAttribs.ShadowAttribs.iNumCascades);
+    ShadowMapManager::InitInfo SMMgrInitInfo;
+    SMMgrInitInfo.Fmt         = m_ShadowSetting.Format;
+    SMMgrInitInfo.Resolution  = m_ShadowSetting.Resolution;
+    SMMgrInitInfo.NumCascades = static_cast<Uint32>(m_LightAttribs.ShadowAttribs.iNumCascades);
+    SMMgrInitInfo.ShadowMode  = m_ShadowSetting.iShadowMode;
+    SMMgrInitInfo.Is32BitFilterableFmt = m_ShadowSetting.Is32BitFilterableFmt;
+
+    if (!m_pComparisonSampler)
+    {
+        SamplerDesc ComparsionSampler;
+        ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS; 
+        // Note: anisotropic filtering requires SampleGrad to fix artifacts at 
+        // cascade boundaries
+        ComparsionSampler.MinFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MagFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MipFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        m_pDevice->CreateSampler(ComparsionSampler, &m_pComparisonSampler);
+    }
+    SMMgrInitInfo.pComparisonSampler = m_pComparisonSampler;
+
+    if (!m_pFilterableShadowMapSampler)
+    {
+        SamplerDesc SamplerDesc;
+        SamplerDesc.MinFilter     = FILTER_TYPE_ANISOTROPIC;
+        SamplerDesc.MagFilter     = FILTER_TYPE_ANISOTROPIC;
+        SamplerDesc.MipFilter     = FILTER_TYPE_ANISOTROPIC;
+        SamplerDesc.MaxAnisotropy = m_LightAttribs.ShadowAttribs.iMaxAnisotropy;
+        m_pDevice->CreateSampler(SamplerDesc, &m_pFilterableShadowMapSampler);
+    }
+    SMMgrInitInfo.pFilterableShadowMapSampler = m_pFilterableShadowMapSampler;
+
+    m_ShadowMapMgr.Initialize(m_pDevice, SMMgrInitInfo);
+
+    InitializeResourceBindings();
 }
 
+void ShadowsSample::RenderShadowMap()
+{
+    auto iNumShadowCascades = m_LightAttribs.ShadowAttribs.iNumCascades;
+    for(int iCascade = 0; iCascade < iNumShadowCascades; ++iCascade)
+    {
+        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
+
+        auto WorldToLightViewSpaceMatr = m_LightAttribs.ShadowAttribs.mWorldToLightViewT.Transpose();
+        auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
+        CameraAttribs ShadowCameraAttribs = {};
+        ShadowCameraAttribs.mViewT     = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
+        ShadowCameraAttribs.mProjT     = CascadeProjMatr.Transpose();
+        ShadowCameraAttribs.mViewProjT = WorldToLightProjSpaceMatr.Transpose();
+        ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSetting.Resolution);
+        ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSetting.Resolution);
+        ShadowCameraAttribs.f4ViewportSize.z = 1.f / ShadowCameraAttribs.f4ViewportSize.x;
+        ShadowCameraAttribs.f4ViewportSize.w = 1.f / ShadowCameraAttribs.f4ViewportSize.y;
+
+        {
+            MapHelper<CameraAttribs> CameraData(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+            *CameraData = ShadowCameraAttribs;
+        }
+
+        auto* pCascadeDSV = m_ShadowMapMgr.GetCascadeDSV(iCascade);
+        m_pImmediateContext->SetRenderTargets(0, nullptr, pCascadeDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearDepthStencil(pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        DrawMesh(m_pImmediateContext, true);
+    }
+
+    if (m_ShadowSetting.iShadowMode > SHADOW_MODE_PCF)
+        m_ShadowMapMgr.ConvertToFilterable(m_pImmediateContext, m_LightAttribs.ShadowAttribs);
+}
 
 // Render a frame
 void ShadowsSample::Render()
 {
+    RenderShadowMap();
+
+    // Reset default framebuffer
+    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     // Clear the back buffer 
     const float ClearColor[] = { 0.032f,  0.032f,  0.032f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -257,6 +381,15 @@ void ShadowsSample::Render()
         CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
         CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
+
+    StateTransitionDesc SMBarrier
+    {
+        (m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF ? m_ShadowMapMgr.GetSRV() : m_ShadowMapMgr.GetFilterableSRV())->GetTexture(), 
+        RESOURCE_STATE_UNKNOWN,
+        RESOURCE_STATE_SHADER_RESOURCE,
+        true
+    };
+    m_pImmediateContext->TransitionResourceStates(1, &SMBarrier);
 
     DrawMesh(m_pImmediateContext, false);
 }
@@ -288,10 +421,10 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass)
             //if(meshData.FrustumTests[partCount++])
             {
                 const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
-                pCtx->CommitShaderResources(m_SRBs[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+                pCtx->CommitShaderResources((bIsShadowPass ? m_ShadowSRBs : m_SRBs)[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-                DrawAttribs drawAttrs(Subset.IndexCount, IBFormat, DRAW_FLAG_VERIFY_ALL);
-                drawAttrs.FirstIndexLocation = Subset.IndexStart;
+                DrawAttribs drawAttrs(static_cast<Uint32>(Subset.IndexCount), IBFormat, DRAW_FLAG_VERIFY_ALL);
+                drawAttrs.FirstIndexLocation = static_cast<Uint32>(Subset.IndexStart);
                 pCtx->Draw(drawAttrs);
             }
         }
@@ -320,12 +453,28 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
 
         m_LastMouseState = mouseState;
     }
+
+
+    m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 1.f;
+    ShadowMapManager::DistributeCascadeInfo DistrInfo;
+    DistrInfo.pCameraView = &m_Camera.GetViewMatrix();
+    DistrInfo.pCameraProj = &m_Camera.GetProjMatrix();
+    float3 CameraPos = m_Camera.GetPos();
+    DistrInfo.pCameraPos  = &CameraPos;
+    float3 f3LightDirection = float3(m_LightAttribs.f4Direction.x, m_LightAttribs.f4Direction.y, m_LightAttribs.f4Direction.z);
+    DistrInfo.pLightDir   = &f3LightDirection;
+
+    DistrInfo.SnapCascades     = m_ShadowSetting.SnapCascades;
+    DistrInfo.EqualizeExtents  = m_ShadowSetting.EqualizeExtents;
+    DistrInfo.StabilizeExtents = m_ShadowSetting.StabilizeExtents;
+
+    m_ShadowMapMgr.DistributeCascades(DistrInfo, m_LightAttribs.ShadowAttribs);
 }
 
 void ShadowsSample::WindowResize(Uint32 Width, Uint32 Height)
 {
     float NearPlane = 0.1f;
-    float FarPlane = 200.f;
+    float FarPlane = 250.f;
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
     m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f, m_pDevice->GetDeviceCaps().IsGLDevice());
 }

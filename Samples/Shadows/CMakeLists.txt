@@ -23,7 +23,7 @@ set(ASSETS
 )
 
 add_sample_app("ShadowsSample" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(ShadowsSample PRIVATE Diligent-AssetLoader)
+target_link_libraries(ShadowsSample PRIVATE Diligent-AssetLoader DiligentFX)
 
 target_include_directories(ShadowsSample
 PRIVATE

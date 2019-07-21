@@ -1,9 +1,20 @@
 #include "BasicStructures.fxh"
 
+#ifndef SHADOW_PASS
+#   define SHADOW_PASS 0
+#endif
+
 cbuffer cbCameraAttribs
 {
     CameraAttribs g_CameraAttribs;
 };
+
+#if !SHADOW_PASS
+cbuffer cbLightAttribs
+{
+    LightAttribs g_LightAttribs;
+};
+#endif
 
 struct VSInput
 {
@@ -14,30 +25,28 @@ struct VSInput
 
 struct VSOutput
 {
-    float4 PositionPS 	: SV_Position;
-    float3 PositionWS 	: POSITIONWS;
-    float3 NormalWS 	: NORMALWS;
-    float2 TexCoord 	: TEXCOORD;
-    float DepthVS		: DEPTHVS;
+    float4 PositionPS 	        : SV_Position;
+    float3 PosInLightViewSpace 	: LIGHT_SPACE_POS;
+    float3 NormalWS 	        : NORMALWS;
+    float2 TexCoord 	        : TEXCOORD;
+    float  CameraSpaceZ	        : CAM_SPACE_Z;
 };
 
 VSOutput MeshVS(in VSInput input)
 {
     VSOutput VSOut;
 
-    // Calc the world-space position
-    VSOut.PositionWS = input.Position;// mul(float4(input.PositionOS, 1.0f), g_CameraAttribs.).xyz;
+#if !SHADOW_PASS
+    float4 LightSpacePos = mul( float4(input.Position, 1.0), g_LightAttribs.ShadowAttribs.mWorldToLightView);
+    VSOut.PosInLightViewSpace = LightSpacePos.xyz / LightSpacePos.w;
+#else
+    VSOut.PosInLightViewSpace = float3(0.0, 0.0, 0.0);
+#endif
 
-    // Calc the clip-space position
-    VSOut.PositionPS = mul(float4(VSOut.PositionWS, 1.0), g_CameraAttribs.mViewProj);
-
-    VSOut.DepthVS = VSOut.PositionPS.w;
-
-    // Rotate the normal into world space
-    VSOut.NormalWS = input.Normal;
-
-    // Pass along the texture coordinate
-    VSOut.TexCoord = input.TexCoord;
+    VSOut.PositionPS   = mul(float4(input.Position, 1.0), g_CameraAttribs.mViewProj);
+    VSOut.CameraSpaceZ = VSOut.PositionPS.w;
+    VSOut.NormalWS     = input.Normal;
+    VSOut.TexCoord     = input.TexCoord;
 
     return VSOut;
 }

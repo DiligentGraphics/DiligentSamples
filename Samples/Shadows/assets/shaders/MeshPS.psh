@@ -4,6 +4,14 @@
 Texture2D    g_tex2DDiffuse;
 SamplerState g_tex2DDiffuse_sampler;
 
+#if SHADOW_MODE == SHADOW_MODE_PCF
+    Texture2DArray<float>  g_tex2DShadowMap;
+    SamplerComparisonState g_tex2DShadowMap_sampler;
+#else
+    Texture2DArray<float4> g_tex2DFilterableShadowMap;         // Can't use g_tex2DShadowMap name due to GLSL converter limitation
+    SamplerState           g_tex2DFilterableShadowMap_sampler;
+#endif
+
 cbuffer cbLightAttribs
 {
     LightAttribs g_LightAttribs;
@@ -12,11 +20,11 @@ cbuffer cbLightAttribs
 
 struct VSOutput
 {
-    float4 PositionPS 	: SV_Position;
-    float3 PositionWS 	: POSITIONWS;
-    float3 NormalWS 	: NORMALWS;
-    float2 TexCoord 	: TEXCOORD;
-    float DepthVS		: DEPTHVS;
+    float4 PositionPS 	        : SV_Position;
+    float3 PosInLightViewSpace 	: LIGHT_SPACE_POS;
+    float3 NormalWS 	        : NORMALWS;
+    float2 TexCoord 	        : TEXCOORD;
+    float  CameraSpaceZ         : CAM_SPACE_Z;
 };
 
 float4 MeshPS(VSOutput VSOut) : SV_TARGET
@@ -27,15 +35,24 @@ float4 MeshPS(VSOutput VSOut) : SV_TARGET
     float3 diffuseAlbedo = g_tex2DDiffuse.Sample(g_tex2DDiffuse_sampler, VSOut.TexCoord).rgb;
 
     float nDotL = saturate(dot(normalWS, -g_LightAttribs.f4Direction.xyz));
-    //uint2 screenPos = uint2(VSOut.PositionPS.xy);
-	float3 shadowVisibility = 1.0; //ShadowVisibility(VSOut.PositionWS, VSOut.DepthVS, nDotL, normalWS, screenPos);
 
-	float3 lighting = float3(0.0, 0.0, 0.0);
+    FilteredShadow Shadow;
+#   if SHADOW_MODE == SHADOW_MODE_PCF
+        Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler, VSOut.PosInLightViewSpace, VSOut.CameraSpaceZ);
+#   else
+        Shadow = SampleFilterableShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DFilterableShadowMap, g_tex2DFilterableShadowMap_sampler, VSOut.PosInLightViewSpace, In.CameraSpaceZ);
+#   endif
 
-    // Add in the primary directional light
-    lighting += nDotL * g_LightAttribs.f4Intensity.xyz * diffuseAlbedo * shadowVisibility;
+	float3 lighting = (nDotL * g_LightAttribs.f4Intensity.xyz * Shadow.fLightAmount + g_LightAttribs.f4AmbientLight.xyz) * diffuseAlbedo;
 
-    lighting += float3(0.2, 0.5, 1.0) * 0.1 * diffuseAlbedo;
+    //if (g_LightAttribs.ShadowAttribs.bVisualizeShadowing)
+    //{
+    //    Color = lerp(Color, float3(Shadow.fLightAmount, Shadow.fLightAmount, Shadow.fLightAmount), 0.99);
+    //}
+    //if (g_LightAttribs.ShadowAttribs.bVisualizeCascades)
+    //{
+    //    Color = lerp(Color, GetCascadeColor(Shadow), 0.1);
+    //}
 
     return float4(max(lighting, 0.0001), 1.0f);
 }
