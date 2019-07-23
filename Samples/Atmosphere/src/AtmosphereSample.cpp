@@ -146,6 +146,8 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
 
     TwAddVarRW(bar, "FPS", TW_TYPE_FLOAT, &m_fFPS, "readonly=true");
 
+    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_f3LightDir, "");
+
     TwAddVarRW( bar, "Camera altitude", TW_TYPE_FLOAT, &m_f3CameraPos.y, "min=2000 max=100000 step=100 keyincr=PGUP keydecr=PGDOWN" );
 
     // Shadows
@@ -756,43 +758,43 @@ void ComputeApproximateNearFarPlaneDist(const float3 &CameraPos,
 
 void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
 {
+    const auto& mouseState = m_InputController.GetMouseState();
+    float MouseDeltaX = 0;
+    float MouseDeltaY = 0;
+    if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
+        m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
     {
-        const auto& mouseState = m_InputController.GetMouseState();
-        constexpr float RotationSpeed[3] = {0.005f, 0.005f, 0.001f};
-        float MouseDeltaX = 0;
-        float MouseDeltaY = 0;
-        if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
-            m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
-        {
-            MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
-            MouseDeltaY = mouseState.PosY - m_LastMouseState.PosY;
-        }
-        m_LastMouseState = mouseState;
-
-        float fYawDelta   = MouseDeltaX;
-        float fPitchDelta = MouseDeltaY;
-        for (Uint32 i=0; i < 3; ++i)
-        {
-            if (mouseState.ButtonFlags & (1 << i))
-            {
-                m_Rotations[i].yaw   += fYawDelta   * RotationSpeed[i];
-                m_Rotations[i].pitch += fPitchDelta * RotationSpeed[i];
-                m_Rotations[i].pitch = std::max(m_Rotations[i].pitch, -PI_F / 2.f);
-                m_Rotations[i].pitch = std::min(m_Rotations[i].pitch, +PI_F / 2.f);
-            }
-        }
-        m_CameraRotation =
-            Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_Rotations[0].pitch) *
-            Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_Rotations[0].yaw);
-        m_f3CameraPos.y += mouseState.WheelDelta * 500.f;
-        m_f3CameraPos.y = std::max(m_f3CameraPos.y, 2000.f);
-        m_f3CameraPos.y = std::min(m_f3CameraPos.y, 100000.f);
-
-        m_f3LightDir.x = std::cos(-m_Rotations[2].yaw) * std::cos(m_Rotations[2].pitch);
-        m_f3LightDir.z = std::sin(-m_Rotations[2].yaw) * std::cos(m_Rotations[2].pitch);
-        m_f3LightDir.y = std::sin(m_Rotations[2].pitch);
+        MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
+        MouseDeltaY = mouseState.PosY - m_LastMouseState.PosY;
     }
+    m_LastMouseState = mouseState;
 
+    if ((m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
+    {
+        constexpr float CameraRotationSpeed = 0.005f;
+        m_fCameraYaw   += MouseDeltaX * CameraRotationSpeed;
+        m_fCameraPitch += MouseDeltaY * CameraRotationSpeed;
+    }
+    m_CameraRotation =
+        Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_fCameraPitch) *
+        Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_fCameraYaw);
+    m_f3CameraPos.y += mouseState.WheelDelta * 500.f;
+    m_f3CameraPos.y = std::max(m_f3CameraPos.y, 2000.f);
+    m_f3CameraPos.y = std::min(m_f3CameraPos.y, 100000.f);
+
+    auto CameraRotationMatrix = m_CameraRotation.ToMatrix();
+
+    if ((m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)
+    {
+        constexpr float LightRotationSpeed = 0.001f;
+        float fYawDelta   = MouseDeltaX * LightRotationSpeed;
+        float fPitchDelta = MouseDeltaY * LightRotationSpeed;
+        float3 WorldUp   {CameraRotationMatrix._12, CameraRotationMatrix._22, CameraRotationMatrix._32};
+        float3 WorldRight{CameraRotationMatrix._11, CameraRotationMatrix._21, CameraRotationMatrix._31};
+        m_f3LightDir = float4(m_f3LightDir, 0) *
+                        float4x4::RotationArbitrary(WorldUp,    fYawDelta) * 
+                        float4x4::RotationArbitrary(WorldRight, fPitchDelta);
+    }
 
     SampleBase::Update(CurrTime, ElapsedTime);
 
@@ -804,7 +806,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
 
     m_mCameraView =
         float4x4::Translation(-m_f3CameraPos) *
-        m_CameraRotation.ToMatrix();
+        CameraRotationMatrix;
 
     // This projection matrix is only used to set up directions in view frustum
     // Actual near and far planes are ignored

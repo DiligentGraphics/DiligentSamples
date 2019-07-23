@@ -61,7 +61,8 @@ private:
 
     void UpdateGUI();
 
-    float3 m_f3LightDir = {0,0,1};
+    float3 m_f3LightDir = {-0.554699242f, -0.0599640049f, -0.829887390f};
+
     Quaternion m_CameraRotation = {0,0,0,1};
     float3 m_f3CameraPos        = {0, 8000.f, 0};
     float4x4 m_mCameraView;
@@ -102,21 +103,8 @@ private:
     RefCntAutoPtr<ITexture>  m_pOffscreenColorBuffer;
     RefCntAutoPtr<ITexture>  m_pOffscreenDepthBuffer;
 
-    struct RotationAngles
-    {
-        float yaw   = 0;
-        float pitch = 0;
-        RotationAngles(float y, float p) :
-            yaw(y),
-            pitch(p)
-        {}
-        RotationAngles(){}
-    }m_Rotations[3] = 
-    {
-        {0.23f, 0.18f},
-        {},
-        {2.16f, -0.06f}
-    }; // camera (LMB), unused (MBM), light (RMB)
+    float m_fCameraYaw   = 0.23f;
+    float m_fCameraPitch = 0.18f;
     MouseState m_LastMouseState;
 };
 
