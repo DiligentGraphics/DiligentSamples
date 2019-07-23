@@ -32,21 +32,21 @@ struct VSOutput
     float  CameraSpaceZ	        : CAM_SPACE_Z;
 };
 
-VSOutput MeshVS(in VSInput input)
+VSOutput MeshVS(in VSInput VSIn)
 {
     VSOutput VSOut;
 
 #if !SHADOW_PASS
-    float4 LightSpacePos = mul( float4(input.Position, 1.0), g_LightAttribs.ShadowAttribs.mWorldToLightView);
+    float4 LightSpacePos = mul( float4(VSIn.Position, 1.0), g_LightAttribs.ShadowAttribs.mWorldToLightView);
     VSOut.PosInLightViewSpace = LightSpacePos.xyz / LightSpacePos.w;
 #else
     VSOut.PosInLightViewSpace = float3(0.0, 0.0, 0.0);
 #endif
 
-    VSOut.PositionPS   = mul(float4(input.Position, 1.0), g_CameraAttribs.mViewProj);
+    VSOut.PositionPS   = mul(float4(VSIn.Position, 1.0), g_CameraAttribs.mViewProj);
     VSOut.CameraSpaceZ = VSOut.PositionPS.w;
-    VSOut.NormalWS     = input.Normal;
-    VSOut.TexCoord     = input.TexCoord;
+    VSOut.NormalWS     = VSIn.Normal;
+    VSOut.TexCoord     = VSIn.TexCoord;
 
     return VSOut;
 }

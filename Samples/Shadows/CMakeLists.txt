@@ -37,9 +37,9 @@ add_custom_command(TARGET ShadowsSample PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/Shadows.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
 )
 
-set_source_files_properties(${ASSETS} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "."
-    MACOSX_PACKAGE_LOCATION Resources
+set_source_files_properties(${POWERPLANT_FILES} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "Powerplant"
+    MACOSX_PACKAGE_LOCATION "Resources/Powerplant"
 )
 
 set_source_files_properties(${SHADERS} PROPERTIES
