@@ -11,6 +11,20 @@
 #   define FILTER_ACROSS_CASCADES 0
 #endif
 
+// Returns the minimum distance to cascade margin.
+// If the point lies outside, the distance will be negative.
+//  +1  ____________________ 
+//     |   ______________ __|__ +1-Margin.y
+//     |  |              |  | 
+//     |  |              |  |
+//     |  |              |  |
+//     |  |---*          |  |
+//     |  |              |  |
+//     |  |______________|__|__ -1+Margin.y
+//  -1 |__|______________|__|
+//    -1  |              | +1
+//     -1+Margin.x    +1-Marign.x
+//
 float GetDistanceToCascadeMargin(float3 f3PosInCascadeProjSpace, float4 f4MarginProjSpace)
 {
     float4 f4DistToEdges;
@@ -59,10 +73,10 @@ CascadeSamplingInfo FindCascade(ShadowMapAttribs ShadowAttribs,
     while (iCascadeIdx < ShadowAttribs.iNumCascades)
     {
         // Find the smallest cascade which covers current point
-        CascadeAttribs Cascade  = ShadowAttribs.Cascades[iCascadeIdx];
+        CascadeAttribs Cascade         = ShadowAttribs.Cascades[iCascadeIdx];
         SamplingInfo.f3LightSpaceScale = Cascade.f4LightSpaceScale.xyz;
-        f3PosInCascadeProjSpace = f3PosInLightViewSpace * SamplingInfo.f3LightSpaceScale + Cascade.f4LightSpaceScaledBias.xyz;
-        SamplingInfo.fMinDistToMargin = GetDistanceToCascadeMargin(f3PosInCascadeProjSpace, Cascade.f4MarginProjSpace);
+        f3PosInCascadeProjSpace        = f3PosInLightViewSpace * SamplingInfo.f3LightSpaceScale + Cascade.f4LightSpaceScaledBias.xyz;
+        SamplingInfo.fMinDistToMargin  = GetDistanceToCascadeMargin(f3PosInCascadeProjSpace, Cascade.f4MarginProjSpace);
 
         if (SamplingInfo.fMinDistToMargin > 0.0)
         {
@@ -142,23 +156,21 @@ float2 ComputeReceiverPlaneDepthBias(float3 ShadowUVDepthDX,
     return biasUV;
 }
 
-//-------------------------------------------------------------------------------------------------
 // The method used in The Witness
-//-------------------------------------------------------------------------------------------------
 float FilterShadowMapFixedPCF(in Texture2DArray<float>  tex2DShadowMap,
                               in SamplerComparisonState tex2DShadowMap_sampler,
-                              in float4                 shadowMapSize,
+                              in float4                 f4ShadowMapSize,
                               in CascadeSamplingInfo    SamplingInfo,
-                              in float2                 receiverPlaneDepthBias)
+                              in float2                 f2ReceiverPlaneDepthBias)
 {
     float lightDepth = SamplingInfo.fDepth;
 
-    float2 uv = SamplingInfo.f2UV * shadowMapSize.xy;
+    float2 uv = SamplingInfo.f2UV * f4ShadowMapSize.xy;
     float2 base_uv = floor(uv + float2(0.5, 0.5));
     float s = (uv.x + 0.5 - base_uv.x);
     float t = (uv.y + 0.5 - base_uv.y);
     base_uv -= float2(0.5, 0.5);
-    base_uv *= shadowMapSize.zw;
+    base_uv *= f4ShadowMapSize.zw;
 
     float sum = 0;
 
@@ -176,7 +188,7 @@ float FilterShadowMapFixedPCF(in Texture2DArray<float>  tex2DShadowMap,
     //
     // Note that clamping at far depth boundary makes no difference as 1 < 1 produces 0 and so does 1+x < 1
     const float DepthClamp = 1e-8;
-#define SAMPLE_SHADOW_MAP(u, v) tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(base_uv.xy + float2(u,v) * shadowMapSize.zw, SamplingInfo.iCascadeIdx), max(lightDepth + dot(float2(u, v), receiverPlaneDepthBias), DepthClamp))
+#define SAMPLE_SHADOW_MAP(u, v) tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(base_uv.xy + float2(u,v) * f4ShadowMapSize.zw, SamplingInfo.iCascadeIdx), max(lightDepth + dot(float2(u, v), f2ReceiverPlaneDepthBias), DepthClamp))
 
     #if SHADOW_FILTER_SIZE == 2
 
@@ -284,103 +296,6 @@ float FilterShadowMapFixedPCF(in Texture2DArray<float>  tex2DShadowMap,
 #undef SAMPLE_SHADOW_MAP
 }
 
-/*
-float FilterShadowMapVaryingPCF(in Texture2DArray<float>  tex2DShadowMap,
-                                in SamplerComparisonState tex2DShadowMap_sampler,
-                                in ShadowMapAttribs       ShadowAttribs,
-                                in CascadeSamplingInfo    SamplingInfo,
-                                in float2                 f2ReceiverPlaneDepthBias,
-                                in float2                 f2FilterSize)
-{
-    //float2 maxFilterSize = MaxKernelSize / abs(CascadeScales[0].xy);
-    //float2 filterSize = clamp(min(FilterSize.xx, maxFilterSize) * abs(CascadeScales[cascadeIdx].xy), 1.0f, MaxKernelSize);
-
-    float result = 0.0f;
-
-    // Get the size of the shadow map
-    uint2 shadowMapSize;
-    uint numSlices;
-    tex2DShadowMap.GetDimensions(shadowMapSize.x, shadowMapSize.y, numSlices);
-
-    float2 texelSize = 1.0f / shadowMapSize;
-
-    //#if UsePlaneDepthBias_
-    //    float2 receiverPlaneDepthBias = ComputeReceiverPlaneDepthBias(shadowPosDX, shadowPosDY);
-
-    //    // Static depth biasing to make up for incorrect fractional sampling on the shadow map grid
-    //    float fractionalSamplingError = dot(float2(1.0f, 1.0f) * texelSize, abs(receiverPlaneDepthBias));
-    //    float shadowDepth = shadowPos.z - min(fractionalSamplingError, 0.01f);
-    //#else
-    //    float shadowDepth = shadowPos.z - Bias;
-    //#endif
-
-    float2 filterSize = f2FilterSize * shadowMapSize;
-
-    [branch]
-    if (filterSize.x > 1.0 || filterSize.y > 1.0)
-    {
-        // Get the texel that will be sampled
-        float2 shadowTexel = SamplingInfo.f2UV * shadowMapSize;
-        float2 texelFraction = frac(shadowTexel);
-
-        float2 Radius = filterSize / 2.0;
-
-        int2 minOffset = int2(floor(texelFraction - Radius));
-        int2 maxOffset = int2(texelFraction + Radius);
-
-        float weightSum = 0.0;
-
-        [loop]
-        for(int y = minOffset.y; y <= maxOffset.y; ++y)
-        {
-            float yWeight = 1.0;
-            if(y == minOffset.y)
-                yWeight = saturate((Radius.y - texelFraction.y) + 1.0 + y);
-            else if(y == maxOffset.y)
-                yWeight = saturate(Radius.y + texelFraction.y - y);
-
-            [loop]
-            for(int x = minOffset.x; x <= maxOffset.x; ++x)
-            {
-                float2 sampleOffset = texelSize * float2(x, y);
-                float2 samplePos = SamplingInfo.f2UV + sampleOffset;
-
-                //#if UsePlaneDepthBias_
-                //    // Compute offset and apply planar depth bias
-                //    float sampleDepth = shadowDepth + dot(sampleOffset, receiverPlaneDepthBias);
-                //#else
-                //    float sampleDepth = shadowDepth;
-                //#endif
-
-                float sampleDepth = SamplingInfo.fDepth + dot(sampleOffset, f2ReceiverPlaneDepthBias);
-
-                float sample = tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(samplePos.xy, SamplingInfo.iCascadeIdx), sampleDepth);
-
-                float xWeight = 1.0;
-                if(x == minOffset.x)
-                    xWeight = saturate((Radius.x - texelFraction.x) + 1.0 + x);
-                else if(x == maxOffset.x)
-                    xWeight = saturate(Radius.x + texelFraction.x - x);
-
-                float2 sampleCoverage = float2(xWeight, yWeight);
-
-                float sampleWeight = sampleCoverage.x * sampleCoverage.y;
-                weightSum += sampleWeight;
-
-                result += sample * sampleWeight;
-            }
-        }
-
-        result /= weightSum;
-    }
-    else
-    {
-        result = tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(SamplingInfo.f2UV, SamplingInfo.iCascadeIdx), SamplingInfo.fDepth);
-    }
-
-    return result;
-}
-*/
 
 float FilterShadowMapVaryingPCF(in Texture2DArray<float>  tex2DShadowMap,
                                 in SamplerComparisonState tex2DShadowMap_sampler,
@@ -389,54 +304,63 @@ float FilterShadowMapVaryingPCF(in Texture2DArray<float>  tex2DShadowMap,
                                 in float2                 f2ReceiverPlaneDepthBias,
                                 in float2                 f2FilterSize)
 {
-    f2FilterSize = float2(5, 5);//max(f2FilterSize * ShadowAttribs.f4ShadowMapDim.xy, float2(1.0, 1.0));
+
+    f2FilterSize = max(f2FilterSize * ShadowAttribs.f4ShadowMapDim.xy, float2(1.0, 1.0));
     float2 f2CenterTexel = SamplingInfo.f2UV * ShadowAttribs.f4ShadowMapDim.xy;
-    float2 f2MinBnd = f2CenterTexel - f2FilterSize / 2.0;
-    float2 f2MaxBnd = f2CenterTexel + f2FilterSize / 2.0;
-    int2 MinXY = int2(floor(f2MinBnd));
-    int2 MaxXY = int2(ceil(f2MaxBnd));
+    // Clamp to the full texture extent, no need for 0.5 texel padding
+    float2 f2MinBnd = clamp(f2CenterTexel - f2FilterSize / 2.0, float2(0.0, 0.0), ShadowAttribs.f4ShadowMapDim.xy);
+    float2 f2MaxBnd = clamp(f2CenterTexel + f2FilterSize / 2.0, float2(0.0, 0.0), ShadowAttribs.f4ShadowMapDim.xy);
+    //
+    // StartTexel                                     EndTexel
+    //   |  MinBnd                         MaxBnd        |
+    //   V    V                              V           V
+    //   |    :  X       |       X       |   :   X       |
+    //   n              n+1             n+2             n+3
+    //
+    int2 StartTexelXY = int2(floor(f2MinBnd));
+    int2 EndTexelXY   = int2(ceil (f2MaxBnd));
+
     float TotalWeight = 0.0;
     float Sum = 0.0;
+
+    // Handle as many as 2x2 texels in one iteration
     [loop]
-    for(int x = MinXY.x; x < MaxXY.x; ++x)
+    for (int x = StartTexelXY.x; x < EndTexelXY.x; x += 2)
     {
+        float U0 = float(x) + 0.5;
+        // Compute horizontal coverage of this and the adjacent texel to the right
+        //
+        //        U0         U1                  U0         U1                  U0         U1
+        //   |    X     |    X     |        |    X     |    X     |        |    X     |    X     |
+        //    ####-----------------          ------###------------          ---############------
+        //     0.4          0.0                    0.3     0.0                  0.7     0.5
+        //
+        float LeftTexelCoverage  = max(min(U0 + 0.5, f2MaxBnd.x) - max(U0 - 0.5, f2MinBnd.x), 0.0);
+        float RightTexelCoverage = max(min(U0 + 1.5, f2MaxBnd.x) - max(U0 + 0.5, f2MinBnd.x), 0.0);
+        float dU = RightTexelCoverage / max(RightTexelCoverage + LeftTexelCoverage, 1e-6);
+        float HorzWeight = RightTexelCoverage + LeftTexelCoverage;
+
         [loop]
-        for(int y = MinXY.y; y < MaxXY.y; ++y)
+        for (int y = StartTexelXY.y; y < EndTexelXY.y; y += 2)
         {
-            float2 f2UV = float2(x, y) + float2(0.5, 0.5);
-            float HorzWeight = min(f2UV.x + 0.5, f2MaxBnd.x) - max(f2UV.x - 0.5, f2MinBnd.x);
-            float VertWeight = min(f2UV.y + 0.5, f2MaxBnd.y) - max(f2UV.y - 0.5, f2MinBnd.y);
+            // Compute vertical coverage of this and the top adjacent texels 
+            float V0 = float(y) + 0.5;
+            float BottomTexelCoverage = max(min(V0 + 0.5, f2MaxBnd.y) - max(V0 - 0.5, f2MinBnd.y), 0.0);
+            float TopTexelCoverage    = max(min(V0 + 1.5, f2MaxBnd.y) - max(V0 + 0.5, f2MinBnd.y), 0.0);
+            float dV = TopTexelCoverage / max(BottomTexelCoverage + TopTexelCoverage, 1e-6);
+            float VertWeight = BottomTexelCoverage + TopTexelCoverage;
+
+            float2 f2UV = float2(U0 + dU, V0 + dV);
+
             float Weight = HorzWeight * VertWeight;
             const float DepthClamp = 1e-8;
             float fDepth = max(SamplingInfo.fDepth + dot(f2UV - f2CenterTexel, f2ReceiverPlaneDepthBias), DepthClamp);
             f2UV *= ShadowAttribs.f4ShadowMapDim.zw;
-            if (f2UV.x > 0.0 && f2UV.y > 0.0 && f2UV.x < 1.0 && f2UV.y < 1.0)
-            {
-                Sum += tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(f2UV, SamplingInfo.iCascadeIdx), fDepth) * Weight;
-                TotalWeight += Weight;
-            }
+            Sum += tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(f2UV, SamplingInfo.iCascadeIdx), fDepth) * Weight;
+            TotalWeight += Weight;
         }
     }
-    return Sum / TotalWeight;
-    
-    /*
-f2FilterSize = float2(6.5, 6.5)  / ShadowAttribs.f4ShadowMapDim.xy;
-    int2 i2NumSamples = max(int2(ceil(f2FilterSize * ShadowAttribs.f4ShadowMapDim.xy)) , int2(1,1));
-    float sum = 0;
-    f2ReceiverPlaneDepthBias *= ShadowAttribs.f4ShadowMapDim.xy;
-    [loop]
-    for(int x=0; x < i2NumSamples.x; ++x)
-    {
-        [loop]
-        for(int y=0; y < i2NumSamples.y; ++y)
-        {
-            float2 f2dUV = lerp(-f2FilterSize.xy/2.0, +f2FilterSize.xy/2.0, float2(float(x) + 0.5, float(y)+0.5) / float2(i2NumSamples));
-            const float DepthClamp = 1e-8;
-            float fDepth = max(SamplingInfo.fDepth + dot(f2dUV, f2ReceiverPlaneDepthBias), DepthClamp);
-            sum += tex2DShadowMap.SampleCmp(tex2DShadowMap_sampler, float3(SamplingInfo.f2UV + f2dUV, SamplingInfo.iCascadeIdx), fDepth);
-        }
-    }
-    return sum / float(i2NumSamples.x * i2NumSamples.y);*/
+    return TotalWeight > 0.0 ? Sum / TotalWeight : 1.0;
 }
 
 
@@ -450,7 +374,10 @@ float FilterShadowCascade(in ShadowMapAttribs       ShadowAttribs,
     float3 f3ddXShadowMapUVDepth  = f3ddXPosInLightViewSpace * SamplingInfo.f3LightSpaceScale * F3NDC_XYZ_TO_UVD_SCALE;
     float3 f3ddYShadowMapUVDepth  = f3ddYPosInLightViewSpace * SamplingInfo.f3LightSpaceScale * F3NDC_XYZ_TO_UVD_SCALE;
     float2 f2DepthSlopeScaledBias = ComputeReceiverPlaneDepthBias(f3ddXShadowMapUVDepth, f3ddYShadowMapUVDepth);
-    float2 f2SlopeScaledBiasClamp = float2(ShadowAttribs.fReceiverPlaneDepthBiasClamp, ShadowAttribs.fReceiverPlaneDepthBiasClamp);
+    // Rescale slope-scaled depth bias clamp to make it uniform across all cascades
+    float2 f2SlopeScaledBiasClamp = abs( (SamplingInfo.f3LightSpaceScale.z  * F3NDC_XYZ_TO_UVD_SCALE.z) / 
+                                         (SamplingInfo.f3LightSpaceScale.xy * F3NDC_XYZ_TO_UVD_SCALE.xy) ) *
+                                    ShadowAttribs.fReceiverPlaneDepthBiasClamp;
     f2DepthSlopeScaledBias = clamp(f2DepthSlopeScaledBias, -f2SlopeScaledBiasClamp, f2SlopeScaledBiasClamp);
     f2DepthSlopeScaledBias *= ShadowAttribs.f4ShadowMapDim.zw;
 
@@ -460,7 +387,7 @@ float FilterShadowCascade(in ShadowMapAttribs       ShadowAttribs,
 #if SHADOW_FILTER_SIZE > 0
     return FilterShadowMapFixedPCF(tex2DShadowMap, tex2DShadowMap_sampler, ShadowAttribs.f4ShadowMapDim, SamplingInfo, f2DepthSlopeScaledBias);
 #else
-    float2 f2FilterSize = ShadowAttribs.fFilterWorldSize * SamplingInfo.f3LightSpaceScale.xy * F3NDC_XYZ_TO_UVD_SCALE.xy;
+    float2 f2FilterSize = abs(ShadowAttribs.fFilterWorldSize * SamplingInfo.f3LightSpaceScale.xy * F3NDC_XYZ_TO_UVD_SCALE.xy);
     return FilterShadowMapVaryingPCF(tex2DShadowMap, tex2DShadowMap_sampler, ShadowAttribs, SamplingInfo, f2DepthSlopeScaledBias, f2FilterSize);
 #endif
 }
@@ -497,8 +424,12 @@ FilteredShadow FilterShadowMap(in ShadowMapAttribs       ShadowAttribs,
     if (SamplingInfo.iCascadeIdx+1 < ShadowAttribs.iNumCascades)
     {
         CascadeSamplingInfo NextCscdSamplingInfo = GetCascadeSamplingInfo(ShadowAttribs, f3PosInLightViewSpace, SamplingInfo.iCascadeIdx + 1);
-        float NextCascadeShadow = FilterShadowCascade(ShadowAttribs, tex2DShadowMap, tex2DShadowMap_sampler, f3ddXPosInLightViewSpace, f3ddYPosInLightViewSpace, NextCscdSamplingInfo);
         Shadow.fNextCascadeBlendAmount = GetNextCascadeBlendAmount(ShadowAttribs, fCameraSpaceZ, SamplingInfo, NextCscdSamplingInfo);
+        float NextCascadeShadow = 1.0;
+        if (Shadow.fNextCascadeBlendAmount > 0.0)
+        {
+            NextCascadeShadow = FilterShadowCascade(ShadowAttribs, tex2DShadowMap, tex2DShadowMap_sampler, f3ddXPosInLightViewSpace, f3ddYPosInLightViewSpace, NextCscdSamplingInfo);
+        }
         Shadow.fLightAmount = lerp(Shadow.fLightAmount, NextCascadeShadow, Shadow.fNextCascadeBlendAmount);
     }
 #endif
@@ -512,17 +443,16 @@ FilteredShadow FilterShadowMap(in ShadowMapAttribs       ShadowAttribs,
 // Reduces VSM light bleedning
 float ReduceLightBleeding(float pMax, float amount)
 {
-  // Remove the [0, amount] tail and linearly rescale (amount, 1].
-   return saturate((pMax - amount) / (1.0 - amount));
+    // Remove the [0, amount] tail and linearly rescale (amount, 1].
+     return saturate((pMax - amount) / (1.0 - amount));
 }
 
 float ChebyshevUpperBound(float2 f2Moments, float fMean, float fMinVariance, float fLightBleedingReduction)
 {
-    // Compute variance
     float Variance = f2Moments.y - (f2Moments.x * f2Moments.x);
     Variance = max(Variance, fMinVariance);
 
-    // Compute probabilistic upper bound
+    // Probabilistic upper bound
     float d = fMean - f2Moments.x;
     float pMax = Variance / (Variance + (d * d));
 
@@ -572,8 +502,7 @@ float SampleEVSM(in ShadowMapAttribs       ShadowAttribs,
 
     float4 f4Occluder = tex2DEVSM.SampleGrad(tex2DEVSM_sampler, float3(SamplingInfo.f2UV, SamplingInfo.iCascadeIdx), f2ddXShadowMapUV, f2ddYShadowMapUV);
 
-    // Derivative of warping at depth
-    float2 f2DepthScale = ShadowAttribs.fVSMBias * f2Exponents * f2WarpedDepth;
+    float2 f2DepthScale  = ShadowAttribs.fVSMBias * f2Exponents * f2WarpedDepth;
     float2 f2MinVariance = f2DepthScale * f2DepthScale;
 
     float fContrib = ChebyshevUpperBound(f4Occluder.xy, f2WarpedDepth.x, f2MinVariance.x, ShadowAttribs.fVSMLightBleedingReduction);
@@ -627,8 +556,12 @@ FilteredShadow SampleFilterableShadowMap(in ShadowMapAttribs       ShadowAttribs
     if (SamplingInfo.iCascadeIdx+1 < ShadowAttribs.iNumCascades)
     {
         CascadeSamplingInfo NextCscdSamplingInfo = GetCascadeSamplingInfo(ShadowAttribs, f3PosInLightViewSpace, SamplingInfo.iCascadeIdx + 1);
-        float NextCascadeShadow = SampleFilterableShadowCascade(ShadowAttribs, tex2DShadowMap, tex2DShadowMap_sampler, f3ddXPosInLightViewSpace, f3ddYPosInLightViewSpace, NextCscdSamplingInfo);
         Shadow.fNextCascadeBlendAmount = GetNextCascadeBlendAmount(ShadowAttribs, fCameraSpaceZ, SamplingInfo, NextCscdSamplingInfo);
+        float NextCascadeShadow = 1.0;
+        if (Shadow.fNextCascadeBlendAmount > 0.0)
+        {
+            NextCascadeShadow = SampleFilterableShadowCascade(ShadowAttribs, tex2DShadowMap, tex2DShadowMap_sampler, f3ddXPosInLightViewSpace, f3ddYPosInLightViewSpace, NextCscdSamplingInfo);
+        }
         Shadow.fLightAmount = lerp(Shadow.fLightAmount, NextCascadeShadow, Shadow.fNextCascadeBlendAmount);
     }
 #endif

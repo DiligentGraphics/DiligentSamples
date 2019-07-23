@@ -78,6 +78,7 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 0.0025f;
     m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
     m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
+    m_LightAttribs.ShadowAttribs.fFilterWorldSize           = 0.1f;
     m_LightAttribs.f4Direction    = float3(0.734249115f, -0.423396081f, -0.530692577f);
     m_LightAttribs.f4Intensity    = float4(1, 1, 1, 1);
     m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
@@ -257,6 +258,7 @@ void ShadowsSample::InitUI()
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
                 This->m_LightAttribs.ShadowAttribs.iFixedFilterSize = *reinterpret_cast<const int*>(value);
+                This->m_ShadowSetting.FilterAcrossCascades = This->m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
                 This->CreatePipelineStates();
                 This->UpdateUIControlStates();
             },
