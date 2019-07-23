@@ -738,19 +738,19 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
         PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
         auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
 		GraphicsPipeline.DepthStencilDesc = DSS_Default;
-		GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
-		GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
-		GraphicsPipeline.RasterizerDesc.DepthClipEnable       = false;
-		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = false;
+		GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+		GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
+		GraphicsPipeline.RasterizerDesc.DepthClipEnable       = False;
+		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
         LayoutElement Inputs[] =
         {
             {0, 0, 3, VT_FLOAT32, False, 0, (3+2)*4}
         };
         GraphicsPipeline.InputLayout.LayoutElements = Inputs;
-        GraphicsPipeline.InputLayout.NumElements = _countof(Inputs);
-        GraphicsPipeline.DSVFormat = TEX_FORMAT_D32_FLOAT;
-        GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        GraphicsPipeline.pVS = pHemisphereZOnlyVS;
+        GraphicsPipeline.InputLayout.NumElements    = _countof(Inputs);
+        GraphicsPipeline.DSVFormat                  = m_Params.ShadowMapFormat;
+        GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        GraphicsPipeline.pVS                        = pHemisphereZOnlyVS;
         pDevice->CreatePipelineState(PSODesc, &m_pHemisphereZOnlyPSO);
         m_pHemisphereZOnlyPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
@@ -771,19 +771,20 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
     VERIFY( m_pVertBuff, "Failed to create VB" );
 }
 
-void EarthHemsiphere::Render(IDeviceContext* pContext,
-                              const RenderingParams &NewParams,
-                              const float3 &vCameraPosition, 
-                              const float4x4 &CameraViewProjMatrix,
-                              ITextureView *pShadowMapSRV,
-                              ITextureView *pPrecomputedNetDensitySRV,
-                              ITextureView *pAmbientSkylightSRV,
-                              bool bZOnlyPass)
+void EarthHemsiphere::Render(IDeviceContext*        pContext,
+                             const RenderingParams& NewParams,
+                             const float3&          vCameraPosition, 
+                             const float4x4&        CameraViewProjMatrix,
+                             ITextureView*          pShadowMapSRV,
+                             ITextureView*          pPrecomputedNetDensitySRV,
+                             ITextureView*          pAmbientSkylightSRV,
+                             bool                   bZOnlyPass)
 {
-    if( m_Params.m_iNumShadowCascades != NewParams.m_iNumShadowCascades    ||
-        m_Params.m_bBestCascadeSearch != NewParams.m_bBestCascadeSearch    || 
-        m_Params.m_bSmoothShadows     != NewParams.m_bSmoothShadows ||
-        m_Params.DstRTVFormat         != NewParams.DstRTVFormat )
+    if( m_Params.m_iNumShadowCascades         != NewParams.m_iNumShadowCascades    ||
+        m_Params.m_bBestCascadeSearch         != NewParams.m_bBestCascadeSearch    || 
+        m_Params.m_FilterAcrossShadowCascades != NewParams.m_FilterAcrossShadowCascades ||
+        m_Params.m_FixedShadowFilterSize      != NewParams.m_FixedShadowFilterSize ||
+        m_Params.DstRTVFormat                 != NewParams.DstRTVFormat )
     {
         m_pHemispherePSO.Release();
         m_pHemisphereSRB.Release();
@@ -844,7 +845,8 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
         Macros.AddShaderMacro("NUM_TILE_TEXTURES", NUM_TILE_TEXTURES);
         Macros.AddShaderMacro("NUM_SHADOW_CASCADES", m_Params.m_iNumShadowCascades);
         Macros.AddShaderMacro("BEST_CASCADE_SEARCH", m_Params.m_bBestCascadeSearch ? true : false);
-        Macros.AddShaderMacro("SMOOTH_SHADOWS", m_Params.m_bSmoothShadows ? true : false);
+        Macros.AddShaderMacro("SHADOW_FILTER_SIZE", m_Params.m_FixedShadowFilterSize);
+        Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_Params.m_FilterAcrossShadowCascades);
         Macros.Finalize();
         Attrs.Macros = Macros;
 
@@ -949,7 +951,7 @@ void EarthHemsiphere::Render(IDeviceContext* pContext,
 
     for(auto MeshIt = m_SphereMeshes.begin();  MeshIt != m_SphereMeshes.end(); ++MeshIt)
     {
-        if(GetBoxVisibility(ViewFrustum, MeshIt->BndBox) != BoxVisibility::Invisible)
+        if(GetBoxVisibility(ViewFrustum, MeshIt->BndBox, bZOnlyPass ? FRUSTUM_PLANE_FLAG_OPEN_NEAR : FRUSTUM_PLANE_FLAG_FULL_FRUSTUM) != BoxVisibility::Invisible)
         {
             pContext->SetIndexBuffer(MeshIt->pIndBuff, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             DrawAttribs DrawAttrs(MeshIt->uiNumIndices, VT_UINT32, DRAW_FLAG_VERIFY_ALL);

@@ -38,42 +38,7 @@ SampleBase* CreateSample()
     return new AtmosphereSample();
 }
 
-void AtmosphereSample::SetNumCascadesCB(const void* value, void* clientData)
-{
-    AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-    pTheSample->m_TerrainRenderParams.m_iNumShadowCascades = *static_cast<const int *>(value);
-    pTheSample->CreateShadowMap();
-}
-
-
-void AtmosphereSample::GetNumCascadesCB(void *value, void * clientData)
-{
-    AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-    *static_cast<int *>(value) = pTheSample->m_TerrainRenderParams.m_iNumShadowCascades;
-}
-
-void AtmosphereSample::SetShadowMapResCB( const void *value, void * clientData )
-{
-    AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-    pTheSample->m_uiShadowMapResolution = *static_cast<const Diligent::Uint32*>(value);
-    pTheSample->CreateShadowMap();
-}
-
-void AtmosphereSample::GetShadowMapResCB( void *value, void * clientData )
-{
-    AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-    *static_cast<Diligent::Uint32*>(value) = pTheSample->m_uiShadowMapResolution;
-}
-
-
-AtmosphereSample::AtmosphereSample() : 
-    m_f3CameraPos(0, 8000.f, 0),
-    m_uiShadowMapResolution( 1024 ),
-    m_fCascadePartitioningFactor(0.95f),
-    m_bVisualizeCascades(false),
-    m_bIsGLDevice(false),
-    m_bEnableLightScattering(true),
-    m_fElapsedTime(0.f)
+AtmosphereSample::AtmosphereSample()
 {}
 
 void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs)
@@ -102,12 +67,14 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
     m_bIsGLDevice = deviceCaps.IsGLDevice();
     if( pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES )
     {
-        m_uiShadowMapResolution = 512;
-        m_PPAttribs.iFirstCascadeToRayMarch = 2;
-        m_PPAttribs.iSingleScatteringMode = SINGLE_SCTR_MODE_LUT;
-        m_TerrainRenderParams.m_iNumShadowCascades = 4;
-        m_TerrainRenderParams.m_iNumRings = 10;
-        m_TerrainRenderParams.m_TexturingMode = RenderingParams::TM_MATERIAL_MASK;
+        m_ShadowSettings.Resolution                        = 512;
+        m_TerrainRenderParams.m_FilterAcrossShadowCascades = false;
+        m_ShadowSettings.iFixedFilterSize                  = 3;
+        m_PPAttribs.iFirstCascadeToRayMarch                = 2;
+        m_PPAttribs.iSingleScatteringMode                  = SINGLE_SCTR_MODE_LUT;
+        m_TerrainRenderParams.m_iNumShadowCascades         = 4;
+        m_TerrainRenderParams.m_iNumRings                  = 10;
+        m_TerrainRenderParams.m_TexturingMode              = RenderingParams::TM_MATERIAL_MASK;
     }
 
     m_f4CustomRlghBeta = m_PPAttribs.f4CustomRlghBeta;
@@ -188,17 +155,37 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
         {
             { 512, "512" },
             { 1024, "1024" },
-            { 2048, "2048" },
-            { 4096, "4096" }
+            { 2048, "2048" }
         };
         TwType modeType = TwDefineEnum( "Shadow Map Resolution", ShadowMapRes, _countof( ShadowMapRes ) );  // create a new TwType associated to the enum defined by the ShadowMapRes array
-        TwAddVarCB( bar, "Shadow map resolution", modeType, SetShadowMapResCB, GetShadowMapResCB, this, "group=Shadows" );
+        TwAddVarCB( bar, "Shadow map resolution", modeType,
+            [](const void *value, void * clientData)
+            {
+                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
+                pTheSample->m_ShadowSettings.Resolution = static_cast<Uint32>(*reinterpret_cast<const int*>(value));
+                pTheSample->CreateShadowMap();
+            },
+            [](void* value, void* clientData)
+            {
+                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
+                *static_cast<int*>(value) = static_cast<int>(pTheSample->m_ShadowSettings.Resolution);
+            },
+            this, "group=Shadows" );
 
-        TwAddVarRW( bar, "Show cascades", TW_TYPE_BOOLCPP, &m_bVisualizeCascades, "group=Shadows" );
-        TwAddVarRW( bar, "Partitioning factor", TW_TYPE_FLOAT, &m_fCascadePartitioningFactor, "min=0 max=1 step=0.01 group=Shadows" );
-        TwAddVarRW( bar, "Find best cascade", TW_TYPE_BOOL32, &m_TerrainRenderParams.m_bBestCascadeSearch, "group=Shadows" );
-        TwAddVarRW( bar, "Smooth shadows", TW_TYPE_BOOL32, &m_TerrainRenderParams.m_bSmoothShadows, "group=Shadows" );
-        TwAddVarCB( bar, "Num cascades", TW_TYPE_INT32, SetNumCascadesCB, GetNumCascadesCB, this, "min=1 max=8 group=Shadows" );
+        TwAddVarRW( bar, "Show cascades", TW_TYPE_BOOLCPP, &m_ShadowSettings.bVisualizeCascades, "group=Shadows" );
+        TwAddVarCB( bar, "Num cascades", TW_TYPE_INT32, 
+            [](const void* value, void* clientData)
+            {
+                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
+                pTheSample->m_TerrainRenderParams.m_iNumShadowCascades = *static_cast<const int *>(value);
+                pTheSample->CreateShadowMap();
+            }, 
+            [](void *value, void * clientData)
+            {
+                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
+                *static_cast<int *>(value) = pTheSample->m_TerrainRenderParams.m_iNumShadowCascades;
+            },
+            this, "min=1 max=8 group=Shadows" );
     }
 
     TwAddVarRW( bar, "Enable Light Scattering", TW_TYPE_BOOLCPP, &m_bEnableLightScattering, "" );
@@ -458,192 +445,78 @@ AtmosphereSample::~AtmosphereSample()
 {
 }
 
-void AtmosphereSample::ReleaseShadowMap()
-{
-    // Release the light space depth shader resource and depth stencil views
-    m_pShadowMapDSVs.clear();
-    m_pShadowMapSRV.Release();
-}
-
-
-
 void AtmosphereSample::CreateShadowMap()
 {
-    ReleaseShadowMap();
+    ShadowMapManager::InitInfo SMMgrInitInfo;
+    SMMgrInitInfo.Fmt         = m_TerrainRenderParams.ShadowMapFormat;
+    SMMgrInitInfo.Resolution  = m_ShadowSettings.Resolution;
+    SMMgrInitInfo.NumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
+    SMMgrInitInfo.ShadowMode  = SHADOW_MODE_PCF;
 
-    static const bool bIs32BitShadowMap = true;
-	//ShadowMap
-    TextureDesc ShadowMapDesc;
-    ShadowMapDesc.Name = "Shadow map";
-    ShadowMapDesc.Type = RESOURCE_DIM_TEX_2D_ARRAY;
-    ShadowMapDesc.Width  = m_uiShadowMapResolution;
-    ShadowMapDesc.Height = m_uiShadowMapResolution;
-    ShadowMapDesc.MipLevels = 1;
-    ShadowMapDesc.ArraySize = m_TerrainRenderParams.m_iNumShadowCascades;
-    ShadowMapDesc.Format = bIs32BitShadowMap ? TEX_FORMAT_D32_FLOAT : TEX_FORMAT_D16_UNORM;
-    ShadowMapDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
-
-	RefCntAutoPtr<ITexture> ptex2DShadowMap;
-	m_pDevice->CreateTexture(ShadowMapDesc, nullptr, &ptex2DShadowMap);
-
-    m_pShadowMapSRV = ptex2DShadowMap->GetDefaultView( TEXTURE_VIEW_SHADER_RESOURCE );
-
-    m_pShadowMapDSVs.resize(ShadowMapDesc.ArraySize);
-    for(Diligent::Uint32 iArrSlice=0; iArrSlice < ShadowMapDesc.ArraySize; iArrSlice++)
+    if (!m_pComparisonSampler)
     {
-        TextureViewDesc ShadowMapDSVDesc;
-        ShadowMapDSVDesc.Name = "Shadow map cascade DSV";
-        ShadowMapDSVDesc.ViewType = TEXTURE_VIEW_DEPTH_STENCIL;
-        ShadowMapDSVDesc.FirstArraySlice = iArrSlice;
-        ShadowMapDSVDesc.NumArraySlices = 1;
-        ptex2DShadowMap->CreateView(ShadowMapDSVDesc, &m_pShadowMapDSVs[iArrSlice]);
+        SamplerDesc ComparsionSampler;
+        ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS; 
+        // Note: anisotropic filtering requires SampleGrad to fix artifacts at 
+        // cascade boundaries
+        ComparsionSampler.MinFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MagFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MipFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        m_pDevice->CreateSampler(ComparsionSampler, &m_pComparisonSampler);
     }
+    SMMgrInitInfo.pComparisonSampler = m_pComparisonSampler;
+
+    m_ShadowMapMgr.Initialize(m_pDevice, SMMgrInitInfo);
 }
 
-void AtmosphereSample::RenderShadowMap(IDeviceContext *pContext,
-                                        LightAttribs &LightAttribs, 
-                                        const float4x4 &mCameraView, 
-                                        const float4x4 &mCameraProj )
+void AtmosphereSample::RenderShadowMap(IDeviceContext*  pContext,
+                                       LightAttribs&    LightAttribs, 
+                                       const float4x4&  mCameraView, 
+                                       const float4x4&  mCameraProj)
 {
-    ShadowMapAttribs& ShadowMapAttribs = LightAttribs.ShadowAttribs;
-    const auto& DevCaps = m_pDevice->GetDeviceCaps();
+    auto& ShadowAttribs = LightAttribs.ShadowAttribs;
 
-    float3 v3LightDirection = (const float3&)LightAttribs.f4Direction;
-
-    float3 vLightSpaceX, vLightSpaceY, vLightSpaceZ;
-
-    vLightSpaceZ = v3LightDirection;
-    vLightSpaceX = float3( 1.0f, 0.0, 0.0 );
-    vLightSpaceY = cross(vLightSpaceX, vLightSpaceZ);
-    vLightSpaceX = cross(vLightSpaceZ, vLightSpaceY);
-
-    vLightSpaceX = normalize( vLightSpaceX );
-    vLightSpaceY = normalize( vLightSpaceY );
-    vLightSpaceZ = normalize( vLightSpaceZ );
-
-    float4x4 WorldToLightViewSpaceMatr =
-        float4x4::ViewFromBasis( vLightSpaceX, vLightSpaceY, vLightSpaceZ );
-
-    ShadowMapAttribs.mWorldToLightViewT = WorldToLightViewSpaceMatr.Transpose();
-
-    float3 f3CameraPosInLightSpace = m_f3CameraPos * WorldToLightViewSpaceMatr;
-
-    float fMainCamNearPlane, fMainCamFarPlane;
-    mCameraProj.GetNearFarClipPlanes(fMainCamNearPlane, fMainCamFarPlane, m_bIsGLDevice);
-
-    for(int i=0; i < MAX_CASCADES; ++i)
-        ShadowMapAttribs.fCascadeCamSpaceZEnd[i] = +FLT_MAX;
+    ShadowMapManager::DistributeCascadeInfo DistrInfo;
+    DistrInfo.pCameraView = &mCameraView;
+    DistrInfo.pCameraProj = &mCameraProj;
+    DistrInfo.pCameraPos  = &m_f3CameraPos;
+    DistrInfo.pLightDir   = &m_f3LightDir;
+    DistrInfo.SnapCascades     = true;
+    DistrInfo.EqualizeExtents  = true;
+    DistrInfo.StabilizeExtents = true;
+    DistrInfo.AdjustCascadeRange = 
+        [iFirstCascadeToRayMarch = m_PPAttribs.iFirstCascadeToRayMarch](int iCascade, float& MinZ, float& MaxZ)
+        {
+            if (iCascade < 0)
+            {
+                // Snap camera z range to the exponential scale
+                const float pw = 1.1f;
+                MinZ = std::pow(pw, std::floor(std::log(std::max(MinZ, 1.f))/std::log(pw)));
+                MinZ = std::max(MinZ, 10.f);
+                MaxZ = std::pow(pw, std::ceil(std::log(std::max(MaxZ, 1.f))/std::log(pw)));
+            }
+            else if (iCascade == iFirstCascadeToRayMarch)
+            {
+                // Ray marching always starts at the camera position, not at the near plane.
+                // So we must make sure that the first cascade used for ray marching covers the camera position
+                MinZ = 10.f;
+            }
+        };
+    m_ShadowMapMgr.DistributeCascades(DistrInfo, ShadowAttribs);
 
     // Render cascades
-    for(int iCascade = 0; iCascade < m_TerrainRenderParams.m_iNumShadowCascades; ++iCascade)
+    for (int iCascade = 0; iCascade < m_TerrainRenderParams.m_iNumShadowCascades; ++iCascade)
     {
-        auto &CurrCascade = ShadowMapAttribs.Cascades[iCascade];
-        float4x4 CascadeFrustumProjMatrix;
-        float &fCascadeFarZ = ShadowMapAttribs.fCascadeCamSpaceZEnd[iCascade];
-        float fCascadeNearZ = (iCascade == 0) ? fMainCamNearPlane : ShadowMapAttribs.fCascadeCamSpaceZEnd[iCascade-1];
-        fCascadeFarZ = fMainCamFarPlane;
-
-        if (iCascade < m_TerrainRenderParams.m_iNumShadowCascades-1) 
-        {
-            float ratio = fMainCamFarPlane / fMainCamNearPlane;
-            float power = (float)(iCascade+1) / (float)m_TerrainRenderParams.m_iNumShadowCascades;
-            float logZ = fMainCamNearPlane * pow(ratio, power);
+        auto* pCascadeDSV = m_ShadowMapMgr.GetCascadeDSV(iCascade);
         
-            float range = fMainCamFarPlane - fMainCamNearPlane;
-            float uniformZ = fMainCamNearPlane + range * power;
+        m_pImmediateContext->SetRenderTargets( 0, nullptr, pCascadeDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
+        m_pImmediateContext->ClearDepthStencil( pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
 
-            fCascadeFarZ = m_fCascadePartitioningFactor * (logZ - uniformZ) + uniformZ;
-        }
+        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
-        float fMaxLightShaftsDist = 3e+5f;
-        // Ray marching always starts at the camera position, not at the near plane.
-        // So we must make sure that the first cascade used for ray marching covers the camera position
-        CurrCascade.f4StartEndZ.x = (iCascade == m_PPAttribs.iFirstCascadeToRayMarch) ? 0 : std::min(fCascadeNearZ, fMaxLightShaftsDist);
-        CurrCascade.f4StartEndZ.y = std::min(fCascadeFarZ, fMaxLightShaftsDist);
-        CascadeFrustumProjMatrix = mCameraProj;
-        CascadeFrustumProjMatrix.SetNearFarClipPlanes(fCascadeNearZ, fCascadeFarZ, m_bIsGLDevice);
+        auto WorldToLightViewSpaceMatr = ShadowAttribs.mWorldToLightViewT.Transpose();
+        auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
-        float4x4 CascadeFrustumViewProjMatr = mCameraView * CascadeFrustumProjMatrix;
-        float4x4 CascadeFrustumProjSpaceToWorldSpace = CascadeFrustumViewProjMatr.Inverse();
-        float4x4 CascadeFrustumProjSpaceToLightSpace = CascadeFrustumProjSpaceToWorldSpace * WorldToLightViewSpaceMatr;
-
-        // Set reference minimums and maximums for each coordinate
-        float3 f3MinXYZ(f3CameraPosInLightSpace), f3MaxXYZ(f3CameraPosInLightSpace);
-        
-        // First cascade used for ray marching must contain camera within it
-        if( iCascade != m_PPAttribs.iFirstCascadeToRayMarch )
-        {
-            f3MinXYZ = float3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
-            f3MaxXYZ = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-        }
-
-        for(int iClipPlaneCorner=0; iClipPlaneCorner < 8; ++iClipPlaneCorner)
-        {
-            float3 f3PlaneCornerProjSpace( (iClipPlaneCorner & 0x01) ? +1.f : - 1.f, 
-                                           (iClipPlaneCorner & 0x02) ? +1.f : - 1.f,
-                                            // Since we use complimentary depth buffering, 
-                                            // far plane has depth 0
-                                           (iClipPlaneCorner & 0x04) ? 1.f : (m_bIsGLDevice ? -1.f : 0.f));
-            float3 f3PlaneCornerLightSpace = f3PlaneCornerProjSpace * CascadeFrustumProjSpaceToLightSpace;
-            f3MinXYZ = min(f3MinXYZ, f3PlaneCornerLightSpace);
-            f3MaxXYZ = max(f3MaxXYZ, f3PlaneCornerLightSpace);
-        }
-
-        // It is necessary to ensure that shadow-casting patches, which are not visible 
-        // in the frustum, are still rendered into the shadow map
-        f3MinXYZ.z -= AirScatteringAttribs().fEarthRadius * sqrt(2.f);
-        
-        // Align cascade extent to the closest power of two
-        float fShadowMapDim = (float)m_uiShadowMapResolution;
-        float fCascadeXExt = (f3MaxXYZ.x - f3MinXYZ.x) * (1 + 1.f/fShadowMapDim);
-        float fCascadeYExt = (f3MaxXYZ.y - f3MinXYZ.y) * (1 + 1.f/fShadowMapDim);
-        const float fExtStep = 2.f;
-        fCascadeXExt = pow( fExtStep, ceil( log(fCascadeXExt)/log(fExtStep) ) );
-        fCascadeYExt = pow( fExtStep, ceil( log(fCascadeYExt)/log(fExtStep) ) );
-        // Align cascade center with the shadow map texels to alleviate temporal aliasing
-        float fCascadeXCenter = (f3MaxXYZ.x + f3MinXYZ.x)/2.f;
-        float fCascadeYCenter = (f3MaxXYZ.y + f3MinXYZ.y)/2.f;
-        float fTexelXSize = fCascadeXExt / fShadowMapDim;
-        float fTexelYSize = fCascadeXExt / fShadowMapDim;
-        fCascadeXCenter = floor(fCascadeXCenter/fTexelXSize) * fTexelXSize;
-        fCascadeYCenter = floor(fCascadeYCenter/fTexelYSize) * fTexelYSize;
-        // Compute new cascade min/max xy coords
-        f3MaxXYZ.x = fCascadeXCenter + fCascadeXExt/2.f;
-        f3MinXYZ.x = fCascadeXCenter - fCascadeXExt/2.f;
-        f3MaxXYZ.y = fCascadeYCenter + fCascadeYExt/2.f;
-        f3MinXYZ.y = fCascadeYCenter - fCascadeYExt/2.f;
-
-        CurrCascade.f4LightSpaceScale.x =  2.f / (f3MaxXYZ.x - f3MinXYZ.x);
-        CurrCascade.f4LightSpaceScale.y =  2.f / (f3MaxXYZ.y - f3MinXYZ.y);
-        CurrCascade.f4LightSpaceScale.z =  
-                    (m_bIsGLDevice ? 2.f : 1.f) / (f3MaxXYZ.z - f3MinXYZ.z);
-        // Apply bias to shift the extent to [-1,1]x[-1,1]x[0,1] for DX or to [-1,1]x[-1,1]x[-1,1] for GL
-        // Find bias such that f3MinXYZ -> (-1,-1,0) for DX or (-1,-1,-1) for GL
-        CurrCascade.f4LightSpaceScaledBias.x = -f3MinXYZ.x * CurrCascade.f4LightSpaceScale.x - 1.f;
-        CurrCascade.f4LightSpaceScaledBias.y = -f3MinXYZ.y * CurrCascade.f4LightSpaceScale.y - 1.f;
-        CurrCascade.f4LightSpaceScaledBias.z = -f3MinXYZ.z * CurrCascade.f4LightSpaceScale.z + (m_bIsGLDevice ? -1.f : 0.f);
-
-        float4x4 ScaleMatrix = float4x4::Scale(CurrCascade.f4LightSpaceScale.x, CurrCascade.f4LightSpaceScale.y, CurrCascade.f4LightSpaceScale.z);
-        float4x4 ScaledBiasMatrix = float4x4::Translation(CurrCascade.f4LightSpaceScaledBias.x, CurrCascade.f4LightSpaceScaledBias.y, CurrCascade.f4LightSpaceScaledBias.z);
-
-        // Note: bias is applied after scaling!
-        float4x4 CascadeProjMatr = ScaleMatrix * ScaledBiasMatrix;
-        //D3DXMatrixOrthoOffCenterLH( &m_LightOrthoMatrix, MinX, MaxX, MinY, MaxY, MaxZ, MinZ);
-        
-        // Adjust the world to light space transformation matrix
-        float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
-
-        const auto& NDCAttribs = DevCaps.GetNDCAttribs();
-        float4x4 ProjToUVScale = float4x4::Scale( 0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale );
-        float4x4 ProjToUVBias = float4x4::Translation( 0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
-        
-        float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
-        ShadowMapAttribs.mWorldToShadowMapUVDepthT[iCascade] = WorldToShadowMapUVDepthMatr.Transpose();
-        
-        m_pImmediateContext->SetRenderTargets( 0, nullptr, m_pShadowMapDSVs[iCascade], RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
-        m_pImmediateContext->ClearDepthStencil( m_pShadowMapDSVs[iCascade], CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION );
-
-        // Render terrain to shadow map
         {
             MapHelper<CameraAttribs> CamAttribs( m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
             CamAttribs->mViewProjT = WorldToLightProjSpaceMatr.Transpose();
@@ -669,13 +542,21 @@ void AtmosphereSample::Render()
     LightAttrs.f4Intensity = f4ExtraterrestrialSunColor;// *m_fScatteringScale;
     LightAttrs.f4AmbientLight = float4( 0, 0, 0, 0 );
 
+    LightAttrs.ShadowAttribs.iNumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
+    LightAttrs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
+    if (m_ShadowSettings.Resolution >= 2048)
+        LightAttrs.ShadowAttribs.fFixedDepthBias = 0.0025f;
+    else if (m_ShadowSettings.Resolution >= 1024)
+        LightAttrs.ShadowAttribs.fFixedDepthBias = 0.0050f;
+    else
+        LightAttrs.ShadowAttribs.fFixedDepthBias = 0.0075f;
     
     // m_iFirstCascade must be initialized before calling RenderShadowMap()!
     m_PPAttribs.iFirstCascadeToRayMarch = std::min(m_PPAttribs.iFirstCascadeToRayMarch, m_TerrainRenderParams.m_iNumShadowCascades - 1);
 
 	RenderShadowMap(m_pImmediateContext, LightAttrs, m_mCameraView, m_mCameraProj);
     
-    LightAttrs.ShadowAttribs.bVisualizeCascades = m_bVisualizeCascades ? TRUE : FALSE;
+    LightAttrs.ShadowAttribs.bVisualizeCascades = m_ShadowSettings.bVisualizeCascades ? TRUE : FALSE;
 
     {
         MapHelper<LightAttribs> LightAttribsCBData( m_pImmediateContext, m_pcbLightAttribs, MAP_WRITE, MAP_FLAG_DISCARD );
@@ -737,7 +618,7 @@ void AtmosphereSample::Render()
                               m_TerrainRenderParams, 
                               m_f3CameraPos, 
                               mViewProj, 
-                              m_pShadowMapSRV, 
+                              m_ShadowMapMgr.GetSRV(), 
                               pPrecomputedNetDensitySRV, 
                               pAmbientSkyLightSRV, 
                               false);
@@ -758,14 +639,14 @@ void AtmosphereSample::Render()
         FrameAttribs.pcbLightAttribs  = m_pcbLightAttribs;
         FrameAttribs.pcbCameraAttribs = m_pcbCameraAttribs;
 
-        m_PPAttribs.fMaxShadowMapStep = static_cast<float>(m_uiShadowMapResolution / 4);
+        m_PPAttribs.fMaxShadowMapStep = static_cast<float>(m_ShadowSettings.Resolution / 4);
         
-        m_PPAttribs.f2ShadowMapTexelSize = float2( 1.f / static_cast<float>(m_uiShadowMapResolution), 1.f / static_cast<float>(m_uiShadowMapResolution) );
-        m_PPAttribs.uiMaxSamplesOnTheRay = m_uiShadowMapResolution;
+        m_PPAttribs.f2ShadowMapTexelSize = float2( 1.f / static_cast<float>(m_ShadowSettings.Resolution), 1.f / static_cast<float>(m_ShadowSettings.Resolution) );
+        m_PPAttribs.uiMaxSamplesOnTheRay = m_ShadowSettings.Resolution;
         // During the ray marching, on each step we move by the texel size in either horz 
         // or vert direction. So resolution of min/max mipmap should be the same as the 
         // resolution of the original shadow map
-        m_PPAttribs.uiMinMaxShadowMapResolution = m_uiShadowMapResolution;
+        m_PPAttribs.uiMinMaxShadowMapResolution = m_ShadowSettings.Resolution;
         m_PPAttribs.uiInitialSampleStepInSlice = std::min( m_PPAttribs.uiInitialSampleStepInSlice, m_PPAttribs.uiMaxSamplesInSlice );
         m_PPAttribs.uiEpipoleSamplingDensityFactor = std::min( m_PPAttribs.uiEpipoleSamplingDensityFactor, m_PPAttribs.uiInitialSampleStepInSlice );
 
@@ -773,7 +654,7 @@ void AtmosphereSample::Render()
         FrameAttribs.ptex2DSrcColorBufferRTV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
         FrameAttribs.ptex2DSrcDepthBufferSRV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         FrameAttribs.ptex2DSrcDepthBufferDSV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
-        FrameAttribs.ptex2DShadowMapSRV      = m_pShadowMapSRV;
+        FrameAttribs.ptex2DShadowMapSRV      = m_ShadowMapMgr.GetSRV();
         FrameAttribs.pDstRTV                 = nullptr;// mpBackBufferRTV;
 
         // Perform the post processing
@@ -839,6 +720,7 @@ void ComputeApproximateNearFarPlaneDist(const float3 &CameraPos,
     
     const int iNumTestDirections = 5;
     for(int i=0; i<iNumTestDirections; ++i)
+    {
         for(int j=0; j<iNumTestDirections; ++j)
         {
             float3 PosPS, PosWS, DirFromCamera;
@@ -868,6 +750,7 @@ void ComputeApproximateNearFarPlaneDist(const float3 &CameraPos,
                 fFarPlaneZ = fMaxViewDistance;
             }
         }
+    }
 }
 
 

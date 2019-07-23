@@ -3,6 +3,7 @@
 #include "ToneMappingStructures.fxh"
 #include "EpipolarLightScatteringStructures.fxh"
 #include "TerrainShadersCommon.fxh"
+#include "Shadows.fxh"
 
 cbuffer cbTerrainAttribs
 {
@@ -38,135 +39,6 @@ SamplerState      g_tex2DTileDiffuse_sampler;
 
 Texture2D<float3> g_tex2DTileNM[5];   // Material NM
 SamplerState      g_tex2DTileNM_sampler;   
-
-
-
-void FindCascade(float3 f3PosInLightViewSpace,
-                 float fCameraViewSpaceZ,
-                 out float3 f3PosInCascadeProjSpace,
-                 out float3 f3CascadeLightSpaceScale,
-                 out int Cascade)
-{
-    f3PosInCascadeProjSpace = float3(0.0, 0.0, 0.0);
-    f3CascadeLightSpaceScale = float3(0.0, 0.0, 0.0);
-    Cascade = 0;
-#if BEST_CASCADE_SEARCH
-    while(Cascade < NUM_SHADOW_CASCADES)
-    {
-        // Find the smallest cascade which covers current point
-        CascadeAttribs CascadeAttribs = g_LightAttribs.ShadowAttribs.Cascades[ Cascade];
-        f3CascadeLightSpaceScale = CascadeAttribs.f4LightSpaceScale.xyz;
-        f3PosInCascadeProjSpace = f3PosInLightViewSpace * f3CascadeLightSpaceScale + g_LightAttribs.ShadowAttribs.Cascades[Cascade].f4LightSpaceScaledBias.xyz;
-        
-        // In order to perform PCF filtering without getting out of the cascade shadow map,
-        // we need to be far enough from its boundaries.
-        if( //Cascade == (NUM_SHADOW_CASCADES - 1) || 
-            abs(f3PosInCascadeProjSpace.x) < 1.0/*- CascadeAttribs.f4LightProjSpaceFilterRadius.x*/ &&
-            abs(f3PosInCascadeProjSpace.y) < 1.0/*- CascadeAttribs.f4LightProjSpaceFilterRadius.y*/ &&
-            // It is necessary to check f3PosInCascadeProjSpace.z as well since it could be behind
-            // the far clipping plane of the current cascade
-            // Besides, if VSM or EVSM filtering is performed, there is also z boundary
-            NDC_MIN_Z /*+ CascadeAttribs.f4LightProjSpaceFilterRadius.z*/ < f3PosInCascadeProjSpace.z && f3PosInCascadeProjSpace.z < 1.0  /*- CascadeAttribs.f4LightProjSpaceFilterRadius.w*/ )
-            break;
-        else
-            Cascade++;
-    }
-#else
-    [unroll]
-    for(int i=0; i<(NUM_SHADOW_CASCADES+3)/4; ++i)
-    {
-        float4 f4CascadeZEnd = g_LightAttribs.ShadowAttribs.f4CascadeCamSpaceZEnd[i];
-        float4 v = float4( f4CascadeZEnd.x < fCameraViewSpaceZ ? 1.0 : 0.0, 
-                           f4CascadeZEnd.y < fCameraViewSpaceZ ? 1.0 : 0.0,
-                           f4CascadeZEnd.z < fCameraViewSpaceZ ? 1.0 : 0.0,
-                           f4CascadeZEnd.w < fCameraViewSpaceZ ? 1.0 : 0.0);
-	    //float4 v = float4(g_LightAttribs.ShadowAttribs.f4CascadeCamSpaceZEnd[i] < fCameraViewSpaceZ);
-	    Cascade += int(dot(float4(1.0,1.0,1.0,1.0), v));
-    }
-    if( Cascade < NUM_SHADOW_CASCADES )
-    {
-    //Cascade = min(Cascade, NUM_SHADOW_CASCADES - 1);
-        f3CascadeLightSpaceScale = g_LightAttribs.ShadowAttribs.Cascades[Cascade].f4LightSpaceScale.xyz;
-        f3PosInCascadeProjSpace = f3PosInLightViewSpace * f3CascadeLightSpaceScale + g_LightAttribs.ShadowAttribs.Cascades[Cascade].f4LightSpaceScaledBias.xyz;
-    }
-#endif
-}
-
-float2 ComputeReceiverPlaneDepthBias(float3 ShadowUVDepthDX, float3 ShadowUVDepthDY)
-{    
-    // Compute (dDepth/dU, dDepth/dV):
-    //  
-    //  | dDepth/dU |    | dX/dU    dX/dV |T  | dDepth/dX |     | dU/dX    dU/dY |-1T | dDepth/dX |
-    //                 =                                     =                                      =
-    //  | dDepth/dV |    | dY/dU    dY/dV |   | dDepth/dY |     | dV/dX    dV/dY |    | dDepth/dY |
-    //
-    //  | A B |-1   | D  -B |                      | A B |-1T   | D  -C |                                   
-    //            =           / det                           =           / det                    
-    //  | C D |     |-C   A |                      | C D |      |-B   A |
-    //
-    //  | dDepth/dU |           | dV/dY   -dV/dX |  | dDepth/dX |
-    //                 = 1/det                                       
-    //  | dDepth/dV |           |-dU/dY    dU/dX |  | dDepth/dY |
-
-    float2 biasUV;
-    //               dV/dY       V      dDepth/dX    D       dV/dX       V     dDepth/dY     D
-    biasUV.x =   ShadowUVDepthDY.y * ShadowUVDepthDX.z - ShadowUVDepthDX.y * ShadowUVDepthDY.z;
-    //               dU/dY       U      dDepth/dX    D       dU/dX       U     dDepth/dY     D
-    biasUV.y = - ShadowUVDepthDY.x * ShadowUVDepthDX.z + ShadowUVDepthDX.x * ShadowUVDepthDY.z;
-
-    float Det = (ShadowUVDepthDX.x * ShadowUVDepthDY.y) - (ShadowUVDepthDX.y * ShadowUVDepthDY.x);
-	biasUV /= sign(Det) * max( abs(Det), 1e-20 );
-    //biasUV = abs(Det) > 1e-7 ? biasUV / abs(Det) : 0;// sign(Det) * max( abs(Det), 1e-10 );
-    return biasUV;
-}
-
-
-float ComputeShadowAmount(in float3 f3PosInLightViewSpace, in float fCameraSpaceZ, out int Cascade)
-{
-    float3 f3PosInCascadeProjSpace = float3(0.0, 0.0, 0.0), f3CascadeLightSpaceScale = float3(0.0, 0.0, 0.0);
-    FindCascade( f3PosInLightViewSpace.xyz, fCameraSpaceZ, f3PosInCascadeProjSpace, f3CascadeLightSpaceScale, Cascade);
-    if( Cascade == NUM_SHADOW_CASCADES )
-        return 1.0;
-
-    float3 f3ShadowMapUVDepth;
-    f3ShadowMapUVDepth.xy = NormalizedDeviceXYToTexUV( f3PosInCascadeProjSpace.xy );
-    f3ShadowMapUVDepth.z = NormalizedDeviceZToDepth( f3PosInCascadeProjSpace.z );
-        
-    float3 f3ddXShadowMapUVDepth = ddx(f3PosInLightViewSpace) * f3CascadeLightSpaceScale * F3NDC_XYZ_TO_UVD_SCALE;
-    float3 f3ddYShadowMapUVDepth = ddy(f3PosInLightViewSpace) * f3CascadeLightSpaceScale * F3NDC_XYZ_TO_UVD_SCALE;
-
-    float2 f2DepthSlopeScaledBias = ComputeReceiverPlaneDepthBias(f3ddXShadowMapUVDepth, f3ddYShadowMapUVDepth);
-    const float MaxSlope = 0.1;
-    f2DepthSlopeScaledBias = clamp(f2DepthSlopeScaledBias, -float2(MaxSlope, MaxSlope), float2(MaxSlope, MaxSlope));
-    uint SMWidth, SMHeight, Elems; 
-    g_tex2DShadowMap.GetDimensions(SMWidth, SMHeight, Elems);
-    float2 ShadowMapDim = float2(SMWidth, SMHeight);
-    f2DepthSlopeScaledBias /= ShadowMapDim.xy;
-
-    float fractionalSamplingError = dot( float2(1.0, 1.0), abs(f2DepthSlopeScaledBias.xy) );
-    fractionalSamplingError = max(fractionalSamplingError, 1e-5);
-    f3ShadowMapUVDepth.z -= fractionalSamplingError;
-    
-    float fLightAmount = g_tex2DShadowMap.SampleCmp( g_tex2DShadowMap_sampler, float3(f3ShadowMapUVDepth.xy, Cascade), float( f3ShadowMapUVDepth.z ) );
-
-#if SMOOTH_SHADOWS
-        float2 Offsets[4];
-        Offsets[0] = float2(-1.,-1.);
-        Offsets[1] = float2(+1.,-1.);
-        Offsets[2] = float2(-1.,+1.);
-        Offsets[3] = float2(+1.,+1.);
-        
-        [unroll]
-        for(int i=0; i<4; ++i)
-        {
-            float fDepthBias = dot(Offsets[i].xy, f2DepthSlopeScaledBias.xy);
-            float2 f2Offset = Offsets[i].xy /  ShadowMapDim.xy;
-            fLightAmount += g_tex2DShadowMap.SampleCmp( g_tex2DShadowMap_sampler, float3(f3ShadowMapUVDepth.xy + f2Offset.xy, Cascade), f3ShadowMapUVDepth.z + fDepthBias );
-        }
-        fLightAmount /= 5.0;
-#endif
-    return fLightAmount;
-}
 
 void CombineMaterials(in float4 MtrlWeights,
                       in float2 f2TileUV,
@@ -282,16 +154,15 @@ void HemispherePS(in float4 f4Pos : SV_Position,
     // We need to divide diffuse color by PI to get the reflectance value
     float3 SurfaceReflectance = SurfaceColor * EARTH_REFLECTANCE / PI;
 
-    int Cascade = 0;
-    float fLightAmount = ComputeShadowAmount( VSOut.f3PosInLightViewSpace.xyz, VSOut.fCameraSpaceZ, Cascade );
+    FilteredShadow Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler, VSOut.f3PosInLightViewSpace.xyz, VSOut.fCameraSpaceZ);
     float DiffuseIllumination = max(0.0, dot(f3Normal, -g_LightAttribs.f4Direction.xyz));
     
     float3 f3CascadeColor = float3(0.0, 0.0, 0.0);
     if( g_LightAttribs.ShadowAttribs.bVisualizeCascades )
     {
-        f3CascadeColor = (Cascade < NUM_SHADOW_CASCADES ? g_TerrainAttribs.f4CascadeColors[Cascade].rgb : float3(1.0, 1.0, 1.0)) / 8.0;
+        f3CascadeColor = GetCascadeColor(Shadow);
     }
     
-    f4OutColor.rgb = f3CascadeColor +  SurfaceReflectance * (fLightAmount*DiffuseIllumination*f3SunLight + f3AmbientSkyLight);
+    f4OutColor.rgb = f3CascadeColor +  SurfaceReflectance * (Shadow.fLightAmount*DiffuseIllumination*f3SunLight + f3AmbientSkyLight);
     f4OutColor.a = 1.0;
 }

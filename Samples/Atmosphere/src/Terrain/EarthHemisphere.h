@@ -67,33 +67,24 @@ struct RenderingParams
 
     enum TEXTURING_MODE
     {
-        TM_HEIGHT_BASED = 0,
-		TM_MATERIAL_MASK = 1,
+        TM_HEIGHT_BASED     = 0,
+		TM_MATERIAL_MASK    = 1,
         TM_MATERIAL_MASK_NM = 2
     };
     
     // Patch rendering params
-    TEXTURING_MODE m_TexturingMode;
-    int m_iRingDimension;
-    int m_iNumRings;
+    TEXTURING_MODE m_TexturingMode    = TM_MATERIAL_MASK_NM;
+    int m_iRingDimension              = 65;
+    int m_iNumRings                   = 15;
 
-    int m_iNumShadowCascades;
-    int m_bBestCascadeSearch;
-    int m_bSmoothShadows;
-    int m_iColOffset, m_iRowOffset;
-    TEXTURE_FORMAT DstRTVFormat;
-
-    RenderingParams() : 
-		m_TexturingMode     (TM_MATERIAL_MASK_NM),
-        m_iRingDimension    (65),
-        m_iNumRings         (15),
-        m_iNumShadowCascades(6),
-        m_bBestCascadeSearch(1),
-        m_bSmoothShadows    (1),
-        m_iColOffset        (1356), 
-        m_iRowOffset        (924),
-        DstRTVFormat        (TEX_FORMAT_R11G11B10_FLOAT)
-	{}
+    int m_iNumShadowCascades          = 6;
+    int m_bBestCascadeSearch          = 1;
+    int m_FixedShadowFilterSize       = 5;
+    bool m_FilterAcrossShadowCascades = true;
+    int m_iColOffset                  = 1356;
+    int m_iRowOffset                  = 924;
+    TEXTURE_FORMAT DstRTVFormat       = TEX_FORMAT_R11G11B10_FLOAT;
+    TEXTURE_FORMAT ShadowMapFormat    = TEX_FORMAT_D32_FLOAT;
 };
 
 struct RingSectorMesh

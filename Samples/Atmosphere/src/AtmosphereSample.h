@@ -28,6 +28,7 @@
 #include "EarthHemisphere.h"
 #include "ElevationDataSource.h"
 #include "EpipolarLightScattering.h"
+#include "ShadowMapManager.h"
 
 namespace Diligent
 {
@@ -53,33 +54,32 @@ public:
 
 private:
     void CreateShadowMap();
-    void ReleaseShadowMap();
     void RenderShadowMap(IDeviceContext*  pContext,
                          LightAttribs&    LightAttribs,
                          const float4x4&  mCameraView,
                          const float4x4&  mCameraProj);
 
-    static void SetNumCascadesCB(const void* value, void* clientData);
-    static void GetNumCascadesCB(void* value, void* clientData);
-    static void SetShadowMapResCB(const void* value, void* clientData);
-    static void GetShadowMapResCB(void* value, void* clientData);
-
     void UpdateGUI();
 
     float3 m_f3LightDir = {0,0,1};
     Quaternion m_CameraRotation = {0,0,0,1};
-    float3 m_f3CameraPos;
+    float3 m_f3CameraPos        = {0, 8000.f, 0};
     float4x4 m_mCameraView;
     float4x4 m_mCameraProj;
 
     RefCntAutoPtr<IBuffer> m_pcbCameraAttribs;
     RefCntAutoPtr<IBuffer> m_pcbLightAttribs;
-    std::vector<RefCntAutoPtr<ITextureView>> m_pShadowMapDSVs;
-    RefCntAutoPtr<ITextureView> m_pShadowMapSRV;
 
-    Uint32 m_uiShadowMapResolution;
-    float m_fCascadePartitioningFactor;
-    bool m_bVisualizeCascades;
+    ShadowMapManager m_ShadowMapMgr;
+    struct ShadowSettings
+    {
+        Uint32 Resolution                   = 1024;
+        float  fCascadePartitioningFactor   = 0.95f;
+        bool   bVisualizeCascades           = false;
+        int    iFixedFilterSize             = 5;
+    }m_ShadowSettings;
+
+    RefCntAutoPtr<ISampler> m_pComparisonSampler;
 
     RenderingParams m_TerrainRenderParams;
     EpipolarLightScatteringAttribs m_PPAttribs;
@@ -91,12 +91,12 @@ private:
     float m_fMinElevation, m_fMaxElevation;
 	std::unique_ptr<ElevationDataSource> m_pElevDataSource;
     EarthHemsiphere m_EarthHemisphere;
-    bool m_bIsGLDevice;
+    bool m_bIsGLDevice  = false;
 
     std::unique_ptr<EpipolarLightScattering> m_pLightSctrPP;
 
-    bool m_bEnableLightScattering;
-    float m_fElapsedTime;
+    bool m_bEnableLightScattering = true;
+    float m_fElapsedTime          = 0.f;
     float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
 
     RefCntAutoPtr<ITexture>  m_pOffscreenColorBuffer;
