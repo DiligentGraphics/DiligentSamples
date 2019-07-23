@@ -111,14 +111,14 @@ void ShadowsSample::UpdateUIControlStates()
         int IsOpened = Opened ? 1 : 0;
         TwSetParam(bar, Name, "opened", TW_PARAM_INT32, 1, &IsOpened);
     };
-    bool IsPCF = m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF;
+    bool IsPCF = m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF;
     EnableControl("Max depth bias slope", IsPCF);
     EnableControl("Fixed depth bias", IsPCF);
     SetGroupState("PCF", IsPCF);
 
-    bool IsVSM = m_ShadowSetting.iShadowMode == SHADOW_MODE_VSM   ||
-                 m_ShadowSetting.iShadowMode == SHADOW_MODE_EVSM2 ||
-                 m_ShadowSetting.iShadowMode == SHADOW_MODE_EVSM4;
+    bool IsVSM = m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM   ||
+                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
+                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4;
     EnableControl("Positive EVSM Exponent", IsVSM);
     EnableControl("Negative EVSM Exponent", IsVSM);
     EnableControl("VSM Bias", IsVSM);
@@ -155,7 +155,7 @@ void ShadowsSample::InitUI()
             [](const void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSetting.Resolution = 512 << *reinterpret_cast<const int*>(value);
+                This->m_ShadowSettings.Resolution = 512 << *reinterpret_cast<const int*>(value);
                 This->CreateShadowMap();
             },
             [](void *value, void* clientData)
@@ -163,7 +163,7 @@ void ShadowsSample::InitUI()
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
                 int& val = *reinterpret_cast<int*>(value);
                 val = 0;
-                while((512 << val) != This->m_ShadowSetting.Resolution)
+                while((512 << val) != This->m_ShadowSettings.Resolution)
                     ++val;
             },
             this, "");
@@ -180,27 +180,27 @@ void ShadowsSample::InitUI()
             [](const void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSetting.Format = *reinterpret_cast<const int*>(value) == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
+                This->m_ShadowSettings.Format = *reinterpret_cast<const int*>(value) == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
                 This->CreatePipelineStates();
                 This->CreateShadowMap();
             },
             [](void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_ShadowSetting.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
+                *reinterpret_cast<int*>(value) = This->m_ShadowSettings.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
             },
             this, "");
         TwAddVarCB(bar, "Filterable Format", enumType,
             [](const void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSetting.Is32BitFilterableFmt = *reinterpret_cast<const int*>(value) != 0;
+                This->m_ShadowSettings.Is32BitFilterableFmt = *reinterpret_cast<const int*>(value) != 0;
                 This->CreateShadowMap();
             },
             [](void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_ShadowSetting.Is32BitFilterableFmt ? 1 : 0;
+                *reinterpret_cast<int*>(value) = This->m_ShadowSettings.Is32BitFilterableFmt ? 1 : 0;
             },
             this, "");
     }
@@ -231,7 +231,7 @@ void ShadowsSample::InitUI()
             [](const void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSetting.iShadowMode = *reinterpret_cast<const int*>(value);
+                This->m_ShadowSettings.iShadowMode = *reinterpret_cast<const int*>(value);
                 This->CreatePipelineStates();
                 This->CreateShadowMap();
                 This->UpdateUIControlStates();
@@ -239,7 +239,7 @@ void ShadowsSample::InitUI()
             [](void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_ShadowSetting.iShadowMode;
+                *reinterpret_cast<int*>(value) = This->m_ShadowSettings.iShadowMode;
             },
             this, "group=Filtering");
     }
@@ -258,7 +258,7 @@ void ShadowsSample::InitUI()
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
                 This->m_LightAttribs.ShadowAttribs.iFixedFilterSize = *reinterpret_cast<const int*>(value);
-                This->m_ShadowSetting.FilterAcrossCascades = This->m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
+                This->m_ShadowSettings.FilterAcrossCascades = This->m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
                 This->CreatePipelineStates();
                 This->UpdateUIControlStates();
             },
@@ -275,32 +275,32 @@ void ShadowsSample::InitUI()
             [](const void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSetting.FilterAcrossCascades = *reinterpret_cast<const bool*>(value);
+                This->m_ShadowSettings.FilterAcrossCascades = *reinterpret_cast<const bool*>(value);
                 This->CreatePipelineStates();
             },
             [](void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<bool*>(value) = This->m_ShadowSetting.FilterAcrossCascades;
+                *reinterpret_cast<bool*>(value) = This->m_ShadowSettings.FilterAcrossCascades;
             },
             this, "group=Filtering");
     TwAddVarRW(bar, "Cascade transition region", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadeTransitionRegion, "min=0 max=0.5 step=0.01 group=Filtering");
 
     TwAddVarRW(bar, "Partitioning Factor", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor, "min=0 max=1 step=0.01 group='Cascade allocation'");
-    TwAddVarRW(bar, "Snap cascades", TW_TYPE_BOOLCPP, &m_ShadowSetting.SnapCascades, "group='Cascade allocation'");
-    TwAddVarRW(bar, "Stabilize extents", TW_TYPE_BOOLCPP, &m_ShadowSetting.StabilizeExtents, "group='Cascade allocation'");
-    TwAddVarRW(bar, "Equalize extents", TW_TYPE_BOOLCPP, &m_ShadowSetting.EqualizeExtents, "group='Cascade allocation'");
+    TwAddVarRW(bar, "Snap cascades", TW_TYPE_BOOLCPP, &m_ShadowSettings.SnapCascades, "group='Cascade allocation'");
+    TwAddVarRW(bar, "Stabilize extents", TW_TYPE_BOOLCPP, &m_ShadowSettings.StabilizeExtents, "group='Cascade allocation'");
+    TwAddVarRW(bar, "Equalize extents", TW_TYPE_BOOLCPP, &m_ShadowSettings.EqualizeExtents, "group='Cascade allocation'");
     TwAddVarCB(bar, "Use best cascade", TW_TYPE_BOOLCPP,
             [](const void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSetting.SearchBestCascade = *reinterpret_cast<const bool*>(value);
+                This->m_ShadowSettings.SearchBestCascade = *reinterpret_cast<const bool*>(value);
                 This->CreatePipelineStates();
             },
             [](void *value, void* clientData)
             {
                 auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<bool*>(value) = This->m_ShadowSetting.SearchBestCascade;
+                *reinterpret_cast<bool*>(value) = This->m_ShadowSettings.SearchBestCascade;
             },
             this, "group='Cascade allocation'");
 
@@ -383,10 +383,10 @@ void ShadowsSample::CreatePipelineStates()
     ShaderCI.UseCombinedTextureSamplers = true;
 
     ShaderMacroHelper Macros;
-    Macros.AddShaderMacro( "SHADOW_MODE",            m_ShadowSetting.iShadowMode);
+    Macros.AddShaderMacro( "SHADOW_MODE",            m_ShadowSettings.iShadowMode);
     Macros.AddShaderMacro( "SHADOW_FILTER_SIZE",     m_LightAttribs.ShadowAttribs.iFixedFilterSize);
-    Macros.AddShaderMacro( "FILTER_ACROSS_CASCADES", m_ShadowSetting.FilterAcrossCascades);
-    Macros.AddShaderMacro( "BEST_CASCADE_SEARCH",    m_ShadowSetting.SearchBestCascade );
+    Macros.AddShaderMacro( "FILTER_ACROSS_CASCADES", m_ShadowSettings.FilterAcrossCascades);
+    Macros.AddShaderMacro( "BEST_CASCADE_SEARCH",    m_ShadowSettings.SearchBestCascade );
     ShaderCI.Macros = Macros;
 
     ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -449,7 +449,7 @@ void ShadowsSample::CreatePipelineStates()
         ShaderResourceVariableDesc Vars[] = 
         {
             {SHADER_TYPE_PIXEL, "g_tex2DDiffuse",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
-            {SHADER_TYPE_PIXEL, m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+            {SHADER_TYPE_PIXEL, m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
         };
         PSODesc.ResourceLayout.Variables    = Vars;
         PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -475,7 +475,7 @@ void ShadowsSample::CreatePipelineStates()
         PSODesc.GraphicsPipeline.pVS        = pShadowVS;
         PSODesc.GraphicsPipeline.NumRenderTargets = 0;
         PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
-        PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowSetting.Format;
+        PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
 
         // It is crucial to disable depth clip to allow shadows from objects
         // behind the near cascade clip plane!
@@ -509,7 +509,7 @@ void ShadowsSample::InitializeResourceBindings()
             m_RenderMeshPSO[0]->CreateShaderResourceBinding(&pSRB, true);
             VERIFY(Mat.pDiffuseRV != nullptr, "Material must have diffuse color texture");
             pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DDiffuse")->Set(Mat.pDiffuseRV);
-            if (m_ShadowSetting.iShadowMode == SHADOW_MODE_PCF)
+            if (m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF)
             {
                 pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DShadowMap")->Set(m_ShadowMapMgr.GetSRV());
             }
@@ -530,20 +530,19 @@ void ShadowsSample::InitializeResourceBindings()
 
 void ShadowsSample::CreateShadowMap()
 {
-    m_LightAttribs.ShadowAttribs.fNumCascades = static_cast<float>(m_LightAttribs.ShadowAttribs.iNumCascades);
-    if (m_ShadowSetting.Resolution >= 2048)
+    if (m_ShadowSettings.Resolution >= 2048)
         m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.0025f;
-    else if (m_ShadowSetting.Resolution >= 1024)
+    else if (m_ShadowSettings.Resolution >= 1024)
         m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.005f;
     else
         m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.0075f;
 
     ShadowMapManager::InitInfo SMMgrInitInfo;
-    SMMgrInitInfo.Fmt         = m_ShadowSetting.Format;
-    SMMgrInitInfo.Resolution  = m_ShadowSetting.Resolution;
+    SMMgrInitInfo.Fmt         = m_ShadowSettings.Format;
+    SMMgrInitInfo.Resolution  = m_ShadowSettings.Resolution;
     SMMgrInitInfo.NumCascades = static_cast<Uint32>(m_LightAttribs.ShadowAttribs.iNumCascades);
-    SMMgrInitInfo.ShadowMode  = m_ShadowSetting.iShadowMode;
-    SMMgrInitInfo.Is32BitFilterableFmt = m_ShadowSetting.Is32BitFilterableFmt;
+    SMMgrInitInfo.ShadowMode  = m_ShadowSettings.iShadowMode;
+    SMMgrInitInfo.Is32BitFilterableFmt = m_ShadowSettings.Is32BitFilterableFmt;
 
     if (!m_pComparisonSampler)
     {
@@ -587,8 +586,8 @@ void ShadowsSample::RenderShadowMap()
         ShadowCameraAttribs.mViewT     = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
         ShadowCameraAttribs.mProjT     = CascadeProjMatr.Transpose();
         ShadowCameraAttribs.mViewProjT = WorldToLightProjSpaceMatr.Transpose();
-        ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSetting.Resolution);
-        ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSetting.Resolution);
+        ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSettings.Resolution);
+        ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSettings.Resolution);
         ShadowCameraAttribs.f4ViewportSize.z = 1.f / ShadowCameraAttribs.f4ViewportSize.x;
         ShadowCameraAttribs.f4ViewportSize.w = 1.f / ShadowCameraAttribs.f4ViewportSize.y;
 
@@ -606,7 +605,7 @@ void ShadowsSample::RenderShadowMap()
         DrawMesh(m_pImmediateContext, true, Frutstum);
     }
 
-    if (m_ShadowSetting.iShadowMode > SHADOW_MODE_PCF)
+    if (m_ShadowSettings.iShadowMode > SHADOW_MODE_PCF)
         m_ShadowMapMgr.ConvertToFilterable(m_pImmediateContext, m_LightAttribs.ShadowAttribs);
 }
 
@@ -719,9 +718,9 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
     float3 f3LightDirection = float3(m_LightAttribs.f4Direction.x, m_LightAttribs.f4Direction.y, m_LightAttribs.f4Direction.z);
     DistrInfo.pLightDir   = &f3LightDirection;
 
-    DistrInfo.SnapCascades     = m_ShadowSetting.SnapCascades;
-    DistrInfo.EqualizeExtents  = m_ShadowSetting.EqualizeExtents;
-    DistrInfo.StabilizeExtents = m_ShadowSetting.StabilizeExtents;
+    DistrInfo.SnapCascades     = m_ShadowSettings.SnapCascades;
+    DistrInfo.EqualizeExtents  = m_ShadowSettings.EqualizeExtents;
+    DistrInfo.StabilizeExtents = m_ShadowSettings.StabilizeExtents;
 
     m_ShadowMapMgr.DistributeCascades(DistrInfo, m_LightAttribs.ShadowAttribs);
 }

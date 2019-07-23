@@ -77,7 +77,7 @@ private:
         int   iShadowMode          = SHADOW_MODE_PCF;
 
         bool   Is32BitFilterableFmt = true;
-    }m_ShadowSetting;
+    }m_ShadowSettings;
 
     DXSDKMesh                                          m_Mesh;
 
