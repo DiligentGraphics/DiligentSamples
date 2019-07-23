@@ -79,8 +79,8 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
     m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
     m_LightAttribs.ShadowAttribs.fFilterWorldSize           = 0.1f;
-    m_LightAttribs.f4Direction    = float3(0.734249115f, -0.423396081f, -0.530692577f);
-    m_LightAttribs.f4Intensity    = float4(1, 1, 1, 1);
+    m_LightAttribs.f4Direction    = float3(-0.522699475f, -0.481321275f, -0.703671455f);
+    m_LightAttribs.f4Intensity    = float4(1, 0.8f, 0.5f, 1);
     m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
 
     m_Camera.SetPos(float3(70, 10, 0.f));
@@ -140,8 +140,10 @@ void ShadowsSample::InitUI()
     barSize[0] = 800;
     barSize[1] = 1000;
 #endif
-    TwDefine("TweakBar label='General' position = '10 10'");
+    TwDefine("TweakBar label='Settings' position = '10 10'");
     TwSetParam(bar, nullptr, "size", TW_PARAM_INT32, 2, barSize);
+
+    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightAttribs.f4Direction, "");
 
     {
         TwEnumVal enumVals[] =
@@ -617,7 +619,7 @@ void ShadowsSample::Render()
     // Reset default framebuffer
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     // Clear the back buffer 
-    const float ClearColor[] = { 0.1f,  0.1f,  0.1f, 1.0f }; 
+    const float ClearColor[] = {0.23f, 0.5f, 0.74f, 1.0f}; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
