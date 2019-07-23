@@ -18,8 +18,10 @@ set(SHADERS
     ../../../DiligentFX/Shaders/Common/public/Shadows.fxh
 )
 
+file(GLOB POWERPLANT_FILES LIST_DIRECTORIES false assets/Powerplant/*.*)
+
 set(ASSETS
-    #assets/MengerSponge.lua
+    ${POWERPLANT_FILES}
 )
 
 add_sample_app("ShadowsSample" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
