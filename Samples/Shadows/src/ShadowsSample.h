@@ -73,6 +73,7 @@ private:
         bool  SearchBestCascade    = true;
         bool  FilterAcrossCascades = true;
         int   Resolution           = 2048;
+        float PartitioningFactor   = 0.95f;
         TEXTURE_FORMAT Format      = TEX_FORMAT_D16_UNORM;
         int   iShadowMode          = SHADOW_MODE_PCF;
 

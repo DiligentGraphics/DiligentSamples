@@ -450,7 +450,7 @@ AtmosphereSample::~AtmosphereSample()
 void AtmosphereSample::CreateShadowMap()
 {
     ShadowMapManager::InitInfo SMMgrInitInfo;
-    SMMgrInitInfo.Fmt         = m_TerrainRenderParams.ShadowMapFormat;
+    SMMgrInitInfo.Format      = m_TerrainRenderParams.ShadowMapFormat;
     SMMgrInitInfo.Resolution  = m_ShadowSettings.Resolution;
     SMMgrInitInfo.NumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
     SMMgrInitInfo.ShadowMode  = SHADOW_MODE_PCF;
@@ -481,11 +481,11 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext*  pContext,
     ShadowMapManager::DistributeCascadeInfo DistrInfo;
     DistrInfo.pCameraView = &mCameraView;
     DistrInfo.pCameraProj = &mCameraProj;
-    DistrInfo.pCameraPos  = &m_f3CameraPos;
     DistrInfo.pLightDir   = &m_f3LightDir;
-    DistrInfo.SnapCascades     = true;
-    DistrInfo.EqualizeExtents  = true;
-    DistrInfo.StabilizeExtents = true;
+    DistrInfo.fPartitioningFactor = 0.95f;
+    DistrInfo.SnapCascades        = true;
+    DistrInfo.EqualizeExtents     = true;
+    DistrInfo.StabilizeExtents    = true;
     DistrInfo.AdjustCascadeRange = 
         [this](int iCascade, float& MinZ, float& MaxZ)
         {
@@ -545,7 +545,6 @@ void AtmosphereSample::Render()
     LightAttrs.f4AmbientLight = float4( 0, 0, 0, 0 );
 
     LightAttrs.ShadowAttribs.iNumCascades = m_TerrainRenderParams.m_iNumShadowCascades;
-    LightAttrs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
     if (m_ShadowSettings.Resolution >= 2048)
         LightAttrs.ShadowAttribs.fFixedDepthBias = 0.0025f;
     else if (m_ShadowSettings.Resolution >= 1024)

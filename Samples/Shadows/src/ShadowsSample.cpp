@@ -76,7 +76,6 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
 
     m_LightAttribs.ShadowAttribs.iNumCascades               = 4;
     m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 0.0025f;
-    m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor = 0.95f;
     m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
     m_LightAttribs.ShadowAttribs.fFilterWorldSize           = 0.1f;
     m_LightAttribs.f4Direction    = float3(-0.522699475f, -0.481321275f, -0.703671455f);
@@ -288,7 +287,7 @@ void ShadowsSample::InitUI()
             this, "group=Filtering");
     TwAddVarRW(bar, "Cascade transition region", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadeTransitionRegion, "min=0 max=0.5 step=0.01 group=Filtering");
 
-    TwAddVarRW(bar, "Partitioning Factor", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadePartitioningFactor, "min=0 max=1 step=0.01 group='Cascade allocation'");
+    TwAddVarRW(bar, "Partitioning Factor", TW_TYPE_FLOAT, &m_ShadowSettings.PartitioningFactor, "min=0 max=1 step=0.01 group='Cascade allocation'");
     TwAddVarRW(bar, "Snap cascades", TW_TYPE_BOOLCPP, &m_ShadowSettings.SnapCascades, "group='Cascade allocation'");
     TwAddVarRW(bar, "Stabilize extents", TW_TYPE_BOOLCPP, &m_ShadowSettings.StabilizeExtents, "group='Cascade allocation'");
     TwAddVarRW(bar, "Equalize extents", TW_TYPE_BOOLCPP, &m_ShadowSettings.EqualizeExtents, "group='Cascade allocation'");
@@ -540,10 +539,10 @@ void ShadowsSample::CreateShadowMap()
         m_LightAttribs.ShadowAttribs.fFixedDepthBias = 0.0075f;
 
     ShadowMapManager::InitInfo SMMgrInitInfo;
-    SMMgrInitInfo.Fmt         = m_ShadowSettings.Format;
-    SMMgrInitInfo.Resolution  = m_ShadowSettings.Resolution;
-    SMMgrInitInfo.NumCascades = static_cast<Uint32>(m_LightAttribs.ShadowAttribs.iNumCascades);
-    SMMgrInitInfo.ShadowMode  = m_ShadowSettings.iShadowMode;
+    SMMgrInitInfo.Format               = m_ShadowSettings.Format;
+    SMMgrInitInfo.Resolution           = m_ShadowSettings.Resolution;
+    SMMgrInitInfo.NumCascades          = static_cast<Uint32>(m_LightAttribs.ShadowAttribs.iNumCascades);
+    SMMgrInitInfo.ShadowMode           = m_ShadowSettings.iShadowMode;
     SMMgrInitInfo.Is32BitFilterableFmt = m_ShadowSettings.Is32BitFilterableFmt;
 
     if (!m_pComparisonSampler)
@@ -715,14 +714,13 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
     ShadowMapManager::DistributeCascadeInfo DistrInfo;
     DistrInfo.pCameraView = &m_Camera.GetViewMatrix();
     DistrInfo.pCameraProj = &m_Camera.GetProjMatrix();
-    float3 CameraPos = m_Camera.GetPos();
-    DistrInfo.pCameraPos  = &CameraPos;
     float3 f3LightDirection = float3(m_LightAttribs.f4Direction.x, m_LightAttribs.f4Direction.y, m_LightAttribs.f4Direction.z);
     DistrInfo.pLightDir   = &f3LightDirection;
 
-    DistrInfo.SnapCascades     = m_ShadowSettings.SnapCascades;
-    DistrInfo.EqualizeExtents  = m_ShadowSettings.EqualizeExtents;
-    DistrInfo.StabilizeExtents = m_ShadowSettings.StabilizeExtents;
+    DistrInfo.fPartitioningFactor = m_ShadowSettings.PartitioningFactor;
+    DistrInfo.SnapCascades        = m_ShadowSettings.SnapCascades;
+    DistrInfo.EqualizeExtents     = m_ShadowSettings.EqualizeExtents;
+    DistrInfo.StabilizeExtents    = m_ShadowSettings.StabilizeExtents;
 
     m_ShadowMapMgr.DistributeCascades(DistrInfo, m_LightAttribs.ShadowAttribs);
 }

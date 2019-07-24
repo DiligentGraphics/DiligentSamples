@@ -120,6 +120,14 @@ This sample demonstrates how to use the [Asset Loader](https://github.com/Dilige
 and [GLTF PBR Renderer](https://github.com/DiligentGraphics/DiligentFX/tree/master/GLTF_PBR_Renderer) to load and render GLTF models.
 
 
+## [Shadows](Samples/Shadows)
+
+![](Samples/Shadows/Screenshot.jpg)
+
+This sample demonstrates how to integrate the [Shadowing component](https://github.com/DiligentGraphics/DiligentFX/tree/master/Components#shadows)
+into an application to render high-quality shadows.
+
+
 # Build and Run Instructions
 
 Please refer to Build and Run Instructions section in the
