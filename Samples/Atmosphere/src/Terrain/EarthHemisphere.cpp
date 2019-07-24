@@ -741,7 +741,7 @@ void EarthHemsiphere::Create( class ElevationDataSource *pDataSource,
 		GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
 		GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
 		GraphicsPipeline.RasterizerDesc.DepthClipEnable       = False;
-		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
+		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
         LayoutElement Inputs[] =
         {
             {0, 0, 3, VT_FLOAT32, False, 0, (3+2)*4}
@@ -879,11 +879,11 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
 
         auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
 
-		GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
-		GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
-		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
+		GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+		GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
+		GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
         GraphicsPipeline.InputLayout.LayoutElements = Inputs;
-        GraphicsPipeline.InputLayout.NumElements = _countof(Inputs);
+        GraphicsPipeline.InputLayout.NumElements    = _countof(Inputs);
         GraphicsPipeline.pVS = m_pHemisphereVS;
         GraphicsPipeline.pPS = pHemispherePS;
         GraphicsPipeline.RTVFormats[0] = m_Params.DstRTVFormat;

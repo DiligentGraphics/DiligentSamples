@@ -160,7 +160,7 @@ void HemispherePS(in float4 f4Pos : SV_Position,
     float3 f3CascadeColor = float3(0.0, 0.0, 0.0);
     if( g_LightAttribs.ShadowAttribs.bVisualizeCascades )
     {
-        f3CascadeColor = GetCascadeColor(Shadow);
+        f3CascadeColor = GetCascadeColor(Shadow) * 0.25;
     }
     
     f4OutColor.rgb = f3CascadeColor +  SurfaceReflectance * (Shadow.fLightAmount*DiffuseIllumination*f3SunLight + f3AmbientSkyLight);

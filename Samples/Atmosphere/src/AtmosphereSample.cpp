@@ -487,7 +487,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext*  pContext,
     DistrInfo.EqualizeExtents  = true;
     DistrInfo.StabilizeExtents = true;
     DistrInfo.AdjustCascadeRange = 
-        [iFirstCascadeToRayMarch = m_PPAttribs.iFirstCascadeToRayMarch](int iCascade, float& MinZ, float& MaxZ)
+        [this](int iCascade, float& MinZ, float& MaxZ)
         {
             if (iCascade < 0)
             {
@@ -497,7 +497,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext*  pContext,
                 MinZ = std::max(MinZ, 10.f);
                 MaxZ = std::pow(pw, std::ceil(std::log(std::max(MaxZ, 1.f))/std::log(pw)));
             }
-            else if (iCascade == iFirstCascadeToRayMarch)
+            else if (iCascade == m_PPAttribs.iFirstCascadeToRayMarch)
             {
                 // Ray marching always starts at the camera position, not at the near plane.
                 // So we must make sure that the first cascade used for ray marching covers the camera position
@@ -552,7 +552,7 @@ void AtmosphereSample::Render()
         LightAttrs.ShadowAttribs.fFixedDepthBias = 0.0050f;
     else
         LightAttrs.ShadowAttribs.fFixedDepthBias = 0.0075f;
-    
+
     // m_iFirstCascade must be initialized before calling RenderShadowMap()!
     m_PPAttribs.iFirstCascadeToRayMarch = std::min(m_PPAttribs.iFirstCascadeToRayMarch, m_TerrainRenderParams.m_iNumShadowCascades - 1);
 
