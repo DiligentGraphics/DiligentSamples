@@ -86,10 +86,8 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
     {
         throw std::runtime_error("Hardware tessellation is not supported");
     }
-    if(!deviceCaps.bGeometryShadersSupported)
-    {
-        throw std::runtime_error("Geometry shaders are required to run this tutorial");
-    }
+    
+    const bool bWireframeSupported = deviceCaps.bGeometryShadersSupported;
 
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -187,10 +185,13 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
             ShaderCI.FilePath        = "terrain.psh";
             pDevice->CreateShader(ShaderCI, &pPS);
 
-            ShaderCI.EntryPoint = "WireTerrainPS";
-            ShaderCI.Desc.Name  = "Wireframe Terrain PS";
-            ShaderCI.FilePath   = "terrain_wire.psh";
-            pDevice->CreateShader(ShaderCI, &pWirePS);
+            if (bWireframeSupported)
+            {
+                ShaderCI.EntryPoint = "WireTerrainPS";
+                ShaderCI.Desc.Name  = "Wireframe Terrain PS";
+                ShaderCI.FilePath   = "terrain_wire.psh";
+                pDevice->CreateShader(ShaderCI, &pWirePS);
+            }
         }
 
         PSODesc.GraphicsPipeline.pVS = pVS;
@@ -222,18 +223,27 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
 
         pDevice->CreatePipelineState(PSODesc, &m_pPSO[0]);
 
-        PSODesc.GraphicsPipeline.pGS = pGS;
-        PSODesc.GraphicsPipeline.pPS = pWirePS;
-        pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
-
+        if (bWireframeSupported)
+        {
+            PSODesc.GraphicsPipeline.pGS = pGS;
+            PSODesc.GraphicsPipeline.pPS = pWirePS;
+            pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
+        }
+        
         for (Uint32 i = 0; i < _countof(m_pPSO); ++i)
         {
-            m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")->Set(m_ShaderConstants);
-            m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_HULL,   "HSConstants")->Set(m_ShaderConstants);
-            m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_DOMAIN, "DSConstants")->Set(m_ShaderConstants);
+            if (m_pPSO[i])
+            {
+                m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")->Set(m_ShaderConstants);
+                m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_HULL,   "HSConstants")->Set(m_ShaderConstants);
+                m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_DOMAIN, "DSConstants")->Set(m_ShaderConstants);
+            }
         }
-        m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
-        m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
+        if (m_pPSO[1])
+        {
+            m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
+            m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
+        }
     }
 
     {
@@ -264,22 +274,26 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     for(size_t i=0; i < _countof(m_pPSO); ++i)
     {
-        m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i], true);
-        // Set texture SRV in the SRB
-        m_SRB[i]->GetVariableByName(SHADER_TYPE_PIXEL,  "g_Texture")->Set(m_ColorMapSRV);
-        m_SRB[i]->GetVariableByName(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
-        m_SRB[i]->GetVariableByName(SHADER_TYPE_HULL,   "g_HeightMap")->Set(m_HeightMapSRV);
+        if (m_pPSO[i])
+        {
+            m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i], true);
+            // Set texture SRV in the SRB
+            m_SRB[i]->GetVariableByName(SHADER_TYPE_PIXEL,  "g_Texture")->Set(m_ColorMapSRV);
+            m_SRB[i]->GetVariableByName(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
+            m_SRB[i]->GetVariableByName(SHADER_TYPE_HULL,   "g_HeightMap")->Set(m_HeightMapSRV);
+        }
     }
 
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     // Add grid size control
     TwAddVarRW(bar, "Animate", TW_TYPE_BOOLCPP, &m_Animate, "");
     TwAddVarRW(bar, "Adaptive tessellation", TW_TYPE_BOOLCPP, &m_AdaptiveTessellation, "");
-    TwAddVarRW(bar, "Wireframe", TW_TYPE_BOOLCPP, &m_Wireframe, "");
+    if (bWireframeSupported)
+        TwAddVarRW(bar, "Wireframe", TW_TYPE_BOOLCPP, &m_Wireframe, "");
     TwAddVarRW(bar, "Tess density", TW_TYPE_FLOAT, &m_TessDensity, "min=1 max=32 step=0.1");
     TwAddVarRW(bar, "Distance", TW_TYPE_FLOAT, &m_Distance, "min=1 max=20 step=0.1");
 }
