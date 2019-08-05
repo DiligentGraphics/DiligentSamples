@@ -426,11 +426,10 @@ void Tutorial13_ShadowMap::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants->WorldViewProj = m_WorldViewProjMatrix.Transpose();
-        auto NormalMatrix = m_CubeWorldMatrix;
-        NormalMatrix.RemoveTranslation();
+        auto NormalMatrix = m_CubeWorldMatrix.RemoveTranslation().Inverse();
         // We need to do inverse-transpose, but we also need to transpose the matrix
         // before writing it to the buffer
-        CBConstants->NormalTranform = NormalMatrix.Inverse();
+        CBConstants->NormalTranform = NormalMatrix;
         CBConstants->LightDirection.x = m_LightDirection.x;
         CBConstants->LightDirection.y = m_LightDirection.y;
         CBConstants->LightDirection.z = m_LightDirection.z;
