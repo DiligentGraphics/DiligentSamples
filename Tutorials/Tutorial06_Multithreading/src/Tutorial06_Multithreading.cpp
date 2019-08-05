@@ -336,7 +336,6 @@ void Tutorial06_Multithreading::InitUI()
             *static_cast<int*>(value) = pTheTutorial->m_NumWorkerThreads;
         },
         this, def.str().c_str());
-    m_NumWorkerThreads = std::min(4, m_MaxThreads);
 }
 
 void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
@@ -348,6 +347,7 @@ void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
+    m_NumWorkerThreads = std::min(4, m_MaxThreads);
 
     std::vector<StateTransitionDesc> Barriers;
 

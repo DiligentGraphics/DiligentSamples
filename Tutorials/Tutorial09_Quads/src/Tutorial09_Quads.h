@@ -50,12 +50,10 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial09: Quads";}
 
 private:
-    static void SetNumQuads(const void* value, void* clientData);
-    static void GetNumQuads(void *value, void * clientData);
-    static void SetBatchSize(const void* value, void* clientData);
-    static void GetBatchSize(void* value, void* clientData);
-    static void SetWorkerThreadCount(const void* value, void* clientData);
-    static void GetWorkerThreadCount(void* value, void* clientData);
+    void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
+    void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
+    void InitUI();
+
     void InitializeQuads();
     void CreateInstanceBuffer();
     void UpdateQuads(float elapsedTime);
