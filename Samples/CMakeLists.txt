@@ -1,9 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 
 add_subdirectory(SampleBase)
-if(TARGET Diligent-RenderScript)
-    add_subdirectory(AntTweakBar)
-endif()
 if(TARGET DiligentFX)
     add_subdirectory(Atmosphere)
     add_subdirectory(GLTFViewer)

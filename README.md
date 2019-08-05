@@ -94,13 +94,6 @@ post-processing effect.
 
 # Samples
 
-## [AntTweakBar Sample](Samples/AntTweakBar)
-
-![](Samples/AntTweakBar/Animation_Large.gif)
-
-This sample demonstrates how to use [AntTweakBar library](http://anttweakbar.sourceforge.net/doc)
-to create simple user interface. 
-
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)
 
 ![](Samples/Atmosphere/Animation_Large.gif)
