@@ -43,7 +43,11 @@ public:
     virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
 
 private:
-    void CreateCubeResources();
+    void CreateCubePSO();
+    void CreateRenderTargetPSO();
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void LoadTexture();
 
     static constexpr TEXTURE_FORMAT       RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
     static constexpr TEXTURE_FORMAT       DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
