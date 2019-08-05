@@ -281,6 +281,16 @@ void Tutorial04_Instancing::LoadTexture()
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 }
 
+void Tutorial04_Instancing::InitUI()
+{
+    // Create a tweak bar
+    TwBar *bar = TwNewBar("Settings");
+    int barSize[2] = {224 * m_UIScale, 60 * m_UIScale};
+    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+
+    // Add grid size control
+    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, SetGridSize, GetGridSize, this, "min=1 max=32");
+}
 
 void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
                                        IRenderDevice*    pDevice,
@@ -295,14 +305,7 @@ void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
     CreateInstanceBuffer();
     CreateIndexBuffer();
     LoadTexture();
-    
-    // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 60 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    // Add grid size control
-    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, SetGridSize, GetGridSize, this, "min=1 max=32");
+    InitUI();
 }
 
 void Tutorial04_Instancing::PopulateInstanceBuffer()

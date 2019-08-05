@@ -42,6 +42,13 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial05: Texture Array";}
 
 private:
+    void CreatePipelineState();
+    void CreateVertexBuffer();
+    void CreateInstanceBuffer();
+    void CreateIndexBuffer();
+    void LoadTextures();
+    void InitUI();
+
     static void SetGridSize(const void *value, void* clientData);
     static void GetGridSize(void *value, void* clientData);
     void PopulateInstanceBuffer();

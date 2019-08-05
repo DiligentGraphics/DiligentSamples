@@ -47,6 +47,7 @@ private:
     void CreateInstanceBuffer();
     void CreateIndexBuffer();
     void LoadTexture();
+    void InitUI();
 
     static void SetGridSize(const void* value, void* clientData);
     static void GetGridSize(void *value, void* clientData);
