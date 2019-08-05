@@ -1,0 +1,27 @@
+cmake_minimum_required (VERSION 3.6)
+
+project(Tutorial13_ShadowMap CXX)
+
+set(SOURCE
+    src/Tutorial13_ShadowMap.cpp
+)
+
+set(INCLUDE
+    src/Tutorial13_ShadowMap.h
+)
+
+set(SHADERS
+    assets/cube.vsh
+    assets/cube.psh
+    assets/cube_shadow.vsh
+    assets/plane.vsh
+    assets/plane.psh
+    assets/structures.fxh
+)
+
+set(ASSETS
+    assets/DGLogo.png
+)
+
+add_sample_app("Tutorial13_ShadowMap" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+target_link_libraries(Tutorial13_ShadowMap PRIVATE Diligent-TextureLoader)
