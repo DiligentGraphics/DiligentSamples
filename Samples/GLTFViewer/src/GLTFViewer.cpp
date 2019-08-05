@@ -157,6 +157,13 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
 
+    LoadModel(GLTFModels[m_SelectedModel].second);
+
+    InitUI();
+}
+
+void GLTFViewer::InitUI()
+{
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
     int barSize[2] = {250 * m_UIScale, 600 * m_UIScale};
@@ -262,8 +269,6 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
         TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
         TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
     }
-
-    LoadModel(GLTFModels[m_SelectedModel].second);
 }
 
 void GLTFViewer::CreateEnvMapPSO()

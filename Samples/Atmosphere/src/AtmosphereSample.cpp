@@ -134,6 +134,11 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
 
     CreateShadowMap();
 
+    InitUI();
+}
+
+void AtmosphereSample::InitUI()
+{
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
     TwDefine(" GLOBAL fontsize=3 ");
@@ -370,8 +375,8 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
         TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOL32, &m_PPAttribs.ToneMapping.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
     }
 
-    const auto& RG16UAttribs = pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );
-    const auto& RG32FAttribs = pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG32_FLOAT );
+    const auto& RG16UAttribs = m_pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );
+    const auto& RG32FAttribs = m_pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG32_FLOAT );
     bool RG16USupported = RG16UAttribs.Supported && RG16UAttribs.ColorRenderable;
     bool RG32FSupported = RG32FAttribs.Supported && RG32FAttribs.ColorRenderable;
     if( !RG16USupported && !RG32FSupported )

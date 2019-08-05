@@ -50,6 +50,7 @@ private:
     void CreateEnvMapSRB();
     void LoadModel(const char* Path);
     void ResetView();
+    void InitUI();
 
     enum class BackgroundMode
     {

@@ -53,6 +53,7 @@ public:
     virtual const Char* GetSampleName()const override final{return "Atmosphere Sample";}
 
 private:
+    void InitUI();
     void CreateShadowMap();
     void RenderShadowMap(IDeviceContext*  pContext,
                          LightAttribs&    LightAttribs,
