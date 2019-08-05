@@ -148,16 +148,8 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType        
 #endif
 }
 
-void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
-                                          IRenderDevice*    pDevice,
-                                          IDeviceContext**  ppContexts,
-                                          Uint32            NumDeferredCtx,
-                                          ISwapChain*       pSwapChain)
+void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
-
-    m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
-
     BlendStateDesc BlendState[NumStates];
     BlendState[1].RenderTargets[0].BlendEnable = true;
     BlendState[1].RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
@@ -175,165 +167,154 @@ void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
     BlendState[4].RenderTargets[0].SrcBlend    = BLEND_FACTOR_INV_SRC_COLOR;
     BlendState[4].RenderTargets[0].DestBlend   = BLEND_FACTOR_SRC_COLOR;
 
-    std::vector<StateTransitionDesc> Barriers;
+    // Pipeline state object encompasses configuration of all GPU stages
+
+    PipelineStateDesc PSODesc;
+    // Pipeline state name is used by the engine to report issues
+    // It is always a good idea to give objects descriptive names
+    PSODesc.Name = "Polygon PSO"; 
+
+    // This is a graphics pipeline
+    PSODesc.IsComputePipeline = false; 
+
+    // This tutorial will render to a single render target
+    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    // Set render target format which is the format of the swap chain's color buffer
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    // Set depth buffer format which is the format of the swap chain's back buffer
+    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    // Disable back face culling
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    // Disable depth testing
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+
+    ShaderCreateInfo ShaderCI;
+    // Tell the system that the shader source code is in HLSL.
+    // For OpenGL, the engine will convert this into GLSL behind the scene
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
+
+    // In this tutorial, we will load shaders from file. To be able to do that,
+    // we need to create a shader source stream factory
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Create vertex shader
+    RefCntAutoPtr<IShader> pVS, pVSBatched;
     {
-        // Pipeline state object encompasses configuration of all GPU stages
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Polygon VS";
+        ShaderCI.FilePath        = "polygon.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pVS);
 
-        PipelineStateDesc PSODesc;
-        // Pipeline state name is used by the engine to report issues
-        // It is always a good idea to give objects descriptive names
-        PSODesc.Name = "Polygon PSO"; 
+        ShaderCI.Desc.Name       = "Polygon VS Batched";
+        ShaderCI.FilePath        = "polygon_batch.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pVSBatched);
 
-        // This is a graphics pipeline
-        PSODesc.IsComputePipeline = false; 
-
-        // This tutorial will render to a single render target
-        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-        // Set render target format which is the format of the swap chain's color buffer
-        PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
-        // Set depth buffer format which is the format of the swap chain's back buffer
-        PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
-        // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        // Disable back face culling
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
-        // Disable depth testing
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-
-        ShaderCreateInfo ShaderCI;
-        // Tell the system that the shader source code is in HLSL.
-        // For OpenGL, the engine will convert this into GLSL behind the scene
-        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-
-        // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-        ShaderCI.UseCombinedTextureSamplers = true;
-
-        // In this tutorial, we will load shaders from file. To be able to do that,
-        // we need to create a shader source stream factory
-        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-        // Create vertex shader
-        RefCntAutoPtr<IShader> pVS, pVSBatched;
-        {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Polygon VS";
-            ShaderCI.FilePath        = "polygon.vsh";
-            pDevice->CreateShader(ShaderCI, &pVS);
-
-            ShaderCI.Desc.Name       = "Polygon VS Batched";
-            ShaderCI.FilePath        = "polygon_batch.vsh";
-            pDevice->CreateShader(ShaderCI, &pVSBatched);
-
-            // Create dynamic uniform buffer that will store our transformation matrix
-            // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4), "Instance constants CB", &m_PolygonAttribsCB);
-            // Transition the buffer to RESOURCE_STATE_CONSTANT_BUFFER state
-            Barriers.emplace_back(m_PolygonAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
-        }
-
-        // Create pixel shader
-        RefCntAutoPtr<IShader> pPS, pPSBatched;
-        {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Polygon PS";
-            ShaderCI.FilePath        = "polygon.psh";
-            pDevice->CreateShader(ShaderCI, &pPS);
-
-            ShaderCI.Desc.Name       = "Polygon PS Batched";
-            ShaderCI.FilePath        = "polygon_batch.psh";
-            pDevice->CreateShader(ShaderCI, &pPSBatched);
-        }
-
-        LayoutElement LayoutElem[] =
-        {
-            // Attribute 0 - PolygonXY
-            LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX}
-        };
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElem;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElem);
-
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
-
-        // Define variable type that will be used by default
-        PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-
-        // Shader variables should typically be mutable, which means they are expected
-        // to change on a per-instance basis
-        ShaderResourceVariableDesc Vars[] = 
-        {
-            {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
-        };
-        PSODesc.ResourceLayout.Variables    = Vars;
-        PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-
-        // Define static sampler for g_Texture. Static samplers should be used whenever possible
-        SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
-        StaticSamplerDesc StaticSamplers[] = 
-        {
-            {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
-        };
-        PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-        PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-
-        for (int state = 0; state < NumStates; ++state)
-        {
-            PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
-            pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
-            // Since we did not explcitly specify the type for Constants, default type 
-            // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-            // to the pipeline state object.
-            m_pPSO[0][state]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "PolygonAttribs")->Set(m_PolygonAttribsCB);
-
-            if (state > 0)
-                VERIFY(m_pPSO[0][state]->IsCompatibleWith(m_pPSO[0][0]), "PSOs are expected to be compatible");
-        }
-
-
-        PSODesc.Name = "Batched Polygon PSO";
-        // Define vertex shader input layout
-        // This tutorial uses two types of input: per-vertex data and per-instance data.
-        LayoutElement BatchLayoutElems[] =
-        {
-            // Attribute 0 - PolygonXY
-            LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX},
-            // Attribute 1 - PolygonRotationAndScale
-            LayoutElement{1, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
-            // Attribute 2 - PolygonCenter
-            LayoutElement{2, 1, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
-            // Attribute 3 - TexArrInd
-            LayoutElement{3, 1, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE}
-        };
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(BatchLayoutElems);
-        
-        PSODesc.GraphicsPipeline.pVS = pVSBatched;
-        PSODesc.GraphicsPipeline.pPS = pPSBatched;
-
-        for (int state = 0; state < NumStates; ++state)
-        {
-            PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
-            pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
-            if (state > 0)
-                VERIFY(m_pPSO[1][state]->IsCompatibleWith(m_pPSO[1][0]), "PSOs are expected to be compatible");
-        }
+        // Create dynamic uniform buffer that will store our transformation matrix
+        // Dynamic buffers can be frequently updated by the CPU
+        CreateUniformBuffer(m_pDevice, sizeof(float4x4), "Instance constants CB", &m_PolygonAttribsCB);
+        // Transition the buffer to RESOURCE_STATE_CONSTANT_BUFFER state
+        Barriers.emplace_back(m_PolygonAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
     }
 
-    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2),     1+NumDeferredCtx, "Streaming vertex buffer"));
-    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER,  MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1+NumDeferredCtx, "Streaming index buffer"));
+    // Create pixel shader
+    RefCntAutoPtr<IShader> pPS, pPSBatched;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Polygon PS";
+        ShaderCI.FilePath        = "polygon.psh";
+        m_pDevice->CreateShader(ShaderCI, &pPS);
 
-    // Transition the buffers to required state
-    Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
-    Barriers.emplace_back(m_StreamingIB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
+        ShaderCI.Desc.Name       = "Polygon PS Batched";
+        ShaderCI.FilePath        = "polygon_batch.psh";
+        m_pDevice->CreateShader(ShaderCI, &pPSBatched);
+    }
 
-    InitializePolygonGeometry();
-    InitializePolygons();
+    LayoutElement LayoutElem[] =
+    {
+        // Attribute 0 - PolygonXY
+        LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX}
+    };
+    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElem;
+    PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElem);
 
-    // Load textures
+    PSODesc.GraphicsPipeline.pVS = pVS;
+    PSODesc.GraphicsPipeline.pPS = pPS;
+
+    // Define variable type that will be used by default
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+    // Shader variables should typically be mutable, which means they are expected
+    // to change on a per-instance basis
+    ShaderResourceVariableDesc Vars[] = 
+    {
+        {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+    };
+    PSODesc.ResourceLayout.Variables    = Vars;
+    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+    // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    StaticSamplerDesc StaticSamplers[] = 
+    {
+        {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
+    };
+    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+
+    for (int state = 0; state < NumStates; ++state)
+    {
+        PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
+        m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
+        // Since we did not explcitly specify the type for Constants, default type 
+        // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
+        // to the pipeline state object.
+        m_pPSO[0][state]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "PolygonAttribs")->Set(m_PolygonAttribsCB);
+
+        if (state > 0)
+            VERIFY(m_pPSO[0][state]->IsCompatibleWith(m_pPSO[0][0]), "PSOs are expected to be compatible");
+    }
+
+
+    PSODesc.Name = "Batched Polygon PSO";
+    // Define vertex shader input layout
+    // This tutorial uses two types of input: per-vertex data and per-instance data.
+    LayoutElement BatchLayoutElems[] =
+    {
+        // Attribute 0 - PolygonXY
+        LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX},
+        // Attribute 1 - PolygonRotationAndScale
+        LayoutElement{1, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
+        // Attribute 2 - PolygonCenter
+        LayoutElement{2, 1, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
+        // Attribute 3 - TexArrInd
+        LayoutElement{3, 1, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE}
+    };
+    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
+    PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(BatchLayoutElems);
+        
+    PSODesc.GraphicsPipeline.pVS = pVSBatched;
+    PSODesc.GraphicsPipeline.pPS = pPSBatched;
+
+    for (int state = 0; state < NumStates; ++state)
+    {
+        PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
+        m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
+        if (state > 0)
+            VERIFY(m_pPSO[1][state]->IsCompatibleWith(m_pPSO[1][0]), "PSOs are expected to be compatible");
+    }
+}
+
+void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
+{
     RefCntAutoPtr<ITexture> pTexArray;
     for(int tex=0; tex < NumTextures; ++tex)
     {
@@ -373,9 +354,8 @@ void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
     }
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-    // Transition all textures to shader resource state
+    // Transition texture array to shader resource state
     Barriers.emplace_back(pTexArray, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
-    m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 
     // Set texture SRV in the SRB
     for (int tex = 0; tex < NumTextures; ++tex)
@@ -388,24 +368,97 @@ void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
 
     m_pPSO[1][0]->CreateShaderResourceBinding(&m_BatchSRB, true);
     m_BatchSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
+}
 
+void Tutorial10_DataStreaming::InitUI()
+{
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     // Add num Polygons control
-    TwAddVarCB(bar, "Num Polygons", TW_TYPE_INT32, SetNumPolygons, GetNumPolygons, this, "min=1 max=100000 step=20");
-    TwAddVarCB(bar, "Batch Size", TW_TYPE_INT32, SetBatchSize, GetBatchSize, this, "min=1 max=100");
+    TwAddVarCB(bar, "Num Polygons", TW_TYPE_INT32,
+        [](const void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
+            pTheTutorial->m_NumPolygons = *static_cast<const int*>(value);
+            pTheTutorial->InitializePolygons();
+        },
+        [](void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
+            *static_cast<int*>(value) = pTheTutorial->m_NumPolygons;
+        },
+        this, "min=1 max=100000 step=20");
+
+    TwAddVarCB(bar, "Batch Size", TW_TYPE_INT32,
+        [](const void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>(clientData);
+            pTheTutorial->m_BatchSize = *static_cast<const int *>(value);
+            pTheTutorial->CreateInstanceBuffer();
+        },
+        [](void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>(clientData);
+            *static_cast<int*>(value) = pTheTutorial->m_BatchSize;
+        },
+        this, "min=1 max=100");
+
     std::stringstream def;
     def << "min=0 max=" << m_MaxThreads;
-    TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, SetWorkerThreadCount, GetWorkerThreadCount, this, def.str().c_str());
-    m_NumWorkerThreads = std::min(4, m_MaxThreads);
+    TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32,
+        [](const void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
+            pTheTutorial->StopWorkerThreads();
+            pTheTutorial->m_NumWorkerThreads = *static_cast<const int*>(value);
+            pTheTutorial->StartWorkerThreads();
+        },
+        [](void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
+            *static_cast<int*>(value) = pTheTutorial->m_NumWorkerThreads;
+        },
+        this, def.str().c_str());
     
-    if (pDevice->GetDeviceCaps().DevType == DeviceType::D3D12 || pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
+    if (m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12 ||
+        m_pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
     {
         TwAddVarRW(bar, "Persistent map", TW_TYPE_BOOLCPP, &m_bAllowPersistentMap, "");
     }
+}
+
+
+void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
+                                          IRenderDevice*    pDevice,
+                                          IDeviceContext**  ppContexts,
+                                          Uint32            NumDeferredCtx,
+                                          ISwapChain*       pSwapChain)
+{
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+
+    m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
+    m_NumWorkerThreads = std::min(4, m_MaxThreads);
+
+    std::vector<StateTransitionDesc> Barriers;
+    CreatePipelineStates(Barriers);
+    LoadTextures(Barriers);
+
+    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2),     1+NumDeferredCtx, "Streaming vertex buffer"));
+    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER,  MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1+NumDeferredCtx, "Streaming index buffer"));
+
+    // Transition the buffers to required state
+    Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+    Barriers.emplace_back(m_StreamingIB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
+
+    InitializePolygonGeometry();
+    InitializePolygons();
+
+    m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
+
+    InitUI();
 
     if (m_BatchSize > 1)
         CreateInstanceBuffer();
@@ -720,21 +773,6 @@ void Tutorial10_DataStreaming::Render()
     }
 }
 
-// Callback function called by AntTweakBar to set the grid size
-void Tutorial10_DataStreaming::SetNumPolygons(const void *value, void * clientData)
-{
-    Tutorial10_DataStreaming *pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-    pTheTutorial->m_NumPolygons = *static_cast<const int *>(value);
-    pTheTutorial->InitializePolygons();
-}
-
-// Callback function called by AntTweakBar to get the grid size
-void Tutorial10_DataStreaming::GetNumPolygons(void *value, void * clientData)
-{
-    Tutorial10_DataStreaming *pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-    *static_cast<int*>(value) = pTheTutorial->m_NumPolygons;
-}
-
 void Tutorial10_DataStreaming::CreateInstanceBuffer()
 {
     // Create instance data buffer that will store transformation matrices
@@ -748,33 +786,6 @@ void Tutorial10_DataStreaming::CreateInstanceBuffer()
     m_BatchDataBuffer.Release();
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_BatchDataBuffer);
 }
-
-void Tutorial10_DataStreaming::SetBatchSize(const void *value, void * clientData)
-{
-    Tutorial10_DataStreaming *pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>(clientData);
-    pTheTutorial->m_BatchSize = *static_cast<const int *>(value);
-    pTheTutorial->CreateInstanceBuffer();
-}
-void Tutorial10_DataStreaming::GetBatchSize(void *value, void * clientData)
-{
-    Tutorial10_DataStreaming *pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>(clientData);
-    *static_cast<int*>(value) = pTheTutorial->m_BatchSize;
-}
-
-void Tutorial10_DataStreaming::SetWorkerThreadCount(const void *value, void * clientData)
-{
-    Tutorial10_DataStreaming *pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-    pTheTutorial->StopWorkerThreads();
-    pTheTutorial->m_NumWorkerThreads = *static_cast<const int *>(value);
-    pTheTutorial->StartWorkerThreads();
-}
-
-void Tutorial10_DataStreaming::GetWorkerThreadCount(void *value, void * clientData)
-{
-    Tutorial10_DataStreaming *pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-    *static_cast<int*>(value) = pTheTutorial->m_NumWorkerThreads;
-}
-
 
 void Tutorial10_DataStreaming::Update(double CurrTime, double ElapsedTime)
 {

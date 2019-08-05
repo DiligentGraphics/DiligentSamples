@@ -51,12 +51,10 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial10: Streaming";}
 
 private:
-    static void SetNumPolygons(const void* value, void* clientData);
-    static void GetNumPolygons(      void* value, void* clientData);
-    static void SetBatchSize  (const void* value, void* clientData);
-    static void GetBatchSize  (      void* value, void * clientData);
-    static void SetWorkerThreadCount(const void *value, void* clientData);
-    static void GetWorkerThreadCount(      void *value, void* clientData);
+    void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
+    void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
+    void InitUI();
+
     void InitializePolygons();
     void InitializePolygonGeometry();
     void CreateInstanceBuffer();
