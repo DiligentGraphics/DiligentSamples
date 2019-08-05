@@ -11,5 +11,6 @@ struct PlanePSOutput
 void main(in  PlanePSInput  PSIn,
           out PlanePSOutput PSOut)
 {
-    PSOut.Color = float4(1,1,1,0) * (PSIn.NdotL * 0.8 + 0.2) + g_ShadowMap.SampleCmp(g_ShadowMap_sampler, float2(0,0), 1).r;//g_Texture.Sample(g_Texture_sampler, PSIn.UV) * (PSIn.NdotL * 0.8 + 0.2);
+    float LightAmount = g_ShadowMap.SampleCmp(g_ShadowMap_sampler, PSIn.ShadowMapPos.xy, PSIn.ShadowMapPos.z).r;
+    PSOut.Color = float4(1,1,1,0) * (PSIn.NdotL * LightAmount * 0.8 + 0.2);
 }

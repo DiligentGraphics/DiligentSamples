@@ -166,13 +166,16 @@ void Tutorial13_ShadowMap::CreateCubePSO()
         m_pDevice->CreateShader(ShaderCI, &pShadowVS);
     }
     
-    PSODesc.Name                             = "Cube shadow PSO";
-    PSODesc.GraphicsPipeline.pVS             = pShadowVS;
-    PSODesc.GraphicsPipeline.pPS             = nullptr;
-    PSODesc.ResourceLayout.Variables         = nullptr;
-    PSODesc.ResourceLayout.NumVariables      = 0;
-    PSODesc.ResourceLayout.StaticSamplers    = nullptr;
-    PSODesc.ResourceLayout.NumStaticSamplers = 0;
+    PSODesc.Name                              = "Cube shadow PSO";
+    PSODesc.GraphicsPipeline.NumRenderTargets = 0;
+    PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
+    PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowMapFormat;
+    PSODesc.GraphicsPipeline.pVS              = pShadowVS;
+    PSODesc.GraphicsPipeline.pPS              = nullptr;
+    PSODesc.ResourceLayout.Variables          = nullptr;
+    PSODesc.ResourceLayout.NumVariables       = 0;
+    PSODesc.ResourceLayout.StaticSamplers     = nullptr;
+    PSODesc.ResourceLayout.NumStaticSamplers  = 0;
     
     // Disable depth clipping to render objects that are closer than near
     // clipping plane. This is not required for this tutorial, but real applications
@@ -388,11 +391,13 @@ void Tutorial13_ShadowMap::InitUI()
 {
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 60 * m_UIScale};
+    int barSize[2] = {320 * m_UIScale, 180 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+    int valuesWidth = 180 * m_UIScale;
+    TwSetParam(bar, NULL, "valueswidth", TW_PARAM_INT32, 1, &valuesWidth);
     
     // Add grid size control
-    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightDirection, "");
+    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightDirection, "opened=true");
 }
     
 void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
@@ -438,7 +443,7 @@ void Tutorial13_ShadowMap::CreateShadowMap()
 void Tutorial13_ShadowMap::RenderShadowMap()
 {
     float3 f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ;
-    f3LightSpaceZ = normalize(m_LightDirection);
+    f3LightSpaceZ = normalize(-m_LightDirection);
     
     auto min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)), std::abs(m_LightDirection.z));
     if (min_cmp == std::abs(m_LightDirection.x))
@@ -485,18 +490,18 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     float4x4 ShadowProjMatr = ScaleMatrix * ScaledBiasMatrix;
     
     // Adjust the world to light space transformation matrix
-    float4x4 WorldToLightProjSpaceMatr;
-    WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
+    float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
     
     const auto& NDCAttribs = DevCaps.GetNDCAttribs();
     float4x4 ProjToUVScale = float4x4::Scale( 0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale );
     float4x4 ProjToUVBias = float4x4::Translation( 0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
     
-    float4x4 WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
-    float4x4 WorldToShadowMapUVDepthT = WorldToShadowMapUVDepthMatr.Transpose();
+    m_WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
+
+    RenderCube(WorldToLightProjSpaceMatr, true);
 }
 
-void Tutorial13_ShadowMap::RenderCube()
+void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsShadowPass)
 {
     // Update constant buffer
     {
@@ -508,14 +513,12 @@ void Tutorial13_ShadowMap::RenderCube()
         };
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->WorldViewProj = (m_CubeWorldMatrix * m_CameraViewProjMatrix).Transpose();
+        CBConstants->WorldViewProj = (m_CubeWorldMatrix * CameraViewProj).Transpose();
         auto NormalMatrix = m_CubeWorldMatrix.RemoveTranslation().Inverse();
         // We need to do inverse-transpose, but we also need to transpose the matrix
         // before writing it to the buffer
         CBConstants->NormalTranform = NormalMatrix;
-        CBConstants->LightDirection.x = m_LightDirection.x;
-        CBConstants->LightDirection.y = m_LightDirection.y;
-        CBConstants->LightDirection.z = m_LightDirection.z;
+        CBConstants->LightDirection = m_LightDirection;
     }
 
     // Bind vertex buffer
@@ -524,11 +527,17 @@ void Tutorial13_ShadowMap::RenderCube()
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Set pipeline state
-    m_pImmediateContext->SetPipelineState(m_pCubePSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
-    // makes sure that resources are transitioned to required states.
-    m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    // Set pipeline state and commit resources
+    if (IsShadowPass)
+    {
+        m_pImmediateContext->SetPipelineState(m_pCubeShadowPSO);
+        m_pImmediateContext->CommitShaderResources(m_CubeShadowSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }
+    else
+    {
+        m_pImmediateContext->SetPipelineState(m_pCubePSO);
+        m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }    
 
     DrawAttribs DrawAttrs(36, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
     m_pImmediateContext->Draw(DrawAttrs);
@@ -540,16 +549,14 @@ void Tutorial13_ShadowMap::RenderPlane()
         struct Constants
         {
             float4x4 CameraViewProj;
-            float4x4 WorldToLightUVDepth;
+            float4x4 WorldToShadowMapUVDepth;
             float4   LightDirection;
         };
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->CameraViewProj = m_CameraViewProjMatrix.Transpose();
-        CBConstants->WorldToLightUVDepth;
-        CBConstants->LightDirection.x = m_LightDirection.x;
-        CBConstants->LightDirection.y = m_LightDirection.y;
-        CBConstants->LightDirection.z = m_LightDirection.z;
+        CBConstants->CameraViewProj          = m_CameraViewProjMatrix.Transpose();
+        CBConstants->WorldToShadowMapUVDepth = m_WorldToShadowMapUVDepthMatr.Transpose();
+        CBConstants->LightDirection          = m_LightDirection;
     }
 
     // Set pipeline state
@@ -565,19 +572,18 @@ void Tutorial13_ShadowMap::RenderPlane()
 // Render a frame
 void Tutorial13_ShadowMap::Render()
 {
-    // Bind shadow map
+    // Render shadow map
     m_pImmediateContext->SetRenderTargets(0, nullptr, m_ShadowMapDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    // Clear shadow map
     m_pImmediateContext->ClearDepthStencil(m_ShadowMapDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    RenderShadowMap();
     
-    
+    // Bind main back buffer
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    // Clear the back buffer 
     const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f }; 
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    RenderCube();
+    RenderCube(m_CameraViewProjMatrix, false);
     RenderPlane();
 }
 
