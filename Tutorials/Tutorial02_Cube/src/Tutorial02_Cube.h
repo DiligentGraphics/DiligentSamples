@@ -42,6 +42,10 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial02: Cube";}
 
 private:
+    void CreatePipelineState();
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
