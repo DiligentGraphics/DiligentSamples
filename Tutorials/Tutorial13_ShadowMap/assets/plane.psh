@@ -1,7 +1,7 @@
 #include "structures.fxh"
 
-//Texture2D              g_ShadowMap;
-//SamplerComparisonState g_ShadowMap_sampler; // By convention, texture samplers must use _sampler suffix
+Texture2D              g_ShadowMap;
+SamplerComparisonState g_ShadowMap_sampler; // By convention, texture samplers must use _sampler suffix
 
 struct PlanePSOutput
 {
@@ -11,5 +11,5 @@ struct PlanePSOutput
 void main(in  PlanePSInput  PSIn,
           out PlanePSOutput PSOut)
 {
-    PSOut.Color = float4(1,0,0,0) * PSIn.NdotL;//g_Texture.Sample(g_Texture_sampler, PSIn.UV) * (PSIn.NdotL * 0.8 + 0.2);
+    PSOut.Color = float4(1,1,1,0) * (PSIn.NdotL * 0.8 + 0.2) + g_ShadowMap.SampleCmp(g_ShadowMap_sampler, float2(0,0), 1).r;//g_Texture.Sample(g_Texture_sampler, PSIn.UV) * (PSIn.NdotL * 0.8 + 0.2);
 }

@@ -45,12 +45,15 @@ public:
 
 private:
     void CreateCubePSO();
+    void CreatePlanePSO();
     void CreateVertexBuffer();
     void CreateIndexBuffer();
     void LoadTexture();
     void InitUI();
     void CreateShadowMap();
     void RenderShadowMap();
+    void RenderCube();
+    void RenderPlane();
     
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
     RefCntAutoPtr<IPipelineState>         m_pCubeShadowPSO;
@@ -65,8 +68,8 @@ private:
     RefCntAutoPtr<ITextureView>           m_ShadowMapDSV;
     RefCntAutoPtr<ITextureView>           m_ShadowMapSRV;
     float4x4                              m_CubeWorldMatrix;
-    float4x4                              m_WorldViewProjMatrix;
-    float3                                m_LightDirection      = float3(0, 0, -1);
+    float4x4                              m_CameraViewProjMatrix;
+    float3                                m_LightDirection      = normalize(float3(-0.42f, -0.78f, -0.46f));
     Uint32                                m_ShadowMapSize       = 1024;
     TEXTURE_FORMAT                        m_ShadowMapFormat     = TEX_FORMAT_D16_UNORM;
 };

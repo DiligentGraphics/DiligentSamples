@@ -183,7 +183,97 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     m_pCubeShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
 }
+ 
+void Tutorial13_ShadowMap::CreatePlanePSO()
+{
+    PipelineStateDesc PSODesc;
+    // Pipeline state name is used by the engine to report issues.
+    // It is always a good idea to give objects descriptive names.
+    PSODesc.Name = "Plane PSO";
     
+    // This is a graphics pipeline
+    PSODesc.IsComputePipeline = false;
+    
+    // This tutorial will render to a single render target
+    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    // Set render target format which is the format of the swap chain's color buffer
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    // Set depth buffer format which is the format of the swap chain's back buffer
+    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    // Cull back faces
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    // Enable depth testing
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    
+    ShaderCreateInfo ShaderCI;
+    // Tell the system that the shader source code is in HLSL.
+    // For OpenGL, the engine will convert this into GLSL behind the scene
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
+    
+    // In this tutorial, we will load shaders from file. To be able to do that,
+    // we need to create a shader source stream factory
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Create vertex shader
+    RefCntAutoPtr<IShader> pPlaneVS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Plane VS";
+        ShaderCI.FilePath        = "plane.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pPlaneVS);
+    }
+    
+    // Create pixel shader
+    RefCntAutoPtr<IShader> pPlanePS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Plane PS";
+        ShaderCI.FilePath        = "plane.psh";
+        m_pDevice->CreateShader(ShaderCI, &pPlanePS);
+    }
+    
+    PSODesc.GraphicsPipeline.pVS = pPlaneVS;
+    PSODesc.GraphicsPipeline.pPS = pPlanePS;
+    
+    // Define variable type that will be used by default
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    
+    // Shader variables should typically be mutable, which means they are expected
+    // to change on a per-instance basis
+    ShaderResourceVariableDesc Vars[] =
+    {
+        {SHADER_TYPE_PIXEL, "g_ShadowMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+    };
+    PSODesc.ResourceLayout.Variables    = Vars;
+    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    
+    // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    SamplerDesc SamCmpDesc(FILTER_TYPE_COMPARISON_LINEAR, FILTER_TYPE_COMPARISON_LINEAR, FILTER_TYPE_COMPARISON_LINEAR,
+                           TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamCmpDesc.ComparisonFunc = COMPARISON_FUNC_LESS;
+    StaticSamplerDesc StaticSamplers[] =
+    {
+        {SHADER_TYPE_PIXEL, "g_ShadowMap", SamCmpDesc}
+    };
+    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    
+    m_pDevice->CreatePipelineState(PSODesc, &m_pPlanePSO);
+    
+    // Since we did not explcitly specify the type for Constants, default type
+    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
+    // through the pipeline state object.
+    m_pPlanePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+}
+
 void Tutorial13_ShadowMap::CreateVertexBuffer()
 {
     // Layout of this structure matches the one we defined in pipeline state
@@ -318,10 +408,12 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     CreateUniformBuffer(pDevice, sizeof(float4x4) * 2 + sizeof(float4), "VS constants CB", &m_VSConstants);
     
     CreateCubePSO();
+    CreatePlanePSO();
     CreateVertexBuffer();
     CreateIndexBuffer();
     LoadTexture();
     CreateShadowMap();
+    InitUI();
 }
 
 void Tutorial13_ShadowMap::CreateShadowMap()
@@ -337,6 +429,10 @@ void Tutorial13_ShadowMap::CreateShadowMap()
     m_pDevice->CreateTexture(SMDesc, nullptr, &ShadowMap);
     m_ShadowMapSRV = ShadowMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     m_ShadowMapDSV = ShadowMap->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+
+    m_PlaneSRB.Release();
+    m_pPlanePSO->CreateShaderResourceBinding(&m_PlaneSRB, true);
+    m_PlaneSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_ShadowMap")->Set(m_ShadowMapSRV);
 }
     
 void Tutorial13_ShadowMap::RenderShadowMap()
@@ -400,7 +496,72 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     float4x4 WorldToShadowMapUVDepthT = WorldToShadowMapUVDepthMatr.Transpose();
 }
 
-    
+void Tutorial13_ShadowMap::RenderCube()
+{
+    // Update constant buffer
+    {
+        struct Constants
+        {
+            float4x4 WorldViewProj;
+            float4x4 NormalTranform;
+            float4   LightDirection;
+        };
+        // Map the buffer and write current world-view-projection matrix
+        MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        CBConstants->WorldViewProj = (m_CubeWorldMatrix * m_CameraViewProjMatrix).Transpose();
+        auto NormalMatrix = m_CubeWorldMatrix.RemoveTranslation().Inverse();
+        // We need to do inverse-transpose, but we also need to transpose the matrix
+        // before writing it to the buffer
+        CBConstants->NormalTranform = NormalMatrix;
+        CBConstants->LightDirection.x = m_LightDirection.x;
+        CBConstants->LightDirection.y = m_LightDirection.y;
+        CBConstants->LightDirection.z = m_LightDirection.z;
+    }
+
+    // Bind vertex buffer
+    Uint32 offset = 0;
+    IBuffer* pBuffs[] = {m_CubeVertexBuffer};
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // Set pipeline state
+    m_pImmediateContext->SetPipelineState(m_pCubePSO);
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // makes sure that resources are transitioned to required states.
+    m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    DrawAttribs DrawAttrs(36, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
+    m_pImmediateContext->Draw(DrawAttrs);
+}
+
+void Tutorial13_ShadowMap::RenderPlane()
+{
+    {
+        struct Constants
+        {
+            float4x4 CameraViewProj;
+            float4x4 WorldToLightUVDepth;
+            float4   LightDirection;
+        };
+        // Map the buffer and write current world-view-projection matrix
+        MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        CBConstants->CameraViewProj = m_CameraViewProjMatrix.Transpose();
+        CBConstants->WorldToLightUVDepth;
+        CBConstants->LightDirection.x = m_LightDirection.x;
+        CBConstants->LightDirection.y = m_LightDirection.y;
+        CBConstants->LightDirection.z = m_LightDirection.z;
+    }
+
+    // Set pipeline state
+    m_pImmediateContext->SetPipelineState(m_pPlanePSO);
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // makes sure that resources are transitioned to required states.
+    m_pImmediateContext->CommitShaderResources(m_PlaneSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    DrawAttribs DrawAttrs(4, DRAW_FLAG_VERIFY_ALL);
+    m_pImmediateContext->Draw(DrawAttrs);
+}
+
 // Render a frame
 void Tutorial13_ShadowMap::Render()
 {
@@ -416,44 +577,8 @@ void Tutorial13_ShadowMap::Render()
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    {
-        struct Constants
-        {
-            float4x4 WorldViewProj;
-            float4x4 NormalTranform;
-            float4   LightDirection;
-        };
-        // Map the buffer and write current world-view-projection matrix
-        MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->WorldViewProj = m_WorldViewProjMatrix.Transpose();
-        auto NormalMatrix = m_CubeWorldMatrix.RemoveTranslation().Inverse();
-        // We need to do inverse-transpose, but we also need to transpose the matrix
-        // before writing it to the buffer
-        CBConstants->NormalTranform = NormalMatrix;
-        CBConstants->LightDirection.x = m_LightDirection.x;
-        CBConstants->LightDirection.y = m_LightDirection.y;
-        CBConstants->LightDirection.z = m_LightDirection.z;
-    }
-
-    // Bind vertex buffer
-    Uint32 offset = 0;
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Set pipeline state
-    m_pImmediateContext->SetPipelineState(m_pCubePSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
-    // makes sure that resources are transitioned to required states.
-    m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed  = true;      // This is indexed draw call
-    DrawAttrs.IndexType  = VT_UINT32; // Index type
-    DrawAttrs.NumIndices = 36;
-    // Verify the state of vertex and index buffers
-    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
-    m_pImmediateContext->Draw(DrawAttrs);
+    RenderCube();
+    RenderPlane();
 }
 
 void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
@@ -464,14 +589,15 @@ void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
 
     // Set cube world view matrix
     m_CubeWorldMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f);
-    float4x4 CameraView = float4x4::Translation(0.f, 1.0f, -10.0f) * float4x4::RotationY(PI_F);
+
+    float4x4 CameraView = float4x4::Translation(0.f, -5.0f, -10.0f) * float4x4::RotationY(PI_F) * float4x4::RotationX(-PI_F * 0.2);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
-    // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = m_CubeWorldMatrix * CameraView * Proj;
+    // Compute view-projection matrix
+    m_CameraViewProjMatrix = CameraView * Proj;
 }
 
 }

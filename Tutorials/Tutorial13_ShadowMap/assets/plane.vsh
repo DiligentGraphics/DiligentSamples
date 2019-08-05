@@ -2,7 +2,7 @@
 
 cbuffer Constants
 {
-    float4x4 g_ViewProj;
+    float4x4 g_CameraViewProj;
     float4x4 g_WorldToLightUVDepth;
     float4   g_LightDirection;
 };
@@ -10,16 +10,16 @@ cbuffer Constants
 void main(in  uint    VertId : SV_VertexID,
           out PlanePSInput PSIn)
 {
-    float PlaneExtent = 10.0;
-    float PlaneZ      = -2.0;
+    float PlaneExtent = 5.0;
+    float PlanePos    = -2.0;
     
     float4 Pos[4];
-    Pos[0] = float4(-PlaneExtent, -PlaneExtent, PlaneZ, 1.0);
-    Pos[1] = float4(-PlaneExtent, +PlaneExtent, PlaneZ, 1.0);
-    Pos[2] = float4(+PlaneExtent, -PlaneExtent, PlaneZ, 1.0);
-    Pos[3] = float4(+PlaneExtent, +PlaneExtent, PlaneZ, 1.0);
-    
-    PSIn.Pos          = mul(Pos[VertId], g_ViewProj);
+    Pos[0] = float4(-PlaneExtent, PlanePos, -PlaneExtent, 1.0);
+    Pos[1] = float4(-PlaneExtent, PlanePos, +PlaneExtent, 1.0);
+    Pos[2] = float4(+PlaneExtent, PlanePos, -PlaneExtent, 1.0);
+    Pos[3] = float4(+PlaneExtent, PlanePos, +PlaneExtent, 1.0);
+
+    PSIn.Pos          = mul(Pos[VertId], g_CameraViewProj);
     PSIn.ShadowMapPos = mul(Pos[VertId], g_WorldToLightUVDepth);
-    PSIn.NdotL        = dot(float3(0.0, 0.0, 1.0), -g_LightDirection.xyz);
+    PSIn.NdotL        = saturate(dot(float3(0.0, 1.0, 0.0), -g_LightDirection.xyz));
 }
