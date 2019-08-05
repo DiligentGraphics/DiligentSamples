@@ -44,6 +44,10 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial08: Tessellation";}
 
 private:
+    void CreatePipelineStates();
+    void LoadTextures();
+    void InitUI();
+
     RefCntAutoPtr<IPipelineState>         m_pPSO[2];
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[2];
     RefCntAutoPtr<IBuffer>                m_ShaderConstants;
