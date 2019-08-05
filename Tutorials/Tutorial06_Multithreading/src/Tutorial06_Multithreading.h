@@ -50,13 +50,16 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial06: Multithreaded rendering";}
 
 private:
-    static void SetGridSize(const void* value, void* clientData);
-    static void GetGridSize(void* value, void* clientData);
-    static void SetWorkerThreadCount(const void* value, void* clientData);
-    static void GetWorkerThreadCount(void* value, void * clientData);
+    void CreatePipelineState (std::vector<StateTransitionDesc>& Barriers);
+    void CreateVertexBuffer  (std::vector<StateTransitionDesc>& Barriers);
+    void CreateIndexBuffer   (std::vector<StateTransitionDesc>& Barriers);
+    void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
+    void InitUI();
     void PopulateInstanceData();
+
     void StartWorkerThreads();
     void StopWorkerThreads();
+
     void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
 
     static void WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum);

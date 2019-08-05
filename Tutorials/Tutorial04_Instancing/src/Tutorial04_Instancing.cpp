@@ -284,12 +284,24 @@ void Tutorial04_Instancing::LoadTexture()
 void Tutorial04_Instancing::InitUI()
 {
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 60 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
     // Add grid size control
-    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, SetGridSize, GetGridSize, this, "min=1 max=32");
+    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, 
+        [](const void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>(clientData);
+            pTheTutorial->m_GridSize = *static_cast<const int*>(value);
+            pTheTutorial->PopulateInstanceBuffer();
+        }, 
+        [](void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>(clientData);
+            *static_cast<int*>(value) = pTheTutorial->m_GridSize;
+        },
+        this, "min=1 max=32");
 }
 
 void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
@@ -384,22 +396,6 @@ void Tutorial04_Instancing::Render()
     DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->Draw(DrawAttrs);
 }
-
-// Callback function called by AntTweakBar to set the grid size
-void Tutorial04_Instancing::SetGridSize(const void *value, void * clientData)
-{
-    Tutorial04_Instancing *pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>( clientData );
-    pTheTutorial->m_GridSize = *static_cast<const int *>(value);
-    pTheTutorial->PopulateInstanceBuffer();
-}
-
-// Callback function called by AntTweakBar to get the grid size
-void Tutorial04_Instancing::GetGridSize(void *value, void * clientData)
-{
-    Tutorial04_Instancing *pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>( clientData );
-    *static_cast<int*>(value) = pTheTutorial->m_GridSize;
-}
-
 
 void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
 {

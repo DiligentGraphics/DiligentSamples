@@ -48,9 +48,6 @@ private:
     void CreateIndexBuffer();
     void LoadTextures();
     void InitUI();
-
-    static void SetGridSize(const void *value, void* clientData);
-    static void GetGridSize(void *value, void* clientData);
     void PopulateInstanceBuffer();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
