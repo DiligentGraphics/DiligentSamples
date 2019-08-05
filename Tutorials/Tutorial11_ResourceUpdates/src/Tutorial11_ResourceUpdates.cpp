@@ -96,121 +96,116 @@ static const Vertex CubeVerts[] =
     {float3(-1,+1,+1), float2(1,0)}
 };
 
-void Tutorial11_ResourceUpdates::Initialize(IEngineFactory*   pEngineFactory,
-                                            IRenderDevice*    pDevice,
-                                            IDeviceContext**  ppContexts,
-                                            Uint32            NumDeferredCtx,
-                                            ISwapChain*       pSwapChain)
+void Tutorial11_ResourceUpdates::CreatePipelineStates()
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    // Pipeline state object encompasses configuration of all GPU stages
 
+    PipelineStateDesc PSODesc;
+    // Pipeline state name is used by the engine to report issues
+    // It is always a good idea to give objects descriptive names
+    PSODesc.Name = "Cube PSO"; 
+
+    // This is a graphics pipeline
+    PSODesc.IsComputePipeline = false; 
+
+    // This tutorial will render to a single render target
+    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    // Set render target format which is the format of the swap chain's color buffer
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    // Set depth buffer format which is the format of the swap chain's back buffer
+    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    // Cull back faces
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    // Enable depth testing
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+
+    ShaderCreateInfo ShaderCI;
+    // Tell the system that the shader source code is in HLSL.
+    // For OpenGL, the engine will convert this into GLSL behind the scene
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
+
+    // In this tutorial, we will load shaders from file. To be able to do that,
+    // we need to create a shader source stream factory
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Create vertex shader
+    RefCntAutoPtr<IShader> pVS;
     {
-        // Pipeline state object encompasses configuration of all GPU stages
-
-        PipelineStateDesc PSODesc;
-        // Pipeline state name is used by the engine to report issues
-        // It is always a good idea to give objects descriptive names
-        PSODesc.Name = "Cube PSO"; 
-
-        // This is a graphics pipeline
-        PSODesc.IsComputePipeline = false; 
-
-        // This tutorial will render to a single render target
-        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-        // Set render target format which is the format of the swap chain's color buffer
-        PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
-        // Set depth buffer format which is the format of the swap chain's back buffer
-        PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
-        // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        // Cull back faces
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-        // Enable depth testing
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-
-        ShaderCreateInfo ShaderCI;
-        // Tell the system that the shader source code is in HLSL.
-        // For OpenGL, the engine will convert this into GLSL behind the scene
-        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-
-        // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-        ShaderCI.UseCombinedTextureSamplers = true;
-
-        // In this tutorial, we will load shaders from file. To be able to do that,
-        // we need to create a shader source stream factory
-        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-        // Create vertex shader
-        RefCntAutoPtr<IShader> pVS;
-        {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Cube VS";
-            ShaderCI.FilePath        = "cube.vsh";
-            pDevice->CreateShader(ShaderCI, &pVS);
-            // Create dynamic uniform buffer that will store our transformation matrix
-            // Dynamic buffers can be frequently updated by the CPU
-            CreateUniformBuffer(pDevice, sizeof(float4x4), "VS constants CB", &m_VSConstants);
-        }
-
-        // Create pixel shader
-        RefCntAutoPtr<IShader> pPS;
-        {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Cube PS";
-            ShaderCI.FilePath        = "cube.psh";
-            pDevice->CreateShader(ShaderCI, &pPS);
-        }
-
-        // Define vertex shader input layout
-        LayoutElement LayoutElems[] =
-        {
-            // Attribute 0 - vertex position
-            LayoutElement{0, 0, 3, VT_FLOAT32, False},
-            // Attribute 1 - texture coordinates
-            LayoutElement{1, 0, 2, VT_FLOAT32, False}
-        };
-
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
-
-        // Define variable type that will be used by default
-        PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-
-        // Shader variables should typically be mutable, which means they are expected
-        // to change on a per-instance basis
-        ShaderResourceVariableDesc Vars[] = 
-        {
-            {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
-        };
-        PSODesc.ResourceLayout.Variables    = Vars;
-        PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-
-        // Define static sampler for g_Texture. Static samplers should be used whenever possible
-        SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
-        StaticSamplerDesc StaticSamplers[] = 
-        {
-            {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
-        };
-        PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-        PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-        pDevice->CreatePipelineState(PSODesc, &m_pPSO);
-
-        // Since we did not explcitly specify the type for Constants, default type
-        // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-        // to the pipeline state object.
-        m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
-        
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
-        pDevice->CreatePipelineState(PSODesc, &m_pPSO_NoCull);
-        m_pPSO_NoCull->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Cube VS";
+        ShaderCI.FilePath        = "cube.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pVS);
+        // Create dynamic uniform buffer that will store our transformation matrix
+        // Dynamic buffers can be frequently updated by the CPU
+        CreateUniformBuffer(m_pDevice, sizeof(float4x4), "VS constants CB", &m_VSConstants);
     }
 
+    // Create pixel shader
+    RefCntAutoPtr<IShader> pPS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Cube PS";
+        ShaderCI.FilePath        = "cube.psh";
+        m_pDevice->CreateShader(ShaderCI, &pPS);
+    }
+
+    // Define vertex shader input layout
+    LayoutElement LayoutElems[] =
+    {
+        // Attribute 0 - vertex position
+        LayoutElement{0, 0, 3, VT_FLOAT32, False},
+        // Attribute 1 - texture coordinates
+        LayoutElement{1, 0, 2, VT_FLOAT32, False}
+    };
+
+    PSODesc.GraphicsPipeline.pVS = pVS;
+    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+
+    // Define variable type that will be used by default
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+    // Shader variables should typically be mutable, which means they are expected
+    // to change on a per-instance basis
+    ShaderResourceVariableDesc Vars[] = 
+    {
+        {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+    };
+    PSODesc.ResourceLayout.Variables    = Vars;
+    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+    // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    StaticSamplerDesc StaticSamplers[] = 
+    {
+        {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
+    };
+    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+
+    // Since we did not explcitly specify the type for Constants, default type
+    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
+    // to the pipeline state object.
+    m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+        
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO_NoCull);
+    m_pPSO_NoCull->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
+}
+
+void Tutorial11_ResourceUpdates::CreateVertexBuffers()
+{
     for(Uint32 i=0; i < _countof(m_CubeVertexBuffer); ++i)
     {
         auto& VertexBuffer = m_CubeVertexBuffer[i];
@@ -233,32 +228,35 @@ void Tutorial11_ResourceUpdates::Initialize(IEngineFactory*   pEngineFactory,
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
-        pDevice->CreateBuffer(VertBuffDesc, i < 2 ? &VBData : nullptr, &VertexBuffer);
+        m_pDevice->CreateBuffer(VertBuffDesc, i < 2 ? &VBData : nullptr, &VertexBuffer);
     }
+}
 
+void Tutorial11_ResourceUpdates::CreateIndexBuffer()
+{
+    Uint32 Indices[] =
     {
-        // Indices
-        Uint32 Indices[] =
-        {
-            2,0,1,    2,3,0,
-            4,6,5,    4,7,6,
-            8,10,9,   8,11,10,
-            12,14,13, 12,15,14,
-            16,18,17, 16,19,18,
-            20,21,22, 20,22,23
-        };
-        // Create index buffer
-        BufferDesc IndBuffDesc;
-        IndBuffDesc.Name          = "Cube index buffer";
-        IndBuffDesc.Usage         = USAGE_STATIC;
-        IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-        IndBuffDesc.uiSizeInBytes = sizeof(Indices);
-        BufferData IBData;
-        IBData.pData    = Indices;
-        IBData.DataSize = sizeof(Indices);
-        pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
-    }
+        2,0,1,    2,3,0,
+        4,6,5,    4,7,6,
+        8,10,9,   8,11,10,
+        12,14,13, 12,15,14,
+        16,18,17, 16,19,18,
+        20,21,22, 20,22,23
+    };
+    // Create index buffer
+    BufferDesc IndBuffDesc;
+    IndBuffDesc.Name          = "Cube index buffer";
+    IndBuffDesc.Usage         = USAGE_STATIC;
+    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
+    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
+    BufferData IBData;
+    IBData.pData    = Indices;
+    IBData.DataSize = sizeof(Indices);
+    m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
+}
 
+void Tutorial11_ResourceUpdates::LoadTextures()
+{
     for (size_t i=0; i < m_Textures.size(); ++i)
     {
         // Load texture
@@ -293,6 +291,21 @@ void Tutorial11_ResourceUpdates::Initialize(IEngineFactory*   pEngineFactory,
         // Set texture SRV in the SRB
         m_SRBs[i]->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(TextureSRV);
     }
+}
+
+
+void Tutorial11_ResourceUpdates::Initialize(IEngineFactory*   pEngineFactory,
+                                            IRenderDevice*    pDevice,
+                                            IDeviceContext**  ppContexts,
+                                            Uint32            NumDeferredCtx,
+                                            ISwapChain*       pSwapChain)
+{
+    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+   
+    CreatePipelineStates();
+    CreateVertexBuffers();
+    CreateIndexBuffer();
+    LoadTextures();
 
     {
         BufferDesc VertBuffDesc;

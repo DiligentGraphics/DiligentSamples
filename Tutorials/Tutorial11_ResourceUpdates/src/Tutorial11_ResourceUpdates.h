@@ -44,6 +44,11 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial11: Resource Updates";}
 
 private:
+    void CreatePipelineStates();
+    void CreateVertexBuffers();
+    void CreateIndexBuffer();
+    void LoadTextures();
+
     void WriteStripPattern(Uint8*, Uint32 Width, Uint32 Height, Uint32 Stride);
     void WriteDiamondPattern(Uint8*, Uint32 Width, Uint32 Height, Uint32 Stride);
     
