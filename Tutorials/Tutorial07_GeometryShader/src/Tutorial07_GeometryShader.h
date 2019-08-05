@@ -44,6 +44,12 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial07: Geometry Shader";}
 
 private:
+    void CreatePipelineState();
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void LoadTexture();
+    void InitUI();
+
     RefCntAutoPtr<IPipelineState> m_pPSO;
     RefCntAutoPtr<IBuffer> m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer> m_CubeIndexBuffer;
