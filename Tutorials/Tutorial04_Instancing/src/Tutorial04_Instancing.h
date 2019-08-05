@@ -42,6 +42,12 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial04: Instancing";}
 
 private:
+    void CreatePipelineState();
+    void CreateVertexBuffer();
+    void CreateInstanceBuffer();
+    void CreateIndexBuffer();
+    void LoadTexture();
+
     static void SetGridSize(const void* value, void* clientData);
     static void GetGridSize(void *value, void* clientData);
     void PopulateInstanceBuffer();
