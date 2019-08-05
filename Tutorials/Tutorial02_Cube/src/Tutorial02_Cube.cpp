@@ -166,6 +166,7 @@ void Tutorial02_Cube::CreateVertexBuffer()
         {float3(+1,+1,+1), float4(1,0,1,1)},
         {float3(+1,-1,+1), float4(0.2f,0.2f,0.2f,1)},
     };
+
     // Create vertex buffer that stores cube vertices
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
@@ -180,7 +181,6 @@ void Tutorial02_Cube::CreateVertexBuffer()
 
 void Tutorial02_Cube::CreateIndexBuffer()
 {
-    // Indices
     Uint32 Indices[] =
     {
         2,0,1, 2,3,0,
@@ -190,6 +190,7 @@ void Tutorial02_Cube::CreateIndexBuffer()
         1,5,2, 5,6,2,
         3,6,7, 3,2,6
     };
+
     // Create index buffer
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";

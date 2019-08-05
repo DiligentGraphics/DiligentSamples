@@ -42,6 +42,11 @@ public:
     virtual const Char* GetSampleName()const override final{return "Tutorial03: Texturing";}
 
 private:
+    void CreatePipelineState();
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void LoadTexture();
+
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
