@@ -400,8 +400,33 @@ void Tutorial13_ShadowMap::InitUI()
     int valuesWidth = 160 * m_UIScale;
     TwSetParam(bar, NULL, "valueswidth", TW_PARAM_INT32, 1, &valuesWidth);
     
-    // Add grid size control
     TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightDirection, "opened=true");
+
+    {
+        TwEnumVal enumVals[] =
+        {
+            { 0, "256"  },
+            { 1, "512"  },
+            { 2, "1024" }
+        };
+        TwType enumType = TwDefineEnum("Shadow map size", enumVals, _countof(enumVals));
+        TwAddVarCB(bar, "Shadow map size", enumType,
+            [](const void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<Tutorial13_ShadowMap*>(clientData);
+                This->m_ShadowMapSize = 256 << *reinterpret_cast<const int*>(value);
+                This->CreateShadowMap();
+            },
+            [](void *value, void* clientData)
+            {
+                auto* This = reinterpret_cast<Tutorial13_ShadowMap*>(clientData);
+                int& val = *reinterpret_cast<int*>(value);
+                val = 0;
+                while(static_cast<Uint32>(256 << val) != This->m_ShadowMapSize)
+                    ++val;
+            },
+            this, "");
+    }
 }
     
 void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
