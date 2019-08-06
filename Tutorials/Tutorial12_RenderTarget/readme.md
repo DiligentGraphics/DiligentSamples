@@ -1,8 +1,8 @@
 # Tutorial12 - Render Target
 
 This tutorial demonstrates how to render a 3d textured cube into an offscreen render 
-target and do a simple distortion post-processing effect. Note that this tutorial
-assumes that you are familiar with all basics covered in Tutorial01 to Tutorial03.
+target and do a simple distortion post-processing effect. It is assumed
+that you are familiar with all basics covered in Tutorial01 to Tutorial03.
 
 ![](Animation_Large.gif)
 
