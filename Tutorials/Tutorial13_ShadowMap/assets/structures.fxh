@@ -18,6 +18,6 @@ struct CubePSInput
 struct PlanePSInput
 {
     float4 Pos          : SV_POSITION;
-    float4 ShadowMapPos : SHADOW_MAP_POS;
+    float3 ShadowMapPos : SHADOW_MAP_POS;
     float  NdotL        : N_DOT_L;
 };

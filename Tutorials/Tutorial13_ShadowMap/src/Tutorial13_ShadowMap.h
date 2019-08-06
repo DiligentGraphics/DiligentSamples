@@ -70,7 +70,7 @@ private:
     float4x4                              m_CubeWorldMatrix;
     float4x4                              m_CameraViewProjMatrix;
     float4x4                              m_WorldToShadowMapUVDepthMatr;
-    float3                                m_LightDirection      = normalize(float3(-0.42f, -0.78f, -0.46f));
+    float3                                m_LightDirection      = normalize(float3(-0.49f, -0.60f, 0.64f));
     Uint32                                m_ShadowMapSize       = 1024;
     TEXTURE_FORMAT                        m_ShadowMapFormat     = TEX_FORMAT_D16_UNORM;
 };

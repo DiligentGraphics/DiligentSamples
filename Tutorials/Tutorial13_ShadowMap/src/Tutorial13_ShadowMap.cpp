@@ -258,13 +258,17 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
     
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamCmpDesc(FILTER_TYPE_COMPARISON_LINEAR, FILTER_TYPE_COMPARISON_LINEAR, FILTER_TYPE_COMPARISON_LINEAR,
-                           TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
-    SamCmpDesc.ComparisonFunc = COMPARISON_FUNC_LESS;
+    // Define static sampler for g_ShadowMap. Static samplers should be used whenever possible
+    SamplerDesc ComparsionSampler;
+    ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS; 
+    // Note: anisotropic filtering requires SampleGrad to fix artifacts at 
+    // cascade boundaries
+    ComparsionSampler.MinFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+    ComparsionSampler.MagFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+    ComparsionSampler.MipFilter      = FILTER_TYPE_COMPARISON_LINEAR;
     StaticSamplerDesc StaticSamplers[] =
     {
-        {SHADER_TYPE_PIXEL, "g_ShadowMap", SamCmpDesc}
+        {SHADER_TYPE_PIXEL, "g_ShadowMap", ComparsionSampler}
     };
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
@@ -391,9 +395,9 @@ void Tutorial13_ShadowMap::InitUI()
 {
     // Create a tweak bar
     TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {320 * m_UIScale, 180 * m_UIScale};
+    int barSize[2] = {300 * m_UIScale, 180 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-    int valuesWidth = 180 * m_UIScale;
+    int valuesWidth = 160 * m_UIScale;
     TwSetParam(bar, NULL, "valueswidth", TW_PARAM_INT32, 1, &valuesWidth);
     
     // Add grid size control
@@ -443,7 +447,7 @@ void Tutorial13_ShadowMap::CreateShadowMap()
 void Tutorial13_ShadowMap::RenderShadowMap()
 {
     float3 f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ;
-    f3LightSpaceZ = normalize(-m_LightDirection);
+    f3LightSpaceZ = normalize(m_LightDirection);
     
     auto min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)), std::abs(m_LightDirection.z));
     if (min_cmp == std::abs(m_LightDirection.x))
@@ -462,14 +466,13 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     
     // For this tutorial we know that the scene center is in (0,0,0).
     // Real applications will want to compute tight bounds
+
     float3 f3SceneCenter = float3(0, 0, 0);
     float SceneRadius = std::sqrt(3.f);
-    float3 f3SceneExtent = float3(SceneRadius, SceneRadius, SceneRadius) * 2.f;
-    
-    // Compute new cascade min/max xy coords
-    float3 f3MinXYZ = f3SceneCenter - f3SceneExtent * 0.5f;
-    //float3 f3MaxXYZ = f3SceneCenter + f3SceneExtent * 0.5f;
-    
+    float3 f3MinXYZ = f3SceneCenter - float3(SceneRadius, SceneRadius, SceneRadius);
+    float3 f3MaxXYZ = f3SceneCenter + float3(SceneRadius, SceneRadius, SceneRadius*5);
+    float3 f3SceneExtent = f3MaxXYZ - f3MinXYZ;
+
     const auto& DevCaps = m_pDevice->GetDeviceCaps();
     const bool IsGL = DevCaps.IsGLDevice();
     float4 f4LightSpaceScale;
@@ -484,7 +487,7 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     f4LightSpaceScaledBias.z = -f3MinXYZ.z * f4LightSpaceScale.z + (IsGL ? -1.f : 0.f);
     
     float4x4 ScaleMatrix = float4x4::Scale(f4LightSpaceScale.x, f4LightSpaceScale.y, f4LightSpaceScale.z);
-    float4x4 ScaledBiasMatrix = float4x4::Translation( f4LightSpaceScaledBias.x, f4LightSpaceScaledBias.y, f4LightSpaceScaledBias.z ) ;
+    float4x4 ScaledBiasMatrix = float4x4::Translation(f4LightSpaceScaledBias.x, f4LightSpaceScaledBias.y, f4LightSpaceScaledBias.z);
     
     // Note: bias is applied after scaling!
     float4x4 ShadowProjMatr = ScaleMatrix * ScaledBiasMatrix;
@@ -493,8 +496,8 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
     
     const auto& NDCAttribs = DevCaps.GetNDCAttribs();
-    float4x4 ProjToUVScale = float4x4::Scale( 0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale );
-    float4x4 ProjToUVBias = float4x4::Translation( 0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
+    float4x4 ProjToUVScale = float4x4::Scale(0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale);
+    float4x4 ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
     
     m_WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
 
