@@ -92,6 +92,12 @@ important internal details and performance implications related to each method.
 This tutorial demonstrates how to render a 3d cube into an offscreen render target and do a simple
 post-processing effect.
 
+## [Tutorial 13 - Shadow Map](Tutorials/Tutorial13_ShadowMap)
+
+![](Tutorials/Tutorial13_ShadowMap/Animation_Large.gif)
+
+This tutorial demonstrates how to render basic shadows using a shadow map.
+
 # Samples
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)

@@ -2,7 +2,7 @@
 
 This tutorial demonstrates how to render a 3d textured cube into an offscreen render 
 target and do a simple distortion post-processing effect. Note that this tutorial
-assumes that you are familiar with all basics covered from Tutorial01 to Tutorial03.
+assumes that you are familiar with all basics covered in Tutorial01 to Tutorial03.
 
 ![](Animation_Large.gif)
 
