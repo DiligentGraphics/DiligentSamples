@@ -46,9 +46,9 @@ public:
 private:
     void CreateCubePSO();
     void CreatePlanePSO();
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
-    void LoadTexture();
+    void CreateVertexBuffer(std::vector<StateTransitionDesc>& Barriers);
+    void CreateIndexBuffer(std::vector<StateTransitionDesc>& Barriers);
+    void LoadTexture(std::vector<StateTransitionDesc>& Barriers);
     void InitUI();
     void CreateShadowMap();
     void RenderShadowMap();

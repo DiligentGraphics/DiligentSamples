@@ -21,6 +21,8 @@
  *  of the possibility of such damages.
  */
 
+#include <vector>
+
 #include "Tutorial13_ShadowMap.h"
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
@@ -281,7 +283,7 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     m_pPlanePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 }
 
-void Tutorial13_ShadowMap::CreateVertexBuffer()
+void Tutorial13_ShadowMap::CreateVertexBuffer(std::vector<StateTransitionDesc>& Barriers)
 {
     // Layout of this structure matches the one we defined in pipeline state
     struct Vertex
@@ -352,9 +354,11 @@ void Tutorial13_ShadowMap::CreateVertexBuffer()
     VBData.pData    = CubeVerts;
     VBData.DataSize = sizeof(CubeVerts);
     m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
+
+    Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
 }
     
-void Tutorial13_ShadowMap::CreateIndexBuffer()
+void Tutorial13_ShadowMap::CreateIndexBuffer(std::vector<StateTransitionDesc>& Barriers)
 {
     Uint32 Indices[] =
     {
@@ -375,9 +379,11 @@ void Tutorial13_ShadowMap::CreateIndexBuffer()
     IBData.pData    = Indices;
     IBData.DataSize = sizeof(Indices);
     m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
+
+    Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
 }
     
-void Tutorial13_ShadowMap::LoadTexture()
+void Tutorial13_ShadowMap::LoadTexture(std::vector<StateTransitionDesc>& Barriers)
 {
     // Load texture
     TextureLoadInfo loadInfo;
@@ -389,6 +395,7 @@ void Tutorial13_ShadowMap::LoadTexture()
     
     // Set texture SRV in the SRB
     m_CubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
+    Barriers.emplace_back(Tex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
 }
     
 void Tutorial13_ShadowMap::InitUI()
@@ -437,16 +444,21 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
+    std::vector<StateTransitionDesc> Barriers;
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
     CreateUniformBuffer(pDevice, sizeof(float4x4) * 2 + sizeof(float4), "VS constants CB", &m_VSConstants);
+    Barriers.emplace_back(m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
     
     CreateCubePSO();
     CreatePlanePSO();
-    CreateVertexBuffer();
-    CreateIndexBuffer();
-    LoadTexture();
+    CreateVertexBuffer(Barriers);
+    CreateIndexBuffer(Barriers);
+    LoadTexture(Barriers);
     CreateShadowMap();
+
+    m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
+
     InitUI();
 }
 
@@ -552,19 +564,19 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
     // Bind vertex buffer
     Uint32 offset = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Set pipeline state and commit resources
     if (IsShadowPass)
     {
         m_pImmediateContext->SetPipelineState(m_pCubeShadowPSO);
-        m_pImmediateContext->CommitShaderResources(m_CubeShadowSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->CommitShaderResources(m_CubeShadowSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
     }
     else
     {
         m_pImmediateContext->SetPipelineState(m_pCubePSO);
-        m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
     }    
 
     DrawAttribs DrawAttrs(36, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
@@ -591,6 +603,7 @@ void Tutorial13_ShadowMap::RenderPlane()
     m_pImmediateContext->SetPipelineState(m_pPlanePSO);
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
     // makes sure that resources are transitioned to required states.
+    // Note that Vulkan requires shadow map to be transitioned to DEPTH_READ state, not SHADER_RESOURCE
     m_pImmediateContext->CommitShaderResources(m_PlaneSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawAttribs DrawAttrs(4, DRAW_FLAG_VERIFY_ALL);
