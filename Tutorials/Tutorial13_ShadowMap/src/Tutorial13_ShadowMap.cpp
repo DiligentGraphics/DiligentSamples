@@ -137,8 +137,11 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
     
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-                                   TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] =
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -283,6 +286,81 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     m_pPlanePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 }
 
+void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
+{
+    PipelineStateDesc PSODesc;
+    PSODesc.Name = "Shadow Map Vis PSO";
+    
+    // This is a graphics pipeline
+    PSODesc.IsComputePipeline = false;
+    
+    // This tutorial will render to a single render target
+    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    // Set render target format which is the format of the swap chain's color buffer
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    // Set depth buffer format which is the format of the swap chain's back buffer
+    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    // Cull back faces
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    // Enable depth testing
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    
+    ShaderCreateInfo ShaderCI;
+    // Tell the system that the shader source code is in HLSL.
+    // For OpenGL, the engine will convert this into GLSL behind the scene
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
+    
+    // In this tutorial, we will load shaders from file. To be able to do that,
+    // we need to create a shader source stream factory
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Create vertex shader
+    RefCntAutoPtr<IShader> pShadowMapVisVS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Shadow Map Vis VS";
+        ShaderCI.FilePath        = "shadow_map_vis.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pShadowMapVisVS);
+    }
+    
+    // Create pixel shader
+    RefCntAutoPtr<IShader> pShadowMapVisPS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Shadow Map Vis PS";
+        ShaderCI.FilePath        = "shadow_map_vis.psh";
+        m_pDevice->CreateShader(ShaderCI, &pShadowMapVisPS);
+    }
+    
+    PSODesc.GraphicsPipeline.pVS = pShadowMapVisVS;
+    PSODesc.GraphicsPipeline.pPS = pShadowMapVisPS;
+    
+    // Define variable type that will be used by default
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
+    StaticSamplerDesc StaticSamplers[] =
+    {
+        {SHADER_TYPE_PIXEL, "g_ShadowMap", SamLinearClampDesc}
+    };
+    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    
+    m_pDevice->CreatePipelineState(PSODesc, &m_pShadowMapVisPSO);
+}
+
 void Tutorial13_ShadowMap::CreateVertexBuffer(std::vector<StateTransitionDesc>& Barriers)
 {
     // Layout of this structure matches the one we defined in pipeline state
@@ -406,8 +484,6 @@ void Tutorial13_ShadowMap::InitUI()
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
     int valuesWidth = 160 * m_UIScale;
     TwSetParam(bar, NULL, "valueswidth", TW_PARAM_INT32, 1, &valuesWidth);
-    
-    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightDirection, "opened=true");
 
     {
         TwEnumVal enumVals[] =
@@ -434,6 +510,8 @@ void Tutorial13_ShadowMap::InitUI()
             },
             this, "");
     }
+
+    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightDirection, "");
 }
     
 void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
@@ -452,6 +530,7 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     
     CreateCubePSO();
     CreatePlanePSO();
+    CreateShadowMapVisPSO();
     CreateVertexBuffer(Barriers);
     CreateIndexBuffer(Barriers);
     LoadTexture(Barriers);
@@ -479,6 +558,10 @@ void Tutorial13_ShadowMap::CreateShadowMap()
     m_PlaneSRB.Release();
     m_pPlanePSO->CreateShaderResourceBinding(&m_PlaneSRB, true);
     m_PlaneSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_ShadowMap")->Set(m_ShadowMapSRV);
+
+    m_ShadowMapVisSRB.Release();
+    m_pShadowMapVisPSO->CreateShaderResourceBinding(&m_ShadowMapVisSRB, true);
+    m_ShadowMapVisSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_ShadowMap")->Set(m_ShadowMapSRV);
 }
     
 void Tutorial13_ShadowMap::RenderShadowMap()
@@ -610,6 +693,15 @@ void Tutorial13_ShadowMap::RenderPlane()
     m_pImmediateContext->Draw(DrawAttrs);
 }
 
+void Tutorial13_ShadowMap::RenderShadowMapVis()
+{
+    m_pImmediateContext->SetPipelineState(m_pShadowMapVisPSO);
+    m_pImmediateContext->CommitShaderResources(m_ShadowMapVisSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+
+    DrawAttribs DrawAttrs(4, DRAW_FLAG_VERIFY_ALL);
+    m_pImmediateContext->Draw(DrawAttrs);
+}
+
 // Render a frame
 void Tutorial13_ShadowMap::Render()
 {
@@ -626,6 +718,7 @@ void Tutorial13_ShadowMap::Render()
 
     RenderCube(m_CameraViewProjMatrix, false);
     RenderPlane();
+    RenderShadowMapVis();
 }
 
 void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)

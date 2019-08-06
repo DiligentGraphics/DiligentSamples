@@ -46,6 +46,7 @@ public:
 private:
     void CreateCubePSO();
     void CreatePlanePSO();
+    void CreateShadowMapVisPSO();
     void CreateVertexBuffer(std::vector<StateTransitionDesc>& Barriers);
     void CreateIndexBuffer(std::vector<StateTransitionDesc>& Barriers);
     void LoadTexture(std::vector<StateTransitionDesc>& Barriers);
@@ -54,10 +55,12 @@ private:
     void RenderShadowMap();
     void RenderCube(const float4x4& CameraViewProj, bool IsShadowPass);
     void RenderPlane();
+    void RenderShadowMapVis();
     
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
     RefCntAutoPtr<IPipelineState>         m_pCubeShadowPSO;
     RefCntAutoPtr<IPipelineState>         m_pPlanePSO;
+    RefCntAutoPtr<IPipelineState>         m_pShadowMapVisPSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
@@ -65,6 +68,7 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_CubeSRB;
     RefCntAutoPtr<IShaderResourceBinding> m_CubeShadowSRB;
     RefCntAutoPtr<IShaderResourceBinding> m_PlaneSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_ShadowMapVisSRB;
     RefCntAutoPtr<ITextureView>           m_ShadowMapDSV;
     RefCntAutoPtr<ITextureView>           m_ShadowMapSRV;
     float4x4                              m_CubeWorldMatrix;

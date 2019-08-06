@@ -16,6 +16,8 @@ set(SHADERS
     assets/cube_shadow.vsh
     assets/plane.vsh
     assets/plane.psh
+    assets/shadow_map_vis.vsh
+    assets/shadow_map_vis.psh
     assets/structures.fxh
 )
 

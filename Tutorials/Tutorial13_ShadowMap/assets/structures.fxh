@@ -21,3 +21,9 @@ struct PlanePSInput
     float3 ShadowMapPos : SHADOW_MAP_POS;
     float  NdotL        : N_DOT_L;
 };
+
+struct ShadowMapVisPSInput
+{
+    float4 Pos : SV_POSITION;
+    float2 UV  : TEX_COORD;
+};
