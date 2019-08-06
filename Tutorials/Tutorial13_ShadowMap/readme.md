@@ -36,10 +36,9 @@ m_ShadowMapSRV = ShadowMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 m_ShadowMapDSV = ShadowMap->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
 ```
 
-## Shadow pass PSO
+## Shadow pass pipeline state
 
-There are few differences in shadow pass PSO initialization compared to 
-normal rendering. First, there are no render targets:
+There are few specifics of the shadow pass PSO initialization. First, there are no render targets:
 
 ```cpp
 PSODesc.Name                              = "Cube shadow PSO";
@@ -71,8 +70,10 @@ PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 First, we need to bind the shadow map to the context (note that no render targets are provided) and clear it:
 
 ```cpp
-m_pImmediateContext->SetRenderTargets(0, nullptr, m_ShadowMapDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(m_ShadowMapDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->SetRenderTargets(0, nullptr, m_ShadowMapDSV,
+                                      RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(m_ShadowMapDSV, CLEAR_DEPTH_FLAG, 1.f, 0,
+                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 RenderShadowMap();
 ```
 
@@ -86,7 +87,8 @@ matrix is the light direction. Two other axis are selected to avoid precision is
 float3 f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ;
 f3LightSpaceZ = normalize(m_LightDirection);
     
-auto min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)), std::abs(m_LightDirection.z));
+auto min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)),
+                        std::abs(m_LightDirection.z));
 if (min_cmp == std::abs(m_LightDirection.x))
     f3LightSpaceX =  float3(1, 0, 0);
 else if (min_cmp == std::abs(m_LightDirection.y))
@@ -103,7 +105,7 @@ float4x4 WorldToLightViewSpaceMatr = float4x4::ViewFromBasis(f3LightSpaceX, f3Li
 ```
 
 Second, we need to define the scene boundaries. For this tutorial we know that the cube center 
-is at (0,0,0). Real applications will want to compute tight bounds as this is crucial to 
+is at (0,0,0). Real applications will want to compute tight bounds as this is crucial for 
 getting high-quality shadows.
 
 ```cpp
@@ -133,17 +135,18 @@ f4LightSpaceScaledBias.y = -f3MinXYZ.y * f4LightSpaceScale.y - 1.f;
 f4LightSpaceScaledBias.z = -f3MinXYZ.z * f4LightSpaceScale.z + (IsGL ? -1.f : 0.f);
  
 float4x4 ScaleMatrix = float4x4::Scale(f4LightSpaceScale.x, f4LightSpaceScale.y, f4LightSpaceScale.z);
-float4x4 ScaledBiasMatrix = float4x4::Translation(f4LightSpaceScaledBias.x, f4LightSpaceScaledBias.y, f4LightSpaceScaledBias.z);
+float4x4 ScaledBiasMatrix = float4x4::Translation(f4LightSpaceScaledBias.x, f4LightSpaceScaledBias.y,
+                                                  f4LightSpaceScaledBias.z);
 ```
 
-Finally, we can compute light projection and the world-to-light-proj-space matrices:
+Now we can compute the light projection and the world-to-light-proj-space matrices:
 
 ```cpp
 float4x4 ShadowProjMatr = ScaleMatrix * ScaledBiasMatrix;
 float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
 ```
 
-The last step is to compute world-to-shadow-map matrix that will be used in the shader
+The last step is to compute the world-to-shadow-map matrix that will be used in the shader
 to sample the shadow map. Note again that OpenGL is unlike other APIs, so we use `NDCAttribs`
 struct to handle the differences.
 
@@ -176,7 +179,7 @@ float4 ShadowMapPos = mul(Pos[VertId], g_WorldToShadowMapUVDepth);
 PSIn.ShadowMapPos = ShadowMapPos.xyz / ShadowMapPos.w;
 ```
 
-The fragment shader uses shadow map position to sample the shadow map. Note that
+The fragment shader uses the shadow map position to sample the shadow map. Note that
 it uses `SampleCmp` method that performs 2x2 comparison filering of the shadow map
 to get smoother edges:
 
