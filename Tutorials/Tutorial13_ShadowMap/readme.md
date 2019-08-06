@@ -17,6 +17,8 @@ Rendering shadows with a shadow map consists of two steps:
   if the point is lit or not by comparing the point's depth in light space to the
   depth stored in the shadow map.
 
+This tutorial renders a cube into the shadow map and then uses it to cast a shadow onto a plane.
+
 ## Creating a shadow map texture
 
 A shadow map is just a normal 2D texture that can be used as depth-stencil buffer
@@ -157,7 +159,7 @@ float4x4 ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDept
 m_WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
 ```
 
-Now we can render the cube using `WorldToLightProjSpaceMatr`:
+Finally we can render the cube into the shadow map using `WorldToLightProjSpaceMatr`:
 
 ```cpp
 RenderCube(WorldToLightProjSpaceMatr, true);
@@ -195,7 +197,8 @@ struct PlanePSOutput
 void main(in  PlanePSInput  PSIn,
           out PlanePSOutput PSOut)
 {
-    float LightAmount = g_ShadowMap.SampleCmp(g_ShadowMap_sampler, PSIn.ShadowMapPos.xy, max(PSIn.ShadowMapPos.z, 1e-7)).r;
+    float LightAmount = g_ShadowMap.SampleCmp(g_ShadowMap_sampler, PSIn.ShadowMapPos.xy,
+                                              max(PSIn.ShadowMapPos.z, 1e-7)).r;
     PSOut.Color.rgb = float3(1.0, 1.0, 1.0) * (PSIn.NdotL * LightAmount * 0.8 + 0.2);
     PSOut.Color.a   = 1.0;
 }
