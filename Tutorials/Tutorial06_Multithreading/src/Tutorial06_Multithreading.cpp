@@ -163,8 +163,8 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
-    // Since we did not explcitly specify the type for Constants, default type 
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
+    // Since we did not explcitly specify the type for 'Constants' and 'InstanceData' variables,
+    // default type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "InstanceData")->Set(m_InstanceConstants);
