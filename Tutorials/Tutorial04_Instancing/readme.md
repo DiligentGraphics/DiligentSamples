@@ -131,7 +131,7 @@ Both buffers need to be bound to the pipeline before calling rendering command:
 
 ```cpp
 Uint32 offsets[] = {0, 0};
-IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
+IBuffer* pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
 m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets,
                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
                                       SET_VERTEX_BUFFERS_FLAG_RESET);

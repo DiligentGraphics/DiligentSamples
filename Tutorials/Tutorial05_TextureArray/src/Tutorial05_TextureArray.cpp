@@ -57,8 +57,8 @@ void Tutorial05_TextureArray::CreatePipelineState()
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false; 
 
-    // Pipeline state name is used by the engine to report issues
-    // It is always a good idea to give objects descriptive names
+    // Pipeline state name is used by the engine to report issues.
+    // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Cube PSO"; 
 
     // This tutorial will render to a single render target
@@ -76,18 +76,17 @@ void Tutorial05_TextureArray::CreatePipelineState()
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -100,7 +99,7 @@ void Tutorial05_TextureArray::CreatePipelineState()
         CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -152,8 +151,11 @@ void Tutorial05_TextureArray::CreatePipelineState()
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -164,11 +166,11 @@ void Tutorial05_TextureArray::CreatePipelineState()
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
 
     // Since we did not explcitly specify the type for Constants, default type 
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // to the pipeline state object.
+    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
+    // never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 
-    // Since we are using mutable variable, we must create shader resource binding object
+    // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
 }
@@ -270,7 +272,6 @@ void Tutorial05_TextureArray::CreateIndexBuffer()
         20,21,22, 20,22,23
     };
 
-    // Create index buffer
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
     IndBuffDesc.Usage         = USAGE_STATIC;
@@ -284,7 +285,7 @@ void Tutorial05_TextureArray::CreateIndexBuffer()
 
 void Tutorial05_TextureArray::LoadTextures()
 {
-    // Load texture array
+    // Load a texture array
     RefCntAutoPtr<ITexture> pTexArray;
     for(int tex=0; tex < NumTextures; ++tex)
     {
@@ -314,7 +315,7 @@ void Tutorial05_TextureArray::LoadTextures()
                                            pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             CopyAttribs.SrcMipLevel = mip;
             CopyAttribs.DstMipLevel = mip;
-            CopyAttribs.DstSlice = tex;
+            CopyAttribs.DstSlice    = tex;
             m_pImmediateContext->CopyTexture(CopyAttribs);
         }
     }
@@ -423,23 +424,23 @@ void Tutorial05_TextureArray::Render()
         CBConstants[1] = m_RotationMatrix.Transpose();
     }
 
-    // Bind vertex & instance buffers
+    // Bind vertex, instance and index buffers
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
-    // Set pipeline state
+    // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed    = true; // This is indexed draw call
+    DrawAttrs.IsIndexed    = true;      // This is an indexed draw call
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // Specify number of instances
+    DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // The number of instances
     // Verify the state of vertex and index buffers
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->Draw(DrawAttrs);

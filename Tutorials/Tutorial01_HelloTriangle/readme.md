@@ -7,7 +7,7 @@ and how to render a simple triangle.
 
 ## Shaders
 
-This tutotial uses very basic shaders. The vertex shader generates procedural triangle. It uses an array of hard-coded
+This tutotial uses very basic shaders. The vertex shader generates a procedural triangle. It uses an array of hard-coded
 vertex positions in screen space and assigns red, green and blue colors to the vertices. The shader uses system-generated
 vertex id as an array index.
 
@@ -135,7 +135,7 @@ ShaderCI.UseCombinedTextureSamplers = true;
 In this example, vertex and pixel shaders are created from the source. The code is self-explanatory:
 
 ```cpp
-// Create vertex shader
+// Create a vertex shader
 RefCntAutoPtr<IShader> pVS;
 {
     ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -145,7 +145,7 @@ RefCntAutoPtr<IShader> pVS;
     pDevice->CreateShader(ShaderCI, &pVS);
 }
 
-// Create pixel shader
+// Create a pixel shader
 RefCntAutoPtr<IShader> pPS;
 {
     ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -179,7 +179,8 @@ Before rendering anything on the screen we want to clear it:
 ```cpp
 const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
 m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0,
+                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
 Passing `nullptr` makes the engine clear default (i.e. the swap chain's) render 

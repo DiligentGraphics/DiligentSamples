@@ -98,7 +98,7 @@ void main(in  uint    VertId : SV_VertexID,
 }
 )";
 
-// Pixel shader will simply output interpolated vertex color
+// Pixel shader simply outputs interpolated vertex color
 static const char* PSSource = R"(
 struct PSInput 
 { 
@@ -147,7 +147,7 @@ public:
                 // Load the dll and import GetEngineFactoryD3D11() function
                 LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
-                auto *pFactoryD3D11 = GetEngineFactoryD3D11();
+                auto* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
@@ -164,7 +164,7 @@ public:
                 LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
-                auto *pFactoryD3D12 = GetEngineFactoryD3D12();
+                auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
@@ -182,7 +182,7 @@ public:
             // Load the dll and import GetEngineFactoryOpenGL() function
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
-            auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
+            auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
             EngineGLCreateInfo CreationAttribs;
             CreationAttribs.pNativeWndHandle = NativeWindowHandle;
             pFactoryOpenGL->CreateDeviceAndSwapChainGL(
@@ -204,7 +204,7 @@ public:
 #ifdef _DEBUG
             EngVkAttribs.EnableValidation = true;
 #endif
-            auto *pFactoryVk = GetEngineFactoryVk();
+            auto* pFactoryVk = GetEngineFactoryVk();
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
@@ -226,7 +226,7 @@ public:
     bool ProcessCommandLine(const char *CmdLine)
     {
         const auto* Key = "-mode ";
-        const auto *pos = strstr(CmdLine, Key);
+        const auto* pos = strstr(CmdLine, Key);
         if (pos != nullptr)
         {
             pos += strlen(Key);
@@ -293,15 +293,15 @@ public:
         // Pipeline state object encompasses configuration of all GPU stages
 
         PipelineStateDesc PSODesc;
-        // Pipeline state name is used by the engine to report issues
-        // It is always a good idea to give objects descriptive names
+        // Pipeline state name is used by the engine to report issues.
+        // It is always a good idea to give objects descriptive names.
         PSODesc.Name = "Simple triangle PSO";
 
         // This is a graphics pipeline
         PSODesc.IsComputePipeline = false;
 
         // This tutorial will render to a single render target
-        PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
+        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
         // Set render target format which is the format of the swap chain's color buffer
         PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
         // Use the depth buffer format from the swap chain
@@ -309,17 +309,17 @@ public:
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
         PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         // No back face culling for this tutorial
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
         // Disable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
         ShaderCreateInfo ShaderCI;
         // Tell the system that the shader source code is in HLSL.
-        // For OpenGL, the engine will convert this into GLSL behind the scene
+        // For OpenGL, the engine will convert this into GLSL under the hood
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
         // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
         ShaderCI.UseCombinedTextureSamplers = true;
-        // Create vertex shader
+        // Create a vertex shader
         RefCntAutoPtr<IShader> pVS;
         {
             ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -329,7 +329,7 @@ public:
             m_pDevice->CreateShader(ShaderCI, &pVS);
         }
 
-        // Create pixel shader
+        // Create a pixel shader
         RefCntAutoPtr<IShader> pPS;
         {
             ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -375,6 +375,7 @@ public:
     }
 
     DeviceType GetDeviceType()const{return m_DeviceType;}
+
 private:
     RefCntAutoPtr<IRenderDevice>    m_pDevice;
     RefCntAutoPtr<IDeviceContext>   m_pImmediateContext;
@@ -395,7 +396,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
 
     g_pTheApp.reset(new Tutorial00App);
 
-    const auto *cmdLine = GetCommandLineA();
+    const auto* cmdLine = GetCommandLineA();
     if (!g_pTheApp->ProcessCommandLine(cmdLine))
         return -1;
 

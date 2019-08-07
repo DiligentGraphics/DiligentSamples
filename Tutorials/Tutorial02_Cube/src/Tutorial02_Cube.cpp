@@ -60,7 +60,7 @@ void Tutorial02_Cube::CreatePipelineState()
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
@@ -71,7 +71,7 @@ void Tutorial02_Cube::CreatePipelineState()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -90,7 +90,7 @@ void Tutorial02_Cube::CreatePipelineState()
         m_pDevice->CreateBuffer(CBDesc, nullptr, &m_VSConstants);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -119,12 +119,12 @@ void Tutorial02_Cube::CreatePipelineState()
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
 
-    // Since we did not explcitly specify the type for Constants, default type
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // through the pipeline state object.
+    // Since we did not explcitly specify the type for 'Constants', default type
+    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never 
+    // change and are bound directly through the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 
-    // Create shader resource binding object and bind all static resources in it
+    // Create a shader resource binding object and bind all static resources in it
     m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
 }
 
@@ -167,7 +167,7 @@ void Tutorial02_Cube::CreateVertexBuffer()
         {float3(+1,-1,+1), float4(0.2f,0.2f,0.2f,1)},
     };
 
-    // Create vertex buffer that stores cube vertices
+    // Create a vertex buffer that stores cube vertices
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_STATIC;
@@ -191,7 +191,6 @@ void Tutorial02_Cube::CreateIndexBuffer()
         3,6,7, 3,2,6
     };
 
-    // Create index buffer
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
     IndBuffDesc.Usage         = USAGE_STATIC;
@@ -230,13 +229,13 @@ void Tutorial02_Cube::Render()
         *CBConstants = m_WorldViewProjMatrix.Transpose();
     }
 
-    // Bind vertex buffer
+    // Bind vertex and index buffers
     Uint32 offset = 0;
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Set pipeline state
+    // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
     // makes sure that resources are transitioned to required states.

@@ -95,8 +95,11 @@ most cases samplers do not change dynamically and it is known beforehand what ki
 sampling is required. Diligent Engine uses *static samplers* that can be specified when creating a PSO:
 
 ```cpp
-SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+SamplerDesc SamLinearClampDesc
+{
+    FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+};
 StaticSamplerDesc StaticSamplers[] = 
 {
     {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}

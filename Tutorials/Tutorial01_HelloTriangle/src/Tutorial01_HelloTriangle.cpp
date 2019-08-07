@@ -62,7 +62,7 @@ void main(in  uint    VertId : SV_VertexID,
 }
 )";
 
-// Pixel shader will simply output interpolated vertex color
+// Pixel shader simply outputs interpolated vertex color
 static const char* PSSource = R"(
 struct PSInput 
 { 
@@ -116,11 +116,11 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -130,7 +130,7 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
         pDevice->CreateShader(ShaderCI, &pVS);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
