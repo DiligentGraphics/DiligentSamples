@@ -50,11 +50,11 @@ private:
     void LoadTexture();
     void InitUI();
 
-    RefCntAutoPtr<IPipelineState> m_pPSO;
-    RefCntAutoPtr<IBuffer> m_CubeVertexBuffer;
-    RefCntAutoPtr<IBuffer> m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer> m_ShaderConstants;
-    RefCntAutoPtr<ITextureView> m_TextureSRV;
+    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_ShaderConstants;
+    RefCntAutoPtr<ITextureView>           m_TextureSRV;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB;
     float4x4 m_WorldViewProjMatrix;
     float m_LineWidth = 3.f;

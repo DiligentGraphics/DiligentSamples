@@ -63,8 +63,8 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     // Pipeline state object encompasses configuration of all GPU stages
 
     PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues
-    // It is always a good idea to give objects descriptive names
+    // Pipeline state name is used by the engine to report issues.
+    // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Cube PSO"; 
 
     // This is a graphics pipeline
@@ -88,18 +88,17 @@ void Tutorial07_GeometryShader::CreatePipelineState()
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -109,7 +108,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
-    // Create geometry shader
+    // Create a geometry shader
     RefCntAutoPtr<IShader> pGS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_GEOMETRY;
@@ -119,7 +118,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         m_pDevice->CreateShader(ShaderCI, &pGS);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -157,8 +156,11 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -168,21 +170,21 @@ void Tutorial07_GeometryShader::CreatePipelineState()
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
 
-    // Since we did not explcitly specify the type for Constants, default type
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // to the pipeline state object.
+    // Since we did not explcitly specify the type for 'VSConstants', 'GSConstants', 
+    // and 'PSConstants' variables, default type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used.
+    // Static variables never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX,   "VSConstants")->Set(m_ShaderConstants);
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
 
-    // Since we are using mutable variable, we must create shader resource binding object
+    // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
 }
 
 void Tutorial07_GeometryShader::CreateVertexBuffer()
 {
-    // Layout of this structure matches the one we defined in pipeline state
+    // Layout of this structure matches the one we defined in the pipeline state
     struct Vertex
     {
         float3 pos;
@@ -206,8 +208,6 @@ void Tutorial07_GeometryShader::CreateVertexBuffer()
     //        (-1,-1,-1)       (+1,-1,-1)
     // 
 
-    // This time we have to duplicate verices because texture coordinates cannot
-    // be shared
     Vertex CubeVerts[] =
     {
         {float3(-1,-1,-1), float2(0,1)},
@@ -240,7 +240,7 @@ void Tutorial07_GeometryShader::CreateVertexBuffer()
         {float3(+1,+1,+1), float2(0,0)},
         {float3(-1,+1,+1), float2(1,0)}
     };
-    // Create vertex buffer that stores cube vertices
+
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_STATIC;
@@ -292,7 +292,7 @@ void Tutorial07_GeometryShader::LoadTexture()
 void Tutorial07_GeometryShader::InitUI()
 {
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
@@ -307,7 +307,7 @@ void Tutorial07_GeometryShader::Initialize(IEngineFactory*   pEngineFactory,
                                            ISwapChain*       pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
-    if(!deviceCaps.bGeometryShadersSupported)
+    if (!deviceCaps.bGeometryShadersSupported)
     {
         throw std::runtime_error("Geometry shaders are not supported");
     }
@@ -340,20 +340,20 @@ void Tutorial07_GeometryShader::Render()
         Consts->LineWidth = m_LineWidth;
     }
 
-    // Bind vertex buffer
+    // Bind vertex and index buffers
     Uint32 offset = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Set pipeline state
+    // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed  = true; // This is indexed draw call
+    DrawAttrs.IsIndexed  = true;      // This is an indexed draw call
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     // Verify the state of vertex and index buffers

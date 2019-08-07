@@ -186,8 +186,6 @@ void Tutorial04_Instancing::CreateVertexBuffer()
     //        (-1,-1,-1)       (+1,-1,-1)
     // 
 
-    // We have to duplicate verices because texture coordinates cannot
-    // be shared
     Vertex CubeVerts[] =
     {
         {float3(-1,-1,-1), float2(0,1)},
@@ -220,7 +218,7 @@ void Tutorial04_Instancing::CreateVertexBuffer()
         {float3(+1,+1,+1), float2(0,0)},
         {float3(-1,+1,+1), float2(1,0)}
     };
-    // Create vertex buffer that stores cube vertices
+
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_STATIC;

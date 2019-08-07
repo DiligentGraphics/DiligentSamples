@@ -88,7 +88,7 @@ Pipeline state initialization is the same as in Tutorial03, with the only differ
 initialzation of the geometry shader:
 
 ```cpp
-// Create geometry shader
+// Create a geometry shader
 RefCntAutoPtr<IShader> pGS;
 {
     CreationAttribs.Desc.ShaderType = SHADER_TYPE_GEOMETRY;

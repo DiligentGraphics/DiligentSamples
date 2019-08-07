@@ -206,7 +206,6 @@ void Tutorial03_Texturing::CreateVertexBuffer()
         {float3(-1,+1,+1), float2(1,0)}
     };
 
-    // Create vertex buffer that stores cube vertices
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_STATIC;
