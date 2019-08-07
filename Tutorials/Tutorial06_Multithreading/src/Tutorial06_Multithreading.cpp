@@ -552,7 +552,7 @@ void Tutorial06_Multithreading::Render()
     {
         m_ExecuteCommandListsSignal.Wait(true, 1);
 
-        for(auto &cmdList : m_CmdLists)
+        for (auto& cmdList : m_CmdLists)
         {
             m_pImmediateContext->ExecuteCommandList(cmdList);
             // Release command lists now to release all outstanding references

@@ -131,7 +131,7 @@ and executes them:
 ```cpp
 m_ExecuteCommandListsSignal.Wait(true, 1);
 
-for (auto &cmdList : m_CmdLists)
+for (auto& cmdList : m_CmdLists)
 {
     m_pImmediateContext->ExecuteCommandList(cmdList);
 }
@@ -218,7 +218,7 @@ DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
 pCtx->SetPipelineState(m_pPSO);
 for (size_t inst = StartInst; inst < EndInst; ++inst)
 {
-    const auto &CurrInstData = m_InstanceData[inst];
+    const auto& CurrInstData = m_InstanceData[inst];
     // Shader resources have been explicitly transitioned to correct states, so
     // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
     // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
