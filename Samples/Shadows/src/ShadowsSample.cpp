@@ -413,19 +413,6 @@ void ShadowsSample::CreatePipelineStates()
     RefCntAutoPtr<IShader> pShadowVS;
     m_pDevice->CreateShader(ShaderCI, &pShadowVS);
 
-    RefCntAutoPtr<IShader> pDummyShadowPS;
-    if (m_pDevice->GetDeviceCaps().IsGLDevice())
-    {
-        // Some OpenGL implementations require empty fragment shader
-        ShaderCreateInfo DummyPSCI;
-        DummyPSCI.UseCombinedTextureSamplers = true;
-        DummyPSCI.SourceLanguage  = SHADER_SOURCE_LANGUAGE_GLSL;
-        DummyPSCI.Source          = "void main(){}";
-        DummyPSCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        DummyPSCI.Desc.Name       = "Dummy fragment shader";
-        m_pDevice->CreateShader(DummyPSCI, &pDummyShadowPS);
-    }
-
     m_PSOIndex.resize(m_Mesh.GetNumVBs());
     m_RenderMeshPSO.clear();
     m_RenderMeshShadowPSO.clear();
@@ -435,7 +422,7 @@ void ShadowsSample::CreatePipelineStates()
         std::vector<LayoutElement> Elements;
         auto& InputLayout = PSODesc.GraphicsPipeline.InputLayout;
         DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(m_Mesh.VBElements(vb), m_Mesh.GetVertexStride(vb), InputLayout, Elements);
-
+        
         //  Try to find PSO with the same layout
         Uint32 pso;
         for (pso=0; pso < m_RenderMeshPSO.size(); ++pso)
@@ -444,11 +431,11 @@ void ShadowsSample::CreatePipelineStates()
             bool IsSameLayout =
                 PSOLayout.NumElements == InputLayout.NumElements && 
                 memcmp(PSOLayout.LayoutElements, InputLayout.LayoutElements, sizeof(LayoutElement) * InputLayout.NumElements) == 0;
-
+            
             if (IsSameLayout)
                 break;
         }
-
+        
         m_PSOIndex[vb] = pso;
         if (pso < static_cast<Uint32>(m_RenderMeshPSO.size()))
             continue;
@@ -485,7 +472,7 @@ void ShadowsSample::CreatePipelineStates()
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbLightAttribs")->Set(m_LightAttribsCB);
 
         PSODesc.Name = "Mesh Shadow PSO";
-        PSODesc.GraphicsPipeline.pPS        = pDummyShadowPS;
+        PSODesc.GraphicsPipeline.pPS        = nullptr;
         PSODesc.GraphicsPipeline.pVS        = pShadowVS;
         PSODesc.GraphicsPipeline.NumRenderTargets = 0;
         PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;

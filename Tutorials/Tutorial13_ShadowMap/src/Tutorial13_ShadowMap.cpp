@@ -134,7 +134,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     };
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-
+    
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
     SamplerDesc SamLinearClampDesc
     {
@@ -147,19 +147,19 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     };
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-
+    
     m_pDevice->CreatePipelineState(PSODesc, &m_pCubePSO);
-
+    
     // Since we did not explcitly specify the type for Constants, default type
     // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
     // through the pipeline state object.
     m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
-
+    
     // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pCubePSO->CreateShaderResourceBinding(&m_CubeSRB, true);
-
-
+    
+    
     // Create shadow vertex shader
     RefCntAutoPtr<IShader> pShadowVS;
     {
@@ -169,20 +169,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
         ShaderCI.FilePath        = "cube_shadow.vsh";
         m_pDevice->CreateShader(ShaderCI, &pShadowVS);
     }
-
-    RefCntAutoPtr<IShader> pDummyShadowPS;
-    if (m_pDevice->GetDeviceCaps().IsGLDevice())
-    {
-        // Some OpenGL implementations require empty fragment shader
-        ShaderCreateInfo DummyPSCI;
-        DummyPSCI.UseCombinedTextureSamplers = true;
-        DummyPSCI.SourceLanguage  = SHADER_SOURCE_LANGUAGE_GLSL;
-        DummyPSCI.Source          = "void main(){}";
-        DummyPSCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        DummyPSCI.Desc.Name       = "Dummy fragment shader";
-        m_pDevice->CreateShader(DummyPSCI, &pDummyShadowPS);
-    }
-
+    
     PSODesc.Name                              = "Cube shadow PSO";
     // Shadow pass doesn't use any render target outputs
     PSODesc.GraphicsPipeline.NumRenderTargets = 0;
@@ -190,19 +177,18 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     // The DSV format is the shadow map format
     PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowMapFormat;
     PSODesc.GraphicsPipeline.pVS              = pShadowVS;
-    // We don't use pixel shader as we are only interested in populating the depth buffer.
-    // Some OpenGL implemenations will, however, fail if there is no fragment shader.
-    PSODesc.GraphicsPipeline.pPS              = pDummyShadowPS;
+    // We don't use pixel shader as we are only interested in populating the depth buffer
+    PSODesc.GraphicsPipeline.pPS              = nullptr;
     PSODesc.ResourceLayout.Variables          = nullptr;
     PSODesc.ResourceLayout.NumVariables       = 0;
     PSODesc.ResourceLayout.StaticSamplers     = nullptr;
     PSODesc.ResourceLayout.NumStaticSamplers  = 0;
-
+    
     // Disable depth clipping to render objects that are closer than near
     // clipping plane. This is not required for this tutorial, but real applications
     // will most likely want to do this.
     PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
-
+    
     m_pDevice->CreatePipelineState(PSODesc, &m_pCubeShadowPSO);
     m_pCubeShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
