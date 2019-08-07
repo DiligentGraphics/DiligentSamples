@@ -99,7 +99,7 @@ for(int tex=0; tex < NumTextures; ++tex)
     const auto &TexDesc = SrcTex->GetDesc();
     if (pTexArray == nullptr)
     {
-        //	Create a texture array
+        // Create a texture array
         auto TexArrDesc = TexDesc;
         TexArrDesc.ArraySize = NumTextures;
         TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;

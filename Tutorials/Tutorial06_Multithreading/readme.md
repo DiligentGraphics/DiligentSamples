@@ -84,13 +84,13 @@ For example, transitioning vertex and index buffers to required states can be pe
 
 ```cpp
 StateTransitionDesc Barriers[2];
-Barriers[0].pBuffer = m_CubeVertexBuffer;
-Barriers[0].OldState = RESOURCE_STATE_UNKNOWN; // Use internal buffer state
+Barriers[0].pBuffer  = m_CubeVertexBuffer;
+Barriers[0].OldState = RESOURCE_STATE_UNKNOWN; // Use the internal buffer state
 Barriers[0].NewState = RESOURCE_STATE_VERTEX_BUFFER;
 Barriers[0].UpdateResourceState = true;
 
-Barriers[1].pBuffer = m_CubeIndexBuffer;
-Barriers[1].OldState = RESOURCE_STATE_UNKNOWN; // Use internal buffer state
+Barriers[1].pBuffer  = m_CubeIndexBuffer;
+Barriers[1].OldState = RESOURCE_STATE_UNKNOWN; // Use the internal buffer state
 Barriers[1].NewState = RESOURCE_STATE_INDEX_BUFFER;
 Barriers[1].UpdateResourceState = true;
 
@@ -112,16 +112,7 @@ Deferred contexts should be created for every worker thread that records renderi
 ### Main Thread
 
 Main thread coordinates the execution of worker threads and handles recorded command lists.
-It starts by transitioning all resources in shader resource binding objects
-to correct states. This is very important as once we know all resources are transitioned to
-correct states, we can tell the engine not to check the states when processing every draw command:
-
-```cpp
-for(size_t i=0; i < _countof(m_SRB); ++i)
-    m_pImmediateContext->TransitionShaderResources(m_pPSO, m_SRB[i]);
-```
-
-The main thread then signals all worker threads to start:
+It starts by signaling all worker threads to start:
 
 ```cpp
 m_NumThreadsCompleted = 0;
@@ -140,7 +131,7 @@ and executes them:
 ```cpp
 m_ExecuteCommandListsSignal.Wait(true, 1);
 
-for(auto &cmdList : m_CmdLists)
+for (auto &cmdList : m_CmdLists)
 {
     m_pImmediateContext->ExecuteCommandList(cmdList);
 }
@@ -167,7 +158,7 @@ if (SignaledValue < 0)
 The thread then renders the allotted subset using its own deferred context:
 
 ```cpp
-IDeviceContext *pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+IDeviceContext* pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
 pThis->RenderSubset(pDeferredCtx, 1+ThreadNum);
 ```
 
@@ -225,7 +216,7 @@ DrawAttrs.NumIndices = 36;
 DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
 
 pCtx->SetPipelineState(m_pPSO);
-for(size_t inst = StartInst; inst < EndInst; ++inst)
+for (size_t inst = StartInst; inst < EndInst; ++inst)
 {
     const auto &CurrInstData = m_InstanceData[inst];
     // Shader resources have been explicitly transitioned to correct states, so

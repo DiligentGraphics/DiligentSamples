@@ -50,7 +50,7 @@ void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType       
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
     Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
 #if VULKAN_SUPPORTED
-    if(DevType == DeviceType::Vulkan)
+    if (DevType == DeviceType::Vulkan)
     {
         auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
@@ -85,18 +85,17 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -113,7 +112,7 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
         Barriers.emplace_back(m_InstanceConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -124,7 +123,6 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
     }
 
     // Define vertex shader input layout
-    // This tutorial uses two types of input: per-vertex data and per-instance data.
     LayoutElement LayoutElems[] =
     {
         // Per-vertex data - first buffer slot
@@ -152,8 +150,11 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -163,8 +164,8 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
     // Since we did not explcitly specify the type for Constants, default type 
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // to the pipeline state object.
+    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
+    // never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "InstanceData")->Set(m_InstanceConstants);
 }
@@ -265,7 +266,7 @@ void Tutorial06_Multithreading::CreateIndexBuffer(std::vector<StateTransitionDes
     IBData.pData    = Indices;
     IBData.DataSize = sizeof(Indices);
     m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
-    // Explicitly transition the buffer to RESOURCE_STATE_INDEX_BUFFER1 state
+    // Explicitly transition the buffer to RESOURCE_STATE_INDEX_BUFFER state
     Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
 }
 
@@ -301,11 +302,10 @@ void Tutorial06_Multithreading::LoadTextures(std::vector<StateTransitionDesc>& B
 void Tutorial06_Multithreading::InitUI()
 {
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    // Add grid size control
     TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32,
         [](const void* value, void* clientData)
         {
@@ -430,12 +430,12 @@ void Tutorial06_Multithreading::StopWorkerThreads()
 void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThis, Uint32 ThreadNum)
 {
     // Every thread should use its own deferred context
-    IDeviceContext *pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+    IDeviceContext* pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
     for (;;)
     {
         // Wait for the signal
         auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
-        if(SignaledValue < 0)
+        if (SignaledValue < 0)
             return;
 
         // Render current subset using the deferred context
@@ -458,14 +458,14 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
 
         // Call FinishFrame() to release dynamic resources allocated by deferred contexts
         // IMPORTANT: we must wait until the command lists are submitted for execution
-        // because FinishFrame() invalidates all dynamic resources
+        // because FinishFrame() invalidates all dynamic resources.
         pDeferredCtx->FinishFrame();
 
         ++pThis->m_NumThreadsReady;
         // We must wait until all threads reach this point, because
         // m_GotoNextFrameSignal must be unsignaled before we proceed to 
-        // RenderSubsetSignal to avoid one thread go through the loop twice in 
-        // a row
+        // RenderSubsetSignal to avoid one thread going through the loop twice in 
+        // a row.
         while(pThis->m_NumThreadsReady < pThis->m_NumWorkerThreads)
             std::this_thread::yield();
         VERIFY_EXPR( !pThis->m_GotoNextFrameSignal.IsTriggered() );
@@ -474,8 +474,8 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
 
 void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 {
-    // Deferred contexts start in default state. We must bind everything to the context
-    // Render targets are set and transitioned to correct states by the main thread, here we only verify states
+    // Deferred contexts start in default state. We must bind everything to the context.
+    // Render targets are set and transitioned to correct states by the main thread, here we only verify the states.
     pCtx->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     {
@@ -488,7 +488,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
         CBConstants[1] = m_RotationMatrix.Transpose();
     }
 
-    // Bind vertex & instance buffers. This must be done for every context
+    // Bind vertex and index buffers. This must be done for every context
     Uint32 offsets[] = {0, 0};
     IBuffer *pBuffs[] = {m_CubeVertexBuffer};
     pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
@@ -500,7 +500,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
 
-    // Set pipeline state
+    // Set the pipeline state
     pCtx->SetPipelineState(m_pPSO);
     Uint32 NumSubsets = 1 + m_NumWorkerThreads;
     Uint32 NumInstances = static_cast<Uint32>(m_InstanceData.size());
@@ -514,7 +514,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
         // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
         // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
         // verify that all resources are in correct states. This mode only has effect
-        // in debug and development builds
+        // in debug and development builds.
         pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
         {
@@ -572,15 +572,15 @@ void Tutorial06_Multithreading::Update(double CurrTime, double ElapsedTime)
 
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
-    // Set cube view matrix
+    // Set the cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
     float NearPlane = 0.1f;
-    float FarPlane = 100.f;
+    float FarPlane  = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
-    // Compute view-projection matrix
+    // Compute the view-projection matrix
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
