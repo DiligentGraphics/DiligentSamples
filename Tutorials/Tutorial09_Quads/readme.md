@@ -54,13 +54,13 @@ void main(in  VSInput VSIn,
 }
 ```
 
-`MatrixFromRows()` is a function defined by the engine that creates a matrix from rows, in an API-spesific fashion.
+`MatrixFromRows()` is a function defined by the engine that creates a matrix from rows, in an API-specific fashion.
 
 Non-batched pixel shader is straightforward and simply samples the texture:
 
 ```hlsl
 Texture2D    g_Texture;
-SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+SamplerState g_Texture_sampler;
 
 struct PSInput 
 { 
@@ -123,7 +123,7 @@ the pixel shader that uses the index to select texture array slice:
 
 ```hlsl
 Texture2DArray g_Texture;
-SamplerState   g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+SamplerState   g_Texture_sampler;
 
 struct PSInput
 {
@@ -171,14 +171,10 @@ Note that we create one SRB per texture for non-batched mode and just one SRB fo
 
 The tutorial largely uses the same rendering scheme as [Tutorial06 - Multithreading](../Tutorial06_Multithreading). 
 If multithreading is enabled, command lists are recorded in parallel by multiple threads and are then executed by the
-immediate context. Few important things to note:
-
-Resources are transitioned to correct states before render loop starts:
+immediate context. An important thing to notice is that resources are transitioned to correct states once after the intialization:
 
 ```cpp
-for (size_t i = 0; i < _countof(m_SRB); ++i)
-    m_pImmediateContext->TransitionShaderResources(m_pPSO[0][0], m_SRB[i]);
-m_pImmediateContext->TransitionShaderResources(m_pPSO[1][0], m_BatchSRB);
+m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 ```
 
 This avoids checking the states inside every draw command:

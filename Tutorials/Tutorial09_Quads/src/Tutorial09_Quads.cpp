@@ -90,8 +90,8 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     // Pipeline state object encompasses configuration of all GPU stages
 
     PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues
-    // It is always a good idea to give objects descriptive names
+    // Pipeline state name is used by the engine to report issues.
+    // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Quad PSO"; 
 
     // This is a graphics pipeline
@@ -112,18 +112,17 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS, pVSBatched;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -142,14 +141,13 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
         Barriers.emplace_back(m_QuadAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
     }
 
-    // Create pixel shader
+    // Create pixel shaders
     RefCntAutoPtr<IShader> pPS, pPSBatched;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Quad PS";
         ShaderCI.FilePath        = "quad.psh";
-
         m_pDevice->CreateShader(ShaderCI, &pPS);
 
         ShaderCI.Desc.Name = "Quad PS Batched";
@@ -173,8 +171,11 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -186,9 +187,9 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
         m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
 
-        // Since we did not explcitly specify the type for Constants, default type 
-        // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-        // to the pipeline state object.
+        // Since we did not explcitly specify the type for 'QuadAttribs' variable, default
+        // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
+        // change and are bound directly to the pipeline state object.
         m_pPSO[0][state]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "QuadAttribs")->Set(m_QuadAttribsCB);
 
         if (state > 0)
@@ -198,7 +199,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
 
     PSODesc.Name = "Batched Quads PSO";
     // Define vertex shader input layout
-    // This tutorial uses two types of input: per-vertex data and per-instance data.
+    // This tutorial only uses per-instance data.
     LayoutElement LayoutElems[] =
     {
         // Attribute 0 - QuadRotationAndScale
@@ -209,7 +210,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
         LayoutElement{2, 0, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE}
     };
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
+    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
         
     PSODesc.GraphicsPipeline.pVS = pVSBatched;
     PSODesc.GraphicsPipeline.pPS = pPSBatched;
@@ -218,8 +219,12 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     {
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
         m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
+#ifdef _DEBUG
         if (state > 0)
+        {
             VERIFY(m_pPSO[1][state]->IsCompatibleWith(m_pPSO[1][0]), "PSOs are expected to be compatible");
+        }
+#endif
     }
 }
 
@@ -283,11 +288,10 @@ void Tutorial09_Quads::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
 void Tutorial09_Quads::InitUI()
 {
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    // Add num quads control
     TwAddVarCB(bar, "Num Quads", TW_TYPE_INT32, 
         [](const void* value, void* clientData)
         {
@@ -513,7 +517,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
         const Uint32 StartInst = batch * m_BatchSize;
         const Uint32 EndInst = std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads));
 
-        // Set pipeline state
+        // Set the pipeline state
         auto StateInd = m_Quads[StartInst].StateInd;
         pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0][StateInd]);
 
@@ -526,7 +530,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 
         for (Uint32 inst = StartInst; inst < EndInst; ++inst)
         {
-            const auto &CurrInstData = m_Quads[inst];
+            const auto& CurrInstData = m_Quads[inst];
             // Shader resources have been explicitly transitioned to correct states, so
             // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
             // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
@@ -536,9 +540,11 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
                 pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
             
             {
-                float2x2 ScaleMatr =
-                    float2x2(CurrInstData.Size, 0.f,
-                        0.f, CurrInstData.Size);
+                float2x2 ScaleMatr
+                {
+                    CurrInstData.Size, 0.f,
+                    0.f,               CurrInstData.Size
+                };
                 float sinAngle = sinf(CurrInstData.Angle);
                 float cosAngle = cosf(CurrInstData.Angle);
                 float2x2 RotMatr(cosAngle, -sinAngle,
