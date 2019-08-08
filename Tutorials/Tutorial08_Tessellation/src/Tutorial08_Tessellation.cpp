@@ -83,8 +83,8 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     // Pipeline state object encompasses configuration of all GPU stages
 
     PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues
-    // It is always a good idea to give objects descriptive names
+    // Pipeline state name is used by the engine to report issues.
+    // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Terrain PSO"; 
 
     // This is a graphics pipeline
@@ -108,18 +108,17 @@ void Tutorial08_Tessellation::CreatePipelineStates()
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -129,8 +128,10 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
-    // Create geometry shader
+
+    // Create a geometry shader
     RefCntAutoPtr<IShader> pGS;
+    if (bWireframeSupported)
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_GEOMETRY;
         ShaderCI.EntryPoint      = "TerrainGS";
@@ -139,7 +140,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         m_pDevice->CreateShader(ShaderCI, &pGS);
     }
 
-    // Create hull shader
+    // Create a hull shader
     RefCntAutoPtr<IShader> pHS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_HULL;
@@ -151,7 +152,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         m_pDevice->CreateShader(ShaderCI, &pHS);
     }
 
-    // Create domain shader
+    // Create a domain shader
     RefCntAutoPtr<IShader> pDS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_DOMAIN;
@@ -162,7 +163,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         m_pDevice->CreateShader(ShaderCI, &pDS);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS, pWirePS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -196,9 +197,12 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    // Define static sampler for g_HeightMap and g_Texture. Static samplers should be used whenever possible
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_HULL | SHADER_TYPE_DOMAIN, "g_HeightMap", SamLinearClampDesc},
@@ -258,9 +262,9 @@ void Tutorial08_Tessellation::LoadTextures()
         m_ColorMapSRV = ColorMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     }
 
-    // Since we are using mutable variable, we must create shader resource binding object
+    // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-    for(size_t i=0; i < _countof(m_pPSO); ++i)
+    for (size_t i=0; i < _countof(m_pPSO); ++i)
     {
         if (m_pPSO[i])
         {
@@ -280,7 +284,6 @@ void Tutorial08_Tessellation::InitUI()
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    // Add grid size control
     TwAddVarRW(bar, "Animate", TW_TYPE_BOOLCPP, &m_Animate, "");
     TwAddVarRW(bar, "Adaptive tessellation", TW_TYPE_BOOLCPP, &m_AdaptiveTessellation, "");
     if (m_pPSO[1])
@@ -319,7 +322,7 @@ void Tutorial08_Tessellation::Render()
     unsigned int NumHorzBlocks = m_HeightMapWidth / m_BlockSize;
     unsigned int NumVertBlocks = m_HeightMapHeight / m_BlockSize;
     {
-        // Map the buffer and write current world-view-projection matrix
+        // Map the buffer and write rendering data
         MapHelper<GlobalConstants> Consts(m_pImmediateContext, m_ShaderConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         Consts->fBlockSize = static_cast<float>(m_BlockSize);
         Consts->NumHorzBlocks = NumHorzBlocks;
@@ -343,7 +346,7 @@ void Tutorial08_Tessellation::Render()
     }
 
 
-    // Set pipeline state
+    // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO[m_Wireframe ? 1 : 0]);
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
     // makes sure that resources are transitioned to required states.

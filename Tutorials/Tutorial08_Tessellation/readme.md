@@ -79,16 +79,16 @@ TerrainHSOut TerrainHS(InputPatch<TerrainVSOut, 1> inputPatch, uint uCPID : SV_O
 ```
 
 The second part is called *constant function*, whose purpose is to compute tessellation
-factors for the patch edges and interior. This tutorial uses very simple method to evlaute the factors
+factors for the patch edges and interior. This tutorial uses a very simple method to evlaute the factors
 for every edge of every block: the edge factor is inversely proportional to the distance from the edge center 
 to the camera:
 
 ```hlsl
 float2 BlockOffset = inputPatch[0].BlockOffset;
 float4 UV = float4(0.0, 0.0, 1.0, 1.0) / float2(g_Constants.fNumHorzBlocks, g_Constants.fNumVertBlocks).xyxy + BlockOffset.xyxy;
-float2 leftEdgeCntrUV  = float2(UV.x,              (UV.y + UV.w)/2.0);
+float2 leftEdgeCntrUV  = float2(UV.x, (UV.y + UV.w)/2.0);
 // Compute edge center position
-float3 leftEdgeCntr  = float3((leftEdgeCntrUV  - float2(0.5, 0.5)) * g_Constants.LengthScale, 0);
+float3 leftEdgeCntr  = float3((leftEdgeCntrUV - float2(0.5, 0.5)) * g_Constants.LengthScale, 0);
 // Sample height map at the location of the edge center
 leftEdgeCntr.z  = g_HeightMap.SampleLevel(g_HeightMap_sampler, leftEdgeCntrUV, 0)  * g_Constants.HeightScale;
 // Transform to camera space
@@ -148,7 +148,7 @@ Pixel shader simpy samples the color texture and is quite straightforward:
 #include "structures.fxh"
 
 Texture2D    g_Texture;
-SamplerState g_Texture_sampler; // By convention, texture samplers must use _sampler suffix
+SamplerState g_Texture_sampler;
 
 float4 TerrainPS(TerrainDSOut ps_in) : SV_TARGET
 {
