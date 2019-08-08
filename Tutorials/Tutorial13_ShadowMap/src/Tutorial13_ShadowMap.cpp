@@ -77,13 +77,13 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
     
-    // Create a shader source stream factory to load shaders from file
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
@@ -150,9 +150,9 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     
     m_pDevice->CreatePipelineState(PSODesc, &m_pCubePSO);
     
-    // Since we did not explcitly specify the type for Constants, default type
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // through the pipeline state object.
+    // Since we did not explcitly specify the type for 'Constants' variable, default
+    // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
+    // change and are bound directly through the pipeline state object.
     m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     
     // Since we are using mutable variable, we must create a shader resource binding object
@@ -219,13 +219,13 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
     
-    // Create a shader source stream factory to load shaders from file
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
@@ -279,9 +279,9 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     
     m_pDevice->CreatePipelineState(PSODesc, &m_pPlanePSO);
     
-    // Since we did not explcitly specify the type for Constants, default type
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // through the pipeline state object.
+    // Since we did not explcitly specify the type for 'Constants' variable, default
+    // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
+    // change and are bound directly through the pipeline state object.
     m_pPlanePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 }
 
@@ -308,13 +308,13 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
     
-    // Create a shader source stream factory to load shaders from file
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
@@ -386,8 +386,6 @@ void Tutorial13_ShadowMap::CreateVertexBuffer(std::vector<StateTransitionDesc>& 
     //        (-1,-1,-1)       (+1,-1,-1)
     //
     
-    // This time we have to duplicate verices because texture coordinates
-    // and normals cannot be shared
     Vertex CubeVerts[] =
     {
         {float3(-1,-1,-1), float2(0,1), float3(0, 0, -1)},
@@ -420,7 +418,7 @@ void Tutorial13_ShadowMap::CreateVertexBuffer(std::vector<StateTransitionDesc>& 
         {float3(+1,+1,+1), float2(0,0), float3(0, 0, +1)},
         {float3(-1,+1,+1), float2(1,0), float3(0, 0, +1)}
     };
-    // Create vertex buffer that stores cube vertices
+
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_STATIC;
@@ -476,7 +474,7 @@ void Tutorial13_ShadowMap::LoadTexture(std::vector<StateTransitionDesc>& Barrier
 void Tutorial13_ShadowMap::InitUI()
 {
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {300 * m_UIScale, 180 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
     int valuesWidth = 160 * m_UIScale;

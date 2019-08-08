@@ -83,7 +83,7 @@ RenderShadowMap();
 using shadow-only mode.
 
 The function starts by building a world-to-light-view-space transformation matrix. The Z axis of this
-matrix is the light direction. Two other axis are selected to avoid precision issues:
+matrix is the light direction. Two other axes are selected to avoid precision issues:
 
 ```cpp
 float3 f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ;
@@ -187,7 +187,7 @@ to get smoother edges:
 
 ```hlsl
 Texture2D              g_ShadowMap;
-SamplerComparisonState g_ShadowMap_sampler; // By convention, texture samplers must use _sampler suffix
+SamplerComparisonState g_ShadowMap_sampler;
 
 struct PlanePSOutput
 {

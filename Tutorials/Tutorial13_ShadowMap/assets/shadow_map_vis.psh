@@ -1,7 +1,7 @@
 #include "structures.fxh"
 
 Texture2D    g_ShadowMap;
-SamplerState g_ShadowMap_sampler; // By convention, texture samplers must use _sampler suffix
+SamplerState g_ShadowMap_sampler; // By convention, texture samplers must use the '_sampler' suffix
 
 struct ShadowMapVisPSOutput
 {
