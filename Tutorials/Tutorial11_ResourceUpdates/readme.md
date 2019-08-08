@@ -19,7 +19,7 @@ IndBuffDesc.Usage         = USAGE_STATIC;
 IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
 IndBuffDesc.uiSizeInBytes = sizeof(Indices);
 BufferData IBData;
-IBData.pData = Indices;
+IBData.pData    = Indices;
 IBData.DataSize = sizeof(Indices);
 pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
 ```
@@ -28,7 +28,7 @@ Note that the contents of `USAGE_STATIC` buffers cannot be changed and initial d
 Initial data can also be provided for `USAGE_DEFAULT` buffers, but not for `USAGE_DYNAMIC` buffers that are updated through mapping.
 Use `USAGE_STATIC` buffer for data that never changes (such as cube index buffer in this tutorial).
 
-### Updating buffers with `IBuffer::UpdateData()`
+### Updating buffers with IBuffer::UpdateData()
 
 The first way to update a buffer contents at run time is to use `IBuffer::UpdateData()` method. Only buffers created with
 `USAGE_DEFAULT` flag can use this way. This method writes new data to a given buffer subregion, as in the example below:
@@ -52,7 +52,7 @@ The operation directly translates to [ID3D11DeviceContext::UpdateSubresource](ht
 
 #### Direct3D12/Vulkan backend
 Default buffers are allocated in GPU-only accessible memory, so the data cannot be written directly. 
-To perform the operation, the engine first allocates temporary storage in a CPU-visible memory, copies the data to this temporary 
+To perform the operation, the engine first allocates a temporary storage in a CPU-visible memory, copies the data to this temporary 
 storage and then issues GPU command to copy the data from the storage to the final destination. It also performs necessary resource
 state transitions (such as shader resource -> copy destination).
 
@@ -83,7 +83,7 @@ VertexBuffer->Map(m_pImmediateContext, MAP_WRITE, MAP_FLAG_DISCARD, reinterpret_
 for(Uint32 v=0; v < _countof(CubeVerts); ++v)
 {
     const auto& SrcVert = CubeVerts[v];
-    Vertices[v].uv = SrcVert.uv;
+    Vertices[v].uv  = SrcVert.uv;
     Vertices[v].pos = SrcVert.pos * static_cast<float>(1 + 0.2*sin(m_CurrTime * (1.0 + v * 0.2)));
 }
 VertexBuffer->Unmap(m_pImmediateContext, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -159,7 +159,7 @@ RefCntAutoPtr<ITexture> Texture;
 Device->CreateTexture(TexDesc, &InitData, &Texture);
 ```
 
-### Updating textures with `ITexture::UpdateData()`
+### Updating textures with ITexture::UpdateData()
 
 The first way to update textures is to use `ITexture::UpdateData()` method. The method works similar to 
 `IBuffer::UpdateData()` and writes new data to a given texture region:
