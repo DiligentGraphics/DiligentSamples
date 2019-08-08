@@ -11,7 +11,7 @@ with varying number of vertices, streaming geometry of every polygon at every dr
 ## Streaming Data
 
 The main difference between this and previous tutorial is that this time the geometry of every polygon is not fixed and
-change dynamically at run time. Before issuing a draw command, polygon vertices and index list are streamed to the GPU.
+changes dynamically at run time. Before issuing a draw command, polygon vertices and index list are streamed to the GPU.
 The sample employs the following strategy to upload varying amounts of data to the GPU:
 
 1. Create dynamic buffer large enough to encompass few polygons
@@ -109,7 +109,7 @@ After the data has been written, the last thing to do is to bind the buffers at 
 
 ```cpp
 Uint32 offsets[] = { VBOffset };
-IBuffer *pBuffs[] = { m_StreamingVB->GetBuffer() };
+IBuffer* pBuffs[] = { m_StreamingVB->GetBuffer() };
 pCtx->SetVertexBuffers(0, 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), IBOffsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 ```

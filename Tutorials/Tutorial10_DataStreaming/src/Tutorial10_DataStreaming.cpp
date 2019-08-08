@@ -141,8 +141,8 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType        
     if(DevType == DeviceType::Vulkan)
     {
         auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
-        VkAttrs.DynamicHeapSize = 128 << 20;
-        VkAttrs.DynamicHeapPageSize = 2 << 20;
+        VkAttrs.DynamicHeapSize             = 128 << 20;
+        VkAttrs.DynamicHeapPageSize         = 2 << 20;
         VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
     }
 #endif
@@ -192,18 +192,17 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS, pVSBatched;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -223,7 +222,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
         Barriers.emplace_back(m_PolygonAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS, pPSBatched;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -261,8 +260,11 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -274,9 +276,9 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     {
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
         m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
-        // Since we did not explcitly specify the type for Constants, default type 
-        // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-        // to the pipeline state object.
+        // Since we did not explcitly specify the type for 'PolygonAttribs' variable, default
+        // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
+        // change and are bound directly to the pipeline state object.
         m_pPSO[0][state]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "PolygonAttribs")->Set(m_PolygonAttribsCB);
 
         if (state > 0)
@@ -299,7 +301,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
         LayoutElement{3, 1, 1, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE}
     };
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(BatchLayoutElems);
+    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(BatchLayoutElems);
         
     PSODesc.GraphicsPipeline.pVS = pVSBatched;
     PSODesc.GraphicsPipeline.pPS = pPSBatched;
@@ -308,8 +310,12 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     {
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
         m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
+#ifdef _DEBUG
         if (state > 0)
+        {
             VERIFY(m_pPSO[1][state]->IsCompatibleWith(m_pPSO[1][0]), "PSOs are expected to be compatible");
+        }
+#endif
     }
 }
 
@@ -329,7 +335,7 @@ void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Ba
         // Get shader resource view from the texture
         m_TextureSRV[tex] = SrcTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-        const auto &TexDesc = SrcTex->GetDesc();
+        const auto& TexDesc = SrcTex->GetDesc();
         if (pTexArray == nullptr)
         {
             //	Create texture array
@@ -373,11 +379,10 @@ void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Ba
 void Tutorial10_DataStreaming::InitUI()
 {
     // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
+    TwBar* bar = TwNewBar("Settings");
     int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
     TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
 
-    // Add num Polygons control
     TwAddVarCB(bar, "Num Polygons", TW_TYPE_INT32,
         [](const void* value, void* clientData)
         {
@@ -469,18 +474,18 @@ void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
 void Tutorial10_DataStreaming::InitializePolygonGeometry()
 {
     m_PolygonGeo.resize(MaxPolygonVerts+1);
-    for(Uint32 NumVerts = MinPolygonVerts; NumVerts <= MaxPolygonVerts; ++NumVerts)
+    for (Uint32 NumVerts = MinPolygonVerts; NumVerts <= MaxPolygonVerts; ++NumVerts)
     {
         auto& PolygonGeo = m_PolygonGeo[NumVerts];
         PolygonGeo.Verts.reserve(NumVerts);
         PolygonGeo.Inds.reserve( (NumVerts-2)*3);
         float ArcLen = PI_F*2.f / static_cast<float>(NumVerts);
         float Angle = ((NumVerts % 2) == 1) ? PI_F/2.f : PI_F/2.f - ArcLen/2.f;
-        for(Uint32 v=0; v < NumVerts; ++v, Angle += ArcLen)
+        for (Uint32 v=0; v < NumVerts; ++v, Angle += ArcLen)
         {
             PolygonGeo.Verts.emplace_back( float2{cosf(Angle), sinf(Angle)} );
 
-            if(v < NumVerts-2)
+            if (v < NumVerts-2)
             {
                 PolygonGeo.Inds.push_back(0);
                 PolygonGeo.Inds.push_back(v+1);
@@ -566,7 +571,7 @@ void Tutorial10_DataStreaming::UpdatePolygons(float elapsedTime)
 void Tutorial10_DataStreaming::StartWorkerThreads()
 {
     m_WorkerThreads.resize(m_NumWorkerThreads);
-    for(Uint32 t=0; t < m_WorkerThreads.size(); ++t)
+    for (Uint32 t=0; t < m_WorkerThreads.size(); ++t)
     {
         m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t );
     }
@@ -577,7 +582,7 @@ void Tutorial10_DataStreaming::StopWorkerThreads()
 {
     m_RenderSubsetSignal.Trigger(true, -1);
 
-    for(auto &thread : m_WorkerThreads)
+    for (auto& thread : m_WorkerThreads)
     {
         thread.join();
     }
@@ -587,16 +592,16 @@ void Tutorial10_DataStreaming::StopWorkerThreads()
 void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis, Uint32 ThreadNum)
 {
     // Every thread should use its own deferred context
-    IDeviceContext *pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+    IDeviceContext* pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
     for (;;)
     {
         // Wait for the signal
         auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
-        if(SignaledValue < 0)
+        if (SignaledValue < 0)
             return;
 
         // Render current subset using the deferred context
-        if(pThis->m_BatchSize > 1)
+        if (pThis->m_BatchSize > 1)
             pThis->RenderSubset<true>(pDeferredCtx, 1 + ThreadNum);
         else
             pThis->RenderSubset<false>(pDeferredCtx, 1 + ThreadNum);
@@ -686,9 +691,11 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
                 pCtx->CommitShaderResources(m_SRB[CurrInstData.TextureInd], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
             
             {
-                float2x2 ScaleMatr =
-                    float2x2(CurrInstData.Size, 0.f,
-                        0.f, CurrInstData.Size);
+                float2x2 ScaleMatr
+                {   
+                    CurrInstData.Size, 0.f,
+                    0.f,               CurrInstData.Size
+                };
                 float sinAngle = sinf(CurrInstData.Angle);
                 float cosAngle = cosf(CurrInstData.Angle);
                 float2x2 RotMatr(cosAngle, -sinAngle,
