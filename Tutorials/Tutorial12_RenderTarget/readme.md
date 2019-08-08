@@ -31,8 +31,8 @@ struct VSInput
 
 struct PSInput
 {
-    float4 Pos    : SV_POSITION;
-    float2 UV     : TEX_COORD;
+    float4 Pos : SV_POSITION;
+    float2 UV  : TEX_COORD;
 };
 
 void main(in  VSInput VSIn,
@@ -86,7 +86,8 @@ void main(in  PSInput  PSIn,
     float2 UV = PSIn.UV;
 #endif
 
-    float2 DistortedUV = UV + float2(sin(UV.y*30.0)*0.1 * sin(g_Time.x*3.0), sin(UV.x*20.0)*0.02 * sin(g_Time.x*2.0));
+    float2 DistortedUV = UV + float2(sin(UV.y*30.0)*0.1  * sin(g_Time.x*3.0),
+                                     sin(UV.x*20.0)*0.02 * sin(g_Time.x*2.0));
     PSOut.Color = g_Texture.Sample(g_Texture_sampler, DistortedUV);
 }
 ```
@@ -196,7 +197,8 @@ texture to `g_Texture` shader variable:
 ```cpp
 m_pRTSRB.Release();
 m_pRTPSO->CreateShaderResourceBinding(&m_pRTSRB, true);
-m_pRTSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+m_pRTSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->
+            Set(pRTColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 ```
 
 ## Rendering
@@ -207,21 +209,26 @@ buffers.
 
 ```cpp
 const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f };
-m_pImmediateContext->SetRenderTargets(1, &m_pRTColorRTV, m_pRTDepthDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearRenderTarget(m_pRTColorRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(m_pRTDepthDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->SetRenderTargets(1, &m_pRTColorRTV, m_pRTDepthDSV,
+                                      RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearRenderTarget(m_pRTColorRTV, ClearColor,
+                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(m_pRTDepthDSV, CLEAR_DEPTH_FLAG, 1.0f, 0,
+                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
 The rendering of our cube looks similar to other tutorials.
 
 After we're done rendering the cube, we need to deactivate our offscreen render target and draw a fullscreen quad
-using our post-processing effect shader.
+to the main framebuffer using our post-processing effect shader.
 
 ```cpp
 const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };
-m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr,
+                                      RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->ClearRenderTarget(nullptr, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0,
+                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 m_pImmediateContext->SetPipelineState(m_pRTPSO);
 m_pImmediateContext->CommitShaderResources(m_pRTSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

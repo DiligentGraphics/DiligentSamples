@@ -47,9 +47,9 @@ void Tutorial12_RenderTarget::CreateCubePSO()
 
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-    // Use offscreen render target format
+    // Use the offscreen render target format
     PSODesc.GraphicsPipeline.RTVFormats[0]                = RenderTargetFormat;
-    // Set offscreen depth buffer format
+    // Set the offscreen depth buffer format
     PSODesc.GraphicsPipeline.DSVFormat                    = DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
     PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -60,18 +60,17 @@ void Tutorial12_RenderTarget::CreateCubePSO()
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    // In this tutorial, we will load shaders from file. To be able to do that,
-    // we need to create a shader source stream factory
+    // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -84,7 +83,7 @@ void Tutorial12_RenderTarget::CreateCubePSO()
         CreateUniformBuffer(m_pDevice, sizeof(float4x4), "VS constants CB", &m_CubeVSConstants);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -121,8 +120,11 @@ void Tutorial12_RenderTarget::CreateCubePSO()
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc( FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-                                    TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP);
+    SamplerDesc SamLinearClampDesc
+    {
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+    };
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
@@ -132,12 +134,12 @@ void Tutorial12_RenderTarget::CreateCubePSO()
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pCubePSO);
         
-    // Since we did not explcitly specify the type for Constants, default type
-    // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
-    // through the pipeline state object.
+    // Since we did not explcitly specify the type for 'Constants' variable, default
+    // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
+    // change and are bound directly through the pipeline state object.
     m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_CubeVSConstants);
 
-    // Since we are using mutable variable, we must create shader resource binding object
+    // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pCubePSO->CreateShaderResourceBinding(&m_pCubeSRB, true);
 }
@@ -165,7 +167,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL behind the scene
+    // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
@@ -177,7 +179,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
-    // Create vertex shader
+    // Create a vertex shader
     RefCntAutoPtr<IShader> pRTVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -187,7 +189,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         m_pDevice->CreateShader(ShaderCI, &pRTVS);
     }
 
-    // Create pixel shader
+    // Create a pixel shader
     RefCntAutoPtr<IShader> pRTPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -241,7 +243,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 
 void Tutorial12_RenderTarget::CreateVertexBuffer()
 {
-    // Layout of this structure matches the one we defined in pipeline state
+    // Layout of this structure matches the one we defined in the pipeline state
     struct Vertex
     {
         float3 pos;
@@ -265,8 +267,6 @@ void Tutorial12_RenderTarget::CreateVertexBuffer()
     //        (-1,-1,-1)       (+1,-1,-1)
     // 
 
-    // This time we have to duplicate verices because texture coordinates cannot
-    // be shared
     Vertex CubeVerts[] =
     {
         {float3(-1,-1,-1), float2(0,1)},
@@ -299,7 +299,7 @@ void Tutorial12_RenderTarget::CreateVertexBuffer()
         {float3(+1,+1,+1), float2(0,0)},
         {float3(-1,+1,+1), float2(1,0)}
     };
-    // Create vertex buffer that stores cube vertices
+
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_STATIC;
@@ -322,7 +322,7 @@ void Tutorial12_RenderTarget::CreateIndexBuffer()
         16,18,17, 16,19,18,
         20,21,22, 20,22,23
     };
-    // Create index buffer
+
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
     IndBuffDesc.Usage         = USAGE_STATIC;
@@ -343,7 +343,6 @@ void Tutorial12_RenderTarget::LoadTexture()
     // Get shader resource view from the texture
     m_CubeTextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     
-
     // Set texture SRV in the SRB
     m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
@@ -365,21 +364,15 @@ void Tutorial12_RenderTarget::Initialize(IEngineFactory*   pEngineFactory,
 
 void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
 {
-    // Render target color attachment
+    // Create window-size offscreen render target
     RefCntAutoPtr<ITexture> pRTColor;
-    // Render target color attachment descriptor
     TextureDesc RTColorDesc;
-    // The render target's attachments are 2D textures
     RTColorDesc.Type        = RESOURCE_DIM_TEX_2D;
-    // The render target's attachments' width is that of the swap chain
     RTColorDesc.Width       = m_pSwapChain->GetDesc().Width;
-    // The render target's attachments' height is that of the swap chain
     RTColorDesc.Height      = m_pSwapChain->GetDesc().Height;
-    // The render target's attachments only have one mipmap
     RTColorDesc.MipLevels   = 1;
-    // The render target's color buffer format is 8 bits RGBA
     RTColorDesc.Format      = RenderTargetFormat;
-    // The render target's color buffer can be bound as a shader resource and as a render target
+    // The render target can be bound as a shader resource and as a render target
     RTColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
     // Define optimal clear value
     RTColorDesc.ClearValue.Format = RTColorDesc.Format;
@@ -387,29 +380,24 @@ void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
     RTColorDesc.ClearValue.Color[1] = 0.350f;
     RTColorDesc.ClearValue.Color[2] = 0.350f;
     RTColorDesc.ClearValue.Color[3] = 1.f;
-    // Let's create the render target's color buffer
     m_pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
     // Store the render target view
     m_pColorRTV = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
     
 
-    // Render target depth attachment
+    // Create window-size depth buffer
     RefCntAutoPtr<ITexture> pRTDepth;
-    // Render target depth attachment descriptor
     TextureDesc RTDepthDesc = RTColorDesc;
-    // The render target's depth buffer format is 32-bit float
     RTDepthDesc.Format = DepthBufferFormat;
     // Define optimal clear value
     RTDepthDesc.ClearValue.Format = RTDepthDesc.Format;
     RTDepthDesc.ClearValue.DepthStencil.Depth = 1;
     RTDepthDesc.ClearValue.DepthStencil.Stencil = 0;
-    // The render target's depth buffer can be bound as a shader resource and as a render target
+    // The depth buffer can be bound as a shader resource and as a depth-stencil buffer
     RTDepthDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
-    // Let's create the render target's depth buffer
     m_pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
     // Store the depth-stencil view
     m_pDepthDSV = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
-
 
     // We need to release and create a new SRB that references new off-screen render target SRV
     m_pRTSRB.Release();
@@ -422,7 +410,7 @@ void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
 // Render a frame
 void Tutorial12_RenderTarget::Render()
 {
-    // Clear the render target's buffers
+    // Clear the offscreen render target and depth buffer
     const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f };
     m_pImmediateContext->SetRenderTargets(1, &m_pColorRTV, m_pDepthDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearRenderTarget(m_pColorRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -440,9 +428,9 @@ void Tutorial12_RenderTarget::Render()
         *CBConstants = float4(m_fCurrentTime, 0 , 0, 0);
     }
 
-    // Bind vertex buffer
+    // Bind vertex and index buffers
     Uint32 offset = 0;
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
+    IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -452,21 +440,21 @@ void Tutorial12_RenderTarget::Render()
     // Commit the cube shader's resources
     m_pImmediateContext->CommitShaderResources(m_pCubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Draw the cube's vertices
+    // Draw the cube
     DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed   = true;      // This is indexed draw call
+    DrawAttrs.IsIndexed   = true;      // This is an indexed draw call
     DrawAttrs.IndexType   = VT_UINT32; // Index type
     DrawAttrs.NumVertices = 36;
     DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->Draw(DrawAttrs);
 
-    // Clear the default render target's buffers
+    // Clear the default render target
     const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearRenderTarget(nullptr, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Set render target pipeline state
+    // Set the render target pipeline state
     m_pImmediateContext->SetPipelineState(m_pRTPSO);
 
     // Commit the render target shader's resources
