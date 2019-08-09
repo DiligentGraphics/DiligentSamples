@@ -44,19 +44,22 @@ public:
 private:
     void CreateRenderParticlePSO();
     void CreateUpdateParticlePSO();
-    void CreateParticleAttribsBuffer();
+    void CreateParticleBuffers();
     void CreateConsantBuffer();
     void InitUI();
 
     Uint32                                m_NumParticles    = 2000;
     int                                   m_ThreadGroupSize = 256;
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB[2];
     RefCntAutoPtr<IPipelineState>         m_pUpdateParticlePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pUpdateParticleSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_pUpdateParticleSRB[2];
     RefCntAutoPtr<IBuffer>                m_Constants;
-    RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer;
+    RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer[2];
+    RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
+    RefCntAutoPtr<IBuffer>                m_pParticleListHeadsBuffer;
     float                                 m_fTimeDelta = 0;
+    int                                   m_BufferIdx  = 0;
 };
 
 }

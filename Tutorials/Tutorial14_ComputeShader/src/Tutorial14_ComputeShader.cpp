@@ -170,7 +170,10 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
 
     ShaderResourceVariableDesc Vars[] = 
     {
-        {SHADER_TYPE_COMPUTE, "g_Particles", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+        {SHADER_TYPE_COMPUTE, "g_InParticles",      SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_COMPUTE, "g_OutParticles",     SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_COMPUTE, "g_ParticleListHead", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_COMPUTE, "g_ParticleLists",    SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -179,24 +182,27 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     m_pUpdateParticlePSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 }
 
-void Tutorial14_ComputeShader::CreateParticleAttribsBuffer()
+void Tutorial14_ComputeShader::CreateParticleBuffers()
 {
-    m_pParticleAttribsBuffer.Release();
+    m_pParticleAttribsBuffer[0].Release();
+    m_pParticleAttribsBuffer[1].Release();
+    m_pParticleListHeadsBuffer.Release();
+    m_pParticleListsBuffer.Release();
 
-    BufferDesc VertBuffDesc;
-    VertBuffDesc.Name              = "Particle attribs buffer";
-    VertBuffDesc.Usage             = USAGE_DEFAULT;
-    VertBuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
-    VertBuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
-    VertBuffDesc.ElementByteStride = sizeof(ParticleAttribs);
-    VertBuffDesc.uiSizeInBytes     = sizeof(ParticleAttribs) * m_NumParticles;
+    BufferDesc BuffDesc;
+    BuffDesc.Name              = "Particle attribs buffer";
+    BuffDesc.Usage             = USAGE_DEFAULT;
+    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(ParticleAttribs);
+    BuffDesc.uiSizeInBytes     = sizeof(ParticleAttribs) * m_NumParticles;
 
     std::vector<ParticleAttribs> ParticleData(m_NumParticles);
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<float> pos_distr(-1.f, +1.0f);
     constexpr float fMaxParticleSize = 0.05f;
-    float fSize = 1.f / std::sqrt(static_cast<float>(m_NumParticles));
+    float fSize = 0.5f / std::sqrt(static_cast<float>(m_NumParticles));
     fSize = std::min(fMaxParticleSize, fSize);
     for(auto& particle : ParticleData)
     {
@@ -210,18 +216,48 @@ void Tutorial14_ComputeShader::CreateParticleAttribsBuffer()
     BufferData VBData;
     VBData.pData    = ParticleData.data();
     VBData.DataSize = sizeof(ParticleAttribs) * static_cast<Uint32>(ParticleData.size());
-    m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_pParticleAttribsBuffer);
+    m_pDevice->CreateBuffer(BuffDesc, &VBData, &m_pParticleAttribsBuffer[0]);
+    m_pDevice->CreateBuffer(BuffDesc, &VBData, &m_pParticleAttribsBuffer[1]);
     
-    auto* pParticleAttribsBufferSRV = m_pParticleAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
-    auto* pParticleAttribsBufferUAV = m_pParticleAttribsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
+    IBufferView* pParticleAttribsBufferSRV[2];
+    IBufferView* pParticleAttribsBufferUAV[2];
+    for(int i=0; i < 2; ++i)
+    {
+        pParticleAttribsBufferSRV[i] = m_pParticleAttribsBuffer[i]->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
+        pParticleAttribsBufferUAV[i] = m_pParticleAttribsBuffer[i]->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
 
-    m_pRenderParticleSRB.Release();
-    m_pRenderParticlePSO->CreateShaderResourceBinding(&m_pRenderParticleSRB, true);
-    m_pRenderParticleSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_Particles")->Set(pParticleAttribsBufferSRV);
+    }
 
-    m_pUpdateParticleSRB.Release();
-    m_pUpdateParticlePSO->CreateShaderResourceBinding(&m_pUpdateParticleSRB, true);
-    m_pUpdateParticleSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Particles")->Set(pParticleAttribsBufferUAV);
+    BuffDesc.ElementByteStride = sizeof(int);
+    BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
+    BuffDesc.uiSizeInBytes     = BuffDesc.ElementByteStride * m_NumParticles;
+    BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS;
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
+    RefCntAutoPtr<IBufferView> pParticleListHeadsBufferUAV;
+    RefCntAutoPtr<IBufferView> pParticleListsBufferUAV;
+    {
+        BufferViewDesc ViewDesc;
+        ViewDesc.ViewType = BUFFER_VIEW_UNORDERED_ACCESS;
+        ViewDesc.Format.ValueType     = VT_INT32;
+        ViewDesc.Format.NumComponents = 1;
+        m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferUAV);
+        m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferUAV);
+    }
+
+    for (int i=0; i < 2; ++i)
+    {
+        m_pRenderParticleSRB[i].Release();
+        m_pRenderParticlePSO->CreateShaderResourceBinding(&m_pRenderParticleSRB[i], true);
+        m_pRenderParticleSRB[i]->GetVariableByName(SHADER_TYPE_VERTEX, "g_Particles")->Set(pParticleAttribsBufferSRV[i]);
+
+        m_pUpdateParticleSRB[i].Release();
+        m_pUpdateParticlePSO->CreateShaderResourceBinding(&m_pUpdateParticleSRB[i], true);
+        m_pUpdateParticleSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_InParticles")->Set(pParticleAttribsBufferUAV[1-i]);
+        m_pUpdateParticleSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_OutParticles")->Set(pParticleAttribsBufferUAV[i]);
+        m_pUpdateParticleSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleListHead")->Set(pParticleListHeadsBufferUAV);
+        m_pUpdateParticleSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")->Set(pParticleListsBufferUAV);
+    }
 }
 
 void Tutorial14_ComputeShader::CreateConsantBuffer()
@@ -247,7 +283,7 @@ void Tutorial14_ComputeShader::InitUI()
         {
             auto* pTheTutorial = reinterpret_cast<Tutorial14_ComputeShader*>( clientData );
             pTheTutorial->m_NumParticles = *static_cast<const int*>(value);
-            pTheTutorial->CreateParticleAttribsBuffer();
+            pTheTutorial->CreateParticleBuffers();
         },
         [](void* value, void* clientData)
         {
@@ -268,7 +304,7 @@ void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
     CreateConsantBuffer();
     CreateRenderParticlePSO();
     CreateUpdateParticlePSO();
-    CreateParticleAttribsBuffer();
+    CreateParticleBuffers();
     InitUI();
 }
 
@@ -296,18 +332,19 @@ void Tutorial14_ComputeShader::Render()
     }
 
     m_pImmediateContext->SetPipelineState(m_pUpdateParticlePSO);
-    m_pImmediateContext->CommitShaderResources(m_pUpdateParticleSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->CommitShaderResources(m_pUpdateParticleSRB[m_BufferIdx], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     DispatchComputeAttribs DispatAttribs;
     DispatAttribs.ThreadGroupCountX = (m_NumParticles + m_ThreadGroupSize-1) / m_ThreadGroupSize;
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 
-
     m_pImmediateContext->SetPipelineState(m_pRenderParticlePSO);
-    m_pImmediateContext->CommitShaderResources(m_pRenderParticleSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->CommitShaderResources(m_pRenderParticleSRB[m_BufferIdx], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     DrawAttribs drawAttrs;
     drawAttrs.NumVertices  = 4;
     drawAttrs.NumInstances = m_NumParticles;
     m_pImmediateContext->Draw(drawAttrs);
+
+    m_BufferIdx = 1 - m_BufferIdx;
 }
 
 void Tutorial14_ComputeShader::Update(double CurrTime, double ElapsedTime)
