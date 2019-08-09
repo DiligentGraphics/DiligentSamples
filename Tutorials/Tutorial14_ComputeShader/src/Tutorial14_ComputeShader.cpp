@@ -26,6 +26,7 @@
 #include "Tutorial14_ComputeShader.h"
 #include "BasicMath.h"
 #include "MapHelper.h"
+#include "AntTweakBar.h"
 
 namespace Diligent
 {
@@ -67,6 +68,11 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+
+    auto& BlendDesc = PSODesc.GraphicsPipeline.BlendDesc;
+    BlendDesc.RenderTargets[0].BlendEnable = True;
+    BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
+    BlendDesc.RenderTargets[0].DestBlend   = BLEND_FACTOR_INV_SRC_ALPHA;
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
@@ -116,6 +122,7 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pRenderParticlePSO);
+    m_pRenderParticlePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_Constants);
 }
 
 void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
@@ -213,6 +220,28 @@ void Tutorial14_ComputeShader::CreateConsantBuffer()
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
 }
 
+void Tutorial14_ComputeShader::InitUI()
+{
+    // Create a tweak bar
+    TwBar* bar = TwNewBar("Settings");
+    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
+    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+
+    TwAddVarCB(bar, "Num Particles", TW_TYPE_INT32, 
+        [](const void* value, void* clientData)
+        {
+            auto* pTheTutorial = reinterpret_cast<Tutorial14_ComputeShader*>( clientData );
+            pTheTutorial->m_NumParticles = *static_cast<const int*>(value);
+            pTheTutorial->CreateParticleAttribsBuffer();
+        },
+        [](void* value, void* clientData)
+        {
+            auto *pTheTutorial = reinterpret_cast<Tutorial14_ComputeShader*>( clientData );
+            *static_cast<int*>(value) = pTheTutorial->m_NumParticles;
+        },
+        this, "min=100 max=100000 step=100");
+}
+
 void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
                                           IRenderDevice*    pDevice,
                                           IDeviceContext**  ppContexts,
@@ -225,6 +254,7 @@ void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
     CreateRenderParticlePSO();
     CreateUpdateParticlePSO();
     CreateParticleAttribsBuffer();
+    InitUI();
 }
 
 // Render a frame
@@ -246,7 +276,7 @@ void Tutorial14_ComputeShader::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> ConstData(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
         ConstData->uiNumParticles = m_NumParticles;
-        ConstData->fAspectRatio   = 1;
+        ConstData->fAspectRatio   = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
         ConstData->fDeltaTime     = m_fTimeDelta;
     }
 

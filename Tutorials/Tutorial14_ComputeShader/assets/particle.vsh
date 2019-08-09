@@ -1,5 +1,10 @@
 #include "structures.fxh"
 
+cbuffer Constants
+{
+    GlobalConstants g_Constants;
+};
+
 StructuredBuffer<ParticleAttribs> g_Particles;
 
 struct VSInput
@@ -26,6 +31,7 @@ void main(in  VSInput VSIn,
     ParticleAttribs Attribs = g_Particles[VSIn.InstID];
 
     float2 pos = pos_uv[VSIn.VertID].xy;
+    pos *= saturate(float2(1.0 / g_Constants.fAspectRatio, g_Constants.fAspectRatio));
     pos = pos * 0.015 + Attribs.f2Pos;
     PSIn.Pos = float4(pos, 0.0, 1.0);
     PSIn.uv = pos_uv[VSIn.VertID].zw;

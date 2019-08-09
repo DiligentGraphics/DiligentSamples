@@ -46,8 +46,9 @@ private:
     void CreateUpdateParticlePSO();
     void CreateParticleAttribsBuffer();
     void CreateConsantBuffer();
+    void InitUI();
 
-    Uint32                        m_NumParticles = 2048;
+    Uint32                                m_NumParticles = 2000;
 
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;
