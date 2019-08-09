@@ -48,8 +48,8 @@ private:
     void CreateConsantBuffer();
     void InitUI();
 
-    Uint32                                m_NumParticles = 2000;
-
+    Uint32                                m_NumParticles    = 2000;
+    int                                   m_ThreadGroupSize = 256;
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;
     RefCntAutoPtr<IPipelineState>         m_pUpdateParticlePSO;

@@ -27,6 +27,7 @@
 #include "BasicMath.h"
 #include "MapHelper.h"
 #include "AntTweakBar.h"
+#include "ShaderMacroHelper.h"
 
 namespace Diligent
 {
@@ -43,6 +44,11 @@ struct ParticleAttribs
 {
     float2 f2Pos;
     float2 f2Speed;
+
+    float  fSize;
+    float  fDummy0;
+    float  fDummy1;
+    float  fDummy2;
 };
 
 }
@@ -142,10 +148,15 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     // Create particle vertex shader
     RefCntAutoPtr<IShader> pCS;
     {
+        ShaderMacroHelper Macros;
+        Macros.AddShaderMacro( "THREAD_GROUP_SIZE", m_ThreadGroupSize );
+        Macros.Finalize();
+        
         ShaderCI.Desc.ShaderType = SHADER_TYPE_COMPUTE;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Update particles CS";
         ShaderCI.FilePath        = "update_particles.csh";
+        ShaderCI.Macros          = Macros;
         m_pDevice->CreateShader(ShaderCI, &pCS);
     }
  
@@ -184,12 +195,16 @@ void Tutorial14_ComputeShader::CreateParticleAttribsBuffer()
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<float> pos_distr(-1.f, +1.0f);
+    constexpr float fMaxParticleSize = 0.05f;
+    float fSize = 1.f / std::sqrt(static_cast<float>(m_NumParticles));
+    fSize = std::min(fMaxParticleSize, fSize);
     for(auto& particle : ParticleData)
     {
         particle.f2Pos.x   = pos_distr(rd);
         particle.f2Pos.y   = pos_distr(rd);
         particle.f2Speed.x = pos_distr(rd) * 0.05f;
         particle.f2Speed.y = pos_distr(rd) * 0.05f;
+        particle.fSize     = fSize;
     }
 
     BufferData VBData;
@@ -283,7 +298,7 @@ void Tutorial14_ComputeShader::Render()
     m_pImmediateContext->SetPipelineState(m_pUpdateParticlePSO);
     m_pImmediateContext->CommitShaderResources(m_pUpdateParticleSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     DispatchComputeAttribs DispatAttribs;
-    DispatAttribs.ThreadGroupCountX = (m_NumParticles + 63) / 64;
+    DispatAttribs.ThreadGroupCountX = (m_NumParticles + m_ThreadGroupSize-1) / m_ThreadGroupSize;
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 
 

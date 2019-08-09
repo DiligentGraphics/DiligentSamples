@@ -32,7 +32,7 @@ void main(in  VSInput VSIn,
 
     float2 pos = pos_uv[VSIn.VertID].xy;
     pos *= saturate(float2(1.0 / g_Constants.fAspectRatio, g_Constants.fAspectRatio));
-    pos = pos * 0.015 + Attribs.f2Pos;
+    pos = pos * Attribs.fSize + Attribs.f2Pos;
     PSIn.Pos = float4(pos, 0.0, 1.0);
     PSIn.uv = pos_uv[VSIn.VertID].zw;
 }
