@@ -1,7 +1,8 @@
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
-    float2 uv : TEX_COORD;
+    float4 Pos  : SV_POSITION; 
+    float2 uv   : TEX_COORD;
+    float  Temp : TEMPERATURE;
 };
 
 struct PSOutput
@@ -17,5 +18,6 @@ void main(in  PSInput  PSIn,
         discard;
 
     float intensity = sqrt(saturate(1.0 - r));
-    PSOut.Color = float4(float3(1.0, 1.0, 1.0) * intensity, sqrt(intensity));
+    float3 Color = lerp(float3(0.0, 0.63, 0.9), float3(1.0, 0.78, 0.05), PSIn.Temp);
+    PSOut.Color = float4(Color * intensity, sqrt(intensity));
 }

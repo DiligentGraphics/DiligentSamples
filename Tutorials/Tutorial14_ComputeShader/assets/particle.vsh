@@ -15,8 +15,9 @@ struct VSInput
 
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
-    float2 uv  : TEX_COORD;
+    float4 Pos  : SV_POSITION; 
+    float2 uv   : TEX_COORD;
+    float  Temp : TEMPERATURE;
 };
 
 void main(in  VSInput VSIn,
@@ -35,4 +36,5 @@ void main(in  VSInput VSIn,
     pos = pos * Attribs.fSize + Attribs.f2Pos;
     PSIn.Pos = float4(pos, 0.0, 1.0);
     PSIn.uv = pos_uv[VSIn.VertID].zw;
+    PSIn.Temp = Attribs.fTemperature;
 }

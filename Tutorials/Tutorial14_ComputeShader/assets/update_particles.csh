@@ -54,6 +54,7 @@ void CollideParticles(inout ParticleAttribs P0, in ParticleAttribs P1, float2 f2
         R01 /= d01;
         P0.f2Pos.xy -= R01 * (P0.fSize + P0.fSize - d01);
         P0.f2Speed.xy -= 2.0*max(dot(P0.f2Speed.xy, R01), 0.0) * R01;
+        P0.fTemperature = 1.0;
     }
     P0.f2Pos.xy   *= f2Scale;
     P0.f2Speed.xy *= f2Scale;
@@ -81,6 +82,7 @@ void main(uint3 Gid  : SV_GroupID,
     ParticleAttribs Particle = g_InParticles[uiParticleIdx];
     // Update particle positions
     Particle.f2Pos += Particle.f2Speed * g_Constants.fDeltaTime;
+    Particle.fTemperature -= Particle.fTemperature * g_Constants.fDeltaTime * 1.0;
 
     ClampParticlePosition(Particle, f2Scale);
     g_InParticles[uiParticleIdx] = Particle;
