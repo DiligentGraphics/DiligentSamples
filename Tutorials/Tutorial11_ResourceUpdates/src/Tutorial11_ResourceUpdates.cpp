@@ -37,6 +37,9 @@ SampleBase* CreateSample()
     return new Tutorial11_ResourceUpdates();
 }
 
+namespace
+{
+
 // Layout of this structure matches the one we defined in the pipeline state
 struct Vertex
 {
@@ -59,9 +62,9 @@ struct Vertex
 //           |/              | /
 //           /_______________|/ 
 //        (-1,-1,-1)       (+1,-1,-1)
-// 
+//
 
-static const Vertex CubeVerts[] =
+const Vertex CubeVerts[] =
 {
     {float3(-1,-1,-1), float2(0,1)},
     {float3(-1,+1,-1), float2(0,0)},
@@ -93,6 +96,8 @@ static const Vertex CubeVerts[] =
     {float3(+1,+1,+1), float2(0,0)},
     {float3(-1,+1,+1), float2(1,0)}
 };
+
+}
 
 void Tutorial11_ResourceUpdates::CreatePipelineStates()
 {
