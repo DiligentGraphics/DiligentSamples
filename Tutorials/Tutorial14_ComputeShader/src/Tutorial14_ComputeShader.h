@@ -25,6 +25,7 @@
 
 #include "SampleBase.h"
 #include "ResourceMapping.h"
+#include "BasicMath.h"
 
 namespace Diligent
 {

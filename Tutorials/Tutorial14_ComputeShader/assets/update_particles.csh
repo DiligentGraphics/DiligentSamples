@@ -26,8 +26,8 @@ void main(uint3 Gid  : SV_GroupID,
 
     ParticleAttribs Particle = g_Particles[iParticleIdx];
     // Update particle positions
-    Particle.f2Pos += Particle.f2Speed * g_Constants.fDeltaTime;
-    Particle.fTemperature -= Particle.fTemperature * g_Constants.fDeltaTime * 1.0;
+    Particle.f2Pos += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
+    Particle.fTemperature -= Particle.fTemperature * g_Constants.fDeltaTime * 2.0;
 
     ClampParticlePosition(Particle, g_Constants.f2Scale);
     g_Particles[iParticleIdx] = Particle;

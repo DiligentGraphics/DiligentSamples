@@ -229,14 +229,14 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     std::uniform_real_distribution<float> pos_distr(-1.f, +1.f);
     std::uniform_real_distribution<float> size_distr(0.5f, 1.f);
     constexpr float fMaxParticleSize = 0.05f;
-    float fSize = 0.75f / std::sqrt(static_cast<float>(m_NumParticles));
+    float fSize = 0.7f / std::sqrt(static_cast<float>(m_NumParticles));
     fSize = std::min(fMaxParticleSize, fSize);
     for(auto& particle : ParticleData)
     {
         particle.f2Pos.x   = pos_distr(rd);
         particle.f2Pos.y   = pos_distr(rd);
-        particle.f2Speed.x = pos_distr(rd) * 0.05f;
-        particle.f2Speed.y = pos_distr(rd) * 0.05f;
+        particle.f2Speed.x = pos_distr(rd) * fSize * 5.f;
+        particle.f2Speed.y = pos_distr(rd) * fSize * 5.f;
         particle.fSize     = fSize * size_distr(rd);
     }
 
@@ -373,13 +373,13 @@ void Tutorial14_ComputeShader::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> ConstData(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
         ConstData->uiNumParticles = m_NumParticles;
-        ConstData->fDeltaTime     = m_fTimeDelta;
+        ConstData->fDeltaTime     = std::min(m_fTimeDelta, 0.1f);
 
         float AspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
         float2 f2Scale = float2(std::sqrt(1.f / AspectRatio), std::sqrt(AspectRatio));
         ConstData->f2Scale = f2Scale;
 
-        int iParticleGridWidth = static_cast<int>(std::sqrt(static_cast<float>(m_NumParticles)) * f2Scale.x);
+        int iParticleGridWidth = static_cast<int>(std::sqrt(static_cast<float>(m_NumParticles)) / f2Scale.x);
         ConstData->i2ParticleGridSize.x = iParticleGridWidth;
         ConstData->i2ParticleGridSize.y = m_NumParticles / iParticleGridWidth;
     }
