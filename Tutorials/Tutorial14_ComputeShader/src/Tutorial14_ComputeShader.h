@@ -24,6 +24,7 @@
 #pragma once 
 
 #include "SampleBase.h"
+#include "ResourceMapping.h"
 
 namespace Diligent
 {
@@ -52,12 +53,17 @@ private:
     int                                   m_ThreadGroupSize = 256;
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB[2];
-    RefCntAutoPtr<IPipelineState>         m_pUpdateParticlePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pUpdateParticleSRB[2];
+    RefCntAutoPtr<IPipelineState>         m_pResetParticleListsPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pResetParticleListsSRB;
+    RefCntAutoPtr<IPipelineState>         m_pUpdateParticlesPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pUpdateParticlesSRB[2];
+    RefCntAutoPtr<IPipelineState>         m_pCollideParticlesPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pCollideParticlesSRB[2];
     RefCntAutoPtr<IBuffer>                m_Constants;
     RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer[2];
     RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
     RefCntAutoPtr<IBuffer>                m_pParticleListHeadsBuffer;
+    RefCntAutoPtr<IResourceMapping>       m_pResMapping;
     float                                 m_fTimeDelta = 0;
     int                                   m_BufferIdx  = 0;
 };

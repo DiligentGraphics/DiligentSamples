@@ -12,7 +12,11 @@ struct ParticleAttribs
 
 struct GlobalConstants
 {
-    uint  uiNumParticles;
-    float fAspectRatio;
-    float fDeltaTime;
+    uint   uiNumParticles;
+    float  fDeltaTime;
+    float  fDummy0;
+    float  fDummy1;
+
+    float2 f2Scale;
+    int2   i2ParticleGridSize;
 };

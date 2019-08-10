@@ -31,8 +31,7 @@ void main(in  VSInput VSIn,
 
     ParticleAttribs Attribs = g_Particles[VSIn.InstID];
 
-    float2 pos = pos_uv[VSIn.VertID].xy;
-    pos *= saturate(float2(1.0 / g_Constants.fAspectRatio, g_Constants.fAspectRatio));
+    float2 pos = pos_uv[VSIn.VertID].xy * g_Constants.f2Scale.xy;
     pos = pos * Attribs.fSize + Attribs.f2Pos;
     PSIn.Pos = float4(pos, 0.0, 1.0);
     PSIn.uv = pos_uv[VSIn.VertID].zw;

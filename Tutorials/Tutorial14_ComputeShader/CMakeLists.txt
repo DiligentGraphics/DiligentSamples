@@ -14,7 +14,10 @@ set(SHADERS
     assets/particle.psh
     assets/particle.vsh
     assets/structures.fxh
+    assets/reset_particle_lists.csh
+    assets/collide_particles.csh
     assets/update_particles.csh
+    assets/particles.fxh
 )
 
 set(ASSETS)
