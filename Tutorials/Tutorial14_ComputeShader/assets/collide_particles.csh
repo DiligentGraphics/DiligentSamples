@@ -10,24 +10,34 @@ cbuffer Constants
 #   define THREAD_GROUP_SIZE 64
 #endif
 
-RWStructuredBuffer<ParticleAttribs> g_InParticles;
+StructuredBuffer<ParticleAttribs>   g_InParticles;
 RWStructuredBuffer<ParticleAttribs> g_OutParticles;
-RWBuffer<int /*format=r32i*/>       g_ParticleListHead;
-RWBuffer<int /*format=r32i*/>       g_ParticleLists;
+Buffer<int>                         g_ParticleListHead;
+Buffer<int>                         g_ParticleLists;
 
+// https://en.wikipedia.org/wiki/Elastic_collision
 void CollideParticles(inout ParticleAttribs P0, in ParticleAttribs P1, float2 f2Scale)
 {
-    P0.f2Pos.xy /= f2Scale.xy;
-    P1.f2Pos.xy /= f2Scale.xy;
+    P0.f2Pos.xy   /= f2Scale.xy;
+    P1.f2Pos.xy   /= f2Scale.xy;
     P0.f2Speed.xy /= f2Scale.xy;
     P1.f2Speed.xy /= f2Scale.xy;
     float2 R01 = P1.f2Pos.xy - P0.f2Pos.xy;
     float d01 = length(R01);
-    if (d01 < P0.fSize + P0.fSize)
+    if (d01 < P0.fSize + P1.fSize)
     {
         R01 /= d01;
-        P0.f2Pos.xy -= R01 * (P0.fSize + P0.fSize - d01);
-        P0.f2Speed.xy -= 2.0*max(dot(P0.f2Speed.xy, R01), 0.0) * R01;
+        P0.f2Pos.xy -= R01 * (P0.fSize + P1.fSize - d01);
+
+        float v0 = dot(P0.f2Speed.xy, R01);
+        float v1 = dot(P1.f2Speed.xy, R01);
+
+        float m0 = P0.fSize * P0.fSize;
+        float m1 = P1.fSize * P1.fSize;
+
+        float new_v0 = ((m0 - m1) * v0 + 2.0 * m1 * v1) / (m0 + m1);
+        P0.f2Speed.xy += (new_v0 - v0) * R01;
+        
         P0.fTemperature = 1.0;
     }
     P0.f2Pos.xy   *= f2Scale;

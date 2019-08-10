@@ -227,8 +227,9 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<float> pos_distr(-1.f, +1.f);
+    std::uniform_real_distribution<float> size_distr(0.5f, 1.f);
     constexpr float fMaxParticleSize = 0.05f;
-    float fSize = 0.5f / std::sqrt(static_cast<float>(m_NumParticles));
+    float fSize = 0.75f / std::sqrt(static_cast<float>(m_NumParticles));
     fSize = std::min(fMaxParticleSize, fSize);
     for(auto& particle : ParticleData)
     {
@@ -236,7 +237,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
         particle.f2Pos.y   = pos_distr(rd);
         particle.f2Speed.x = pos_distr(rd) * 0.05f;
         particle.f2Speed.y = pos_distr(rd) * 0.05f;
-        particle.fSize     = fSize;
+        particle.fSize     = fSize * size_distr(rd);
     }
 
     BufferData VBData;
@@ -256,11 +257,13 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     BuffDesc.ElementByteStride = sizeof(int);
     BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
     BuffDesc.uiSizeInBytes     = BuffDesc.ElementByteStride * m_NumParticles;
-    BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS;
+    BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
     RefCntAutoPtr<IBufferView> pParticleListHeadsBufferUAV;
     RefCntAutoPtr<IBufferView> pParticleListsBufferUAV;
+    RefCntAutoPtr<IBufferView> pParticleListHeadsBufferSRV;
+    RefCntAutoPtr<IBufferView> pParticleListsBufferSRV;
     {
         BufferViewDesc ViewDesc;
         ViewDesc.ViewType = BUFFER_VIEW_UNORDERED_ACCESS;
@@ -268,6 +271,10 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
         ViewDesc.Format.NumComponents = 1;
         m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferUAV);
         m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferUAV);
+
+        ViewDesc.ViewType = BUFFER_VIEW_SHADER_RESOURCE;
+        m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferSRV);
+        m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferSRV);
     }
 
     m_pResetParticleListsSRB.Release();
@@ -288,10 +295,10 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
 
         m_pCollideParticlesSRB[i].Release();
         m_pCollideParticlesPSO->CreateShaderResourceBinding(&m_pCollideParticlesSRB[i], true);
-        m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_InParticles")->Set(pParticleAttribsBufferUAV[1-i]);
+        m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_InParticles")->Set(pParticleAttribsBufferSRV[1-i]);
         m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_OutParticles")->Set(pParticleAttribsBufferUAV[i]);
-        m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleListHead")->Set(pParticleListHeadsBufferUAV);
-        m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")->Set(pParticleListsBufferUAV);
+        m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleListHead")->Set(pParticleListHeadsBufferSRV);
+        m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")->Set(pParticleListsBufferSRV);
     }
 }
 
