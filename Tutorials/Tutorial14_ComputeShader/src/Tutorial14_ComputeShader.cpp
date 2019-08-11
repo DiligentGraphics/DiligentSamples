@@ -180,6 +180,17 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
         m_pDevice->CreateShader(ShaderCI, &pCollideParticlesCS);
     }
 
+    RefCntAutoPtr<IShader> pUpdatedSpeedCS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_COMPUTE;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Collide particles CS";
+        ShaderCI.FilePath        = "collide_particles.csh";
+        Macros.AddShaderMacro("UPDATE_SPEED", 1);
+        ShaderCI.Macros          = Macros;
+        m_pDevice->CreateShader(ShaderCI, &pUpdatedSpeedCS);
+    }
+
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
     PSODesc.Name = "Update particles PSO"; 
@@ -206,6 +217,9 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     PSODesc.ComputePipeline.pCS = pCollideParticlesCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pCollideParticlesPSO);
     m_pCollideParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
+
+    PSODesc.ComputePipeline.pCS = pUpdatedSpeedCS;
+    m_pDevice->CreatePipelineState(PSODesc, &m_pUpdateParticleSpeedPSO);
 }
 
 void Tutorial14_ComputeShader::CreateParticleBuffers()
@@ -403,6 +417,10 @@ void Tutorial14_ComputeShader::Render()
 
     m_pImmediateContext->SetPipelineState(m_pCollideParticlesPSO);
     m_pImmediateContext->CommitShaderResources(m_pCollideParticlesSRB[m_BufferIdx], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->DispatchCompute(DispatAttribs);
+
+    m_pImmediateContext->SetPipelineState(m_pUpdateParticleSpeedPSO);
+    // We will use the same SRB
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 
     m_pImmediateContext->SetPipelineState(m_pRenderParticlePSO);

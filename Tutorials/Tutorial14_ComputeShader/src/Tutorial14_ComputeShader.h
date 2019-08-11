@@ -60,6 +60,7 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_pUpdateParticlesSRB[2];
     RefCntAutoPtr<IPipelineState>         m_pCollideParticlesPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pCollideParticlesSRB[2];
+    RefCntAutoPtr<IPipelineState>         m_pUpdateParticleSpeedPSO;
     RefCntAutoPtr<IBuffer>                m_Constants;
     RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer[2];
     RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
