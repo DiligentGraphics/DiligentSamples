@@ -194,7 +194,7 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     };
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-
+    
     PSODesc.ComputePipeline.pCS = pResetParticleListsCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pResetParticleListsPSO);
     m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);

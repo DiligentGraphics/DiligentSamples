@@ -17,12 +17,14 @@ To build and run the applications in the module, please follow the [instructions
 
 This tutorial shows how to render simple triangle using Diligent Engine API.
 
+
 ## [Tutorial 02 - Cube](Tutorials/Tutorial02_Cube)
 
 ![](Tutorials/Tutorial02_Cube/Animation_Large.gif)
 
 This tutorial demonstrates how to render an actual 3D object, a cube. It shows how to load shaders from files, create and use vertex, 
 index and uniform buffers.
+
 
 ## [Tutorial 03 - Texturing](Tutorials/Tutorial03_Texturing)
 
@@ -31,12 +33,14 @@ index and uniform buffers.
 This tutorial demonstrates how to apply a texture to a 3D object. It shows how to load a texture from file, create shader resource
 binding object and how to sample a texture in the shader.
 
+
 ## [Tutorial 04 - Instancing](Tutorials/Tutorial04_Instancing)
 
 ![](Tutorials/Tutorial04_Instancing/Animation_Large.gif)
 
 This tutorial demonstrates how to use instancing to render multiple copies of one object
 using unique transformation matrix for every copy.
+
 
 ## [Tutorial 05 - Texture Array](Tutorials/Tutorial05_TextureArray)
 
@@ -45,11 +49,13 @@ using unique transformation matrix for every copy.
 This tutorial demonstrates how to combine instancing with texture arrays to 
 use unique texture for every instance.
 
+
 ## [Tutorial 06 - Multithreading](Tutorials/Tutorial06_Multithreading)
 
 ![](Tutorials/Tutorial06_Multithreading/Animation_Large.gif)
 
 This tutorial shows how to generate command lists in parallel from multiple threads.
+
 
 ## [Tutorial 07 - Geometry Shader](Tutorials/Tutorial07_GeometryShader)
 
@@ -57,12 +63,14 @@ This tutorial shows how to generate command lists in parallel from multiple thre
 
 This tutorial shows how to use geometry shader to render smooth wireframe.
 
+
 ## [Tutorial 08 - Tessellation](Tutorials/Tutorial08_Tessellation)
 
 ![](Tutorials/Tutorial08_Tessellation/Animation_Large.gif)
 
 This tutorial shows how to use hardware tessellation to implement simple adaptive terrain 
 rendering algorithm.
+
 
 ## [Tutorial 09 - Quads](Tutorials/Tutorial09_Quads)
 
@@ -78,12 +86,14 @@ This tutorial shows how to render multiple 2D quads, frequently swithcing textur
 This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
 flags to efficiently stream varying amounts of data to GPU.
 
+
 ## [Tutorial 11 - Resource Updates](Tutorials/Tutorial11_ResourceUpdates)
 
 ![](Tutorials/Tutorial11_ResourceUpdates/Animation_Large.gif)
 
 This tutorial demonstrates different ways to update buffers and textures in Diligent Engine and explains 
 important internal details and performance implications related to each method.
+
 
 ## [Tutorial 12 - Render Target](Tutorials/Tutorial12_RenderTarget)
 
@@ -92,11 +102,20 @@ important internal details and performance implications related to each method.
 This tutorial demonstrates how to render a 3d cube into an offscreen render target and do a simple
 post-processing effect.
 
+
 ## [Tutorial 13 - Shadow Map](Tutorials/Tutorial13_ShadowMap)
 
 ![](Tutorials/Tutorial13_ShadowMap/Animation_Large.gif)
 
 This tutorial demonstrates how to render basic shadows using a shadow map.
+
+
+## [Tutorial 14 - Compute Shader](Tutorials/Tutorial14_ComputeShader)
+
+This tutorial shows how to implement simple particle simulation using compute shaders.
+
+![](Tutorials/Tutorial14_ComputeShader/Animation_Large.gif)
+
 
 # Samples
 
