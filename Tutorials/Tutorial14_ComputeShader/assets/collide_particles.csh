@@ -15,16 +15,36 @@ RWStructuredBuffer<ParticleAttribs> g_OutParticles;
 Buffer<int>                         g_ParticleListHead;
 Buffer<int>                         g_ParticleLists;
 
-// https://en.wikipedia.org/wiki/Elastic_collision
-bool CollideParticles(in ParticleAttribs P0, in ParticleAttribs P1, float2 f2Scale, inout float2 f2PosDelta, inout float2 f2SpeedDelta)
+bool TestCapsuleSphereIntesection(float2 f2CapsuleStart, float2 f2CapsuleDir, float CapsuleRadius, float2 f2SphereCenter, float SphereRadius)
 {
-    float2 R01 = P1.f2Pos.xy / f2Scale.xy - P0.f2Pos.xy / f2Scale.xy;
+    float fCapsuleLen = length(f2CapsuleDir);
+    f2CapsuleDir /= fCapsuleLen;
+
+    float2 DirToSphere = f2SphereCenter - f2CapsuleStart;
+    float d0 = dot(DirToSphere, f2CapsuleDir);
+    float d1_sq = dot(DirToSphere, DirToSphere) - d0*d0;
+    d0 = max(max(-d0, d0 - fCapsuleLen), 0.0);
+    return d0*d0 + d1_sq < (CapsuleRadius + SphereRadius) * (CapsuleRadius + SphereRadius);
+}
+
+// https://en.wikipedia.org/wiki/Elastic_collision
+bool CollideParticles(in ParticleAttribs P0, in ParticleAttribs P1, float2 f2Scale, inout float2 f2TotalPosDelta, inout float2 f2TotalSpeedDelta)
+{
+    P0.f2Pos.xy /= f2Scale.xy;
+    P1.f2Pos.xy /= f2Scale.xy;
+    float2 R01 = P1.f2Pos.xy - P0.f2Pos.xy;
     float d01 = length(R01);
+
     if (d01 < P0.fSize + P1.fSize)
     {
+        // If two particles intersect, update their positions, but do NOT update speed.
+        f2TotalPosDelta += -R01 * (P0.fSize + P1.fSize - d01) * 0.5;
+        return true;
+    }
+    // If particles don't intersect, extrapolate their movement and check if they intersect after the next update
+    else if (TestCapsuleSphereIntesection(P0.f2Pos.xy, (P0.f2Speed - P1.f2Speed) * g_Constants.fDeltaTime, P0.fSize, P1.f2Pos.xy, P1.fSize))
+    {
         R01 /= d01;
-        f2PosDelta += -R01 * (P0.fSize + P1.fSize - d01) * f2Scale.xy * 0.5;
-
         float v0 = dot(P0.f2Speed.xy, R01);
         float v1 = dot(P1.f2Speed.xy, R01);
 
@@ -32,7 +52,7 @@ bool CollideParticles(in ParticleAttribs P0, in ParticleAttribs P1, float2 f2Sca
         float m1 = P1.fSize * P1.fSize;
 
         float new_v0 = ((m0 - m1) * v0 + 2.0 * m1 * v1) / (m0 + m1);
-        f2SpeedDelta += (new_v0 - v0) * R01;
+        f2TotalSpeedDelta += (new_v0 - v0) * R01;
 
         return true;
     }
