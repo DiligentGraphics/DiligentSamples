@@ -341,6 +341,12 @@ void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
                                           Uint32            NumDeferredCtx,
                                           ISwapChain*       pSwapChain)
 {
+    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    if (!deviceCaps.bComputeShadersSupported)
+    {
+        throw std::runtime_error("Compute shaders are required to run this tutorial");
+    }
+
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     CreateConsantBuffer();

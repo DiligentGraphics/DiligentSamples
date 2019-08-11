@@ -75,7 +75,7 @@ void main(uint3 Gid  : SV_GroupID,
     int2 i2GridPos = GetGridLocation(Particle.f2Pos, g_Constants.i2ParticleGridSize).xy;
     int GridWidth  = g_Constants.i2ParticleGridSize.x;
     int GridHeight = g_Constants.i2ParticleGridSize.y;
-    float2 f2Scale  = g_Constants.f2Scale;
+    float2 f2Scale = g_Constants.f2Scale;
 
     float2 f2PosDelta   = float2(0.0, 0.0);
     float2 f2SpeedDelta = float2(0.0, 0.0);
