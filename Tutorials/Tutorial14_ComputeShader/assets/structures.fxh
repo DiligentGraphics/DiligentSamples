@@ -2,7 +2,10 @@
 struct ParticleAttribs
 {
     float2 f2Pos;
+    float2 f2NewPos;
+
     float2 f2Speed;
+    float2 f2NewSpeed;
 
     float  fSize;
     float  fTemperature;

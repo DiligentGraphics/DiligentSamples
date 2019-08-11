@@ -1,28 +1,31 @@
 
-void ClampParticlePosition(inout ParticleAttribs Particle, float2 f2Scale)
+void ClampParticlePosition(inout float2 f2Pos,
+                           inout float2 f2Speed,
+                           in    float  fSize,
+                           in    float2 f2Scale)
 {
-    if (Particle.f2Pos.x + Particle.fSize * f2Scale.x > 1.0)
+    if (f2Pos.x + fSize * f2Scale.x > 1.0)
     {
-        Particle.f2Pos.x -= Particle.f2Pos.x + Particle.fSize * f2Scale.x - 1.0;
-        Particle.f2Speed.x *= -1.0;
+        f2Pos.x -= f2Pos.x + fSize * f2Scale.x - 1.0;
+        f2Speed.x *= -1.0;
     }
 
-    if (Particle.f2Pos.x - Particle.fSize * f2Scale.x < -1.0)
+    if (f2Pos.x - fSize * f2Scale.x < -1.0)
     {
-        Particle.f2Pos.x += -1.0 - (Particle.f2Pos.x - Particle.fSize * f2Scale.x);
-        Particle.f2Speed.x *= -1.0;
+        f2Pos.x += -1.0 - (f2Pos.x - fSize * f2Scale.x);
+        f2Speed.x *= -1.0;
     }
 
-    if (Particle.f2Pos.y + Particle.fSize * f2Scale.y > 1.0)
+    if (f2Pos.y + fSize * f2Scale.y > 1.0)
     {
-        Particle.f2Pos.y -= Particle.f2Pos.y + Particle.fSize * f2Scale.y - 1.0;
-        Particle.f2Speed.y *= -1.0;
+        f2Pos.y -= f2Pos.y + fSize * f2Scale.y - 1.0;
+        f2Speed.y *= -1.0;
     }
 
-    if (Particle.f2Pos.y - Particle.fSize * f2Scale.y < -1.0)
+    if (f2Pos.y - fSize * f2Scale.y < -1.0)
     {
-        Particle.f2Pos.y += -1.0 - (Particle.f2Pos.y - Particle.fSize * f2Scale.y);
-        Particle.f2Speed.y *= -1.0;
+        f2Pos.y += -1.0 - (f2Pos.y - fSize * f2Scale.y);
+        f2Speed.y *= -1.0;
     }
 }
 

@@ -26,10 +26,12 @@ void main(uint3 Gid  : SV_GroupID,
 
     ParticleAttribs Particle = g_Particles[iParticleIdx];
     // Update particle positions
-    Particle.f2Pos += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
+    Particle.f2Pos   = Particle.f2NewPos;
+    Particle.f2Speed = Particle.f2NewSpeed;
+    Particle.f2Pos  += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
     Particle.fTemperature -= Particle.fTemperature * g_Constants.fDeltaTime * 2.0;
 
-    ClampParticlePosition(Particle, g_Constants.f2Scale);
+    ClampParticlePosition(Particle.f2Pos, Particle.f2Speed, Particle.fSize, g_Constants.f2Scale);
     g_Particles[iParticleIdx] = Particle;
 
     // Bin particles

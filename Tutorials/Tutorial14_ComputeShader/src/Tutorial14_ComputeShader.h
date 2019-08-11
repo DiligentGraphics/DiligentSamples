@@ -50,24 +50,23 @@ private:
     void CreateConsantBuffer();
     void InitUI();
 
-    Uint32                                m_NumParticles    = 200;
+    Uint32                                m_NumParticles    = 2000;
     int                                   m_ThreadGroupSize = 256;
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB[2];
+    RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;
     RefCntAutoPtr<IPipelineState>         m_pResetParticleListsPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pResetParticleListsSRB;
     RefCntAutoPtr<IPipelineState>         m_pMoveParticlesPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pMoveParticlesSRB[2];
+    RefCntAutoPtr<IShaderResourceBinding> m_pMoveParticlesSRB;
     RefCntAutoPtr<IPipelineState>         m_pCollideParticlesPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pCollideParticlesSRB[2];
+    RefCntAutoPtr<IShaderResourceBinding> m_pCollideParticlesSRB;
     RefCntAutoPtr<IPipelineState>         m_pUpdateParticleSpeedPSO;
     RefCntAutoPtr<IBuffer>                m_Constants;
-    RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer[2];
+    RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer;
     RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
     RefCntAutoPtr<IBuffer>                m_pParticleListHeadsBuffer;
     RefCntAutoPtr<IResourceMapping>       m_pResMapping;
     float                                 m_fTimeDelta = 0;
-    int                                   m_BufferIdx  = 0;
 };
 
 }
