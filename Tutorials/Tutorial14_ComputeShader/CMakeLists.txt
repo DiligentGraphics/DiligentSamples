@@ -16,7 +16,7 @@ set(SHADERS
     assets/structures.fxh
     assets/reset_particle_lists.csh
     assets/collide_particles.csh
-    assets/update_particles.csh
+    assets/move_particles.csh
     assets/particles.fxh
 )
 
