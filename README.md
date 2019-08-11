@@ -112,7 +112,7 @@ This tutorial demonstrates how to render basic shadows using a shadow map.
 
 ## [Tutorial 14 - Compute Shader](Tutorials/Tutorial14_ComputeShader)
 
-This tutorial shows how to implement simple particle simulation system using compute shaders.
+This tutorial shows how to implement a simple particle simulation system using compute shaders.
 
 ![](Tutorials/Tutorial14_ComputeShader/Animation_Large.gif)
 
