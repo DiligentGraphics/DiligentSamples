@@ -223,6 +223,7 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
 
     PSODesc.ComputePipeline.pCS = pUpdatedSpeedCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pUpdateParticleSpeedPSO);
+    m_pUpdateParticleSpeedPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 }
 
 void Tutorial14_ComputeShader::CreateParticleBuffers()
@@ -338,6 +339,9 @@ void Tutorial14_ComputeShader::InitUI()
             *static_cast<int*>(value) = pTheTutorial->m_NumParticles;
         },
         this, "min=100 max=100000 step=100");
+
+    TwAddVarRW(bar, "Simulation Speed", TW_TYPE_FLOAT, &m_fSimulationSpeed, "min=0.1 max=5 step=0.1");
+    
 }
 
 void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
@@ -384,7 +388,7 @@ void Tutorial14_ComputeShader::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> ConstData(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
         ConstData->uiNumParticles = m_NumParticles;
-        ConstData->fDeltaTime     = std::min(m_fTimeDelta, 1.f/60.f);
+        ConstData->fDeltaTime     = m_fTimeDelta * m_fSimulationSpeed;
 
         float AspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
         float2 f2Scale = float2(std::sqrt(1.f / AspectRatio), std::sqrt(AspectRatio));
@@ -411,7 +415,7 @@ void Tutorial14_ComputeShader::Render()
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 
     m_pImmediateContext->SetPipelineState(m_pUpdateParticleSpeedPSO);
-    // We will use the same SRB
+    m_pImmediateContext->CommitShaderResources(m_pCollideParticlesSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 
     m_pImmediateContext->SetPipelineState(m_pRenderParticlePSO);

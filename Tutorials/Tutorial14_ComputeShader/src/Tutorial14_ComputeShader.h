@@ -66,7 +66,8 @@ private:
     RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
     RefCntAutoPtr<IBuffer>                m_pParticleListHeadsBuffer;
     RefCntAutoPtr<IResourceMapping>       m_pResMapping;
-    float                                 m_fTimeDelta = 0;
+    float                                 m_fTimeDelta       = 0;
+    float                                 m_fSimulationSpeed = 1;
 };
 
 }
