@@ -25,7 +25,6 @@ void main(uint3 Gid  : SV_GroupID,
     int iParticleIdx = int(uiGlobalThreadIdx);
 
     ParticleAttribs Particle = g_Particles[iParticleIdx];
-    // Update particle positions
     Particle.f2Pos   = Particle.f2NewPos;
     Particle.f2Speed = Particle.f2NewSpeed;
     Particle.f2Pos  += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;

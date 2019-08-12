@@ -50,8 +50,8 @@ struct ParticleAttribs
 
     float  fSize;
     float  fTemperature;
+    int    iNumCollisions;
     float  fDummy0;
-    float  fDummy1;
 };
 
 }
@@ -415,6 +415,7 @@ void Tutorial14_ComputeShader::Render()
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 
     m_pImmediateContext->SetPipelineState(m_pUpdateParticleSpeedPSO);
+    // Use the same SRB
     m_pImmediateContext->CommitShaderResources(m_pCollideParticlesSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->DispatchCompute(DispatAttribs);
 

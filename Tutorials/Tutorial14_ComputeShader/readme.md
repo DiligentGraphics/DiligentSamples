@@ -15,7 +15,7 @@ resulting in O(1) algorithmic complexity.
 
 ## Buffers
 
-The tutorial creates a number of buffers described below.
+The tutorial uses a number of buffers described below.
 
 ## Particle Attributes Buffer
 
@@ -26,18 +26,22 @@ into the following structure:
 struct ParticleAttribs
 {
     float2 f2Pos;
+    float2 f2NewPos;
+
     float2 f2Speed;
+    float2 f2NewSpeed;
 
     float  fSize;
     float  fTemperature;
+    int    iNumCollisions;
     float  fDummy0;
-    float  fDummy1;
 };
 ```
 
-Notice the two padding floats that are required to make the struct float4-aligned. The buffer initialization
-is pretty standard except for the fact that we use `BIND_UNORDERED_ACCESS` bind flag to make the buffer
-available for unordered access operations in the shader.
+Notice the padding float that is required to make the struct float4-aligned. Note also that the struct contains
+current and new values of position and speed. This is required because they can't be updated in place due to
+unspecified execution order. The buffer initialization is pretty standard except for the fact that we use
+`BIND_UNORDERED_ACCESS` bind flag to make the buffer available for unordered access operations in the shader.
 Another important thing is that we use `BUFFER_MODE_STRUCTURED` to allow the buffer be accessed as a structured
 buffer in the shader. When `BUFFER_MODE_STRUCTURED` mode is used, `ElementByteStride` must define the element
 stride, in bytes.
@@ -50,41 +54,42 @@ BuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
 BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
 BuffDesc.ElementByteStride = sizeof(ParticleAttribs);
 BuffDesc.uiSizeInBytes     = sizeof(ParticleAttribs) * m_NumParticles;
-
-m_pDevice->CreateBuffer(BuffDesc, &VBData, &m_pParticleAttribsBuffer[0]);
-m_pDevice->CreateBuffer(BuffDesc, &VBData, &m_pParticleAttribsBuffer[1]);
+m_pDevice->CreateBuffer(BuffDesc, &VBData, &m_pParticleAttribsBuffer);
 ```
 
-Notice that we create two identical buffers. We use one buffer as the source for particle update operation and
-the other one as destination, and swap the buffer roles every frame. Structured buffers can be defined as both
-read-only or read-write buffers in the shader:
+Structured buffers can be defined as both read-only or read-write buffers in the shader:
 
 ```hlsl
-StructuredBuffer<ParticleAttribs>   g_InParticles;
-RWStructuredBuffer<ParticleAttribs> g_OutParticles;
+StructuredBuffer<ParticleAttribs> g_Particles;
+```
+
+or
+
+```hlsl
+RWStructuredBuffer<ParticleAttribs> g_Particles;
 ```
 
 The buffers can be accessed using array-style indexing in the shaders:
 
 ```hlsl
-ParticleAttribs Particle = g_InParticles[iParticleIdx];
+ParticleAttribs Particle = g_Particles[iParticleIdx];
 
-// Update particle attribs
+// Update the particle attribs
 
-g_OutParticles[iParticleIdx] = Particle;
+g_Particles[iParticleIdx] = Particle;
 ```
 
 To bind structured buffers to shader variables, we can request default shader resource and unordered access views and
 set them in the shader resource binding like any other variable:
 
 ```cpp
-pParticleAttribsBufferSRV[i] = m_pParticleAttribsBuffer[i]->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
-pParticleAttribsBufferUAV[i] = m_pParticleAttribsBuffer[i]->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
+IBufferView* pParticleAttribsBufferSRV = m_pParticleAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
+IBufferView* pParticleAttribsBufferUAV = m_pParticleAttribsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
 
-m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_InParticles")
-                         ->Set(pParticleAttribsBufferSRV[1-i]);
-m_pCollideParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_OutParticles")
-                         ->Set(pParticleAttribsBufferUAV[i]);
+m_pRenderParticleSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_Particles")
+                    ->Set(pParticleAttribsBufferSRV);
+m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Particles")
+                   ->Set(pParticleAttribsBufferUAV);
 ```
 
 ## Particle List Heads and Particle List Buffer
@@ -130,10 +135,10 @@ m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferSRV);
 The buffer views are bound to shader resource binding objects in a typical way:
 
 ```cpp
-m_pUpdateParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleListHead")
-                        ->Set(pParticleListHeadsBufferUAV);
-m_pUpdateParticlesSRB[i]->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")
-                        ->Set(pParticleListsBufferUAV);
+m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleListHead")
+                   ->Set(pParticleListHeadsBufferUAV);
+m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")
+                   ->Set(pParticleListsBufferUAV);
 ```
 
 In the shaders, formatted buffers are declared similar to structured buffers, but they can only use
@@ -143,7 +148,8 @@ basic types (int, float4, uint2, etc.):
 RWBuffer<int /*format=r32i*/> g_ParticleListHead;
 ```
 
-Notice the special comment in the type declaration. This comment is used by the HLSL->GLSL converter.
+Notice the special comment in the type declaration. This comment is used by the HLSL->GLSL converter to
+make the shader work in GLSL backend.
 
 Access to a formatted buffer is performed similar to a structured buffer using the array notation:
 
@@ -152,6 +158,13 @@ g_ParticleListHead[uiGlobalThreadIdx] = -1;
 ```
 
 ## Compute Shaders
+
+Particle update pipeline consits of the following steps described in details below:
+
+1. Resetting particle lists
+2. Moving particles
+3. Particle collision - position update
+4. Particle collision - speed update
 
 ### Resetting the Particle Lists
 
@@ -182,9 +195,9 @@ by the host and defines the size of the compute shader thread group.
 Please refer to [this page](https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-dispatch)
 for explanation of groupd index, group thread index and other compute shader specific elements.
 
-### Updating Particle Positions
+### Moving Particle Positions
 
-The second compute shader in the pipeline updates particle positions. The full source is given below:
+The second compute shader in the pipeline moves every particle. The full source is given below:
 
 ```hlsl
 #include "structures.fxh"
@@ -214,11 +227,12 @@ void main(uint3 Gid  : SV_GroupID,
     int iParticleIdx = int(uiGlobalThreadIdx);
 
     ParticleAttribs Particle = g_Particles[iParticleIdx];
-    // Update particle positions
-    Particle.f2Pos += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
+    Particle.f2Pos   = Particle.f2NewPos;
+    Particle.f2Speed = Particle.f2NewSpeed;
+    Particle.f2Pos  += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
     Particle.fTemperature -= Particle.fTemperature * g_Constants.fDeltaTime * 2.0;
 
-    ClampParticlePosition(Particle, g_Constants.f2Scale);
+    ClampParticlePosition(Particle.f2Pos, Particle.f2Speed, Particle.fSize, g_Constants.f2Scale);
     g_Particles[iParticleIdx] = Particle;
 
     // Bin particles
@@ -227,20 +241,22 @@ void main(uint3 Gid  : SV_GroupID,
     InterlockedExchange(g_ParticleListHead[GridIdx], iParticleIdx, OriginalListIdx);
     g_ParticleLists[iParticleIdx] = OriginalListIdx;
 }
+
 ```
 
 The shader starts by loading the particle attributes and updating the position and temperature.
-The temperature is not a real temperature but rather indicates if the particle has bit hit recently.
-It then clamps particle positions against screen boundaries and writes updated particle back
+The temperature is not a real temperature but rather indicates if the particle has been hit recently.
+It then clamps particle positions against the screen boundaries and writes the updated particle back
 to the structured buffer:
 
 ```hlsl
 ParticleAttribs Particle = g_Particles[iParticleIdx];
-// Update particle positions
-Particle.f2Pos += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
+Particle.f2Pos   = Particle.f2NewPos;
+Particle.f2Speed = Particle.f2NewSpeed;
+Particle.f2Pos  += Particle.f2Speed * g_Constants.f2Scale * g_Constants.fDeltaTime;
 Particle.fTemperature -= Particle.fTemperature * g_Constants.fDeltaTime * 2.0;
 
-ClampParticlePosition(Particle, g_Constants.f2Scale);
+ClampParticlePosition(Particle.f2Pos, Particle.f2Speed, Particle.fSize, g_Constants.f2Scale);
 g_Particles[iParticleIdx] = Particle;
 ```
 
@@ -298,15 +314,18 @@ the particles can be iterated as shown in the collision shader.
 
 ### Particle Collision
 
-The third and the last compute shader in the pipeline performs collision
-detection and updates particle positions and speed. It reads the current
-particle positions from the inpute buffer and writes updated positions to the output
-buffer. It uses the two buffers defining the particle lists to iterate over
-candidate particles:
+Particle collision is performed in two steps. On the first step we update the particle
+position to make sure it does not intersect with other particles. On the second step,
+we update particle speed. The reasons the steps are separated is because the math we
+use for speed updates is only valid for two-particle collisions, so we count the number 
+of collisions on the first step and use this number at the second step
+
+Both steps are implemented by the same shader. Whether we perform position or speed
+update is controlled by the value of `UPDATE_SPEED` macro. The shader uses all three
+particle-related buffers:
 
 ```hlsl
-StructuredBuffer<ParticleAttribs>   g_InParticles;
-RWStructuredBuffer<ParticleAttribs> g_OutParticles;
+RWStructuredBuffer<ParticleAttribs> g_Particles;
 Buffer<int>                         g_ParticleListHead;
 Buffer<int>                         g_ParticleLists;
 ```
@@ -316,21 +335,18 @@ and computing the grid location:
 
 ```hlsl
 int iParticleIdx = int(uiGlobalThreadIdx);
-ParticleAttribs Particle = g_InParticles[iParticleIdx];
+ParticleAttribs Particle = g_Particles[iParticleIdx];
     
 int2 i2GridPos = GetGridLocation(Particle.f2Pos, g_Constants.i2ParticleGridSize).xy;
 int GridWidth  = g_Constants.i2ParticleGridSize.x;
 int GridHeight = g_Constants.i2ParticleGridSize.y;
-float2 f2Scale = g_Constants.f2Scale;
+
 ```
 
 The shader then goes through all bins in a 3x3 neighborhood, and for
 every bin it iterates through the list of particles assigned to that bin:
 
 ```hlsl
-float2 f2PosDelta   = float2(0.0, 0.0);
-float2 f2SpeedDelta = float2(0.0, 0.0);
-
 for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); ++y)
 {
     for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
@@ -340,11 +356,8 @@ for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); +
         {
             if (iParticleIdx != AnotherParticleIdx)
             {
-                ParticleAttribs AnotherParticle = g_InParticles[AnotherParticleIdx];
-                if (CollideParticles(Particle, AnotherParticle, f2Scale, f2PosDelta, f2SpeedDelta))
-                {
-                    Particle.fTemperature = 1.0;
-                }
+                ParticleAttribs AnotherParticle = g_Particles[AnotherParticleIdx];
+                CollideParticles(Particle, AnotherParticle);
             }
 
             AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
@@ -371,7 +384,7 @@ AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
 
 `CollideParticles` function implements the crux of particle collision that is not relevant here.
 Please refer to the shader's
-[source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial14_ComputeShader/assets/collide_particles.csh)
+[full source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial14_ComputeShader/assets/collide_particles.csh)
 for details.
 
 ## Particle Rendering Shader
@@ -389,8 +402,8 @@ ParticleAttribs Attribs = g_Particles[VSIn.InstID];
 
 ## Initializing Compute Pipeline States
 
-Initialization of compute pipeline is performed very similar to a graphics pipeline
-except that there is way less states to describe. Resource layout is pretty
+Initialization of the compute pipeline is performed very similar to a graphics pipeline
+except that there is way fewer states to describe. Resource layout is pretty
 much everything you need to specify except for the compute shader itself:
 
 ```cpp
@@ -428,24 +441,24 @@ DispatAttribs.ThreadGroupCountX = (m_NumParticles + m_ThreadGroupSize-1) / m_Thr
 
 m_pImmediateContext->SetPipelineState(m_pResetParticleListsPSO);
 m_pImmediateContext->CommitShaderResources(m_pResetParticleListsSRB,
-                                           RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+                                            RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->DispatchCompute(DispatAttribs);
 
-m_pImmediateContext->SetPipelineState(m_pUpdateParticlesPSO);
-m_pImmediateContext->CommitShaderResources(m_pUpdateParticlesSRB[m_BufferIdx],
+m_pImmediateContext->SetPipelineState(m_pMoveParticlesPSO);
+m_pImmediateContext->CommitShaderResources(m_pMoveParticlesSRB,
                                            RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->DispatchCompute(DispatAttribs);
 
 m_pImmediateContext->SetPipelineState(m_pCollideParticlesPSO);
-m_pImmediateContext->CommitShaderResources(m_pCollideParticlesSRB[m_BufferIdx],
+m_pImmediateContext->CommitShaderResources(m_pCollideParticlesSRB,
                                            RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->DispatchCompute(DispatAttribs);
-```
 
-`m_BufferIdx` defines the current buffer. Every frame we toggle between buffers:
-
-```cpp
-m_BufferIdx = 1 - m_BufferIdx;
+m_pImmediateContext->SetPipelineState(m_pUpdateParticleSpeedPSO);
+// Use the same SRB
+m_pImmediateContext->CommitShaderResources(m_pCollideParticlesSRB,
+                                           RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->DispatchCompute(DispatAttribs);
 ```
 
 ## Rendering
