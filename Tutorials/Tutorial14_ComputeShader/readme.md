@@ -11,7 +11,7 @@ the shader subdivides the screen into bins and for every bin creates a list of p
 The number of bins is the same as the number of particles and the bins are distributed evenly on the screen,
 thus every bin on average contains one particle. The size of the particle does not exceed the bin size, so
 a particle should only be tested for collision against particles residing in its own or eight neighboring bins, 
-resulting in O(1) algorithmic complexity.
+resulting in O(n) overall algorithmic complexity.
 
 ## Buffers
 
