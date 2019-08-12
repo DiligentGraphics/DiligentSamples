@@ -51,7 +51,7 @@ struct ParticleAttribs
     float  fSize;
     float  fTemperature;
     int    iNumCollisions;
-    float  fDummy0;
+    float  fPadding0;
 };
 
 }

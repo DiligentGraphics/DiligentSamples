@@ -19,8 +19,7 @@ The tutorial uses a number of buffers described below.
 
 ## Particle Attributes Buffer
 
-This buffer contains the following attributes for every particle: position, speed, size and temperature organized
-into the following structure:
+This buffer contains the particle attributes organized into the following structure:
 
 ```cpp
 struct ParticleAttribs
@@ -34,17 +33,17 @@ struct ParticleAttribs
     float  fSize;
     float  fTemperature;
     int    iNumCollisions;
-    float  fDummy0;
+    float  fPadding0;
 };
 ```
 
-Notice the padding float that is required to make the struct float4-aligned. Note also that the struct contains
+Notice the padding element that is required to make the struct size `float4`-aligned. Note also that the struct contains
 current and new values of position and speed. This is required because they can't be updated in place due to
-unspecified execution order. The buffer initialization is pretty standard except for the fact that we use
-`BIND_UNORDERED_ACCESS` bind flag to make the buffer available for unordered access operations in the shader.
+unspecified execution order of GPU threads. The buffer initialization is pretty standard except for the fact that we use
+`BIND_UNORDERED_ACCESS` bind flag to make the buffer available for unordered read/write operations in the shader.
 Another important thing is that we use `BUFFER_MODE_STRUCTURED` to allow the buffer be accessed as a structured
 buffer in the shader. When `BUFFER_MODE_STRUCTURED` mode is used, `ElementByteStride` must define the element
-stride, in bytes.
+stride, in bytes, which is in our case is `sizeof(ParticleAttribs)`.
 
 ```cpp
 BufferDesc BuffDesc;
@@ -111,8 +110,8 @@ m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
 Formatted buffer allows format conversions when accessing elements of a buffer
 (such as float->UNORM). We will not use this though and access buffers as raw
 integer values. Formatted buffers do not provide default views because default
-format is ambiguous, so we have to manually create the views explicitly defining
-the format:
+format is ambiguous, so we have to explicitly define the format (one 32-bit
+integer) and manually create the views:
 
 ```cpp
 RefCntAutoPtr<IBufferView> pParticleListHeadsBufferUAV;
@@ -142,7 +141,7 @@ m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")
 ```
 
 In the shaders, formatted buffers are declared similar to structured buffers, but they can only use
-basic types (int, float4, uint2, etc.):
+basic types (`int`, `float4`, `uint2`, etc.):
 
 ```hlsl
 RWBuffer<int /*format=r32i*/> g_ParticleListHead;
@@ -161,8 +160,8 @@ g_ParticleListHead[uiGlobalThreadIdx] = -1;
 
 Particle update pipeline consits of the following steps described in details below:
 
-1. Resetting particle lists
-2. Moving particles
+1. Reset particle lists
+2. Move particles and perform binning
 3. Particle collision - position update
 4. Particle collision - speed update
 
@@ -195,9 +194,10 @@ by the host and defines the size of the compute shader thread group.
 Please refer to [this page](https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-dispatch)
 for explanation of groupd index, group thread index and other compute shader specific elements.
 
-### Moving Particle Positions
+### Moving Particles
 
-The second compute shader in the pipeline moves every particle. The full source is given below:
+The second compute shader in the pipeline moves every particle, updates the speed calculated
+by the collision shader previously and performs particle binning. The full source is given below:
 
 ```hlsl
 #include "structures.fxh"
