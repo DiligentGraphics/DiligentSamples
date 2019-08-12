@@ -4,8 +4,8 @@ This tutorial shows how to implement a simple particle simulation system using c
 
 ![](Animation_Large.gif)
 
-The particle system consists of a number of sphercal particles moving in random directions that
-encounter [ellastic collisions](https://en.wikipedia.org/wiki/Elastic_collision). The simulation
+The particle system consists of a number of spherical particles moving in random directions that
+encounter [elastic collisions](https://en.wikipedia.org/wiki/Elastic_collision). The simulation
 and collision detection is performed on the GPU by compute shaders. To accelerate collision detection,
 the shader subdivides the screen into bins and for every bin creates a list of particles residing in the bin.
 The number of bins is the same as the number of particles and the bins are distributed evenly on the screen,
@@ -158,7 +158,7 @@ g_ParticleListHead[uiGlobalThreadIdx] = -1;
 
 ## Compute Shaders
 
-Particle update pipeline consits of the following steps described in details below:
+Particle update pipeline consists of the following steps described in details below:
 
 1. Reset particle lists
 2. Move particles and perform binning
@@ -192,7 +192,7 @@ Notice, again, the usage of special comment `/*format=r32i*/`. The `THREAD_GROUP
 by the host and defines the size of the compute shader thread group. 
 
 Please refer to [this page](https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-dispatch)
-for explanation of groupd index, group thread index and other compute shader specific elements.
+for explanation of group index, group thread index and other compute shader specific elements.
 
 ### Moving Particles
 
