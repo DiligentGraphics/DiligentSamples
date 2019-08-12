@@ -388,7 +388,7 @@ void Tutorial14_ComputeShader::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> ConstData(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
         ConstData->uiNumParticles = m_NumParticles;
-        ConstData->fDeltaTime     = m_fTimeDelta * m_fSimulationSpeed;
+        ConstData->fDeltaTime     = std::min(m_fTimeDelta, 1.f/60.f) * m_fSimulationSpeed;
 
         float AspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
         float2 f2Scale = float2(std::sqrt(1.f / AspectRatio), std::sqrt(AspectRatio));
