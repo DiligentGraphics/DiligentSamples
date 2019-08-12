@@ -69,33 +69,35 @@ void main(uint3 Gid  : SV_GroupID,
     int GridWidth  = g_Constants.i2ParticleGridSize.x;
     int GridHeight = g_Constants.i2ParticleGridSize.y;
 
-#if UPDATE_SPEED
-    Particle.f2NewSpeed     = Particle.f2Speed;
-#else
+#if !UPDATE_SPEED
     Particle.f2NewPos       = Particle.f2Pos;
     Particle.iNumCollisions = 0;
-#endif
-
-    for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); ++y)
+#else
+    Particle.f2NewSpeed     = Particle.f2Speed;
+    // Only update speed when there is single collision with another particle.
+    if (Particle.iNumCollisions == 1)
     {
-        for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
+#endif
+        for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); ++y)
         {
-            int AnotherParticleIdx = g_ParticleListHead.Load(x + y * GridWidth);
-            while (AnotherParticleIdx >= 0)
+            for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
             {
-                if (iParticleIdx != AnotherParticleIdx)
+                int AnotherParticleIdx = g_ParticleListHead.Load(x + y * GridWidth);
+                while (AnotherParticleIdx >= 0)
                 {
-                    ParticleAttribs AnotherParticle = g_Particles[AnotherParticleIdx];
-                    CollideParticles(Particle, AnotherParticle);
-                }
+                    if (iParticleIdx != AnotherParticleIdx)
+                    {
+                        ParticleAttribs AnotherParticle = g_Particles[AnotherParticleIdx];
+                        CollideParticles(Particle, AnotherParticle);
+                    }
 
-                AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
+                    AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
+                }
             }
         }
-    }
-
 #if UPDATE_SPEED
-    if (Particle.iNumCollisions > 1)
+    }
+    else if (Particle.iNumCollisions > 1)
     {
         // If there are multiple collisions, reverse the particle move direction to
         // avoid particle crowding.
