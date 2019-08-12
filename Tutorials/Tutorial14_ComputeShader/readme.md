@@ -43,7 +43,7 @@ unspecified execution order of GPU threads. The buffer initialization is pretty 
 `BIND_UNORDERED_ACCESS` bind flag to make the buffer available for unordered read/write operations in the shader.
 Another important thing is that we use `BUFFER_MODE_STRUCTURED` to allow the buffer be accessed as a structured
 buffer in the shader. When `BUFFER_MODE_STRUCTURED` mode is used, `ElementByteStride` must define the element
-stride, in bytes, which is in our case is `sizeof(ParticleAttribs)`.
+stride, in bytes, which in our case is `sizeof(ParticleAttribs)`.
 
 ```cpp
 BufferDesc BuffDesc;
@@ -246,7 +246,7 @@ void main(uint3 Gid  : SV_GroupID,
 
 The shader starts by loading the particle attributes and updating the position and temperature.
 The temperature is not a real temperature but rather indicates if the particle has been hit recently.
-It then clamps particle positions against the screen boundaries and writes the updated particle back
+It then clamps the particle position against the screen boundaries and writes the updated particle back
 to the structured buffer:
 
 ```hlsl
@@ -316,7 +316,7 @@ the particles can be iterated as shown in the collision shader.
 
 Particle collision is performed in two steps. On the first step we update the particle
 position to make sure it does not intersect with other particles. On the second step,
-we update particle speed. The reasons the steps are separated is because the math we
+we update the particle speed. The reasons the steps are separated is because the math we
 use for speed updates is only valid for two-particle collisions, so we count the number 
 of collisions on the first step and use this number at the second step
 
@@ -382,8 +382,7 @@ particle's list buffer:
 AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
 ```
 
-`CollideParticles` function implements the crux of particle collision that is not relevant here.
-Please refer to the shader's
+`CollideParticles` function implements the crux of particle collision. Please refer to the shader's
 [full source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial14_ComputeShader/assets/collide_particles.csh)
 for details.
 
@@ -409,7 +408,7 @@ much everything you need to specify except for the compute shader itself:
 ```cpp
 PipelineStateDesc PSODesc;
 // Pipeline state name is used by the engine to report issues.
-PSODesc.Name = "Update particles PSO"; 
+PSODesc.Name = "Reset particle lists PSO";
 
 // This is a compute pipeline
 PSODesc.IsComputePipeline = true;

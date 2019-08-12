@@ -195,9 +195,6 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     }
 
     PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues.
-    PSODesc.Name = "Update particles PSO"; 
-
     // This is a compute pipeline
     PSODesc.IsComputePipeline = true;
 
@@ -209,18 +206,22 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
     
+    PSODesc.Name = "Reset particle lists PSO"; 
     PSODesc.ComputePipeline.pCS = pResetParticleListsCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pResetParticleListsPSO);
     m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
+    PSODesc.Name = "Move particles PSO"; 
     PSODesc.ComputePipeline.pCS = pMoveParticlesCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pMoveParticlesPSO);
     m_pMoveParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
+    PSODesc.Name = "Collidse particles PSO"; 
     PSODesc.ComputePipeline.pCS = pCollideParticlesCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pCollideParticlesPSO);
     m_pCollideParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
+    PSODesc.Name = "Update particle speed PSO"; 
     PSODesc.ComputePipeline.pCS = pUpdatedSpeedCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pUpdateParticleSpeedPSO);
     m_pUpdateParticleSpeedPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
