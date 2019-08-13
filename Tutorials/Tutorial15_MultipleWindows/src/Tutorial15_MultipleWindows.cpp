@@ -465,7 +465,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     std::array<HWND, NumWindows> hWnds;
     std::array<RECT, NumWindows> WndRects = 
     {
-        RECT{0, 0,  640, 480},
+        RECT{0, 0, 1024, 768},
         RECT{0, 0,  640, 480},
         RECT{0, 0,  480, 320}
     };
