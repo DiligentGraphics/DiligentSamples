@@ -51,8 +51,9 @@ void ShadowsSample::GetEngineInitializationAttribs(DeviceType         DevType,
     if(DevType == DeviceType::Vulkan)
     {
         auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
-        VkAttrs.EnabledFeatures.samplerAnisotropy = true;
-        VkAttrs.EnabledFeatures.depthClamp        = true;
+        VkAttrs.EnabledFeatures.samplerAnisotropy    = true;
+        VkAttrs.EnabledFeatures.depthClamp           = true;
+        VkAttrs.EnabledFeatures.textureCompressionBC = true;
     }
 #endif
 #if D3D12_SUPPORTED
