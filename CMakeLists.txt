@@ -94,6 +94,6 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
 endfunction()
 
-add_subdirectory(External)
+add_subdirectory(ThirdParty)
 add_subdirectory(Samples)
 add_subdirectory(Tutorials)

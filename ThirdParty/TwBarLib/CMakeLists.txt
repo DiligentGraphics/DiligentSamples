@@ -180,7 +180,7 @@ if(NOT FILE2STRING_PATH STREQUAL "")
 
     add_dependencies(TwBarLib ProcessTwBarLibShaders)
     set_target_properties(ProcessTwBarLibShaders PROPERTIES
-        FOLDER Samples/External
+        FOLDER Samples/ThirdParty
     )
 else()
     message(WARNING "File2String utility is currently unavailable on this host system. This is not an issues unless you modify TwBarLib shaders")
@@ -212,5 +212,5 @@ if(WIN32)
 endif()
 
 set_target_properties(TwBarLib PROPERTIES
-    FOLDER Samples/External
+    FOLDER Samples/ThirdParty
 )
