@@ -53,19 +53,21 @@
 #   include "EngineFactoryMtl.h"
 #endif
 
+#include "ImGuiImplDiligent.h"
 #include "AntTweakBar.h"
 
 namespace Diligent
 {
 
 SampleApp::SampleApp() :
-    m_TheSample(CreateSample()),
-    m_AppTitle(m_TheSample->GetSampleName())
+    m_TheSample (CreateSample()),
+    m_AppTitle  (m_TheSample->GetSampleName())
 {
 }
 
 SampleApp::~SampleApp()
 {
+    m_pImGui.reset();
     TwTerminate();
     m_TheSample.reset();
 
@@ -267,13 +269,14 @@ void SampleApp::InitializeSample()
         TwDefine(fontscaling.str().c_str());
     }
 
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+
     // Initialize AntTweakBar
     // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
     // very old GL specification. Using these modes results in applying some 
     // odd offsets which distorts everything
     // Latest OpenGL works very much like Direct3D11, and 
     // Tweak Bar will never know if D3D or OpenGL is actually used
-    const auto& SCDesc = m_pSwapChain->GetDesc();
     if (!TwInit(TW_DIRECT3D11, m_pDevice.RawPtr(), m_pImmediateContext.RawPtr(), SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat))
     {
         LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
@@ -548,6 +551,7 @@ void SampleApp::WindowResize(int width, int height)
 void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
     m_CurrentTime = CurrTime;
+    m_pImGui->NewFrame();
     m_TheSample->Update(CurrTime, ElapsedTime);
     m_TheSample->GetInputController().ClearState();
 }
@@ -555,11 +559,13 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 void SampleApp::Render()
 {
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
     m_TheSample->Render();
 
-    // Draw tweak bars
     // Restore default render target in case the sample has changed it
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImGui->Render(m_pImmediateContext);
+
     TwDraw();
 }
 

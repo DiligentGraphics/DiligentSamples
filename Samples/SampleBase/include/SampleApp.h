@@ -40,6 +40,8 @@
 namespace Diligent
 {
 
+class ImGuiImplDiligent;
+
 class SampleApp : public NativeAppBase
 {
 public:
@@ -115,6 +117,8 @@ protected:
 
     }m_ScreenCaptureInfo;
     std::unique_ptr<ScreenCapture> m_pScreenCapture;
+
+    std::unique_ptr<ImGuiImplDiligent> m_pImGui;
 };
 
 }

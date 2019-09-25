@@ -26,6 +26,7 @@
 #include "SampleApp.h"
 #include "AntTweakBar.h"
 #include "resources/Win32AppResource.h"
+#include "ImGuiImplWin32.h"
 
 namespace
 {
@@ -158,6 +159,9 @@ public:
             break;
         }
 
+        if (m_pImGui)
+            static_cast<ImGuiImplWin32*>(m_pImGui.get())->Win32_ProcHandler(hWnd, message, wParam, lParam);
+
         // Send event message to AntTweakBar
         auto Handled = TwEventWin(hWnd, message, wParam, lParam);
         if(Handled)
@@ -177,7 +181,12 @@ public:
     virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight)override final
     {
         m_hWnd = hWnd;
+
         InitializeDiligentEngine(hWnd);
+
+        // Initialize Dear ImGUI
+        m_pImGui.reset(new ImGuiImplWin32(m_hWnd, m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat));
+
         InitializeSample();
     }
 

@@ -27,7 +27,7 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "AntTweakBar.h"
+#include "imgui.h"
 
 namespace Diligent
 {
@@ -280,27 +280,17 @@ void Tutorial04_Instancing::LoadTexture()
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 }
 
-void Tutorial04_Instancing::InitUI()
+void Tutorial04_Instancing::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 60 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    // Add grid size control
-    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32, 
-        [](const void* value, void* clientData)
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, 32))
         {
-            auto* pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>(clientData);
-            pTheTutorial->m_GridSize = *static_cast<const int*>(value);
-            pTheTutorial->PopulateInstanceBuffer();
-        }, 
-        [](void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial04_Instancing*>(clientData);
-            *static_cast<int*>(value) = pTheTutorial->m_GridSize;
-        },
-        this, "min=1 max=32");
+            PopulateInstanceBuffer();
+        }
+    }
+    ImGui::End();
 }
 
 void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
@@ -316,7 +306,6 @@ void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
     CreateInstanceBuffer();
     CreateIndexBuffer();
     LoadTexture();
-    InitUI();
 }
 
 void Tutorial04_Instancing::PopulateInstanceBuffer()
@@ -415,6 +404,8 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
 
     // Global rotation matrix
     m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
+
+    UpdateUI();
 }
 
 }

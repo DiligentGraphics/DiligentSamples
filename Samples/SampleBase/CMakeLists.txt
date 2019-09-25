@@ -149,6 +149,7 @@ PUBLIC
     Diligent-GraphicsTools
     Diligent-TextureLoader
     Diligent-TargetPlatform
+    Diligent-Imgui
     ${ENGINE_LIBRARIES}
 )
 

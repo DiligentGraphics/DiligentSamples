@@ -29,7 +29,8 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "AntTweakBar.h"
+#include "imgui.h"
+#include "ImGuiUtils.h"
 
 namespace Diligent
 {
@@ -297,43 +298,26 @@ void Tutorial06_Multithreading::LoadTextures(std::vector<StateTransitionDesc>& B
     }
 }
 
-void Tutorial06_Multithreading::InitUI()
+void Tutorial06_Multithreading::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, 32))
+        {
+            PopulateInstanceData();
+        }
+        {
+            ImGuiScopedDisabler Disable(m_MaxThreads == 0);
+            if (ImGui::SliderInt("Worker Threads", &m_NumWorkerThreads, 0, m_MaxThreads))
+            {
+                StopWorkerThreads();
+                StartWorkerThreads(m_NumWorkerThreads);
+            }
+        }
+    }
 
-    TwAddVarCB(bar, "Grid Size", TW_TYPE_INT32,
-        [](const void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>(clientData);
-            pTheTutorial->m_GridSize = *static_cast<const int*>(value);
-            pTheTutorial->PopulateInstanceData();
-        },
-        [](void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>(clientData);
-            *static_cast<int*>(value) = pTheTutorial->m_GridSize;
-        },
-        this, "min=1 max=32");
-
-    std::stringstream def;
-    def << "min=0 max=" << m_MaxThreads;
-    TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32, 
-        [](const void *value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>(clientData);
-            pTheTutorial->StopWorkerThreads();
-            pTheTutorial->m_NumWorkerThreads = *static_cast<const int*>(value);
-            pTheTutorial->StartWorkerThreads();
-        },
-        [](void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial06_Multithreading*>(clientData);
-            *static_cast<int*>(value) = pTheTutorial->m_NumWorkerThreads;
-        },
-        this, def.str().c_str());
+    ImGui::End();
 }
 
 void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
@@ -359,9 +343,7 @@ void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
 
     PopulateInstanceData();
 
-    InitUI();
-    
-    StartWorkerThreads();
+    StartWorkerThreads(m_NumWorkerThreads);
 }
 
 void Tutorial06_Multithreading::PopulateInstanceData()
@@ -404,14 +386,14 @@ void Tutorial06_Multithreading::PopulateInstanceData()
     }
 }
 
-void Tutorial06_Multithreading::StartWorkerThreads()
+void Tutorial06_Multithreading::StartWorkerThreads(size_t NumThreads)
 {
-    m_WorkerThreads.resize(m_NumWorkerThreads);
+    m_WorkerThreads.resize(NumThreads);
     for(Uint32 t=0; t < m_WorkerThreads.size(); ++t)
     {
         m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t );
     }
-    m_CmdLists.resize(m_NumWorkerThreads);
+    m_CmdLists.resize(NumThreads);
 }
 
 void Tutorial06_Multithreading::StopWorkerThreads()
@@ -429,10 +411,11 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
 {
     // Every thread should use its own deferred context
     IDeviceContext* pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+    const int NumWorkerThreads = static_cast<int>(pThis->m_WorkerThreads.size());
     for (;;)
     {
         // Wait for the signal
-        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
 
@@ -448,11 +431,11 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
             std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
             // Increment the number of completed threads
             ++pThis->m_NumThreadsCompleted;
-            if(pThis->m_NumThreadsCompleted == pThis->m_NumWorkerThreads)
+            if(pThis->m_NumThreadsCompleted == NumWorkerThreads)
                 pThis->m_ExecuteCommandListsSignal.Trigger();
         }
 
-        pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
+        pThis->m_GotoNextFrameSignal.Wait(true, NumWorkerThreads);
 
         // Call FinishFrame() to release dynamic resources allocated by deferred contexts
         // IMPORTANT: we must wait until the command lists are submitted for execution
@@ -464,7 +447,7 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
         // m_GotoNextFrameSignal must be unsignaled before we proceed to 
         // RenderSubsetSignal to avoid one thread going through the loop twice in 
         // a row.
-        while(pThis->m_NumThreadsReady < pThis->m_NumWorkerThreads)
+        while(pThis->m_NumThreadsReady < NumWorkerThreads)
             std::this_thread::yield();
         VERIFY_EXPR( !pThis->m_GotoNextFrameSignal.IsTriggered() );
     }
@@ -500,7 +483,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
 
     // Set the pipeline state
     pCtx->SetPipelineState(m_pPSO);
-    Uint32 NumSubsets = 1 + m_NumWorkerThreads;
+    Uint32 NumSubsets   = Uint32{1} + static_cast<Uint32>(m_WorkerThreads.size());
     Uint32 NumInstances = static_cast<Uint32>(m_InstanceData.size());
     Uint32 SusbsetSize = NumInstances / NumSubsets;
     Uint32 StartInst = SusbsetSize * Subset;
@@ -538,7 +521,7 @@ void Tutorial06_Multithreading::Render()
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    if (m_NumWorkerThreads > 0)
+    if (!m_WorkerThreads.empty())
     {
         m_NumThreadsCompleted = 0;
         m_RenderSubsetSignal.Trigger(true);
@@ -546,7 +529,7 @@ void Tutorial06_Multithreading::Render()
 
     RenderSubset(m_pImmediateContext, 0);
 
-    if (m_NumWorkerThreads > 0)
+    if (!m_WorkerThreads.empty())
     {
         m_ExecuteCommandListsSignal.Wait(true, 1);
 
@@ -583,6 +566,8 @@ void Tutorial06_Multithreading::Update(double CurrTime, double ElapsedTime)
 
     // Global rotation matrix
     m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
+
+    UpdateUI();
 }
 
 }

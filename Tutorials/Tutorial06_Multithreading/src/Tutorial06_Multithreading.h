@@ -54,10 +54,10 @@ private:
     void CreateVertexBuffer  (std::vector<StateTransitionDesc>& Barriers);
     void CreateIndexBuffer   (std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
-    void InitUI();
+    void UpdateUI();
     void PopulateInstanceData();
 
-    void StartWorkerThreads();
+    void StartWorkerThreads(size_t NumThreads);
     void StopWorkerThreads();
 
     void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
@@ -86,7 +86,7 @@ private:
     float4x4 m_RotationMatrix;
     int m_GridSize = 5;
 
-    int m_MaxThreads = 8;
+    int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
 
     struct InstanceData

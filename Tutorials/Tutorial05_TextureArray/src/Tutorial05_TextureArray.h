@@ -47,7 +47,7 @@ private:
     void CreateInstanceBuffer();
     void CreateIndexBuffer();
     void LoadTextures();
-    void InitUI();
+    void UpdateUI();
     void PopulateInstanceBuffer();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;

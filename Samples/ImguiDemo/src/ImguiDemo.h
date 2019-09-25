@@ -29,39 +29,29 @@
 namespace Diligent
 {
 
-class Tutorial04_Instancing final : public SampleBase
+
+class ImguiDemo final : public SampleBase
 {
 public:
-    virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
+    ~ImguiDemo();
+
+    virtual void Initialize(IEngineFactory*   pEngineFactory,
+                            IRenderDevice*    pDevice, 
+                            IDeviceContext**  ppContexts, 
+                            Uint32            NumDeferredCtx, 
+                            ISwapChain*       pSwapChain)override final;
     virtual void Render()override final;
     virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial04: Instancing";}
+    virtual const Char* GetSampleName()const override final{return "Dear Imgui Demo";}
+    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
 
 private:
-    void CreatePipelineState();
-    void CreateVertexBuffer();
-    void CreateInstanceBuffer();
-    void CreateIndexBuffer();
-    void LoadTexture();
     void UpdateUI();
-    void PopulateInstanceBuffer();
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO;
-    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
-    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
-    RefCntAutoPtr<IBuffer>                m_VSConstants;
-    RefCntAutoPtr<ITextureView>           m_TextureSRV;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
-    int m_GridSize = 5;
-    static constexpr int MaxGridSize = 32;
-    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
+    bool m_ShowDemoWindow    = true;
+    bool m_ShowAnotherWindow = false;
+    float4 m_ClearColor      = {0.45f, 0.55f, 0.60f, 1.00f};
+
 };
 
 }
