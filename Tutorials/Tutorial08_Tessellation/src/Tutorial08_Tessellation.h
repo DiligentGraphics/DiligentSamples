@@ -46,7 +46,7 @@ public:
 private:
     void CreatePipelineStates();
     void LoadTextures();
-    void InitUI();
+    void UpdateUI();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO[2];
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[2];

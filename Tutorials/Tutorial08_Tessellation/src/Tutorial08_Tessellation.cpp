@@ -25,8 +25,8 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "AntTweakBar.h"
 #include "ShaderMacroHelper.h"
+#include "imgui.h"
 
 namespace Diligent
 {
@@ -277,19 +277,19 @@ void Tutorial08_Tessellation::LoadTextures()
     }
 }
 
-void Tutorial08_Tessellation::InitUI()
+void Tutorial08_Tessellation::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    TwAddVarRW(bar, "Animate", TW_TYPE_BOOLCPP, &m_Animate, "");
-    TwAddVarRW(bar, "Adaptive tessellation", TW_TYPE_BOOLCPP, &m_AdaptiveTessellation, "");
-    if (m_pPSO[1])
-        TwAddVarRW(bar, "Wireframe", TW_TYPE_BOOLCPP, &m_Wireframe, "");
-    TwAddVarRW(bar, "Tess density", TW_TYPE_FLOAT, &m_TessDensity, "min=1 max=32 step=0.1");
-    TwAddVarRW(bar, "Distance", TW_TYPE_FLOAT, &m_Distance, "min=1 max=20 step=0.1");
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Checkbox("Animate", &m_Animate);
+        ImGui::Checkbox("Adaptive tessellation", &m_AdaptiveTessellation);
+        if (m_pPSO[1])
+            ImGui::Checkbox("Wireframe", &m_Wireframe);
+        ImGui::SliderFloat("Tess density", &m_TessDensity, 1.f, 32.f);
+        ImGui::SliderFloat("Distance", &m_Distance, 1.f, 20.f);
+    }
+    ImGui::End();
 }
 
 void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
@@ -308,7 +308,6 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
 
     CreatePipelineStates();
     LoadTextures();
-    InitUI();
 }
 
 // Render a frame
@@ -380,6 +379,8 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = m_WorldViewMatrix * Proj;
+
+    UpdateUI();
 }
 
 }

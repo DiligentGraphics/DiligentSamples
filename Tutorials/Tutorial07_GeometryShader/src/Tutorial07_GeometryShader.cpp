@@ -25,7 +25,6 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "AntTweakBar.h"
 #include "imgui.h"
 
 namespace Diligent
