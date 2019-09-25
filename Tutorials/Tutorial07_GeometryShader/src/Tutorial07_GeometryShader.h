@@ -48,7 +48,7 @@ private:
     void CreateVertexBuffer();
     void CreateIndexBuffer();
     void LoadTexture();
-    void InitUI();
+    void UpdateUI();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;

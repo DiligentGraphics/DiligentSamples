@@ -26,6 +26,7 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "AntTweakBar.h"
+#include "imgui.h"
 
 namespace Diligent
 {
@@ -289,15 +290,14 @@ void Tutorial07_GeometryShader::LoadTexture()
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 }
 
-void Tutorial07_GeometryShader::InitUI()
+void Tutorial07_GeometryShader::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    // Add line width control
-    TwAddVarRW(bar, "Line Width", TW_TYPE_FLOAT, &m_LineWidth, "min=1 max=10");
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::SliderFloat("Line Width", &m_LineWidth, 1.f, 10.f);
+    }
+    ImGui::End();
 }
 
 void Tutorial07_GeometryShader::Initialize(IEngineFactory*   pEngineFactory,
@@ -318,7 +318,6 @@ void Tutorial07_GeometryShader::Initialize(IEngineFactory*   pEngineFactory,
     CreateVertexBuffer();
     CreateIndexBuffer();
     LoadTexture();
-    InitUI();
 }
 
 // Render a frame
@@ -377,6 +376,8 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
+
+    UpdateUI();
 }
 
 }
