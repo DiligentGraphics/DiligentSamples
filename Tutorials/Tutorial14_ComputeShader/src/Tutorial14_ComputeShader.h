@@ -48,9 +48,9 @@ private:
     void CreateUpdateParticlePSO();
     void CreateParticleBuffers();
     void CreateConsantBuffer();
-    void InitUI();
+    void UpdateUI();
 
-    Uint32                                m_NumParticles    = 2000;
+    int                                   m_NumParticles    = 2000;
     int                                   m_ThreadGroupSize = 256;
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;

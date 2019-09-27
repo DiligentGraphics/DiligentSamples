@@ -50,7 +50,7 @@ private:
     void CreateVertexBuffer(std::vector<StateTransitionDesc>& Barriers);
     void CreateIndexBuffer(std::vector<StateTransitionDesc>& Barriers);
     void LoadTexture(std::vector<StateTransitionDesc>& Barriers);
-    void InitUI();
+    void UpdateUI();
     void CreateShadowMap();
     void RenderShadowMap();
     void RenderCube(const float4x4& CameraViewProj, bool IsShadowPass);
@@ -77,6 +77,8 @@ private:
     float3                                m_LightDirection      = normalize(float3(-0.49f, -0.60f, 0.64f));
     Uint32                                m_ShadowMapSize       = 512;
     TEXTURE_FORMAT                        m_ShadowMapFormat     = TEX_FORMAT_D16_UNORM;
+
+    int                                   m_ShadowMapComboId    = 0;
 };
 
 }

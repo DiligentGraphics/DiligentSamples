@@ -26,7 +26,7 @@
 #include "Tutorial14_ComputeShader.h"
 #include "BasicMath.h"
 #include "MapHelper.h"
-#include "AntTweakBar.h"
+#include "imgui.h"
 #include "ShaderMacroHelper.h"
 
 namespace Diligent
@@ -267,7 +267,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
 
     BuffDesc.ElementByteStride = sizeof(int);
     BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
-    BuffDesc.uiSizeInBytes     = BuffDesc.ElementByteStride * m_NumParticles;
+    BuffDesc.uiSizeInBytes     = BuffDesc.ElementByteStride * static_cast<Uint32>(m_NumParticles);
     BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
@@ -320,29 +320,19 @@ void Tutorial14_ComputeShader::CreateConsantBuffer()
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
 }
 
-void Tutorial14_ComputeShader::InitUI()
+void Tutorial14_ComputeShader::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    TwAddVarCB(bar, "Num Particles", TW_TYPE_INT32, 
-        [](const void* value, void* clientData)
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (ImGui::InputInt("Num Particles", &m_NumParticles, 100, 1000, ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            auto* pTheTutorial = reinterpret_cast<Tutorial14_ComputeShader*>( clientData );
-            pTheTutorial->m_NumParticles = *static_cast<const int*>(value);
-            pTheTutorial->CreateParticleBuffers();
-        },
-        [](void* value, void* clientData)
-        {
-            auto *pTheTutorial = reinterpret_cast<Tutorial14_ComputeShader*>( clientData );
-            *static_cast<int*>(value) = pTheTutorial->m_NumParticles;
-        },
-        this, "min=100 max=100000 step=100");
-
-    TwAddVarRW(bar, "Simulation Speed", TW_TYPE_FLOAT, &m_fSimulationSpeed, "min=0.1 max=5 step=0.1");
-    
+            m_NumParticles = std::min(std::max(m_NumParticles, 100), 100000);
+            CreateParticleBuffers();
+        }
+        ImGui::SliderFloat("Simulation Speed", &m_fSimulationSpeed, 0.1f, 5.f);
+    }
+    ImGui::End();
 }
 
 void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
@@ -363,7 +353,6 @@ void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
     CreateRenderParticlePSO();
     CreateUpdateParticlePSO();
     CreateParticleBuffers();
-    InitUI();
 }
 
 // Render a frame
@@ -388,7 +377,7 @@ void Tutorial14_ComputeShader::Render()
         };
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> ConstData(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
-        ConstData->uiNumParticles = m_NumParticles;
+        ConstData->uiNumParticles = static_cast<Uint32>(m_NumParticles);
         ConstData->fDeltaTime     = std::min(m_fTimeDelta, 1.f/60.f) * m_fSimulationSpeed;
 
         float AspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
@@ -424,13 +413,15 @@ void Tutorial14_ComputeShader::Render()
     m_pImmediateContext->CommitShaderResources(m_pRenderParticleSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     DrawAttribs drawAttrs;
     drawAttrs.NumVertices  = 4;
-    drawAttrs.NumInstances = m_NumParticles;
+    drawAttrs.NumInstances = static_cast<Uint32>(m_NumParticles);
     m_pImmediateContext->Draw(drawAttrs);
 }
 
 void Tutorial14_ComputeShader::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
+
     m_fTimeDelta = static_cast<float>(ElapsedTime);
 }
 

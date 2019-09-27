@@ -436,6 +436,7 @@ void Tutorial05_TextureArray::Render()
 void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
 
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
@@ -452,8 +453,6 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
 
     // Global rotation matrix
     m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
-
-    UpdateUI();
 }
 
 }

@@ -27,7 +27,7 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "AntTweakBar.h"
+#include "imgui.h"
 
 namespace Diligent
 {
@@ -471,42 +471,27 @@ void Tutorial13_ShadowMap::LoadTexture(std::vector<StateTransitionDesc>& Barrier
     Barriers.emplace_back(Tex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
 }
     
-void Tutorial13_ShadowMap::InitUI()
+void Tutorial13_ShadowMap::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {300 * m_UIScale, 180 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-    int valuesWidth = 160 * m_UIScale;
-    TwSetParam(bar, NULL, "valueswidth", TW_PARAM_INT32, 1, &valuesWidth);
-
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        TwEnumVal enumVals[] =
+        constexpr int MinShadowMapSize = 256;
+        for(m_ShadowMapComboId = 0; MinShadowMapSize << m_ShadowMapComboId != m_ShadowMapSize; ++m_ShadowMapComboId);
+        if (ImGui::Combo("Shadow map size", &m_ShadowMapComboId, "256\0""512\0""1024\0\0"))
         {
-            { 0, "256"  },
-            { 1, "512"  },
-            { 2, "1024" }
-        };
-        TwType enumType = TwDefineEnum("Shadow map size", enumVals, _countof(enumVals));
-        TwAddVarCB(bar, "Shadow map size", enumType,
-            [](const void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<Tutorial13_ShadowMap*>(clientData);
-                This->m_ShadowMapSize = 256 << *reinterpret_cast<const int*>(value);
-                This->CreateShadowMap();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<Tutorial13_ShadowMap*>(clientData);
-                int& val = *reinterpret_cast<int*>(value);
-                val = 0;
-                while(static_cast<Uint32>(256 << val) != This->m_ShadowMapSize)
-                    ++val;
-            },
-            this, "");
+            m_ShadowMapSize = MinShadowMapSize << m_ShadowMapComboId;
+            CreateShadowMap();
+        }
+        if (ImGui::SliderFloat3("Light Direction", &m_LightDirection.x, -1, +1))
+        {
+            if(m_LightDirection == float3(0, 0, 0))
+                m_LightDirection = float3(0, -1, 0);
+            else
+                m_LightDirection = normalize(m_LightDirection);
+        }
     }
-
-    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightDirection, "");
+    ImGui::End();
 }
     
 void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
@@ -532,8 +517,6 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     CreateShadowMap();
 
     m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
-
-    InitUI();
 }
 
 void Tutorial13_ShadowMap::CreateShadowMap()
@@ -719,6 +702,7 @@ void Tutorial13_ShadowMap::Render()
 void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
 
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 

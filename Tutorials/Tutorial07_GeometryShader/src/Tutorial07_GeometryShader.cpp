@@ -362,6 +362,7 @@ void Tutorial07_GeometryShader::Render()
 void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
 
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
@@ -375,8 +376,6 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeWorldView * Proj;
-
-    UpdateUI();
 }
 
 }
