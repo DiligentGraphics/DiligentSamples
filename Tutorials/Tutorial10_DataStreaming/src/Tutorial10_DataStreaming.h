@@ -53,13 +53,13 @@ public:
 private:
     void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
-    void InitUI();
+    void UpdateUI();
 
     void InitializePolygons();
     void InitializePolygonGeometry();
     void CreateInstanceBuffer();
     void UpdatePolygons(float elapsedTime);
-    void StartWorkerThreads();
+    void StartWorkerThreads(size_t NumThreads);
     void StopWorkerThreads();
 
     template<bool UseBatch>

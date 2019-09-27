@@ -406,6 +406,7 @@ void Tutorial06_Multithreading::StopWorkerThreads()
     }
     m_RenderSubsetSignal.Reset();
     m_WorkerThreads.clear();
+    m_CmdLists.clear();
 }
 
 void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThis, Uint32 ThreadNum)

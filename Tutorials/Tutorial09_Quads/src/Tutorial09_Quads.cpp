@@ -414,6 +414,7 @@ void Tutorial09_Quads::StopWorkerThreads()
     }
     m_RenderSubsetSignal.Reset();
     m_WorkerThreads.clear();
+    m_CmdLists.clear();
 }
 
 void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNum)

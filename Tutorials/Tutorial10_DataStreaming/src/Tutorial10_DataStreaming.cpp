@@ -30,7 +30,8 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "AntTweakBar.h"
+#include "imgui.h"
+#include "ImGuiUtils.h"
 
 namespace Diligent
 {
@@ -376,63 +377,37 @@ void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Ba
     m_BatchSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TexArraySRV);
 }
 
-void Tutorial10_DataStreaming::InitUI()
+void Tutorial10_DataStreaming::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar* bar = TwNewBar("Settings");
-    int barSize[2] = {224 * m_UIScale, 120 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    TwAddVarCB(bar, "Num Polygons", TW_TYPE_INT32,
-        [](const void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-            pTheTutorial->m_NumPolygons = *static_cast<const int*>(value);
-            pTheTutorial->InitializePolygons();
-        },
-        [](void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-            *static_cast<int*>(value) = pTheTutorial->m_NumPolygons;
-        },
-        this, "min=1 max=100000 step=20");
-
-    TwAddVarCB(bar, "Batch Size", TW_TYPE_INT32,
-        [](const void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>(clientData);
-            pTheTutorial->m_BatchSize = *static_cast<const int *>(value);
-            pTheTutorial->CreateInstanceBuffer();
-        },
-        [](void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>(clientData);
-            *static_cast<int*>(value) = pTheTutorial->m_BatchSize;
-        },
-        this, "min=1 max=100");
-
-    std::stringstream def;
-    def << "min=0 max=" << m_MaxThreads;
-    TwAddVarCB(bar, "Worker Threads", TW_TYPE_INT32,
-        [](const void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-            pTheTutorial->StopWorkerThreads();
-            pTheTutorial->m_NumWorkerThreads = *static_cast<const int*>(value);
-            pTheTutorial->StartWorkerThreads();
-        },
-        [](void* value, void* clientData)
-        {
-            auto* pTheTutorial = reinterpret_cast<Tutorial10_DataStreaming*>( clientData );
-            *static_cast<int*>(value) = pTheTutorial->m_NumWorkerThreads;
-        },
-        this, def.str().c_str());
-    
-    if (m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12 ||
-        m_pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        TwAddVarRW(bar, "Persistent map", TW_TYPE_BOOLCPP, &m_bAllowPersistentMap, "");
+        if (ImGui::InputInt("Num Polygons", &m_NumPolygons, 100, 1000, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            m_NumPolygons = std::min(std::max(m_NumPolygons, 1), 100000);
+            InitializePolygons();
+        }
+        if (ImGui::InputInt("Batch Size", &m_BatchSize, 1, 5))
+        {
+            m_BatchSize = std::min(std::max(m_BatchSize, 1), 100);
+            CreateInstanceBuffer();
+        }
+        {
+            ImGuiScopedDisabler Disable(m_MaxThreads == 0);
+            if (ImGui::SliderInt("Worker Threads", &m_NumWorkerThreads, 0, m_MaxThreads))
+            {
+                StopWorkerThreads();
+                StartWorkerThreads(m_NumWorkerThreads);
+            }
+        }
+        if (m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12 ||
+            m_pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
+        {
+            ImGui::Checkbox("Persistent map", &m_bAllowPersistentMap);
+        }
+
     }
+    ImGui::End();
 }
 
 
@@ -463,12 +438,10 @@ void Tutorial10_DataStreaming::Initialize(IEngineFactory*   pEngineFactory,
 
     m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 
-    InitUI();
-
     if (m_BatchSize > 1)
         CreateInstanceBuffer();
 
-    StartWorkerThreads();
+    StartWorkerThreads(m_NumWorkerThreads);
 }
 
 void Tutorial10_DataStreaming::InitializePolygonGeometry()
@@ -568,14 +541,14 @@ void Tutorial10_DataStreaming::UpdatePolygons(float elapsedTime)
     }
 }
 
-void Tutorial10_DataStreaming::StartWorkerThreads()
+void Tutorial10_DataStreaming::StartWorkerThreads(size_t NumThreads)
 {
-    m_WorkerThreads.resize(m_NumWorkerThreads);
+    m_WorkerThreads.resize(NumThreads);
     for (Uint32 t=0; t < m_WorkerThreads.size(); ++t)
     {
         m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t );
     }
-    m_CmdLists.resize(m_NumWorkerThreads);
+    m_CmdLists.resize(NumThreads);
 }
 
 void Tutorial10_DataStreaming::StopWorkerThreads()
@@ -587,16 +560,20 @@ void Tutorial10_DataStreaming::StopWorkerThreads()
         thread.join();
     }
     m_RenderSubsetSignal.Reset();
+    m_WorkerThreads.clear();
+    m_CmdLists.clear();
 }
 
 void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis, Uint32 ThreadNum)
 {
     // Every thread should use its own deferred context
     IDeviceContext* pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
+    const int NumWorkerThreads = static_cast<int>(pThis->m_WorkerThreads.size());
+    VERIFY_EXPR(NumWorkerThreads > 0);
     for (;;)
     {
         // Wait for the signal
-        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
 
@@ -615,11 +592,11 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis,
             std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
             // Increment the number of completed threads
             ++pThis->m_NumThreadsCompleted;
-            if(pThis->m_NumThreadsCompleted == pThis->m_NumWorkerThreads)
+            if(pThis->m_NumThreadsCompleted == NumWorkerThreads)
                 pThis->m_ExecuteCommandListsSignal.Trigger();
         }
 
-        pThis->m_GotoNextFrameSignal.Wait(true, pThis->m_NumWorkerThreads);
+        pThis->m_GotoNextFrameSignal.Wait(true, NumWorkerThreads);
 
         // Call FinishFrame() to release dynamic resources allocated by deferred contexts
         // IMPORTANT: we must wait until the command lists are submitted for execution
@@ -631,7 +608,7 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis,
         // m_GotoNextFrameSignal must be unsignaled before we proceed to 
         // RenderSubsetSignal to avoid one thread go through the loop twice in 
         // a row
-        while(pThis->m_NumThreadsReady < pThis->m_NumWorkerThreads)
+        while(pThis->m_NumThreadsReady < NumWorkerThreads)
             std::this_thread::yield();
         VERIFY_EXPR( !pThis->m_GotoNextFrameSignal.IsTriggered() );
     }
@@ -649,7 +626,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     DrawAttrs.IndexType = VT_UINT32;
     DrawAttrs.Flags     = DRAW_FLAG_VERIFY_ALL;
 
-    Uint32 NumSubsets = 1 + m_NumWorkerThreads;
+    Uint32 NumSubsets = Uint32{1} + static_cast<Uint32>(m_WorkerThreads.size());
     const Uint32 TotalPolygons = static_cast<Uint32>(m_Polygons.size());
     const Uint32 TotalBatches = (TotalPolygons + m_BatchSize - 1) / m_BatchSize;
     const Uint32 SusbsetSize = TotalBatches / NumSubsets;
@@ -751,7 +728,7 @@ void Tutorial10_DataStreaming::Render()
     m_StreamingIB->AllowPersistentMapping(m_bAllowPersistentMap);
     m_StreamingVB->AllowPersistentMapping(m_bAllowPersistentMap);
 
-    if (m_NumWorkerThreads > 0)
+    if (!m_WorkerThreads.empty())
     {
         m_NumThreadsCompleted = 0;
         m_RenderSubsetSignal.Trigger(true);
@@ -762,7 +739,7 @@ void Tutorial10_DataStreaming::Render()
     else
         RenderSubset<false>(m_pImmediateContext, 0);
 
-    if (m_NumWorkerThreads > 0)
+    if (!m_WorkerThreads.empty())
     {
         m_ExecuteCommandListsSignal.Wait(true, 1);
 
@@ -797,6 +774,8 @@ void Tutorial10_DataStreaming::CreateInstanceBuffer()
 void Tutorial10_DataStreaming::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
+
     UpdatePolygons(static_cast<float>(ElapsedTime));
 }
 
