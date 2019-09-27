@@ -164,6 +164,9 @@ public:
                 LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
+#ifdef _DEBUG
+                EngD3D12Attribs.EnableDebugLayer = true;
+#endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);

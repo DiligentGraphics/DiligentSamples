@@ -132,7 +132,8 @@ public:
 
     ~Tutorial00App()
     {
-        m_pImmediateContext->Flush();
+        if (m_pImmediateContext)
+            m_pImmediateContext->Flush();
     }
 
     bool InitializeDiligentEngine(HWND hWnd[], size_t NumWindows)
@@ -175,6 +176,9 @@ public:
                 LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
+#ifdef _DEBUG
+                EngD3D12Attribs.EnableDebugLayer = true;
+#endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
