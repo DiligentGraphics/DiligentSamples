@@ -93,7 +93,12 @@ protected:
     
     int m_InitialWindowWidth  = 0;
     int m_InitialWindowHeight = 0;
-
+    enum class ValidationMode
+    {
+        Default,
+        Enable,
+        Disable
+    }m_ValidationMode = ValidationMode::Default;
     std::string m_AppTitle;
     Int32       m_UIScale = 1;
     std::string m_AdapterDetailsString;

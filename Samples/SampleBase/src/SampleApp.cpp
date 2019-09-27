@@ -157,6 +157,14 @@ void SampleApp::InitializeDiligentEngine(
             pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
 
             EngineD3D12CreateInfo EngD3D12Attribs;
+#ifdef _DEBUG
+            EngD3D12Attribs.EnableDebugLayer = true;
+#endif
+            if (m_ValidationMode == ValidationMode::Enable)
+                EngD3D12Attribs.EnableDebugLayer = true;
+            else if (m_ValidationMode == ValidationMode::Disable)
+                EngD3D12Attribs.EnableDebugLayer = false;
+
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs);
             ppContexts.resize(1 + EngD3D12Attribs.NumDeferredContexts);
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data());
@@ -212,6 +220,10 @@ void SampleApp::InitializeDiligentEngine(
 #ifdef _DEBUG
             EngVkAttribs.EnableValidation = true;
 #endif
+            if (m_ValidationMode == ValidationMode::Enable)
+                EngVkAttribs.EnableValidation = true;
+            else if (m_ValidationMode == ValidationMode::Disable)
+                EngVkAttribs.EnableValidation = false;
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs);
             ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
@@ -490,6 +502,15 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         else if ( !(Arg = GetArgument(pos, "height")).empty() )
         {
             m_InitialWindowHeight = atoi(Arg.c_str());
+        }
+        else if ( !(Arg = GetArgument(pos, "validation")).empty() )
+        {
+            if (StrCmpNoCase(Arg.c_str(), "true",   Arg.length()) == 0 ||
+                StrCmpNoCase(Arg.c_str(), "1",      Arg.length()) == 0 ||
+                StrCmpNoCase(Arg.c_str(), "enable", Arg.length()) == 0)
+                m_ValidationMode = ValidationMode::Enable;
+            else
+                m_ValidationMode = ValidationMode::Disable;
         }
 
         pos = strchr(pos, '-');
