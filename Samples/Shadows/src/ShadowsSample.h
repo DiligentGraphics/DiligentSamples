@@ -57,8 +57,7 @@ private:
     void InitializeResourceBindings();
     void CreateShadowMap();
     void RenderShadowMap();
-    void InitUI();
-    void UpdateUIControlStates();
+    void UpdateUI();
 
     static void DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT*  VertexElement,
                                                           Uint32                           Stride,

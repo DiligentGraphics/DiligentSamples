@@ -28,8 +28,10 @@
 #include "CommonlyUsedStates.h"
 #include "StringTools.h"
 #include "GraphicsUtilities.h"
-#include "AntTweakBar.h"
 #include "AdvancedMath.h"
+#include "imgui.h"
+#include "imGuIZMO.h"
+
 
 namespace Diligent
 {
@@ -94,230 +96,168 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     CreatePipelineStates();
 
     CreateShadowMap();
-
-    InitUI();
 }
 
-void ShadowsSample::UpdateUIControlStates()
+void ShadowsSample::UpdateUI()
 {
-    auto* bar = TwGetBarByName("TweakBar");
-    auto EnableControl = [bar](const char* Name, bool Enable)
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        int IsReadOnly = Enable ? 0 : 1;
-        TwSetParam(bar, Name, "readonly", TW_PARAM_INT32, 1, &IsReadOnly);
-    };
-    auto SetGroupState = [bar](const char* Name, bool Opened)
-    {
-        int IsOpened = Opened ? 1 : 0;
-        TwSetParam(bar, Name, "opened", TW_PARAM_INT32, 1, &IsOpened);
-    };
-    bool IsPCF = m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF;
-    EnableControl("Max depth bias slope", IsPCF);
-    EnableControl("Fixed depth bias", IsPCF);
-    SetGroupState("PCF", IsPCF);
+        ImGui::gizmo3D("Light direction", reinterpret_cast<float3&>(m_LightAttribs.f4Direction), ImGui::GetTextLineHeight() * 10);
 
-    bool IsVSM = m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM   ||
-                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
-                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4;
-    EnableControl("Positive EVSM Exponent", IsVSM);
-    EnableControl("Negative EVSM Exponent", IsVSM);
-    EnableControl("VSM Bias", IsVSM);
-    EnableControl("Light bleeding reduction", IsVSM);
-    SetGroupState("VSM/EVSM", IsVSM);
-
-    EnableControl("Filterable Format", IsVSM);
-
-    EnableControl("Filter world size", m_LightAttribs.ShadowAttribs.iFixedFilterSize == 0);
-}
-
-void ShadowsSample::InitUI()
-{
-    TwBar *bar = TwNewBar("TweakBar");
-   
-    TwDefine(" GLOBAL help='Terrain demo' "); // Message added to the help bar.
-    int barSize[2] = {300, 800};
-#ifdef ANDROID
-    barSize[0] = 800;
-    barSize[1] = 1000;
-#endif
-    TwDefine("TweakBar label='Settings' position = '10 10'");
-    TwSetParam(bar, nullptr, "size", TW_PARAM_INT32, 2, barSize);
-
-    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_LightAttribs.f4Direction, "");
-
-    {
-        TwEnumVal enumVals[] =
         {
-            { 0, "512" },
-            { 1, "1024" },
-            { 2, "2048" }
-        };
-        TwType enumType = TwDefineEnum("Shadow map size", enumVals, _countof(enumVals));
-        TwAddVarCB(bar, "Shadow map size", enumType,
-            [](const void *value, void* clientData)
+            constexpr int MinShadowMapSize = 512;
+            int ShadowMapComboId = 0;
+            while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowSettings.Resolution))
+                ++ShadowMapComboId;
+            if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "512\0""1024\0""2048\0\0"))
             {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSettings.Resolution = 512 << *reinterpret_cast<const int*>(value);
-                This->CreateShadowMap();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                int& val = *reinterpret_cast<int*>(value);
-                val = 0;
-                while((512 << val) != This->m_ShadowSettings.Resolution)
-                    ++val;
-            },
-            this, "");
-    }
+                m_ShadowSettings.Resolution = MinShadowMapSize << ShadowMapComboId;
+                CreateShadowMap();
+            }
+        }
 
-    {
-        TwEnumVal enumVals[] =
+        if (ImGui::SliderInt("Num cascades", &m_LightAttribs.ShadowAttribs.iNumCascades, 1, 8))
+                CreateShadowMap();
+
         {
-            { 0, "16-bit" },
-            { 1, "32-bit" }
-        };
-        TwType enumType = TwDefineEnum("Shadow map format", enumVals, _countof(enumVals));
-        TwAddVarCB(bar, "Format", enumType,
-            [](const void *value, void* clientData)
+            int Is32Bit = m_ShadowSettings.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
+            if (ImGui::Combo("Shadow map format", &Is32Bit, "16-bit\0""32-bit\0\0"))
             {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSettings.Format = *reinterpret_cast<const int*>(value) == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
-                This->CreatePipelineStates();
-                This->CreateShadowMap();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_ShadowSettings.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
-            },
-            this, "");
-        TwAddVarCB(bar, "Filterable Format", enumType,
-            [](const void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSettings.Is32BitFilterableFmt = *reinterpret_cast<const int*>(value) != 0;
-                This->CreateShadowMap();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_ShadowSettings.Is32BitFilterableFmt ? 1 : 0;
-            },
-            this, "");
-    }
+                m_ShadowSettings.Format = Is32Bit == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
+                CreatePipelineStates();
+                CreateShadowMap();
+            }
+        }
 
-    TwAddVarCB(bar, "Num cascades", TW_TYPE_INT32, [](const void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_LightAttribs.ShadowAttribs.iNumCascades = *reinterpret_cast<const int*>(value);
-                This->CreateShadowMap();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_LightAttribs.ShadowAttribs.iNumCascades;
-            },
-            this, "min=1 max=8");
-
-    {
-        TwEnumVal enumVals[] =
         {
-            { 1, "PCF" },
-            { 2, "VSM" },
-            { 3, "EVSM2" },
-            { 4, "EVSM4" }
-        };
-        TwType enumType = TwDefineEnum("Shadow mode", enumVals, _countof(enumVals));
-        TwAddVarCB(bar, "Shadow mode", enumType,
-            [](const void *value, void* clientData)
+            const char* ShadowModes[]
             {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSettings.iShadowMode = *reinterpret_cast<const int*>(value);
-                This->CreatePipelineStates();
-                This->CreateShadowMap();
-                This->UpdateUIControlStates();
-            },
-            [](void *value, void* clientData)
+                "PCF",
+                "VSM",
+                "EVSM2",
+                "EVSM4"
+            };
+            int iShadowModeComboItem = m_ShadowSettings.iShadowMode - 1;
+            if (ImGui::Combo("Shadow mode", &iShadowModeComboItem, ShadowModes, _countof(ShadowModes)))
             {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_ShadowSettings.iShadowMode;
-            },
-            this, "group=Filtering");
-    }
-    {
-        TwEnumVal enumVals[] =
+                m_ShadowSettings.iShadowMode = iShadowModeComboItem + 1;
+                CreatePipelineStates();
+                CreateShadowMap();
+            }
+        }
+
         {
-            { 0, "World-constant"},
-            { 2, "Fixed 2x2"     },
-            { 3, "Fixed 3x3"     },
-            { 5, "Fixed 5x5"     },
-            { 7, "Fixed 7x7"     }
-        };
-        TwType enumType = TwDefineEnum("Shadow filter size", enumVals, _countof(enumVals));
-        TwAddVarCB(bar, "Shadow filter size", enumType,
-            [](const void *value, void* clientData)
+            const char* StrFilterSizes[] =
             {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_LightAttribs.ShadowAttribs.iFixedFilterSize = *reinterpret_cast<const int*>(value);
-                This->m_ShadowSettings.FilterAcrossCascades = This->m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
-                This->CreatePipelineStates();
-                This->UpdateUIControlStates();
-            },
-            [](void *value, void* clientData)
+                "World-constant",
+                "Fixed 2x2",
+                "Fixed 3x3",
+                "Fixed 5x5",
+                "Fixed 7x7"
+            };
+            int FilterSizes[] = 
             {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<int*>(value) = This->m_LightAttribs.ShadowAttribs.iFixedFilterSize;
-            },
-            this, "group=Filtering");
+                0,
+                2,
+                3,
+                5,
+                7
+            };
+            int iItemId = 0;
+            while(iItemId < _countof(FilterSizes) && FilterSizes[iItemId] != m_LightAttribs.ShadowAttribs.iFixedFilterSize)
+                ++iItemId;
+            VERIFY_EXPR(iItemId < _countof(FilterSizes));
+            if (ImGui::Combo("Shadow filter size", &iItemId, StrFilterSizes, _countof(StrFilterSizes)))
+            {
+                m_LightAttribs.ShadowAttribs.iFixedFilterSize = FilterSizes[iItemId];
+                m_ShadowSettings.FilterAcrossCascades = m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
+                CreatePipelineStates();
+
+            }
+        }
+
+        bool IsVSM = m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM   ||
+                     m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
+                     m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4;
+
+        if (IsVSM)
+        {
+            if(ImGui::Checkbox("32-bit filterable Format", &m_ShadowSettings.Is32BitFilterableFmt))
+            {
+                CreateShadowMap();
+            }
+        }
+
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Cascade allocation"))
+        {
+            if (ImGui::InputFloat("Partitioning Factor", &m_ShadowSettings.PartitioningFactor, 0.001f, 0.01f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
+            {
+                m_ShadowSettings.PartitioningFactor = clamp(m_ShadowSettings.PartitioningFactor, 0.f, 1.f);
+            }
+            ImGui::Checkbox("Snap cascades", &m_ShadowSettings.SnapCascades);
+            ImGui::Checkbox("Stabilize extents", &m_ShadowSettings.StabilizeExtents);
+            ImGui::Checkbox("Equalize extents", &m_ShadowSettings.EqualizeExtents);
+            bool UseBestCascade = m_ShadowSettings.SearchBestCascade != 0;
+            if (ImGui::Checkbox("Use best cascade", &UseBestCascade))
+            {
+                m_ShadowSettings.SearchBestCascade = UseBestCascade ? 1 : 0;
+                CreatePipelineStates();
+            }
+            ImGui::TreePop();
+        }
+        
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Filtering"))
+        {
+            if (ImGui::Checkbox("Filter across cascades", &m_ShadowSettings.FilterAcrossCascades))
+                    CreatePipelineStates();
+            if (m_ShadowSettings.FilterAcrossCascades)
+                ImGui::SliderFloat("Cascade transition region", &m_LightAttribs.ShadowAttribs.fCascadeTransitionRegion, 0, 0.5f);
+
+            if (m_LightAttribs.ShadowAttribs.iFixedFilterSize == 0)
+                ImGui::SliderFloat("Filter world size", &m_LightAttribs.ShadowAttribs.fFilterWorldSize, 0, 0.25f);
+
+            if (m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF)
+            {
+                ImGui::SliderFloat("Max depth bias slope", &m_LightAttribs.ShadowAttribs.fReceiverPlaneDepthBiasClamp, 0, 20);
+                ImGui::SliderFloat("Fixed depth bias", &m_LightAttribs.ShadowAttribs.fFixedDepthBias, 0, 1, "%.4f", 3);
+            }
+
+            if (m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
+                m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
+                ImGui::SliderFloat("Positive EVSM Exponent", &m_LightAttribs.ShadowAttribs.fEVSMPositiveExponent, 0.1f, 40);
+
+            if (m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
+                ImGui::SliderFloat("Negative EVSM Exponent", &m_LightAttribs.ShadowAttribs.fEVSMNegativeExponent, 0.1f, 40);
+
+            if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM ||
+                m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
+                m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
+                ImGui::SliderFloat("Light bleeding reduction", &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, 0, 0.99f,  "%.4f", 3);
+
+            if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM)
+                ImGui::SliderFloat("VSM Bias", &m_LightAttribs.ShadowAttribs.fVSMBias, 0, 1, "%.4f", 3);
+
+            ImGui::TreePop();
+        }
+
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Visualization"))
+        {
+            bool bVisualizeCascades = m_LightAttribs.ShadowAttribs.bVisualizeCascades != 0;
+            if (ImGui::Checkbox("Visualize cascades", &bVisualizeCascades))
+                m_LightAttribs.ShadowAttribs.bVisualizeCascades = bVisualizeCascades ? 1 : 0;
+
+            bool bVisualizeShadowing = m_LightAttribs.ShadowAttribs.bVisualizeShadowing != 0;
+            if (ImGui::Checkbox("Shadows only", &bVisualizeShadowing))
+                m_LightAttribs.ShadowAttribs.bVisualizeShadowing = bVisualizeShadowing ? 1 : 0;
+
+            ImGui::TreePop();
+        }
     }
-
-    TwAddVarRW(bar, "Filter world size", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fFilterWorldSize, "min=0 max=0.25 step=0.001 group=Filtering");
-    TwAddVarCB(bar, "Filter across cascades", TW_TYPE_BOOLCPP,
-            [](const void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSettings.FilterAcrossCascades = *reinterpret_cast<const bool*>(value);
-                This->CreatePipelineStates();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<bool*>(value) = This->m_ShadowSettings.FilterAcrossCascades;
-            },
-            this, "group=Filtering");
-    TwAddVarRW(bar, "Cascade transition region", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fCascadeTransitionRegion, "min=0 max=0.5 step=0.01 group=Filtering");
-
-    TwAddVarRW(bar, "Partitioning Factor", TW_TYPE_FLOAT, &m_ShadowSettings.PartitioningFactor, "min=0 max=1 step=0.01 group='Cascade allocation'");
-    TwAddVarRW(bar, "Snap cascades", TW_TYPE_BOOLCPP, &m_ShadowSettings.SnapCascades, "group='Cascade allocation'");
-    TwAddVarRW(bar, "Stabilize extents", TW_TYPE_BOOLCPP, &m_ShadowSettings.StabilizeExtents, "group='Cascade allocation'");
-    TwAddVarRW(bar, "Equalize extents", TW_TYPE_BOOLCPP, &m_ShadowSettings.EqualizeExtents, "group='Cascade allocation'");
-    TwAddVarCB(bar, "Use best cascade", TW_TYPE_BOOLCPP,
-            [](const void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                This->m_ShadowSettings.SearchBestCascade = *reinterpret_cast<const bool*>(value);
-                This->CreatePipelineStates();
-            },
-            [](void *value, void* clientData)
-            {
-                auto* This = reinterpret_cast<ShadowsSample*>(clientData);
-                *reinterpret_cast<bool*>(value) = This->m_ShadowSettings.SearchBestCascade;
-            },
-            this, "group='Cascade allocation'");
-
-    TwAddVarRW(bar, "Max depth bias slope", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fReceiverPlaneDepthBiasClamp, "min=0 max=20 step=0.01 group=PCF");
-    TwAddVarRW(bar, "Fixed depth bias", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fFixedDepthBias, "min=0 max=1 step=0.00001 group=PCF");
-
-    TwAddVarRW(bar, "Positive EVSM Exponent", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fEVSMPositiveExponent, "min=0.1 max=40 step=0.1 group='VSM/EVSM'");
-    TwAddVarRW(bar, "Negative EVSM Exponent", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fEVSMNegativeExponent, "min=0.1 max=40 step=0.1 group='VSM/EVSM'");
-    TwAddVarRW(bar, "VSM Bias", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fVSMBias, "min=0 max=1 step=0.00001 group='VSM/EVSM'");
-    TwAddVarRW(bar, "Light bleeding reduction", TW_TYPE_FLOAT, &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, "min=0 max=0.99 step=0.01 group='VSM/EVSM'");
-
-    TwAddVarRW(bar, "Visualize cascades", TW_TYPE_BOOL32, &m_LightAttribs.ShadowAttribs.bVisualizeCascades, "group='Visualization'");
-    TwAddVarRW(bar, "Shadows only", TW_TYPE_BOOL32,  &m_LightAttribs.ShadowAttribs.bVisualizeShadowing, "group='Visualization'");
-
-    UpdateUIControlStates();
+    ImGui::End();
 }
 
 
@@ -691,6 +631,7 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
 void ShadowsSample::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     {
