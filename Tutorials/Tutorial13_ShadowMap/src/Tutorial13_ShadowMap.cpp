@@ -28,6 +28,8 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "imgui.h"
+#include "ImGuiUtils.h"
+#include "imGuIZMO.h"
 
 namespace Diligent
 {
@@ -477,21 +479,17 @@ void Tutorial13_ShadowMap::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         constexpr int MinShadowMapSize = 256;
-        for(m_ShadowMapComboId = 0; MinShadowMapSize << m_ShadowMapComboId != m_ShadowMapSize; ++m_ShadowMapComboId);
-        if (ImGui::Combo("Shadow map size", &m_ShadowMapComboId, "256\0""512\0""1024\0\0"))
+        int ShadowMapComboId = 0;
+        while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowMapSize))
+            ++ShadowMapComboId;
+        if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "256\0""512\0""1024\0\0"))
         {
-            m_ShadowMapSize = MinShadowMapSize << m_ShadowMapComboId;
+            m_ShadowMapSize = MinShadowMapSize << ShadowMapComboId;
             CreateShadowMap();
         }
-        if (ImGui::SliderFloat3("Light Direction", &m_LightDirection.x, -1, +1))
-        {
-            if(m_LightDirection == float3(0, 0, 0))
-                m_LightDirection = float3(0, -1, 0);
-            else
-                m_LightDirection = normalize(m_LightDirection);
-        }
+        ImGui::gizmo3D("##LightDirection", m_LightDirection, ImGui::GetTextLineHeight() * 10);
     }
-    ImGui::End();
+    ImGui::End();   
 }
     
 void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
