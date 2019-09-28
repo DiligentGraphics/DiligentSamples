@@ -50,14 +50,15 @@ private:
     void CreateEnvMapSRB();
     void LoadModel(const char* Path);
     void ResetView();
-    void InitUI();
+    void UpdateUI();
 
-    enum class BackgroundMode
+    enum class BackgroundMode : int
     {
         None,
         EnvironmentMap,
         Irradiance,
-        PrefilteredEnvMap
+        PrefilteredEnvMap,
+        NumModes
     }m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;

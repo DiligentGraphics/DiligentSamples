@@ -22,15 +22,17 @@
  */
 
 #include <cmath>
+#include <array>
 #include "GLTFViewer.h"
 #include "MapHelper.h"
 #include "BasicMath.h"
 #include "GraphicsUtilities.h"
-#include "AntTweakBar.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
 #include "ShaderMacroHelper.h"
 #include "FileSystem.h"
+#include "imgui.h"
+#include "imGuIZMO.h"
 
 namespace Diligent
 {
@@ -68,16 +70,8 @@ const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
 
 void GLTFViewer::LoadModel(const char* Path)
 {
-    TwBar* bar = TwGetBarByName("Settings");
-
     if (m_Model)
     {
-        if (!m_Model->Animations.empty())
-        {
-            TwRemoveVar(bar, "Play");
-            TwRemoveVar(bar, "Active Animation");
-        }
-
         m_GLTFRenderer->ReleaseResourceBindings(*m_Model);
         m_PlayAnimation  = false;
         m_AnimationIndex = 0;
@@ -98,12 +92,6 @@ void GLTFViewer::LoadModel(const char* Path)
 
     if (!m_Model->Animations.empty())
     {
-        TwAddVarRW(bar, "Play", TW_TYPE_BOOLCPP, &m_PlayAnimation, "group='Animation'");
-        std::vector<TwEnumVal> AnimationEnumVals(m_Model->Animations.size());
-        for (int i=0; i < m_Model->Animations.size(); ++i)
-            AnimationEnumVals.emplace_back(TwEnumVal{i, m_Model->Animations[i].Name.c_str()});
-        TwType AnimationsEnumTwType = TwDefineEnum( "AnimationsEnum", AnimationEnumVals.data(), static_cast<unsigned int>(AnimationEnumVals.size()));
-        TwAddVarRW( bar, "Active Animation", AnimationsEnumTwType, &m_AnimationIndex, "group='Animation'");
         m_AnimationTimers.resize(m_Model->Animations.size());
         m_AnimationIndex = 0;
         m_PlayAnimation  = true;
@@ -158,117 +146,114 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
 
     LoadModel(GLTFModels[m_SelectedModel].second);
-
-    InitUI();
 }
 
-void GLTFViewer::InitUI()
+void GLTFViewer::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
-    int barSize[2] = {250 * m_UIScale, 600 * m_UIScale};
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        TwEnumVal ModelEnumVals[_countof(GLTFModels)];
-        for(int i=0; i < _countof(GLTFModels); ++i)
-            ModelEnumVals[i] = TwEnumVal{i, GLTFModels[i].first};
-        TwType ModelEnumTwType = TwDefineEnum( "Model", ModelEnumVals, _countof(ModelEnumVals) );
-        TwAddVarCB( bar, "Model", ModelEnumTwType,
-            []( const void *value, void * clientData )
+        {
+            const char* Models[_countof(GLTFModels)];
+            for(int i=0; i < _countof(GLTFModels); ++i)
+                Models[i] = GLTFModels[i].first;
+            if (ImGui::Combo("Model", &m_SelectedModel, Models, _countof(GLTFModels)))
             {
-                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                pViewer->m_SelectedModel = *reinterpret_cast<const int*>(value);
-                pViewer->LoadModel(pViewer->GLTFModels[pViewer->m_SelectedModel].second);
-            },
-            [](void *value, void * clientData)
-            {
-                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                *reinterpret_cast<int*>(value) = static_cast<int>(pViewer->m_SelectedModel);
-            },
-            this, "");
-    }
+                LoadModel(GLTFModels[m_SelectedModel].second);
+            }
+        }
 #ifdef PLATFORM_WIN32
-    TwAddButton(bar, "Load model", 
-                [](void *clientData)
-                {
-                    auto FileName = FileSystem::OpenFileDialog("Select GLTF file", "glTF files\0*.gltf;*.glb\0");
-                    if (!FileName.empty())
-                    {
-                        auto* pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                        pViewer->LoadModel(FileName.c_str());
-                    }
-                }, 
-                this, "");
+        if (ImGui::Button("Load model"))
+        {
+            auto FileName = FileSystem::OpenFileDialog("Select GLTF file", "glTF files\0*.gltf;*.glb\0");
+            if (!FileName.empty())
+            {
+                LoadModel(FileName.c_str());
+            }
+        }
 #endif
 
-    TwAddVarRO(bar, "Camera Rotation",    TW_TYPE_QUAT4F,  &m_CameraRotation,  "opened=true axisz=-z");
-    TwAddVarRO(bar, "Model Rotation",     TW_TYPE_QUAT4F,  &m_ModelRotation,   "opened=true axisz=-z");
-    TwAddButton(bar, "Reset view", 
-                [](void *clientData)
-                {
-                    auto* pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                    pViewer->ResetView();
-                }, 
-                this, "");
-    TwAddVarRW(bar, "Light direction",    TW_TYPE_DIR3F,   &m_LightDirection,  "opened=true axisz=-z");
-    TwAddVarRW(bar, "Camera dist",        TW_TYPE_FLOAT,   &m_CameraDist,      "min=0.1 max=5.0 step=0.1");
-    TwAddVarRW(bar, "Light Color",        TW_TYPE_COLOR4F, &m_LightColor,      "group='Lighting' opened=false");
-    TwAddVarRW(bar, "Light Intensity",    TW_TYPE_FLOAT,   &m_LightIntensity,  "group='Lighting' min=0.0 max=50.0 step=0.1");
-    TwAddVarRW(bar, "Occlusion strength", TW_TYPE_FLOAT,   &m_RenderParams.OcclusionStrength, "group='Lighting' min=0.0 max=1.0 step=0.01");
-    TwAddVarRW(bar, "Emission scale",     TW_TYPE_FLOAT,   &m_RenderParams.EmissionScale,     "group='Lighting' min=0.0 max=1.0 step=0.01");
-    TwAddVarRW(bar, "IBL scale",          TW_TYPE_FLOAT,   &m_RenderParams.IBLScale,          "group='Lighting' min=0.0 max=1.0 step=0.01");
-    TwAddVarRW(bar, "Average log lum",    TW_TYPE_FLOAT,   &m_RenderParams.AverageLogLum,     "group='Tone mapping' min=0.01 max=10.0 step=0.01");
-    TwAddVarRW(bar, "Middle gray",        TW_TYPE_FLOAT,   &m_RenderParams.MiddleGray,        "group='Tone mapping' min=0.01 max=1.0 step=0.01");
-    TwAddVarRW(bar, "White point",        TW_TYPE_FLOAT,   &m_RenderParams.WhitePoint,        "group='Tone mapping' min=0.1  max=20.0 step=0.1");
-    {
-        TwEnumVal BackgroundModeEnumVals[] =
+        ImGui::gizmo3D("Camera Rotation", m_CameraRotation, ImGui::GetTextLineHeight() * 10); ImGui::SameLine();
+        ImGui::gizmo3D("Model Rotation", m_ModelRotation, ImGui::GetTextLineHeight() * 10);
+        if (ImGui::Button("Reset view"))
         {
-            {static_cast<int>(BackgroundMode::None),              "None"             },
-            {static_cast<int>(BackgroundMode::EnvironmentMap),    "Environmen Map"   },
-            {static_cast<int>(BackgroundMode::Irradiance),        "Irradiance"       },
-            {static_cast<int>(BackgroundMode::PrefilteredEnvMap), "PrefilteredEnvMap"}
-        };
-        TwType BackgroundModeEnumTwType = TwDefineEnum( "Background mode", BackgroundModeEnumVals, _countof(BackgroundModeEnumVals) );
-        TwAddVarCB( bar, "Background mode", BackgroundModeEnumTwType,
-            []( const void *value, void * clientData )
+            ResetView();
+        }
+        ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
+
+        ImGui::SliderFloat("Camera distance", &m_CameraDist, 0.1f, 5.0f);
+
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Lighting"))
+        {
+            ImGui::ColorEdit3("Light Color", &m_LightColor.r);
+            ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                 0.f, 50.f);
+            ImGui::SliderFloat("Occlusion strength", &m_RenderParams.OcclusionStrength, 0.f,  1.f);
+            ImGui::SliderFloat("Emission scale",     &m_RenderParams.EmissionScale,     0.f,  1.f);
+            ImGui::SliderFloat("IBL scale",          &m_RenderParams.IBLScale,          0.f,  1.f);
+            ImGui::TreePop();
+        }
+        
+        if (!m_Model->Animations.empty())
+        {
+            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+            if (ImGui::TreeNode("Animation"))
             {
-                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                pViewer->m_BackgroundMode = static_cast<GLTFViewer::BackgroundMode>(*reinterpret_cast<const int*>(value));
-                pViewer->CreateEnvMapSRB();
-            },
-            [](void *value, void * clientData)
+                ImGui::Checkbox("Play", &m_PlayAnimation);
+                std::vector<const char*> Animations(m_Model->Animations.size());
+                for (int i=0; i < m_Model->Animations.size(); ++i)
+                    Animations[i] = m_Model->Animations[i].Name.c_str();
+                ImGui::Combo("Active Animation", reinterpret_cast<int*>(&m_AnimationIndex), Animations.data(), static_cast<int>(Animations.size()));
+                ImGui::TreePop();
+            }
+        }
+
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Tone mapping"))
+        {
+            ImGui::SliderFloat("Average log lum",    &m_RenderParams.AverageLogLum,     0.01f, 10.0f);
+            ImGui::SliderFloat("Middle gray",        &m_RenderParams.MiddleGray,        0.01f,  1.0f);
+            ImGui::SliderFloat("White point",        &m_RenderParams.WhitePoint,        0.1f,  20.0f);
+            ImGui::TreePop();
+        }
+
+        {
+            std::array<const char*, static_cast<size_t>(BackgroundMode::NumModes)> BackgroundModes;
+            BackgroundModes[static_cast<size_t>(BackgroundMode::None)]              = "None";
+            BackgroundModes[static_cast<size_t>(BackgroundMode::EnvironmentMap)]    = "Environmen Map";
+            BackgroundModes[static_cast<size_t>(BackgroundMode::Irradiance)]        = "Irradiance";
+            BackgroundModes[static_cast<size_t>(BackgroundMode::PrefilteredEnvMap)] = "PrefilteredEnvMap";
+            if (ImGui::Combo("Background mode", reinterpret_cast<int*>(&m_BackgroundMode), BackgroundModes.data(), static_cast<int>(BackgroundModes.size())))
             {
-                GLTFViewer *pViewer = reinterpret_cast<GLTFViewer*>( clientData );
-                *reinterpret_cast<int*>(value) = static_cast<int>(pViewer->m_BackgroundMode);
-            },
-            this, "");
-    }
-    TwAddVarRW(bar, "Env map mip", TW_TYPE_FLOAT, &m_EnvMapMipLevel, "min=0.0 max=7.0 step=0.1");
+                CreateEnvMapSRB();
+            }
+        }
+
+        ImGui::SliderFloat("Env map mip", &m_EnvMapMipLevel, 0.0f, 7.0f);
     
-    {
-        TwEnumVal DebugViewType[] = // array used to describe the shadow map resolution
         {
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None),            "None"       },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor),       "Base Color" },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Transparency),    "Transparency"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap),       "Normal Map" },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion),       "Occlusion"  },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive),        "Emissive"   },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic),        "Metallic"   },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness),       "Roughness"  },
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor),    "Diffuse color"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor),   "Specular color (R0)"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90),   "Reflectance90"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::MeshNormal),      "Mesh normal"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::PerturbedNormal), "Perturbed normal"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV),           "n*v"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseIBL),      "Diffuse IBL"},
-            {static_cast<int>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularIBL),     "Specular IBL"}
-        };
-        TwType DebugViewTwType = TwDefineEnum( "Debug view", DebugViewType, _countof( DebugViewType ) );
-        TwAddVarRW( bar, "Debug view", DebugViewTwType, &m_RenderParams.DebugView, "" );
+            std::array<const char*, static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NumDebugViews)> DebugViews;
+            
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None)]            = "None";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor)]       = "Base Color";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Transparency)]    = "Transparency";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NormalMap)]       = "Normal Map";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Occlusion)]       = "Occlusion";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Emissive)]        = "Emissive";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Metallic)]        = "Metallic";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Roughness)]       = "Roughness";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseColor)]    = "Diffuse color";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularColor)]   = "Specular color (R0)";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Reflectance90)]   = "Reflectance90";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::MeshNormal)]      = "Mesh normal";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::PerturbedNormal)] = "Perturbed normal";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NdotV)]           = "n*v";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularIBL)]     = "Specular IBL";
+            ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size()));
+        }
     }
+    ImGui::End();   
 }
 
 void GLTFViewer::CreateEnvMapPSO()
@@ -472,6 +457,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         ResetView();
 
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
 
     if (!m_Model->Animations.empty() && m_PlayAnimation)
     {
