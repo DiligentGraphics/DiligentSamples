@@ -31,6 +31,7 @@
 #include "AdvancedMath.h"
 #include "imgui.h"
 #include "imGuIZMO.h"
+#include "ImGuiUtils.h"
 
 
 namespace Diligent
@@ -118,7 +119,7 @@ void ShadowsSample::UpdateUI()
         }
 
         if (ImGui::SliderInt("Num cascades", &m_LightAttribs.ShadowAttribs.iNumCascades, 1, 8))
-                CreateShadowMap();
+            CreateShadowMap();
 
         {
             int Is32Bit = m_ShadowSettings.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
@@ -196,13 +197,11 @@ void ShadowsSample::UpdateUI()
             {
                 m_ShadowSettings.PartitioningFactor = clamp(m_ShadowSettings.PartitioningFactor, 0.f, 1.f);
             }
-            ImGui::Checkbox("Snap cascades", &m_ShadowSettings.SnapCascades);
+            ImGui::Checkbox("Snap cascades",     &m_ShadowSettings.SnapCascades);
             ImGui::Checkbox("Stabilize extents", &m_ShadowSettings.StabilizeExtents);
-            ImGui::Checkbox("Equalize extents", &m_ShadowSettings.EqualizeExtents);
-            bool UseBestCascade = m_ShadowSettings.SearchBestCascade != 0;
-            if (ImGui::Checkbox("Use best cascade", &UseBestCascade))
+            ImGui::Checkbox("Equalize extents",  &m_ShadowSettings.EqualizeExtents);
+            if (ImGui::Checkbox("Use best cascade", &m_ShadowSettings.SearchBestCascade))
             {
-                m_ShadowSettings.SearchBestCascade = UseBestCascade ? 1 : 0;
                 CreatePipelineStates();
             }
             ImGui::TreePop();
@@ -212,7 +211,8 @@ void ShadowsSample::UpdateUI()
         if (ImGui::TreeNode("Filtering"))
         {
             if (ImGui::Checkbox("Filter across cascades", &m_ShadowSettings.FilterAcrossCascades))
-                    CreatePipelineStates();
+                CreatePipelineStates();
+
             if (m_ShadowSettings.FilterAcrossCascades)
                 ImGui::SliderFloat("Cascade transition region", &m_LightAttribs.ShadowAttribs.fCascadeTransitionRegion, 0, 0.5f);
 
@@ -246,14 +246,8 @@ void ShadowsSample::UpdateUI()
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Visualization"))
         {
-            bool bVisualizeCascades = m_LightAttribs.ShadowAttribs.bVisualizeCascades != 0;
-            if (ImGui::Checkbox("Visualize cascades", &bVisualizeCascades))
-                m_LightAttribs.ShadowAttribs.bVisualizeCascades = bVisualizeCascades ? 1 : 0;
-
-            bool bVisualizeShadowing = m_LightAttribs.ShadowAttribs.bVisualizeShadowing != 0;
-            if (ImGui::Checkbox("Shadows only", &bVisualizeShadowing))
-                m_LightAttribs.ShadowAttribs.bVisualizeShadowing = bVisualizeShadowing ? 1 : 0;
-
+            ImGui::Checkbox("Visualize cascades", &m_LightAttribs.ShadowAttribs.bVisualizeCascades);
+            ImGui::Checkbox("Shadows only", &m_LightAttribs.ShadowAttribs.bVisualizeShadowing);
             ImGui::TreePop();
         }
     }
