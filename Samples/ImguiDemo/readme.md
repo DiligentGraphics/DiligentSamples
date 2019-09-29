@@ -1,4 +1,4 @@
-# Shadows Sample
+# Dear ImGui Demo
 
 ![](Screenshot.png)
 

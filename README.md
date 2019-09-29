@@ -153,7 +153,7 @@ This sample demonstrates how to integrate the [Shadowing component](https://gith
 into an application to render high-quality shadows.
 
 
-## [Shadows](Samples/ImguiDemo)
+## [Dear ImGui Demo](Samples/ImguiDemo)
 
 ![](Samples/ImguiDemo/Screenshot.png)
 
