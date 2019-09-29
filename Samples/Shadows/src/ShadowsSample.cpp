@@ -111,7 +111,7 @@ void ShadowsSample::UpdateUI()
             int ShadowMapComboId = 0;
             while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowSettings.Resolution))
                 ++ShadowMapComboId;
-            if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "512\0""1024\0""2048\0\0"))
+            if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "512\0" "1024\0" "2048\0\0"))
             {
                 m_ShadowSettings.Resolution = MinShadowMapSize << ShadowMapComboId;
                 CreateShadowMap();
@@ -123,7 +123,7 @@ void ShadowsSample::UpdateUI()
 
         {
             int Is32Bit = m_ShadowSettings.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
-            if (ImGui::Combo("Shadow map format", &Is32Bit, "16-bit\0""32-bit\0\0"))
+            if (ImGui::Combo("Shadow map format", &Is32Bit, "16-bit\0" "32-bit\0\0"))
             {
                 m_ShadowSettings.Format = Is32Bit == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
                 CreatePipelineStates();

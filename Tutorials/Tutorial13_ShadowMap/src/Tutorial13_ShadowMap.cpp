@@ -482,7 +482,7 @@ void Tutorial13_ShadowMap::UpdateUI()
         int ShadowMapComboId = 0;
         while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowMapSize))
             ++ShadowMapComboId;
-        if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "256\0""512\0""1024\0\0"))
+        if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "256\0" "512\0" "1024\0\0"))
         {
             m_ShadowMapSize = MinShadowMapSize << ShadowMapComboId;
             CreateShadowMap();
