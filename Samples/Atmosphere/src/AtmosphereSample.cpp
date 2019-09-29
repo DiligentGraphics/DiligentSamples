@@ -23,12 +23,15 @@
 
 #include <cmath>
 #include <algorithm>
-
-#include "AntTweakBar.h"
+#include <array>
 
 #include "AtmosphereSample.h"
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
+#include "imgui.h"
+#include "imGuIZMO.h"
+#include "PlatformMisc.h"
+#include "ImGuiUtils.h"
 
 namespace Diligent
 {
@@ -77,8 +80,25 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
         m_TerrainRenderParams.m_TexturingMode              = RenderingParams::TM_MATERIAL_MASK;
     }
 
-    m_f4CustomRlghBeta = m_PPAttribs.f4CustomRlghBeta;
-    m_f4CustomMieBeta = m_PPAttribs.f4CustomMieBeta;
+    const auto& RG16UAttribs = m_pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );
+    const auto& RG32FAttribs = m_pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG32_FLOAT );
+    m_bRG16UFmtSupported = RG16UAttribs.Supported && RG16UAttribs.ColorRenderable;
+    m_bRG32FFmtSupported = RG32FAttribs.Supported && RG32FAttribs.ColorRenderable;
+    if (!m_bRG16UFmtSupported && !m_bRG32FFmtSupported)
+    {
+        m_PPAttribs.bUse1DMinMaxTree = FALSE;
+    }
+    else
+    {
+        if (m_bRG16UFmtSupported && !m_bRG32FFmtSupported)
+            m_PPAttribs.bIs32BitMinMaxMipMap = FALSE;
+
+        if (!m_bRG16UFmtSupported && m_bRG32FFmtSupported)
+            m_PPAttribs.bIs32BitMinMaxMipMap = TRUE;
+    }
+
+    m_f3CustomRlghBeta = m_PPAttribs.f4CustomRlghBeta;
+    m_f3CustomMieBeta  = m_PPAttribs.f4CustomMieBeta;
 
 	m_strRawDEMDataFile = "Terrain\\HeightMap.tif";
     m_strMtrlMaskFile = "Terrain\\Mask.png";
@@ -133,320 +153,252 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice 
                              pcMediaScatteringParams );
 
     CreateShadowMap();
-
-    InitUI();
 }
 
-void AtmosphereSample::InitUI()
+void AtmosphereSample::UpdateUI()
 {
-    // Create a tweak bar
-    TwBar *bar = TwNewBar("Settings");
-    TwDefine(" GLOBAL fontsize=3 ");
-    int barSize[2] = {300, 900};
-#ifdef ANDROID
-    barSize[0] = 800;
-    barSize[1] = 1000;
-#endif
-    TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-
-    TwAddVarRW(bar, "FPS", TW_TYPE_FLOAT, &m_fFPS, "readonly=true");
-
-    TwAddVarRW(bar, "Light Direction", TW_TYPE_DIR3F, &m_f3LightDir, "");
-
-    TwAddVarRW( bar, "Camera altitude", TW_TYPE_FLOAT, &m_f3CameraPos.y, "min=2000 max=100000 step=100 keyincr=PGUP keydecr=PGDOWN" );
-
-    // Shadows
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        // Define a new enum type for the tweak bar
-        TwEnumVal ShadowMapRes[] = // array used to describe the shadow map resolution
-        {
-            { 512, "512" },
-            { 1024, "1024" },
-            { 2048, "2048" }
-        };
-        TwType modeType = TwDefineEnum( "Shadow Map Resolution", ShadowMapRes, _countof( ShadowMapRes ) );  // create a new TwType associated to the enum defined by the ShadowMapRes array
-        TwAddVarCB( bar, "Shadow map resolution", modeType,
-            [](const void *value, void * clientData)
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                pTheSample->m_ShadowSettings.Resolution = static_cast<Uint32>(*reinterpret_cast<const int*>(value));
-                pTheSample->CreateShadowMap();
-            },
-            [](void* value, void* clientData)
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                *static_cast<int*>(value) = static_cast<int>(pTheSample->m_ShadowSettings.Resolution);
-            },
-            this, "group=Shadows" );
+        ImGui::gizmo3D("Light direction", static_cast<float3&>(m_f3LightDir), ImGui::GetTextLineHeight() * 10);
+        ImGui::SliderFloat("Camera altitude", &m_f3CameraPos.y, 2000, 100000);
 
-        TwAddVarRW( bar, "Show cascades", TW_TYPE_BOOLCPP, &m_ShadowSettings.bVisualizeCascades, "group=Shadows" );
-        TwAddVarCB( bar, "Num cascades", TW_TYPE_INT32, 
-            [](const void* value, void* clientData)
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                pTheSample->m_TerrainRenderParams.m_iNumShadowCascades = *static_cast<const int *>(value);
-                pTheSample->CreateShadowMap();
-            }, 
-            [](void *value, void * clientData)
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                *static_cast<int *>(value) = pTheSample->m_TerrainRenderParams.m_iNumShadowCascades;
-            },
-            this, "min=1 max=8 group=Shadows" );
-    }
-
-    TwAddVarRW( bar, "Enable Light Scattering", TW_TYPE_BOOLCPP, &m_bEnableLightScattering, "" );
-
-    // Light scattering GUI controls
-    {
-        TwAddVarRW( bar, "Enable light shafts", TW_TYPE_BOOL32, &m_PPAttribs.bEnableLightShafts, "group=Scattering" );
-
-        // Define a new enum type for the tweak bar
-        TwEnumVal LightSctrTech[] = // array used to describe the shadow map resolution
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Shadows"))
         {
-            { LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING, "Epipolar" },
-            { LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE, "Brute force" }
-        };
-        TwType LightSctrTechType = TwDefineEnum( "Light scattering tech", LightSctrTech, _countof( LightSctrTech ) );
-        TwAddVarRW( bar, "Light scattering tech", LightSctrTechType, &m_PPAttribs.iLightSctrTechnique, "group=Scattering" );
-
-        TwEnumVal Pow2Values[] =
-        {
-            { 1, "1" },
-            { 2, "2" },
-            { 4, "4" },
-            { 8, "8" },
-            { 16, "16" },
-            { 32, "32" },
-            { 64, "64" },
-            { 128, "128" },
-            { 256, "256" },
-            { 512, "512" },
-            { 1024, "1024" },
-            { 2048, "2048" }
-        };
-        TwType BigPow2Enum = TwDefineEnum( "Large powers of two", Pow2Values + 7, 5 );
-        TwAddVarRW( bar, "NumSlices", BigPow2Enum, &m_PPAttribs.uiNumEpipolarSlices, "group=Scattering label=\'Num slices\'" );
-        TwAddVarRW( bar, "MaxSamples", BigPow2Enum, &m_PPAttribs.uiMaxSamplesInSlice, "group=Scattering label=\'Max samples\'" );
-        TwType SmallPow2Enum = TwDefineEnum( "Small powers of two", Pow2Values+2, 5 );
-        TwAddVarRW( bar, "IntialStep", SmallPow2Enum, &m_PPAttribs.uiInitialSampleStepInSlice, "group=Scattering label=\'Initial step\'" );
-        
-        TwAddVarRW( bar, "ShowSampling", TW_TYPE_BOOL32, &m_PPAttribs.bShowSampling, "group=Scattering label=\'Show Sampling\'" );
-        TwAddVarRW( bar, "RefinementThreshold", TW_TYPE_FLOAT, &m_PPAttribs.fRefinementThreshold, "group=Scattering label=\'Refinement Threshold\' min=0.01 max=0.5 step=0.01" );
-        TwAddVarRW( bar, "1DMinMaxOptimization", TW_TYPE_BOOL32, &m_PPAttribs.bUse1DMinMaxTree, "group=Scattering label=\'Use 1D min/max trees\'" );
-        TwAddVarRW( bar, "OptimizeSampleLocations", TW_TYPE_BOOL32, &m_PPAttribs.bOptimizeSampleLocations, "group=Scattering label=\'Optimize Sample Locations\'" );
-        TwAddVarRW( bar, "CorrectScattering", TW_TYPE_BOOL32, &m_PPAttribs.bCorrectScatteringAtDepthBreaks, "group=Scattering label=\'Correct Scattering At Depth Breaks\'" );
-        TwAddVarRW( bar, "ShowDepthBreaks", TW_TYPE_BOOL32, &m_PPAttribs.bShowDepthBreaks, "group=Scattering label=\'Show Depth Breaks\'" );
-        TwAddVarRW( bar, "LightingOnly", TW_TYPE_BOOL32, &m_PPAttribs.bShowLightingOnly, "group=Scattering label=\'Lighting Only\'" );
-        //TwAddVarRW( bar, "ScatteringScale", TW_TYPE_FLOAT, &m_fScatteringScale, "group=Scattering label=\'Scattering scale\' min=0 max=2 step=0.1" );
-
-        TwAddVarRW( bar, "NumIntegrationSteps", TW_TYPE_UINT32, &m_PPAttribs.uiInstrIntegralSteps, "min=5 max=100 step=5 group=Advanced label=\'Num Integrtion Steps\'" );
-        TwDefine( "Settings/Advanced group=Scattering" );
-
-        {
-            TwType EpipoleSamplingDensityEnum = TwDefineEnum( "Epipole sampling density enum", Pow2Values, 4 );
-            TwAddVarRW( bar, "EpipoleSamplingDensity", EpipoleSamplingDensityEnum, &m_PPAttribs.uiEpipoleSamplingDensityFactor, "group=Advanced label=\'Epipole sampling density\'" );
-        }
-        {
-            TwEnumVal SinglSctrMode[] =
             {
-                { SINGLE_SCTR_MODE_NONE, "None" },
-                { SINGLE_SCTR_MODE_INTEGRATION, "Integration" },
-                { SINGLE_SCTR_MODE_LUT, "Look-up table" }
-            };
-            TwType SinglSctrModeEnum = TwDefineEnum( "Single scattering mode enum", SinglSctrMode, _countof(SinglSctrMode) );
-            TwAddVarRW( bar, "SingleSctrMode", SinglSctrModeEnum, &m_PPAttribs.iSingleScatteringMode, "group=Advanced label=\'Single scattering\'" );
-        }
-        {
-            TwEnumVal MultSctrMode[] =
-            {
-                { MULTIPLE_SCTR_MODE_NONE, "None" },
-                { MULTIPLE_SCTR_MODE_UNOCCLUDED, "Unoccluded" },
-                { MULTIPLE_SCTR_MODE_OCCLUDED, "Occluded" }
-            };
-            TwType MultSctrModeEnum = TwDefineEnum( "Higher-order scattering mode enum", MultSctrMode, _countof( MultSctrMode ) );
-            TwAddVarRW( bar, "MultipleSctrMode", MultSctrModeEnum, &m_PPAttribs.iMultipleScatteringMode, "group=Advanced label=\'Higher-order scattering\'" );
-        }
-        {
-            TwEnumVal CascadeProcessingMode[] =
-            {
-                { CASCADE_PROCESSING_MODE_SINGLE_PASS, "Single pass" },
-                { CASCADE_PROCESSING_MODE_MULTI_PASS, "Multi-pass" },
-                { CASCADE_PROCESSING_MODE_MULTI_PASS_INST, "Multi-pass inst" }
-            };
-            TwType CascadeProcessingModeEnum = TwDefineEnum( "Cascade processing mode enum", CascadeProcessingMode, _countof( CascadeProcessingMode ) );
-            TwAddVarRW( bar, "CascadeProcessingMode", CascadeProcessingModeEnum, &m_PPAttribs.iCascadeProcessingMode, "group=Advanced label=\'Cascade processing mode\'" );
-        }
-        TwAddVarRW( bar, "FirstCascadeToRayMarch", TW_TYPE_INT32, &m_PPAttribs.iFirstCascadeToRayMarch, "min=0 max=8 step=1 group=Advanced label=\'Start cascade\'" );
-        TwAddVarRW( bar, "Is32BitMinMaxShadowMap", TW_TYPE_BOOL32, &m_PPAttribs.bIs32BitMinMaxMipMap, "group=Advanced label=\'Use 32-bit float min/max SM\'" );
-        {
-            TwEnumVal RefinementCriterion[] =
-            {
-                { REFINEMENT_CRITERION_DEPTH_DIFF, "Depth difference" },
-                { REFINEMENT_CRITERION_INSCTR_DIFF, "Scattering difference" }
-            };
-            TwType CascadeProcessingModeEnum = TwDefineEnum( "Refinement criterion enum", RefinementCriterion, _countof( RefinementCriterion ) );
-            TwAddVarRW( bar, "RefinementCriterion", CascadeProcessingModeEnum, &m_PPAttribs.iRefinementCriterion, "group=Advanced label=\'Refinement criterion\'" );
-        }
-        {
-            TwEnumVal ExtinctionEvalMode[] =
-            {
-                { EXTINCTION_EVAL_MODE_PER_PIXEL, "Per pixel" },
-                { EXTINCTION_EVAL_MODE_EPIPOLAR, "Epipolar" }
-            };
-            TwType ExtinctionEvalModeEnum = TwDefineEnum( "Extinction eval mode enum", ExtinctionEvalMode, _countof( ExtinctionEvalMode ) );
-            TwAddVarRW( bar, "ExtinctionEval", ExtinctionEvalModeEnum, &m_PPAttribs.iExtinctionEvalMode, "group=Advanced label=\'Extinction eval mode\'" );
-        }
-        TwAddVarRW( bar, "AerosolDensity", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolDensityScale, "group=Advanced label=\'Aerosol density\' min=0.1 max=5.0 step=0.1" );
-        TwAddVarRW( bar, "AerosolAbsorption", TW_TYPE_FLOAT, &m_PPAttribs.fAerosolAbsorbtionScale, "group=Advanced label=\'Aerosol absorption\' min=0.0 max=5.0 step=0.1" );
-        TwAddVarRW( bar, "UseCustomSctrCoeffs", TW_TYPE_BOOL32, &m_PPAttribs.bUseCustomSctrCoeffs, "group=Advanced label=\'Use custom scattering coeffs\'" );
-
-        #define RLGH_COLOR_SCALE 5e-5f
-        #define MIE_COLOR_SCALE 5e-5f
-        TwAddVarCB(bar, "RayleighColor", TW_TYPE_COLOR4F, 
-            []( const void *value, void * clientData )
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                pTheSample->m_f4CustomRlghBeta = *reinterpret_cast<const float4 *>(value) * RLGH_COLOR_SCALE;
-                if( (float3&)pTheSample->m_f4CustomRlghBeta == float3( 0, 0, 0 ) )
+                constexpr int MinShadowMapSize = 512;
+                int ShadowMapComboId = 0;
+                while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowSettings.Resolution))
+                    ++ShadowMapComboId;
+                if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "512\0" "1024\0" "2048\0\0"))
                 {
-                    pTheSample->m_f4CustomRlghBeta = float4( 1, 1, 1, 1 ) * RLGH_COLOR_SCALE / 255.f;
+                    m_ShadowSettings.Resolution = MinShadowMapSize << ShadowMapComboId;
+                    CreateShadowMap();
                 }
-            },
-            [](void *value, void * clientData)
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                float4 RlghColor = pTheSample->m_f4CustomRlghBeta / RLGH_COLOR_SCALE;
-                RlghColor.w = 1;
-                *reinterpret_cast<float4*>(value) = RlghColor;
-            },
-            this, "group=Advanced label=\'Rayleigh color\' colormode=rgb");
+            }
 
-        TwAddVarCB(bar, "MieColor", TW_TYPE_COLOR4F, 
-            []( const void *value, void * clientData )
+            if (ImGui::SliderInt("Num cascades", &m_TerrainRenderParams.m_iNumShadowCascades, 1, 8))
+                CreateShadowMap();
+
+            ImGui::Checkbox("Visualize cascades", &m_ShadowSettings.bVisualizeCascades);
+
+            ImGui::TreePop();
+        }
+
+        ImGui::Checkbox("Enable Light Scattering", &m_bEnableLightScattering);
+
+        if (m_bEnableLightScattering)
+        {
+            if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_None))
             {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                pTheSample->m_f4CustomMieBeta = *reinterpret_cast<const float4 *>(value) * MIE_COLOR_SCALE;
-                if( (float3&)pTheSample->m_f4CustomMieBeta == float3( 0, 0, 0 ) )
+                if (ImGui::BeginTabItem("Basic"))
                 {
-                    pTheSample->m_f4CustomMieBeta = float4( 1, 1, 1, 1 ) * MIE_COLOR_SCALE / 255.f;
-                }
-            },
-            [](void *value, void * clientData)
-            {
-                AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                float4 MieColor = pTheSample->m_f4CustomMieBeta / MIE_COLOR_SCALE;
-                MieColor.w = 1;
-                *reinterpret_cast<float4*>(value) = MieColor;
-            },
-            this, "group=Advanced label=\'Mie color\' colormode=rgb");
-        #undef RLGH_COLOR_SCALE
-        #undef MIE_COLOR_SCALE
-        TwAddButton(bar, "UpdateCoeffsBtn", 
-                    [](void *clientData)
+                    ImGui::Checkbox("Enable light shafts", &m_PPAttribs.bEnableLightShafts);
+
+                    static_assert(LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING == 0 && LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE == 1, "Unexpcted value");
+                    ImGui::Combo("Light scattering tech", &m_PPAttribs.iLightSctrTechnique, "Epipolar\0" "Brute force\0\0");
+
+                    if (m_PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING)
                     {
-                        AtmosphereSample *pTheSample = reinterpret_cast<AtmosphereSample*>( clientData );
-                        pTheSample->m_PPAttribs.f4CustomRlghBeta = pTheSample->m_f4CustomRlghBeta;
-                        pTheSample->m_PPAttribs.f4CustomMieBeta = pTheSample->m_f4CustomMieBeta;
-                    }, 
-                    this, "group=Advanced label=\'Update coefficients\'");
-    }
+                        {
+                            static constexpr Uint32 MinSlices = 128;
+                            int SelectedItem = PlatformMisc::GetLSB(m_PPAttribs.uiNumEpipolarSlices / MinSlices);
+                            if (ImGui::Combo("Num Slices", &SelectedItem, "128\0" "256\0" "512\0" "1024\0" "2048\0\0"))
+                            {
+                                m_PPAttribs.uiNumEpipolarSlices = MinSlices << SelectedItem;
+                            }
+                            ImGui::HelpMarker("Total number of epipolar slices (or lines). For high quality effect, set this value to (Screen Width + Screen Height)/2");
+                        }
 
-    // Tone mapping GUI controls
-    {
-        {
-            TwEnumVal ToneMappingMode[] =
-            {
-                {TONE_MAPPING_MODE_EXP,          "Exp"},
-                {TONE_MAPPING_MODE_REINHARD,     "Reinhard"},
-                {TONE_MAPPING_MODE_REINHARD_MOD, "Reinhard Mod"},
-                {TONE_MAPPING_MODE_UNCHARTED2,   "Uncharted 2"},
-                {TONE_MAPPING_FILMIC_ALU,        "Filmic ALU"},
-                {TONE_MAPPING_LOGARITHMIC,       "Logarithmic"},
-                {TONE_MAPPING_ADAPTIVE_LOG,      "Adaptive log"}
-            };
-            TwType ToneMappingModeEnum = TwDefineEnum( "Tone mapping mode enum", ToneMappingMode, _countof( ToneMappingMode ) );
-            TwAddVarRW( bar, "ToneMappingMode", ToneMappingModeEnum, &m_PPAttribs.ToneMapping.iToneMappingMode, "group=ToneMapping label=\'Mode\'" );
+                        {
+                            static constexpr Uint32 MinSamples = 128;
+                            int SelectedItem = PlatformMisc::GetLSB(m_PPAttribs.uiMaxSamplesInSlice / MinSamples);
+                            if (ImGui::Combo("Max samples", &SelectedItem, "128\0" "256\0" "512\0" "1024\0" "2048\0\0"))
+                            {
+                                m_PPAttribs.uiMaxSamplesInSlice = MinSamples << SelectedItem;
+                            }
+                            ImGui::HelpMarker("Maximum number of samples on a single epipolar line. For high quality effect, set this value to (Screen Width + Screen Height)/2");
+                        }
+
+                        {
+                            static constexpr Uint32 MinInitialStep = 4;
+                            int SelectedItem = PlatformMisc::GetLSB(m_PPAttribs.uiInitialSampleStepInSlice / MinInitialStep);
+                            if (ImGui::Combo("Intial Step", &SelectedItem, "4\0" "8\0" "16\0" "32\0" "64\0\0"))
+                            {
+                                m_PPAttribs.uiInitialSampleStepInSlice = MinInitialStep << SelectedItem;
+                            }
+                            ImGui::HelpMarker("Initial ray marching sample spacing on an epipolar line. Additional samples are added at discontinuities.");
+                        }
+
+                        ImGui::SliderFloat("Refinement Threshold", &m_PPAttribs.fRefinementThreshold, 0, 0.5f);
+                        ImGui::HelpMarker("Refinement threshold controls detection of discontinuities. Smaller values produce more samples and higher quality, but at a higher performance cost.");
+
+                        ImGui::Checkbox("Show Sampling", &m_PPAttribs.bShowSampling);
+
+                        if (m_bRG16UFmtSupported || m_bRG32FFmtSupported)
+                        {
+                            ImGui::Checkbox("Use 1D min/max trees", &m_PPAttribs.bUse1DMinMaxTree);
+                            ImGui::HelpMarker("Whether to use 1D min/max binary tree optimization. This improves performance for higher shadow map resolution. Test it.");
+                        }
+
+                        ImGui::Checkbox("Optimize Sample Locations", &m_PPAttribs.bOptimizeSampleLocations);
+                        ImGui::HelpMarker("Optimize sample locations to avoid oversampling. This should generally be TRUE.");
+
+                        ImGui::Checkbox("Correct Scattering At Depth Breaks", &m_PPAttribs.bCorrectScatteringAtDepthBreaks);
+                        ImGui::HelpMarker("Whether to correct inscattering at depth discontinuities. Improves quality for additional cost.");
+                    
+                        if (m_PPAttribs.bCorrectScatteringAtDepthBreaks)
+                        {
+                            ImGui::Checkbox("Show Depth Breaks", &m_PPAttribs.bShowDepthBreaks);
+                            ImGui::HelpMarker("Whether to display pixels which are classified as depth discontinuities and which will be corrected.");
+                        }
+                    }
+
+                    ImGui::Checkbox("Lighting Only", &m_PPAttribs.bShowLightingOnly);
+
+                    ImGui::EndTabItem();
+                }
+
+                if (ImGui::BeginTabItem("Advanced"))
+                {
+                    if (!m_PPAttribs.bEnableLightShafts && m_PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION)
+                    {
+                        ImGui::SliderIntT("Num Integration Steps", &m_PPAttribs.uiInstrIntegralSteps, 5, 100);
+                        ImGui::HelpMarker("Number of inscattering integral steps taken when computing unshadowed inscattering");
+                    }
+
+                    if (m_PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING)
+                    {
+                        int SelectedItem = PlatformMisc::GetLSB(m_PPAttribs.uiEpipoleSamplingDensityFactor);
+                        if (ImGui::Combo("Epipole sampling density", &SelectedItem, "1\0" "2\0" "4\0" "8\0\0"))
+                        {
+                            m_PPAttribs.uiEpipoleSamplingDensityFactor = 1 << SelectedItem;
+                        }
+                        ImGui::HelpMarker("Sample density scale near the epipole where inscattering changes rapidly. "
+                                          "Note that sampling near the epipole is very cheap since only a few steps are required to perform ray marching.");
+                    }
+
+                    static_assert(SINGLE_SCTR_MODE_NONE         == 0 &&
+                                  SINGLE_SCTR_MODE_INTEGRATION  == 1 &&
+                                  SINGLE_SCTR_MODE_LUT          == 2, "Unexpected value");
+                    ImGui::Combo("Single scattering mode",       &m_PPAttribs.iSingleScatteringMode,   "None\0" "Integration\0" "Look-up table\0\0");
+
+                    static_assert(MULTIPLE_SCTR_MODE_NONE        == 0 &&
+                                  MULTIPLE_SCTR_MODE_UNOCCLUDED  == 1 &&
+                                  MULTIPLE_SCTR_MODE_OCCLUDED    == 2, "Unexpected value");
+                    ImGui::Combo("Higher-order scattering mode", &m_PPAttribs.iMultipleScatteringMode, "None\0" "Unoccluded\0" "Occluded\0\0");
+
+                    static_assert(CASCADE_PROCESSING_MODE_SINGLE_PASS     == 0 &&
+                                  CASCADE_PROCESSING_MODE_MULTI_PASS      == 1 &&
+                                  CASCADE_PROCESSING_MODE_MULTI_PASS_INST == 2, "Unexpected value");
+                    ImGui::Combo("Cascade processing mode",      &m_PPAttribs.iCascadeProcessingMode,  "Single pass\0" "Multi-pass\0" "Multi-pass inst\0\0");
+
+                    ImGui::SliderInt("First Cascade to Ray March", &m_PPAttribs.iFirstCascadeToRayMarch, 0, m_TerrainRenderParams.m_iNumShadowCascades-1);
+                    ImGui::HelpMarker("First cascade to use for ray marching. Usually first few cascades are small, and ray marching them is inefficient.");
+
+                    if (m_bRG16UFmtSupported && m_bRG32FFmtSupported)
+                    {
+                        ImGui::Checkbox("32-bit float min/max Shadow Map", &m_PPAttribs.bIs32BitMinMaxMipMap);
+                        ImGui::HelpMarker("Whether to use 32-bit float or 16-bit UNORM min-max binary tree.");
+                    }
+                
+                    static_assert(REFINEMENT_CRITERION_DEPTH_DIFF     == 0 &&
+                                  REFINEMENT_CRITERION_INSCTR_DIFF    == 1, "Unexpected value");
+                    ImGui::Combo("Refinement criterion", &m_PPAttribs.iRefinementCriterion, "Depth difference\0" "Scattering difference\0\0");
+                    ImGui::HelpMarker("Epipolar sampling refinement criterion.");
+
+
+                    static_assert(EXTINCTION_EVAL_MODE_PER_PIXEL == 0 &&
+                                  EXTINCTION_EVAL_MODE_EPIPOLAR  == 1, "Unexpected value");
+                    ImGui::Combo("Extinction eval mode", &m_PPAttribs.iExtinctionEvalMode, "Per pixel\0" "Epipolar\0\0");
+                    ImGui::HelpMarker("Epipolar sampling refinement criterion.");
+
+                    if (ImGui::InputFloat("Aerosol Density", &m_PPAttribs.fAerosolDensityScale, 0.1f, 0.25f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
+                        m_PPAttribs.fAerosolDensityScale = clamp(m_PPAttribs.fAerosolDensityScale, 0.1f, 5.0f);
+
+                    if (ImGui::InputFloat("Aerosol Absorption",  &m_PPAttribs.fAerosolAbsorbtionScale, 0.1f, 0.25f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
+                        m_PPAttribs.fAerosolAbsorbtionScale = clamp(m_PPAttribs.fAerosolAbsorbtionScale, 0.0f, 5.0f); 
+
+                    ImGui::Checkbox("Use custom scattering coeffs", &m_PPAttribs.bUseCustomSctrCoeffs);
+
+                    if (m_PPAttribs.bUseCustomSctrCoeffs)
+                    {
+                        static constexpr float RLGH_COLOR_SCALE = 5e-5f;
+                        static constexpr float MIE_COLOR_SCALE  = 5e-5f;
+
+                        {
+                            float3 RayleighColor = m_f3CustomRlghBeta / RLGH_COLOR_SCALE;
+                            if (ImGui::ColorEdit3("Rayleigh Color", &RayleighColor.r))
+                            {
+                                m_f3CustomRlghBeta = max(RayleighColor, float3(1,1,1) / 255.f) * RLGH_COLOR_SCALE;
+                            }
+                        }
+
+                        {
+                            float3 MieColor = m_f3CustomMieBeta / MIE_COLOR_SCALE;
+                            if (ImGui::ColorEdit3("Mie Color", &MieColor.r))
+                            {
+                                m_f3CustomMieBeta = max(MieColor, float3(1,1,1) / 255.f) * MIE_COLOR_SCALE;
+                            }
+                        }
+
+                        if (ImGui::Button("Update coefficients"))
+                        {
+                            m_PPAttribs.f4CustomRlghBeta = m_f3CustomRlghBeta;
+                            m_PPAttribs.f4CustomMieBeta  = m_f3CustomMieBeta;
+                        }
+                    }
+
+                    ImGui::EndTabItem();
+                }
+
+                if (ImGui::BeginTabItem("Tone mapping"))
+                {
+                    {
+                        std::array<const char*, 7> ToneMappingMode;
+                        ToneMappingMode[TONE_MAPPING_MODE_EXP]          = "Exp";
+                        ToneMappingMode[TONE_MAPPING_MODE_REINHARD]     = "Reinhard";
+                        ToneMappingMode[TONE_MAPPING_MODE_REINHARD_MOD] = "Reinhard Mod";
+                        ToneMappingMode[TONE_MAPPING_MODE_UNCHARTED2]   = "Uncharted 2";
+                        ToneMappingMode[TONE_MAPPING_FILMIC_ALU]        = "Filmic ALU";
+                        ToneMappingMode[TONE_MAPPING_LOGARITHMIC]       = "Logarithmic";
+                        ToneMappingMode[TONE_MAPPING_ADAPTIVE_LOG]      = "Adaptive log";
+                        ImGui::Combo("Tone Mapping Mode", &m_PPAttribs.ToneMapping.iToneMappingMode, ToneMappingMode.data(), static_cast<int>(ToneMappingMode.size()));
+                    }
+
+                    if (m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG)
+                    {
+                        ImGui::SliderFloat("White Point",    &m_PPAttribs.ToneMapping.fWhitePoint, 0.01f, 10.0f);
+                    }
+
+                    if (m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_EXP ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG)
+                    {
+                        ImGui::SliderFloat("Luminance Saturation", &m_PPAttribs.ToneMapping.fLuminanceSaturation, 0.01f, 2.f);
+                    }
+
+                    ImGui::SliderFloat("Middle Gray",    &m_PPAttribs.ToneMapping.fMiddleGray, 0.01f, 1.f);
+                    ImGui::Checkbox("Auto Exposure", &m_PPAttribs.ToneMapping.bAutoExposure);
+                    if (m_PPAttribs.ToneMapping.bAutoExposure)
+                        ImGui::Checkbox("Light Adaptation", &m_PPAttribs.ToneMapping.bLightAdaptation);
+
+                    ImGui::EndTabItem();
+                }
+
+                ImGui::EndTabBar();
+            }
         }
-        TwAddVarRW( bar, "WhitePoint", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fWhitePoint, "group=ToneMapping label=\'White point\' min=0.01 max=10.0 step=0.1" );
-        TwAddVarRW( bar, "LumSaturation", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fLuminanceSaturation, "group=ToneMapping label=\'Luminance saturation\' min=0.01 max=2.0 step=0.1" );
-        TwAddVarRW( bar, "MiddleGray", TW_TYPE_FLOAT, &m_PPAttribs.ToneMapping.fMiddleGray, "group=ToneMapping label=\'Middle Gray\' min=0.01 max=1.0 step=0.01" );
-        TwAddVarRW( bar, "AutoExposure", TW_TYPE_BOOL32, &m_PPAttribs.ToneMapping.bAutoExposure, "group=ToneMapping label=\'Auto exposure\'" );
-        TwAddVarRW( bar, "LightAdaptation", TW_TYPE_BOOL32, &m_PPAttribs.ToneMapping.bLightAdaptation, "group=ToneMapping label=\'Light adaptation\'" );
     }
-
-    const auto& RG16UAttribs = m_pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG16_UNORM );
-    const auto& RG32FAttribs = m_pDevice->GetTextureFormatInfoExt( TEX_FORMAT_RG32_FLOAT );
-    bool RG16USupported = RG16UAttribs.Supported && RG16UAttribs.ColorRenderable;
-    bool RG32FSupported = RG32FAttribs.Supported && RG32FAttribs.ColorRenderable;
-    if( !RG16USupported && !RG32FSupported )
-    {
-        int32_t IsVisible = 0;
-        TwSetParam( bar, "1DMinMaxOptimization", "visible", TW_PARAM_INT32, 1, &IsVisible );
-        m_PPAttribs.bUse1DMinMaxTree = FALSE;
-    }
-
-    if( !RG16USupported || !RG32FSupported )
-    {
-        int32_t IsVisible = 0;
-        TwSetParam( bar, "Is32BitMinMaxShadowMap", "visible", TW_PARAM_INT32, 1, &IsVisible );
-
-        if( RG16USupported && !RG32FSupported )
-            m_PPAttribs.bIs32BitMinMaxMipMap = FALSE;
-
-        if( !RG16USupported && RG32FSupported )
-            m_PPAttribs.bIs32BitMinMaxMipMap = TRUE;
-    }
+    ImGui::End();
 }
 
-void TwSetEnabled( TwBar* bar, const char *VarName, bool bEnabled )
-{
-    int32_t ReadOnly = bEnabled ? 0 : 1;
-    TwSetParam( bar, VarName, "readonly", TW_PARAM_INT32, 1, &ReadOnly );
-}
-
-void AtmosphereSample::UpdateGUI()
-{
-    auto bar = TwGetBarByName( "Settings" );
-
-    {
-        int32_t IsVisible = m_bEnableLightScattering ? 1 : 0;
-        TwSetParam( bar, "Scattering", "visible", TW_PARAM_INT32, 1, &IsVisible );
-        TwSetParam( bar, "ToneMapping", "visible", TW_PARAM_INT32, 1, &IsVisible );
-    }
-
-    bool bIsEpipolarSampling = m_PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING;
-    TwSetEnabled( bar, "NumSlices", bIsEpipolarSampling );
-    TwSetEnabled( bar, "MaxSamples", bIsEpipolarSampling );
-    TwSetEnabled( bar, "IntialStep", bIsEpipolarSampling );
-    TwSetEnabled( bar, "EpipoleSamplingDensity", bIsEpipolarSampling );
-    TwSetEnabled( bar, "RefinementThreshold", bIsEpipolarSampling );
-    TwSetEnabled( bar, "1DMinMaxOptimization", bIsEpipolarSampling );
-    TwSetEnabled( bar, "OptimizeSampleLocations", bIsEpipolarSampling );
-    TwSetEnabled( bar, "ShowSampling", bIsEpipolarSampling );
-    TwSetEnabled( bar, "CorrectScattering", bIsEpipolarSampling );
-    TwSetEnabled( bar, "ShowDepthBreaks", bIsEpipolarSampling && m_PPAttribs.bCorrectScatteringAtDepthBreaks != 0);
-    TwSetEnabled( bar, "NumIntegrationSteps", !m_PPAttribs.bEnableLightShafts && m_PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION );
-
-    {
-        int32_t IsVisible = m_PPAttribs.bUseCustomSctrCoeffs ? 1 : 0;
-        TwSetParam( bar, "RayleighColor", "visible", TW_PARAM_INT32, 1, &IsVisible );
-        TwSetParam( bar, "MieColor", "visible", TW_PARAM_INT32, 1, &IsVisible );
-        TwSetParam( bar, "UpdateCoeffsBtn", "visible", TW_PARAM_INT32, 1, &IsVisible );
-    }
-
-    TwSetEnabled( bar, "WhitePoint", m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                     m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
-                                     m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                     m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
-    
-    TwSetEnabled( bar, "LumSaturation", m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_EXP ||
-                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
-                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG );
-    TwSetEnabled( bar, "LightAdaptation", m_PPAttribs.ToneMapping.bAutoExposure ? true : false );
-}
 
 AtmosphereSample::~AtmosphereSample()
 {
@@ -801,6 +753,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     }
 
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
 
     m_fElapsedTime = static_cast<float>(ElapsedTime);
 
@@ -863,7 +816,6 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
         m_Rotation = RotationFromAxisAngle(axis, angle);
     }
 #endif
-    UpdateGUI();
 }
 
 void AtmosphereSample :: WindowResize( Uint32 Width, Uint32 Height )

@@ -53,14 +53,12 @@ public:
     virtual const Char* GetSampleName()const override final{return "Atmosphere Sample";}
 
 private:
-    void InitUI();
+    void UpdateUI();
     void CreateShadowMap();
     void RenderShadowMap(IDeviceContext*  pContext,
                          LightAttribs&    LightAttribs,
                          const float4x4&  mCameraView,
                          const float4x4&  mCameraProj);
-
-    void UpdateGUI();
 
     float3 m_f3LightDir = {-0.554699242f, -0.0599640049f, -0.829887390f};
 
@@ -99,7 +97,7 @@ private:
 
     bool m_bEnableLightScattering = true;
     float m_fElapsedTime          = 0.f;
-    float4 m_f4CustomRlghBeta, m_f4CustomMieBeta;
+    float3 m_f3CustomRlghBeta, m_f3CustomMieBeta;
 
     RefCntAutoPtr<ITexture>  m_pOffscreenColorBuffer;
     RefCntAutoPtr<ITexture>  m_pOffscreenDepthBuffer;
@@ -107,6 +105,9 @@ private:
     float m_fCameraYaw   = 0.23f;
     float m_fCameraPitch = 0.18f;
     MouseState m_LastMouseState;
+
+    bool m_bRG16UFmtSupported = false;
+    bool m_bRG32FFmtSupported = false;
 };
 
 }
