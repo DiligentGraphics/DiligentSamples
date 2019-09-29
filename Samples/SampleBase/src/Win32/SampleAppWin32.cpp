@@ -183,7 +183,8 @@ public:
         InitializeDiligentEngine(hWnd);
 
         // Initialize Dear ImGUI
-        m_pImGui.reset(new ImGuiImplWin32(m_hWnd, m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat));
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui.reset(new ImGuiImplWin32(m_hWnd, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
 
         InitializeSample();
     }
