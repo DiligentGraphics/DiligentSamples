@@ -1,5 +1,5 @@
 # Shadows Sample
 
-![](Screenshot.jpg)
+![](Screenshot.png)
 
-This sample demonstrates the capabilities of the dear [imgui library](https://github.com/ocornut/imgui).
+This sample demonstrates the integration of the engine with [dear imgui](https://github.com/ocornut/imgui) UI library.

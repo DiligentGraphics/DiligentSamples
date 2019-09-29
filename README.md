@@ -153,6 +153,13 @@ This sample demonstrates how to integrate the [Shadowing component](https://gith
 into an application to render high-quality shadows.
 
 
+## [Shadows](Samples/ImguiDemo)
+
+![](Samples/ImguiDemo/Screenshot.png)
+
+This sample demonstrates the integration of the engine with [dear imgui](https://github.com/ocornut/imgui) UI library.
+
+
 # Build and Run Instructions
 
 Please refer to Build and Run Instructions section in the
