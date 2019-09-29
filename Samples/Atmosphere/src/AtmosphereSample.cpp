@@ -303,16 +303,19 @@ void AtmosphereSample::UpdateUI()
                         ImGui::HelpMarker("Whether to use 32-bit float or 16-bit UNORM min-max binary tree.");
                     }
                 
-                    static_assert(REFINEMENT_CRITERION_DEPTH_DIFF     == 0 &&
-                                  REFINEMENT_CRITERION_INSCTR_DIFF    == 1, "Unexpected value");
-                    ImGui::Combo("Refinement criterion", &m_PPAttribs.iRefinementCriterion, "Depth difference\0" "Scattering difference\0\0");
-                    ImGui::HelpMarker("Epipolar sampling refinement criterion.");
+                    if (m_PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING)
+                    {
+                        static_assert(REFINEMENT_CRITERION_DEPTH_DIFF     == 0 &&
+                                      REFINEMENT_CRITERION_INSCTR_DIFF    == 1, "Unexpected value");
+                        ImGui::Combo("Refinement criterion", &m_PPAttribs.iRefinementCriterion, "Depth difference\0" "Scattering difference\0\0");
+                        ImGui::HelpMarker("Epipolar sampling refinement criterion.");
 
 
-                    static_assert(EXTINCTION_EVAL_MODE_PER_PIXEL == 0 &&
-                                  EXTINCTION_EVAL_MODE_EPIPOLAR  == 1, "Unexpected value");
-                    ImGui::Combo("Extinction eval mode", &m_PPAttribs.iExtinctionEvalMode, "Per pixel\0" "Epipolar\0\0");
-                    ImGui::HelpMarker("Epipolar sampling refinement criterion.");
+                        static_assert(EXTINCTION_EVAL_MODE_PER_PIXEL == 0 &&
+                                      EXTINCTION_EVAL_MODE_EPIPOLAR  == 1, "Unexpected value");
+                        ImGui::Combo("Extinction eval mode", &m_PPAttribs.iExtinctionEvalMode, "Per pixel\0" "Epipolar\0\0");
+                        ImGui::HelpMarker("Epipolar sampling refinement criterion.");
+                    }
 
                     if (ImGui::InputFloat("Aerosol Density", &m_PPAttribs.fAerosolDensityScale, 0.1f, 0.25f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
                         m_PPAttribs.fAerosolDensityScale = clamp(m_PPAttribs.fAerosolDensityScale, 0.1f, 5.0f);
