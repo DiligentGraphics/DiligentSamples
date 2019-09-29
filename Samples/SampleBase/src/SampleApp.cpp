@@ -298,7 +298,7 @@ void SampleApp::UpdateAdaptersDialog()
     if(m_DeviceType == DeviceType::D3D11 || m_DeviceType == DeviceType::D3D12)
     {
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        Uint32 AdaptersWndWidth = std::min(500u, SCDesc.Width);
+        Uint32 AdaptersWndWidth = std::min(330u, SCDesc.Width);
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(AdaptersWndWidth), 0), ImGuiCond_Always);
         ImGui::SetNextWindowPos(ImVec2(static_cast<float>(std::max(SCDesc.Width - AdaptersWndWidth, 10U) - 10), 10), ImGuiCond_Always);
         ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
@@ -340,6 +340,7 @@ void SampleApp::UpdateAdaptersDialog()
                 }
             }
 
+            ImGui::SetNextItemWidth(220);
             ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
 
             if (m_bFullScreenMode)
