@@ -132,6 +132,7 @@ void ShadowsSample::UpdateUI()
         }
 
         {
+            static_assert(SHADOW_MODE_PCF == 1 && SHADOW_MODE_VSM == 2 && SHADOW_MODE_EVSM2 == 3 && SHADOW_MODE_EVSM4 == 4, "Unexpected constant");
             const char* ShadowModes[]
             {
                 "PCF",
@@ -149,40 +150,24 @@ void ShadowsSample::UpdateUI()
         }
 
         {
-            const char* StrFilterSizes[] =
+            const std::pair<int, const char*> FilterSizes[] =
             {
-                "World-constant",
-                "Fixed 2x2",
-                "Fixed 3x3",
-                "Fixed 5x5",
-                "Fixed 7x7"
+                {0, "World-constant"},
+                {2, "Fixed 2x2"},
+                {3, "Fixed 3x3"},
+                {5, "Fixed 5x5"},
+                {7, "Fixed 7x7"}
             };
-            int FilterSizes[] = 
+            if (ImGui::Combo("Shadow filter size", &m_LightAttribs.ShadowAttribs.iFixedFilterSize, FilterSizes, _countof(FilterSizes)))
             {
-                0,
-                2,
-                3,
-                5,
-                7
-            };
-            int iItemId = 0;
-            while(iItemId < _countof(FilterSizes) && FilterSizes[iItemId] != m_LightAttribs.ShadowAttribs.iFixedFilterSize)
-                ++iItemId;
-            VERIFY_EXPR(iItemId < _countof(FilterSizes));
-            if (ImGui::Combo("Shadow filter size", &iItemId, StrFilterSizes, _countof(StrFilterSizes)))
-            {
-                m_LightAttribs.ShadowAttribs.iFixedFilterSize = FilterSizes[iItemId];
                 m_ShadowSettings.FilterAcrossCascades = m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
                 CreatePipelineStates();
-
             }
         }
 
-        bool IsVSM = m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM   ||
-                     m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
-                     m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4;
-
-        if (IsVSM)
+        if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM   ||
+            m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
+            m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
         {
             if(ImGui::Checkbox("32-bit filterable Format", &m_ShadowSettings.Is32BitFilterableFmt))
             {
