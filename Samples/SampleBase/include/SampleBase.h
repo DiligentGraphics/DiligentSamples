@@ -69,9 +69,10 @@ protected:
     RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
     std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
     RefCntAutoPtr<ISwapChain>                   m_pSwapChain;
-    float  m_fFPS                = 0;
+    float  m_fSmoothFPS          = 0;
     double m_LastFPSTime         = 0;
-    Uint32 m_uiNumFramesRendered = 0;
+    Uint32 m_NumFramesRendered   = 0;
+    Uint32 m_CurrentFrameNumber  = 0;
     Int32  m_UIScale             = 1;
 
     InputController m_InputController;
@@ -79,12 +80,13 @@ protected:
 
 inline void SampleBase::Update(double CurrTime, double ElapsedTime)
 {
-    ++m_uiNumFramesRendered;
+    ++m_NumFramesRendered;
+    ++m_CurrentFrameNumber;
     static const double dFPSInterval = 0.5;
     if( CurrTime - m_LastFPSTime > dFPSInterval )
     {
-        m_fFPS = static_cast<float>(m_uiNumFramesRendered / (CurrTime - m_LastFPSTime));
-        m_uiNumFramesRendered = 0;
+        m_fSmoothFPS = static_cast<float>(m_NumFramesRendered / (CurrTime - m_LastFPSTime));
+        m_NumFramesRendered = 0;
         m_LastFPSTime = CurrTime;
     }
 }
