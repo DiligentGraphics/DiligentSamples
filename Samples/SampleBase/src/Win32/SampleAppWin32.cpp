@@ -24,7 +24,6 @@
 #include <limits>
 
 #include "SampleApp.h"
-#include "AntTweakBar.h"
 #include "resources/Win32AppResource.h"
 #include "ImGuiImplWin32.h"
 
@@ -160,12 +159,11 @@ public:
         }
 
         if (m_pImGui)
-            static_cast<ImGuiImplWin32*>(m_pImGui.get())->Win32_ProcHandler(hWnd, message, wParam, lParam);
-
-        // Send event message to AntTweakBar
-        auto Handled = TwEventWin(hWnd, message, wParam, lParam);
-        if(Handled)
-            return Handled;
+        {
+            auto Handled = static_cast<ImGuiImplWin32*>(m_pImGui.get())->Win32_ProcHandler(hWnd, message, wParam, lParam);
+            if(Handled)
+                return Handled;
+        }
 
         struct WindowsMessageData
         {

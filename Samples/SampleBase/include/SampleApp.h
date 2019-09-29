@@ -68,6 +68,7 @@ protected:
         void *NativeWindowHandle
     );
     void InitializeSample();
+    void UpdateAdaptersDialog();
 
     virtual void SetFullscreenMode(const DisplayModeAttribs& DisplayMode)
     { 

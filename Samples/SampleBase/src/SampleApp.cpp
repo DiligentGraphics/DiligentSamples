@@ -53,8 +53,8 @@
 #   include "EngineFactoryMtl.h"
 #endif
 
+#include "imgui.h"
 #include "ImGuiImplDiligent.h"
-#include "AntTweakBar.h"
 
 namespace Diligent
 {
@@ -68,7 +68,6 @@ SampleApp::SampleApp() :
 SampleApp::~SampleApp()
 {
     m_pImGui.reset();
-    TwTerminate();
     m_TheSample.reset();
 
     m_pImmediateContext->Flush();
@@ -273,27 +272,15 @@ void SampleApp::InitializeDiligentEngine(
 
 void SampleApp::InitializeSample()
 {
-    auto UIScale = m_TheSample->GetUIScale();
-    if(UIScale != 1)
-    {
-        std::stringstream fontscaling;
-        fontscaling << " GLOBAL fontscaling=" << UIScale;
-        TwDefine(fontscaling.str().c_str());
-    }
+    //auto UIScale = m_TheSample->GetUIScale();
+    //if(UIScale != 1)
+    //{
+    //    std::stringstream fontscaling;
+    //    fontscaling << " GLOBAL fontscaling=" << UIScale;
+    //    TwDefine(fontscaling.str().c_str());
+    //}
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
-
-    // Initialize AntTweakBar
-    // TW_OPENGL and TW_OPENGL_CORE were designed to select rendering with 
-    // very old GL specification. Using these modes results in applying some 
-    // odd offsets which distorts everything
-    // Latest OpenGL works very much like Direct3D11, and 
-    // Tweak Bar will never know if D3D or OpenGL is actually used
-    if (!TwInit(TW_DIRECT3D11, m_pDevice.RawPtr(), m_pImmediateContext.RawPtr(), SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat))
-    {
-        LOG_ERROR_MESSAGE("AntTweakBar initialization failed");
-    }
-    TwDefine(" TW_HELP visible=false ");
 
     std::vector<IDeviceContext*> ppContexts(1 + m_pDeferredContexts.size());
     ppContexts[0] = m_pImmediateContext;
@@ -303,75 +290,77 @@ void SampleApp::InitializeSample()
     m_TheSample->Initialize(m_pEngineFactory, m_pDevice, ppContexts.data(), NumDeferredCtx, m_pSwapChain);
 
     m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
-    TwWindowSize(SCDesc.Width, SCDesc.Height);
+}
 
+void SampleApp::UpdateAdaptersDialog()
+{
 #if PLATFORM_WIN32
     if(m_DeviceType == DeviceType::D3D11 || m_DeviceType == DeviceType::D3D12)
     {
-        TwBar *bar = TwNewBar("adapters");
-        int barSize[2] = { 480 * m_UIScale, 120 * m_UIScale };
-        TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-        TwDefine(" adapters iconified=true label='Adapters & Display Modes' valueswidth=280");
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        Uint32 AdaptersWndWidth = std::min(500u, SCDesc.Width);
+        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(AdaptersWndWidth), 0), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(std::max(SCDesc.Width - AdaptersWndWidth, 10U) - 10), 10), ImGuiCond_Always);
+        ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Adapters", nullptr, ImGuiWindowFlags_NoResize))
         {
-            std::stringstream ss;
-            ss << m_AdapterAttribs.Description << " (" << (m_AdapterAttribs.DedicatedVideoMemory>>20) << " MB)";
-            m_AdapterDetailsString = ss.str();
-            TwAddVarRO(bar, "Adapter", TW_TYPE_STDSTRING, &m_AdapterDetailsString, "label=\'Adapter details\'");
-        }
-        std::vector<TwEnumVal> twDisplayModes(m_DisplayModes.size());
-        std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
-        for(int i=0; i < static_cast<int>(m_DisplayModes.size()); ++i)
-        {
-            static constexpr const char* ScalingModeStr[] = 
+            ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, m_AdapterAttribs.DedicatedVideoMemory>>20);
+
+            std::vector<const char*> DisplayModes(m_DisplayModes.size());
+            std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
+            for(int i=0; i < static_cast<int>(m_DisplayModes.size()); ++i)
             {
-                ""
-                " Centered",
-                " Stretched"
-            };
-            const auto &Mode = m_DisplayModes[i];
-            std::stringstream ss;
-            float RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
-            ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
-            DisplayModeStrings[i] = ss.str();
-            twDisplayModes[i] = TwEnumVal{i, DisplayModeStrings[i].c_str()};
-        }
-        {
-            RECT rc;
-            const HWND hDesktop = GetDesktopWindow();
-            GetWindowRect(hDesktop, &rc);
-            Uint32 ScreenWidth  = static_cast<Uint32>(rc.right - rc.left);
-            Uint32 ScreenHeight = static_cast<Uint32>(rc.bottom - rc.top);
-            for(int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
-            {
-                if(ScreenWidth == m_DisplayModes[i].Width && ScreenHeight == m_DisplayModes[i].Height)
+                static constexpr const char* ScalingModeStr[] = 
                 {
-                    m_SelectedDisplayMode = i;
-                    break;
+                    ""
+                    " Centered",
+                    " Stretched"
+                };
+                const auto &Mode = m_DisplayModes[i];
+                std::stringstream ss;
+                float RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
+                ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
+                DisplayModeStrings[i] = ss.str();
+                DisplayModes[i] = DisplayModeStrings[i].c_str();
+            }
+
+            {
+                RECT rc;
+                const HWND hDesktop = GetDesktopWindow();
+                GetWindowRect(hDesktop, &rc);
+                Uint32 ScreenWidth  = static_cast<Uint32>(rc.right - rc.left);
+                Uint32 ScreenHeight = static_cast<Uint32>(rc.bottom - rc.top);
+                for(int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
+                {
+                    if(ScreenWidth == m_DisplayModes[i].Width && ScreenHeight == m_DisplayModes[i].Height)
+                    {
+                        m_SelectedDisplayMode = i;
+                        break;
+                    }
                 }
             }
+
+            ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
+
+            if (m_bFullScreenMode)
+            {
+                if (ImGui::Button("Go Windowed"))
+                {
+                    SetWindowedMode();
+                }
+            }
+            else 
+            {
+                if (ImGui::Button("Go Full Screen"))
+                {
+                    const auto &SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
+                    SetFullscreenMode(SelectedMode);
+                }
+            }
+
+            ImGui::Checkbox("VSync", &m_bVSync);
         }
-
-        TwType DisplayModesEnum = TwDefineEnum("Display Modes", twDisplayModes.data(), static_cast<unsigned int>(twDisplayModes.size()));
-        TwAddVarRW(bar, "DisplayModes", DisplayModesEnum, &m_SelectedDisplayMode, "label=\'Display Modes\'");
-
-        TwAddButton(bar, "SetFullScreen",
-            [](void *clientData)
-            {
-                SampleApp *pTheApp = reinterpret_cast<SampleApp*>(clientData);
-                const auto &SelectedMode = pTheApp->m_DisplayModes[pTheApp->m_SelectedDisplayMode];
-                pTheApp->SetFullscreenMode(SelectedMode);
-            },
-            this, "label=\'Set fullscreen mode\'");
-
-        TwAddButton(bar, "SetWindowed",
-            [](void *clientData)
-            {
-                SampleApp *pTheApp = reinterpret_cast<SampleApp*>(clientData);
-                pTheApp->SetWindowedMode();
-            },
-            this, "label=\'Set windowed mode\'");
-
-        TwAddVarRW(bar, "VSync", TW_TYPE_BOOLCPP, &m_bVSync, "label=\'VSync\' key=v");
+        ImGui::End();
     }
 #endif
 }
@@ -565,7 +554,6 @@ void SampleApp::WindowResize(int width, int height)
         auto SCWidth = m_pSwapChain->GetDesc().Width;
         auto SCHeight = m_pSwapChain->GetDesc().Height;
         m_TheSample->WindowResize(SCWidth, SCHeight);
-        TwWindowSize(SCWidth, SCHeight);
     }
 }
 
@@ -573,6 +561,7 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
     m_CurrentTime = CurrTime;
     m_pImGui->NewFrame();
+    UpdateAdaptersDialog();
     m_TheSample->Update(CurrTime, ElapsedTime);
     m_TheSample->GetInputController().ClearState();
 }
@@ -586,8 +575,6 @@ void SampleApp::Render()
     // Restore default render target in case the sample has changed it
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImGui->Render(m_pImmediateContext);
-
-    TwDraw();
 }
 
 void SampleApp::Present()

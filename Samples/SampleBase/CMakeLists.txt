@@ -144,7 +144,6 @@ PRIVATE
     Diligent-BuildSettings
 PUBLIC
     NativeAppBase
-    TwBarLib 
     Diligent-Common 
     Diligent-GraphicsTools
     Diligent-TextureLoader
