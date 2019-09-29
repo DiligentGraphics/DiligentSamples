@@ -189,7 +189,6 @@ See [Apache 2.0 license](License.txt).
 
 This project has some third-party dependencies, each of which may have independent licensing:
 
-* [AntTweakBar](http://anttweakbar.sourceforge.net/doc): A simple user interface library.
 
 
 <a name="contributing"></a>
