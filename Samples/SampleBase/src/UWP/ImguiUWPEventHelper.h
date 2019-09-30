@@ -42,12 +42,12 @@
 #define PARAM_INT int
 #endif
 
-ref class TwEventUWPHelper
+ref class ImguiUWPEventHelper
 {
 internal:
-    static TwEventUWPHelper^ TwEventUWPHelper::Create(_In_ Windows::UI::Core::CoreWindow^ window);
+    static ImguiUWPEventHelper^ ImguiUWPEventHelper::Create(_In_ Windows::UI::Core::CoreWindow^ window);
 
-    TwEventUWPHelper(_In_ Windows::UI::Core::CoreWindow^ window);
+    ImguiUWPEventHelper(_In_ Windows::UI::Core::CoreWindow^ window);
 
 protected:
     void OnPointerPressed(
@@ -88,14 +88,6 @@ protected:
 
 protected private:
 
-    unsigned PARAM_INT s_PrevKeyDown;
-    PARAM_INT s_PrevKeyDownMod;
-    int s_PrevKeyDownHandled;
-    bool m_bShiftPressed;
-    bool m_bCtrlPressed;
-    bool m_bAltPressed;
-    bool m_bLMBPressed;
-    bool m_bRMBPressed;
-    bool m_bMMBPressed;
-    int s_WheelPos;
+    void UpdateImguiMouseProperties(_In_ Windows::UI::Core::PointerEventArgs^ args);
+    void UpdateKeyStates(_In_ Windows::UI::Core::KeyEventArgs^ args, bool IsDown);
 };

@@ -22,15 +22,15 @@
 */
 
 #include "SampleApp.h"
-#include "TwEventUWP.h"
+#include "ImguiUWPEventHelper.h"
 #include "InputControllerEventHandlerUWP.h"
-#include <AntTweakBar.h>
 #include "RenderDeviceD3D12.h"
 #include "RenderDeviceD3D11.h"
 #include "SwapChainD3D12.h"
 #include "SwapChainD3D11.h"
 #include "EngineFactoryD3D11.h"
 #include "EngineFactoryD3D12.h"
+#include "ImGuiImplUWP.h"
 
 namespace Diligent
 {
@@ -45,7 +45,7 @@ public:
 
     virtual void OnSetWindow(Windows::UI::Core::CoreWindow^ window)override final
     {
-        m_TwEventHandler = TwEventUWPHelper::Create(window);
+        m_ImguiEventHandler = ImguiUWPEventHelper::Create(window);
         m_InputControllerEventHandlerUWP = InputControllerEventHandlerUWP::Create(window, m_TheSample->GetInputController().GetSharedState());
     }
 
@@ -57,7 +57,6 @@ public:
         {
             const auto &SCDesc = m_pSwapChain->GetDesc();
             m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
-            TwWindowSize(SCDesc.Width, SCDesc.Height);
         }
     }
 
@@ -213,12 +212,16 @@ public:
 
     virtual void CreateRenderers()override
     {
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui.reset(new ImGuiImplUWP(0, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+
         InitializeSample();
+
         m_SampleInitialized = true;
     }
 
 private:
-    TwEventUWPHelper^ m_TwEventHandler;
+    ImguiUWPEventHelper^ m_ImguiEventHandler;
     InputControllerEventHandlerUWP^ m_InputControllerEventHandlerUWP;
 
     Microsoft::WRL::ComPtr<IDXGISwapChain3>	m_swapChain;

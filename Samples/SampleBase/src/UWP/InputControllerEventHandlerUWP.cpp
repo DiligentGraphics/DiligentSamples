@@ -78,11 +78,14 @@ void InputControllerEventHandlerUWP::OnPointerPressed(
     _In_ PointerEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     PointerPoint^ point = args->CurrentPoint;
     uint32 pointerID = point->PointerId;
     Point pointerPosition = point->Position;
     PointerPointProperties^ pointProperties = point->Properties;
-
+    
     MouseState::BUTTON_FLAGS Flags = MouseState::BUTTON_FLAG_NONE;
     if(pointProperties->IsLeftButtonPressed)
         Flags |= MouseState::BUTTON_FLAG_LEFT;
@@ -103,6 +106,9 @@ void InputControllerEventHandlerUWP::OnPointerMoved(
     _In_ PointerEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     PointerPoint^ point = args->CurrentPoint;
     uint32 pointerID = point->PointerId;
     Point pointerPosition = point->Position;
@@ -121,6 +127,9 @@ void InputControllerEventHandlerUWP::OnPointerWheelChanged(
     _In_ PointerEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     PointerPoint^ point = args->CurrentPoint;
     uint32 pointerID = point->PointerId;
     Point pointerPosition = point->Position;
@@ -150,6 +159,9 @@ void InputControllerEventHandlerUWP::OnPointerReleased(
     _In_ PointerEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     PointerPoint^ point = args->CurrentPoint;
     uint32 pointerID = point->PointerId;
     Point pointerPosition = point->Position;
@@ -175,6 +187,9 @@ void InputControllerEventHandlerUWP::OnPointerExited(
     _In_ PointerEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     PointerPoint^ point = args->CurrentPoint;
     uint32 pointerID = point->PointerId;
     Point pointerPosition = point->Position;
@@ -322,6 +337,9 @@ void InputControllerEventHandlerUWP::OnKeyDown(
     _In_ KeyEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     auto inputKey = VirtualKeyToInputKey(args->VirtualKey);
     if (inputKey != InputKeys::Unknown && inputKey < InputKeys::TotalKeys)
     {
@@ -336,6 +354,9 @@ void InputControllerEventHandlerUWP::OnKeyUp(
     _In_ KeyEventArgs^ args
     )
 {
+    if(args->Handled)
+        return;
+
     auto inputKey = VirtualKeyToInputKey(args->VirtualKey);
     if (inputKey != InputKeys::Unknown && inputKey < InputKeys::TotalKeys)
     {

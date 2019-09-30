@@ -38,14 +38,14 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
         get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
 
         set(SAMPLE_BASE_UWP_SOURCE
-            ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.cpp
+            ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/ImguiUWPEventHelper.cpp
             ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/SampleAppUWP.cpp
             ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/InputControllerEventHandlerUWP.cpp
             ${SAMPLE_BASE_SOURCE_DIR}/src/SampleApp.cpp
         )
 
         set(SAMPLE_BASE_UWP_INCLUDE
-            ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/TwEventUWP.h
+            ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/ImguiUWPEventHelper.h
             ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/InputControllerEventHandlerUWP.h
             ${SAMPLE_BASE_SOURCE_DIR}/include/SampleApp.h
             ${SAMPLE_BASE_SOURCE_DIR}/include/UWP/InputControllerUWP.h
