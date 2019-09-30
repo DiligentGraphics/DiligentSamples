@@ -55,7 +55,8 @@ public:
 
         if (m_SampleInitialized)
         {
-            const auto &SCDesc = m_pSwapChain->GetDesc();
+            const auto& SCDesc = m_pSwapChain->GetDesc();
+            static_cast<ImGuiImplUWP*>(m_pImGui.get())->SetDisplaySize(SCDesc.Width, SCDesc.Height);
             m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
         }
     }
@@ -213,7 +214,7 @@ public:
     virtual void CreateRenderers()override
     {
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplUWP(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+        m_pImGui.reset(new ImGuiImplUWP(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
 
         InitializeSample();
 
