@@ -213,7 +213,7 @@ public:
     virtual void CreateRenderers()override
     {
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplUWP(0, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+        m_pImGui.reset(new ImGuiImplUWP(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
 
         InitializeSample();
 
