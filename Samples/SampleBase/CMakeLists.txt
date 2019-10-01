@@ -85,7 +85,7 @@ elseif(PLATFORM_MACOS)
 
     set(SOURCE
         src/MacOS/InputControllerMacOS.cpp
-        src/MacOS/SampleAppMacOS.cpp
+        src/MacOS/SampleAppMacOS.mm
         src/SampleApp.cpp
     )
     set(INCLUDE
