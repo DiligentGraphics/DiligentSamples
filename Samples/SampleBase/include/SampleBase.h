@@ -54,10 +54,8 @@ public:
     virtual bool HandleNativeMessage(const void* pNativeMsgData){return false;}
 
     virtual const Char* GetSampleName()const{return "Diligent Engine Sample";}
-    void SetUIScale(Int32 UIScale){m_UIScale = UIScale;};
-    Int32 GetUIScale()const{return m_UIScale;}
     virtual void ProcessCommandLine(const char *CmdLine){}
-    
+
     InputController& GetInputController()
     {
         return m_InputController;
@@ -73,7 +71,6 @@ protected:
     double m_LastFPSTime         = 0;
     Uint32 m_NumFramesRendered   = 0;
     Uint32 m_CurrentFrameNumber  = 0;
-    Int32  m_UIScale             = 1;
 
     InputController m_InputController;
 };

@@ -42,7 +42,6 @@ public:
     {
         m_DeviceType = view == nullptr ? DeviceType::OpenGL : DeviceType::Vulkan;
         InitializeDiligentEngine(view);
-        m_TheSample->SetUIScale(2);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplMacOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         InitializeSample();
