@@ -45,19 +45,31 @@ public:
         SampleApp::Render();
     }
 
+    virtual void Update(double CurrTime, double ElapsedTime)override
+    {
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        static_cast<ImGuiImplIOS*>(m_pImGui.get())->SetDisplaySize(SCDesc.Width, SCDesc.Height);
+        SampleApp::Update(CurrTime, ElapsedTime);
+    }
+
     virtual void OnTouchBegan(float x, float y)override final
     {
+        if (!static_cast<ImGuiImplIOS*>(m_pImGui.get())->OnTouchEvent(x, y, true))
+        {
+            m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Pressed);
+        }
         m_TheSample->GetInputController().OnMouseMove(x, y);
-        m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Pressed);
     }
 
     virtual void OnTouchMoved(float x, float y)override final
     {
+        static_cast<ImGuiImplIOS*>(m_pImGui.get())->OnTouchEvent(x, y, true);
         m_TheSample->GetInputController().OnMouseMove(x, y);
     }
 
     virtual void OnTouchEnded(float x, float y)override final
     {
+        static_cast<ImGuiImplIOS*>(m_pImGui.get())->OnTouchEvent(x, y, false);
         m_TheSample->GetInputController().OnMouseMove(x, y);
         m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Released);
     }
