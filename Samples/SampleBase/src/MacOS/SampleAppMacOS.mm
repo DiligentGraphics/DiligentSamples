@@ -144,6 +144,32 @@ public:
             {
                 HandleKeyEvent(event, inputController);
             }
+
+            if (event.type == NSEventTypeScrollWheel)
+            {
+                double wheel_dx = 0.0;
+                double wheel_dy = 0.0;
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
+                if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
+                {
+                    wheel_dx = [event scrollingDeltaX];
+                    wheel_dy = [event scrollingDeltaY];
+                    if ([event hasPreciseScrollingDeltas])
+                    {
+                        wheel_dx *= 0.1;
+                        wheel_dy *= 0.1;
+                    }
+                }
+                else
+#endif /*MAC_OS_X_VERSION_MAX_ALLOWED*/
+                {
+                    wheel_dx = [event deltaX];
+                    wheel_dy = [event deltaY];
+                }
+
+                inputController.OnMouseWheel(static_cast<float>(wheel_dy * 0.1));
+            }
         }
 
         if (event.type == NSEventTypeLeftMouseUp ||

@@ -39,6 +39,11 @@ public:
         m_MouseState.PosY = static_cast<float>(MouseY);
     }
 
+    void OnMouseWheel(float WheelDelta)
+    {
+        m_MouseState.WheelDelta = WheelDelta;
+    }
+
     void OnKeyPressed(int key);
     void OnKeyReleased(int key);
     void OnFlagsChanged(bool ShiftPressed, bool CtrlPressed, bool AltPressed);

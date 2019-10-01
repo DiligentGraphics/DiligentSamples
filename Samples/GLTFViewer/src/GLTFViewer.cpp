@@ -451,6 +451,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         }
 
         m_CameraDist -= mouseState.WheelDelta * 0.25f;
+        m_CameraDist = clamp(m_CameraDist, 0.1f, 5.f);
     }
 
     if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)
