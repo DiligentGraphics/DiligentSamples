@@ -23,7 +23,7 @@
 
 #include <queue>
 #include "SampleApp.h"
-#include "AntTweakBar.h"
+#include "ImGuiImplIOS.h"
 
 namespace Diligent
 {
@@ -35,6 +35,8 @@ public:
     {
         m_DeviceType = static_cast<Diligent::DeviceType>(deviceType);
         InitializeDiligentEngine(layer);
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui.reset(new ImGuiImplIOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         InitializeSample();
     }
 
@@ -45,25 +47,17 @@ public:
 
     virtual void OnTouchBegan(float x, float y)override final
     {
-        TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
         m_TheSample->GetInputController().OnMouseMove(x, y);
-        auto handled = TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
-        if (!handled)
-        {
-            m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Pressed);
-        }
+        m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Pressed);
     }
 
     virtual void OnTouchMoved(float x, float y)override final
     {
-        TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
         m_TheSample->GetInputController().OnMouseMove(x, y);
     }
 
     virtual void OnTouchEnded(float x, float y)override final
     {
-        TwMouseMotion(static_cast<int>(x), static_cast<int>(y));
-        TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
         m_TheSample->GetInputController().OnMouseMove(x, y);
         m_TheSample->GetInputController().OnMouseButtonEvent(InputController::MouseButtonEvent::LMB_Released);
     }
