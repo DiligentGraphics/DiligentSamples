@@ -80,54 +80,38 @@ public:
     {
         auto* event = (NSEvent*)_event;
 
-        if (event.type != NSEventTypeLeftMouseDown   && event.type != NSEventTypeRightMouseDown    &&
-            event.type != NSEventTypeLeftMouseUp     && event.type != NSEventTypeRightMouseUp      &&
-            event.type != NSEventTypeOtherMouseDown  && event.type != NSEventTypeOtherMouseUp      &&
-            event.type != NSEventTypeMouseMoved      &&
-            event.type != NSEventTypeLeftMouseDragged&& event.type != NSEventTypeRightMouseDragged &&
-            event.type != NSEventTypeKeyDown         && event.type != NSEventTypeKeyUp             &&
-            event.type != NSEventTypeFlagsChanged    && event.type != NSEventTypeScrollWheel)
-            return;
+        switch(event.type)
+        {
+            case NSEventTypeLeftMouseDown:
+            case NSEventTypeRightMouseDown:
+            case NSEventTypeLeftMouseUp:
+            case NSEventTypeRightMouseUp:
+            case NSEventTypeOtherMouseDown:
+            case NSEventTypeOtherMouseUp:
+            case NSEventTypeMouseMoved:
+            case NSEventTypeLeftMouseDragged:
+            case NSEventTypeRightMouseDragged:
+            case NSEventTypeKeyDown:
+            case NSEventTypeKeyUp:
+            case NSEventTypeFlagsChanged:
+            case NSEventTypeScrollWheel:
+                break;
+            
+            default:
+                return;
+        }
 
         std::lock_guard<std::mutex> lock(AppMutex);
         auto& inputController = m_TheSample->GetInputController();
 
-        auto* view  = (NSView*)_view;
-        if (!static_cast<ImGuiImplMacOS*>(m_pImGui.get())->HandleOSXEvent(event, view))
+        auto HandleKeyEvent = [](NSEvent* event, InputController& inputController)
         {
-            if (event.type == NSEventTypeLeftMouseDown || event.type == NSEventTypeRightMouseDown)
+            NSString* str = [event characters];
+            int len = (int)[str length];
+            for (int i = 0; i < len; i++)
             {
-                auto ControllerEvent = event.type == NSEventTypeLeftMouseDown ?
-                            InputController::MouseButtonEvent::LMB_Pressed :
-                            InputController::MouseButtonEvent::RMB_Pressed;
-                inputController.OnMouseButtonEvent(ControllerEvent);
-            }
-
-            if (event.type == NSEventTypeLeftMouseUp || event.type == NSEventTypeRightMouseUp)
-            {
-                auto ControllerEvent = event.type == NSEventTypeLeftMouseUp  ?
-                    InputController::MouseButtonEvent::LMB_Released :
-                    InputController::MouseButtonEvent::RMB_Released;
-                inputController.OnMouseButtonEvent(ControllerEvent);
-            }
-
-            if (event.type == NSEventTypeLeftMouseDown    || event.type == NSEventTypeRightMouseDown ||
-                event.type == NSEventTypeLeftMouseUp      || event.type == NSEventTypeRightMouseUp   ||
-                event.type == NSEventTypeMouseMoved       ||
-                event.type == NSEventTypeLeftMouseDragged || event.type == NSEventTypeRightMouseDragged)
-            {
-                NSRect viewRectPoints = [view bounds];
-                NSRect viewRectPixels = [view convertRectToBacking:viewRectPoints];
-                NSPoint curPoint = [view convertPoint:[event locationInWindow] fromView:nil];
-                curPoint = [view convertPointToBacking:curPoint];
-                inputController.OnMouseMove(curPoint.x, viewRectPixels.size.height-1 - curPoint.y);
-            }
-
-            if (event.type == NSEventTypeKeyDown ||
-                event.type == NSEventTypeKeyUp)
-            {
+                int c = [str characterAtIndex:i];
                 int key = 0;
-                unichar c = [[event charactersIgnoringModifiers] characterAtIndex:0];
                 switch(c)
                 {
                     case NSLeftArrowFunctionKey:  key = 260; break;
@@ -137,9 +121,55 @@ public:
                 }
                 if (event.type == NSEventTypeKeyDown)
                     inputController.OnKeyPressed(key);
-                else
+                else if (event.type == NSEventTypeKeyUp)
                     inputController.OnKeyReleased(key);
+                else
+                    UNEXPECTED("Unexpected event type");
             }
+        };
+
+        auto* view  = (NSView*)_view;
+        if (!static_cast<ImGuiImplMacOS*>(m_pImGui.get())->HandleOSXEvent(event, view))
+        {
+            if (event.type == NSEventTypeLeftMouseDown ||
+                event.type == NSEventTypeRightMouseDown)
+            {
+                auto ControllerEvent = event.type == NSEventTypeLeftMouseDown ?
+                            InputController::MouseButtonEvent::LMB_Pressed :
+                            InputController::MouseButtonEvent::RMB_Pressed;
+                inputController.OnMouseButtonEvent(ControllerEvent);
+            }
+
+            if (event.type == NSEventTypeKeyDown)
+            {
+                HandleKeyEvent(event, inputController);
+            }
+        }
+
+        if (event.type == NSEventTypeLeftMouseUp ||
+            event.type == NSEventTypeRightMouseUp)
+        {
+            auto ControllerEvent =
+                    event.type == NSEventTypeLeftMouseUp ?
+                        InputController::MouseButtonEvent::LMB_Released :
+                        InputController::MouseButtonEvent::RMB_Released;
+            inputController.OnMouseButtonEvent(ControllerEvent);
+        }
+
+        if (event.type == NSEventTypeLeftMouseDragged  ||
+            event.type == NSEventTypeRightMouseDragged ||
+            event.type == NSEventTypeMouseMoved)
+        {
+            NSRect viewRectPoints = [view bounds];
+            NSRect viewRectPixels = [view convertRectToBacking:viewRectPoints];
+            NSPoint curPoint = [view convertPoint:[event locationInWindow] fromView:nil];
+            curPoint = [view convertPointToBacking:curPoint];
+            inputController.OnMouseMove(curPoint.x, viewRectPixels.size.height-1 - curPoint.y);
+        }
+
+        if (event.type == NSEventTypeKeyUp)
+        {
+            HandleKeyEvent(event, inputController);
         }
 
         if (event.type ==  NSEventTypeFlagsChanged)
