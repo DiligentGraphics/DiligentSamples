@@ -22,7 +22,8 @@
 */
 
 #include "SampleApp.h"
-#include "AntTweakBar.h"
+#include "ImGuiImplLinuxXCB.h"
+#include "ImGuiImplLinuxX11.h"
 
 namespace Diligent
 {
@@ -37,19 +38,18 @@ public:
 
     ~SampleAppLinux()
     {
-#if VULKAN_SUPPORTED
-        TwReleaseXCBKeysyms();
-#endif
     }
     virtual void OnGLContextCreated(Display* display, Window window)override final
     {
         InitializeDiligentEngine(display, reinterpret_cast<void*>(static_cast<size_t>(window)));
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui.reset(new ImGuiImplLinuxX11(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         InitializeSample();
     }
 
     virtual int HandleXEvent(XEvent *xev)override final
     {
-        auto handled = TwEventX11(xev);
+        auto handled = static_cast<ImGuiImplLinuxX11*>(m_pImGui.get())->HandleXEvent(xev);
         // Always handle mouse move, button release and key release events
         if(!handled || xev->type == ButtonRelease || xev->type == MotionNotify || xev->type == KeyRelease)
         {
@@ -68,13 +68,14 @@ public:
             uint32_t window;
         }xcbInfo = {connection, window};
         InitializeDiligentEngine(nullptr, &xcbInfo);
-        TwInitXCBKeysms(connection);
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         m_TheSample->GetInputController().InitXCBKeysms(connection);
         InitializeSample();
     }
     virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
     {
-        int handled = TwEventXCB(event);
+        auto handled = static_cast<ImGuiImplLinuxXCB*>(m_pImGui.get())->HandleXCBEvent(event);
         auto EventType = event->response_type & 0x7f;
         // Always handle mouse move, button release and key release events
         if (!handled || EventType == XCB_MOTION_NOTIFY || EventType == XCB_BUTTON_RELEASE || EventType == XCB_KEY_RELEASE)
