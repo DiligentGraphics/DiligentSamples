@@ -173,13 +173,14 @@ void GLTFViewer::UpdateUI()
         }
 #endif
 
-        ImGui::gizmo3D("Camera Rotation", m_CameraRotation, ImGui::GetTextLineHeight() * 10); ImGui::SameLine();
         ImGui::gizmo3D("Model Rotation", m_ModelRotation, ImGui::GetTextLineHeight() * 10);
+        ImGui::SameLine();
+        ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
+
         if (ImGui::Button("Reset view"))
         {
             ResetView();
         }
-        ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
 
         ImGui::SliderFloat("Camera distance", &m_CameraDist, 0.1f, 5.0f);
 
@@ -193,7 +194,7 @@ void GLTFViewer::UpdateUI()
             ImGui::SliderFloat("IBL scale",          &m_RenderParams.IBLScale,          0.f,  1.f);
             ImGui::TreePop();
         }
-        
+
         if (!m_Model->Animations.empty())
         {
             ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
