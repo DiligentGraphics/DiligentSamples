@@ -1,5 +1,4 @@
 include 'Common',
-        ':AntTweakBar',
         ':Atmosphere',
         ':GLTFViewer',
         ':Tutorial01_HelloTriangle',
