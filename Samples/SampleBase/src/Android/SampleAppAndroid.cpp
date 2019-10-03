@@ -25,7 +25,7 @@
 #include "EngineFactoryOpenGL.h"
 #include "SampleApp.h"
 #include "RenderDeviceGLES.h"
-#include "AntTweakBar.h"
+#include "ImGuiImplAndroid.h"
 
 namespace Diligent
 {
@@ -44,8 +44,9 @@ public:
         AndroidFileSystem::Init(app_->activity, native_activity_class_name_.c_str());
         SampleApp::Initialize();
         InitializeDiligentEngine(app_->window);
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui.reset(new ImGuiImplAndroid(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
-        m_TheSample->SetUIScale(3);
         InitializeSample();
     }
 
@@ -90,8 +91,7 @@ public:
                     drag_detector_.GetPointer( v );
                     float fX = 0, fY = 0;
                     v.Value(fX, fY);
-                    TwMouseMotion((short)fX, (short)fY);
-                    int Handled = TwMouseButton( TW_MOUSE_PRESSED, TW_MOUSE_LEFT );
+                    auto Handled = static_cast<ImGuiImplAndroid*>(m_pImGui.get())->BeginDrag(fX, fY);
                     if (!Handled)
                     {
                         m_TheSample->GetInputController().BeginDrag(fX, fY);
@@ -103,12 +103,15 @@ public:
                     drag_detector_.GetPointer( v );
                     float fX = 0, fY = 0;
                     v.Value(fX, fY);
-                    int Handled = TwMouseMotion((short)fX, (short)fY);
-                    m_TheSample->GetInputController().DragMove(fX, fY);
+                    auto Handled = static_cast<ImGuiImplAndroid*>(m_pImGui.get())->DragMove(fX, fY);
+                    if (!Handled)
+                    {
+                        m_TheSample->GetInputController().DragMove(fX, fY);
+                    }
                 }
                 else if( dragState & ndk_helper::GESTURE_STATE_END )
                 {
-                    int Handled = TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
+                    static_cast<ImGuiImplAndroid*>(m_pImGui.get())->EndDrag();
                     m_TheSample->GetInputController().EndDrag();
                 }
 
