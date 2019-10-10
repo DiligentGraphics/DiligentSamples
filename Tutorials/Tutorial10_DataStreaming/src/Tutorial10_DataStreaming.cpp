@@ -589,7 +589,7 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming *pThis,
         pThis->m_CmdLists[ThreadNum] = pCmdList;
 
         {
-            std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
+            std::lock_guard<std::mutex> Lock{pThis->m_NumThreadsCompletedMtx};
             // Increment the number of completed threads
             ++pThis->m_NumThreadsCompleted;
             if(pThis->m_NumThreadsCompleted == NumWorkerThreads)

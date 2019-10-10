@@ -442,7 +442,7 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads *pThis, Uint32 ThreadNu
         pThis->m_CmdLists[ThreadNum] = pCmdList;
 
         {
-            std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
+            std::lock_guard<std::mutex> Lock{pThis->m_NumThreadsCompletedMtx};
             // Increment the number of completed threads
             ++pThis->m_NumThreadsCompleted;
             if(pThis->m_NumThreadsCompleted == NumWorkerThreads)
