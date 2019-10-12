@@ -23,11 +23,13 @@
 
 #include "Tutorial08_Tessellation.h"
 #include "MapHelper.h"
-#include "HLSL2GLSLConverterImpl.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "ShaderMacroHelper.h"
 #include "imgui.h"
+#ifdef HLSL2GLSL_CONVERTER_SUPPORTED
+#   include "HLSL2GLSLConverterImpl.h"
+#endif
 
 namespace Diligent
 {
@@ -79,7 +81,7 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
                                            const ShaderCreateInfo& ShaderCI)
 {
     RefCntAutoPtr<IShader> pShader;
-
+#ifdef HLSL2GLSL_CONVERTER_SUPPORTED
     if (pDevice->GetDeviceCaps().IsVulkanDevice())
     {
         // glslang currently does not produce GS/HS/DS bytecode that can be properly 
@@ -106,10 +108,13 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
 
         pDevice->CreateShader(ConvertedShaderCI, &pShader);
     }
-    else
+#endif
+
+    if (!pShader)
     {
         pDevice->CreateShader(ShaderCI, &pShader);
     }
+
     return pShader;
 }
 

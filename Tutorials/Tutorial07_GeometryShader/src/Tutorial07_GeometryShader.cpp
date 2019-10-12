@@ -22,11 +22,14 @@
  */
 
 #include "Tutorial07_GeometryShader.h"
-#include "HLSL2GLSLConverterImpl.h"
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "imgui.h"
+
+#ifdef HLSL2GLSL_CONVERTER_SUPPORTED
+#   include "HLSL2GLSLConverterImpl.h"
+#endif
 
 namespace Diligent
 {
@@ -64,6 +67,7 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
 {
     RefCntAutoPtr<IShader> pShader;
 
+#ifdef HLSL2GLSL_CONVERTER_SUPPORTED
     if (pDevice->GetDeviceCaps().IsVulkanDevice())
     {
         // glslang currently does not produce geometry shader bytecode that can be
@@ -90,7 +94,9 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
 
         pDevice->CreateShader(ConvertedShaderCI, &pShader);
     }
-    else
+#endif
+
+    if (!pShader)
     {
         pDevice->CreateShader(ShaderCI, &pShader);
     }
