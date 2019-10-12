@@ -26,4 +26,6 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial08_Tessellation" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial08_Tessellation PRIVATE Diligent-TextureLoader)
+get_target_property(HLSL2GLSLConverterLib_SourceDir Diligent-HLSL2GLSLConverterLib SOURCE_DIR)
+target_link_libraries(Tutorial08_Tessellation PRIVATE Diligent-TextureLoader Diligent-HLSL2GLSLConverterLib)
+target_include_directories(Tutorial08_Tessellation PRIVATE "${HLSL2GLSLConverterLib_SourceDir}/include")

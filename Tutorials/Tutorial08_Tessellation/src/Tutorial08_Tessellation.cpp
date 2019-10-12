@@ -23,6 +23,7 @@
 
 #include "Tutorial08_Tessellation.h"
 #include "MapHelper.h"
+#include "HLSL2GLSLConverterImpl.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "ShaderMacroHelper.h"
@@ -72,6 +73,44 @@ void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType         
         VkAttrs.EnabledFeatures.tessellationShader = true;
     }
 #endif
+}
+
+static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
+                                           const ShaderCreateInfo& ShaderCI)
+{
+    RefCntAutoPtr<IShader> pShader;
+
+    if (pDevice->GetDeviceCaps().IsVulkanDevice())
+    {
+        // glslang currently does not produce GS/HS/DS bytecode that can be properly 
+        // linked with other shader stages. So we will manually convert HLSL to GLSL
+        // and compile GLSL.
+
+        const auto& Converter = HLSL2GLSLConverterImpl::GetInstance();
+        HLSL2GLSLConverterImpl::ConversionAttribs Attribs;
+        Attribs.pSourceStreamFactory       = ShaderCI.pShaderSourceStreamFactory;
+        Attribs.ppConversionStream         = nullptr;
+        Attribs.EntryPoint                 = ShaderCI.EntryPoint;
+        Attribs.ShaderType                 = ShaderCI.Desc.ShaderType;
+        Attribs.IncludeDefinitions         = true;
+        Attribs.InputFileName              = ShaderCI.FilePath;
+        Attribs.SamplerSuffix              = ShaderCI.CombinedSamplerSuffix;
+        // Separate shader objects extension is required to allow input/output layout qualifiers
+        Attribs.UseInOutLocationQualifiers = true;
+        auto ConvertedSource = Converter.Convert(Attribs);
+        
+        ShaderCreateInfo ConvertedShaderCI = ShaderCI;
+        ConvertedShaderCI.pShaderSourceStreamFactory = nullptr;
+        ConvertedShaderCI.Source                     = ConvertedSource.c_str();
+        ConvertedShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL;
+
+        pDevice->CreateShader(ConvertedShaderCI, &pShader);
+    }
+    else
+    {
+        pDevice->CreateShader(ShaderCI, &pShader);
+    }
+    return pShader;
 }
 
 void Tutorial08_Tessellation::CreatePipelineStates()
@@ -125,7 +164,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainVS";
         ShaderCI.Desc.Name       = "Terrain VS";
         ShaderCI.FilePath        = "terrain.vsh";
-        m_pDevice->CreateShader(ShaderCI, &pVS);
+        pVS = CreateShader(m_pDevice, ShaderCI);
     }
 
 
@@ -137,7 +176,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainGS";
         ShaderCI.Desc.Name       = "Terrain GS";
         ShaderCI.FilePath        = "terrain.gsh";
-        m_pDevice->CreateShader(ShaderCI, &pGS);
+        pGS = CreateShader(m_pDevice, ShaderCI);
     }
 
     // Create a hull shader
@@ -149,7 +188,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.FilePath        = "terrain.hsh";
         MacroHelper.AddShaderMacro("BLOCK_SIZE", m_BlockSize);
         ShaderCI.Macros          = MacroHelper;
-        m_pDevice->CreateShader(ShaderCI, &pHS);
+        pHS = CreateShader(m_pDevice, ShaderCI);
     }
 
     // Create a domain shader
@@ -160,7 +199,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.Desc.Name       = "Terrain DS";
         ShaderCI.FilePath        = "terrain.dsh";
         ShaderCI.Macros          = nullptr;
-        m_pDevice->CreateShader(ShaderCI, &pDS);
+        pDS = CreateShader(m_pDevice, ShaderCI);
     }
 
     // Create a pixel shader
@@ -170,14 +209,14 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainPS";
         ShaderCI.Desc.Name       = "Terrain PS";
         ShaderCI.FilePath        = "terrain.psh";
-        m_pDevice->CreateShader(ShaderCI, &pPS);
+        pPS = CreateShader(m_pDevice, ShaderCI);
 
         if (bWireframeSupported)
         {
             ShaderCI.EntryPoint = "WireTerrainPS";
             ShaderCI.Desc.Name  = "Wireframe Terrain PS";
             ShaderCI.FilePath   = "terrain_wire.psh";
-            m_pDevice->CreateShader(ShaderCI, &pWirePS);
+            pWirePS = CreateShader(m_pDevice, ShaderCI);
         }
     }
 
