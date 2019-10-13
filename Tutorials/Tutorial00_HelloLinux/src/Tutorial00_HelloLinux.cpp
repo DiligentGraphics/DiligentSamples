@@ -28,7 +28,38 @@
 #include <GL/gl.h>
 
 #if VULKAN_SUPPORTED
+
 #include <xcb/xcb.h>
+
+// https://code.woboq.org/qt5/include/xcb/xcb_icccm.h.html
+enum XCB_ICCCM_SIZE_HINT
+{
+    XCB_ICCCM_SIZE_HINT_US_POSITION     = 1 << 0,
+    XCB_ICCCM_SIZE_HINT_US_SIZE         = 1 << 1,
+    XCB_ICCCM_SIZE_HINT_P_POSITION      = 1 << 2,
+    XCB_ICCCM_SIZE_HINT_P_SIZE          = 1 << 3,
+    XCB_ICCCM_SIZE_HINT_P_MIN_SIZE      = 1 << 4,
+    XCB_ICCCM_SIZE_HINT_P_MAX_SIZE      = 1 << 5,
+    XCB_ICCCM_SIZE_HINT_P_RESIZE_INC    = 1 << 6,
+    XCB_ICCCM_SIZE_HINT_P_ASPECT        = 1 << 7,
+    XCB_ICCCM_SIZE_HINT_BASE_SIZE       = 1 << 8,
+    XCB_ICCCM_SIZE_HINT_P_WIN_GRAVITY   = 1 << 9
+};
+
+struct xcb_size_hints_t
+{
+    uint32_t flags;                         /** User specified flags */
+    int32_t x, y;                           /** User-specified position */
+    int32_t width, height;                  /** User-specified size */
+    int32_t min_width, min_height;          /** Program-specified minimum size */
+    int32_t max_width, max_height;          /** Program-specified maximum size */
+    int32_t width_inc, height_inc;          /** Program-specified resize increments */
+    int32_t min_aspect_num, min_aspect_den; /** Program-specified minimum aspect ratios */
+    int32_t max_aspect_num, max_aspect_den; /** Program-specified maximum aspect ratios */
+    int32_t base_width, base_height;        /** Program-specified base size */
+    uint32_t win_gravity;                   /** Program-specified window gravity */
+};
+
 #endif
 
 // Undef symbols defined by XLib
@@ -330,6 +361,14 @@ XCBInfo InitXCBConnectionAndWindow()
     xcb_change_property(info.connection, XCB_PROP_MODE_REPLACE, info.window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING,
                         8, strlen(title), title );
 
+    // https://stackoverflow.com/a/27771295
+    xcb_size_hints_t hints = {};
+    hints.flags = XCB_ICCCM_SIZE_HINT_P_MIN_SIZE;
+    hints.min_width = 320;
+    hints.min_height = 240;
+    xcb_change_property(info.connection, XCB_PROP_MODE_REPLACE, info.window, XCB_ATOM_WM_NORMAL_HINTS, XCB_ATOM_WM_SIZE_HINTS,
+                        32, sizeof(xcb_size_hints_t), &hints);
+
     xcb_map_window(info.connection, info.window);
 
     // Force the x/y coordinates to 100,100 results are identical in consecutive
@@ -483,6 +522,15 @@ int x_main()
         return -1;
     }
  
+    {
+        auto SizeHints = XAllocSizeHints();
+        SizeHints->flags = PMinSize;
+        SizeHints->min_width = 320;
+        SizeHints->min_height = 240;
+        XSetWMNormalHints(display, win, SizeHints);
+        XFree(SizeHints);
+    }
+
     XMapWindow(display, win);
  
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = nullptr;
