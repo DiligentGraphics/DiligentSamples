@@ -1,6 +1,8 @@
 include 'Common',
         ':Atmosphere',
         ':GLTFViewer',
+        ':ImguiDemo',
+        ':Shadows',
         ':Tutorial01_HelloTriangle',
         ':Tutorial02_Cube',
         ':Tutorial03_Texturing',
@@ -12,5 +14,7 @@ include 'Common',
         ':Tutorial09_Quads',
         ':Tutorial10_DataStreaming',
         ':Tutorial11_ResourceUpdates',
-        ':Tutorial12_RenderTarget'
+        ':Tutorial12_RenderTarget',
+        ':Tutorial13_ShadowMap',
+        ':Tutorial14_ComputeShader'
 project(':Common').projectDir = new File(settingsDir, '../../Common/NativeApp/Android')
