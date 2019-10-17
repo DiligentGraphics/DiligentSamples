@@ -85,8 +85,6 @@ void SampleApp::InitializeDiligentEngine(
     void *NativeWindowHandle
     )
 {
-    Uint32 AdapterId = 0;
-
     SwapChainDesc SCDesc;
     SCDesc.SamplesCount = 1;
     if (m_ScreenCaptureInfo.AllowCapture)
@@ -99,6 +97,7 @@ void SampleApp::InitializeDiligentEngine(
         case DeviceType::D3D11:
         {
             EngineD3D11CreateInfo EngineCI;
+            EngineCI.AdapterId = m_AdapterId;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
 
 #if ENGINE_DLL
@@ -109,18 +108,18 @@ void SampleApp::InitializeDiligentEngine(
             auto* pFactoryD3D11 = GetEngineFactoryD3D11();
             m_pEngineFactory = pFactoryD3D11;
             Uint32 NumAdapters = 0;
-            pFactoryD3D11->EnumerateHardwareAdapters(NumAdapters, 0);
+            pFactoryD3D11->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
             std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
             if(NumAdapters>0)
-                pFactoryD3D11->EnumerateHardwareAdapters(NumAdapters, Adapters.data());
+                pFactoryD3D11->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
             else
                 LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
             
-            m_AdapterAttribs = Adapters[AdapterId];
+            m_AdapterAttribs = Adapters[m_AdapterId];
             Uint32 NumDisplayModes = 0;
-            pFactoryD3D11->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
+            pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
             m_DisplayModes.resize(NumDisplayModes);
-            pFactoryD3D11->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+            pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
 
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
@@ -134,6 +133,18 @@ void SampleApp::InitializeDiligentEngine(
 #if D3D12_SUPPORTED
         case DeviceType::D3D12:
         {
+            EngineD3D12CreateInfo EngineCI;
+            EngineCI.AdapterId = m_AdapterId;
+#ifdef _DEBUG
+            EngineCI.EnableDebugLayer = true;
+#endif
+            if (m_ValidationMode == ValidationMode::Enable)
+                EngineCI.EnableDebugLayer = true;
+            else if (m_ValidationMode == ValidationMode::Disable)
+                EngineCI.EnableDebugLayer = false;
+
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
+
 #if ENGINE_DLL
             GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
             // Load the dll and import GetEngineFactoryD3D12() function
@@ -142,31 +153,21 @@ void SampleApp::InitializeDiligentEngine(
             auto* pFactoryD3D12 = GetEngineFactoryD3D12();
             m_pEngineFactory = pFactoryD3D12;
             Uint32 NumAdapters = 0;
-            pFactoryD3D12->EnumerateHardwareAdapters(NumAdapters, 0);
+            pFactoryD3D12->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
             std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
             if (NumAdapters>0)
-                pFactoryD3D12->EnumerateHardwareAdapters(NumAdapters, Adapters.data());
+                pFactoryD3D12->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
             else
                 LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
 
-            m_AdapterAttribs = Adapters[AdapterId];
+            m_AdapterAttribs = Adapters[m_AdapterId];
             Uint32 NumDisplayModes = 0;
-            pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
+            pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
             m_DisplayModes.resize(NumDisplayModes);
-            pFactoryD3D12->EnumerateDisplayModes(AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+            pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
 
-            EngineD3D12CreateInfo EngD3D12Attribs;
-#ifdef _DEBUG
-            EngD3D12Attribs.EnableDebugLayer = true;
-#endif
-            if (m_ValidationMode == ValidationMode::Enable)
-                EngD3D12Attribs.EnableDebugLayer = true;
-            else if (m_ValidationMode == ValidationMode::Disable)
-                EngD3D12Attribs.EnableDebugLayer = false;
-
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngD3D12Attribs);
-            ppContexts.resize(1 + EngD3D12Attribs.NumDeferredContexts);
-            pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, ppContexts.data());
+            ppContexts.resize(1 + EngineCI.NumDeferredContexts);
+            pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
@@ -340,8 +341,11 @@ void SampleApp::UpdateAdaptersDialog()
                 }
             }
 
-            ImGui::SetNextItemWidth(220);
-            ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
+            if (!m_DisplayModes.empty())
+            {
+                ImGui::SetNextItemWidth(220);
+                ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
+            }
 
             if (m_bFullScreenMode)
             {
@@ -352,10 +356,13 @@ void SampleApp::UpdateAdaptersDialog()
             }
             else 
             {
-                if (ImGui::Button("Go Full Screen"))
+                if (!m_DisplayModes.empty())
                 {
-                    const auto &SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
-                    SetFullscreenMode(SelectedMode);
+                    if (ImGui::Button("Go Full Screen"))
+                    {
+                        const auto &SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
+                        SetFullscreenMode(SelectedMode);
+                    }
                 }
             }
 
@@ -502,7 +509,13 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             else
                 m_ValidationMode = ValidationMode::Disable;
         }
-
+        else if ( !(Arg = GetArgument(pos, "adapter")).empty() )
+        {
+            auto AdapterId = atoi(Arg.c_str());
+            VERIFY_EXPR(AdapterId >= 0);
+            m_AdapterId = static_cast<Uint32>(std::max(AdapterId, 0));
+        }
+        
         pos = strchr(pos, '-');
     }
     

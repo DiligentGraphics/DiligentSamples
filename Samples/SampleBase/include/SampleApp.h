@@ -101,7 +101,7 @@ protected:
         Disable
     }m_ValidationMode = ValidationMode::Default;
     std::string m_AppTitle;
-    Int32       m_UIScale = 1;
+    Uint32      m_AdapterId = 0;
     std::string m_AdapterDetailsString;
     int         m_SelectedDisplayMode = 0;
     bool        m_bVSync              = false;
