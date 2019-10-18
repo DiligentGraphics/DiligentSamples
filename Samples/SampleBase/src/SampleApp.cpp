@@ -513,7 +513,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         {
             auto AdapterId = atoi(Arg.c_str());
             VERIFY_EXPR(AdapterId >= 0);
-            m_AdapterId = static_cast<Uint32>(std::max(AdapterId, 0));
+            m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
         }
         
         pos = strchr(pos, '-');
