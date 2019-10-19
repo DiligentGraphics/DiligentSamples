@@ -271,14 +271,13 @@ m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MOD
 Finally, this time the draw call is an indexed one:
 
 ```cpp
-DrawAttribs DrawAttrs;
-DrawAttrs.IsIndexed   = true; // This is an indexed draw call
+DrawIndexedAttribs DrawAttrs; // This is an indexed draw call
 DrawAttrs.IndexType  = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
 // Verify the state of vertex and index buffers as well as consistence of 
 // render targets and correctness of draw command arguments
 DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
-m_pImmediateContext->Draw(DrawAttrs);
+m_pImmediateContext->DrawIndexed(DrawAttrs);
 ```
 
 We want the engine to verify that the states are correct,

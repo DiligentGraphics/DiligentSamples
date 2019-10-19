@@ -441,12 +441,11 @@ void Tutorial12_RenderTarget::Render()
     m_pImmediateContext->CommitShaderResources(m_pCubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Draw the cube
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed   = true;      // This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType   = VT_UINT32; // Index type
-    DrawAttrs.NumVertices = 36;
+    DrawAttrs.NumIndices  = 36;
     DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
-    m_pImmediateContext->Draw(DrawAttrs);
+    m_pImmediateContext->DrawIndexed(DrawAttrs);
 
     // Clear the default render target
     const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };

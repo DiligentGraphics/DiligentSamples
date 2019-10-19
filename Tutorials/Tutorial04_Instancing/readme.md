@@ -141,11 +141,10 @@ m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSIT
 Number of instances is specified by the `NumInstances` member of `DrawAttribs` structure:
 
 ```cpp
-DrawAttribs DrawAttrs;
-DrawAttrs.IsIndexed  = true;
+DrawIndexedAttribs DrawAttrs;
 DrawAttrs.IndexType  = VT_UINT32; // Index type
 DrawAttrs.NumIndices = 36;
 // Number of instances
 DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; 
-m_pImmediateContext->Draw(DrawAttrs);
+m_pImmediateContext->DrawIndexed(DrawAttrs);
 ```

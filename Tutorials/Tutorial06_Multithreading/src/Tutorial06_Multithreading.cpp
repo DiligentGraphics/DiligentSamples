@@ -477,8 +477,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     pCtx->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed  = true;      // This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;// This is an indexed draw call
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
@@ -511,7 +510,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
             *InstData = CurrInstData.Matrix.Transpose();
         }
         
-        pCtx->Draw(DrawAttrs);
+        pCtx->DrawIndexed(DrawAttrs);
     }
 }
 

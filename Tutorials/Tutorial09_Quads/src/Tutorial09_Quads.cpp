@@ -482,7 +482,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     }
     DrawAttribs DrawAttrs;
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
-    DrawAttrs.NumIndices = 4;
+    DrawAttrs.NumVertices = 4;
 
     Uint32 NumSubsets = Uint32{1} + static_cast<Uint32>(m_WorkerThreads.size());
     const Uint32 TotalQuads = static_cast<Uint32>(m_Quads.size());

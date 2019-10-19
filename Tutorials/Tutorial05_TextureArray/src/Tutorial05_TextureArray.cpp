@@ -423,14 +423,13 @@ void Tutorial05_TextureArray::Render()
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed    = true;      // This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;// This is an indexed draw call
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
     DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // The number of instances
     // Verify the state of vertex and index buffers
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
-    m_pImmediateContext->Draw(DrawAttrs);
+    m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
 void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)

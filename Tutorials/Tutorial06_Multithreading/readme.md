@@ -209,8 +209,7 @@ does the following:
 
 
 ```cpp
-DrawAttribs DrawAttrs;
-DrawAttrs.IsIndexed  = true;
+DrawIndexedAttribs DrawAttrs;
 DrawAttrs.IndexType  = VT_UINT32;
 DrawAttrs.NumIndices = 36;
 DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
@@ -231,6 +230,6 @@ for (size_t inst = StartInst; inst < EndInst; ++inst)
         *InstData = transposeMatrix(CurrInstData.Matrix);
     }
 
-    pCtx->Draw(DrawAttrs);
+    pCtx->DrawIndexed(DrawAttrs);
 }
 ```

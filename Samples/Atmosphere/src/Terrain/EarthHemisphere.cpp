@@ -954,8 +954,8 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         if(GetBoxVisibility(ViewFrustum, MeshIt->BndBox, bZOnlyPass ? FRUSTUM_PLANE_FLAG_OPEN_NEAR : FRUSTUM_PLANE_FLAG_FULL_FRUSTUM) != BoxVisibility::Invisible)
         {
             pContext->SetIndexBuffer(MeshIt->pIndBuff, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            DrawAttribs DrawAttrs(MeshIt->uiNumIndices, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
-            pContext->Draw(DrawAttrs);
+            DrawIndexedAttribs DrawAttrs(MeshIt->uiNumIndices, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
+            pContext->DrawIndexed(DrawAttrs);
         }
     }
 }

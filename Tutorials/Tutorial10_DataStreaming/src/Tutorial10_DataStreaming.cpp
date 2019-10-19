@@ -621,8 +621,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
     // Render targets are set and transitioned to correct states by the main thread, here we only verify states
     pCtx->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    DrawAttribs DrawAttrs;
-    DrawAttrs.IsIndexed = true;
+    DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType = VT_UINT32;
     DrawAttrs.Flags     = DRAW_FLAG_VERIFY_ALL;
 
@@ -710,7 +709,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
 
         DrawAttrs.NumIndices = static_cast<Uint32>(PolygonGeo.Inds.size());
         DrawAttrs.NumInstances = EndInst - StartInst;
-        pCtx->Draw(DrawAttrs);
+        pCtx->DrawIndexed(DrawAttrs);
     }
 
     m_StreamingVB->Flush(Subset);

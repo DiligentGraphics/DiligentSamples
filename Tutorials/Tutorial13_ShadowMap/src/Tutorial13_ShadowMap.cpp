@@ -640,8 +640,8 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
         m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
     }    
 
-    DrawAttribs DrawAttrs(36, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
-    m_pImmediateContext->Draw(DrawAttrs);
+    DrawIndexedAttribs DrawAttrs(36, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
+    m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
 void Tutorial13_ShadowMap::RenderPlane()

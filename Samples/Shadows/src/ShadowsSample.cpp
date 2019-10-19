@@ -600,9 +600,9 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
             const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
             pCtx->CommitShaderResources((bIsShadowPass ? m_ShadowSRBs : m_SRBs)[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-            DrawAttribs drawAttrs(static_cast<Uint32>(Subset.IndexCount), IBFormat, DRAW_FLAG_VERIFY_ALL);
+            DrawIndexedAttribs drawAttrs(static_cast<Uint32>(Subset.IndexCount), IBFormat, DRAW_FLAG_VERIFY_ALL);
             drawAttrs.FirstIndexLocation = static_cast<Uint32>(Subset.IndexStart);
-            pCtx->Draw(drawAttrs);
+            pCtx->DrawIndexed(drawAttrs);
         }
     }
 }
