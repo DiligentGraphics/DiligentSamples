@@ -98,6 +98,25 @@ void SampleApp::InitializeDiligentEngine(
         {
             EngineD3D11CreateInfo EngineCI;
             EngineCI.AdapterId = m_AdapterId;
+#ifdef DEVELOPMENT
+            EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE | 
+                                   D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
+#endif
+#ifdef _DEBUG
+            EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
+#endif
+
+            if (m_ValidationMode == ValidationMode::Enable)
+            {
+                EngineCI.DebugFlags = D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
+                                      D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES | 
+                                      D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
+            }
+            else if (m_ValidationMode == ValidationMode::Disable)
+            {
+                EngineCI.DebugFlags = D3D11_DEBUG_FLAG_NONE;
+            }
+
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
 
 #if ENGINE_DLL
@@ -135,7 +154,7 @@ void SampleApp::InitializeDiligentEngine(
         {
             EngineD3D12CreateInfo EngineCI;
             EngineCI.AdapterId = m_AdapterId;
-#ifdef _DEBUG
+#ifdef DEVELOPMENT
             EngineCI.EnableDebugLayer = true;
 #endif
             if (m_ValidationMode == ValidationMode::Enable)
@@ -217,7 +236,7 @@ void SampleApp::InitializeDiligentEngine(
             LoadGraphicsEngineVk(GetEngineFactoryVk);
 #endif
             EngineVkCreateInfo EngVkAttribs;
-#ifdef _DEBUG
+#ifdef DEVELOPMENT
             EngVkAttribs.EnableValidation = true;
 #endif
             if (m_ValidationMode == ValidationMode::Enable)

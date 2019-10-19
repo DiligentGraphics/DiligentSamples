@@ -35,10 +35,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #if D3D11_SUPPORTED
         case DeviceType::D3D11:
         {
-            EngineD3D11CreateInfo& EngineD3D11CI = static_cast<EngineD3D11CreateInfo&>(EngineCI);
-            EngineD3D11CI.DebugFlags = 
-                (Uint32)EngineD3D11DebugFlags::VerifyCommittedShaderResources |
-                (Uint32)EngineD3D11DebugFlags::VerifyCommittedResourceRelevance;
+            //EngineD3D11CreateInfo& EngineD3D11CI = static_cast<EngineD3D11CreateInfo&>(EngineCI);
         }
         break;
 #endif
