@@ -150,6 +150,10 @@ public:
             case DeviceType::D3D11:
             {
                 EngineD3D11CreateInfo DeviceAttribs;
+#ifdef _DEBUG
+                DeviceAttribs.DebugFlags |= D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE | 
+                                            D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
+#endif
 #if ENGINE_DLL
                 GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
                 // Load the dll and import GetEngineFactoryD3D11() function
