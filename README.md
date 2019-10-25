@@ -177,8 +177,8 @@ Command line options:
 * **-capture_format** {*jpg*|*png*} - image file format (example: *-capture_format jpg*). Default value: jpg.
 * **-capture_quality** *value* - jpeg quality (example: *-capture_quality 80*). Default value: 95.
 * **-capture_alpha** *value* - when saving png, whether to write alpha channel (example: *-capture_alpha 1*). Default value: false.
-* **-validation** *value* - Set validation level (example: *-validation 1*). Default value: 1 in debug build, 0 in release builds.
-* **-adapter** *value* - Select GPU adapter, if there are more than one installed on the system (example: *-adapter 1*). Default value: 0.
+* **-validation** *value* - set validation level (example: *-validation 1*). Default value: 1 in debug build; 0 in release builds.
+* **-adapter** *value* - select GPU adapter, if there are more than one installed on the system (example: *-adapter 1*). Default value: 0.
 
 When image capture is enabled the following hot keys are available:
 

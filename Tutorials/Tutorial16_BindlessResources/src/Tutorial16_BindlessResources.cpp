@@ -433,10 +433,10 @@ void Tutorial16_BindlessResources::UpdateUI()
 }
 
 void Tutorial16_BindlessResources::Initialize(IEngineFactory*   pEngineFactory,
-                                         IRenderDevice*    pDevice,
-                                         IDeviceContext**  ppContexts,
-                                         Uint32            NumDeferredCtx,
-                                         ISwapChain*       pSwapChain)
+                                              IRenderDevice*    pDevice,
+                                              IDeviceContext**  ppContexts,
+                                              Uint32            NumDeferredCtx,
+                                              ISwapChain*       pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -542,6 +542,8 @@ void Tutorial16_BindlessResources::Render()
         DrawAttrs.FirstIndexLocation    = Geometry.FirstIndex;
         DrawAttrs.FirstInstanceLocation = static_cast<Uint32>(i);
         // Verify the state of vertex and index buffers
+        // Also use DRAW_FLAG_DYNAMIC_RESOURCE_BUFFERS_INTACT flag to inform the engine that
+        // none of the dynamic buffers have changed since the last draw command.
         DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL | DRAW_FLAG_DYNAMIC_RESOURCE_BUFFERS_INTACT;
         m_pImmediateContext->DrawIndexed(DrawAttrs);
     }

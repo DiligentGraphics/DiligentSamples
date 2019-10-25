@@ -57,7 +57,7 @@ private:
     void UpdateUI();
     void PopulateInstanceBuffer();
 
-    static constexpr int    NumTextures    = 4;
+    static constexpr int        NumTextures    = 4;
     std::vector<ObjectGeometry> m_Geometries;
 
     bool                                  m_BindlessMode = false;
