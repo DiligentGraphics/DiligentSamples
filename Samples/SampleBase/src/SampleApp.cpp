@@ -106,13 +106,13 @@ void SampleApp::InitializeDiligentEngine(
             EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
 #endif
 
-            if (m_ValidationMode == ValidationMode::Enable)
+            if (m_ValidationLevel >= 1)
             {
                 EngineCI.DebugFlags = D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
                                       D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES | 
                                       D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
             }
-            else if (m_ValidationMode == ValidationMode::Disable)
+            else if (m_ValidationLevel == 0)
             {
                 EngineCI.DebugFlags = D3D11_DEBUG_FLAG_NONE;
             }
@@ -157,10 +157,16 @@ void SampleApp::InitializeDiligentEngine(
 #ifdef DEVELOPMENT
             EngineCI.EnableDebugLayer = true;
 #endif
-            if (m_ValidationMode == ValidationMode::Enable)
+            if (m_ValidationLevel >= 1)
+            {
                 EngineCI.EnableDebugLayer = true;
-            else if (m_ValidationMode == ValidationMode::Disable)
+                if (m_ValidationLevel >= 2)
+                    EngineCI.EnableGPUBasedValidation = true;
+            }
+            else if (m_ValidationLevel == 0)
+            {
                 EngineCI.EnableDebugLayer = false;
+            }
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
 
@@ -239,10 +245,14 @@ void SampleApp::InitializeDiligentEngine(
 #ifdef DEVELOPMENT
             EngVkAttribs.EnableValidation = true;
 #endif
-            if (m_ValidationMode == ValidationMode::Enable)
+            if (m_ValidationLevel >= 1)
+            {
                 EngVkAttribs.EnableValidation = true;
-            else if (m_ValidationMode == ValidationMode::Disable)
+            }
+            else if (m_ValidationLevel == 0)
+            {
                 EngVkAttribs.EnableValidation = false;
+            }
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs);
             ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
@@ -521,12 +531,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         }
         else if ( !(Arg = GetArgument(pos, "validation")).empty() )
         {
-            if (StrCmpNoCase(Arg.c_str(), "true",   Arg.length()) == 0 ||
-                StrCmpNoCase(Arg.c_str(), "1",      Arg.length()) == 0 ||
-                StrCmpNoCase(Arg.c_str(), "enable", Arg.length()) == 0)
-                m_ValidationMode = ValidationMode::Enable;
-            else
-                m_ValidationMode = ValidationMode::Disable;
+            m_ValidationLevel = atoi(Arg.c_str());
         }
         else if ( !(Arg = GetArgument(pos, "adapter")).empty() )
         {

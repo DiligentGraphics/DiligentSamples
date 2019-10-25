@@ -11,8 +11,8 @@ set(INCLUDE
 )
 
 set(SHADERS
-    assets/cube_inst.vsh
-    assets/cube_inst.psh
+    assets/cube.vsh
+    assets/cube.psh
 )
 
 set(ASSETS

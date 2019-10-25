@@ -167,7 +167,7 @@ Please refer to Build and Run Instructions section in the
 
 Command line options:
 
-* **-mode** {*d3d11*|*d3d12*|*vk*|*gl*} - select rendering back-end (exmple: *-mode d3d12*).
+* **-mode** {*d3d11*|*d3d12*|*vk*|*gl*} - select rendering back-end (example: *-mode d3d12*).
 * **-width** *value* - set desired window width (example: *-width 1024*).
 * **-height** *value* - set desired window height (example: *-height 768*).
 * **-capture_path** *path* - path to the folder where screen captures will be saved. Specifying this parameter enables screen capture (example: *-capture_path .*).
@@ -177,6 +177,8 @@ Command line options:
 * **-capture_format** {*jpg*|*png*} - image file format (example: *-capture_format jpg*). Default value: jpg.
 * **-capture_quality** *value* - jpeg quality (example: *-capture_quality 80*). Default value: 95.
 * **-capture_alpha** *value* - when saving png, whether to write alpha channel (example: *-capture_alpha 1*). Default value: false.
+* **-validation** *value* - Set validation level (example: *-validation 1*). Default value: 1 in debug build, 0 in release builds.
+* **-adapter** *value* - Select GPU adapter, if there are more than one installed on the system (example: *-adapter 1*). Default value: 0.
 
 When image capture is enabled the following hot keys are available:
 
