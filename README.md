@@ -124,6 +124,14 @@ This tutorial demonstrates how to use Diligent Engine to render to multiple wind
 ![](Tutorials/Tutorial15_MultipleWindows/Screenshot.png)
 
 
+## [Tutorial 16 - Bindless Resources](Tutorials/Tutorial16_BindlessResources)
+
+This tutorial shows how to implement bindless resources, a technique that leverages
+dynamic shader resource indexing enabled by the next-gen APIs to significantly improve
+rendering performance.
+
+![](Tutorials/Tutorial16_BindlessResources/Animation_Large.gif)
+
 # Samples
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)

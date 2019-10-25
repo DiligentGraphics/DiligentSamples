@@ -1,7 +1,7 @@
 # Tutorial16 - Bindless Resources
 
 This tutorial shows how to implement bindless resources, a technique that leverages
-dynamic shader resource indexing enabled by the next-gen APIs to significantly
+dynamic shader resource indexing feature enabled by the next-gen APIs to significantly
 improve rendering performance.
 
 ![](Animation_Large.gif)
@@ -27,7 +27,7 @@ access required resources using the draw call information.
 This tutorial is based on [Tutorial 5](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial05_TextureArray).
 However, while original tutorial used a texture array object that requried all array slices to be identical (same size, format,
 number of mip levels, etc.), this tutorial binds textures as an array of shader resources. Unlike texture array object, all resources
-in an array of resources may have completely different parameters. Pixel shader dynamically selects the texture to sample
+in an array of resources may have completely different parameters. The pixel shader is able to dynamically select the texture to sample
 using the texture index it receives from the vertex shader (that reads it from the instance data buffer):
 
 ```hlsl
@@ -87,7 +87,6 @@ for (int i=0; i < NumObjects; ++i)
     DrawAttrs.NumIndices            = Geometry.NumIndices;
     DrawAttrs.FirstIndexLocation    = Geometry.FirstIndex;
     DrawAttrs.FirstInstanceLocation = static_cast<Uint32>(i);
-    // Verify the state of vertex and index buffers
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL | DRAW_FLAG_DYNAMIC_RESOURCE_BUFFERS_INTACT;
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
