@@ -127,7 +127,7 @@ This tutorial demonstrates how to use Diligent Engine to render to multiple wind
 ## [Tutorial 16 - Bindless Resources](Tutorials/Tutorial16_BindlessResources)
 
 This tutorial shows how to implement bindless resources, a technique that leverages
-dynamic shader resource indexing enabled by the next-gen APIs to significantly improve
+dynamic shader resource indexing feature enabled by the next-gen APIs to significantly improve
 rendering performance.
 
 ![](Tutorials/Tutorial16_BindlessResources/Animation_Large.gif)
