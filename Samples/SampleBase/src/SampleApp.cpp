@@ -70,7 +70,8 @@ SampleApp::~SampleApp()
     m_pImGui.reset();
     m_TheSample.reset();
 
-    m_pImmediateContext->Flush();
+    if (m_pImmediateContext)
+        m_pImmediateContext->Flush();
     m_pDeferredContexts.clear();
     m_pImmediateContext.Release();
     m_pSwapChain.Release();
@@ -129,10 +130,14 @@ void SampleApp::InitializeDiligentEngine(
             Uint32 NumAdapters = 0;
             pFactoryD3D11->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
             std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
-            if(NumAdapters>0)
+            if (NumAdapters>0)
+            {
                 pFactoryD3D11->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
+            }
             else
-                LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
+            {
+                LOG_ERROR_AND_THROW("Failed to find Direct3D11-compatible hardware adapters");
+            }
             
             m_AdapterAttribs = Adapters[m_AdapterId];
             Uint32 NumDisplayModes = 0;
@@ -181,9 +186,20 @@ void SampleApp::InitializeDiligentEngine(
             pFactoryD3D12->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
             std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
             if (NumAdapters>0)
+            {
                 pFactoryD3D12->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
+            }
             else
-                LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
+            {
+#if D3D11_SUPPORTED
+                LOG_ERROR_MESSAGE("Failed to find Direct3D12-compatible hardware adapters. Attempting to initialize the engine in Direct3D11 mode.");
+                m_DeviceType = DeviceType::D3D11;
+                InitializeDiligentEngine(NativeWindowHandle);
+                return;
+#else
+                LOG_ERROR_AND_THROW("Failed to find Direct3D12-compatible hardware adapters.");
+#endif
+            }
 
             m_AdapterAttribs = Adapters[m_AdapterId];
             Uint32 NumDisplayModes = 0;
@@ -259,7 +275,22 @@ void SampleApp::InitializeDiligentEngine(
             auto* pFactoryVk = GetEngineFactoryVk();
             m_pEngineFactory = pFactoryVk;
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
+            if (!m_pDevice)
+            {
+#if GL_SUPPORTED || GLES_SUPPORTED
+                LOG_ERROR_MESSAGE("Failed to initialize Vulkan. Attempting to initialize the engine in OpenGL mode");
+                m_DeviceType = DeviceType::OpenGL;
+                InitializeDiligentEngine(
+#if PLATFORM_LINUX
+                    *display,
+#endif
+                    NativeWindowHandle);
 
+                return;
+#else
+                LOG_ERROR_AND_THROW("Failed to initialize Vulkan.");
+#endif
+            }
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
         }
@@ -286,6 +317,15 @@ void SampleApp::InitializeDiligentEngine(
         default:
             LOG_ERROR_AND_THROW("Unknown device type");
             break;
+    }
+
+    switch (m_DeviceType)
+    {
+        case DeviceType::D3D11:  m_AppTitle.append(" (D3D11)");  break;
+        case DeviceType::D3D12:  m_AppTitle.append(" (D3D12)");  break;
+        case DeviceType::OpenGL: m_AppTitle.append(" (OpenGL)"); break;
+        case DeviceType::Vulkan: m_AppTitle.append(" (Vulkan)"); break;
+        default: UNEXPECTED("Unknown/unsupported device type");
     }
 
     m_pImmediateContext.Attach(ppContexts[0]);
@@ -448,7 +488,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
 #if D3D11_SUPPORTED
                 m_DeviceType = DeviceType::D3D11;
 #else
-                LOG_ERROR_AND_THROW("Direct3D11 is not supported. Please select another device type");
+                LOG_ERROR_MESSAGE("Direct3D11 is not supported. Please select another device type");
 #endif
             }
             else if (StrCmpNoCase(Arg.c_str(), "D3D12", Arg.length()) == 0)
@@ -456,7 +496,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
 #if D3D12_SUPPORTED
                 m_DeviceType = DeviceType::D3D12;
 #else
-                LOG_ERROR_AND_THROW("Direct3D12 is not supported. Please select another device type");
+                LOG_ERROR_MESSAGE("Direct3D12 is not supported. Please select another device type");
 #endif
             }
             else if (StrCmpNoCase(Arg.c_str(), "GL", Arg.length()) == 0)
@@ -464,7 +504,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
 #if GL_SUPPORTED || GLES_SUPPORTED
                 m_DeviceType = DeviceType::OpenGL;
 #else
-                LOG_ERROR_AND_THROW("OpenGL is not supported. Please select another device type");
+                LOG_ERROR_MESSAGE("OpenGL is not supported. Please select another device type");
 #endif
             }
             else if (StrCmpNoCase(Arg.c_str(), "VK", Arg.length()) == 0)
@@ -472,12 +512,12 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
 #if VULKAN_SUPPORTED
                 m_DeviceType = DeviceType::Vulkan;
 #else
-                LOG_ERROR_AND_THROW("Vulkan is not supported. Please select another device type");
+                LOG_ERROR_MESSAGE("Vulkan is not supported. Please select another device type");
 #endif
             }
             else
             {
-                LOG_ERROR_AND_THROW("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, VK");
+                LOG_ERROR_MESSAGE("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, VK");
             }
         }
         else if ( !(Arg = GetArgument(pos, "capture_path")).empty() )
@@ -560,27 +600,6 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         }
     }
 
-    switch (m_DeviceType)
-    {
-#if D3D11_SUPPORTED
-        case DeviceType::D3D11: m_AppTitle.append(" (D3D11)"); break;
-#endif
-
-#if D3D12_SUPPORTED
-        case DeviceType::D3D12: m_AppTitle.append(" (D3D12)"); break;
-#endif
-
-#if GL_SUPPORTED || GLES_SUPPORTED
-        case DeviceType::OpenGL: m_AppTitle.append(" (OpenGL)"); break;
-#endif
-
-#if VULKAN_SUPPORTED
-        case DeviceType::Vulkan: m_AppTitle.append(" (Vulkan)"); break;
-#endif
-
-        default: UNEXPECTED("Unknown/unsupported device type");
-    }
-
     m_TheSample->ProcessCommandLine(CmdLine);
 }
 
@@ -598,25 +617,41 @@ void SampleApp::WindowResize(int width, int height)
 void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
     m_CurrentTime = CurrTime;
-    m_pImGui->NewFrame();
-    UpdateAdaptersDialog();
-    m_TheSample->Update(CurrTime, ElapsedTime);
-    m_TheSample->GetInputController().ClearState();
+
+    if (m_pImGui)
+    {
+        m_pImGui->NewFrame();
+        UpdateAdaptersDialog();
+    }
+    if (m_pDevice)
+    {
+        m_TheSample->Update(CurrTime, ElapsedTime);
+        m_TheSample->GetInputController().ClearState();
+    }
 }
 
 void SampleApp::Render()
 {
+    if (!m_pImmediateContext)
+        return;
+
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_TheSample->Render();
 
     // Restore default render target in case the sample has changed it
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImGui->Render(m_pImmediateContext);
+    if (m_pImGui)
+    {
+        m_pImGui->Render(m_pImmediateContext);
+    }
 }
 
 void SampleApp::Present()
 {
+    if (!m_pSwapChain)
+        return;
+
     if (m_pScreenCapture && m_ScreenCaptureInfo.FramesToCapture > 0)
     {
         if (m_CurrentTime - m_ScreenCaptureInfo.LastCaptureTime >= 1.0 / m_ScreenCaptureInfo.CaptureFPS)

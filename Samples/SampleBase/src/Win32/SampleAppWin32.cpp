@@ -180,13 +180,20 @@ public:
     {
         m_hWnd = hWnd;
 
-        InitializeDiligentEngine(hWnd);
+        try
+        {
+            InitializeDiligentEngine(hWnd);
 
-        // Initialize Dear ImGUI
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplWin32(m_hWnd, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+            // Initialize Dear ImGUI
+            const auto& SCDesc = m_pSwapChain->GetDesc();
+            m_pImGui.reset(new ImGuiImplWin32(m_hWnd, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
 
-        InitializeSample();
+            InitializeSample();
+        }
+        catch(...)
+        {
+            LOG_ERROR("Failed to initialize Diligent Engine.");
+        }
     }
 
 

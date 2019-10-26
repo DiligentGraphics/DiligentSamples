@@ -103,7 +103,8 @@ public:
 
     virtual void Present()override
     {
-        m_pSwapChain->Present();
+        if (m_pSwapChain)
+            m_pSwapChain->Present();
 
         //// If the device was removed either by a disconnection or a driver upgrade, we 
         //// must recreate all device resources.
@@ -119,32 +120,42 @@ public:
 
     virtual std::shared_ptr<DX::DeviceResources> InitDeviceResources()override
     {
-        InitializeDiligentEngine(nullptr);
+        try
+        {
+            InitializeDiligentEngine(nullptr);
 
-        ID3D12Device *pd3d12Device = nullptr;
-        ID3D11Device *pd3d11Device = nullptr;
-        if (m_DeviceType == DeviceType::D3D12)
-        {
-            // Store pointers to the Direct3D 11.1 API device and immediate context.
-            RefCntAutoPtr<IRenderDeviceD3D12> pRenderDeviceD3D12(m_pDevice, IID_RenderDeviceD3D12);
-            pd3d12Device = pRenderDeviceD3D12->GetD3D12Device();
+            ID3D12Device *pd3d12Device = nullptr;
+            ID3D11Device *pd3d11Device = nullptr;
+            if (m_DeviceType == DeviceType::D3D12)
+            {
+                // Store pointers to the Direct3D 11.1 API device and immediate context.
+                RefCntAutoPtr<IRenderDeviceD3D12> pRenderDeviceD3D12(m_pDevice, IID_RenderDeviceD3D12);
+                pd3d12Device = pRenderDeviceD3D12->GetD3D12Device();
+            }
+            else if (m_DeviceType == DeviceType::D3D11)
+            {
+                RefCntAutoPtr<IRenderDeviceD3D11> pRenderDeviceD3D11(m_pDevice, IID_RenderDeviceD3D11);
+                pd3d11Device = pRenderDeviceD3D11->GetD3D11Device();
+            }
+            else
+            {
+                UNEXPECTED("Unexpected device type");
+            }
+            m_DeviceResources = std::make_shared<DX::DeviceResources>(pd3d11Device, pd3d12Device);
         }
-        else if (m_DeviceType == DeviceType::D3D11)
+        catch(...)
         {
-            RefCntAutoPtr<IRenderDeviceD3D11> pRenderDeviceD3D11(m_pDevice, IID_RenderDeviceD3D11);
-            pd3d11Device = pRenderDeviceD3D11->GetD3D11Device();
+            LOG_ERROR("Failed to initialize Diligent Engine.");
         }
-        else
-        {
-            UNEXPECTED("Unexpected device type");
-        }
-        m_DeviceResources = std::make_shared<DX::DeviceResources>(pd3d11Device, pd3d12Device);
-        
+
         return m_DeviceResources;
     }
 
     virtual void InitWindowSizeDependentResources()override
     {
+        if (!m_DeviceResources)
+            return;
+
         m_DeviceResources->UpdateRenderTargetSize();
         auto backBufferWidth = m_DeviceResources->GetBackBufferWidth();
         auto backBufferHeight = m_DeviceResources->GetBackBufferHeight();
@@ -213,6 +224,9 @@ public:
 
     virtual void CreateRenderers()override
     {
+        if (!m_DeviceResources)
+            return;
+
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplUWP(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
 
