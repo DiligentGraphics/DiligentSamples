@@ -321,10 +321,12 @@ void SampleApp::InitializeDiligentEngine(
 
     switch (m_DeviceType)
     {
-        case DeviceType::D3D11:  m_AppTitle.append(" (D3D11)");  break;
-        case DeviceType::D3D12:  m_AppTitle.append(" (D3D12)");  break;
-        case DeviceType::OpenGL: m_AppTitle.append(" (OpenGL)"); break;
-        case DeviceType::Vulkan: m_AppTitle.append(" (Vulkan)"); break;
+        case DeviceType::D3D11:    m_AppTitle.append(" (D3D11)");    break;
+        case DeviceType::D3D12:    m_AppTitle.append(" (D3D12)");    break;
+        case DeviceType::OpenGL:   m_AppTitle.append(" (OpenGL)");   break;
+        case DeviceType::OpenGLES: m_AppTitle.append(" (OpenGLES)"); break;
+        case DeviceType::Vulkan:   m_AppTitle.append(" (Vulkan)");   break;
+        case DeviceType::Metal:    m_AppTitle.append(" (Metal)");    break;
         default: UNEXPECTED("Unknown/unsupported device type");
     }
 
