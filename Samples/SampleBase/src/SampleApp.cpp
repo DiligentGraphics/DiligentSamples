@@ -282,7 +282,7 @@ void SampleApp::InitializeDiligentEngine(
                 m_DeviceType = DeviceType::OpenGL;
                 InitializeDiligentEngine(
 #if PLATFORM_LINUX
-                    *display,
+                    display,
 #endif
                     NativeWindowHandle);
 
