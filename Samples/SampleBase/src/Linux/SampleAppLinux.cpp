@@ -59,19 +59,27 @@ public:
     }
 
 #if VULKAN_SUPPORTED
-    virtual void InitVulkan(xcb_connection_t* connection, uint32_t window)override final
+    virtual bool InitVulkan(xcb_connection_t* connection, uint32_t window)override final
     {
-        m_DeviceType = DeviceType::Vulkan;
-        struct XCBInfo
+        try
         {
-            xcb_connection_t* connection;
-            uint32_t window;
-        }xcbInfo = {connection, window};
-        InitializeDiligentEngine(nullptr, &xcbInfo);
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
-        m_TheSample->GetInputController().InitXCBKeysms(connection);
-        InitializeSample();
+            m_DeviceType = DeviceType::Vulkan;
+            struct XCBInfo
+            {
+                xcb_connection_t* connection;
+                uint32_t window;
+            }xcbInfo = {connection, window};
+            InitializeDiligentEngine(nullptr, &xcbInfo);
+            const auto& SCDesc = m_pSwapChain->GetDesc();
+            m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+            m_TheSample->GetInputController().InitXCBKeysms(connection);
+            InitializeSample();
+            return true;
+        }            
+        catch(...)
+        {
+            return false;
+        }
     }
     virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
     {
