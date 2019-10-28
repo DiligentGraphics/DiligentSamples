@@ -277,19 +277,7 @@ void SampleApp::InitializeDiligentEngine(
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
-#if GL_SUPPORTED || GLES_SUPPORTED
-                LOG_ERROR_MESSAGE("Failed to initialize Vulkan. Attempting to initialize the engine in OpenGL mode");
-                m_DeviceType = DeviceType::OpenGL;
-                InitializeDiligentEngine(
-#if PLATFORM_LINUX
-                    display,
-#endif
-                    NativeWindowHandle);
-
-                return;
-#else
                 LOG_ERROR_AND_THROW("Failed to initialize Vulkan.");
-#endif
             }
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
