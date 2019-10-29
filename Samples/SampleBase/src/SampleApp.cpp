@@ -678,8 +678,11 @@ void SampleApp::Present()
             m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
             m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
             std::stringstream FileNameSS;
-            FileNameSS << m_ScreenCaptureInfo.Directory << '/' << m_ScreenCaptureInfo.FileName
-                       << std::setw(3) << std::setfill('0') << Capture.Id
+            if (!m_ScreenCaptureInfo.Directory.empty())
+            {
+                FileNameSS << m_ScreenCaptureInfo.Directory << '/';
+            }
+            FileNameSS << m_ScreenCaptureInfo.FileName << std::setw(3) << std::setfill('0') << Capture.Id
                        << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : ".png");
             auto FileName = FileNameSS.str();
             FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
