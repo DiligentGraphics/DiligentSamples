@@ -21,6 +21,8 @@
  *  of the possibility of such damages.
  */
 
+#include <climits>
+
 #include "NuklearDemo.h"
 
 #define NK_INCLUDE_STANDARD_VARARGS
