@@ -45,9 +45,7 @@ bool NuklearDemo::HandleNativeMessage(const void* pNativeMsgData)
         LPARAM lParam;
     }const* pWin32Msg  = reinterpret_cast<const WindowsMessageData*>(pNativeMsgData);
 
-    //nk_input_begin(m_pNkCtx); // TODO: needs to go before msg loop
     return nk_diligent_handle_win32_event(m_pNkCtx, pWin32Msg->hWnd, pWin32Msg->message, pWin32Msg->wParam, pWin32Msg->lParam) != 0;
-    //nk_input_end(m_pNkCtx);  // TODO: needs to go after msg loop
 }
 
 }
