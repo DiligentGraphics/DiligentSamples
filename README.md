@@ -213,6 +213,7 @@ See [Apache 2.0 license](License.txt).
 
 This project has some third-party dependencies, each of which may have independent licensing:
 
+* [nuklear](https://github.com/vurtun/nuklear): A single-header ANSI C gui library.
 
 
 <a name="contributing"></a>

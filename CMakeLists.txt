@@ -94,5 +94,9 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
 endfunction()
 
+add_subdirectory(ThirdParty)
 add_subdirectory(Samples)
 add_subdirectory(Tutorials)
+
+file(RELATIVE_PATH SAMPLES_ROOT_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+install(FILES License.txt DESTINATION "${SAMPLES_ROOT_REL_PATH}/Licenses" RENAME DiligentEngine-License.txt)
