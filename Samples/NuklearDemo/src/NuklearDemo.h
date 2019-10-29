@@ -53,10 +53,6 @@ public:
 private:
     void UpdateUI();
 
-    bool m_ShowDemoWindow    = true;
-    bool m_ShowAnotherWindow = false;
-    float4 m_ClearColor      = {0.45f, 0.55f, 0.60f, 1.00f};
-
     nk_diligent_context* m_pNkDlgCtx = nullptr;
     nk_context*         m_pNkCtx     = nullptr;
 };

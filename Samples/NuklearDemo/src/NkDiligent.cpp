@@ -304,6 +304,7 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
     device_ctx->SetIndexBuffer(nk_dlg_ctx->index_buffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     device_ctx->SetPipelineState(nk_dlg_ctx->pso);
     device_ctx->CommitShaderResources(nk_dlg_ctx->srb, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    device_ctx->SetBlendFactors(blend_factors);
 
     DrawIndexedAttribs Attribs;
     Attribs.Flags     = DRAW_FLAG_VERIFY_STATES;
@@ -352,7 +353,7 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
     nk_draw_foreach(cmd, &nk_dlg_ctx->ctx, &nk_dlg_ctx->cmds)
     {
         auto* texture_view = reinterpret_cast<ITextureView*>(cmd->texture.ptr);
-        VERIFY(texture_view == nk_dlg_ctx->font_texture_view, "Unexpected font texture view");
+        VERIFY(texture_view == nk_dlg_ctx->font_texture_view, "Unexpected font texture view"); (void)texture_view;
         if (!cmd->elem_count) continue;
 
         Rect scissor;
