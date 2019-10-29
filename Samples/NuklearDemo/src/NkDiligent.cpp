@@ -21,6 +21,8 @@
  *  of the possibility of such damages.
  */
 
+#include <cstdarg>
+
 // If defined it will include header `<stdint.h>` for fixed sized types otherwise nuklear tries to select the correct type. If that fails it will throw a compiler error and you have to select the correct types yourself.
 #define NK_INCLUDE_FIXED_TYPES
 
@@ -125,12 +127,12 @@ struct PS_INPUT
     float2 uv  : TEXCOORD;
 };
 
-PS_INPUT vs(VS_INPUT input)
+PS_INPUT vs(VS_INPUT vs_input)
 {
     PS_INPUT vs_output;
-    vs_output.pos = mul(ProjectionMatrix, float4(input.pos.xy, 0.0, 1.0));
-    vs_output.col = input.col;
-    vs_output.uv  = input.uv;
+    vs_output.pos = mul(ProjectionMatrix, float4(vs_input.pos.xy, 0.0, 1.0));
+    vs_output.col = vs_input.col;
+    vs_output.uv  = vs_input.uv;
     return vs_output;
 }
 )";
