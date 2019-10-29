@@ -44,7 +44,7 @@ public:
                             ISwapChain*       pSwapChain)override final;
     virtual void Render()override final;
     virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Dear Imgui Demo";}
+    virtual const Char* GetSampleName()const override final{return "Nuklear Demo";}
     virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
 #if PLATFORM_WIN32
     virtual bool HandleNativeMessage(const void* pNativeMsgData)override final;
