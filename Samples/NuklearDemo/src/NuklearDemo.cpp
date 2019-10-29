@@ -51,7 +51,8 @@ void NuklearDemo::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDev
 
     constexpr Uint32 NuklearMaxVBSize = 512 * 1024;
     constexpr Uint32 NuklearMaxIBSize = 128 * 1024;
-    m_pNkDlgCtx = nk_diligent_init(m_pDevice, m_pSwapChain->GetDesc().Width, m_pSwapChain->GetDesc().Height, m_pSwapChain->GetDesc().ColorBufferFormat, NuklearMaxVBSize, NuklearMaxIBSize);
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+    m_pNkDlgCtx = nk_diligent_init(m_pDevice, SCDesc.Width, SCDesc.Height, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, NuklearMaxVBSize, NuklearMaxIBSize);
     m_pNkCtx    = nk_diligent_get_nk_ctx(m_pNkDlgCtx);
 
     nk_font_atlas* atlas = nullptr;
@@ -66,9 +67,11 @@ void NuklearDemo::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDev
 
 void NuklearDemo::UpdateUI()
 {
+    nk_input_end(m_pNkCtx); // Needs to go after msg loop
+
     overview(m_pNkCtx);
 
-    nk_input_begin(m_pNkCtx);  // TODO: needs to go before msg loop
+    nk_input_begin(m_pNkCtx);// Needs to go before msg loop
 }
 
 // Render a frame

@@ -23,3 +23,10 @@ set(ASSETS
 )
 
 add_sample_app("NuklearDemo" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+
+if(MSVC)
+    target_compile_definitions(NuklearDemo PRIVATE _CRT_SECURE_NO_WARNINGS)
+    set_source_files_properties(src/NkDiligent.cpp PROPERTY COMPILE_FLAGS
+        /wd4127 # Conditional expression is constant
+    )
+endif()

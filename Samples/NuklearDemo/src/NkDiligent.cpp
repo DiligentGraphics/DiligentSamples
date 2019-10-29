@@ -56,13 +56,6 @@
 
 using namespace Diligent;
 
-//#if PLATFORM_WIN32
-//#   ifndef NOMINMAX
-//#      define NOMINMAX
-//#   endif
-//#   include <Windows.h>
-//#endif
-
 struct nk_diligent_vertex
 {
     float   position[2];
@@ -96,68 +89,6 @@ NK_API struct nk_context *nk_diligent_get_nk_ctx(nk_diligent_context* nk_dlg_ctx
     VERIFY_EXPR(nk_dlg_ctx != nullptr);
     return &nk_dlg_ctx->ctx;
 }
-
-//#if PLATFORM_WIN32
-//static void
-//nk_win32_clipboard_paste(nk_handle usr, struct nk_text_edit *edit)
-//{
-//    (void)usr;
-//    if (isclipboardformatavailable(cf_unicodetext) && openclipboard(null))
-//    {
-//        hglobal mem = getclipboarddata(cf_unicodetext); 
-//        if (mem)
-//        {
-//            size_t size = globalsize(mem) - 1;
-//            if (size)
-//            {
-//                lpcwstr wstr = (lpcwstr)globallock(mem);
-//                if (wstr)
-//                {
-//                    int utf8size = widechartomultibyte(cp_utf8, 0, wstr, size / sizeof(wchar_t), null, 0, null, null);
-//                    if (utf8size)
-//                    {
-//                        char* utf8 = (char*)malloc(utf8size);
-//                        if (utf8)
-//                        {
-//                            widechartomultibyte(cp_utf8, 0, wstr, size / sizeof(wchar_t), utf8, utf8size, null, null);
-//                            nk_textedit_paste(edit, utf8, utf8size);
-//                            free(utf8);
-//                        }
-//                    }
-//                    globalunlock(mem); 
-//                }
-//            }
-//        }
-//        closeclipboard();
-//    }
-//}
-//
-//static void
-//nk_win32_clipboard_copy(nk_handle usr, const char *text, int len)
-//{
-//    (void)usr;
-//    if (openclipboard(null))
-//    {
-//        int wsize = multibytetowidechar(cp_utf8, 0, text, len, null, 0);
-//        if (wsize)
-//        {
-//            hglobal mem = globalalloc(gmem_moveable, (wsize + 1) * sizeof(wchar_t));
-//            if (mem)
-//            {
-//                wchar_t* wstr = (wchar_t*)globallock(mem);
-//                if (wstr)
-//                {
-//                    multibytetowidechar(cp_utf8, 0, text, len, wstr, wsize);
-//                    wstr[wsize] = 0;
-//                    globalunlock(mem);
-//                    setclipboarddata(cf_unicodetext, mem); 
-//                }
-//            }
-//        }
-//        closeclipboard();
-//    }
-//}
-//#endif
 
 static float4x4 nk_get_projection_matrix(int width, int height, bool IsGL)
 {
@@ -226,6 +157,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
                                                     unsigned int        width,
                                                     unsigned int        height,
                                                     TEXTURE_FORMAT      BackBufferFmt,
+                                                    TEXTURE_FORMAT      DepthBufferFmt,
                                                     unsigned int        max_vertex_buffer_size,
                                                     unsigned int        max_index_buffer_size)
 {
@@ -247,8 +179,9 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
     GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     GraphicsPipeline.RasterizerDesc.ScissorEnable = True;
     GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-    GraphicsPipeline.NumRenderTargets = 1;
-    GraphicsPipeline.RTVFormats[0] = BackBufferFmt;
+    GraphicsPipeline.NumRenderTargets  = 1;
+    GraphicsPipeline.RTVFormats[0]     = BackBufferFmt;
+    GraphicsPipeline.DSVFormat         = DepthBufferFmt;
     GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     ShaderCreateInfo ShaderCI;
@@ -421,10 +354,10 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
         if (!cmd->elem_count) continue;
 
         Rect scissor;
-        scissor.left    = static_cast<Int32>(cmd->clip_rect.x);
-        scissor.right   = static_cast<Int32>(cmd->clip_rect.x + cmd->clip_rect.w);
-        scissor.top     = static_cast<Int32>(cmd->clip_rect.y);
-        scissor.bottom  = static_cast<Int32>(cmd->clip_rect.y + cmd->clip_rect.h);
+        scissor.left    = std::max(static_cast<Int32>(cmd->clip_rect.x), 0);
+        scissor.right   = std::max(static_cast<Int32>(cmd->clip_rect.x + cmd->clip_rect.w), scissor.left);
+        scissor.top     = std::max(static_cast<Int32>(cmd->clip_rect.y), 0);
+        scissor.bottom  = std::max(static_cast<Int32>(cmd->clip_rect.y + cmd->clip_rect.h), scissor.top);
 
         Attribs.NumIndices         = cmd->elem_count;
         Attribs.FirstIndexLocation = offset;

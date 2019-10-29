@@ -28,6 +28,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(Diligent::IRenderDevice* dev
                                                     unsigned int             width,
                                                     unsigned int             height,
                                                     Diligent::TEXTURE_FORMAT BackBufferFmt,
+                                                    Diligent::TEXTURE_FORMAT DepthBufferFmt,
                                                     unsigned int             max_vertex_buffer_size,
                                                     unsigned int             max_index_buffer_size);
 
