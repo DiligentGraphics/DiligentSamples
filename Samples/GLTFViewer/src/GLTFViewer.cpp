@@ -202,7 +202,7 @@ void GLTFViewer::UpdateUI()
             {
                 ImGui::Checkbox("Play", &m_PlayAnimation);
                 std::vector<const char*> Animations(m_Model->Animations.size());
-                for (int i=0; i < m_Model->Animations.size(); ++i)
+                for (size_t i=0; i < m_Model->Animations.size(); ++i)
                     Animations[i] = m_Model->Animations[i].Name.c_str();
                 ImGui::Combo("Active Animation", reinterpret_cast<int*>(&m_AnimationIndex), Animations.data(), static_cast<int>(Animations.size()));
                 ImGui::TreePop();
