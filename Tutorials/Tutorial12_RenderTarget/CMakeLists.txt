@@ -4,10 +4,12 @@ project(Tutorial12_RenderTarget CXX)
 
 set(SOURCE
     src/Tutorial12_RenderTarget.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial12_RenderTarget.h
+    ../Common/src/TexturedCube.h
 )
 
 set(SHADERS

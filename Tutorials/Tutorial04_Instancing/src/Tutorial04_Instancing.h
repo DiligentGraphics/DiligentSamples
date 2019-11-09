@@ -43,10 +43,7 @@ public:
 
 private:
     void CreatePipelineState();
-    void CreateVertexBuffer();
     void CreateInstanceBuffer();
-    void CreateIndexBuffer();
-    void LoadTexture();
     void UpdateUI();
     void PopulateInstanceBuffer();
 

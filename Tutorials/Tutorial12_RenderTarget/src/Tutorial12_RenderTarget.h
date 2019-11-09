@@ -45,9 +45,6 @@ public:
 private:
     void CreateCubePSO();
     void CreateRenderTargetPSO();
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
-    void LoadTexture();
 
     static constexpr TEXTURE_FORMAT       RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
     static constexpr TEXTURE_FORMAT       DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;

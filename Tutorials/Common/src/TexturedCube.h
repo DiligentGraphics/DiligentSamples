@@ -23,38 +23,20 @@
 
 #pragma once 
 
-#include "SampleBase.h"
-#include "BasicMath.h"
+#include "RenderDevice.h"
+#include "Buffer.h"
+#include "RefCntAutoPtr.h"
 
 namespace Diligent
 {
 
-class Tutorial07_GeometryShader final : public SampleBase
+namespace TexturedCube
 {
-public:
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
-                                                EngineCreateInfo& Attribs)override final;
-    virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial07: Geometry Shader";}
 
-private:
-    void CreatePipelineState();
-    void UpdateUI();
+RefCntAutoPtr<IBuffer>  CreateVertexBuffer(IRenderDevice* pDevice);
+RefCntAutoPtr<IBuffer>  CreateIndexBuffer(IRenderDevice* pDevice);
+RefCntAutoPtr<ITexture> LoadTexture(IRenderDevice* pDevice, const char* Path);
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO;
-    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
-    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_ShaderConstants;
-    RefCntAutoPtr<ITextureView>           m_TextureSRV;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
-    float4x4 m_WorldViewProjMatrix;
-    float m_LineWidth = 3.f;
-};
+}
 
 }

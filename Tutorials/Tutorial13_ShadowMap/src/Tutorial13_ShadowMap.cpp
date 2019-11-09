@@ -27,6 +27,7 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "../../Common/src/TexturedCube.h"
 #include "imgui.h"
 #include "ImGuiUtils.h"
 #include "imGuIZMO.h"
@@ -361,7 +362,7 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     m_pDevice->CreatePipelineState(PSODesc, &m_pShadowMapVisPSO);
 }
 
-void Tutorial13_ShadowMap::CreateVertexBuffer(std::vector<StateTransitionDesc>& Barriers)
+void Tutorial13_ShadowMap::CreateVertexBuffer()
 {
     // Layout of this structure matches the one we defined in pipeline state
     struct Vertex
@@ -430,49 +431,8 @@ void Tutorial13_ShadowMap::CreateVertexBuffer(std::vector<StateTransitionDesc>& 
     VBData.pData    = CubeVerts;
     VBData.DataSize = sizeof(CubeVerts);
     m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
+}
 
-    Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
-}
-    
-void Tutorial13_ShadowMap::CreateIndexBuffer(std::vector<StateTransitionDesc>& Barriers)
-{
-    Uint32 Indices[] =
-    {
-        2,0,1,    2,3,0,
-        4,6,5,    4,7,6,
-        8,10,9,   8,11,10,
-        12,14,13, 12,15,14,
-        16,18,17, 16,19,18,
-        20,21,22, 20,22,23
-    };
-    
-    BufferDesc IndBuffDesc;
-    IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_STATIC;
-    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
-    BufferData IBData;
-    IBData.pData    = Indices;
-    IBData.DataSize = sizeof(Indices);
-    m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
-
-    Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
-}
-    
-void Tutorial13_ShadowMap::LoadTexture(std::vector<StateTransitionDesc>& Barriers)
-{
-    TextureLoadInfo loadInfo;
-    loadInfo.IsSRGB = true;
-    RefCntAutoPtr<ITexture> Tex;
-    CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
-    // Get shader resource view from the texture
-    m_TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    
-    // Set texture SRV in the SRB
-    m_CubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
-    Barriers.emplace_back(Tex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
-}
-    
 void Tutorial13_ShadowMap::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -509,9 +469,22 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     CreateCubePSO();
     CreatePlanePSO();
     CreateShadowMapVisPSO();
-    CreateVertexBuffer(Barriers);
-    CreateIndexBuffer(Barriers);
-    LoadTexture(Barriers);
+
+    // Load cube
+
+    // In this tutorial we need vertices with normals
+    CreateVertexBuffer();
+    // Load index buffer
+    m_CubeIndexBuffer = TexturedCube::CreateIndexBuffer(pDevice);
+    // Explicitly transition vertex and index buffers to required states
+    Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+    Barriers.emplace_back(m_CubeIndexBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER,  true);
+    // Load texture
+    auto CubeTexture = TexturedCube::LoadTexture(pDevice, "DGLogo.png");
+    m_CubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(CubeTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    // Transition the texture to shader resource state
+    Barriers.emplace_back(CubeTexture, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+
     CreateShadowMap();
 
     m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());

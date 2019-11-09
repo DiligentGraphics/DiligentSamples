@@ -26,6 +26,7 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
+#include "../../Common/src/TexturedCube.h"
 
 namespace Diligent
 {
@@ -241,112 +242,6 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
     m_pRTPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "Constants")->Set(m_RTPSConstants);
 }
 
-void Tutorial12_RenderTarget::CreateVertexBuffer()
-{
-    // Layout of this structure matches the one we defined in the pipeline state
-    struct Vertex
-    {
-        float3 pos;
-        float2 uv;
-    };
-
-    // Cube vertices
-
-    //      (-1,+1,+1)________________(+1,+1,+1) 
-    //               /|              /|
-    //              / |             / |
-    //             /  |            /  |
-    //            /   |           /   |
-    //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____| 
-    //           |   /(-1,+1,-1) |    /(+1,+1,-1)
-    //           |  /            |   /
-    //           | /             |  /
-    //           |/              | /
-    //           /_______________|/ 
-    //        (-1,-1,-1)       (+1,-1,-1)
-    // 
-
-    Vertex CubeVerts[] =
-    {
-        {float3(-1,-1,-1), float2(0,1)},
-        {float3(-1,+1,-1), float2(0,0)},
-        {float3(+1,+1,-1), float2(1,0)},
-        {float3(+1,-1,-1), float2(1,1)},
-
-        {float3(-1,-1,-1), float2(0,1)},
-        {float3(-1,-1,+1), float2(0,0)},
-        {float3(+1,-1,+1), float2(1,0)},
-        {float3(+1,-1,-1), float2(1,1)},
-
-        {float3(+1,-1,-1), float2(0,1)},
-        {float3(+1,-1,+1), float2(1,1)},
-        {float3(+1,+1,+1), float2(1,0)},
-        {float3(+1,+1,-1), float2(0,0)},
-
-        {float3(+1,+1,-1), float2(0,1)},
-        {float3(+1,+1,+1), float2(0,0)},
-        {float3(-1,+1,+1), float2(1,0)},
-        {float3(-1,+1,-1), float2(1,1)},
-
-        {float3(-1,+1,-1), float2(1,0)},
-        {float3(-1,+1,+1), float2(0,0)},
-        {float3(-1,-1,+1), float2(0,1)},
-        {float3(-1,-1,-1), float2(1,1)},
-
-        {float3(-1,-1,+1), float2(1,1)},
-        {float3(+1,-1,+1), float2(0,1)},
-        {float3(+1,+1,+1), float2(0,0)},
-        {float3(-1,+1,+1), float2(1,0)}
-    };
-
-    BufferDesc VertBuffDesc;
-    VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_STATIC;
-    VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
-    BufferData VBData;
-    VBData.pData    = CubeVerts;
-    VBData.DataSize = sizeof(CubeVerts);
-    m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
-}
-
-void Tutorial12_RenderTarget::CreateIndexBuffer()
-{
-    Uint32 Indices[] =
-    {
-        2,0,1,    2,3,0,
-        4,6,5,    4,7,6,
-        8,10,9,   8,11,10,
-        12,14,13, 12,15,14,
-        16,18,17, 16,19,18,
-        20,21,22, 20,22,23
-    };
-
-    BufferDesc IndBuffDesc;
-    IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_STATIC;
-    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
-    BufferData IBData;
-    IBData.pData    = Indices;
-    IBData.DataSize = sizeof(Indices);
-    m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
-}
-
-void Tutorial12_RenderTarget::LoadTexture()
-{
-    TextureLoadInfo loadInfo;
-    loadInfo.IsSRGB = true;
-    RefCntAutoPtr<ITexture> Tex;
-    CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &Tex);
-    // Get shader resource view from the texture
-    m_CubeTextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    
-    // Set texture SRV in the SRB
-    m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
-}
-
 void Tutorial12_RenderTarget::Initialize(IEngineFactory*   pEngineFactory,
                                          IRenderDevice*    pDevice,
                                          IDeviceContext**  ppContexts,
@@ -357,9 +252,13 @@ void Tutorial12_RenderTarget::Initialize(IEngineFactory*   pEngineFactory,
     
     CreateCubePSO();
     CreateRenderTargetPSO();
-    CreateVertexBuffer();
-    CreateIndexBuffer();
-    LoadTexture();
+
+    // Load textured cube
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
+    m_CubeTextureSRV = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    // Set cube texture SRV in the SRB
+    m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
 void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)

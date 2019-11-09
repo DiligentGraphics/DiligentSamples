@@ -4,10 +4,12 @@ project(Tutorial04_Instancing CXX)
 
 set(SOURCE
     src/Tutorial04_Instancing.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial04_Instancing.h
+    ../Common/src/TexturedCube.h
 )
 
 set(SHADERS

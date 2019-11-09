@@ -4,10 +4,12 @@ project(Tutorial07_GeometryShader CXX)
 
 set(SOURCE
     src/Tutorial07_GeometryShader.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial07_GeometryShader.h
+    ../Common/src/TexturedCube.h
 )
 
 set(SHADERS

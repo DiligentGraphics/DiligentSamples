@@ -51,8 +51,6 @@ public:
 
 private:
     void CreatePipelineState (std::vector<StateTransitionDesc>& Barriers);
-    void CreateVertexBuffer  (std::vector<StateTransitionDesc>& Barriers);
-    void CreateIndexBuffer   (std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
     void UpdateUI();
     void PopulateInstanceData();

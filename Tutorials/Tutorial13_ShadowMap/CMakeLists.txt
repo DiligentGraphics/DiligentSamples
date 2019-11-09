@@ -4,10 +4,12 @@ project(Tutorial13_ShadowMap CXX)
 
 set(SOURCE
     src/Tutorial13_ShadowMap.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial13_ShadowMap.h
+    ../Common/src/TexturedCube.h
 )
 
 set(SHADERS

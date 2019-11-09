@@ -28,6 +28,7 @@
 #include "MapHelper.h"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "../../Common/src/TexturedCube.h"
 #include "imgui.h"
 
 namespace Diligent
@@ -175,76 +176,6 @@ void Tutorial05_TextureArray::CreatePipelineState()
     m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
 }
 
-void Tutorial05_TextureArray::CreateVertexBuffer()
-{
-    // Layout of this structure matches the one we defined in the pipeline state
-    struct Vertex
-    {
-        float3 pos;
-        float2 uv;
-    };
-
-    // Cube vertices
-
-    //      (-1,+1,+1)________________(+1,+1,+1) 
-    //               /|              /|
-    //              / |             / |
-    //             /  |            /  |
-    //            /   |           /   |
-    //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____| 
-    //           |   /(-1,+1,-1) |    /(+1,+1,-1)
-    //           |  /            |   /
-    //           | /             |  /
-    //           |/              | /
-    //           /_______________|/ 
-    //        (-1,-1,-1)       (+1,-1,-1)
-    // 
-
-    Vertex CubeVerts[] =
-    {
-        {float3(-1,-1,-1), float2(0,1)},
-        {float3(-1,+1,-1), float2(0,0)},
-        {float3(+1,+1,-1), float2(1,0)},
-        {float3(+1,-1,-1), float2(1,1)},
-
-        {float3(-1,-1,-1), float2(0,1)},
-        {float3(-1,-1,+1), float2(0,0)},
-        {float3(+1,-1,+1), float2(1,0)},
-        {float3(+1,-1,-1), float2(1,1)},
-
-        {float3(+1,-1,-1), float2(0,1)},
-        {float3(+1,-1,+1), float2(1,1)},
-        {float3(+1,+1,+1), float2(1,0)},
-        {float3(+1,+1,-1), float2(0,0)},
-
-        {float3(+1,+1,-1), float2(0,1)},
-        {float3(+1,+1,+1), float2(0,0)},
-        {float3(-1,+1,+1), float2(1,0)},
-        {float3(-1,+1,-1), float2(1,1)},
-
-        {float3(-1,+1,-1), float2(1,0)},
-        {float3(-1,+1,+1), float2(0,0)},
-        {float3(-1,-1,+1), float2(0,1)},
-        {float3(-1,-1,-1), float2(1,1)},
-
-        {float3(-1,-1,+1), float2(1,1)},
-        {float3(+1,-1,+1), float2(0,1)},
-        {float3(+1,+1,+1), float2(0,0)},
-        {float3(-1,+1,+1), float2(1,0)}
-    };
-
-    BufferDesc VertBuffDesc;
-    VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_STATIC;
-    VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
-    BufferData VBData;
-    VBData.pData = CubeVerts;
-    VBData.DataSize = sizeof(CubeVerts);
-    m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
-}
-
 void Tutorial05_TextureArray::CreateInstanceBuffer()
 {
     // Create instance data buffer that will store transformation matrices
@@ -256,29 +187,6 @@ void Tutorial05_TextureArray::CreateInstanceBuffer()
     InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
     PopulateInstanceBuffer();
-}
-
-void Tutorial05_TextureArray::CreateIndexBuffer()
-{
-    Uint32 Indices[] =
-    {
-        2,0,1,    2,3,0,
-        4,6,5,    4,7,6,
-        8,10,9,   8,11,10,
-        12,14,13, 12,15,14,
-        16,18,17, 16,19,18,
-        20,21,22, 20,22,23
-    };
-
-    BufferDesc IndBuffDesc;
-    IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_STATIC;
-    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
-    BufferData IBData;
-    IBData.pData    = Indices;
-    IBData.DataSize = sizeof(Indices);
-    m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
 }
 
 void Tutorial05_TextureArray::LoadTextures()
@@ -295,7 +203,7 @@ void Tutorial05_TextureArray::LoadTextures()
         FileNameSS << "DGLogo" << tex << ".png";
         auto FileName = FileNameSS.str();
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
-        const auto &TexDesc = SrcTex->GetDesc();
+        const auto& TexDesc = SrcTex->GetDesc();
         if (pTexArray == nullptr)
         {
             //	Create texture array
@@ -346,9 +254,12 @@ void Tutorial05_TextureArray::Initialize(IEngineFactory*   pEngineFactory,
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     CreatePipelineState();
-    CreateVertexBuffer();
+
+    // Load cube vertex and index buffers
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
+
     CreateInstanceBuffer();
-    CreateIndexBuffer();
     LoadTextures();    
 }
 

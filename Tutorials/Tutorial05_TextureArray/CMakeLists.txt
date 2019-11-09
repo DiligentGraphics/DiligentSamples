@@ -4,10 +4,12 @@ project(Tutorial05_TextureArray CXX)
 
 set(SOURCE
     src/Tutorial05_TextureArray.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial05_TextureArray.h
+    ../Common/src/TexturedCube.h
 )
 
 set(SHADERS

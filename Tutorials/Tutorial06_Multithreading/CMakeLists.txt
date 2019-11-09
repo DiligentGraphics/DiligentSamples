@@ -4,10 +4,12 @@ project(Tutorial06_Multithreading CXX)
 
 set(SOURCE
     src/Tutorial06_Multithreading.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial06_Multithreading.h
+    ../Common/src/TexturedCube.h
 )
 
 set(SHADERS
