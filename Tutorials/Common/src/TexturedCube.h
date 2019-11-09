@@ -37,6 +37,15 @@ RefCntAutoPtr<IBuffer>  CreateVertexBuffer(IRenderDevice* pDevice);
 RefCntAutoPtr<IBuffer>  CreateIndexBuffer(IRenderDevice* pDevice);
 RefCntAutoPtr<ITexture> LoadTexture(IRenderDevice* pDevice, const char* Path);
 
+RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                   pDevice,
+                                                  TEXTURE_FORMAT                   RTVFormat,
+                                                  TEXTURE_FORMAT                   DSVFormat,
+                                                  IShaderSourceInputStreamFactory* pShaderSourceFactory,
+                                                  const char*                      VSFilePath,
+                                                  const char*                      PSFilePath,
+                                                  LayoutElement*                   LayoutElements     = nullptr,
+                                                  Uint32                           NumLayoutElements  = 0);
+
 }
 
 }

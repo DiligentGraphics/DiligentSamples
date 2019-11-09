@@ -40,64 +40,6 @@ SampleBase* CreateSample()
 
 void Tutorial04_Instancing::CreatePipelineState()
 {
-    // Pipeline state object encompasses configuration of all GPU stages
-
-    PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues.
-    // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO"; 
-
-    // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
-
-    // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-    // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
-    // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
-    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    // Cull back faces
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-    // Enable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-
-    ShaderCreateInfo ShaderCI;
-    // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL under the hood.
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-
-    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
-
-    // Create a shader source stream factory to load shaders from files.
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create a vertex shader
-    RefCntAutoPtr<IShader> pVS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Cube VS";
-        ShaderCI.FilePath        = "cube_inst.vsh";
-        m_pDevice->CreateShader(ShaderCI, &pVS);
-        // Create dynamic uniform buffer that will store our transformation matrix
-        // Dynamic buffers can be frequently updated by the CPU
-        CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
-    }
-
-    // Create a pixel shader
-    RefCntAutoPtr<IShader> pPS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Cube PS";
-        ShaderCI.FilePath        = "cube_inst.psh";
-        m_pDevice->CreateShader(ShaderCI, &pPS);
-    }
-
     // Define vertex shader input layout
     // This tutorial uses two types of input: per-vertex data and per-instance data.
     LayoutElement LayoutElems[] =
@@ -111,46 +53,32 @@ void Tutorial04_Instancing::CreatePipelineState()
         // Per-instance data - second buffer slot
         // We will use four attributes to encode instance-specific 4x4 transformation matrix
         // Attribute 2 - first row
-        LayoutElement{2, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{2, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
         // Attribute 3 - second row
-        LayoutElement{3, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{3, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
         // Attribute 4 - third row
-        LayoutElement{4, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{4, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
         // Attribute 5 - fourth row
-        LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_INSTANCE}
+        LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE}
     };
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
+    // Create a shader source stream factory to load shaders from files.
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice, 
+        m_pSwapChain->GetDesc().ColorBufferFormat,
+        m_pSwapChain->GetDesc().DepthBufferFormat,
+        pShaderSourceFactory,
+        "cube_inst.vsh",
+        "cube_inst.psh",
+        LayoutElems,
+        _countof(LayoutElems));
 
-    // Shader variables should typically be mutable, which means they are expected
-    // to change on a per-instance basis
-    ShaderResourceVariableDesc Vars[] = 
-    {
-        {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
-    };
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    // Create dynamic uniform buffer that will store our transformation matrix
+    // Dynamic buffers can be frequently updated by the CPU
+    CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
 
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc
-    {
-        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
-    };
-    StaticSamplerDesc StaticSamplers[] = 
-    {
-        {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
-    };
-    PSODesc.ResourceLayout.StaticSamplers = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
     // Since we did not explcitly specify the type for 'Constants' variable, default 
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly to the pipeline state object.

@@ -55,61 +55,10 @@ void Tutorial13_ShadowMap::GetEngineInitializationAttribs(DeviceType         Dev
 
 void Tutorial13_ShadowMap::CreateCubePSO()
 {
-    // Pipeline state object encompasses configuration of all GPU stages
-    
-    PipelineStateDesc PSODesc;
-    // Pipeline state name is used by the engine to report issues.
-    // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO";
-    
-    // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
-    
-    // This tutorial renders to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-    // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
-    // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
-    // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    // Cull back faces
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-    // Enable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-    
-    ShaderCreateInfo ShaderCI;
-    // Tell the system that the shader source code is in HLSL.
-    // For OpenGL, the engine will convert this into GLSL under the hood.
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    
-    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
-    
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create cube vertex shader
-    RefCntAutoPtr<IShader> pCubeVS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Cube VS";
-        ShaderCI.FilePath        = "cube.vsh";
-        m_pDevice->CreateShader(ShaderCI, &pCubeVS);
-    }
-    
-    // Create cube pixel shader
-    RefCntAutoPtr<IShader> pCubePS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Cube PS";
-        ShaderCI.FilePath        = "cube.psh";
-        m_pDevice->CreateShader(ShaderCI, &pCubePS);
-    }
-    
+
     // Define vertex shader input layout
     LayoutElement LayoutElems[] =
     {
@@ -120,38 +69,15 @@ void Tutorial13_ShadowMap::CreateCubePSO()
         // Attribute 2 - normal
         LayoutElement{2, 0, 3, VT_FLOAT32, False},
     };
-    
-    PSODesc.GraphicsPipeline.pVS = pCubeVS;
-    PSODesc.GraphicsPipeline.pPS = pCubePS;
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
-    
-    // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-    
-    // Shader variables should typically be mutable, which means they are expected
-    // to change on a per-instance basis
-    ShaderResourceVariableDesc Vars[] =
-    {
-        {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
-    };
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-    
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc
-    {
-        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
-    };
-    StaticSamplerDesc StaticSamplers[] =
-    {
-        {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
-    };
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-    
-    m_pDevice->CreatePipelineState(PSODesc, &m_pCubePSO);
+
+    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice, 
+        m_pSwapChain->GetDesc().ColorBufferFormat,
+        m_pSwapChain->GetDesc().DepthBufferFormat,
+        pShaderSourceFactory,
+        "cube.vsh",
+        "cube.psh",
+        LayoutElems,
+        _countof(LayoutElems));
     
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -163,6 +89,31 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     m_pCubePSO->CreateShaderResourceBinding(&m_CubeSRB, true);
     
     
+    // Create shadow pass PSO
+    PipelineStateDesc PSODesc;
+    PSODesc.Name = "Cube shadow PSO";
+    
+    // This is a graphics pipeline
+    PSODesc.IsComputePipeline = false;
+    
+    // Shadow pass doesn't use any render target outputs
+    PSODesc.GraphicsPipeline.NumRenderTargets             = 0;
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_UNKNOWN;
+    // The DSV format is the shadow map format
+    PSODesc.GraphicsPipeline.DSVFormat                    = m_ShadowMapFormat;
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    // Cull back faces
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    // Enable depth testing
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Tell the system that the shader source code is in HLSL.
+    // For OpenGL, the engine will convert this into GLSL under the hood.
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
     // Create shadow vertex shader
     RefCntAutoPtr<IShader> pShadowVS;
     {
@@ -172,21 +123,16 @@ void Tutorial13_ShadowMap::CreateCubePSO()
         ShaderCI.FilePath        = "cube_shadow.vsh";
         m_pDevice->CreateShader(ShaderCI, &pShadowVS);
     }
-    
-    PSODesc.Name                              = "Cube shadow PSO";
-    // Shadow pass doesn't use any render target outputs
-    PSODesc.GraphicsPipeline.NumRenderTargets = 0;
-    PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
-    // The DSV format is the shadow map format
-    PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowMapFormat;
-    PSODesc.GraphicsPipeline.pVS              = pShadowVS;
+    PSODesc.GraphicsPipeline.pVS = pShadowVS;
+
     // We don't use pixel shader as we are only interested in populating the depth buffer
-    PSODesc.GraphicsPipeline.pPS              = nullptr;
-    PSODesc.ResourceLayout.Variables          = nullptr;
-    PSODesc.ResourceLayout.NumVariables       = 0;
-    PSODesc.ResourceLayout.StaticSamplers     = nullptr;
-    PSODesc.ResourceLayout.NumStaticSamplers  = 0;
+    PSODesc.GraphicsPipeline.pPS = nullptr;
     
+    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
     // Disable depth clipping to render objects that are closer than near
     // clipping plane. This is not required for this tutorial, but real applications
     // will most likely want to do this.
