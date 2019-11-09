@@ -40,7 +40,8 @@ class Tutorial10_DataStreaming final : public SampleBase
 public:
     ~Tutorial10_DataStreaming()override;
     virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
-                                                EngineCreateInfo& Attribs)override final;
+                                                EngineCreateInfo& Attribs,
+                                                SwapChainDesc&    SCDesc)override final;
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 

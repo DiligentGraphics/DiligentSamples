@@ -44,9 +44,9 @@ SampleBase* CreateSample()
 AtmosphereSample::AtmosphereSample()
 {}
 
-void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs)
+void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs, SwapChainDesc& SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {

@@ -39,7 +39,8 @@ class Tutorial06_Multithreading final : public SampleBase
 public:
     ~Tutorial06_Multithreading()override;
     virtual void GetEngineInitializationAttribs(DeviceType         DevType, 
-                                                EngineCreateInfo&  Attribs)override final;
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&     SCDesc)override final;
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 

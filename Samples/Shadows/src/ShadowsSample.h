@@ -39,7 +39,8 @@ class ShadowsSample final : public SampleBase
 public:
     ~ShadowsSample();
     virtual void GetEngineInitializationAttribs(DeviceType         DevType,
-                                                EngineCreateInfo&  Attribs)override final;
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&     SCDesc)override final;
 
     virtual void Initialize(IEngineFactory*   pEngineFactory,
                             IRenderDevice*    pDevice, 

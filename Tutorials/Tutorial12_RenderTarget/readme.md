@@ -163,6 +163,21 @@ pDevice->CreatePipelineState(RTPSODesc, &m_pRTPSO);
 
 ## Creating Offscreen Render Target
 
+In this tutorial we will use our own off-screen depth buffer, so we can
+save memory by not initializing the depth buffer in the swap chain:
+
+```cpp
+void Tutorial12_RenderTarget::GetEngineInitializationAttribs(DeviceType         DevType,
+                                                             EngineCreateInfo&  Attribs,
+                                                             SwapChainDesc&     SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    // In this tutorial we will be using off-screen depth-stencil buffer, so
+    // we do not need the one in the swap chain.
+    SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+}
+```
+
 An offscreen render target is used to render the cube into and then sampled by the post-processing shader.
 We want the size of our render targets to match the window size, so we override `WindowResize()` method and
 create a new render target every time when the window resizes.

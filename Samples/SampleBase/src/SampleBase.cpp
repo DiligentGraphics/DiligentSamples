@@ -28,7 +28,7 @@
 namespace Diligent
 {
 
-void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI)
+void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, SwapChainDesc& /*SCDesc*/)
 {
     switch (DevType)
     {

@@ -36,6 +36,16 @@ SampleBase* CreateSample()
     return new Tutorial12_RenderTarget();
 }
 
+void Tutorial12_RenderTarget::GetEngineInitializationAttribs(DeviceType         DevType,
+                                                             EngineCreateInfo&  Attribs,
+                                                             SwapChainDesc&     SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    // In this tutorial we will be using off-screen depth-stencil buffer, so
+    // we do not need the one in the swap chain.
+    SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+}
+
 void Tutorial12_RenderTarget::CreateCubePSO()
 {
     // Create a shader source stream factory to load shaders from files.
@@ -268,7 +278,6 @@ void Tutorial12_RenderTarget::Render()
     const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearRenderTarget(nullptr, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the render target pipeline state
     m_pImmediateContext->SetPipelineState(m_pRTPSO);

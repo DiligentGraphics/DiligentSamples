@@ -39,7 +39,8 @@ class Tutorial09_Quads final : public SampleBase
 public:
     ~Tutorial09_Quads()override;
     virtual void GetEngineInitializationAttribs(DeviceType          DevType, 
-                                                EngineCreateInfo&   Attribs)override final;
+                                                EngineCreateInfo&   Attribs,
+                                                SwapChainDesc&      SCDesc)override final;
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 

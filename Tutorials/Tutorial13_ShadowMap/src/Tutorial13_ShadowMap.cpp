@@ -41,9 +41,10 @@ SampleBase* CreateSample()
 }
     
 void Tutorial13_ShadowMap::GetEngineInitializationAttribs(DeviceType         DevType,
-                                                          EngineCreateInfo&  Attribs)
+                                                          EngineCreateInfo&  Attribs,
+                                                          SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs);
+    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
 #if VULKAN_SUPPORTED
     if(DevType == DeviceType::Vulkan)
     {

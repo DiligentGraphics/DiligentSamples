@@ -118,7 +118,7 @@ void SampleApp::InitializeDiligentEngine(
                 EngineCI.DebugFlags = D3D11_DEBUG_FLAG_NONE;
             }
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, SCDesc);
 
 #if ENGINE_DLL
             GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
@@ -173,7 +173,7 @@ void SampleApp::InitializeDiligentEngine(
                 EngineCI.EnableDebugLayer = false;
             }
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, SCDesc);
 
 #if ENGINE_DLL
             GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
@@ -236,7 +236,7 @@ void SampleApp::InitializeDiligentEngine(
 #if PLATFORM_LINUX
             CreationAttribs.pDisplay = display;
 #endif
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, SCDesc);
             if (CreationAttribs.NumDeferredContexts != 0)
             {
                 LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");
@@ -270,7 +270,7 @@ void SampleApp::InitializeDiligentEngine(
                 EngVkAttribs.EnableValidation = false;
             }
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, SCDesc);
             ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
             auto* pFactoryVk = GetEngineFactoryVk();
             m_pEngineFactory = pFactoryVk;
@@ -291,7 +291,7 @@ void SampleApp::InitializeDiligentEngine(
         {
             EngineMtlCreateInfo MtlAttribs;
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, SCDesc);
             ppContexts.resize(1 + MtlAttribs.NumDeferredContexts);
             auto *pFactoryMtl = GetEngineFactoryMtl();
             pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());

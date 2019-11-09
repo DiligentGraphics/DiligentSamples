@@ -32,6 +32,10 @@ namespace Diligent
 class Tutorial12_RenderTarget final : public SampleBase
 {
 public:
+    virtual void GetEngineInitializationAttribs(DeviceType         DevType,
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&    SCDesc)override final;
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice, 
                             IDeviceContext** ppContexts, 
