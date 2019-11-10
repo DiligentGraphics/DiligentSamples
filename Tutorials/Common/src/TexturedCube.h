@@ -45,7 +45,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
                                                   const char*                      PSFilePath,
                                                   LayoutElement*                   LayoutElements     = nullptr,
                                                   Uint32                           NumLayoutElements  = 0,
-                                                  Uint32                           SampleCount        = 0);
+                                                  Uint8                            SampleCount        = 1);
 
 }
 

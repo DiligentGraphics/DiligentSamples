@@ -60,7 +60,7 @@ private:
     RefCntAutoPtr<ITextureView>           m_pMSColorRTV;
     RefCntAutoPtr<ITextureView>           m_pMSDepthDSV;
 
-    Uint32                                m_SampleCount           = 4;
+    Uint8                                 m_SampleCount           = 4;
     Uint32                                m_SupportedSampleCounts = 0;
 
     float4x4                              m_WorldViewProjMatrix;

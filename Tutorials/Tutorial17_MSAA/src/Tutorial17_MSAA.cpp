@@ -72,15 +72,15 @@ void Tutorial17_MSAA::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        std::array<std::pair<Uint32, const char*>, 4> ComboItems;
+        std::array<std::pair<Uint8, const char*>, 4> ComboItems;
         Uint32 NumItems = 0;
-        ComboItems[NumItems++] = std::make_pair(Uint32{1}, "1");
+        ComboItems[NumItems++] = std::make_pair(Uint8{1}, "1");
         if (m_SupportedSampleCounts & 0x02)
-            ComboItems[NumItems++] = std::make_pair(Uint32{2}, "2");
+            ComboItems[NumItems++] = std::make_pair(Uint8{2}, "2");
         if (m_SupportedSampleCounts & 0x04)
-            ComboItems[NumItems++] = std::make_pair(Uint32{4}, "4");
+            ComboItems[NumItems++] = std::make_pair(Uint8{4}, "4");
         if (m_SupportedSampleCounts & 0x08)
-            ComboItems[NumItems++] = std::make_pair(Uint32{8}, "8");
+            ComboItems[NumItems++] = std::make_pair(Uint8{8}, "8");
         if (ImGui::Combo("Sample count", &m_SampleCount, ComboItems.data(), NumItems))
         {
             CreateCubePSO();
