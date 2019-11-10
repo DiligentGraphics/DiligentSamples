@@ -1,0 +1,38 @@
+cbuffer Constants
+{
+    float4 g_Time; // yzw is unused
+};
+
+Texture2D    g_Texture;
+SamplerState g_Texture_sampler; // By convention, texture samplers must use the '_sampler' suffix
+
+struct PSInput
+{
+    float4 Pos   : SV_POSITION;
+    float2 UV    : TEX_COORD;
+};
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+// Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex
+// shader output variable name must match exactly the name of the pixel shader input variable.
+// If the variable has structure type (like in this example), the structure declarations must also be indentical.
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+#if defined(DESKTOP_GL) || defined(GL_ES)
+    // Unlike other graphics API's, OpenGL has its texture coordinates origin at the bottom-left corner instead
+    // of the top left. When sampling a regular texture, there is no visible difference since the texture data
+    // is also uploaded starting from that lower-left corner. When sampling a framebuffer attachment, there is
+    // a visible difference, though. Hence we need to flip the Y coordinate of the frame buffer attachment.
+    float2 UV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+#else
+    float2 UV = PSIn.UV;
+#endif
+
+    float2 DistortedUV = UV + float2(sin(UV.y*300.0)*0.1 * sin(g_Time.x*3.0), sin(UV.x*200.0)*0.02 * sin(g_Time.x*2.0));
+    PSOut.Color = g_Texture.Sample(g_Texture_sampler, DistortedUV);
+}
