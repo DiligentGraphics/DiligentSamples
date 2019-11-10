@@ -194,6 +194,7 @@ void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
     // Create window-size offscreen render target
     RefCntAutoPtr<ITexture> pRTColor;
     TextureDesc RTColorDesc;
+    RTColorDesc.Name        = "Offscreen render target";
     RTColorDesc.Type        = RESOURCE_DIM_TEX_2D;
     RTColorDesc.Width       = m_pSwapChain->GetDesc().Width;
     RTColorDesc.Height      = m_pSwapChain->GetDesc().Height;
@@ -215,6 +216,7 @@ void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
     // Create window-size depth buffer
     RefCntAutoPtr<ITexture> pRTDepth;
     TextureDesc RTDepthDesc = RTColorDesc;
+    RTDepthDesc.Name   = "Offscreen depth buffer";
     RTDepthDesc.Format = DepthBufferFormat;
     // Define optimal clear value
     RTDepthDesc.ClearValue.Format = RTDepthDesc.Format;

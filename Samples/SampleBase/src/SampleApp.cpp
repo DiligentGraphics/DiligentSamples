@@ -87,7 +87,6 @@ void SampleApp::InitializeDiligentEngine(
     )
 {
     SwapChainDesc SCDesc;
-    SCDesc.SamplesCount = 1;
     if (m_ScreenCaptureInfo.AllowCapture)
         SCDesc.Usage |= SWAP_CHAIN_USAGE_COPY_SOURCE;
 

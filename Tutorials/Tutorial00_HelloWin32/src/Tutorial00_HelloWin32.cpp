@@ -135,7 +135,6 @@ public:
     bool InitializeDiligentEngine(HWND NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
-        SCDesc.SamplesCount = 1;
         switch (m_DeviceType)
         {
 #if D3D11_SUPPORTED

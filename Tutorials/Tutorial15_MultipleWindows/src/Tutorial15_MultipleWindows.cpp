@@ -143,7 +143,6 @@ public:
             m_Windows[i].hWnd = hWnd[i];
 
         SwapChainDesc SCDesc;
-        SCDesc.SamplesCount = 1;
         switch (m_DeviceType)
         {
 #if D3D11_SUPPORTED

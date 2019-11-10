@@ -147,7 +147,8 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
                                                   const char*                      VSFilePath,
                                                   const char*                      PSFilePath,
                                                   LayoutElement*                   LayoutElements     /*= nullptr*/,
-                                                  Uint32                           NumLayoutElements  /*= 0*/)
+                                                  Uint32                           NumLayoutElements  /*= 0*/,
+                                                  Uint32                           SampleCount        /*= 0*/)
 {
     PipelineStateDesc PSODesc;
 
@@ -164,6 +165,8 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     PSODesc.GraphicsPipeline.RTVFormats[0]                = RTVFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
     PSODesc.GraphicsPipeline.DSVFormat                    = DSVFormat;
+    // Set the desired number of samples
+    PSODesc.GraphicsPipeline.SmplDesc.Count               = SampleCount;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
     PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Cull back faces
