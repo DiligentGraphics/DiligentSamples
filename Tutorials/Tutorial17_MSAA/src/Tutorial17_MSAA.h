@@ -48,6 +48,7 @@ private:
     void CreateMSAARenderTarget();
 
     static constexpr TEXTURE_FORMAT       DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
+
     // Cube resources
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
@@ -56,7 +57,7 @@ private:
     RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
-    // Offscreen render target and depth-stencil
+    // Offscreen multi-sampled render target and depth-stencil
     RefCntAutoPtr<ITextureView>           m_pMSColorRTV;
     RefCntAutoPtr<ITextureView>           m_pMSDepthDSV;
 

@@ -101,7 +101,7 @@ void Tutorial17_MSAA::Initialize(IEngineFactory*   pEngineFactory,
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
     
     const auto& ColorFmtInfo = pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
-    const auto& DepthFmtInfo = pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().DepthBufferFormat);
+    const auto& DepthFmtInfo = pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
     m_SupportedSampleCounts = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
     if (m_SupportedSampleCounts & 0x04)
         m_SampleCount = 4;
@@ -120,7 +120,7 @@ void Tutorial17_MSAA::Initialize(IEngineFactory*   pEngineFactory,
     // Load textured cube
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
-    m_CubeTextureSRV = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_CubeTextureSRV   = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     CreateCubePSO();
 }
@@ -139,14 +139,13 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     TextureDesc ColorDesc;
     ColorDesc.Name        = "Multisampled render target";
     ColorDesc.Type        = RESOURCE_DIM_TEX_2D;
+    ColorDesc.BindFlags   = BIND_RENDER_TARGET;
     ColorDesc.Width       = m_pSwapChain->GetDesc().Width;
     ColorDesc.Height      = m_pSwapChain->GetDesc().Height;
     ColorDesc.MipLevels   = 1;
     ColorDesc.Format      = m_pSwapChain->GetDesc().ColorBufferFormat;
+    // Set the desired number of samples
     ColorDesc.SampleCount = m_SampleCount;
-
-    // The render target can be bound as a shader resource and as a render target
-    ColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
     // Define optimal clear value
     ColorDesc.ClearValue.Format = ColorDesc.Format;
     ColorDesc.ClearValue.Color[0] = 0.125f;
@@ -162,13 +161,13 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     // Create window-size multi-sampled depth buffer
     TextureDesc DepthDesc = ColorDesc;
     DepthDesc.Name        = "Multisampled depth buffer";
-    DepthDesc.Format = DepthBufferFormat;
+    DepthDesc.Format      = DepthBufferFormat;
+    DepthDesc.BindFlags   = BIND_DEPTH_STENCIL;
     // Define optimal clear value
     DepthDesc.ClearValue.Format = DepthDesc.Format;
-    DepthDesc.ClearValue.DepthStencil.Depth = 1;
+    DepthDesc.ClearValue.DepthStencil.Depth   = 1;
     DepthDesc.ClearValue.DepthStencil.Stencil = 0;
-    // The depth buffer can be bound as a shader resource and as a depth-stencil buffer
-    DepthDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
+
     RefCntAutoPtr<ITexture> pDepth;
     m_pDevice->CreateTexture(DepthDesc, nullptr, &pDepth);
     // Store the depth-stencil view
@@ -183,9 +182,9 @@ void Tutorial17_MSAA::Render()
     ITextureView* pDSV = nullptr;
     if (m_SampleCount > 1)
     {
-        m_pImmediateContext->SetRenderTargets(1, &m_pMSColorRTV, m_pMSDepthDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         pRTV = m_pMSColorRTV;
         pDSV = m_pMSDepthDSV;
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
     else
     {
