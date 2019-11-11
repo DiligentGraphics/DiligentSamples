@@ -1,6 +1,6 @@
 # Tutorial17 - MSAA
 
-This tutorial demonstrates how to use MSAA to improve visual quality of geometrical edges.
+This tutorial demonstrates how to use multisample anti-aliasing (MSAA) to improve visual quality of geometrical edges.
 
 ![](Animation_Large.gif)
 
@@ -11,10 +11,10 @@ and shows how to use MSAA in Diligent Engine.
 
 ## Creating Multi-Sampled Render Target and Depth Buffer
 
-Creating multi-sampled render target and depth buffer is not more involved than
+Creating a multi-sampled render target and a depth buffer is not more involved than
 creating regular off-screen render targets (see
 [Tutorial 12](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial12_RenderTarget)).
-In fact, the only difference is that we set `SampleCount` member of a `TextureDesc` struct to the
+In fact, the only difference is that we set `SampleCount` member of the `TextureDesc` struct to the
 desired number of samples:
 
 ```cpp
@@ -50,17 +50,17 @@ m_pMSDepthDSV = pDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
 
 ## Pipeline State Initialization
 
-When creating a PSO object, we need to specify the number of samples:
+When creating a PSO object, we need to specify the number of samples as well:
 
 ```cpp
 PSODesc.GraphicsPipeline.SmplDesc.Count = m_SampleCount;
 ```
 
-Other than that, there is no difference compared to previous tutorials.
+Other than that, there is nothing new compared to previous tutorials.
 
 ## Resolving Multisampled Resource
 
-Multi-sampled resources cannot be used directly in many operations and need to be converted
+Multi-sampled resources cannot be used directly in many rendering operations and need to be converted
 to a single-sample representation first. This operation is called *resolving*.
 Diligent Engine exposes `IDeviceContext::ResolveTextureSubresource` method that performs
 resolve operation. In our example, we will resolve our multi-sampled color buffer directly
@@ -76,8 +76,8 @@ m_pImmediateContext->ResolveTextureSubresource(m_pMSColorRTV->GetTexture(), pCur
 
 ## Checking MSAA Support
 
-Multisampling support may vary between formats, devices and other fators. To check sample counts
-supported by a current format, use `IRenderDevice::GetTextureFormatInfoExt` method. The `SampleCounts`
+Multisampling support may depends on format, GPU and other fators. To query sample counts
+supported by a format, use `IRenderDevice::GetTextureFormatInfoExt` method. The `SampleCounts`
 member of the returned structure has 1 bit set for all supported sample counts:
 
 ```cpp
@@ -90,7 +90,8 @@ else if (m_SupportedSampleCounts & 0x02)
     m_SampleCount = 2;
 else
 {
-    LOG_WARNING_MESSAGE(ColorFmtInfo.Name, " + ", DepthFmtInfo.Name, " pair does not allow multisampling on this device");
+    LOG_WARNING_MESSAGE(ColorFmtInfo.Name, " + ", DepthFmtInfo.Name,
+                        " pair does not allow multisampling on this device");
     m_SampleCount = 1;
 }
 ```
