@@ -132,6 +132,14 @@ rendering performance.
 
 ![](Tutorials/Tutorial16_BindlessResources/Animation_Large.gif)
 
+
+## [Tutorial 17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial17_MSAA)
+
+This tutorial demonstrates how to use multisample anti-aliasing (MSAA)
+to improve visual quality of geometrical edges.
+
+![](Tutorials/Tutorial17_MSAA/Animation_Large.gif)
+
 # Samples
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)

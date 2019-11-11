@@ -1,13 +1,13 @@
 # Tutorial17 - MSAA
 
-This tutorial demonstrates how to use multisample anti-aliasing (MSAA) to improve visual quality of geometrical edges.
+This tutorial demonstrates how to use multisample anti-aliasing (MSAA) to make geometrical edges look smoother
+and more temporarily stable.
 
 ![](Animation_Large.gif)
 
 [MSAA](https://en.wikipedia.org/wiki/Multisample_anti-aliasing) is an industry-standard method of alleviating
-geometrical aliasing. This tutorial is based on 
-[Tutorial 12 - Render Target](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial12_RenderTarget))
-and shows how to use MSAA in Diligent Engine.
+geometrical aliasing and is supported by all modern graphics hardware. This tutorial shows how to use MSAA
+in Diligent Engine.
 
 ## Creating Multi-Sampled Render Target and Depth Buffer
 
