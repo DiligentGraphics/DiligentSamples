@@ -65,6 +65,7 @@ private:
 
     float4x4                              m_WorldViewProjMatrix;
     float                                 m_fCurrentTime = 0.f;
+    bool                                  m_bRotateGrid  = true;
 };
 
 }

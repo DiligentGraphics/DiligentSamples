@@ -86,6 +86,8 @@ void Tutorial17_MSAA::UpdateUI()
             CreateCubePSO();
             CreateMSAARenderTarget();
         }
+
+        ImGui::Checkbox("Rotate gird", &m_bRotateGrid);
     }
     ImGui::End();   
 }
@@ -147,9 +149,9 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     ColorDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
     // Define optimal clear value
     ColorDesc.ClearValue.Format = ColorDesc.Format;
-    ColorDesc.ClearValue.Color[0] = 0.350f;
-    ColorDesc.ClearValue.Color[1] = 0.350f;
-    ColorDesc.ClearValue.Color[2] = 0.350f;
+    ColorDesc.ClearValue.Color[0] = 0.125f;
+    ColorDesc.ClearValue.Color[1] = 0.125f;
+    ColorDesc.ClearValue.Color[2] = 0.125f;
     ColorDesc.ClearValue.Color[3] = 1.f;
     RefCntAutoPtr<ITexture> pColor;
     m_pDevice->CreateTexture(ColorDesc, nullptr, &pColor);
@@ -176,7 +178,7 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
 // Render a frame
 void Tutorial17_MSAA::Render()
 {
-    const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f };
+    const float ClearColor[] = { 0.125f,  0.125f,  0.125f, 1.0f };
     ITextureView* pRTV = nullptr;
     ITextureView* pDSV = nullptr;
     if (m_SampleCount > 1)
@@ -213,9 +215,10 @@ void Tutorial17_MSAA::Render()
 
     // Draw the cube
     DrawIndexedAttribs DrawAttrs;
-    DrawAttrs.IndexType   = VT_UINT32; // Index type
-    DrawAttrs.NumIndices  = 36;
-    DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
+    DrawAttrs.IndexType    = VT_UINT32; // Index type
+    DrawAttrs.NumIndices   = 36;
+    DrawAttrs.NumInstances = 49;
+    DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 
     if (m_SampleCount > 1)
@@ -233,9 +236,10 @@ void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    m_fCurrentTime = static_cast<float>(CurrTime);
+    if (m_bRotateGrid)
+        m_fCurrentTime += static_cast<float>(ElapsedTime);
     // Set cube world view matrix
-    float4x4 CubeWorldView = float4x4::RotationY(static_cast<float>(CurrTime) * 0.25f) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0.0f, 0.0f, 5.0f);
+    float4x4 WorldView = float4x4::RotationZ(m_fCurrentTime * 0.1f) * float4x4::Translation(0.0f, 0.0f, 30.0f);
     float NearPlane = 0.1f;
     float FarPlane = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
@@ -244,7 +248,7 @@ void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime)
     auto Proj = float4x4::Projection(PI_F / 4.0f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
 
     // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = CubeWorldView * Proj;
+    m_WorldViewProjMatrix = WorldView * Proj;
 }
 
 }

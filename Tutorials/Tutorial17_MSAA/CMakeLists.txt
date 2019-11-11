@@ -16,8 +16,6 @@ set(SHADERS
     assets/cube.vsh
     assets/cube.psh
     assets/DGLogo.png
-    assets/rendertarget.vsh
-    assets/rendertarget.psh
 )
 
 add_sample_app("Tutorial17_MSAA" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
