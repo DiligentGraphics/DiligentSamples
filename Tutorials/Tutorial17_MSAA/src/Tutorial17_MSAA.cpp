@@ -182,12 +182,14 @@ void Tutorial17_MSAA::Render()
     ITextureView* pDSV = nullptr;
     if (m_SampleCount > 1)
     {
+        // Set off-screen multi-sampled render target and depth-stencil buffer
         pRTV = m_pMSColorRTV;
         pDSV = m_pMSDepthDSV;
         m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
     else
     {
+        // Render directly to the current swap chain back buffer.
         m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
@@ -195,7 +197,7 @@ void Tutorial17_MSAA::Render()
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {
-        // Map the cube's constant buffer and fill it in with its model-view-projection matrix
+        // Map the cube's constant buffer and fill it in with its view-projection matrix
         MapHelper<float4x4> CBConstants(m_pImmediateContext, m_CubeVSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         *CBConstants = m_WorldViewProjMatrix.Transpose();
     }
@@ -212,7 +214,7 @@ void Tutorial17_MSAA::Render()
     // Commit the cube shader's resources
     m_pImmediateContext->CommitShaderResources(m_pCubeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Draw the cube
+    // Draw the grid
     DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
@@ -222,6 +224,7 @@ void Tutorial17_MSAA::Render()
 
     if (m_SampleCount > 1)
     {
+        // Resolve multi-sampled render taget into the current swap chain back buffer.
         auto pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
         ResolveTextureSubresourceAttribs ResolveAttribs;
         ResolveAttribs.SrcTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;

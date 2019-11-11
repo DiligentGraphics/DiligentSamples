@@ -8,6 +8,35 @@ To build and run the applications in the module, please follow the [instructions
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](License.txt)
 [![Chat on gitter](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/diligent-engine)
 
+# Table of Contents
+
+- [Tutorials](https://github.com/DiligentGraphics/DiligentSamples#tutorials)
+  - [01 - Hello Triangle](https://github.com/DiligentGraphics/DiligentSamples#tutorial-01---hello-triangle)
+  - [02 - Cube](https://github.com/DiligentGraphics/DiligentSamples#tutorial-02---cube)
+  - [03 - Texturing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-03---texturing)
+  - [04 - Instancing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-04---instancing)
+  - [05 - Texture Array](https://github.com/DiligentGraphics/DiligentSamples#tutorial-05---texture-array)
+  - [06 - Multithreading](https://github.com/DiligentGraphics/DiligentSamples#tutorial-06---multithreading)
+  - [07 - Geometry Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-07---geometry-shader)
+  - [08 - Tessellation](https://github.com/DiligentGraphics/DiligentSamples#tutorial-08---tessellation)
+  - [09 - Quads](https://github.com/DiligentGraphics/DiligentSamples#tutorial-09---quads)
+  - [10 - Data Streaming](https://github.com/DiligentGraphics/DiligentSamples#tutorial-10---data-streaming)
+  - [11 - Resource Updates](https://github.com/DiligentGraphics/DiligentSamples#tutorial-11---resource-updates)
+  - [12 - Render Target](https://github.com/DiligentGraphics/DiligentSamples#tutorial-12---render-target)
+  - [13 - Shadow Map](https://github.com/DiligentGraphics/DiligentSamples#tutorial-13---shadow-map)
+  - [14 - Compute Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-14---compute-shader)
+  - [15 - Multiple Windows](https://github.com/DiligentGraphics/DiligentSamples#tutorial-15---multiple-windows)
+  - [16 - Bindless Resources](https://github.com/DiligentGraphics/DiligentSamples#tutorial-16---bindless-resources)
+  - [17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples#tutorial-17---msaa)
+- [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
+  - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
+  - [GLTF Viewer](https://github.com/DiligentGraphics/DiligentSamples#gltf-viewer)
+  - [Shadows](https://github.com/DiligentGraphics/DiligentSamples#shadows)
+  - [Dear ImGui Demo](https://github.com/DiligentGraphics/DiligentSamples#dear-imgui-demo)
+  - [Nuklear Demo](https://github.com/DiligentGraphics/DiligentSamples#nuklear-demo)
+- [Build and Run Instructions](https://github.com/DiligentGraphics/DiligentSamples#build-and-run-instructions)
+- [License](https://github.com/DiligentGraphics/DiligentSamples#license)
+- [Contributing](https://github.com/DiligentGraphics/DiligentSamples#contributing)
 
 # Tutorials
 
