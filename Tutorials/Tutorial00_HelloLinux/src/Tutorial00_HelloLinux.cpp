@@ -187,7 +187,6 @@ public:
     bool OnGLContextCreated(Display *display, Window NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
-        SCDesc.SamplesCount = 1;
         Uint32 NumDeferredCtx = 0;
         // Declare function pointer
         auto *pFactoryOpenGL = GetEngineFactoryOpenGL();
@@ -210,7 +209,6 @@ public:
         auto* pFactoryVk = GetEngineFactoryVk();
         pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
         SwapChainDesc SCDesc;
-        SCDesc.SamplesCount = 1;
         pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, &xcbInfo, &m_pSwapChain);
     }
 #endif
