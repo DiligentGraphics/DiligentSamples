@@ -2,12 +2,12 @@ cmake_minimum_required (VERSION 3.6)
 
 if(TARGET DiligentFX)
     add_subdirectory(Atmosphere)
-    add_subdirectory(GLTFViewer)
 endif()
+
 if(TARGET Diligent-AssetLoader AND TARGET DiligentFX)
+    add_subdirectory(GLTFViewer)
     add_subdirectory(Shadows)
 endif()
-if(TARGET Diligent-Imgui)
-    add_subdirectory(ImguiDemo)
-endif()
+
+add_subdirectory(ImguiDemo)
 add_subdirectory(NuklearDemo)

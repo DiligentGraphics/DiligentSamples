@@ -95,7 +95,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 endfunction()
 
 add_subdirectory(ThirdParty)
-if(TARGET NativeAppBase)
+if(TARGET NativeAppBase AND TARGET Diligent-TextureLoader AND TARGET Diligent-Imgui)
     add_subdirectory(SampleBase)
 endif()
 if(TARGET SampleBase)
