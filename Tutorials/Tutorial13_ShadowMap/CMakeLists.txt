@@ -27,5 +27,5 @@ set(ASSETS
     assets/DGLogo.png
 )
 
-add_sample_app("Tutorial13_ShadowMap" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial13_ShadowMap" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial13_ShadowMap PRIVATE Diligent-TextureLoader)

@@ -22,4 +22,4 @@ set(SHADERS
 
 set(ASSETS)
 
-add_sample_app("Tutorial14_ComputeShader" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial14_ComputeShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

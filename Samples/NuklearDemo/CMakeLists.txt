@@ -22,7 +22,7 @@ set(SHADERS
 set(ASSETS
 )
 
-add_sample_app("NuklearDemo" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("NuklearDemo" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
 if(MSVC)
     target_compile_definitions(NuklearDemo PRIVATE _CRT_SECURE_NO_WARNINGS)

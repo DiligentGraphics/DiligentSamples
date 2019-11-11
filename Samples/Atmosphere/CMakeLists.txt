@@ -52,7 +52,7 @@ set(TERRAIN_TILES
 
 set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
-add_sample_app("AtmosphereSample" "Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
+add_sample_app("AtmosphereSample" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
 set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/terrain"

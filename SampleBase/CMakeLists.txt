@@ -171,5 +171,5 @@ if(PLATFORM_WIN32)
 endif()
 
 set_target_properties(SampleBase PROPERTIES
-    FOLDER Samples
+    FOLDER DiligentSamples
 )

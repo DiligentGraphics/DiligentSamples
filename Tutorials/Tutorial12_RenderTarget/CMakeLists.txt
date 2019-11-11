@@ -20,4 +20,4 @@ set(SHADERS
     assets/rendertarget.psh
 )
 
-add_sample_app("Tutorial12_RenderTarget" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial12_RenderTarget" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

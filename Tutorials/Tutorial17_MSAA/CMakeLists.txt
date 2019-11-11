@@ -18,4 +18,4 @@ set(SHADERS
     assets/DGLogo.png
 )
 
-add_sample_app("Tutorial17_MSAA" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial17_MSAA" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

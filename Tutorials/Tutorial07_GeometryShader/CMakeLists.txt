@@ -23,7 +23,7 @@ set(ASSETS
     assets/DGLogo.png
 )
 
-add_sample_app("Tutorial07_GeometryShader" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial07_GeometryShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial07_GeometryShader PRIVATE Diligent-TextureLoader)
 
 if(TARGET Diligent-HLSL2GLSLConverterLib)

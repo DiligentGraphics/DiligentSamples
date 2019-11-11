@@ -24,7 +24,7 @@ set(ASSETS
     assets/DGLogo3.png
 )
 
-add_sample_app("Tutorial10_DataStreaming" "Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial10_DataStreaming" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(Tutorial10_DataStreaming PRIVATE Diligent-TextureLoader)
 if(PLATFORM_LINUX)
     target_link_libraries(Tutorial10_DataStreaming PRIVATE pthread)

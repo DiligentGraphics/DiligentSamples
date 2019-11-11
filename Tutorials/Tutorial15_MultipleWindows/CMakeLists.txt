@@ -19,7 +19,7 @@ PRIVATE
 )
 
 set_target_properties(Tutorial15_MultipleWindows PROPERTIES
-    FOLDER Tutorials
+    FOLDER DiligentSamples/Tutorials
 )
 
 target_compile_definitions(Tutorial15_MultipleWindows PRIVATE ENGINE_DLL=1)

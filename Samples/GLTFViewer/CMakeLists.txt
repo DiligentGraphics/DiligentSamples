@@ -33,7 +33,7 @@ set(ASSETS
     ${TEXTURES}
 )
 
-add_sample_app("GLTFViewer" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("GLTFViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_link_libraries(GLTFViewer PRIVATE Diligent-AssetLoader DiligentFX)
 
 target_include_directories(GLTFViewer PRIVATE

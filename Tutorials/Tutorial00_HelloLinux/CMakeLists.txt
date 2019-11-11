@@ -12,7 +12,7 @@ target_compile_options(Tutorial00_HelloLinux PRIVATE -DENGINE_DLL)
 target_include_directories(Tutorial00_HelloLinux PRIVATE "../../../DiligentCore")
 
 set_target_properties(Tutorial00_HelloLinux PROPERTIES
-    FOLDER Tutorials
+    FOLDER DiligentSamples/Tutorials
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF

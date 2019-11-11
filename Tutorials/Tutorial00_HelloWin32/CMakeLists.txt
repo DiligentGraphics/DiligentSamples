@@ -19,7 +19,7 @@ PRIVATE
 )
 
 set_target_properties(Tutorial00_HelloWin32 PROPERTIES
-    FOLDER Tutorials
+    FOLDER DiligentSamples/Tutorials
 )
 
 target_compile_definitions(Tutorial00_HelloWin32 PRIVATE ENGINE_DLL=1)

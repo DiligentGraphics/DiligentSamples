@@ -17,4 +17,4 @@ set(SHADERS
 set(ASSETS
 )
 
-add_sample_app("ImguiDemo" "Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("ImguiDemo" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
