@@ -135,8 +135,8 @@ rendering performance.
 
 ## [Tutorial 17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial17_MSAA)
 
-This tutorial demonstrates how to use multisample anti-aliasing (MSAA)
-to improve visual quality of geometrical edges.
+This tutorial demonstrates how to use multisample anti-aliasing (MSAA) to make
+geometrical edges look smoother and more temporarily stable.
 
 ![](Tutorials/Tutorial17_MSAA/Animation_Large.gif)
 
