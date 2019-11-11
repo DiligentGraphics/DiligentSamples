@@ -101,6 +101,7 @@ protected:
     int         m_SelectedDisplayMode = 0;
     bool        m_bVSync              = false;
     bool        m_bFullScreenMode     = false;
+    bool        m_bShowAdaptersDialog = true;
     double      m_CurrentTime         = 0;
 
     struct ScreenCaptureInfo

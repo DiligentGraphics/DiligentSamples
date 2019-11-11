@@ -457,7 +457,7 @@ std::string GetArgument(const char* &pos, const char* ArgName)
 
 // Command line example to capture frames:
 //
-//     -mode d3d11 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format jpg -capture_quality 100 -capture_frames 3 -capture_alpha 0
+//     -mode d3d11 -adapters_dialog 0 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format jpg -capture_quality 100 -capture_frames 3 -capture_alpha 0
 //
 // Image magick command to create animated gif:
 //
@@ -568,6 +568,11 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             VERIFY_EXPR(AdapterId >= 0);
             m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
         }
+        else if ( !(Arg = GetArgument(pos, "adapters_dialog")).empty() )
+        {
+            m_bShowAdaptersDialog = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
+        }
+
         
         pos = strchr(pos, '-');
     }
@@ -610,7 +615,10 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
     if (m_pImGui)
     {
         m_pImGui->NewFrame();
-        UpdateAdaptersDialog();
+        if (m_bShowAdaptersDialog)
+        {
+            UpdateAdaptersDialog();
+        }
     }
     if (m_pDevice)
     {
