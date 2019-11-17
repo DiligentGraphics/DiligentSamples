@@ -135,27 +135,49 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     if (m_SampleCount == 1)
         return;
 
+    const auto& SCDesc = m_pSwapChain->GetDesc();
     // Create window-size multi-sampled offscreen render target
     TextureDesc ColorDesc;
     ColorDesc.Name        = "Multisampled render target";
     ColorDesc.Type        = RESOURCE_DIM_TEX_2D;
     ColorDesc.BindFlags   = BIND_RENDER_TARGET;
-    ColorDesc.Width       = m_pSwapChain->GetDesc().Width;
-    ColorDesc.Height      = m_pSwapChain->GetDesc().Height;
+    ColorDesc.Width       = SCDesc.Width;
+    ColorDesc.Height      = SCDesc.Height;
     ColorDesc.MipLevels   = 1;
-    ColorDesc.Format      = m_pSwapChain->GetDesc().ColorBufferFormat;
+    ColorDesc.Format      = SCDesc.ColorBufferFormat;
+    bool NeedsSRGBConversion = m_pDevice->GetDeviceCaps().IsD3DDevice() && (ColorDesc.Format == TEX_FORMAT_RGBA8_UNORM_SRGB);
+    if (NeedsSRGBConversion)
+    {
+        // Internally Direct3D swap chain images are not SRGB, and ResolveSubresource
+        // requires source and destination formats to match exactly or be typeless.
+        // So we will have to create a typeless texture and use SRGB render target view with it.
+        ColorDesc.Format = TEX_FORMAT_RGBA8_TYPELESS;
+    }
+
     // Set the desired number of samples
     ColorDesc.SampleCount = m_SampleCount;
     // Define optimal clear value
-    ColorDesc.ClearValue.Format = ColorDesc.Format;
+    ColorDesc.ClearValue.Format = SCDesc.ColorBufferFormat;
     ColorDesc.ClearValue.Color[0] = 0.125f;
     ColorDesc.ClearValue.Color[1] = 0.125f;
     ColorDesc.ClearValue.Color[2] = 0.125f;
     ColorDesc.ClearValue.Color[3] = 1.f;
     RefCntAutoPtr<ITexture> pColor;
     m_pDevice->CreateTexture(ColorDesc, nullptr, &pColor);
+    
     // Store the render target view
-    m_pMSColorRTV = pColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+    m_pMSColorRTV.Release();
+    if (NeedsSRGBConversion)
+    {
+        TextureViewDesc RTVDesc;
+        RTVDesc.ViewType = TEXTURE_VIEW_RENDER_TARGET;
+        RTVDesc.Format   = SCDesc.ColorBufferFormat;
+        pColor->CreateView(RTVDesc, &m_pMSColorRTV);
+    }
+    else
+    {
+        m_pMSColorRTV = pColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+    }
     
 
     // Create window-size multi-sampled depth buffer

@@ -140,10 +140,10 @@ public:
 #if D3D11_SUPPORTED
             case DeviceType::D3D11:
             {
-                EngineD3D11CreateInfo DeviceAttribs;
+                EngineD3D11CreateInfo EngineCI;
 #ifdef _DEBUG
-                DeviceAttribs.DebugFlags |= D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE | 
-                                            D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
+                EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE | 
+                                       D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
 #endif
 #if ENGINE_DLL
                 GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
@@ -151,7 +151,7 @@ public:
                 LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
 #endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
-                pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
+                pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
@@ -166,12 +166,12 @@ public:
                 // Load the dll and import GetEngineFactoryD3D12() function
                 LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #endif
-                EngineD3D12CreateInfo EngD3D12Attribs;
+                EngineD3D12CreateInfo EngineCI;
 #ifdef _DEBUG
-                EngD3D12Attribs.EnableDebugLayer = true;
+                EngineCI.EnableDebugLayer = true;
 #endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
-                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
+                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
             }
             break;
@@ -189,10 +189,9 @@ public:
             LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
 #endif
             auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
-            EngineGLCreateInfo CreationAttribs;
-            CreationAttribs.pNativeWndHandle = NativeWindowHandle;
-            pFactoryOpenGL->CreateDeviceAndSwapChainGL(
-                CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
+            EngineGLCreateInfo EngineCI;
+            EngineCI.pNativeWndHandle = NativeWindowHandle;
+            pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
         }
         break;
 #endif
@@ -206,12 +205,12 @@ public:
             // Load the dll and import GetEngineFactoryVk() function
             LoadGraphicsEngineVk(GetEngineFactoryVk);
 #endif
-            EngineVkCreateInfo EngVkAttribs;
+            EngineVkCreateInfo EngineCI;
 #ifdef _DEBUG
-            EngVkAttribs.EnableValidation = true;
+            EngineCI.EnableValidation = true;
 #endif
             auto* pFactoryVk = GetEngineFactoryVk();
-            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
+            pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
 
             if (!m_pSwapChain && NativeWindowHandle != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);
