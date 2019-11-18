@@ -145,13 +145,13 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     ColorDesc.Height      = SCDesc.Height;
     ColorDesc.MipLevels   = 1;
     ColorDesc.Format      = SCDesc.ColorBufferFormat;
-    bool NeedsSRGBConversion = m_pDevice->GetDeviceCaps().IsD3DDevice() && (ColorDesc.Format == TEX_FORMAT_RGBA8_UNORM_SRGB);
+    bool NeedsSRGBConversion = m_pDevice->GetDeviceCaps().IsD3DDevice() && (ColorDesc.Format == TEX_FORMAT_RGBA8_UNORM_SRGB || ColorDesc.Format == TEX_FORMAT_BGRA8_UNORM_SRGB);
     if (NeedsSRGBConversion)
     {
         // Internally Direct3D swap chain images are not SRGB, and ResolveSubresource
         // requires source and destination formats to match exactly or be typeless.
         // So we will have to create a typeless texture and use SRGB render target view with it.
-        ColorDesc.Format = TEX_FORMAT_RGBA8_TYPELESS;
+        ColorDesc.Format = ColorDesc.Format == TEX_FORMAT_RGBA8_UNORM_SRGB ? TEX_FORMAT_RGBA8_TYPELESS : TEX_FORMAT_BGRA8_TYPELESS;
     }
 
     // Set the desired number of samples
