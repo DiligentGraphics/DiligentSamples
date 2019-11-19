@@ -70,24 +70,24 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
         # Install instructions
         file(RELATIVE_PATH TUTORIAL_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
         install(TARGETS     ${APP_NAME}
-				DESTINATION ${TUTORIAL_REL_PATH})
+				DESTINATION "bin/${TUTORIAL_REL_PATH}")
 
         if(PLATFORM_LINUX OR PLATFORM_WIN32)
             install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/assets/"
-					DESTINATION ${TUTORIAL_REL_PATH})
+					DESTINATION "bin/${TUTORIAL_REL_PATH}")
 		endif()
 
 		if(PLATFORM_WIN32)
             get_supported_backends(BACKEND_LIBRARIES)
             install(TARGETS  ${BACKEND_LIBRARIES}
-                    RUNTIME DESTINATION ${TUTORIAL_REL_PATH}
-                    LIBRARY DESTINATION ${TUTORIAL_REL_PATH}
-					ARCHIVE DESTINATION ${TUTORIAL_REL_PATH})
+                    RUNTIME DESTINATION "bin/${TUTORIAL_REL_PATH}"
+                    LIBRARY DESTINATION "bin/${TUTORIAL_REL_PATH}"
+					ARCHIVE DESTINATION "bin/${TUTORIAL_REL_PATH}")
 		endif()
 
 		if(PLATFORM_LINUX)
 			set_target_properties(${APP_NAME} PROPERTIES
-				INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${DILIGENT_CORE_INSTALL_DIR}/bin"
+				INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/bin/${DILIGENT_CORE_DIR}"
 			)
 		endif()
     endif()
@@ -104,4 +104,4 @@ if(TARGET SampleBase)
 endif()
 
 file(RELATIVE_PATH SAMPLES_ROOT_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
-install(FILES License.txt DESTINATION "${SAMPLES_ROOT_REL_PATH}/Licenses" RENAME DiligentEngine-License.txt)
+install(FILES License.txt DESTINATION "Licenses/${SAMPLES_ROOT_REL_PATH}" RENAME DiligentEngine-License.txt)
