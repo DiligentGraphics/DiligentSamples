@@ -102,6 +102,3 @@ if(TARGET SampleBase)
     add_subdirectory(Samples)
     add_subdirectory(Tutorials)
 endif()
-
-file(RELATIVE_PATH SAMPLES_ROOT_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
-install(FILES License.txt DESTINATION "Licenses/${SAMPLES_ROOT_REL_PATH}" RENAME DiligentEngine-License.txt)
