@@ -37,8 +37,8 @@
 namespace Diligent
 {
 
-#include "BasicStructures.fxh"
-#include "ToneMappingStructures.fxh"
+#include "Shaders/Common/public/BasicStructures.fxh"
+#include "Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh"
 
 SampleBase* CreateSample()
 {
