@@ -1,9 +1,9 @@
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     cmake_minimum_required (VERSION 3.13)
-    option(INSTALL_DILIGENT_SAMPLES "Enable installation of samples and tutorials" ON)
+    option(DILIGENT_INSTALL_SAMPLES "Enable installation of samples and tutorials" ON)
 else()
     cmake_minimum_required (VERSION 3.6)
-    set(INSTALL_DILIGENT_SAMPLES OFF)
+    set(DILIGENT_INSTALL_SAMPLES OFF)
 endif()
 
 option(DILIGENT_BUILD_SAMPLE_BASE_ONLY "Build only SampleBase project" OFF)
@@ -68,7 +68,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
                 "\"$<TARGET_FILE_DIR:${APP_NAME}>\"")
     endif()
 
-    if(INSTALL_DILIGENT_SAMPLES)
+    if(DILIGENT_INSTALL_SAMPLES)
         # Install instructions
         file(RELATIVE_PATH TUTORIAL_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
         install(TARGETS     ${APP_NAME}
