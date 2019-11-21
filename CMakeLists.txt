@@ -6,6 +6,8 @@ else()
     set(INSTALL_DILIGENT_SAMPLES OFF)
 endif()
 
+option(DILIGENT_BUILD_SAMPLE_BASE_ONLY "Build only SampleBase project" OFF)
+
 function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
 	set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
@@ -95,10 +97,12 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 endfunction()
 
 add_subdirectory(ThirdParty)
+
 if(TARGET NativeAppBase AND TARGET Diligent-TextureLoader AND TARGET Diligent-Imgui)
     add_subdirectory(SampleBase)
 endif()
-if(TARGET SampleBase)
+
+if(NOT ${DILIGENT_BUILD_SAMPLE_BASE_ONLY} AND TARGET SampleBase)
     add_subdirectory(Samples)
     add_subdirectory(Tutorials)
 endif()
