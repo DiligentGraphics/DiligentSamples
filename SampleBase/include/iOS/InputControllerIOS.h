@@ -39,4 +39,4 @@ public:
     }
 };
 
-}
+} // namespace Diligent

@@ -36,4 +36,4 @@ private:
     void* m_XCBKeySymbols = nullptr;
 };
 
-}
+} // namespace Diligent

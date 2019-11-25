@@ -27,17 +27,17 @@ struct MouseState
 {
     enum BUTTON_FLAGS : Uint8
     {
-        BUTTON_FLAG_NONE    = 0x00,
-        BUTTON_FLAG_LEFT    = 0x01,
-        BUTTON_FLAG_MIDDLE  = 0x02,
-        BUTTON_FLAG_RIGHT   = 0x04,
-        BUTTON_FLAG_WHEEL   = 0x08
+        BUTTON_FLAG_NONE   = 0x00,
+        BUTTON_FLAG_LEFT   = 0x01,
+        BUTTON_FLAG_MIDDLE = 0x02,
+        BUTTON_FLAG_RIGHT  = 0x04,
+        BUTTON_FLAG_WHEEL  = 0x08
     };
 
-    Float32      PosX         = -1;
-    Float32      PosY         = -1;
-    BUTTON_FLAGS ButtonFlags  = BUTTON_FLAG_NONE;
-    Float32      WheelDelta   = 0;
+    Float32      PosX        = -1;
+    Float32      PosY        = -1;
+    BUTTON_FLAGS ButtonFlags = BUTTON_FLAG_NONE;
+    Float32      WheelDelta  = 0;
 };
 DEFINE_FLAG_ENUM_OPERATORS(MouseState::BUTTON_FLAGS)
 
@@ -71,17 +71,17 @@ DEFINE_FLAG_ENUM_OPERATORS(INPUT_KEY_STATE_FLAGS)
 class InputControllerBase
 {
 public:
-    const MouseState& GetMouseState()const
+    const MouseState& GetMouseState() const
     {
         return m_MouseState;
     }
 
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
+    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key) const
     {
         return m_Keys[static_cast<size_t>(Key)];
     }
 
-    bool IsKeyDown(InputKeys Key)const
+    bool IsKeyDown(InputKeys Key) const
     {
         return (GetKeyState(Key) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0;
     }
@@ -90,7 +90,7 @@ public:
     {
         m_MouseState.WheelDelta = 0;
 
-        for(Uint32 i=0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
+        for (Uint32 i = 0; i < static_cast<Uint32>(InputKeys::TotalKeys); ++i)
         {
             auto& KeyState = m_Keys[i];
             if (KeyState & INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN)
@@ -101,12 +101,13 @@ public:
     }
 
 protected:
-    MouseState m_MouseState;
+    MouseState            m_MouseState;
     INPUT_KEY_STATE_FLAGS m_Keys[static_cast<size_t>(InputKeys::TotalKeys)] = {};
 };
 
-}
+} // namespace Diligent
 
+// clang-format off
 #if PLATFORM_WIN32
     #include "Win32/InputControllerWin32.h"
     namespace Diligent
@@ -159,3 +160,4 @@ protected:
         using InputController = DummyInputController;
     }
 #endif
+// clang-format on

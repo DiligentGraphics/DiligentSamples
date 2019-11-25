@@ -35,56 +35,56 @@ Diligent::DeviceType g_DeviceType = Diligent::DeviceType::Undefined;
 void SetButtonImage(HWND hwndDlg, int buttonId, int imageId, BOOL Enable)
 {
     HBITMAP hBitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(imageId));
-    auto hButton = GetDlgItem(hwndDlg, buttonId);
+    auto    hButton = GetDlgItem(hwndDlg, buttonId);
     SendMessage(hButton, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap);
     EnableWindow(hButton, Enable);
 }
 
-INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND hwndDlg, 
-                                            UINT message, 
-                                            WPARAM wParam, 
-                                            LPARAM lParam) 
-{ 
-    switch (message) 
-    { 
-        case WM_COMMAND: 
-            switch (LOWORD(wParam)) 
-            { 
-                case ID_DIRECT3D11: 
+INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND   hwndDlg,
+                                            UINT   message,
+                                            WPARAM wParam,
+                                            LPARAM lParam)
+{
+    switch (message)
+    {
+        case WM_COMMAND:
+            switch (LOWORD(wParam))
+            {
+                case ID_DIRECT3D11:
                     g_DeviceType = Diligent::DeviceType::D3D11;
-                    EndDialog(hwndDlg, wParam); 
+                    EndDialog(hwndDlg, wParam);
                     return TRUE;
 
                 case ID_DIRECT3D12:
                     g_DeviceType = Diligent::DeviceType::D3D12;
-                    EndDialog(hwndDlg, wParam); 
+                    EndDialog(hwndDlg, wParam);
                     return TRUE;
 
                 case ID_OPENGL:
                     g_DeviceType = Diligent::DeviceType::OpenGL;
-                    EndDialog(hwndDlg, wParam); 
+                    EndDialog(hwndDlg, wParam);
                     return TRUE;
 
                 case ID_VULKAN:
                     g_DeviceType = Diligent::DeviceType::Vulkan;
-                    EndDialog(hwndDlg, wParam); 
+                    EndDialog(hwndDlg, wParam);
                     return TRUE;
-            } 
-        break;
+            }
+            break;
 
         case WM_INITDIALOG:
         {
 #if D3D11_SUPPORTED
             BOOL D3D11Supported = TRUE;
 #else
-            BOOL D3D11Supported = FALSE;
+            BOOL D3D11Supported  = FALSE;
 #endif
             SetButtonImage(hwndDlg, ID_DIRECT3D11, IDB_DIRECTX11_LOGO, D3D11Supported);
 
 #if D3D12_SUPPORTED
             BOOL D3D12Supported = TRUE;
 #else
-            BOOL D3D12Supported = FALSE;
+            BOOL D3D12Supported  = FALSE;
 #endif
             SetButtonImage(hwndDlg, ID_DIRECT3D12, IDB_DIRECTX12_LOGO, D3D12Supported);
 
@@ -103,11 +103,11 @@ INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND hwndDlg,
             SetButtonImage(hwndDlg, ID_VULKAN, IDB_VULKAN_LOGO, VulkanSupported);
         }
         break;
-    } 
-    return FALSE; 
-} 
-
+    }
+    return FALSE;
 }
+
+} // namespace
 
 namespace Diligent
 {
@@ -115,7 +115,7 @@ namespace Diligent
 class SampleAppWin32 final : public SampleApp
 {
 public:
-    virtual LRESULT HandleWin32Message(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)override final
+    virtual LRESULT HandleWin32Message(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) override final
     {
         switch (message)
         {
@@ -130,7 +130,7 @@ public:
                     }
                 }
                 // Send all other WM_SYSKEYDOWN messages to the default WndProc.
-            break;
+                break;
 
             case WM_KEYDOWN:
                 switch (wParam)
@@ -155,28 +155,28 @@ public:
                         return 0;
                     }
                 }
-            break;
+                break;
         }
 
         if (m_pImGui)
         {
             auto Handled = static_cast<ImGuiImplWin32*>(m_pImGui.get())->Win32_ProcHandler(hWnd, message, wParam, lParam);
-            if(Handled)
+            if (Handled)
                 return Handled;
         }
 
         struct WindowsMessageData
         {
-            HWND hWnd;
-            UINT message;
+            HWND   hWnd;
+            UINT   message;
             WPARAM wParam;
             LPARAM lParam;
-        }MsgData = {hWnd, message, wParam, lParam};
+        } MsgData = {hWnd, message, wParam, lParam};
         m_TheSample->GetInputController().HandleNativeMessage(&MsgData);
         return m_TheSample->HandleNativeMessage(&MsgData);
     }
 
-    virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight)override final
+    virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight) override final
     {
         m_hWnd = hWnd;
 
@@ -190,7 +190,7 @@ public:
 
             InitializeSample();
         }
-        catch(...)
+        catch (...)
         {
             LOG_ERROR("Failed to initialize Diligent Engine.");
         }
@@ -201,7 +201,7 @@ protected:
     void ToggleFullscreenWindow()
     {
         // Ignore if we are in exclusive fullscreen mode
-        if(m_bFullScreenMode)
+        if (m_bFullScreenMode)
             return;
 
         m_bFullScreenWindow = !m_bFullScreenWindow;
@@ -219,7 +219,7 @@ protected:
             // Get the settings of the primary display. We want the app to go into
             // fullscreen mode on the display that supports Independent Flip.
             DEVMODE devMode = {};
-            devMode.dmSize = sizeof(DEVMODE);
+            devMode.dmSize  = sizeof(DEVMODE);
             EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
 
             SetWindowPos(
@@ -250,10 +250,10 @@ protected:
             ShowWindow(m_hWnd, SW_NORMAL);
         }
     }
-    
-    virtual void SetFullscreenMode(const Diligent::DisplayModeAttribs &DisplayMode)override 
-    { 
-        if(m_bFullScreenWindow)
+
+    virtual void SetFullscreenMode(const Diligent::DisplayModeAttribs& DisplayMode) override
+    {
+        if (m_bFullScreenWindow)
         {
             // We must exit full screen window first.
             ToggleFullscreenWindow();
@@ -261,8 +261,8 @@ protected:
         SampleApp::SetFullscreenMode(DisplayMode);
     }
 
-    virtual void SetWindowedMode()override
-    { 
+    virtual void SetWindowedMode() override
+    {
         if (m_bFullScreenWindow)
         {
             // Exit full screen window
@@ -271,17 +271,17 @@ protected:
         SampleApp::SetWindowedMode();
     }
 
-    virtual void SelectDeviceType()override final
+    virtual void SelectDeviceType() override final
     {
         DialogBox(NULL, MAKEINTRESOURCE(IDD_DEVICE_TYPE_SELECTION_DIALOG), NULL, SelectDeviceTypeDialogProc);
         m_DeviceType = g_DeviceType;
     }
 
     bool m_bFullScreenWindow = false;
-    HWND m_hWnd = 0;
+    HWND m_hWnd              = 0;
 
 private:
-    RECT m_WindowRect = {};
+    RECT m_WindowRect  = {};
     LONG m_WindowStyle = 0;
 };
 
@@ -290,4 +290,4 @@ NativeAppBase* CreateApplication()
     return new SampleAppWin32;
 }
 
-}
+} // namespace Diligent

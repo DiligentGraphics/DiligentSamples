@@ -19,7 +19,7 @@
 #include <algorithm>
 
 #ifndef NOMINMAX
-#   define NOMINMAX
+#    define NOMINMAX
 #endif
 #include "Windows.h"
 
@@ -28,11 +28,11 @@ namespace Diligent
 
 InputKeys MapCameraKeyWnd(UINT nKey)
 {
-    switch( nKey )
+    switch (nKey)
     {
         case VK_CONTROL:
             return InputKeys::ControlDown;
-        
+
         case VK_SHIFT:
             return InputKeys::ShiftDown;
 
@@ -42,26 +42,26 @@ InputKeys MapCameraKeyWnd(UINT nKey)
         case VK_LEFT:
         case 'A':
             return InputKeys::MoveLeft;
-        
+
         case VK_RIGHT:
         case 'D':
             return InputKeys::MoveRight;
-        
+
         case VK_UP:
         case 'W':
             return InputKeys::MoveForward;
-        
+
         case VK_DOWN:
         case 'S':
             return InputKeys::MoveBackward;
-        
+
         case VK_PRIOR:
         case 'E':
-            return InputKeys::MoveUp;        // pgup
-        
+            return InputKeys::MoveUp; // pgup
+
         case VK_NEXT:
         case 'Q':
-            return InputKeys::MoveDown;      // pgdn
+            return InputKeys::MoveDown; // pgdn
 
         case VK_HOME:
             return InputKeys::Reset;
@@ -88,7 +88,7 @@ const MouseState& InputControllerWin32::GetMouseState()
     return InputControllerBase::GetMouseState();
 }
 
-bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
+bool InputControllerWin32::HandleNativeMessage(const void* MsgData)
 {
     m_MouseState.WheelDelta = 0;
 
@@ -100,7 +100,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         LPARAM lParam;
     };
     const WindowMessageData& WndMsg = *reinterpret_cast<const WindowMessageData*>(MsgData);
-    
+
     auto hWnd   = WndMsg.hWnd;
     auto uMsg   = WndMsg.message;
     auto wParam = WndMsg.wParam;
@@ -108,14 +108,14 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
 
 
     bool MsgHandled = false;
-    switch( uMsg )
+    switch (uMsg)
     {
         case WM_KEYDOWN:
         {
             // Map this key to a InputKeys enum and update the
             // state of m_aKeys[] by adding the INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN|INPUT_KEY_STATE_FLAG_KEY_IS_DOWN mask
             // only if the key is not down
-            auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
+            auto mappedKey = MapCameraKeyWnd((UINT)wParam);
             if (mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
             {
                 auto& Key = m_Keys[static_cast<Int32>(mappedKey)];
@@ -130,10 +130,10 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         {
             // Map this key to a InputKeys enum and update the
             // state of m_aKeys[] by removing the INPUT_KEY_STATE_FLAG_KEY_IS_DOWN mask.
-            auto mappedKey = MapCameraKeyWnd( ( UINT )wParam );
-            if( mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
+            auto mappedKey = MapCameraKeyWnd((UINT)wParam);
+            if (mappedKey != InputKeys::Unknown && mappedKey < InputKeys::TotalKeys)
             {
-                auto &Key = m_Keys[static_cast<Int32>(mappedKey)];
+                auto& Key = m_Keys[static_cast<Int32>(mappedKey)];
                 Key &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
                 Key |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
             }
@@ -147,65 +147,65 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         case WM_RBUTTONDBLCLK:
         case WM_MBUTTONDBLCLK:
         case WM_LBUTTONDBLCLK:
+        {
+            // Update member var state
+            if ((uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONDBLCLK))
             {
-                // Update member var state
-                if( ( uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONDBLCLK ) )
-                {
-                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
-                }
-                if( ( uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONDBLCLK ) )
-                {
-                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
-                }
-                if( ( uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONDBLCLK )  )
-                {
-                    m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
-                }
-
-                // Capture the mouse, so if the mouse button is 
-                // released outside the window, we'll get the WM_LBUTTONUP message
-                SetCapture( hWnd );
-                UpdateMousePos();
-               
-                MsgHandled = true;
-                break;
+                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
             }
+            if ((uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONDBLCLK))
+            {
+                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
+            }
+            if ((uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONDBLCLK))
+            {
+                m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
+            }
+
+            // Capture the mouse, so if the mouse button is
+            // released outside the window, we'll get the WM_LBUTTONUP message
+            SetCapture(hWnd);
+            UpdateMousePos();
+
+            MsgHandled = true;
+            break;
+        }
 
         case WM_RBUTTONUP:
         case WM_MBUTTONUP:
         case WM_LBUTTONUP:
+        {
+            // Update member var state
+            if (uMsg == WM_LBUTTONUP)
             {
-                // Update member var state
-                if( uMsg == WM_LBUTTONUP )
-                {
-                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
-                }
-                if( uMsg == WM_MBUTTONUP )
-                {
-                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
-                }
-                if( uMsg == WM_RBUTTONUP )
-                {
-                    m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
-                }
-
-                // Release the capture if no mouse buttons down
-                if( (m_MouseState.ButtonFlags & (MouseState::BUTTON_FLAG_LEFT | MouseState::BUTTON_FLAG_MIDDLE | MouseState::BUTTON_FLAG_RIGHT)) == 0 )
-                {
-                    ReleaseCapture();
-                }
-
-                MsgHandled = true;
-                break;
+                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
             }
+            if (uMsg == WM_MBUTTONUP)
+            {
+                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
+            }
+            if (uMsg == WM_RBUTTONUP)
+            {
+                m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
+            }
+
+            // Release the capture if no mouse buttons down
+            if ((m_MouseState.ButtonFlags & (MouseState::BUTTON_FLAG_LEFT | MouseState::BUTTON_FLAG_MIDDLE | MouseState::BUTTON_FLAG_RIGHT)) == 0)
+            {
+                ReleaseCapture();
+            }
+
+            MsgHandled = true;
+            break;
+        }
 
         case WM_CAPTURECHANGED:
         {
-            if( ( HWND )lParam != hWnd )
+            if ((HWND)lParam != hWnd)
             {
-                if( ( m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT ) ||
-                    ( m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_MIDDLE ) ||
-                    ( m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT ) )
+                if ((m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) ||
+                    (m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_MIDDLE) ||
+                    (m_MouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT))
                 {
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
@@ -221,7 +221,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
         case WM_MOUSEWHEEL:
             // Update member var state
             m_MouseState.WheelDelta = (float)((short)HIWORD(wParam)) / (float)WHEEL_DELTA;
-            MsgHandled = true;
+            MsgHandled              = true;
             break;
     }
 
@@ -231,7 +231,7 @@ bool InputControllerWin32::HandleNativeMessage(const void *MsgData)
 void InputControllerWin32::UpdateMousePos()
 {
     POINT MousePosition;
-    GetCursorPos( &MousePosition );
+    GetCursorPos(&MousePosition);
     m_MouseState.PosX = static_cast<float>(MousePosition.x);
     m_MouseState.PosY = static_cast<float>(MousePosition.y);
 
@@ -255,4 +255,4 @@ void InputControllerWin32::UpdateMousePos()
     }*/
 }
 
-}
+} // namespace Diligent

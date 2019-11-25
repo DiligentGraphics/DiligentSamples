@@ -31,7 +31,7 @@ namespace Diligent
 class SampleAppIOS final : public SampleApp
 {
 public:
-    virtual void Initialize(int deviceType, void* layer)override final
+    virtual void Initialize(int deviceType, void* layer) override final
     {
         m_DeviceType = static_cast<Diligent::DeviceType>(deviceType);
         InitializeDiligentEngine(layer);
@@ -40,19 +40,19 @@ public:
         InitializeSample();
     }
 
-    virtual void Render()override
+    virtual void Render() override
     {
         SampleApp::Render();
     }
 
-    virtual void Update(double CurrTime, double ElapsedTime)override
+    virtual void Update(double CurrTime, double ElapsedTime) override
     {
         const auto& SCDesc = m_pSwapChain->GetDesc();
         static_cast<ImGuiImplIOS*>(m_pImGui.get())->SetDisplaySize(SCDesc.Width, SCDesc.Height);
         SampleApp::Update(CurrTime, ElapsedTime);
     }
 
-    virtual void OnTouchBegan(float x, float y)override final
+    virtual void OnTouchBegan(float x, float y) override final
     {
         if (!static_cast<ImGuiImplIOS*>(m_pImGui.get())->OnTouchEvent(x, y, true))
         {
@@ -61,13 +61,13 @@ public:
         m_TheSample->GetInputController().OnMouseMove(x, y);
     }
 
-    virtual void OnTouchMoved(float x, float y)override final
+    virtual void OnTouchMoved(float x, float y) override final
     {
         static_cast<ImGuiImplIOS*>(m_pImGui.get())->OnTouchEvent(x, y, true);
         m_TheSample->GetInputController().OnMouseMove(x, y);
     }
 
-    virtual void OnTouchEnded(float x, float y)override final
+    virtual void OnTouchEnded(float x, float y) override final
     {
         static_cast<ImGuiImplIOS*>(m_pImGui.get())->OnTouchEvent(x, y, false);
         m_TheSample->GetInputController().OnMouseMove(x, y);
@@ -75,7 +75,6 @@ public:
     }
 
 private:
-
 };
 
 NativeAppBase* CreateApplication()
@@ -83,4 +82,4 @@ NativeAppBase* CreateApplication()
     return new SampleAppIOS;
 }
 
-}
+} // namespace Diligent

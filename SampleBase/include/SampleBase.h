@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include <vector>
 
@@ -38,23 +38,23 @@ namespace Diligent
 class SampleBase
 {
 public:
-    virtual ~SampleBase(){}
+    virtual ~SampleBase() {}
 
     virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc);
 
-    virtual void Initialize(IEngineFactory*     pEngineFactory,
-                            IRenderDevice*      pDevice, 
-                            IDeviceContext**    ppContexts, 
-                            Uint32              NumDeferredCtx, 
-                            ISwapChain*         pSwapChain) = 0;
+    virtual void Initialize(IEngineFactory*  pEngineFactory,
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) = 0;
 
-    virtual void Render() = 0;
+    virtual void Render()                                    = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
-    virtual void WindowResize(Uint32 Width, Uint32 Height){}
-    virtual bool HandleNativeMessage(const void* pNativeMsgData){return false;}
+    virtual void WindowResize(Uint32 Width, Uint32 Height) {}
+    virtual bool HandleNativeMessage(const void* pNativeMsgData) { return false; }
 
-    virtual const Char* GetSampleName()const{return "Diligent Engine Sample";}
-    virtual void ProcessCommandLine(const char *CmdLine){}
+    virtual const Char* GetSampleName() const { return "Diligent Engine Sample"; }
+    virtual void        ProcessCommandLine(const char* CmdLine) {}
 
     InputController& GetInputController()
     {
@@ -62,15 +62,15 @@ public:
     }
 
 protected:
-    RefCntAutoPtr<IEngineFactory>               m_pEngineFactory;
-    RefCntAutoPtr<IRenderDevice>                m_pDevice;
-    RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
-    std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
-    RefCntAutoPtr<ISwapChain>                   m_pSwapChain;
-    float  m_fSmoothFPS          = 0;
-    double m_LastFPSTime         = 0;
-    Uint32 m_NumFramesRendered   = 0;
-    Uint32 m_CurrentFrameNumber  = 0;
+    RefCntAutoPtr<IEngineFactory>              m_pEngineFactory;
+    RefCntAutoPtr<IRenderDevice>               m_pDevice;
+    RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;
+    std::vector<RefCntAutoPtr<IDeviceContext>> m_pDeferredContexts;
+    RefCntAutoPtr<ISwapChain>                  m_pSwapChain;
+    float                                      m_fSmoothFPS         = 0;
+    double                                     m_LastFPSTime        = 0;
+    Uint32                                     m_NumFramesRendered  = 0;
+    Uint32                                     m_CurrentFrameNumber = 0;
 
     InputController m_InputController;
 };
@@ -80,18 +80,18 @@ inline void SampleBase::Update(double CurrTime, double ElapsedTime)
     ++m_NumFramesRendered;
     ++m_CurrentFrameNumber;
     static const double dFPSInterval = 0.5;
-    if( CurrTime - m_LastFPSTime > dFPSInterval )
+    if (CurrTime - m_LastFPSTime > dFPSInterval)
     {
-        m_fSmoothFPS = static_cast<float>(m_NumFramesRendered / (CurrTime - m_LastFPSTime));
+        m_fSmoothFPS        = static_cast<float>(m_NumFramesRendered / (CurrTime - m_LastFPSTime));
         m_NumFramesRendered = 0;
-        m_LastFPSTime = CurrTime;
+        m_LastFPSTime       = CurrTime;
     }
 }
 
 inline void SampleBase::Initialize(IEngineFactory*  pEngineFactory,
-                                   IRenderDevice*   pDevice, 
-                                   IDeviceContext** ppContexts, 
-                                   Uint32           NumDeferredCtx, 
+                                   IRenderDevice*   pDevice,
+                                   IDeviceContext** ppContexts,
+                                   Uint32           NumDeferredCtx,
                                    ISwapChain*      pSwapChain)
 {
     m_pEngineFactory    = pEngineFactory;
@@ -99,10 +99,10 @@ inline void SampleBase::Initialize(IEngineFactory*  pEngineFactory,
     m_pSwapChain        = pSwapChain;
     m_pImmediateContext = ppContexts[0];
     m_pDeferredContexts.resize(NumDeferredCtx);
-    for (Uint32 ctx=0; ctx < NumDeferredCtx; ++ctx)
-        m_pDeferredContexts[ctx] = ppContexts[1+ctx];
+    for (Uint32 ctx = 0; ctx < NumDeferredCtx; ++ctx)
+        m_pDeferredContexts[ctx] = ppContexts[1 + ctx];
 }
 
 extern SampleBase* CreateSample();
 
-}
+} // namespace Diligent

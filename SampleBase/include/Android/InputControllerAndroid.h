@@ -54,4 +54,4 @@ private:
     float2 m_PrvePinchPoint1;
 };
 
-}
+} // namespace Diligent

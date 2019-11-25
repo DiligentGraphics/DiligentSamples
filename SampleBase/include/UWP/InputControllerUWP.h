@@ -22,7 +22,7 @@
 
 namespace Diligent
 {
- 
+
 class InputControllerUWP
 {
 public:
@@ -55,6 +55,7 @@ public:
         void OnKeyDown(InputKeys Key)
         {
             std::lock_guard<std::mutex> lock(mtx);
+
             auto& keyState = m_Keys[static_cast<size_t>(Key)];
             keyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
             keyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
@@ -63,6 +64,7 @@ public:
         void OnKeyUp(InputKeys Key)
         {
             std::lock_guard<std::mutex> lock(mtx);
+
             auto& keyState = m_Keys[static_cast<size_t>(Key)];
             keyState &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
             keyState |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
@@ -102,12 +104,12 @@ public:
         return m_SharedState->GetMouseState();
     }
 
-    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const
+    INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key) const
     {
         return m_SharedState->GetKeyState(Key);
     }
 
-    bool IsKeyDown(InputKeys Key)const
+    bool IsKeyDown(InputKeys Key) const
     {
         return m_SharedState->IsKeyDown(Key);
     }
@@ -126,4 +128,4 @@ private:
     std::shared_ptr<SharedControllerState> m_SharedState{new SharedControllerState};
 };
 
-}
+} // namespace Diligent

@@ -39,7 +39,7 @@ public:
     ~SampleAppLinux()
     {
     }
-    virtual void OnGLContextCreated(Display* display, Window window)override final
+    virtual void OnGLContextCreated(Display* display, Window window) override final
     {
         InitializeDiligentEngine(display, reinterpret_cast<void*>(static_cast<size_t>(window)));
         const auto& SCDesc = m_pSwapChain->GetDesc();
@@ -47,11 +47,11 @@ public:
         InitializeSample();
     }
 
-    virtual int HandleXEvent(XEvent *xev)override final
+    virtual int HandleXEvent(XEvent* xev) override final
     {
         auto handled = static_cast<ImGuiImplLinuxX11*>(m_pImGui.get())->HandleXEvent(xev);
         // Always handle mouse move, button release and key release events
-        if(!handled || xev->type == ButtonRelease || xev->type == MotionNotify || xev->type == KeyRelease)
+        if (!handled || xev->type == ButtonRelease || xev->type == MotionNotify || xev->type == KeyRelease)
         {
             handled = m_TheSample->GetInputController().HandleXEvent(xev);
         }
@@ -59,7 +59,7 @@ public:
     }
 
 #if VULKAN_SUPPORTED
-    virtual bool InitVulkan(xcb_connection_t* connection, uint32_t window)override final
+    virtual bool InitVulkan(xcb_connection_t* connection, uint32_t window) override final
     {
         try
         {
@@ -67,23 +67,23 @@ public:
             struct XCBInfo
             {
                 xcb_connection_t* connection;
-                uint32_t window;
-            }xcbInfo = {connection, window};
+                uint32_t          window;
+            } xcbInfo = {connection, window};
             InitializeDiligentEngine(nullptr, &xcbInfo);
             const auto& SCDesc = m_pSwapChain->GetDesc();
             m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
             m_TheSample->GetInputController().InitXCBKeysms(connection);
             InitializeSample();
             return true;
-        }            
-        catch(...)
+        }
+        catch (...)
         {
             return false;
         }
     }
-    virtual void HandleXCBEvent(xcb_generic_event_t* event)override final
+    virtual void HandleXCBEvent(xcb_generic_event_t* event) override final
     {
-        auto handled = static_cast<ImGuiImplLinuxXCB*>(m_pImGui.get())->HandleXCBEvent(event);
+        auto handled   = static_cast<ImGuiImplLinuxXCB*>(m_pImGui.get())->HandleXCBEvent(event);
         auto EventType = event->response_type & 0x7f;
         // Always handle mouse move, button release and key release events
         if (!handled || EventType == XCB_MOTION_NOTIFY || EventType == XCB_BUTTON_RELEASE || EventType == XCB_KEY_RELEASE)
@@ -99,4 +99,4 @@ NativeAppBase* CreateApplication()
     return new SampleAppLinux;
 }
 
-}
+} // namespace Diligent

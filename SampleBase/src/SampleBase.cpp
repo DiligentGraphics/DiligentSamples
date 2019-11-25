@@ -43,10 +43,10 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #if D3D12_SUPPORTED
         case DeviceType::D3D12:
         {
-            EngineD3D12CreateInfo& EngineD3D12CI = static_cast<EngineD3D12CreateInfo &>(EngineCI);
+            EngineD3D12CreateInfo& EngineD3D12CI                  = static_cast<EngineD3D12CreateInfo&>(EngineCI);
             EngineD3D12CI.GPUDescriptorHeapDynamicSize[0]         = 32768;
             EngineD3D12CI.GPUDescriptorHeapSize[1]                = 128;
-            EngineD3D12CI.GPUDescriptorHeapDynamicSize[1]         = 2048-128;
+            EngineD3D12CI.GPUDescriptorHeapDynamicSize[1]         = 2048 - 128;
             EngineD3D12CI.DynamicDescriptorAllocationChunkSize[0] = 32;
             EngineD3D12CI.DynamicDescriptorAllocationChunkSize[1] = 8; // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
         }
@@ -91,4 +91,4 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
     }
 }
 
-}
+} // namespace Diligent

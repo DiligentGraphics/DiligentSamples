@@ -23,7 +23,6 @@ namespace Diligent
 class InputControllerMacOS : public InputControllerBase
 {
 public:
-
     enum class MouseButtonEvent
     {
         LMB_Pressed,
@@ -52,4 +51,4 @@ private:
     void ProcessKeyEvent(int key, bool IsKeyPressed);
 };
 
-}
+} // namespace Diligent

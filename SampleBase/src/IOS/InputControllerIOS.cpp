@@ -20,7 +20,7 @@
 
 namespace Diligent
 {
-    
+
 void InputControllerIOS::OnMouseButtonEvent(MouseButtonEvent Event)
 {
     switch (Event)
@@ -46,4 +46,4 @@ void InputControllerIOS::OnMouseButtonEvent(MouseButtonEvent Event)
     }
 }
 
-}
+} // namespace Diligent

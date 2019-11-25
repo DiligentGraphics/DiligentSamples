@@ -23,7 +23,7 @@ namespace Diligent
 
 void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
 {
-    float3 MoveDirection = float3(0,0,0);
+    float3 MoveDirection = float3(0, 0, 0);
     // Update acceleration vector based on keyboard state
     if (Controller.IsKeyDown(InputKeys::MoveForward))
         MoveDirection.z += 1.0f;
@@ -40,18 +40,18 @@ void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
     if (Controller.IsKeyDown(InputKeys::MoveDown))
         MoveDirection.y -= 1.0f;
 
-    // Normalize vector so if moving in 2 dirs (left & forward), 
+    // Normalize vector so if moving in 2 dirs (left & forward),
     // the camera doesn't move faster than if moving in 1 dir
     auto len = length(MoveDirection);
-    if(len != 0.0)
+    if (len != 0.0)
         MoveDirection /= len;
 
     bool IsSpeedUpScale      = Controller.IsKeyDown(InputKeys::ShiftDown);
     bool IsSuperSpeedUpScale = Controller.IsKeyDown(InputKeys::ControlDown);
 
     MoveDirection *= m_fMoveSpeed;
-    if (IsSpeedUpScale)     MoveDirection *= m_fSpeedUpScale;
-    if (IsSuperSpeedUpScale)MoveDirection *= m_fSuperSpeedUpScale;
+    if (IsSpeedUpScale) MoveDirection *= m_fSpeedUpScale;
+    if (IsSuperSpeedUpScale) MoveDirection *= m_fSuperSpeedUpScale;
 
     m_fCurrentSpeed = length(MoveDirection);
 
@@ -59,9 +59,10 @@ void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
 
     {
         const auto& mouseState = Controller.GetMouseState();
+
         float MouseDeltaX = 0;
         float MouseDeltaY = 0;
-        if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
+        if (m_LastMouseState.PosX >= 0 && m_LastMouseState.PosY >= 0 &&
             m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
         {
             MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
@@ -73,38 +74,40 @@ void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
         float fPitchDelta = MouseDeltaY * m_fRotationSpeed;
         if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
         {
-            m_fYawAngle   += fYawDelta;
+            m_fYawAngle += fYawDelta;
             m_fPitchAngle += fPitchDelta;
             m_fPitchAngle = std::max(m_fPitchAngle, -PI_F / 2.f);
             m_fPitchAngle = std::min(m_fPitchAngle, +PI_F / 2.f);
         }
     }
 
+    // clang-format off
     float4x4 ReferenceRotation
     {
-            m_ReferenceRightAxis.x,  m_ReferenceUpAxis.x,  m_ReferenceAheadAxis.x,   0,
-            m_ReferenceRightAxis.y,  m_ReferenceUpAxis.y,  m_ReferenceAheadAxis.y,   0,
-            m_ReferenceRightAxis.z,  m_ReferenceUpAxis.z,  m_ReferenceAheadAxis.z,   0,
-                                 0,                    0,                       0,   1
+        m_ReferenceRightAxis.x, m_ReferenceUpAxis.x, m_ReferenceAheadAxis.x, 0,
+        m_ReferenceRightAxis.y, m_ReferenceUpAxis.y, m_ReferenceAheadAxis.y, 0,
+        m_ReferenceRightAxis.z, m_ReferenceUpAxis.z, m_ReferenceAheadAxis.z, 0,
+                             0,                   0,                      0, 1
     };
+    // clang-format on
 
-    float4x4 CameraRotation = float4x4::RotationArbitrary(m_ReferenceUpAxis,    -m_fYawAngle) *
-                              float4x4::RotationArbitrary(m_ReferenceRightAxis, -m_fPitchAngle) *
-                              ReferenceRotation;
+    float4x4 CameraRotation = float4x4::RotationArbitrary(m_ReferenceUpAxis, -m_fYawAngle) *
+        float4x4::RotationArbitrary(m_ReferenceRightAxis, -m_fPitchAngle) *
+        ReferenceRotation;
     float4x4 WorldRotation = CameraRotation.Transpose();
- 
+
     float3 PosDeltaWorld = PosDelta * WorldRotation;
     m_Pos += PosDeltaWorld;
 
-    m_ViewMatrix = float4x4::Translation(-m_Pos) * CameraRotation;
+    m_ViewMatrix  = float4x4::Translation(-m_Pos) * CameraRotation;
     m_WorldMatrix = WorldRotation * float4x4::Translation(m_Pos);
 }
 
 void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis)
 {
-    m_ReferenceRightAxis = normalize(ReferenceRightAxis);
-    m_ReferenceUpAxis    = ReferenceUpAxis - dot(ReferenceUpAxis, m_ReferenceRightAxis) * m_ReferenceRightAxis;
-    auto UpLen = length(m_ReferenceUpAxis);
+    m_ReferenceRightAxis    = normalize(ReferenceRightAxis);
+    m_ReferenceUpAxis       = ReferenceUpAxis - dot(ReferenceUpAxis, m_ReferenceRightAxis) * m_ReferenceRightAxis;
+    auto            UpLen   = length(m_ReferenceUpAxis);
     constexpr float Epsilon = 1e-5f;
     if (UpLen < Epsilon)
     {
@@ -114,7 +117,7 @@ void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const
     m_ReferenceUpAxis /= UpLen;
 
     m_ReferenceAheadAxis = cross(m_ReferenceRightAxis, m_ReferenceUpAxis);
-    auto AheadLen = length(m_ReferenceAheadAxis);
+    auto AheadLen        = length(m_ReferenceAheadAxis);
     if (AheadLen < Epsilon)
     {
         AheadLen = Epsilon;
@@ -123,23 +126,23 @@ void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const
     m_ReferenceAheadAxis /= AheadLen;
 }
 
-void FirstPersonCamera::SetLookAt(const float3 &LookAt)
+void FirstPersonCamera::SetLookAt(const float3& LookAt)
 {
     float3 ViewDir = LookAt - m_Pos;
-    m_fYawAngle = atan2f( ViewDir.x, ViewDir.z );
+    m_fYawAngle    = atan2f(ViewDir.x, ViewDir.z);
 
-    float fXZLen = sqrtf( ViewDir.z * ViewDir.z + ViewDir.x * ViewDir.x );
-    m_fPitchAngle = -atan2f( ViewDir.y, fXZLen );
+    float fXZLen  = sqrtf(ViewDir.z * ViewDir.z + ViewDir.x * ViewDir.x);
+    m_fPitchAngle = -atan2f(ViewDir.y, fXZLen);
 }
 
 void FirstPersonCamera::SetRotation(float Yaw, float Pitch)
 {
-    m_fYawAngle = Yaw;
+    m_fYawAngle   = Yaw;
     m_fPitchAngle = Pitch;
 }
 
-void FirstPersonCamera::SetProjAttribs(Float32 NearClipPlane, 
-                                       Float32 FarClipPlane, 
+void FirstPersonCamera::SetProjAttribs(Float32 NearClipPlane,
+                                       Float32 FarClipPlane,
                                        Float32 AspectRatio,
                                        Float32 FOV,
                                        bool    IsGL)
@@ -155,8 +158,8 @@ void FirstPersonCamera::SetProjAttribs(Float32 NearClipPlane,
 
 void FirstPersonCamera::SetSpeedUpScales(Float32 SpeedUpScale, Float32 SuperSpeedUpScale)
 {
-    m_fSpeedUpScale = SpeedUpScale;
+    m_fSpeedUpScale      = SpeedUpScale;
     m_fSuperSpeedUpScale = SuperSpeedUpScale;
 }
 
-}
+} // namespace Diligent

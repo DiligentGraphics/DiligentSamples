@@ -58,10 +58,10 @@ void InputControllerMacOS::OnKeyReleased(int key)
 
 void InputControllerMacOS::ProcessKeyEvent(int key, bool IsKeyPressed)
 {
-    auto UpdateKeyState = [&](InputKeys Key)
+    auto UpdateKeyState = [&](InputKeys Key) //
     {
         auto& KeyState = m_Keys[static_cast<size_t>(Key)];
-        if(IsKeyPressed)
+        if (IsKeyPressed)
         {
             KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
             KeyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
@@ -73,7 +73,7 @@ void InputControllerMacOS::ProcessKeyEvent(int key, bool IsKeyPressed)
         }
     };
 
-    switch(key)
+    switch (key)
     {
         case 'w':
         case 'W':
@@ -129,23 +129,23 @@ void InputControllerMacOS::ProcessKeyEvent(int key, bool IsKeyPressed)
 
 void InputControllerMacOS::OnFlagsChanged(bool ShiftPressed, bool CtrlPressed, bool AltPressed)
 {
-    auto UpdateKey = [&](InputKeys Key, bool IsPressed)
+    auto UpdateKey = [&](InputKeys Key, bool IsPressed) //
     {
         auto& KeyState = m_Keys[static_cast<size_t>(Key)];
-        if(IsPressed)
+        if (IsPressed)
         {
             KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
             KeyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
         }
-        else if(KeyState & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN)
+        else if (KeyState & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN)
         {
             KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
             KeyState |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
         }
     };
-    UpdateKey(InputKeys::ShiftDown,   ShiftPressed);
-    UpdateKey(InputKeys::AltDown,     AltPressed);
+    UpdateKey(InputKeys::ShiftDown, ShiftPressed);
+    UpdateKey(InputKeys::AltDown, AltPressed);
     UpdateKey(InputKeys::ControlDown, CtrlPressed);
 }
 
-}
+} // namespace Diligent

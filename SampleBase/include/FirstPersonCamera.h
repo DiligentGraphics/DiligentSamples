@@ -15,7 +15,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "BasicMath.h"
 #include "InputController.h"
@@ -28,27 +28,30 @@ class FirstPersonCamera
 public:
     void Update(InputController& Controller, float ElapsedTime);
     void SetRotation(float Yaw, float Pitch);
-    void SetLookAt(const float3 &LookAt);
-    void SetMoveSpeed(float MoveSpeed)         { m_fMoveSpeed = MoveSpeed; }
+    void SetLookAt(const float3& LookAt);
+    void SetMoveSpeed(float MoveSpeed) { m_fMoveSpeed = MoveSpeed; }
     void SetRotationSpeed(float RotationSpeed) { m_fRotationSpeed = RotationSpeed; }
-    void SetPos(const float3 &Pos)             { m_Pos = Pos; }
-    void SetProjAttribs(Float32 NearClipPlane, 
-                        Float32 FarClipPlane, 
+    void SetPos(const float3& Pos) { m_Pos = Pos; }
+    void SetProjAttribs(Float32 NearClipPlane,
+                        Float32 FarClipPlane,
                         Float32 AspectRatio,
                         Float32 FOV,
                         bool    IsGL);
     void SetSpeedUpScales(Float32 SpeedUpScale, Float32 SuperSpeedUpScale);
-    
 
-    const float4x4& GetViewMatrix() const { return m_ViewMatrix;  }
-    const float4x4& GetWorldMatrix()const { return m_WorldMatrix; }
-    const float4x4& GetProjMatrix() const { return m_ProjMatrix;  }
-    float3 GetWorldRight()const { return float3(m_ViewMatrix._11, m_ViewMatrix._21, m_ViewMatrix._31); }
-    float3 GetWorldUp()   const { return float3(m_ViewMatrix._12, m_ViewMatrix._22, m_ViewMatrix._32); }
-    float3 GetWorldAhead()const { return float3(m_ViewMatrix._13, m_ViewMatrix._23, m_ViewMatrix._33); }
+
+    // clang-format off
+    const float4x4& GetViewMatrix()  const { return m_ViewMatrix;  }
+    const float4x4& GetWorldMatrix() const { return m_WorldMatrix; }
+    const float4x4& GetProjMatrix()  const { return m_ProjMatrix;  }
+
+    float3 GetWorldRight() const { return float3(m_ViewMatrix._11, m_ViewMatrix._21, m_ViewMatrix._31); }
+    float3 GetWorldUp()    const { return float3(m_ViewMatrix._12, m_ViewMatrix._22, m_ViewMatrix._32); }
+    float3 GetWorldAhead() const { return float3(m_ViewMatrix._13, m_ViewMatrix._23, m_ViewMatrix._33); }
+    // clang-format on
 
     float3 GetPos() const { return m_Pos; }
-    float GetCurrentSpeed() const {return m_fCurrentSpeed;}
+    float  GetCurrentSpeed() const { return m_fCurrentSpeed; }
 
     struct ProjectionAttribs
     {
@@ -58,7 +61,7 @@ public:
         Float32 FOV           = PI_F / 4.f;
         bool    IsGL          = false;
     };
-    const ProjectionAttribs& GetProjAttribs() { return m_ProjAttribs;  }
+    const ProjectionAttribs& GetProjAttribs() { return m_ProjAttribs; }
 
     void SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis);
 
@@ -67,23 +70,23 @@ protected:
 
     MouseState m_LastMouseState;
 
-    float3   m_ReferenceRightAxis = float3{1, 0, 0};
-    float3   m_ReferenceUpAxis    = float3{0, 1, 0};
-    float3   m_ReferenceAheadAxis = float3{0, 0, 1};
+    float3 m_ReferenceRightAxis = float3{1, 0, 0};
+    float3 m_ReferenceUpAxis    = float3{0, 1, 0};
+    float3 m_ReferenceAheadAxis = float3{0, 0, 1};
 
-    float3   m_Pos;
-    
+    float3 m_Pos;
+
     float4x4 m_ViewMatrix;
     float4x4 m_WorldMatrix;
     float4x4 m_ProjMatrix;
-    float m_fRotationSpeed = 0.01f;
-    float m_fMoveSpeed     = 1.f;
-    float m_fCurrentSpeed  = 0.f;
+    float    m_fRotationSpeed = 0.01f;
+    float    m_fMoveSpeed     = 1.f;
+    float    m_fCurrentSpeed  = 0.f;
 
-    float m_fYawAngle          = 0;    // Yaw angle of camera
-    float m_fPitchAngle        = 0;    // Pitch angle of camera
+    float m_fYawAngle          = 0; // Yaw angle of camera
+    float m_fPitchAngle        = 0; // Pitch angle of camera
     float m_fSpeedUpScale      = 1.f;
     float m_fSuperSpeedUpScale = 1.f;
 };
 
-}
+} // namespace Diligent

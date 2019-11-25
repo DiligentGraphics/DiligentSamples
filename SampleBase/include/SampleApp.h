@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include <vector>
 #include <string>
@@ -47,14 +47,15 @@ class SampleApp : public NativeAppBase
 public:
     SampleApp();
     ~SampleApp();
-    virtual void ProcessCommandLine(const char* CmdLine)override final;
-    virtual const char* GetAppTitle()const override final { return m_AppTitle.c_str(); }
-    virtual void Update(double CurrTime, double ElapsedTime)override;
-    virtual void WindowResize(int width, int height)override;
-    virtual void Render()override;
-    virtual void Present()override;
-    virtual void SelectDeviceType(){};
-    virtual void GetDesiredInitialWindowSize(int& width, int& height)override final
+    virtual void        ProcessCommandLine(const char* CmdLine) override final;
+    virtual const char* GetAppTitle() const override final { return m_AppTitle.c_str(); }
+    virtual void        Update(double CurrTime, double ElapsedTime) override;
+    virtual void        WindowResize(int width, int height) override;
+    virtual void        Render() override;
+    virtual void        Present() override;
+    virtual void        SelectDeviceType(){};
+
+    virtual void GetDesiredInitialWindowSize(int& width, int& height) override final
     {
         width  = m_InitialWindowWidth;
         height = m_InitialWindowHeight;
@@ -63,38 +64,37 @@ public:
 protected:
     void InitializeDiligentEngine(
 #if PLATFORM_LINUX
-        void *display,
+        void* display,
 #endif
-        void *NativeWindowHandle
-    );
+        void* NativeWindowHandle);
     void InitializeSample();
     void UpdateAdaptersDialog();
 
     virtual void SetFullscreenMode(const DisplayModeAttribs& DisplayMode)
-    { 
+    {
         m_bFullScreenMode = true;
-        m_pSwapChain->SetFullscreenMode(DisplayMode); 
+        m_pSwapChain->SetFullscreenMode(DisplayMode);
     }
     virtual void SetWindowedMode()
-    { 
+    {
         m_bFullScreenMode = false;
-        m_pSwapChain->SetWindowedMode(); 
+        m_pSwapChain->SetWindowedMode();
     }
 
-    DeviceType m_DeviceType = DeviceType::Undefined;
-    RefCntAutoPtr<IEngineFactory>               m_pEngineFactory;
-    RefCntAutoPtr<IRenderDevice>                m_pDevice;
-    RefCntAutoPtr<IDeviceContext>               m_pImmediateContext;
-    std::vector<RefCntAutoPtr<IDeviceContext> > m_pDeferredContexts;
-    RefCntAutoPtr<ISwapChain>                   m_pSwapChain;
-    HardwareAdapterAttribs                      m_AdapterAttribs;
-    std::vector<DisplayModeAttribs>             m_DisplayModes;
+    DeviceType                                 m_DeviceType = DeviceType::Undefined;
+    RefCntAutoPtr<IEngineFactory>              m_pEngineFactory;
+    RefCntAutoPtr<IRenderDevice>               m_pDevice;
+    RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;
+    std::vector<RefCntAutoPtr<IDeviceContext>> m_pDeferredContexts;
+    RefCntAutoPtr<ISwapChain>                  m_pSwapChain;
+    HardwareAdapterAttribs                     m_AdapterAttribs;
+    std::vector<DisplayModeAttribs>            m_DisplayModes;
 
     std::unique_ptr<SampleBase> m_TheSample;
-    
-    int m_InitialWindowWidth  = 0;
-    int m_InitialWindowHeight = 0;
-    int m_ValidationLevel     = -1;
+
+    int         m_InitialWindowWidth  = 0;
+    int         m_InitialWindowHeight = 0;
+    int         m_ValidationLevel     = -1;
     std::string m_AppTitle;
     Uint32      m_AdapterId = 0;
     std::string m_AdapterDetailsString;
@@ -106,7 +106,7 @@ protected:
 
     struct ScreenCaptureInfo
     {
-        bool             AllowCapture    = false;
+        bool             AllowCapture = false;
         std::string      Directory;
         std::string      FileName        = "frame";
         double           CaptureFPS      = 30;
@@ -117,10 +117,10 @@ protected:
         int              JpegQuality     = 95;
         bool             KeepAlpha       = false;
 
-    }m_ScreenCaptureInfo;
+    } m_ScreenCaptureInfo;
     std::unique_ptr<ScreenCapture> m_pScreenCapture;
 
     std::unique_ptr<ImGuiImplDiligent> m_pImGui;
 };
 
-}
+} // namespace Diligent

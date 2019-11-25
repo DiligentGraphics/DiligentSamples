@@ -19,13 +19,13 @@
 
 // Undef symbols defined by XLib
 #ifdef Bool
-# undef Bool
+#    undef Bool
 #endif
 #ifdef True
-#   undef True
+#    undef True
 #endif
 #ifdef False
-#   undef False
+#    undef False
 #endif
 
 #include <xcb/xcb.h>
@@ -39,8 +39,8 @@ namespace Diligent
 
 int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed)
 {
-    int handled = 0;
-    auto UpdateKeyState = [&](InputKeys Key)
+    int  handled        = 0;
+    auto UpdateKeyState = [&](InputKeys Key) //
     {
         auto& KeyState = m_Keys[static_cast<size_t>(Key)];
         if (IsKeyPressed)
@@ -68,99 +68,98 @@ int InputControllerLinux::HandleKeyEvevnt(unsigned int keysym, bool IsKeyPressed
         case XK_Control_L:
         case XK_Control_R:
             UpdateKeyState(InputKeys::ControlDown);
-        break;
+            break;
 
         case XK_Shift_L:
         case XK_Shift_R:
             UpdateKeyState(InputKeys::ShiftDown);
-        break;
+            break;
 
         case XK_Alt_L:
         case XK_Alt_R:
             UpdateKeyState(InputKeys::AltDown);
-        break;
+            break;
 
         case XK_Up:
         case 'w':
         case 'W':
             UpdateKeyState(InputKeys::MoveForward);
-        break;
+            break;
 
         case XK_Down:
         case 's':
         case 'S':
             UpdateKeyState(InputKeys::MoveBackward);
-        break;
+            break;
 
         case XK_Right:
         case 'd':
         case 'D':
             UpdateKeyState(InputKeys::MoveRight);
-        break;
+            break;
 
         case XK_Left:
         case 'a':
         case 'A':
             UpdateKeyState(InputKeys::MoveLeft);
-        break;
+            break;
 
         case XK_Home:
             UpdateKeyState(InputKeys::Reset);
-        break;
+            break;
 
         case XK_Page_Up:
         case 'e':
         case 'E':
             UpdateKeyState(InputKeys::MoveUp);
-        break;
+            break;
 
         case XK_Page_Down:
         case 'q':
         case 'Q':
             UpdateKeyState(InputKeys::MoveDown);
-        break;
+            break;
 
         case XK_plus:
             UpdateKeyState(InputKeys::ZoomIn);
-        break;
+            break;
 
         case XK_minus:
             UpdateKeyState(InputKeys::ZoomOut);
-        break;
+            break;
 
 #ifdef XK_KP_Home
         case XK_KP_Home:
             UpdateKeyState(InputKeys::Reset);
-        break;
+            break;
 #endif
 
 #ifdef XK_KP_Up
         case XK_KP_Up:
             UpdateKeyState(InputKeys::MoveForward);
-        break;
+            break;
 
         case XK_KP_Down:
             UpdateKeyState(InputKeys::MoveBackward);
-        break;
+            break;
 
         case XK_KP_Right:
             UpdateKeyState(InputKeys::MoveRight);
-        break;
+            break;
 
         case XK_KP_Left:
             UpdateKeyState(InputKeys::MoveLeft);
-        break;
+            break;
 
         case XK_KP_Page_Up:
             UpdateKeyState(InputKeys::MoveUp);
-        break;
+            break;
 
         case XK_KP_Page_Down:
             UpdateKeyState(InputKeys::MoveDown);
-        break;  
+            break;
 #endif
-
-    }  
+    }
 
     return handled;
 }
@@ -174,67 +173,68 @@ int InputControllerLinux::HandleXEvent(void* xevent)
         case KeyRelease:
         {
             KeySym keysym;
-            int num_char = XLookupString((XKeyEvent *)event, nullptr, 0, &keysym, 0);
+            int    num_char = XLookupString((XKeyEvent*)event, nullptr, 0, &keysym, 0);
             return HandleKeyEvevnt(keysym, event->type == KeyPress);
         }
 
         case ButtonPress:
         {
-            auto* xbe = reinterpret_cast<XButtonEvent *>(event);
-            switch(xbe->button)
+            auto* xbe = reinterpret_cast<XButtonEvent*>(event);
+            switch (xbe->button)
             {
                 case Button1:
                     m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
-                break;
+                    break;
 
                 case Button2:
                     m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
-                break;
+                    break;
 
                 case Button3:
                     m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
-                break;
+                    break;
 
                 case Button4:
                     m_MouseState.WheelDelta += 1;
-                break;
+                    break;
 
                 case Button5:
                     m_MouseState.WheelDelta -= 1;
-                break;
+                    break;
             }
             return 1;
         }
 
-        case ButtonRelease: 
+        case ButtonRelease:
         {
-            auto* xbe = reinterpret_cast<XButtonEvent *>(event);
-            switch(xbe->button)
+            auto* xbe = reinterpret_cast<XButtonEvent*>(event);
+            switch (xbe->button)
             {
                 case Button1:
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
-                break;
+                    break;
 
                 case Button2:
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
-                break;
+                    break;
 
                 case Button3:
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
-                break;
+                    break;
             }
             return 1;
         }
 
         case MotionNotify:
         {
-            auto* xme = (XMotionEvent *)event;
+            auto* xme = (XMotionEvent*)event;
+
             m_MouseState.PosX = static_cast<float>(xme->x);
             m_MouseState.PosY = static_cast<float>(xme->y);
             return 1;
         }
 
-        default:  
+        default:
             break;
     }
 
@@ -265,7 +265,8 @@ int InputControllerLinux::HandleXCBEvent(void* xcb_event)
     {
         case XCB_MOTION_NOTIFY:
         {
-            xcb_motion_notify_event_t *motion = (xcb_motion_notify_event_t *)event;
+            xcb_motion_notify_event_t* motion = (xcb_motion_notify_event_t*)event;
+
             m_MouseState.PosX = static_cast<float>(motion->event_x);
             m_MouseState.PosY = static_cast<float>(motion->event_y);
             return 1;
@@ -274,28 +275,28 @@ int InputControllerLinux::HandleXCBEvent(void* xcb_event)
 
         case XCB_BUTTON_PRESS:
         {
-            xcb_button_press_event_t *press = (xcb_button_press_event_t *)event;
-            switch(press->detail)
+            xcb_button_press_event_t* press = (xcb_button_press_event_t*)event;
+            switch (press->detail)
             {
                 case XCB_BUTTON_INDEX_1:
                     m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_LEFT;
-                break;
+                    break;
 
                 case XCB_BUTTON_INDEX_2:
                     m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_MIDDLE;
-                break;
+                    break;
 
                 case XCB_BUTTON_INDEX_3:
                     m_MouseState.ButtonFlags |= MouseState::BUTTON_FLAG_RIGHT;
-                break;
+                    break;
 
                 case XCB_BUTTON_INDEX_4:
                     m_MouseState.WheelDelta += 1;
-                break;
+                    break;
 
                 case XCB_BUTTON_INDEX_5:
                     m_MouseState.WheelDelta -= 1;
-                break;
+                    break;
             }
             return 1;
         }
@@ -303,20 +304,20 @@ int InputControllerLinux::HandleXCBEvent(void* xcb_event)
 
         case XCB_BUTTON_RELEASE:
         {
-            xcb_button_release_event_t *press = (xcb_button_release_event_t *)event;
-            switch(press->detail)
+            xcb_button_release_event_t* press = (xcb_button_release_event_t*)event;
+            switch (press->detail)
             {
                 case XCB_BUTTON_INDEX_1:
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_LEFT;
-                break;
+                    break;
 
                 case XCB_BUTTON_INDEX_2:
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_MIDDLE;
-                break;
+                    break;
 
                 case XCB_BUTTON_INDEX_3:
                     m_MouseState.ButtonFlags &= ~MouseState::BUTTON_FLAG_RIGHT;
-                break;
+                    break;
             }
             return 1;
         }
@@ -339,4 +340,4 @@ int InputControllerLinux::HandleXCBEvent(void* xcb_event)
     return 0;
 }
 
-}
+} // namespace Diligent
