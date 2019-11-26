@@ -45,15 +45,15 @@ void Tutorial17_MSAA::CreateCubePSO()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice, 
-        m_pSwapChain->GetDesc().ColorBufferFormat,
-        DepthBufferFormat,
-        pShaderSourceFactory,
-        "cube.vsh",
-        "cube.psh",
-        nullptr, 0,
-        m_SampleCount);
-      
+    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice,
+                                                   m_pSwapChain->GetDesc().ColorBufferFormat,
+                                                   DepthBufferFormat,
+                                                   pShaderSourceFactory,
+                                                   "cube.vsh",
+                                                   "cube.psh",
+                                                   nullptr, 0,
+                                                   m_SampleCount);
+
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
     // change and are bound directly through the pipeline state object.
@@ -73,7 +73,9 @@ void Tutorial17_MSAA::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         std::array<std::pair<Uint8, const char*>, 4> ComboItems;
+
         Uint32 NumItems = 0;
+
         ComboItems[NumItems++] = std::make_pair(Uint8{1}, "1");
         if (m_SupportedSampleCounts & 0x02)
             ComboItems[NumItems++] = std::make_pair(Uint8{2}, "2");
@@ -89,20 +91,20 @@ void Tutorial17_MSAA::UpdateUI()
 
         ImGui::Checkbox("Rotate gird", &m_bRotateGrid);
     }
-    ImGui::End();   
+    ImGui::End();
 }
 
-void Tutorial17_MSAA::Initialize(IEngineFactory*   pEngineFactory,
-                                 IRenderDevice*    pDevice,
-                                 IDeviceContext**  ppContexts,
-                                 Uint32            NumDeferredCtx,
-                                 ISwapChain*       pSwapChain)
+void Tutorial17_MSAA::Initialize(IEngineFactory*  pEngineFactory,
+                                 IRenderDevice*   pDevice,
+                                 IDeviceContext** ppContexts,
+                                 Uint32           NumDeferredCtx,
+                                 ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
-    
+
     const auto& ColorFmtInfo = pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
     const auto& DepthFmtInfo = pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
-    m_SupportedSampleCounts = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
+    m_SupportedSampleCounts  = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
     if (m_SupportedSampleCounts & 0x04)
         m_SampleCount = 4;
     else if (m_SupportedSampleCounts & 0x02)
@@ -138,13 +140,13 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     const auto& SCDesc = m_pSwapChain->GetDesc();
     // Create window-size multi-sampled offscreen render target
     TextureDesc ColorDesc;
-    ColorDesc.Name        = "Multisampled render target";
-    ColorDesc.Type        = RESOURCE_DIM_TEX_2D;
-    ColorDesc.BindFlags   = BIND_RENDER_TARGET;
-    ColorDesc.Width       = SCDesc.Width;
-    ColorDesc.Height      = SCDesc.Height;
-    ColorDesc.MipLevels   = 1;
-    ColorDesc.Format      = SCDesc.ColorBufferFormat;
+    ColorDesc.Name           = "Multisampled render target";
+    ColorDesc.Type           = RESOURCE_DIM_TEX_2D;
+    ColorDesc.BindFlags      = BIND_RENDER_TARGET;
+    ColorDesc.Width          = SCDesc.Width;
+    ColorDesc.Height         = SCDesc.Height;
+    ColorDesc.MipLevels      = 1;
+    ColorDesc.Format         = SCDesc.ColorBufferFormat;
     bool NeedsSRGBConversion = m_pDevice->GetDeviceCaps().IsD3DDevice() && (ColorDesc.Format == TEX_FORMAT_RGBA8_UNORM_SRGB || ColorDesc.Format == TEX_FORMAT_BGRA8_UNORM_SRGB);
     if (NeedsSRGBConversion)
     {
@@ -157,14 +159,14 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     // Set the desired number of samples
     ColorDesc.SampleCount = m_SampleCount;
     // Define optimal clear value
-    ColorDesc.ClearValue.Format = SCDesc.ColorBufferFormat;
+    ColorDesc.ClearValue.Format   = SCDesc.ColorBufferFormat;
     ColorDesc.ClearValue.Color[0] = 0.125f;
     ColorDesc.ClearValue.Color[1] = 0.125f;
     ColorDesc.ClearValue.Color[2] = 0.125f;
     ColorDesc.ClearValue.Color[3] = 1.f;
     RefCntAutoPtr<ITexture> pColor;
     m_pDevice->CreateTexture(ColorDesc, nullptr, &pColor);
-    
+
     // Store the render target view
     m_pMSColorRTV.Release();
     if (NeedsSRGBConversion)
@@ -178,7 +180,7 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     {
         m_pMSColorRTV = pColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
     }
-    
+
 
     // Create window-size multi-sampled depth buffer
     TextureDesc DepthDesc = ColorDesc;
@@ -186,7 +188,7 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     DepthDesc.Format      = DepthBufferFormat;
     DepthDesc.BindFlags   = BIND_DEPTH_STENCIL;
     // Define optimal clear value
-    DepthDesc.ClearValue.Format = DepthDesc.Format;
+    DepthDesc.ClearValue.Format               = DepthDesc.Format;
     DepthDesc.ClearValue.DepthStencil.Depth   = 1;
     DepthDesc.ClearValue.DepthStencil.Stencil = 0;
 
@@ -199,7 +201,8 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
 // Render a frame
 void Tutorial17_MSAA::Render()
 {
-    const float ClearColor[] = { 0.125f,  0.125f,  0.125f, 1.0f };
+    const float ClearColor[] = {0.125f, 0.125f, 0.125f, 1.0f};
+
     ITextureView* pRTV = nullptr;
     ITextureView* pDSV = nullptr;
     if (m_SampleCount > 1)
@@ -225,7 +228,7 @@ void Tutorial17_MSAA::Render()
     }
 
     // Bind vertex and index buffers
-    Uint32 offset = 0;
+    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -248,6 +251,7 @@ void Tutorial17_MSAA::Render()
     {
         // Resolve multi-sampled render taget into the current swap chain back buffer.
         auto pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
+
         ResolveTextureSubresourceAttribs ResolveAttribs;
         ResolveAttribs.SrcTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
         ResolveAttribs.DstTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
@@ -263,10 +267,10 @@ void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime)
     if (m_bRotateGrid)
         m_fCurrentTime += static_cast<float>(ElapsedTime);
     // Set cube world view matrix
-    float4x4 WorldView = float4x4::RotationZ(m_fCurrentTime * 0.1f) * float4x4::Translation(0.0f, 0.0f, 30.0f);
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
+    float4x4 WorldView   = float4x4::RotationZ(m_fCurrentTime * 0.1f) * float4x4::Translation(0.0f, 0.0f, 30.0f);
+    float    NearPlane   = 0.1f;
+    float    FarPlane    = 100.f;
+    float    aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
 
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.0f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
@@ -275,4 +279,4 @@ void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime)
     m_WorldViewProjMatrix = WorldView * Proj;
 }
 
-}
+} // namespace Diligent

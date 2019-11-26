@@ -29,7 +29,7 @@
 #include "imgui.h"
 
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED
-#   include "HLSL2GLSLConverterImpl.h"
+#    include "HLSL2GLSLConverterImpl.h"
 #endif
 
 namespace Diligent
@@ -42,23 +42,25 @@ SampleBase* CreateSample()
 
 namespace
 {
+
 struct Constants
 {
     float4x4 WorldViewProj;
-    float4 ViewportSize;
-    float LineWidth;
+    float4   ViewportSize;
+    float    LineWidth;
 };
-}
 
-void Tutorial07_GeometryShader::GetEngineInitializationAttribs(DeviceType         DevType,
-                                                               EngineCreateInfo&  Attribs,
-                                                               SwapChainDesc&     SCDesc)
+} // namespace
+
+void Tutorial07_GeometryShader::GetEngineInitializationAttribs(DeviceType        DevType,
+                                                               EngineCreateInfo& Attribs,
+                                                               SwapChainDesc&    SCDesc)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
 #if VULKAN_SUPPORTED
-    if(DevType == DeviceType::Vulkan)
+    if (DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+        auto& VkAttrs                          = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.EnabledFeatures.geometryShader = true;
     }
 #endif
@@ -77,19 +79,21 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
         // and compile GLSL
 
         const auto& Converter = HLSL2GLSLConverterImpl::GetInstance();
+
         HLSL2GLSLConverterImpl::ConversionAttribs Attribs;
-        Attribs.pSourceStreamFactory       = ShaderCI.pShaderSourceStreamFactory;
-        Attribs.ppConversionStream         = nullptr;
-        Attribs.EntryPoint                 = ShaderCI.EntryPoint;
-        Attribs.ShaderType                 = ShaderCI.Desc.ShaderType;
-        Attribs.IncludeDefinitions         = true;
-        Attribs.InputFileName              = ShaderCI.FilePath;
-        Attribs.SamplerSuffix              = ShaderCI.CombinedSamplerSuffix;
+        Attribs.pSourceStreamFactory = ShaderCI.pShaderSourceStreamFactory;
+        Attribs.ppConversionStream   = nullptr;
+        Attribs.EntryPoint           = ShaderCI.EntryPoint;
+        Attribs.ShaderType           = ShaderCI.Desc.ShaderType;
+        Attribs.IncludeDefinitions   = true;
+        Attribs.InputFileName        = ShaderCI.FilePath;
+        Attribs.SamplerSuffix        = ShaderCI.CombinedSamplerSuffix;
         // Separate shader objects extension is required to allow input/output layout qualifiers
         Attribs.UseInOutLocationQualifiers = true;
-        auto ConvertedSource = Converter.Convert(Attribs);
-        
+        auto ConvertedSource               = Converter.Convert(Attribs);
+
         ShaderCreateInfo ConvertedShaderCI = ShaderCI;
+
         ConvertedShaderCI.pShaderSourceStreamFactory = nullptr;
         ConvertedShaderCI.Source                     = ConvertedSource.c_str();
         ConvertedShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL;
@@ -112,11 +116,12 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO"; 
+    PSODesc.Name = "Cube PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -129,6 +134,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    // clang-format on
 
     // Create dynamic uniform buffer that will store shader constants
     CreateUniformBuffer(m_pDevice, sizeof(Constants), "Shader constants CB", &m_ShaderConstants);
@@ -153,7 +159,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube VS";
         ShaderCI.FilePath        = "cube.vsh";
-        pVS = CreateShader(m_pDevice, ShaderCI);
+        pVS                      = CreateShader(m_pDevice, ShaderCI);
     }
 
     // Create a geometry shader
@@ -163,7 +169,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube GS";
         ShaderCI.FilePath        = "cube.gsh";
-        pGS = CreateShader(m_pDevice, ShaderCI);
+        pGS                      = CreateShader(m_pDevice, ShaderCI);
     }
 
     // Create a pixel shader
@@ -173,9 +179,10 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube PS";
         ShaderCI.FilePath        = "cube.psh";
-        pPS = CreateShader(m_pDevice, ShaderCI);
+        pPS                      = CreateShader(m_pDevice, ShaderCI);
     }
 
+    // clang-format off
     // Define vertex shader input layout
     LayoutElement LayoutElems[] =
     {
@@ -184,10 +191,12 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         // Attribute 1 - texture coordinates
         LayoutElement{1, 0, 2, VT_FLOAT32, False}
     };
+    // clang-format on
 
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pGS = pGS;
     PSODesc.GraphicsPipeline.pPS = pPS;
+
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
     PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
@@ -196,14 +205,17 @@ void Tutorial07_GeometryShader::CreatePipelineState()
 
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
+    // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    // clang-format off
     SamplerDesc SamLinearClampDesc
     {
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
@@ -213,17 +225,20 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
 
+    // clang-format off
     // Since we did not explcitly specify the type for 'VSConstants', 'GSConstants', 
     // and 'PSConstants' variables, default type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used.
     // Static variables never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX,   "VSConstants")->Set(m_ShaderConstants);
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
+    // clang-format on
 
     // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
@@ -240,11 +255,11 @@ void Tutorial07_GeometryShader::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial07_GeometryShader::Initialize(IEngineFactory*   pEngineFactory,
-                                           IRenderDevice*    pDevice,
-                                           IDeviceContext**  ppContexts,
-                                           Uint32            NumDeferredCtx,
-                                           ISwapChain*       pSwapChain)
+void Tutorial07_GeometryShader::Initialize(IEngineFactory*  pEngineFactory,
+                                           IRenderDevice*   pDevice,
+                                           IDeviceContext** ppContexts,
+                                           Uint32           NumDeferredCtx,
+                                           ISwapChain*      pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if (!deviceCaps.bGeometryShadersSupported)
@@ -259,15 +274,15 @@ void Tutorial07_GeometryShader::Initialize(IEngineFactory*   pEngineFactory,
     // Load textured cube
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
-    m_TextureSRV = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_TextureSRV       = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 }
 
 // Render a frame
 void Tutorial07_GeometryShader::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -275,22 +290,22 @@ void Tutorial07_GeometryShader::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> Consts(m_pImmediateContext, m_ShaderConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         Consts->WorldViewProj = m_WorldViewProjMatrix.Transpose();
-        
-        const auto &SCDesc = m_pSwapChain->GetDesc();
-        Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f/static_cast<float>(SCDesc.Width), 1.f/static_cast<float>(SCDesc.Height));
-        
+
+        const auto& SCDesc   = m_pSwapChain->GetDesc();
+        Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / static_cast<float>(SCDesc.Width), 1.f / static_cast<float>(SCDesc.Height));
+
         Consts->LineWidth = m_LineWidth;
     }
 
     // Bind vertex and index buffers
-    Uint32 offset = 0;
+    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -298,7 +313,7 @@ void Tutorial07_GeometryShader::Render()
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     // Verify the state of vertex and index buffers
-    DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
+    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
@@ -310,10 +325,10 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube world view matrix
-    float4x4 CubeWorldView = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F*0.1f) * 
+    float4x4 CubeWorldView = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f) *
         float4x4::Translation(0.f, 0.0f, 5.0f);
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -321,4 +336,4 @@ void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
     m_WorldViewProjMatrix = CubeWorldView * Proj;
 }
 
-}
+} // namespace Diligent

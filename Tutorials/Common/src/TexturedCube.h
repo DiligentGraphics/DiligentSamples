@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "RenderDevice.h"
 #include "Buffer.h"
@@ -43,10 +43,10 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
                                                   IShaderSourceInputStreamFactory* pShaderSourceFactory,
                                                   const char*                      VSFilePath,
                                                   const char*                      PSFilePath,
-                                                  LayoutElement*                   LayoutElements     = nullptr,
-                                                  Uint32                           NumLayoutElements  = 0,
-                                                  Uint8                            SampleCount        = 1);
+                                                  LayoutElement*                   LayoutElements    = nullptr,
+                                                  Uint32                           NumLayoutElements = 0,
+                                                  Uint8                            SampleCount       = 1);
 
-}
+} // namespace TexturedCube
 
-}
+} // namespace Diligent

@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include <atomic>
 #include <memory>
@@ -38,22 +38,25 @@ namespace Diligent
 class Tutorial10_DataStreaming final : public SampleBase
 {
 public:
-    ~Tutorial10_DataStreaming()override;
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
+    ~Tutorial10_DataStreaming() override;
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
                                                 EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc)override final;
+                                                SwapChainDesc&    SCDesc) override final;
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial10: Streaming";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial10: Streaming"; }
 
 private:
     void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
-    void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
+    void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
     void UpdateUI();
 
     void InitializePolygons();
@@ -63,7 +66,7 @@ private:
     void StartWorkerThreads(size_t NumThreads);
     void StopWorkerThreads();
 
-    template<bool UseBatch>
+    template <bool UseBatch>
     void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
 
     static void WorkerThreadFunc(Tutorial10_DataStreaming* pThis, Uint32 ThreadNum);
@@ -71,26 +74,30 @@ private:
     ThreadingTools::Signal m_RenderSubsetSignal;
     ThreadingTools::Signal m_ExecuteCommandListsSignal;
     ThreadingTools::Signal m_GotoNextFrameSignal;
+
     std::mutex      m_NumThreadsCompletedMtx;
     std::atomic_int m_NumThreadsCompleted;
     std::atomic_int m_NumThreadsReady;
-    std::vector<std::thread> m_WorkerThreads;
-    std::vector< RefCntAutoPtr<ICommandList> > m_CmdLists;
 
-    static constexpr const int NumStates = 5;
+    std::vector<std::thread> m_WorkerThreads;
+
+    std::vector<RefCntAutoPtr<ICommandList>> m_CmdLists;
+
+    static constexpr const int    NumStates = 5;
     RefCntAutoPtr<IPipelineState> m_pPSO[2][NumStates];
-    RefCntAutoPtr<IBuffer> m_PolygonAttribsCB;
-    RefCntAutoPtr<IBuffer> m_BatchDataBuffer;
-    
-    static constexpr const int MaxVertsInStreamingBuffer = 1024;
+    RefCntAutoPtr<IBuffer>        m_PolygonAttribsCB;
+    RefCntAutoPtr<IBuffer>        m_BatchDataBuffer;
+
+    static constexpr const int             MaxVertsInStreamingBuffer = 1024;
     std::unique_ptr<class StreamingBuffer> m_StreamingVB;
     std::unique_ptr<class StreamingBuffer> m_StreamingIB;
 
-    static constexpr int NumTextures = 4;
+    static constexpr int                  NumTextures = 4;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
     RefCntAutoPtr<IShaderResourceBinding> m_BatchSRB;
-    RefCntAutoPtr<ITextureView> m_TextureSRV[NumTextures];
-    RefCntAutoPtr<ITextureView> m_TexArraySRV;
+    RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
+    RefCntAutoPtr<ITextureView>           m_TexArraySRV;
+
     int m_NumPolygons = 1000;
     int m_BatchSize   = 5;
 
@@ -101,12 +108,12 @@ private:
     {
         float2 Pos;
         float2 MoveDir;
-        float Size;
-        float Angle;
-        float RotSpeed;
-        int TextureInd;
-        int StateInd;
-        int NumVerts;
+        float  Size;
+        float  Angle;
+        float  RotSpeed;
+        int    TextureInd;
+        int    StateInd;
+        int    NumVerts;
     };
     std::vector<PolygonData> m_Polygons;
 
@@ -114,7 +121,7 @@ private:
     {
         float4 PolygonRotationAndScale;
         float2 PolygonCenter;
-        float TexArrInd;
+        float  TexArrInd;
     };
 
     static constexpr const Uint32 MinPolygonVerts = 3;
@@ -125,9 +132,8 @@ private:
         std::vector<Uint32> Inds;
     };
     std::vector<PolygonGeometry> m_PolygonGeo;
-    bool m_bAllowPersistentMap = false;
-    std::pair<Uint32, Uint32> WritePolygon(const PolygonGeometry& PolygonGeo, IDeviceContext* pCtx, size_t CtxNum);
-
+    bool                         m_bAllowPersistentMap = false;
+    std::pair<Uint32, Uint32>    WritePolygon(const PolygonGeometry& PolygonGeo, IDeviceContext* pCtx, size_t CtxNum);
 };
 
-}
+} // namespace Diligent

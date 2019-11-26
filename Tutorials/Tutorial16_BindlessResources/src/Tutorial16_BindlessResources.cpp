@@ -45,7 +45,7 @@ struct Vertex
     float2 uv;
 };
 
-}
+} // namespace
 
 SampleBase* CreateSample()
 {
@@ -58,12 +58,13 @@ void Tutorial16_BindlessResources::CreatePipelineState()
 
     PipelineStateDesc PSODesc;
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO"; 
+    PSODesc.Name = "Cube PSO";
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -76,6 +77,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    // clang-format on
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
@@ -99,7 +101,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         m_pDevice->CreateShader(ShaderCI, &pVS);
         // Create dynamic uniform buffer that will store our transformation matrix
         // Dynamic buffers can be frequently updated by the CPU
-        CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
+        CreateUniformBuffer(m_pDevice, sizeof(float4x4) * 2, "VS constants CB", &m_VSConstants);
         StateTransitionDesc Barrier{m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true};
         m_pImmediateContext->TransitionResourceStates(1, &Barrier);
     }
@@ -124,6 +126,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         }
     }
 
+    // clang-format off
     // Define vertex shader input layout
     // This tutorial uses two types of input: per-vertex data and per-instance data.
     LayoutElement LayoutElems[] =
@@ -145,26 +148,31 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         // Attribute 5 - fourth row
         LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
         // Attribute 6 - texture array index
-        LayoutElement{6, 1, 1, VT_UINT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{6, 1, 1, VT_UINT32,  False, LayoutElement::FREQUENCY_PER_INSTANCE},
     };
+    // clang-format on
 
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pPS = pPS;
+
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
+    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
+    // clang-format off
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
+    // clang-format off
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
     SamplerDesc SamLinearClampDesc
     {
@@ -175,6 +183,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
@@ -188,7 +197,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
 
-    for (Uint32 i=0; i < NumTextures; ++i)
+    for (Uint32 i = 0; i < NumTextures; ++i)
     {
         m_pPSO->CreateShaderResourceBinding(&m_SRB[i], true);
     }
@@ -213,23 +222,24 @@ Tutorial16_BindlessResources::ObjectGeometry AddCube(std::vector<Vertex>& Vertic
 {
     // Cube vertices
 
-    //      (-1,+1,+1)________________(+1,+1,+1) 
+    //      (-1,+1,+1)________________(+1,+1,+1)
     //               /|              /|
     //              / |             / |
     //             /  |            /  |
     //            /   |           /   |
     //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____| 
+    //           |    |__________|____|
     //           |   /(-1,+1,-1) |    /(+1,+1,-1)
     //           |  /            |   /
     //           | /             |  /
     //           |/              | /
-    //           /_______________|/ 
+    //           /_______________|/
     //        (-1,-1,-1)       (+1,-1,-1)
-    // 
+    //
 
     auto BaseVertex = static_cast<Uint32>(Vertices.size());
 
+    // clang-format off
     Vertices.insert(Vertices.end(),
         {
             {float3(-1,-1,-1) * f3BottomScale, float2(0,1)},
@@ -263,9 +273,11 @@ Tutorial16_BindlessResources::ObjectGeometry AddCube(std::vector<Vertex>& Vertic
             {float3(-1,+1,+1) * f3TopScale,    float2(1,0)}
         }
     );
+    // clang-format on
 
     Tutorial16_BindlessResources::ObjectGeometry Geometry;
     Geometry.FirstIndex = static_cast<Uint32>(Indices.size());
+    // clang-format off
     Indices.insert(Indices.end(),
         {
             2,0,1,    2,3,0,
@@ -276,24 +288,27 @@ Tutorial16_BindlessResources::ObjectGeometry AddCube(std::vector<Vertex>& Vertic
             20,21,22, 20,22,23
         }
     );
+    // clang-format on
+
     Geometry.NumIndices = static_cast<Uint32>(Indices.size()) - Geometry.FirstIndex;
-    for(Uint32 i=Geometry.FirstIndex; i < Geometry.FirstIndex + Geometry.NumIndices; ++i)
+    for (Uint32 i = Geometry.FirstIndex; i < Geometry.FirstIndex + Geometry.NumIndices; ++i)
         Indices[i] += BaseVertex;
     return Geometry;
 }
 
 Tutorial16_BindlessResources::ObjectGeometry AddPyramid(std::vector<Vertex>& Vertices, std::vector<Uint32>& Indices)
 {
-//          4-7
-//           *
-//       1_______2
-//       /      /
-//      /______/
-//     0       3
-//     
+    //          4-7
+    //           *
+    //       1_______2
+    //       /      /
+    //      /______/
+    //     0       3
+    //
 
     auto BaseVertex = static_cast<Uint32>(Vertices.size());
 
+    // clang-format off
     Vertices.insert(Vertices.end(),
         {
             {float3(-1,-1,-1), float2(0,1)},
@@ -307,9 +322,12 @@ Tutorial16_BindlessResources::ObjectGeometry AddPyramid(std::vector<Vertex>& Ver
             {float3(0, 0, +1), float2(0,0)}
         }
     );
+    // clang-format on
 
     Tutorial16_BindlessResources::ObjectGeometry Geometry;
     Geometry.FirstIndex = static_cast<Uint32>(Indices.size());
+
+    // clang-format off
     Indices.insert(Indices.end(),
         {
             2,0,1, 2,3,0,
@@ -319,26 +337,28 @@ Tutorial16_BindlessResources::ObjectGeometry AddPyramid(std::vector<Vertex>& Ver
             3,7,0
         }
     );
+    // clang-format on
+
     Geometry.NumIndices = static_cast<Uint32>(Indices.size()) - Geometry.FirstIndex;
-    for(Uint32 i=Geometry.FirstIndex; i < Geometry.FirstIndex + Geometry.NumIndices; ++i)
+    for (Uint32 i = Geometry.FirstIndex; i < Geometry.FirstIndex + Geometry.NumIndices; ++i)
         Indices[i] += BaseVertex;
 
     return Geometry;
 }
 
-}
+} // namespace
 
 void Tutorial16_BindlessResources::CreateGeometryBuffers()
 {
     std::vector<Vertex> Vertices;
     std::vector<Uint32> Indices;
 
-    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(1,1,1), float3(1,1,1)));
-    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(1,1,1), float3(0.5f, 0.5f, 1.f)));
-    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(0.5f,1,1), float3(1, 0.5f, 1.f)));
-    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(1,1,1), float3(1, 0.5f, 0.5f)));
+    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(1, 1, 1), float3(1, 1, 1)));
+    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(1, 1, 1), float3(0.5f, 0.5f, 1.f)));
+    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(0.5f, 1, 1), float3(1, 0.5f, 1.f)));
+    m_Geometries.emplace_back(AddCube(Vertices, Indices, float3(1, 1, 1), float3(1, 0.5f, 0.5f)));
     m_Geometries.emplace_back(AddPyramid(Vertices, Indices));
-    
+
 
     {
         BufferDesc VertBuffDesc;
@@ -347,7 +367,7 @@ void Tutorial16_BindlessResources::CreateGeometryBuffers()
         VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
         VertBuffDesc.uiSizeInBytes = static_cast<Uint32>(sizeof(Vertex) * Vertices.size());
         BufferData VBData;
-        VBData.pData = Vertices.data();
+        VBData.pData    = Vertices.data();
         VBData.DataSize = VertBuffDesc.uiSizeInBytes;
         m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_VertexBuffer);
     }
@@ -363,11 +383,13 @@ void Tutorial16_BindlessResources::CreateGeometryBuffers()
         IBData.DataSize = IndBuffDesc.uiSizeInBytes;
         m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_IndexBuffer);
     }
+    // clang-format off
     StateTransitionDesc Barriers[2] =
     {
         {m_VertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
         {m_IndexBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER,  true}
     };
+    // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 }
 
@@ -375,9 +397,9 @@ void Tutorial16_BindlessResources::CreateInstanceBuffer()
 {
     // Create instance data buffer that will store transformation matrices
     BufferDesc InstBuffDesc;
-    InstBuffDesc.Name          = "Instance data buffer";
+    InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage         = USAGE_DEFAULT; 
+    InstBuffDesc.Usage         = USAGE_DEFAULT;
     InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
     InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
@@ -387,20 +409,20 @@ void Tutorial16_BindlessResources::CreateInstanceBuffer()
 void Tutorial16_BindlessResources::LoadTextures()
 {
     // Load a texture array
-    IDeviceObject* pTexSRVs[NumTextures] = {};
+    IDeviceObject*          pTexSRVs[NumTextures] = {};
     RefCntAutoPtr<ITexture> pTex[NumTextures];
-    StateTransitionDesc Barriers[NumTextures];
-    for(int tex=0; tex < NumTextures; ++tex)
+    StateTransitionDesc     Barriers[NumTextures];
+    for (int tex = 0; tex < NumTextures; ++tex)
     {
         // Load current texture
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
-        
+
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
         auto FileName = FileNameSS.str();
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &pTex[tex]);
-        
+
         // Get shader resource view from the texture
         auto* pTextureSRV = pTex[tex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         m_SRB[tex]->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pTextureSRV);
@@ -432,38 +454,39 @@ void Tutorial16_BindlessResources::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial16_BindlessResources::Initialize(IEngineFactory*   pEngineFactory,
-                                              IRenderDevice*    pDevice,
-                                              IDeviceContext**  ppContexts,
-                                              Uint32            NumDeferredCtx,
-                                              ISwapChain*       pSwapChain)
+void Tutorial16_BindlessResources::Initialize(IEngineFactory*  pEngineFactory,
+                                              IRenderDevice*   pDevice,
+                                              IDeviceContext** ppContexts,
+                                              Uint32           NumDeferredCtx,
+                                              ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     CreatePipelineState();
     CreateGeometryBuffers();
     CreateInstanceBuffer();
-    LoadTextures();    
+    LoadTextures();
 }
 
 void Tutorial16_BindlessResources::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    m_InstanceData.resize(m_GridSize*m_GridSize*m_GridSize);
-    m_GeometryType.resize(m_GridSize*m_GridSize*m_GridSize);
+    m_InstanceData.resize(m_GridSize * m_GridSize * m_GridSize);
+    m_GeometryType.resize(m_GridSize * m_GridSize * m_GridSize);
 
     float fGridSize = static_cast<float>(m_GridSize);
-    
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::random_device rd;        //Will be used to obtain a seed for the random number engine
+    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
     std::uniform_real_distribution<float> rot_distr(-PI_F, +PI_F);
-    std::uniform_int_distribution<Uint32> tex_distr(0, NumTextures-1);
-    std::uniform_int_distribution<Uint32> geom_type_distr(0, static_cast<Uint32>(m_Geometries.size())-1);
+    std::uniform_int_distribution<Uint32> tex_distr(0, NumTextures - 1);
+    std::uniform_int_distribution<Uint32> geom_type_distr(0, static_cast<Uint32>(m_Geometries.size()) - 1);
 
     float BaseScale = 0.6f / fGridSize;
-    int instId = 0;
+    int   instId    = 0;
     for (int x = 0; x < m_GridSize; ++x)
     {
         for (int y = 0; y < m_GridSize; ++y)
@@ -471,17 +494,17 @@ void Tutorial16_BindlessResources::PopulateInstanceBuffer()
             for (int z = 0; z < m_GridSize; ++z)
             {
                 // Add random offset from central position in the grid
-                float xOffset = 2.f * (x+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float yOffset = 2.f * (y+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float zOffset = 2.f * (z+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float xOffset = 2.f * (x + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float yOffset = 2.f * (y + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float zOffset = 2.f * (z + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
                 float4x4 rotation = float4x4::RotationX(rot_distr(gen)) * float4x4::RotationY(rot_distr(gen)) * float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
-                auto &CurrInst = m_InstanceData[instId];
-                CurrInst.Matrix = matrix;
+                float4x4 matrix   = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
+                auto&    CurrInst = m_InstanceData[instId];
+                CurrInst.Matrix   = matrix;
                 // Texture array index
                 CurrInst.TextureInd = tex_distr(gen);
 
@@ -500,8 +523,8 @@ void Tutorial16_BindlessResources::PopulateInstanceBuffer()
 // Render a frame
 void Tutorial16_BindlessResources::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -513,27 +536,27 @@ void Tutorial16_BindlessResources::Render()
     }
 
     // Bind vertex, instance and index buffers
-    Uint32 offsets[] = {0, 0};
-    IBuffer *pBuffs[] = {m_VertexBuffer, m_InstanceBuffer};
+    Uint32   offsets[] = {0, 0};
+    IBuffer* pBuffs[]  = {m_VertexBuffer, m_InstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    
+
     // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_BindlessMode ? m_pBindlessPSO : m_pPSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     if (m_BindlessMode)
         m_pImmediateContext->CommitShaderResources(m_BindlessSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    auto NumObjects = m_GridSize*m_GridSize*m_GridSize;
-    for (int i=0; i < NumObjects; ++i)
+    auto NumObjects = m_GridSize * m_GridSize * m_GridSize;
+    for (int i = 0; i < NumObjects; ++i)
     {
         if (!m_BindlessMode)
         {
             auto TexId = m_InstanceData[i].TextureInd;
             m_pImmediateContext->CommitShaderResources(m_SRB[TexId], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
         }
-        
+
         const auto& Geometry = m_Geometries[m_GeometryType[i]];
 
         DrawIndexedAttribs DrawAttrs;
@@ -559,8 +582,8 @@ void Tutorial16_BindlessResources::Update(double CurrTime, double ElapsedTime)
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -568,7 +591,7 @@ void Tutorial16_BindlessResources::Update(double CurrTime, double ElapsedTime)
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime) * 0.25f);
 }
 
-}
+} // namespace Diligent

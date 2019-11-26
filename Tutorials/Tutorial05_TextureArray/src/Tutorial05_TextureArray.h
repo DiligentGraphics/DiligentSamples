@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -29,17 +29,19 @@
 namespace Diligent
 {
 
-class Tutorial05_TextureArray final: public SampleBase
+class Tutorial05_TextureArray final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial05: Texture Array";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial05: Texture Array"; }
 
 private:
     void CreatePipelineState();
@@ -55,12 +57,13 @@ private:
     RefCntAutoPtr<IBuffer>                m_VSConstants;
     RefCntAutoPtr<ITextureView>           m_TextureSRV;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB;
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
-    int m_GridSize = 5;
+
+    float4x4             m_ViewProjMatrix;
+    float4x4             m_RotationMatrix;
+    int                  m_GridSize   = 5;
     static constexpr int MaxGridSize  = 32;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
     static constexpr int NumTextures  = 4;
 };
 
-}
+} // namespace Diligent

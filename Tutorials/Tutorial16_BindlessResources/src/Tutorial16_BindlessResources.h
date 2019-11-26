@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include <vector>
 #include "SampleBase.h"
@@ -30,17 +30,19 @@
 namespace Diligent
 {
 
-class Tutorial16_BindlessResources final: public SampleBase
+class Tutorial16_BindlessResources final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial16: Bindless Resources";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial16: Bindless Resources"; }
 
     struct ObjectGeometry
     {
@@ -57,10 +59,10 @@ private:
     void UpdateUI();
     void PopulateInstanceBuffer();
 
-    static constexpr int        NumTextures    = 4;
+    static constexpr int        NumTextures = 4;
     std::vector<ObjectGeometry> m_Geometries;
 
-    bool                                  m_BindlessMode = false;
+    bool m_BindlessMode = false;
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IPipelineState>         m_pBindlessPSO;
@@ -70,7 +72,7 @@ private:
     RefCntAutoPtr<IBuffer>                m_VSConstants;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
     RefCntAutoPtr<IShaderResourceBinding> m_BindlessSRB;
-    
+
     struct InstanceData
     {
         float4x4 Matrix;
@@ -81,10 +83,11 @@ private:
 
     float4x4 m_ViewProjMatrix;
     float4x4 m_RotationMatrix;
+
     int m_GridSize = 5;
+
     static constexpr int MaxGridSize  = 32;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
-    
 };
 
-}
+} // namespace Diligent

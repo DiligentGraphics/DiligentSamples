@@ -83,11 +83,11 @@ void main(in  PSInput  PSIn,
 )";
 
 
-void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
-                                          IRenderDevice*    pDevice,
-                                          IDeviceContext**  ppContexts,
-                                          Uint32            NumDeferredCtx,
-                                          ISwapChain*       pSwapChain)
+void Tutorial01_HelloTriangle::Initialize(IEngineFactory*  pEngineFactory,
+                                          IRenderDevice*   pDevice,
+                                          IDeviceContext** ppContexts,
+                                          Uint32           NumDeferredCtx,
+                                          ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -96,11 +96,12 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Simple triangle PSO"; 
+    PSODesc.Name = "Simple triangle PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -113,11 +114,12 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    // clang-format on
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL under the hood.
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
     // Create a vertex shader
@@ -149,15 +151,15 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*   pEngineFactory,
 // Render a frame
 void Tutorial01_HelloTriangle::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     // Let the engine perform required state transitions
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the pipeline state in the immediate context
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. Even though in this example we don't really 
+    // Commit shader resources. Even though in this example we don't really
     // have any resources, this call also sets the shaders in OpenGL backend.
     m_pImmediateContext->CommitShaderResources(nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     DrawAttribs drawAttrs;
@@ -170,4 +172,4 @@ void Tutorial01_HelloTriangle::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
 }
 
-}
+} // namespace Diligent

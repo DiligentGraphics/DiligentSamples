@@ -51,11 +51,11 @@ void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType       
                                                                SwapChainDesc&    SCDesc)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
-    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency()-1, 2u);
+    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if VULKAN_SUPPORTED
     if (DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+        auto& VkAttrs           = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
     }
 #endif
@@ -67,16 +67,16 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice, 
-        m_pSwapChain->GetDesc().ColorBufferFormat,
-        m_pSwapChain->GetDesc().DepthBufferFormat,
-        pShaderSourceFactory,
-        "cube.vsh",
-        "cube.psh");
+    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice,
+                                               m_pSwapChain->GetDesc().ColorBufferFormat,
+                                               m_pSwapChain->GetDesc().DepthBufferFormat,
+                                               pShaderSourceFactory,
+                                               "cube.vsh",
+                                               "cube.psh");
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
-    CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
+    CreateUniformBuffer(m_pDevice, sizeof(float4x4) * 2, "VS constants CB", &m_VSConstants);
     CreateUniformBuffer(m_pDevice, sizeof(float4x4), "Instance constants CB", &m_InstanceConstants);
     // Explicitly transition the buffers to RESOURCE_STATE_CONSTANT_BUFFER state
     Barriers.emplace_back(m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
@@ -92,12 +92,13 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
 void Tutorial06_Multithreading::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
 {
     // Load textures
-    for(int tex=0; tex < NumTextures; ++tex)
+    for (int tex = 0; tex < NumTextures; ++tex)
     {
         // Load current texture
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
         auto FileName = FileNameSS.str();
+
         RefCntAutoPtr<ITexture> SrcTex = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
         // Get shader resource view from the texture
         m_TextureSRV[tex] = SrcTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -106,7 +107,7 @@ void Tutorial06_Multithreading::LoadTextures(std::vector<StateTransitionDesc>& B
     }
 
     // Set texture SRV in the SRB
-    for(int tex=0; tex < NumTextures; ++tex)
+    for (int tex = 0; tex < NumTextures; ++tex)
     {
         // Create one Shader Resource Binding for every texture
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
@@ -137,15 +138,15 @@ void Tutorial06_Multithreading::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
-                                           IRenderDevice*    pDevice,
-                                           IDeviceContext**  ppContexts,
-                                           Uint32            NumDeferredCtx,
-                                           ISwapChain*       pSwapChain)
+void Tutorial06_Multithreading::Initialize(IEngineFactory*  pEngineFactory,
+                                           IRenderDevice*   pDevice,
+                                           IDeviceContext** ppContexts,
+                                           Uint32           NumDeferredCtx,
+                                           ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
-    m_MaxThreads = static_cast<int>(m_pDeferredContexts.size());
+    m_MaxThreads       = static_cast<int>(m_pDeferredContexts.size());
     m_NumWorkerThreads = std::min(4, m_MaxThreads);
 
     std::vector<StateTransitionDesc> Barriers;
@@ -157,8 +158,8 @@ void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
     // Explicitly transition vertex and index buffers to required states
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
-    Barriers.emplace_back(m_CubeIndexBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER,  true);
-    LoadTextures(Barriers);    
+    Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
+    LoadTextures(Barriers);
 
     // Execute all barriers
     m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
@@ -170,19 +171,20 @@ void Tutorial06_Multithreading::Initialize(IEngineFactory*   pEngineFactory,
 
 void Tutorial06_Multithreading::PopulateInstanceData()
 {
-    m_InstanceData.resize(m_GridSize*m_GridSize*m_GridSize);
+    m_InstanceData.resize(m_GridSize * m_GridSize * m_GridSize);
     // Populate instance data buffer
     float fGridSize = static_cast<float>(m_GridSize);
-    
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::random_device rd;        //Will be used to obtain a seed for the random number engine
+    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
     std::uniform_real_distribution<float> rot_distr(-PI_F, +PI_F);
-    std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
+    std::uniform_int_distribution<Int32>  tex_distr(0, NumTextures - 1);
 
     float BaseScale = 0.6f / fGridSize;
-    int instId = 0;
+    int   instId    = 0;
     for (int x = 0; x < m_GridSize; ++x)
     {
         for (int y = 0; y < m_GridSize; ++y)
@@ -190,17 +192,17 @@ void Tutorial06_Multithreading::PopulateInstanceData()
             for (int z = 0; z < m_GridSize; ++z)
             {
                 // Add random offset from central position in the grid
-                float xOffset = 2.f * (x+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float yOffset = 2.f * (y+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float zOffset = 2.f * (z+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float xOffset = 2.f * (x + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float yOffset = 2.f * (y + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float zOffset = 2.f * (z + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
                 float4x4 rotation = float4x4::RotationX(rot_distr(gen)) * float4x4::RotationY(rot_distr(gen)) * float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
-                auto &CurrInst = m_InstanceData[instId++];
-                CurrInst.Matrix = matrix;
+                float4x4 matrix   = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
+                auto&    CurrInst = m_InstanceData[instId++];
+                CurrInst.Matrix   = matrix;
                 // Texture array index
                 CurrInst.TextureInd = tex_distr(gen);
             }
@@ -211,9 +213,9 @@ void Tutorial06_Multithreading::PopulateInstanceData()
 void Tutorial06_Multithreading::StartWorkerThreads(size_t NumThreads)
 {
     m_WorkerThreads.resize(NumThreads);
-    for(Uint32 t=0; t < m_WorkerThreads.size(); ++t)
+    for (Uint32 t = 0; t < m_WorkerThreads.size(); ++t)
     {
-        m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t );
+        m_WorkerThreads[t] = std::thread(WorkerThreadFunc, this, t);
     }
     m_CmdLists.resize(NumThreads);
 }
@@ -222,7 +224,7 @@ void Tutorial06_Multithreading::StopWorkerThreads()
 {
     m_RenderSubsetSignal.Trigger(true, -1);
 
-    for(auto &thread : m_WorkerThreads)
+    for (auto& thread : m_WorkerThreads)
     {
         thread.join();
     }
@@ -231,11 +233,11 @@ void Tutorial06_Multithreading::StopWorkerThreads()
     m_CmdLists.clear();
 }
 
-void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThis, Uint32 ThreadNum)
+void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum)
 {
     // Every thread should use its own deferred context
-    IDeviceContext* pDeferredCtx = pThis->m_pDeferredContexts[ThreadNum];
-    const int NumWorkerThreads = static_cast<int>(pThis->m_WorkerThreads.size());
+    IDeviceContext* pDeferredCtx     = pThis->m_pDeferredContexts[ThreadNum];
+    const int       NumWorkerThreads = static_cast<int>(pThis->m_WorkerThreads.size());
     for (;;)
     {
         // Wait for the signal
@@ -244,7 +246,7 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
             return;
 
         // Render current subset using the deferred context
-        pThis->RenderSubset(pDeferredCtx, 1+ThreadNum);
+        pThis->RenderSubset(pDeferredCtx, 1 + ThreadNum);
 
         // Finish command list
         RefCntAutoPtr<ICommandList> pCmdList;
@@ -255,7 +257,7 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
             std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
             // Increment the number of completed threads
             ++pThis->m_NumThreadsCompleted;
-            if(pThis->m_NumThreadsCompleted == NumWorkerThreads)
+            if (pThis->m_NumThreadsCompleted == NumWorkerThreads)
                 pThis->m_ExecuteCommandListsSignal.Trigger();
         }
 
@@ -268,16 +270,16 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading *pThi
 
         ++pThis->m_NumThreadsReady;
         // We must wait until all threads reach this point, because
-        // m_GotoNextFrameSignal must be unsignaled before we proceed to 
-        // RenderSubsetSignal to avoid one thread going through the loop twice in 
+        // m_GotoNextFrameSignal must be unsignaled before we proceed to
+        // RenderSubsetSignal to avoid one thread going through the loop twice in
         // a row.
-        while(pThis->m_NumThreadsReady < NumWorkerThreads)
+        while (pThis->m_NumThreadsReady < NumWorkerThreads)
             std::this_thread::yield();
-        VERIFY_EXPR( !pThis->m_GotoNextFrameSignal.IsTriggered() );
+        VERIFY_EXPR(!pThis->m_GotoNextFrameSignal.IsTriggered());
     }
 }
 
-void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset)
+void Tutorial06_Multithreading::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context.
     // Render targets are set and transitioned to correct states by the main thread, here we only verify the states.
@@ -285,7 +287,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
 
     {
         // Map the buffer and write current world-view-projection matrix
-        
+
         // Since this is a dynamic buffer, it must be mapped in every context before
         // it can be used even though the matrices are the same.
         MapHelper<float4x4> CBConstants(pCtx, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -294,12 +296,12 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     }
 
     // Bind vertex and index buffers. This must be done for every context
-    Uint32 offsets[] = {0, 0};
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
+    Uint32   offsets[] = {0, 0};
+    IBuffer* pBuffs[]  = {m_CubeVertexBuffer};
     pCtx->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     pCtx->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    DrawIndexedAttribs DrawAttrs;// This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;     // This is an indexed draw call
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
@@ -308,12 +310,12 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
     pCtx->SetPipelineState(m_pPSO);
     Uint32 NumSubsets   = Uint32{1} + static_cast<Uint32>(m_WorkerThreads.size());
     Uint32 NumInstances = static_cast<Uint32>(m_InstanceData.size());
-    Uint32 SusbsetSize = NumInstances / NumSubsets;
-    Uint32 StartInst = SusbsetSize * Subset;
-    Uint32 EndInst = (Subset < NumSubsets-1) ? SusbsetSize * (Subset+1) : NumInstances;
-    for(size_t inst = StartInst; inst < EndInst; ++inst)
+    Uint32 SusbsetSize  = NumInstances / NumSubsets;
+    Uint32 StartInst    = SusbsetSize * Subset;
+    Uint32 EndInst      = (Subset < NumSubsets - 1) ? SusbsetSize * (Subset + 1) : NumInstances;
+    for (size_t inst = StartInst; inst < EndInst; ++inst)
     {
-        const auto &CurrInstData = m_InstanceData[inst];
+        const auto& CurrInstData = m_InstanceData[inst];
         // Shader resources have been explicitly transitioned to correct states, so
         // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
         // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
@@ -324,14 +326,14 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
         {
             // Map the buffer and write current world-view-projection matrix
             MapHelper<float4x4> InstData(pCtx, m_InstanceConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-            if(InstData == nullptr)
+            if (InstData == nullptr)
             {
                 LOG_ERROR_MESSAGE("Failed to map instance data buffer");
                 break;
             }
             *InstData = CurrInstData.Matrix.Transpose();
         }
-        
+
         pCtx->DrawIndexed(DrawAttrs);
     }
 }
@@ -339,8 +341,8 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext *pCtx, Uint32 Subset
 // Render a frame
 void Tutorial06_Multithreading::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -360,7 +362,7 @@ void Tutorial06_Multithreading::Render()
         {
             m_pImmediateContext->ExecuteCommandList(cmdList);
             // Release command lists now to release all outstanding references
-            // In d3d11 mode, command lists hold references to the swap chain's back buffer 
+            // In d3d11 mode, command lists hold references to the swap chain's back buffer
             // that cause swap chain resize to fail
             cmdList.Release();
         }
@@ -380,8 +382,8 @@ void Tutorial06_Multithreading::Update(double CurrTime, double ElapsedTime)
     // Set the cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
-    float NearPlane = 0.1f;
-    float FarPlane  = 100.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -389,7 +391,7 @@ void Tutorial06_Multithreading::Update(double CurrTime, double ElapsedTime)
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime) * 0.25f);
 }
 
-}
+} // namespace Diligent

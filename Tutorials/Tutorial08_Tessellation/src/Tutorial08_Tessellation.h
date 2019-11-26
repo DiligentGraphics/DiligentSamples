@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -32,17 +32,20 @@ namespace Diligent
 class Tutorial08_Tessellation final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
                                                 EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc)override final;
+                                                SwapChainDesc&    SCDesc) override final;
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial08: Tessellation";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial08: Tessellation"; }
 
 private:
     void CreatePipelineStates();
@@ -54,17 +57,20 @@ private:
     RefCntAutoPtr<IBuffer>                m_ShaderConstants;
     RefCntAutoPtr<ITextureView>           m_HeightMapSRV;
     RefCntAutoPtr<ITextureView>           m_ColorMapSRV;
+
     float4x4 m_WorldViewProjMatrix;
     float4x4 m_WorldViewMatrix;
-    bool  m_Animate                 = true;
-    bool  m_Wireframe               = false;
-    float m_RotationAngle           = 0;
-    float m_TessDensity             = 32;
-    float m_Distance                = 10.f;
-    bool  m_AdaptiveTessellation    = true;
-    int   m_BlockSize               = 32;
-    unsigned int m_HeightMapWidth   = 0;
-    unsigned int m_HeightMapHeight  = 0;
+
+    bool  m_Animate              = true;
+    bool  m_Wireframe            = false;
+    float m_RotationAngle        = 0;
+    float m_TessDensity          = 32;
+    float m_Distance             = 10.f;
+    bool  m_AdaptiveTessellation = true;
+    int   m_BlockSize            = 32;
+
+    unsigned int m_HeightMapWidth  = 0;
+    unsigned int m_HeightMapHeight = 0;
 };
 
-}
+} // namespace Diligent

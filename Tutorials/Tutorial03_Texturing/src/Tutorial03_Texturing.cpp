@@ -41,11 +41,12 @@ void Tutorial03_Texturing::CreatePipelineState()
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO"; 
+    PSODesc.Name = "Cube PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -58,6 +59,7 @@ void Tutorial03_Texturing::CreatePipelineState()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    // clang-format on
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
@@ -94,6 +96,7 @@ void Tutorial03_Texturing::CreatePipelineState()
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
 
+    // clang-format off
     // Define vertex shader input layout
     LayoutElement LayoutElems[] =
     {
@@ -102,24 +105,29 @@ void Tutorial03_Texturing::CreatePipelineState()
         // Attribute 1 - texture coordinates
         LayoutElement{1, 0, 2, VT_FLOAT32, False}
     };
+    // clang-format on
 
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pPS = pPS;
+
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
     PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
+    // clang-format off
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
+    // clang-format off
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
     SamplerDesc SamLinearClampDesc
     {
@@ -130,13 +138,14 @@ void Tutorial03_Texturing::CreatePipelineState()
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
     m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
-        
+
     // Since we did not explcitly specify the type for 'Constants' variable, default
-    // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables 
+    // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly through the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 
@@ -156,21 +165,22 @@ void Tutorial03_Texturing::CreateVertexBuffer()
 
     // Cube vertices
 
-    //      (-1,+1,+1)________________(+1,+1,+1) 
+    //      (-1,+1,+1)________________(+1,+1,+1)
     //               /|              /|
     //              / |             / |
     //             /  |            /  |
     //            /   |           /   |
     //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____| 
+    //           |    |__________|____|
     //           |   /(-1,+1,-1) |    /(+1,+1,-1)
     //           |  /            |   /
     //           | /             |  /
     //           |/              | /
-    //           /_______________|/ 
+    //           /_______________|/
     //        (-1,-1,-1)       (+1,-1,-1)
-    // 
+    //
 
+    // clang-format off
     // This time we have to duplicate verices because texture coordinates cannot
     // be shared
     Vertex CubeVerts[] =
@@ -205,6 +215,7 @@ void Tutorial03_Texturing::CreateVertexBuffer()
         {float3(+1,+1,+1), float2(0,0)},
         {float3(-1,+1,+1), float2(1,0)}
     };
+    // clang-format on
 
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
@@ -219,6 +230,7 @@ void Tutorial03_Texturing::CreateVertexBuffer()
 
 void Tutorial03_Texturing::CreateIndexBuffer()
 {
+    // clang-format off
     Uint32 Indices[] =
     {
         2,0,1,    2,3,0,
@@ -228,6 +240,7 @@ void Tutorial03_Texturing::CreateIndexBuffer()
         16,18,17, 16,19,18,
         20,21,22, 20,22,23
     };
+    // clang-format on
 
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
@@ -261,7 +274,7 @@ void Tutorial03_Texturing::Initialize(IEngineFactory*  pEngineFactory,
                                       ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
-    
+
     CreatePipelineState();
     CreateVertexBuffer();
     CreateIndexBuffer();
@@ -271,8 +284,8 @@ void Tutorial03_Texturing::Initialize(IEngineFactory*  pEngineFactory,
 // Render a frame
 void Tutorial03_Texturing::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -283,18 +296,18 @@ void Tutorial03_Texturing::Render()
     }
 
     // Bind vertex and index buffers
-    Uint32 offset = 0;
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
+    Uint32   offset   = 0;
+    IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    DrawIndexedAttribs DrawAttrs; // This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;     // This is an indexed draw call
     DrawAttrs.IndexType  = VT_UINT32; // Index type
     DrawAttrs.NumIndices = 36;
     // Verify the state of vertex and index buffers
@@ -309,10 +322,10 @@ void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Set cube world view matrix
-    float4x4 CubeWorldView = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F*0.1f) * 
+    float4x4 CubeWorldView = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f) *
         float4x4::Translation(0.f, 0.0f, 5.0f);
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -320,4 +333,4 @@ void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
     m_WorldViewProjMatrix = CubeWorldView * Proj;
 }
 
-}
+} // namespace Diligent

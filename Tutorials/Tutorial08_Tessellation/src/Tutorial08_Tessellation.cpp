@@ -28,7 +28,7 @@
 #include "ShaderMacroHelper.h"
 #include "imgui.h"
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED
-#   include "HLSL2GLSLConverterImpl.h"
+#    include "HLSL2GLSLConverterImpl.h"
 #endif
 
 namespace Diligent
@@ -41,37 +41,40 @@ SampleBase* CreateSample()
 
 namespace
 {
-    struct GlobalConstants
-    {
-        unsigned int NumHorzBlocks; // Number of blocks along the horizontal edge
-        unsigned int NumVertBlocks; // Number of blocks along the horizontal edge
-        float fNumHorzBlocks;
-        float fNumVertBlocks;
 
-        float fBlockSize;
-        float LengthScale;
-        float HeightScale;
-        float LineWidth;
+struct GlobalConstants
+{
+    unsigned int NumHorzBlocks; // Number of blocks along the horizontal edge
+    unsigned int NumVertBlocks; // Number of blocks along the horizontal edge
+    float        fNumHorzBlocks;
+    float        fNumVertBlocks;
 
-        float TessDensity;
-        int AdaptiveTessellation;
-        float2 Dummy2;
+    float fBlockSize;
+    float LengthScale;
+    float HeightScale;
+    float LineWidth;
 
-        float4x4 WorldView;
-        float4x4 WorldViewProj;
-        float4 ViewportSize;
-    };
-}
+    float  TessDensity;
+    int    AdaptiveTessellation;
+    float2 Dummy2;
 
-void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType         DevType,
-                                                             EngineCreateInfo&  Attribs,
-                                                             SwapChainDesc&     SCDesc)
+    float4x4 WorldView;
+    float4x4 WorldViewProj;
+    float4   ViewportSize;
+};
+
+} // namespace
+
+void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType        DevType,
+                                                             EngineCreateInfo& Attribs,
+                                                             SwapChainDesc&    SCDesc)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
 #if VULKAN_SUPPORTED
-    if(DevType == DeviceType::Vulkan)
+    if (DevType == DeviceType::Vulkan)
     {
         auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+
         VkAttrs.EnabledFeatures.geometryShader     = true;
         VkAttrs.EnabledFeatures.tessellationShader = true;
     }
@@ -85,24 +88,27 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED
     if (pDevice->GetDeviceCaps().IsVulkanDevice())
     {
-        // glslang currently does not produce GS/HS/DS bytecode that can be properly 
+        // glslang currently does not produce GS/HS/DS bytecode that can be properly
         // linked with other shader stages. So we will manually convert HLSL to GLSL
         // and compile GLSL.
 
         const auto& Converter = HLSL2GLSLConverterImpl::GetInstance();
+
         HLSL2GLSLConverterImpl::ConversionAttribs Attribs;
-        Attribs.pSourceStreamFactory       = ShaderCI.pShaderSourceStreamFactory;
-        Attribs.ppConversionStream         = nullptr;
-        Attribs.EntryPoint                 = ShaderCI.EntryPoint;
-        Attribs.ShaderType                 = ShaderCI.Desc.ShaderType;
-        Attribs.IncludeDefinitions         = true;
-        Attribs.InputFileName              = ShaderCI.FilePath;
-        Attribs.SamplerSuffix              = ShaderCI.CombinedSamplerSuffix;
+        Attribs.pSourceStreamFactory = ShaderCI.pShaderSourceStreamFactory;
+        Attribs.ppConversionStream   = nullptr;
+        Attribs.EntryPoint           = ShaderCI.EntryPoint;
+        Attribs.ShaderType           = ShaderCI.Desc.ShaderType;
+        Attribs.IncludeDefinitions   = true;
+        Attribs.InputFileName        = ShaderCI.FilePath;
+        Attribs.SamplerSuffix        = ShaderCI.CombinedSamplerSuffix;
         // Separate shader objects extension is required to allow input/output layout qualifiers
         Attribs.UseInOutLocationQualifiers = true;
+
         auto ConvertedSource = Converter.Convert(Attribs);
-        
+
         ShaderCreateInfo ConvertedShaderCI = ShaderCI;
+
         ConvertedShaderCI.pShaderSourceStreamFactory = nullptr;
         ConvertedShaderCI.Source                     = ConvertedSource.c_str();
         ConvertedShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL;
@@ -130,11 +136,12 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Terrain PSO"; 
+    PSODesc.Name = "Terrain PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -147,6 +154,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    // clang-format on
 
     // Create dynamic uniform buffer that will store shader constants
     CreateUniformBuffer(m_pDevice, sizeof(GlobalConstants), "Global shader constants CB", &m_ShaderConstants);
@@ -170,6 +178,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainVS";
         ShaderCI.Desc.Name       = "Terrain VS";
         ShaderCI.FilePath        = "terrain.vsh";
+
         pVS = CreateShader(m_pDevice, ShaderCI);
     }
 
@@ -182,6 +191,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainGS";
         ShaderCI.Desc.Name       = "Terrain GS";
         ShaderCI.FilePath        = "terrain.gsh";
+
         pGS = CreateShader(m_pDevice, ShaderCI);
     }
 
@@ -193,7 +203,8 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.Desc.Name       = "Terrain HS";
         ShaderCI.FilePath        = "terrain.hsh";
         MacroHelper.AddShaderMacro("BLOCK_SIZE", m_BlockSize);
-        ShaderCI.Macros          = MacroHelper;
+        ShaderCI.Macros = MacroHelper;
+
         pHS = CreateShader(m_pDevice, ShaderCI);
     }
 
@@ -205,6 +216,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.Desc.Name       = "Terrain DS";
         ShaderCI.FilePath        = "terrain.dsh";
         ShaderCI.Macros          = nullptr;
+
         pDS = CreateShader(m_pDevice, ShaderCI);
     }
 
@@ -215,6 +227,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainPS";
         ShaderCI.Desc.Name       = "Terrain PS";
         ShaderCI.FilePath        = "terrain.psh";
+
         pPS = CreateShader(m_pDevice, ShaderCI);
 
         if (bWireframeSupported)
@@ -222,6 +235,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
             ShaderCI.EntryPoint = "WireTerrainPS";
             ShaderCI.Desc.Name  = "Wireframe Terrain PS";
             ShaderCI.FilePath   = "terrain_wire.psh";
+
             pWirePS = CreateShader(m_pDevice, ShaderCI);
         }
     }
@@ -234,14 +248,17 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
+    // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_HULL | SHADER_TYPE_DOMAIN,  "g_HeightMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
         {SHADER_TYPE_PIXEL,                      "g_Texture",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
+    // clang-format off
     // Define static sampler for g_HeightMap and g_Texture. Static samplers should be used whenever possible
     SamplerDesc SamLinearClampDesc
     {
@@ -253,6 +270,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         {SHADER_TYPE_HULL | SHADER_TYPE_DOMAIN, "g_HeightMap", SamLinearClampDesc},
         {SHADER_TYPE_PIXEL,                     "g_Texture",   SamLinearClampDesc}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
@@ -264,20 +282,24 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         PSODesc.GraphicsPipeline.pPS = pWirePS;
         m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
     }
-        
+
     for (Uint32 i = 0; i < _countof(m_pPSO); ++i)
     {
         if (m_pPSO[i])
         {
+            // clang-format off
             m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "VSConstants")->Set(m_ShaderConstants);
             m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_HULL,   "HSConstants")->Set(m_ShaderConstants);
             m_pPSO[i]->GetStaticVariableByName(SHADER_TYPE_DOMAIN, "DSConstants")->Set(m_ShaderConstants);
+            // clang-format on
         }
     }
     if (m_pPSO[1])
     {
+        // clang-format off
         m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_GEOMETRY, "GSConstants")->Set(m_ShaderConstants);
         m_pPSO[1]->GetStaticVariableByName(SHADER_TYPE_PIXEL,    "PSConstants")->Set(m_ShaderConstants);
+        // clang-format on
     }
 }
 
@@ -287,7 +309,7 @@ void Tutorial08_Tessellation::LoadTextures()
         // Load texture
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = false;
-        loadInfo.Name = "Terrain height map";
+        loadInfo.Name   = "Terrain height map";
         RefCntAutoPtr<ITexture> HeightMap;
         CreateTextureFromFile("ps_height_1k.png", loadInfo, m_pDevice, &HeightMap);
         const auto HMDesc = HeightMap->GetDesc();
@@ -300,7 +322,7 @@ void Tutorial08_Tessellation::LoadTextures()
     {
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
-        loadInfo.Name = "Terrain color map";
+        loadInfo.Name   = "Terrain color map";
         RefCntAutoPtr<ITexture> ColorMap;
         CreateTextureFromFile("ps_texture_2k.png", loadInfo, m_pDevice, &ColorMap);
         // Get shader resource view from the texture
@@ -309,15 +331,17 @@ void Tutorial08_Tessellation::LoadTextures()
 
     // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
-    for (size_t i=0; i < _countof(m_pPSO); ++i)
+    for (size_t i = 0; i < _countof(m_pPSO); ++i)
     {
         if (m_pPSO[i])
         {
             m_pPSO[i]->CreateShaderResourceBinding(&m_SRB[i], true);
             // Set texture SRV in the SRB
+            // clang-format off
             m_SRB[i]->GetVariableByName(SHADER_TYPE_PIXEL,  "g_Texture")->Set(m_ColorMapSRV);
             m_SRB[i]->GetVariableByName(SHADER_TYPE_DOMAIN, "g_HeightMap")->Set(m_HeightMapSRV);
             m_SRB[i]->GetVariableByName(SHADER_TYPE_HULL,   "g_HeightMap")->Set(m_HeightMapSRV);
+            // clang-format on
         }
     }
 }
@@ -337,11 +361,11 @@ void Tutorial08_Tessellation::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
-                                         IRenderDevice*    pDevice,
-                                         IDeviceContext**  ppContexts,
-                                         Uint32            NumDeferredCtx,
-                                         ISwapChain*       pSwapChain)
+void Tutorial08_Tessellation::Initialize(IEngineFactory*  pEngineFactory,
+                                         IRenderDevice*   pDevice,
+                                         IDeviceContext** ppContexts,
+                                         Uint32           NumDeferredCtx,
+                                         ISwapChain*      pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if (!deviceCaps.bTessellationSupported)
@@ -358,8 +382,8 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*   pEngineFactory,
 // Render a frame
 void Tutorial08_Tessellation::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -368,9 +392,9 @@ void Tutorial08_Tessellation::Render()
     {
         // Map the buffer and write rendering data
         MapHelper<GlobalConstants> Consts(m_pImmediateContext, m_ShaderConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        Consts->fBlockSize = static_cast<float>(m_BlockSize);
-        Consts->NumHorzBlocks = NumHorzBlocks;
-        Consts->NumVertBlocks = NumVertBlocks;
+        Consts->fBlockSize     = static_cast<float>(m_BlockSize);
+        Consts->NumHorzBlocks  = NumHorzBlocks;
+        Consts->NumVertBlocks  = NumVertBlocks;
         Consts->fNumHorzBlocks = static_cast<float>(NumHorzBlocks);
         Consts->fNumVertBlocks = static_cast<float>(NumVertBlocks);
 
@@ -380,19 +404,19 @@ void Tutorial08_Tessellation::Render()
         Consts->WorldView     = m_WorldViewMatrix.Transpose();
         Consts->WorldViewProj = m_WorldViewProjMatrix.Transpose();
 
-        Consts->TessDensity = m_TessDensity;
+        Consts->TessDensity          = m_TessDensity;
         Consts->AdaptiveTessellation = m_AdaptiveTessellation ? 1 : 0;
-        
-        const auto &SCDesc = m_pSwapChain->GetDesc();
-        Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f/static_cast<float>(SCDesc.Width), 1.f/static_cast<float>(SCDesc.Height));
-        
+
+        const auto& SCDesc   = m_pSwapChain->GetDesc();
+        Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / static_cast<float>(SCDesc.Width), 1.f / static_cast<float>(SCDesc.Height));
+
         Consts->LineWidth = 3.0f;
     }
 
 
     // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO[m_Wireframe ? 1 : 0]);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB[m_Wireframe ? 1 : 0], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -413,13 +437,13 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
     if (m_Animate)
     {
         m_RotationAngle += static_cast<float>(ElapsedTime) * 0.2f;
-        if(m_RotationAngle > PI_F*2.f)
-            m_RotationAngle -= PI_F*2.f;
+        if (m_RotationAngle > PI_F * 2.f)
+            m_RotationAngle -= PI_F * 2.f;
     }
 
-    m_WorldViewMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F*0.1f) * float4x4::Translation(0.f, 0.0f, m_Distance);
-    float NearPlane = 0.1f;
-    float FarPlane = 1000.f;
+    m_WorldViewMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0.f, 0.0f, m_Distance);
+    float NearPlane   = 0.1f;
+    float FarPlane    = 1000.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -427,4 +451,4 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
     m_WorldViewProjMatrix = m_WorldViewMatrix * Proj;
 }
 
-}
+} // namespace Diligent

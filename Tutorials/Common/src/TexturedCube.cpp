@@ -42,21 +42,22 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice* pDevice)
 
     // Cube vertices
 
-    //      (-1,+1,+1)________________(+1,+1,+1) 
+    //      (-1,+1,+1)________________(+1,+1,+1)
     //               /|              /|
     //              / |             / |
     //             /  |            /  |
     //            /   |           /   |
     //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____| 
+    //           |    |__________|____|
     //           |   /(-1,+1,-1) |    /(+1,+1,-1)
     //           |  /            |   /
     //           | /             |  /
     //           |/              | /
-    //           /_______________|/ 
+    //           /_______________|/
     //        (-1,-1,-1)       (+1,-1,-1)
-    // 
+    //
 
+    // clang-format off
     Vertex CubeVerts[] =
     {
         {float3(-1,-1,-1), float2(0,1)},
@@ -89,6 +90,7 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice* pDevice)
         {float3(+1,+1,+1), float2(0,0)},
         {float3(-1,+1,+1), float2(1,0)}
     };
+    // clang-format on
 
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
@@ -107,6 +109,7 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice* pDevice)
 
 RefCntAutoPtr<IBuffer> CreateIndexBuffer(IRenderDevice* pDevice)
 {
+    // clang-format off
     Uint32 Indices[] =
     {
         2,0,1,    2,3,0,
@@ -116,6 +119,7 @@ RefCntAutoPtr<IBuffer> CreateIndexBuffer(IRenderDevice* pDevice)
         16,18,17, 16,19,18,
         20,21,22, 20,22,23
     };
+    // clang-format on
 
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
@@ -146,19 +150,20 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
                                                   IShaderSourceInputStreamFactory* pShaderSourceFactory,
                                                   const char*                      VSFilePath,
                                                   const char*                      PSFilePath,
-                                                  LayoutElement*                   LayoutElements     /*= nullptr*/,
-                                                  Uint32                           NumLayoutElements  /*= 0*/,
-                                                  Uint8                            SampleCount        /*= 1*/)
+                                                  LayoutElement*                   LayoutElements /*= nullptr*/,
+                                                  Uint32                           NumLayoutElements /*= 0*/,
+                                                  Uint8                            SampleCount /*= 1*/)
 {
     PipelineStateDesc PSODesc;
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO"; 
+    PSODesc.Name = "Cube PSO";
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -173,7 +178,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-
+    // clang-format on
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL under the hood.
@@ -205,6 +210,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
 
     // Define vertex shader input layout
     // This tutorial uses two types of input: per-vertex data and per-instance data.
+    // clang-format off
     const LayoutElement DefaultLayoutElems[] =
     {
         // Per-vertex data - first buffer slot
@@ -213,10 +219,12 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
         // Attribute 1 - texture coordinates
         LayoutElement{1, 0, 2, VT_FLOAT32, False}
     };
+    // clang-format on
 
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pPS = pPS;
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElements != nullptr ? LayoutElements    : DefaultLayoutElems;
+
+    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElements != nullptr ? LayoutElements : DefaultLayoutElems;
     PSODesc.GraphicsPipeline.InputLayout.NumElements    = LayoutElements != nullptr ? NumLayoutElements : _countof(DefaultLayoutElems);
 
     // Define variable type that will be used by default
@@ -224,14 +232,17 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
 
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
+    // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    // clang-format off
     SamplerDesc SamLinearClampDesc
     {
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
@@ -241,6 +252,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 

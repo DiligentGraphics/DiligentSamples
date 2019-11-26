@@ -45,13 +45,14 @@ namespace
 struct InstanceData
 {
     float4x4 Matrix;
-    float TextureInd;
+    float    TextureInd;
 };
 
-}
+} // namespace
 
 void Tutorial05_TextureArray::CreatePipelineState()
 {
+    // clang-format off
     // Define vertex shader input layout
     // This tutorial uses two types of input: per-vertex data and per-instance data.
     LayoutElement LayoutElems[] =
@@ -75,23 +76,24 @@ void Tutorial05_TextureArray::CreatePipelineState()
         // Attribute 6 - texture array index
         LayoutElement{6, 1, 1, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
     };
+    // clang-format on
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice, 
-        m_pSwapChain->GetDesc().ColorBufferFormat,
-        m_pSwapChain->GetDesc().DepthBufferFormat,
-        pShaderSourceFactory,
-        "cube_inst.vsh",
-        "cube_inst.psh",
-        LayoutElems,
-        _countof(LayoutElems));
+    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice,
+                                               m_pSwapChain->GetDesc().ColorBufferFormat,
+                                               m_pSwapChain->GetDesc().DepthBufferFormat,
+                                               pShaderSourceFactory,
+                                               "cube_inst.vsh",
+                                               "cube_inst.psh",
+                                               LayoutElems,
+                                               _countof(LayoutElems));
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
-    CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
+    CreateUniformBuffer(m_pDevice, sizeof(float4x4) * 2, "VS constants CB", &m_VSConstants);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
@@ -107,9 +109,9 @@ void Tutorial05_TextureArray::CreateInstanceBuffer()
 {
     // Create instance data buffer that will store transformation matrices
     BufferDesc InstBuffDesc;
-    InstBuffDesc.Name          = "Instance data buffer";
+    InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage         = USAGE_DEFAULT; 
+    InstBuffDesc.Usage         = USAGE_DEFAULT;
     InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
     InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
@@ -120,18 +122,18 @@ void Tutorial05_TextureArray::LoadTextures()
 {
     // Load a texture array
     RefCntAutoPtr<ITexture> pTexArray;
-    for(int tex=0; tex < NumTextures; ++tex)
+    for (int tex = 0; tex < NumTextures; ++tex)
     {
         // Load current texture
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        auto FileName = FileNameSS.str();
-        RefCntAutoPtr<ITexture> SrcTex = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
-        const auto& TexDesc = SrcTex->GetDesc();
+        auto                    FileName = FileNameSS.str();
+        RefCntAutoPtr<ITexture> SrcTex   = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
+        const auto&             TexDesc  = SrcTex->GetDesc();
         if (pTexArray == nullptr)
         {
             //	Create texture array
-            auto TexArrDesc = TexDesc;
+            auto TexArrDesc      = TexDesc;
             TexArrDesc.ArraySize = NumTextures;
             TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
             TexArrDesc.Usage     = USAGE_DEFAULT;
@@ -139,7 +141,7 @@ void Tutorial05_TextureArray::LoadTextures()
             m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
         }
         // Copy current texture into the texture array
-        for(Uint32 mip=0; mip < TexDesc.MipLevels; ++mip)
+        for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
         {
             CopyTextureAttribs CopyAttribs(SrcTex, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
                                            pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -169,11 +171,11 @@ void Tutorial05_TextureArray::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial05_TextureArray::Initialize(IEngineFactory*   pEngineFactory,
-                                         IRenderDevice*    pDevice,
-                                         IDeviceContext**  ppContexts,
-                                         Uint32            NumDeferredCtx,
-                                         ISwapChain*       pSwapChain)
+void Tutorial05_TextureArray::Initialize(IEngineFactory*  pEngineFactory,
+                                         IRenderDevice*   pDevice,
+                                         IDeviceContext** ppContexts,
+                                         Uint32           NumDeferredCtx,
+                                         ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -184,24 +186,26 @@ void Tutorial05_TextureArray::Initialize(IEngineFactory*   pEngineFactory,
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
 
     CreateInstanceBuffer();
-    LoadTextures();    
+    LoadTextures();
 }
 
 void Tutorial05_TextureArray::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    std::vector<InstanceData> InstanceData(m_GridSize*m_GridSize*m_GridSize);
+    std::vector<InstanceData> InstanceData(m_GridSize * m_GridSize * m_GridSize);
+
     float fGridSize = static_cast<float>(m_GridSize);
-    
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::random_device rd;        //Will be used to obtain a seed for the random number engine
+    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
     std::uniform_real_distribution<float> rot_distr(-PI_F, +PI_F);
-    std::uniform_int_distribution<Int32> tex_distr(0, NumTextures-1);
+    std::uniform_int_distribution<Int32>  tex_distr(0, NumTextures - 1);
 
     float BaseScale = 0.6f / fGridSize;
-    int instId = 0;
+    int   instId    = 0;
     for (int x = 0; x < m_GridSize; ++x)
     {
         for (int y = 0; y < m_GridSize; ++y)
@@ -209,17 +213,17 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
             for (int z = 0; z < m_GridSize; ++z)
             {
                 // Add random offset from central position in the grid
-                float xOffset = 2.f * (x+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float yOffset = 2.f * (y+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float zOffset = 2.f * (z+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float xOffset = 2.f * (x + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float yOffset = 2.f * (y + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float zOffset = 2.f * (z + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
                 float4x4 rotation = float4x4::RotationX(rot_distr(gen)) * float4x4::RotationY(rot_distr(gen)) * float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
-                auto &CurrInst = InstanceData[instId++];
-                CurrInst.Matrix = matrix;
+                float4x4 matrix   = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
+                auto&    CurrInst = InstanceData[instId++];
+                CurrInst.Matrix   = matrix;
                 // Texture array index
                 CurrInst.TextureInd = static_cast<float>(tex_distr(gen));
             }
@@ -234,8 +238,8 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
 // Render a frame
 void Tutorial05_TextureArray::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -247,21 +251,21 @@ void Tutorial05_TextureArray::Render()
     }
 
     // Bind vertex, instance and index buffers
-    Uint32 offsets[] = {0, 0};
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
+    Uint32   offsets[] = {0, 0};
+    IBuffer* pBuffs[]  = {m_CubeVertexBuffer, m_InstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    
+
     // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    DrawIndexedAttribs DrawAttrs;// This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;       // This is an indexed draw call
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // The number of instances
+    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize; // The number of instances
     // Verify the state of vertex and index buffers
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->DrawIndexed(DrawAttrs);
@@ -277,8 +281,8 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -286,7 +290,7 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime) * 0.25f);
 }
 
-}
+} // namespace Diligent

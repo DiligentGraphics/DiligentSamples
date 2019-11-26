@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -32,17 +32,18 @@ namespace Diligent
 class Tutorial07_GeometryShader final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType, 
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
                                                 EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc)override final;
+                                                SwapChainDesc&    SCDesc) override final;
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial07: Geometry Shader";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial07: Geometry Shader"; }
 
 private:
     void CreatePipelineState();
@@ -54,8 +55,9 @@ private:
     RefCntAutoPtr<IBuffer>                m_ShaderConstants;
     RefCntAutoPtr<ITextureView>           m_TextureSRV;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+
     float4x4 m_WorldViewProjMatrix;
-    float m_LineWidth = 3.f;
+    float    m_LineWidth = 3.f;
 };
 
-}
+} // namespace Diligent

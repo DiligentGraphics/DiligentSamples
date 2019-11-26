@@ -48,23 +48,24 @@ struct ParticleAttribs
     float2 f2Speed;
     float2 f2NewSpeed;
 
-    float  fSize;
-    float  fTemperature;
-    int    iNumCollisions;
-    float  fPadding0;
+    float fSize;
+    float fTemperature;
+    int   iNumCollisions;
+    float fPadding0;
 };
 
-}
+} // namespace
 
 void Tutorial14_ComputeShader::CreateRenderParticlePSO()
 {
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
-    PSODesc.Name = "Render particles PSO"; 
+    PSODesc.Name = "Render particles PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false; 
+    PSODesc.IsComputePipeline = false;
 
+    // clang-format off
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -77,8 +78,10 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    // clang-format on
 
     auto& BlendDesc = PSODesc.GraphicsPipeline.BlendDesc;
+
     BlendDesc.RenderTargets[0].BlendEnable = True;
     BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
     BlendDesc.RenderTargets[0].DestBlend   = BLEND_FACTOR_INV_SRC_ALPHA;
@@ -121,12 +124,14 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
+    // clang-format off
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_VERTEX, "g_Particles", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
@@ -150,7 +155,7 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     ShaderMacroHelper Macros;
-    Macros.AddShaderMacro( "THREAD_GROUP_SIZE", m_ThreadGroupSize );
+    Macros.AddShaderMacro("THREAD_GROUP_SIZE", m_ThreadGroupSize);
     Macros.Finalize();
 
     RefCntAutoPtr<IShader> pResetParticleListsCS;
@@ -190,7 +195,7 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
         ShaderCI.Desc.Name       = "Update particle speed CS";
         ShaderCI.FilePath        = "collide_particles.csh";
         Macros.AddShaderMacro("UPDATE_SPEED", 1);
-        ShaderCI.Macros          = Macros;
+        ShaderCI.Macros = Macros;
         m_pDevice->CreateShader(ShaderCI, &pUpdatedSpeedCS);
     }
 
@@ -199,29 +204,31 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     PSODesc.IsComputePipeline = true;
 
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_COMPUTE, "Constants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-    
-    PSODesc.Name = "Reset particle lists PSO"; 
+
+    PSODesc.Name                = "Reset particle lists PSO";
     PSODesc.ComputePipeline.pCS = pResetParticleListsCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pResetParticleListsPSO);
     m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
-    PSODesc.Name = "Move particles PSO"; 
+    PSODesc.Name                = "Move particles PSO";
     PSODesc.ComputePipeline.pCS = pMoveParticlesCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pMoveParticlesPSO);
     m_pMoveParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
-    PSODesc.Name = "Collidse particles PSO"; 
+    PSODesc.Name                = "Collidse particles PSO";
     PSODesc.ComputePipeline.pCS = pCollideParticlesCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pCollideParticlesPSO);
     m_pCollideParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
-    PSODesc.Name = "Update particle speed PSO"; 
+    PSODesc.Name                = "Update particle speed PSO";
     PSODesc.ComputePipeline.pCS = pUpdatedSpeedCS;
     m_pDevice->CreatePipelineState(PSODesc, &m_pUpdateParticleSpeedPSO);
     m_pUpdateParticleSpeedPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
@@ -242,14 +249,17 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     BuffDesc.uiSizeInBytes     = sizeof(ParticleAttribs) * m_NumParticles;
 
     std::vector<ParticleAttribs> ParticleData(m_NumParticles);
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::random_device rd;        //Will be used to obtain a seed for the random number engine
+    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     std::uniform_real_distribution<float> pos_distr(-1.f, +1.f);
     std::uniform_real_distribution<float> size_distr(0.5f, 1.f);
+
     constexpr float fMaxParticleSize = 0.05f;
-    float fSize = 0.7f / std::sqrt(static_cast<float>(m_NumParticles));
-    fSize = std::min(fMaxParticleSize, fSize);
-    for(auto& particle : ParticleData)
+    float           fSize            = 0.7f / std::sqrt(static_cast<float>(m_NumParticles));
+    fSize                            = std::min(fMaxParticleSize, fSize);
+    for (auto& particle : ParticleData)
     {
         particle.f2NewPos.x   = pos_distr(rd);
         particle.f2NewPos.y   = pos_distr(rd);
@@ -277,7 +287,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     RefCntAutoPtr<IBufferView> pParticleListsBufferSRV;
     {
         BufferViewDesc ViewDesc;
-        ViewDesc.ViewType = BUFFER_VIEW_UNORDERED_ACCESS;
+        ViewDesc.ViewType             = BUFFER_VIEW_UNORDERED_ACCESS;
         ViewDesc.Format.ValueType     = VT_INT32;
         ViewDesc.Format.NumComponents = 1;
         m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferUAV);
@@ -335,11 +345,11 @@ void Tutorial14_ComputeShader::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
-                                          IRenderDevice*    pDevice,
-                                          IDeviceContext**  ppContexts,
-                                          Uint32            NumDeferredCtx,
-                                          ISwapChain*       pSwapChain)
+void Tutorial14_ComputeShader::Initialize(IEngineFactory*  pEngineFactory,
+                                          IRenderDevice*   pDevice,
+                                          IDeviceContext** ppContexts,
+                                          Uint32           NumDeferredCtx,
+                                          ISwapChain*      pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
     if (!deviceCaps.bComputeShadersSupported)
@@ -358,8 +368,8 @@ void Tutorial14_ComputeShader::Initialize(IEngineFactory*   pEngineFactory,
 // Render a frame
 void Tutorial14_ComputeShader::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     // Let the engine perform required state transitions
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -367,10 +377,10 @@ void Tutorial14_ComputeShader::Render()
     {
         struct Constants
         {
-            uint   uiNumParticles;
-            float  fDeltaTime;
-            float  fDummy0;
-            float  fDummy1;
+            uint  uiNumParticles;
+            float fDeltaTime;
+            float fDummy0;
+            float fDummy1;
 
             float2 f2Scale;
             int2   i2ParticleGridSize;
@@ -378,19 +388,19 @@ void Tutorial14_ComputeShader::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> ConstData(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
         ConstData->uiNumParticles = static_cast<Uint32>(m_NumParticles);
-        ConstData->fDeltaTime     = std::min(m_fTimeDelta, 1.f/60.f) * m_fSimulationSpeed;
+        ConstData->fDeltaTime     = std::min(m_fTimeDelta, 1.f / 60.f) * m_fSimulationSpeed;
 
-        float AspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-        float2 f2Scale = float2(std::sqrt(1.f / AspectRatio), std::sqrt(AspectRatio));
+        float  AspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
+        float2 f2Scale     = float2(std::sqrt(1.f / AspectRatio), std::sqrt(AspectRatio));
         ConstData->f2Scale = f2Scale;
 
-        int iParticleGridWidth = static_cast<int>(std::sqrt(static_cast<float>(m_NumParticles)) / f2Scale.x);
+        int iParticleGridWidth          = static_cast<int>(std::sqrt(static_cast<float>(m_NumParticles)) / f2Scale.x);
         ConstData->i2ParticleGridSize.x = iParticleGridWidth;
         ConstData->i2ParticleGridSize.y = m_NumParticles / iParticleGridWidth;
     }
 
     DispatchComputeAttribs DispatAttribs;
-    DispatAttribs.ThreadGroupCountX = (m_NumParticles + m_ThreadGroupSize-1) / m_ThreadGroupSize;
+    DispatAttribs.ThreadGroupCountX = (m_NumParticles + m_ThreadGroupSize - 1) / m_ThreadGroupSize;
 
     m_pImmediateContext->SetPipelineState(m_pResetParticleListsPSO);
     m_pImmediateContext->CommitShaderResources(m_pResetParticleListsSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -425,4 +435,4 @@ void Tutorial14_ComputeShader::Update(double CurrTime, double ElapsedTime)
     m_fTimeDelta = static_cast<float>(ElapsedTime);
 }
 
-}
+} // namespace Diligent

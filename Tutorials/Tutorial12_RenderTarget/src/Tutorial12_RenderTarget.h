@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -32,26 +32,29 @@ namespace Diligent
 class Tutorial12_RenderTarget final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(DeviceType         DevType,
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&    SCDesc)override final;
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
+                                                EngineCreateInfo& Attribs,
+                                                SwapChainDesc&    SCDesc) override final;
 
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial12: Render Target";}
-    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial12: Render Target"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
     void CreateCubePSO();
     void CreateRenderTargetPSO();
 
-    static constexpr TEXTURE_FORMAT       RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
-    static constexpr TEXTURE_FORMAT       DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
+    static constexpr TEXTURE_FORMAT RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
+    static constexpr TEXTURE_FORMAT DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
     // Cube resources
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
@@ -61,8 +64,8 @@ private:
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
     // Offscreen render target and depth-stencil
-    RefCntAutoPtr<ITextureView>           m_pColorRTV;
-    RefCntAutoPtr<ITextureView>           m_pDepthDSV;
+    RefCntAutoPtr<ITextureView> m_pColorRTV;
+    RefCntAutoPtr<ITextureView> m_pDepthDSV;
 
     RefCntAutoPtr<IBuffer>                m_RTPSConstants;
     RefCntAutoPtr<IPipelineState>         m_pRTPSO;
@@ -71,4 +74,4 @@ private:
     float                                 m_fCurrentTime = 0.f;
 };
 
-}
+} // namespace Diligent

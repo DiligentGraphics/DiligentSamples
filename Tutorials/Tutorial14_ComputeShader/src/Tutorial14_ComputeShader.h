@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "ResourceMapping.h"
@@ -33,15 +33,16 @@ namespace Diligent
 class Tutorial14_ComputeShader final : public SampleBase
 {
 public:
+    virtual void Initialize(IEngineFactory*  pEngineFactory,
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
 
-    virtual void Initialize(IEngineFactory*   pEngineFactory,
-                            IRenderDevice*    pDevice, 
-                            IDeviceContext**  ppContexts, 
-                            Uint32            NumDeferredCtx, 
-                            ISwapChain*       pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial14: Compute Shader";}
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial14: Compute Shader"; }
 
 private:
     void CreateRenderParticlePSO();
@@ -50,8 +51,9 @@ private:
     void CreateConsantBuffer();
     void UpdateUI();
 
-    int                                   m_NumParticles    = 2000;
-    int                                   m_ThreadGroupSize = 256;
+    int m_NumParticles    = 2000;
+    int m_ThreadGroupSize = 256;
+
     RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;
     RefCntAutoPtr<IPipelineState>         m_pResetParticleListsPSO;
@@ -66,8 +68,9 @@ private:
     RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
     RefCntAutoPtr<IBuffer>                m_pParticleListHeadsBuffer;
     RefCntAutoPtr<IResourceMapping>       m_pResMapping;
-    float                                 m_fTimeDelta       = 0;
-    float                                 m_fSimulationSpeed = 1;
+
+    float m_fTimeDelta       = 0;
+    float m_fSimulationSpeed = 1;
 };
 
-}
+} // namespace Diligent

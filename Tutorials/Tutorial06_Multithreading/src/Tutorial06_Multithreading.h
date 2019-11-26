@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include <atomic>
 #include <vector>
@@ -37,22 +37,24 @@ namespace Diligent
 class Tutorial06_Multithreading final : public SampleBase
 {
 public:
-    ~Tutorial06_Multithreading()override;
-    virtual void GetEngineInitializationAttribs(DeviceType         DevType, 
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&     SCDesc)override final;
+    ~Tutorial06_Multithreading() override;
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
+                                                EngineCreateInfo& Attribs,
+                                                SwapChainDesc&    SCDesc) override final;
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial06: Multithreaded rendering";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial06: Multithreaded rendering"; }
 
 private:
-    void CreatePipelineState (std::vector<StateTransitionDesc>& Barriers);
-    void LoadTextures        (std::vector<StateTransitionDesc>& Barriers);
+    void CreatePipelineState(std::vector<StateTransitionDesc>& Barriers);
+    void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
     void UpdateUI();
     void PopulateInstanceData();
 
@@ -63,27 +65,30 @@ private:
 
     static void WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum);
 
-    ThreadingTools::Signal m_RenderSubsetSignal;
-    ThreadingTools::Signal m_ExecuteCommandListsSignal;
-    ThreadingTools::Signal m_GotoNextFrameSignal;
-    std::mutex m_NumThreadsCompletedMtx;
-    std::atomic_int m_NumThreadsCompleted;
-    std::atomic_int m_NumThreadsReady;
+    ThreadingTools::Signal   m_RenderSubsetSignal;
+    ThreadingTools::Signal   m_ExecuteCommandListsSignal;
+    ThreadingTools::Signal   m_GotoNextFrameSignal;
+    std::mutex               m_NumThreadsCompletedMtx;
+    std::atomic_int          m_NumThreadsCompleted;
+    std::atomic_int          m_NumThreadsReady;
     std::vector<std::thread> m_WorkerThreads;
-    std::vector< RefCntAutoPtr<ICommandList> > m_CmdLists;
+
+    std::vector<RefCntAutoPtr<ICommandList>> m_CmdLists;
 
     RefCntAutoPtr<IPipelineState> m_pPSO;
     RefCntAutoPtr<IBuffer>        m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>        m_CubeIndexBuffer;
     RefCntAutoPtr<IBuffer>        m_InstanceConstants;
     RefCntAutoPtr<IBuffer>        m_VSConstants;
-        
+
     static constexpr int NumTextures = 4;
+
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
     RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
+
     float4x4 m_ViewProjMatrix;
     float4x4 m_RotationMatrix;
-    int m_GridSize = 5;
+    int      m_GridSize = 5;
 
     int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
@@ -91,9 +96,9 @@ private:
     struct InstanceData
     {
         float4x4 Matrix;
-        int TextureInd;
+        int      TextureInd;
     };
     std::vector<InstanceData> m_InstanceData;
 };
 
-}
+} // namespace Diligent

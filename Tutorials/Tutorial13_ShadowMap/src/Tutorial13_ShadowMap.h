@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -32,17 +32,20 @@ namespace Diligent
 class Tutorial13_ShadowMap final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(DeviceType         DevType,
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&    SCDesc)override final;
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
+                                                EngineCreateInfo& Attribs,
+                                                SwapChainDesc&    SCDesc) override final;
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial13: Shadow Map";}
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial13: Shadow Map"; }
 
 private:
     void CreateCubePSO();
@@ -55,7 +58,7 @@ private:
     void RenderCube(const float4x4& CameraViewProj, bool IsShadowPass);
     void RenderPlane();
     void RenderShadowMapVis();
-    
+
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
     RefCntAutoPtr<IPipelineState>         m_pCubeShadowPSO;
     RefCntAutoPtr<IPipelineState>         m_pPlanePSO;
@@ -70,12 +73,13 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_ShadowMapVisSRB;
     RefCntAutoPtr<ITextureView>           m_ShadowMapDSV;
     RefCntAutoPtr<ITextureView>           m_ShadowMapSRV;
-    float4x4                              m_CubeWorldMatrix;
-    float4x4                              m_CameraViewProjMatrix;
-    float4x4                              m_WorldToShadowMapUVDepthMatr;
-    float3                                m_LightDirection      = normalize(float3(-0.49f, -0.60f, 0.64f));
-    Uint32                                m_ShadowMapSize       = 512;
-    TEXTURE_FORMAT                        m_ShadowMapFormat     = TEX_FORMAT_D16_UNORM;
+
+    float4x4       m_CubeWorldMatrix;
+    float4x4       m_CameraViewProjMatrix;
+    float4x4       m_WorldToShadowMapUVDepthMatr;
+    float3         m_LightDirection  = normalize(float3(-0.49f, -0.60f, 0.64f));
+    Uint32         m_ShadowMapSize   = 512;
+    TEXTURE_FORMAT m_ShadowMapFormat = TEX_FORMAT_D16_UNORM;
 };
 
-}
+} // namespace Diligent

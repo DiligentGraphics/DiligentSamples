@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -33,21 +33,24 @@ class Tutorial17_MSAA final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice, 
-                            IDeviceContext** ppContexts, 
-                            Uint32           NumDeferredCtx, 
-                            ISwapChain*      pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Tutorial17: MSAA";}
-    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Tutorial17: MSAA"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
     void CreateCubePSO();
     void UpdateUI();
     void CreateMSAARenderTarget();
 
-    static constexpr TEXTURE_FORMAT       DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
+    static constexpr TEXTURE_FORMAT DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
 
     // Cube resources
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
@@ -58,15 +61,15 @@ private:
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
     // Offscreen multi-sampled render target and depth-stencil
-    RefCntAutoPtr<ITextureView>           m_pMSColorRTV;
-    RefCntAutoPtr<ITextureView>           m_pMSDepthDSV;
+    RefCntAutoPtr<ITextureView> m_pMSColorRTV;
+    RefCntAutoPtr<ITextureView> m_pMSDepthDSV;
 
-    Uint8                                 m_SampleCount           = 4;
-    Uint32                                m_SupportedSampleCounts = 0;
+    Uint8  m_SampleCount           = 4;
+    Uint32 m_SupportedSampleCounts = 0;
 
-    float4x4                              m_WorldViewProjMatrix;
-    float                                 m_fCurrentTime = 0.f;
-    bool                                  m_bRotateGrid  = true;
+    float4x4 m_WorldViewProjMatrix;
+    float    m_fCurrentTime = 0.f;
+    bool     m_bRotateGrid  = true;
 };
 
-}
+} // namespace Diligent

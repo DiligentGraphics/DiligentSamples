@@ -39,16 +39,16 @@ SampleBase* CreateSample()
 {
     return new Tutorial13_ShadowMap();
 }
-    
-void Tutorial13_ShadowMap::GetEngineInitializationAttribs(DeviceType         DevType,
-                                                          EngineCreateInfo&  Attribs,
-                                                          SwapChainDesc&     SCDesc)
+
+void Tutorial13_ShadowMap::GetEngineInitializationAttribs(DeviceType        DevType,
+                                                          EngineCreateInfo& Attribs,
+                                                          SwapChainDesc&    SCDesc)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
 #if VULKAN_SUPPORTED
-    if(DevType == DeviceType::Vulkan)
+    if (DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+        auto& VkAttrs                      = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.EnabledFeatures.depthClamp = true;
     }
 #endif
@@ -60,6 +60,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
+    // clang-format off
     // Define vertex shader input layout
     LayoutElement LayoutElems[] =
     {
@@ -70,33 +71,35 @@ void Tutorial13_ShadowMap::CreateCubePSO()
         // Attribute 2 - normal
         LayoutElement{2, 0, 3, VT_FLOAT32, False},
     };
+    // clang-format on
 
-    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice, 
-        m_pSwapChain->GetDesc().ColorBufferFormat,
-        m_pSwapChain->GetDesc().DepthBufferFormat,
-        pShaderSourceFactory,
-        "cube.vsh",
-        "cube.psh",
-        LayoutElems,
-        _countof(LayoutElems));
-    
+    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice,
+                                                   m_pSwapChain->GetDesc().ColorBufferFormat,
+                                                   m_pSwapChain->GetDesc().DepthBufferFormat,
+                                                   pShaderSourceFactory,
+                                                   "cube.vsh",
+                                                   "cube.psh",
+                                                   LayoutElems,
+                                                   _countof(LayoutElems));
+
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
     // change and are bound directly through the pipeline state object.
     m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
-    
+
     // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
     m_pCubePSO->CreateShaderResourceBinding(&m_CubeSRB, true);
-    
-    
+
+
     // Create shadow pass PSO
     PipelineStateDesc PSODesc;
     PSODesc.Name = "Cube shadow PSO";
-    
+
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false;
-    
+
+    // clang-format off
     // Shadow pass doesn't use any render target outputs
     PSODesc.GraphicsPipeline.NumRenderTargets             = 0;
     PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_UNKNOWN;
@@ -107,12 +110,13 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    // clang-format on
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL under the hood.
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
     // Create shadow vertex shader
@@ -128,7 +132,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
 
     // We don't use pixel shader as we are only interested in populating the depth buffer
     PSODesc.GraphicsPipeline.pPS = nullptr;
-    
+
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
     PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
@@ -138,22 +142,23 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     // clipping plane. This is not required for this tutorial, but real applications
     // will most likely want to do this.
     PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
-    
+
     m_pDevice->CreatePipelineState(PSODesc, &m_pCubeShadowPSO);
     m_pCubeShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
 }
- 
+
 void Tutorial13_ShadowMap::CreatePlanePSO()
 {
     PipelineStateDesc PSODesc;
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Plane PSO";
-    
+
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false;
-    
+
+    // clang-format off
     // This tutorial renders to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -166,15 +171,16 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Enable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-    
+    // clang-format on
+
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    
+
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
-    
+
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
@@ -188,7 +194,7 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
         ShaderCI.FilePath        = "plane.vsh";
         m_pDevice->CreateShader(ShaderCI, &pPlaneVS);
     }
-    
+
     // Create plane pixel shader
     RefCntAutoPtr<IShader> pPlanePS;
     {
@@ -198,37 +204,41 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
         ShaderCI.FilePath        = "plane.psh";
         m_pDevice->CreateShader(ShaderCI, &pPlanePS);
     }
-    
+
     PSODesc.GraphicsPipeline.pVS = pPlaneVS;
     PSODesc.GraphicsPipeline.pPS = pPlanePS;
-    
+
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-    
+
+    // clang-format off
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
     ShaderResourceVariableDesc Vars[] =
     {
         {SHADER_TYPE_PIXEL, "g_ShadowMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-    
+
     // Define static comparison sampler for g_ShadowMap. Static samplers should be used whenever possible
     SamplerDesc ComparsionSampler;
-    ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS; 
+    ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS;
     ComparsionSampler.MinFilter      = FILTER_TYPE_COMPARISON_LINEAR;
     ComparsionSampler.MagFilter      = FILTER_TYPE_COMPARISON_LINEAR;
     ComparsionSampler.MipFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+    // clang-format off
     StaticSamplerDesc StaticSamplers[] =
     {
         {SHADER_TYPE_PIXEL, "g_ShadowMap", ComparsionSampler}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-    
+
     m_pDevice->CreatePipelineState(PSODesc, &m_pPlanePSO);
-    
+
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
     // change and are bound directly through the pipeline state object.
@@ -239,10 +249,11 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
 {
     PipelineStateDesc PSODesc;
     PSODesc.Name = "Shadow Map Vis PSO";
-    
+
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false;
-    
+
+    // clang-format off
     // This tutorial renders to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -255,15 +266,16 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-    
+    // clang-format on
+
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
     // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-    
+
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
-    
+
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
@@ -277,7 +289,7 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
         ShaderCI.FilePath        = "shadow_map_vis.vsh";
         m_pDevice->CreateShader(ShaderCI, &pShadowMapVisVS);
     }
-    
+
     // Create shadow map visualization pixel shader
     RefCntAutoPtr<IShader> pShadowMapVisPS;
     {
@@ -287,13 +299,14 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
         ShaderCI.FilePath        = "shadow_map_vis.psh";
         m_pDevice->CreateShader(ShaderCI, &pShadowMapVisPS);
     }
-    
+
     PSODesc.GraphicsPipeline.pVS = pShadowMapVisVS;
     PSODesc.GraphicsPipeline.pPS = pShadowMapVisPS;
-    
+
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
+    // clang-format off
     SamplerDesc SamLinearClampDesc
     {
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
@@ -303,9 +316,10 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     {
         {SHADER_TYPE_PIXEL, "g_ShadowMap", SamLinearClampDesc}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-    
+
     m_pDevice->CreatePipelineState(PSODesc, &m_pShadowMapVisPSO);
 }
 
@@ -318,9 +332,9 @@ void Tutorial13_ShadowMap::CreateVertexBuffer()
         float2 uv;
         float3 normal;
     };
-    
+
     // Cube vertices
-    
+
     //      (-1,+1,+1)________________(+1,+1,+1)
     //               /|              /|
     //              / |             / |
@@ -335,7 +349,8 @@ void Tutorial13_ShadowMap::CreateVertexBuffer()
     //           /_______________|/
     //        (-1,-1,-1)       (+1,-1,-1)
     //
-    
+
+    // clang-format off
     Vertex CubeVerts[] =
     {
         {float3(-1,-1,-1), float2(0,1), float3(0, 0, -1)},
@@ -368,6 +383,7 @@ void Tutorial13_ShadowMap::CreateVertexBuffer()
         {float3(+1,+1,+1), float2(0,0), float3(0, 0, +1)},
         {float3(-1,+1,+1), float2(1,0), float3(0, 0, +1)}
     };
+    // clang-format on
 
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
@@ -386,19 +402,22 @@ void Tutorial13_ShadowMap::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         constexpr int MinShadowMapSize = 256;
-        int ShadowMapComboId = 0;
-        while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowMapSize))
+        int           ShadowMapComboId = 0;
+        while ((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowMapSize))
             ++ShadowMapComboId;
-        if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "256\0" "512\0" "1024\0\0"))
+        if (ImGui::Combo("Shadow map size", &ShadowMapComboId,
+                         "256\0"
+                         "512\0"
+                         "1024\0\0"))
         {
             m_ShadowMapSize = MinShadowMapSize << ShadowMapComboId;
             CreateShadowMap();
         }
         ImGui::gizmo3D("##LightDirection", m_LightDirection, ImGui::GetTextLineHeight() * 10);
     }
-    ImGui::End();   
+    ImGui::End();
 }
-    
+
 void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
                                       IRenderDevice*   pDevice,
                                       IDeviceContext** ppContexts,
@@ -412,7 +431,7 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     // Dynamic buffers can be frequently updated by the CPU
     CreateUniformBuffer(pDevice, sizeof(float4x4) * 2 + sizeof(float4), "VS constants CB", &m_VSConstants);
     Barriers.emplace_back(m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
-    
+
     CreateCubePSO();
     CreatePlanePSO();
     CreateShadowMapVisPSO();
@@ -425,7 +444,7 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     m_CubeIndexBuffer = TexturedCube::CreateIndexBuffer(pDevice);
     // Explicitly transition vertex and index buffers to required states
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
-    Barriers.emplace_back(m_CubeIndexBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER,  true);
+    Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
     // Load texture
     auto CubeTexture = TexturedCube::LoadTexture(pDevice, "DGLogo.png");
     m_CubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(CubeTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
@@ -460,62 +479,62 @@ void Tutorial13_ShadowMap::CreateShadowMap()
     m_pShadowMapVisPSO->CreateShaderResourceBinding(&m_ShadowMapVisSRB, true);
     m_ShadowMapVisSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_ShadowMap")->Set(m_ShadowMapSRV);
 }
-    
+
 void Tutorial13_ShadowMap::RenderShadowMap()
 {
     float3 f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ;
     f3LightSpaceZ = normalize(m_LightDirection);
-    
+
     auto min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)), std::abs(m_LightDirection.z));
     if (min_cmp == std::abs(m_LightDirection.x))
-        f3LightSpaceX =  float3(1, 0, 0);
+        f3LightSpaceX = float3(1, 0, 0);
     else if (min_cmp == std::abs(m_LightDirection.y))
-        f3LightSpaceX =  float3(0, 1, 0);
+        f3LightSpaceX = float3(0, 1, 0);
     else
-        f3LightSpaceX =  float3(0, 0, 1);
-    
+        f3LightSpaceX = float3(0, 0, 1);
+
     f3LightSpaceY = cross(f3LightSpaceZ, f3LightSpaceX);
     f3LightSpaceX = cross(f3LightSpaceY, f3LightSpaceZ);
     f3LightSpaceX = normalize(f3LightSpaceX);
     f3LightSpaceY = normalize(f3LightSpaceY);
-    
+
     float4x4 WorldToLightViewSpaceMatr = float4x4::ViewFromBasis(f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ);
-    
+
     // For this tutorial we know that the scene center is at (0,0,0).
     // Real applications will want to compute tight bounds
 
     float3 f3SceneCenter = float3(0, 0, 0);
-    float SceneRadius = std::sqrt(3.f);
-    float3 f3MinXYZ = f3SceneCenter - float3(SceneRadius, SceneRadius, SceneRadius);
-    float3 f3MaxXYZ = f3SceneCenter + float3(SceneRadius, SceneRadius, SceneRadius*5);
+    float  SceneRadius   = std::sqrt(3.f);
+    float3 f3MinXYZ      = f3SceneCenter - float3(SceneRadius, SceneRadius, SceneRadius);
+    float3 f3MaxXYZ      = f3SceneCenter + float3(SceneRadius, SceneRadius, SceneRadius * 5);
     float3 f3SceneExtent = f3MaxXYZ - f3MinXYZ;
 
     const auto& DevCaps = m_pDevice->GetDeviceCaps();
-    const bool IsGL = DevCaps.IsGLDevice();
-    float4 f4LightSpaceScale;
-    f4LightSpaceScale.x =  2.f / f3SceneExtent.x;
-    f4LightSpaceScale.y =  2.f / f3SceneExtent.y;
-    f4LightSpaceScale.z =  (IsGL ? 2.f : 1.f) / f3SceneExtent.z;
+    const bool  IsGL    = DevCaps.IsGLDevice();
+    float4      f4LightSpaceScale;
+    f4LightSpaceScale.x = 2.f / f3SceneExtent.x;
+    f4LightSpaceScale.y = 2.f / f3SceneExtent.y;
+    f4LightSpaceScale.z = (IsGL ? 2.f : 1.f) / f3SceneExtent.z;
     // Apply bias to shift the extent to [-1,1]x[-1,1]x[0,1] for DX or to [-1,1]x[-1,1]x[-1,1] for GL
     // Find bias such that f3MinXYZ -> (-1,-1,0) for DX or (-1,-1,-1) for GL
     float4 f4LightSpaceScaledBias;
     f4LightSpaceScaledBias.x = -f3MinXYZ.x * f4LightSpaceScale.x - 1.f;
     f4LightSpaceScaledBias.y = -f3MinXYZ.y * f4LightSpaceScale.y - 1.f;
     f4LightSpaceScaledBias.z = -f3MinXYZ.z * f4LightSpaceScale.z + (IsGL ? -1.f : 0.f);
-    
-    float4x4 ScaleMatrix = float4x4::Scale(f4LightSpaceScale.x, f4LightSpaceScale.y, f4LightSpaceScale.z);
+
+    float4x4 ScaleMatrix      = float4x4::Scale(f4LightSpaceScale.x, f4LightSpaceScale.y, f4LightSpaceScale.z);
     float4x4 ScaledBiasMatrix = float4x4::Translation(f4LightSpaceScaledBias.x, f4LightSpaceScaledBias.y, f4LightSpaceScaledBias.z);
-    
+
     // Note: bias is applied after scaling!
     float4x4 ShadowProjMatr = ScaleMatrix * ScaledBiasMatrix;
-    
+
     // Adjust the world to light space transformation matrix
     float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
-    
-    const auto& NDCAttribs = DevCaps.GetNDCAttribs();
-    float4x4 ProjToUVScale = float4x4::Scale(0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale);
-    float4x4 ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
-    
+
+    const auto& NDCAttribs    = DevCaps.GetNDCAttribs();
+    float4x4    ProjToUVScale = float4x4::Scale(0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale);
+    float4x4    ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
+
     m_WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
 
     RenderCube(WorldToLightProjSpaceMatr, true);
@@ -534,7 +553,7 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants->WorldViewProj = (m_CubeWorldMatrix * CameraViewProj).Transpose();
-        auto NormalMatrix = m_CubeWorldMatrix.RemoveTranslation().Inverse();
+        auto NormalMatrix          = m_CubeWorldMatrix.RemoveTranslation().Inverse();
         // We need to do inverse-transpose, but we also need to transpose the matrix
         // before writing it to the buffer
         CBConstants->NormalTranform = NormalMatrix;
@@ -542,7 +561,7 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
     }
 
     // Bind vertex buffer
-    Uint32 offset = 0;
+    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     // Note that since resouces have been explicitly transitioned to required states, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY flag
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
@@ -558,7 +577,7 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
     {
         m_pImmediateContext->SetPipelineState(m_pCubePSO);
         m_pImmediateContext->CommitShaderResources(m_CubeSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
-    }    
+    }
 
     DrawIndexedAttribs DrawAttrs(36, VT_UINT32, DRAW_FLAG_VERIFY_ALL);
     m_pImmediateContext->DrawIndexed(DrawAttrs);
@@ -580,7 +599,7 @@ void Tutorial13_ShadowMap::RenderPlane()
     }
 
     m_pImmediateContext->SetPipelineState(m_pPlanePSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     // Note that Vulkan requires shadow map to be transitioned to DEPTH_READ state, not SHADER_RESOURCE
     m_pImmediateContext->CommitShaderResources(m_PlaneSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -605,10 +624,10 @@ void Tutorial13_ShadowMap::Render()
     m_pImmediateContext->SetRenderTargets(0, nullptr, m_ShadowMapDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(m_ShadowMapDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     RenderShadowMap();
-    
+
     // Bind main back buffer
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f }; 
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -625,16 +644,16 @@ void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
     // Animate the cube
-    m_CubeWorldMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f);
+    m_CubeWorldMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f);
 
-    float4x4 CameraView = float4x4::Translation(0.f, -5.0f, -10.0f) * float4x4::RotationY(PI_F) * float4x4::RotationX(-PI_F * 0.2);
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
+    float4x4 CameraView  = float4x4::Translation(0.f, -5.0f, -10.0f) * float4x4::RotationY(PI_F) * float4x4::RotationX(-PI_F * 0.2);
+    float    NearPlane   = 0.1f;
+    float    FarPlane    = 100.f;
+    float    aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
     // Compute camera view-projection matrix
     m_CameraViewProjMatrix = CameraView * Proj;
 }
 
-}
+} // namespace Diligent

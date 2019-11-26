@@ -40,6 +40,7 @@ SampleBase* CreateSample()
 
 void Tutorial04_Instancing::CreatePipelineState()
 {
+    // clang-format off
     // Define vertex shader input layout
     // This tutorial uses two types of input: per-vertex data and per-instance data.
     LayoutElement LayoutElems[] =
@@ -61,25 +62,26 @@ void Tutorial04_Instancing::CreatePipelineState()
         // Attribute 5 - fourth row
         LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE}
     };
+    // clang-format on
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice, 
-        m_pSwapChain->GetDesc().ColorBufferFormat,
-        m_pSwapChain->GetDesc().DepthBufferFormat,
-        pShaderSourceFactory,
-        "cube_inst.vsh",
-        "cube_inst.psh",
-        LayoutElems,
-        _countof(LayoutElems));
+    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice,
+                                               m_pSwapChain->GetDesc().ColorBufferFormat,
+                                               m_pSwapChain->GetDesc().DepthBufferFormat,
+                                               pShaderSourceFactory,
+                                               "cube_inst.vsh",
+                                               "cube_inst.psh",
+                                               LayoutElems,
+                                               _countof(LayoutElems));
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
-    CreateUniformBuffer(m_pDevice, sizeof(float4x4)*2, "VS constants CB", &m_VSConstants);
+    CreateUniformBuffer(m_pDevice, sizeof(float4x4) * 2, "VS constants CB", &m_VSConstants);
 
-    // Since we did not explcitly specify the type for 'Constants' variable, default 
+    // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
@@ -93,9 +95,9 @@ void Tutorial04_Instancing::CreateInstanceBuffer()
 {
     // Create instance data buffer that will store transformation matrices
     BufferDesc InstBuffDesc;
-    InstBuffDesc.Name          = "Instance data buffer";
+    InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage         = USAGE_DEFAULT; 
+    InstBuffDesc.Usage         = USAGE_DEFAULT;
     InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
     InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
@@ -115,11 +117,11 @@ void Tutorial04_Instancing::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
-                                       IRenderDevice*    pDevice,
-                                       IDeviceContext**  ppContexts,
-                                       Uint32            NumDeferredCtx,
-                                       ISwapChain*       pSwapChain)
+void Tutorial04_Instancing::Initialize(IEngineFactory*  pEngineFactory,
+                                       IRenderDevice*   pDevice,
+                                       IDeviceContext** ppContexts,
+                                       Uint32           NumDeferredCtx,
+                                       ISwapChain*      pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
@@ -128,7 +130,7 @@ void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
     // Load textured cube
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
-    m_TextureSRV = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_TextureSRV       = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     // Set cube texture SRV in the SRB
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 
@@ -138,17 +140,19 @@ void Tutorial04_Instancing::Initialize(IEngineFactory*   pEngineFactory,
 void Tutorial04_Instancing::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    std::vector<float4x4> InstanceData(m_GridSize*m_GridSize*m_GridSize);
+    std::vector<float4x4> InstanceData(m_GridSize * m_GridSize * m_GridSize);
+
     float fGridSize = static_cast<float>(m_GridSize);
-    
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::random_device rd;        //Will be used to obtain a seed for the random number engine
+    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
     std::uniform_real_distribution<float> rot_distr(-PI_F, +PI_F);
 
     float BaseScale = 0.6f / fGridSize;
-    int instId = 0;
+    int   instId    = 0;
     for (int x = 0; x < m_GridSize; ++x)
     {
         for (int y = 0; y < m_GridSize; ++y)
@@ -156,15 +160,15 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
             for (int z = 0; z < m_GridSize; ++z)
             {
                 // Add random offset from central position in the grid
-                float xOffset = 2.f * (x+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float yOffset = 2.f * (y+0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float zOffset = 2.f * (z+0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float xOffset = 2.f * (x + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float yOffset = 2.f * (y + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
+                float zOffset = 2.f * (z + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
                 float4x4 rotation = float4x4::RotationX(rot_distr(gen)) * float4x4::RotationY(rot_distr(gen)) * float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
+                float4x4 matrix        = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
                 InstanceData[instId++] = matrix;
             }
         }
@@ -178,8 +182,8 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
 // Render a frame
 void Tutorial04_Instancing::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -191,23 +195,23 @@ void Tutorial04_Instancing::Render()
     }
 
     // Bind vertex, instance and index buffers
-    Uint32 offsets[] = {0, 0};
-    IBuffer* pBuffs[] = {m_CubeVertexBuffer, m_InstanceBuffer};
+    Uint32   offsets[] = {0, 0};
+    IBuffer* pBuffs[]  = {m_CubeVertexBuffer, m_InstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the pipeline state
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode 
+    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    DrawIndexedAttribs DrawAttrs;// This is an indexed draw call
+    DrawIndexedAttribs DrawAttrs;       // This is an indexed draw call
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = m_GridSize*m_GridSize*m_GridSize; // The number of instances
+    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize; // The number of instances
     // Verify the state of vertex and index buffers
-    DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL;
+    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
@@ -221,8 +225,8 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 100.f;
     float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
@@ -230,7 +234,7 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     m_ViewProjMatrix = View * Proj;
 
     // Global rotation matrix
-    m_RotationMatrix = float4x4::RotationY( static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime)*0.25f);
+    m_RotationMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime) * 0.25f);
 }
 
-}
+} // namespace Diligent

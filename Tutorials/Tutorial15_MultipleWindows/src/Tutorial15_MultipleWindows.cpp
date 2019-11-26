@@ -29,32 +29,32 @@
 #include <sstream>
 
 #ifndef NOMINMAX
-#   define NOMINMAX
+#    define NOMINMAX
 #endif
 #include <Windows.h>
 
 #ifndef PLATFORM_WIN32
-#   define PLATFORM_WIN32 1
+#    define PLATFORM_WIN32 1
 #endif
 
 #ifndef ENGINE_DLL
-#   define ENGINE_DLL 1
+#    define ENGINE_DLL 1
 #endif
 
 #ifndef D3D11_SUPPORTED
-#   define D3D11_SUPPORTED 1
+#    define D3D11_SUPPORTED 1
 #endif
 
 #ifndef D3D12_SUPPORTED
-#   define D3D12_SUPPORTED 1
+#    define D3D12_SUPPORTED 1
 #endif
 
 #ifndef GL_SUPPORTED
-#   define GL_SUPPORTED 1
+#    define GL_SUPPORTED 1
 #endif
 
 #ifndef VULKAN_SUPPORTED
-#   define VULKAN_SUPPORTED 1
+#    define VULKAN_SUPPORTED 1
 #endif
 
 #include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
@@ -127,7 +127,6 @@ class Tutorial00App
 public:
     Tutorial00App()
     {
-
     }
 
     ~Tutorial00App()
@@ -139,7 +138,7 @@ public:
     bool InitializeDiligentEngine(HWND hWnd[], size_t NumWindows)
     {
         m_Windows.resize(NumWindows);
-        for (size_t i=0; i < NumWindows; ++i)
+        for (size_t i = 0; i < NumWindows; ++i)
             m_Windows[i].hWnd = hWnd[i];
 
         SwapChainDesc SCDesc;
@@ -149,15 +148,16 @@ public:
             case DeviceType::D3D11:
             {
                 EngineD3D11CreateInfo DeviceAttribs;
-#ifdef _DEBUG
-                DeviceAttribs.DebugFlags |= D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE | 
-                                            D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
-#endif
-#if ENGINE_DLL
+#    ifdef _DEBUG
+                DeviceAttribs.DebugFlags |=
+                    D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
+                    D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
+#    endif
+#    if ENGINE_DLL
                 GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
                 // Load the dll and import GetEngineFactoryD3D11() function
                 LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
-#endif
+#    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
@@ -173,15 +173,15 @@ public:
 #if D3D12_SUPPORTED
             case DeviceType::D3D12:
             {
-#if ENGINE_DLL
+#    if ENGINE_DLL
                 GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
                 // Load the dll and import GetEngineFactoryD3D12() function
                 LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
-#endif
+#    endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
-#ifdef _DEBUG
+#    ifdef _DEBUG
                 EngD3D12Attribs.EnableDebugLayer = true;
-#endif
+#    endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
@@ -195,61 +195,64 @@ public:
 
 
 #if GL_SUPPORTED
-        case DeviceType::OpenGL:
-        {
+            case DeviceType::OpenGL:
+            {
 
-#if EXPLICITLY_LOAD_ENGINE_GL_DLL
-            // Declare function pointer
-            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
-            // Load the dll and import GetEngineFactoryOpenGL() function
-            LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
-#endif
-            MessageBox(NULL, L"OpenGL backend does not currently support multiple swap chains", L"Error", MB_OK | MB_ICONWARNING);
-            auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
-            EngineGLCreateInfo CreationAttribs;
-            auto& WndInfo = m_Windows[0];
-            CreationAttribs.pNativeWndHandle = WndInfo.hWnd;
-            pFactoryOpenGL->CreateDeviceAndSwapChainGL(
-                CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &WndInfo.pSwapChain);
-        }
-        break;
+#    if EXPLICITLY_LOAD_ENGINE_GL_DLL
+                // Declare function pointer
+                GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
+                // Load the dll and import GetEngineFactoryOpenGL() function
+                LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
+#    endif
+                MessageBox(NULL, L"OpenGL backend does not currently support multiple swap chains", L"Error", MB_OK | MB_ICONWARNING);
+                auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
+
+                EngineGLCreateInfo CreationAttribs;
+
+                auto& WndInfo = m_Windows[0];
+
+                CreationAttribs.pNativeWndHandle = WndInfo.hWnd;
+                pFactoryOpenGL->CreateDeviceAndSwapChainGL(
+                    CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &WndInfo.pSwapChain);
+            }
+            break;
 #endif
 
 
 #if VULKAN_SUPPORTED
-        case DeviceType::Vulkan:
-        {
-#if EXPLICITLY_LOAD_ENGINE_VK_DLL
-            GetEngineFactoryVkType GetEngineFactoryVk = nullptr;
-            // Load the dll and import GetEngineFactoryVk() function
-            LoadGraphicsEngineVk(GetEngineFactoryVk);
-#endif
-            EngineVkCreateInfo EngVkAttribs;
-#ifdef _DEBUG
-            EngVkAttribs.EnableValidation = true;
-#endif
-            auto* pFactoryVk = GetEngineFactoryVk();
-            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
-            for (auto& WndInfo : m_Windows)
+            case DeviceType::Vulkan:
             {
-                pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, WndInfo.hWnd, &WndInfo.pSwapChain);
-                SCDesc.IsPrimary = false;
+#    if EXPLICITLY_LOAD_ENGINE_VK_DLL
+                GetEngineFactoryVkType GetEngineFactoryVk = nullptr;
+                // Load the dll and import GetEngineFactoryVk() function
+                LoadGraphicsEngineVk(GetEngineFactoryVk);
+#    endif
+                EngineVkCreateInfo EngVkAttribs;
+#    ifdef _DEBUG
+                EngVkAttribs.EnableValidation = true;
+#    endif
+                auto* pFactoryVk = GetEngineFactoryVk();
+                pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
+                for (auto& WndInfo : m_Windows)
+                {
+                    pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, WndInfo.hWnd, &WndInfo.pSwapChain);
+                    SCDesc.IsPrimary = false;
+                }
             }
-        }
-        break;
+            break;
 #endif
 
 
-        default:
-            std::cerr << "Unknown/unsupported device type";
-            return false;
-            break;
+            default:
+                std::cerr << "Unknown/unsupported device type";
+                return false;
+                break;
         }
 
         return true;
     }
 
-    bool ProcessCommandLine(const char *CmdLine)
+    bool ProcessCommandLine(const char* CmdLine)
     {
         const auto* Key = "-mode ";
         const auto* pos = strstr(CmdLine, Key);
@@ -326,6 +329,7 @@ public:
         // This is a graphics pipeline
         PSODesc.IsComputePipeline = false;
 
+        // clang-format off
         // This tutorial will render to a single render target
         PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
         // Set render target format which is the format of the swap chain's color buffer
@@ -339,11 +343,12 @@ public:
         PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
         // Disable depth testing
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+        // clang-format on
 
         ShaderCreateInfo ShaderCI;
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL under the hood
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
         // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
         ShaderCI.UseCombinedTextureSamplers = true;
         // Create a vertex shader
@@ -374,11 +379,11 @@ public:
 
     void Render()
     {
-        for (size_t i=0; i < m_Windows.size(); ++i)
+        for (size_t i = 0; i < m_Windows.size(); ++i)
         {
             ITextureView* pRTV = nullptr;
             ITextureView* pDSV = nullptr;
-            if(i == 0)
+            if (i == 0)
             {
                 m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             }
@@ -393,15 +398,15 @@ public:
                 m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             }
 
-            // Clear the back buffer 
-            const float ClearColor[] = { 0.350f,  0.350f,  0.350f, 1.0f };
+            // Clear the back buffer
+            const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
             // Let the engine perform required state transitions
             m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
             // Set the pipeline state in the immediate context
             m_pImmediateContext->SetPipelineState(m_pPSO);
-            // Commit shader resources. Even though in this example we don't really 
+            // Commit shader resources. Even though in this example we don't really
             // have any resources, this call also sets the shaders in OpenGL backend.
             m_pImmediateContext->CommitShaderResources(nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             DrawAttribs drawAttrs;
@@ -423,7 +428,7 @@ public:
     {
         for (auto& WndInfo : m_Windows)
         {
-            if(WndInfo.hWnd == hWnd)
+            if (WndInfo.hWnd == hWnd)
             {
                 if (WndInfo.pSwapChain)
                     WndInfo.pSwapChain->Resize(Width, Height);
@@ -432,13 +437,13 @@ public:
         }
     }
 
-    DeviceType GetDeviceType()const{return m_DeviceType;}
+    DeviceType GetDeviceType() const { return m_DeviceType; }
 
 private:
-    RefCntAutoPtr<IRenderDevice>    m_pDevice;
-    RefCntAutoPtr<IDeviceContext>   m_pImmediateContext;
-    RefCntAutoPtr<IPipelineState>   m_pPSO;
-    DeviceType                      m_DeviceType = DeviceType::D3D11;
+    RefCntAutoPtr<IRenderDevice>  m_pDevice;
+    RefCntAutoPtr<IDeviceContext> m_pImmediateContext;
+    RefCntAutoPtr<IPipelineState> m_pPSO;
+    DeviceType                    m_DeviceType = DeviceType::D3D11;
     struct WindowInfo
     {
         RefCntAutoPtr<ISwapChain> pSwapChain;
@@ -464,29 +469,32 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         return -1;
 
     // Register our window class
-    WNDCLASSEX wcex = { sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, MessageProc,
-        0L, 0L, instance, NULL, NULL, NULL, NULL, L"SampleApp", NULL };
+    WNDCLASSEX wcex = {sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, MessageProc,
+                       0L, 0L, instance, NULL, NULL, NULL, NULL, L"SampleApp", NULL};
     RegisterClassEx(&wcex);
 
     constexpr size_t NumWindows = 3;
+
     std::array<HWND, NumWindows> hWnds;
-    std::array<RECT, NumWindows> WndRects = 
+    // clang-format off
+    std::array<RECT, NumWindows> WndRects =
     {
         RECT{0, 0, 1024, 768},
-        RECT{0, 0,  640, 480},
-        RECT{0, 0,  480, 320}
+        RECT{0, 0, 640, 480},
+        RECT{0, 0, 480, 320}
     };
+    // clang-format on
 
-    for (size_t i=0; i < NumWindows; ++i)
+    for (size_t i = 0; i < NumWindows; ++i)
     {
         std::wstringstream TitleSS;
         TitleSS << L"Tutorial15: Multiple Windows";
         switch (g_pTheApp->GetDeviceType())
         {
-            case DeviceType::D3D11:  TitleSS <<L" (D3D11)"; break;
-            case DeviceType::D3D12:  TitleSS <<L" (D3D12)"; break;
-            case DeviceType::OpenGL: TitleSS <<L" (GL)";    break;
-            case DeviceType::Vulkan: TitleSS <<L" (VK)";    break;
+            case DeviceType::D3D11: TitleSS << L" (D3D11)"; break;
+            case DeviceType::D3D12: TitleSS << L" (D3D12)"; break;
+            case DeviceType::OpenGL: TitleSS << L" (GL)"; break;
+            case DeviceType::Vulkan: TitleSS << L" (VK)"; break;
         }
         TitleSS << " - Window " << i;
         auto Title = TitleSS.str();
@@ -494,8 +502,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         auto& rc = WndRects[i];
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
         hWnds[i] = CreateWindow(L"SampleApp", Title.c_str(),
-            WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-            rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, instance, NULL);
+                                WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+                                rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, instance, NULL);
         if (!hWnds[i])
         {
             MessageBox(NULL, L"Cannot create window", L"Error", MB_OK | MB_ICONERROR);
@@ -511,7 +519,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
     g_pTheApp->CreateResources();
 
     // Main message loop
-    MSG msg = { 0 };
+    MSG msg = {0};
     while (WM_QUIT != msg.message)
     {
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -525,7 +533,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
             g_pTheApp->Present();
         }
     }
-    
+
     g_pTheApp.reset();
 
     return (int)msg.wParam;
@@ -536,38 +544,38 @@ LRESULT CALLBACK MessageProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lPara
 {
     switch (message)
     {
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        BeginPaint(wnd, &ps);
-        EndPaint(wnd, &ps);
-        return 0;
-    }
-    case WM_SIZE: // Window size has been changed
-        if (g_pTheApp)
+        case WM_PAINT:
         {
-            g_pTheApp->WindowResize(wnd, LOWORD(lParam), HIWORD(lParam));
+            PAINTSTRUCT ps;
+            BeginPaint(wnd, &ps);
+            EndPaint(wnd, &ps);
+            return 0;
         }
-        return 0;
+        case WM_SIZE: // Window size has been changed
+            if (g_pTheApp)
+            {
+                g_pTheApp->WindowResize(wnd, LOWORD(lParam), HIWORD(lParam));
+            }
+            return 0;
 
-    case WM_CHAR:
-        if (wParam == VK_ESCAPE)
+        case WM_CHAR:
+            if (wParam == VK_ESCAPE)
+                PostQuitMessage(0);
+            return 0;
+
+        case WM_DESTROY:
             PostQuitMessage(0);
-        return 0;
+            return 0;
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
+        case WM_GETMINMAXINFO:
+        {
+            LPMINMAXINFO lpMMI      = (LPMINMAXINFO)lParam;
+            lpMMI->ptMinTrackSize.x = 320;
+            lpMMI->ptMinTrackSize.y = 240;
+            return 0;
+        }
 
-    case WM_GETMINMAXINFO:
-    {
-        LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
-        lpMMI->ptMinTrackSize.x = 320;
-        lpMMI->ptMinTrackSize.y = 240;
-        return 0;
-    }
-
-    default:
-        return DefWindowProc(wnd, message, wParam, lParam);
+        default:
+            return DefWindowProc(wnd, message, wParam, lParam);
     }
 }
