@@ -22,6 +22,7 @@ clone_folder: c:\projects\DiligentSamples
 
 install:
   # clone submodules
+  - git submodule update --init --recursive
   - git clone https://github.com/DiligentGraphics/DiligentCore.git ../DiligentCore --recursive
   - git clone https://github.com/DiligentGraphics/DiligentTools.git ../DiligentTools --recursive
   - git clone https://github.com/DiligentGraphics/DiligentFX.git ../DiligentFX --recursive
