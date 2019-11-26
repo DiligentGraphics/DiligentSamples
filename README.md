@@ -8,6 +8,7 @@ To build and run the applications in the module, please follow the [instructions
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](License.txt)
 [![Chat on gitter](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/diligent-engine)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
+[![Build Status](https://travis-ci.org/DiligentGraphics/DiligentSamples.svg?branch=master)](https://travis-ci.org/DiligentGraphics/DiligentSamples)
 
 # Table of Contents
 
