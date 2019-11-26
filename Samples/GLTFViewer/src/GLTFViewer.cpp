@@ -47,17 +47,20 @@ SampleBase* CreateSample()
 
 namespace
 {
-    struct EnvMapRenderAttribs
-    {
-        ToneMappingAttribs TMAttribs;
 
-        float AverageLogLum;
-        float MipLevel;
-        float Unusued1;
-        float Unusued2;
-    };
-}
+struct EnvMapRenderAttribs
+{
+    ToneMappingAttribs TMAttribs;
 
+    float AverageLogLum;
+    float MipLevel;
+    float Unusued1;
+    float Unusued2;
+};
+
+} // namespace
+
+// clang-format off
 const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
 {
     {"Damaged Helmet",      "models/DamagedHelmet/DamagedHelmet.gltf"},
@@ -67,6 +70,7 @@ const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
     {"Boom Box",            "models/BoomBoxWithAxes/BoomBoxWithAxes.gltf"},
     {"Normal Tangent Test", "models/NormalTangentTest/NormalTangentTest.gltf"}
 };
+// clang-format on
 
 void GLTFViewer::LoadModel(const char* Path)
 {
@@ -83,12 +87,12 @@ void GLTFViewer::LoadModel(const char* Path)
 
     // Center and scale model
     float3 ModelDim{m_Model->aabb[0][0], m_Model->aabb[1][1], m_Model->aabb[2][2]};
-    float Scale = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
-    auto Translate = -float3(m_Model->aabb[3][0], m_Model->aabb[3][1], m_Model->aabb[3][2]);
+    float  Scale     = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
+    auto   Translate = -float3(m_Model->aabb[3][0], m_Model->aabb[3][1], m_Model->aabb[3][2]);
     Translate += -0.5f * ModelDim;
     float4x4 InvYAxis = float4x4::Identity();
-    InvYAxis._22 = -1;
-    m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+    InvYAxis._22      = -1;
+    m_ModelTransform  = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
 
     if (!m_Model->Animations.empty())
     {
@@ -100,8 +104,8 @@ void GLTFViewer::LoadModel(const char* Path)
 
 void GLTFViewer::ResetView()
 {
-    m_CameraYaw   = 0;
-    m_CameraPitch = 0;
+    m_CameraYaw      = 0;
+    m_CameraPitch    = 0;
     m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
     m_CameraRotation = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 }
@@ -119,6 +123,7 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
 
     auto BackBufferFmt  = m_pSwapChain->GetDesc().ColorBufferFormat;
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
+
     GLTF_PBR_Renderer::CreateInfo RendererCI;
     RendererCI.RTVFmt         = BackBufferFmt;
     RendererCI.DSVFmt         = DepthBufferFmt;
@@ -127,9 +132,10 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
     RendererCI.FrontCCW       = true;
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
 
-    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs),       "Camera attribs buffer",         &m_CameraAttribsCB);
-    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs),        "Light attribs buffer",          &m_LightAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
     CreateUniformBuffer(m_pDevice, sizeof(EnvMapRenderAttribs), "Env map render attribs buffer", &m_EnvMapRenderAttribsCB);
+    // clang-format off
     StateTransitionDesc Barriers [] =
     {
         {m_CameraAttribsCB,        RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
@@ -137,13 +143,14 @@ void GLTFViewer::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevi
         {m_EnvMapRenderAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
         {EnvironmentMap,           RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true}
     };
+    // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
 
     CreateEnvMapPSO();
 
-    m_LightDirection  = normalize(float3(0.5f, -0.6f, -0.2f));
+    m_LightDirection = normalize(float3(0.5f, -0.6f, -0.2f));
 
     LoadModel(GLTFModels[m_SelectedModel].second);
 }
@@ -155,7 +162,7 @@ void GLTFViewer::UpdateUI()
     {
         {
             const char* Models[_countof(GLTFModels)];
-            for(int i=0; i < _countof(GLTFModels); ++i)
+            for (int i = 0; i < _countof(GLTFModels); ++i)
                 Models[i] = GLTFModels[i].first;
             if (ImGui::Combo("Model", &m_SelectedModel, Models, _countof(GLTFModels)))
             {
@@ -188,10 +195,12 @@ void GLTFViewer::UpdateUI()
         if (ImGui::TreeNode("Lighting"))
         {
             ImGui::ColorEdit3("Light Color", &m_LightColor.r);
+            // clang-format off
             ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                 0.f, 50.f);
             ImGui::SliderFloat("Occlusion strength", &m_RenderParams.OcclusionStrength, 0.f,  1.f);
             ImGui::SliderFloat("Emission scale",     &m_RenderParams.EmissionScale,     0.f,  1.f);
             ImGui::SliderFloat("IBL scale",          &m_RenderParams.IBLScale,          0.f,  1.f);
+            // clang-format on
             ImGui::TreePop();
         }
 
@@ -202,7 +211,7 @@ void GLTFViewer::UpdateUI()
             {
                 ImGui::Checkbox("Play", &m_PlayAnimation);
                 std::vector<const char*> Animations(m_Model->Animations.size());
-                for (size_t i=0; i < m_Model->Animations.size(); ++i)
+                for (size_t i = 0; i < m_Model->Animations.size(); ++i)
                     Animations[i] = m_Model->Animations[i].Name.c_str();
                 ImGui::Combo("Active Animation", reinterpret_cast<int*>(&m_AnimationIndex), Animations.data(), static_cast<int>(Animations.size()));
                 ImGui::TreePop();
@@ -212,9 +221,11 @@ void GLTFViewer::UpdateUI()
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Tone mapping"))
         {
+            // clang-format off
             ImGui::SliderFloat("Average log lum",    &m_RenderParams.AverageLogLum,     0.01f, 10.0f);
             ImGui::SliderFloat("Middle gray",        &m_RenderParams.MiddleGray,        0.01f,  1.0f);
             ImGui::SliderFloat("White point",        &m_RenderParams.WhitePoint,        0.1f,  20.0f);
+            // clang-format on
             ImGui::TreePop();
         }
 
@@ -231,10 +242,10 @@ void GLTFViewer::UpdateUI()
         }
 
         ImGui::SliderFloat("Env map mip", &m_EnvMapMipLevel, 0.0f, 7.0f);
-    
+
         {
             std::array<const char*, static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::NumDebugViews)> DebugViews;
-            
+
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::None)]            = "None";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::BaseColor)]       = "Base Color";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::Transparency)]    = "Transparency";
@@ -254,16 +265,16 @@ void GLTFViewer::UpdateUI()
             ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size()));
         }
     }
-    ImGui::End();   
+    ImGui::End();
 }
 
 void GLTFViewer::CreateEnvMapPSO()
 {
-    ShaderCreateInfo ShaderCI;
+    ShaderCreateInfo                               ShaderCI;
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.UseCombinedTextureSamplers = true;
 
     ShaderMacroHelper Macros;
@@ -277,39 +288,43 @@ void GLTFViewer::CreateEnvMapPSO()
     RefCntAutoPtr<IShader> pVS;
     m_pDevice->CreateShader(ShaderCI, &pVS);
 
-    ShaderCI.Desc.Name   = "Environment map PS";
-    ShaderCI.EntryPoint  = "main";
-    ShaderCI.FilePath    = "env_map.psh";
+    ShaderCI.Desc.Name       = "Environment map PS";
+    ShaderCI.EntryPoint      = "main";
+    ShaderCI.FilePath        = "env_map.psh";
     ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
     RefCntAutoPtr<IShader> pPS;
     m_pDevice->CreateShader(ShaderCI, &pPS);
 
     PipelineStateDesc PSODesc;
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
-        
+
+    // clang-format off
     StaticSamplerDesc StaticSamplers[] =
     {
         {SHADER_TYPE_PIXEL, "EnvMap", Sam_LinearClamp}
     };
+    // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
+    // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
         {SHADER_TYPE_PIXEL, "cbCameraAttribs",       SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
         {SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC}
     };
+    // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    PSODesc.Name = "EnvMap PSO";
+    PSODesc.Name                 = "EnvMap PSO";
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.RTVFormats[0] = m_pSwapChain->GetDesc().ColorBufferFormat;
-    PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-    PSODesc.GraphicsPipeline.DSVFormat = m_pSwapChain->GetDesc().DepthBufferFormat;
-    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSODesc.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
+    PSODesc.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
     m_pDevice->CreatePipelineState(PSODesc, &m_EnvMapPSO);
@@ -320,24 +335,24 @@ void GLTFViewer::CreateEnvMapPSO()
 
 void GLTFViewer::CreateEnvMapSRB()
 {
-    if(m_BackgroundMode != BackgroundMode::None)
+    if (m_BackgroundMode != BackgroundMode::None)
     {
         m_EnvMapSRB.Release();
         m_EnvMapPSO->CreateShaderResourceBinding(&m_EnvMapSRB, true);
         ITextureView* pEnvMapSRV = nullptr;
-        switch(m_BackgroundMode)
+        switch (m_BackgroundMode)
         {
             case BackgroundMode::EnvironmentMap:
                 pEnvMapSRV = m_EnvironmentMapSRV;
-            break;
+                break;
 
             case BackgroundMode::Irradiance:
                 pEnvMapSRV = m_GLTFRenderer->GetIrradianceCubeSRV();
-            break;
+                break;
 
             case BackgroundMode::PrefilteredEnvMap:
                 pEnvMapSRV = m_GLTFRenderer->GetPrefilteredEnvMapSRV();
-            break;
+                break;
 
             default:
                 UNEXPECTED("Unexpected background mode");
@@ -353,17 +368,17 @@ GLTFViewer::~GLTFViewer()
 // Render a frame
 void GLTFViewer::Render()
 {
-    // Clear the back buffer 
-    const float ClearColor[] = { 0.032f,  0.032f,  0.032f, 1.0f }; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    
-    float4x4 CameraView = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
-    float4x4 CameraWorld = CameraView.Inverse();
-    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
-    float NearPlane = 0.1f;
-    float FarPlane = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
+
+    float4x4 CameraView     = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
+    float4x4 CameraWorld    = CameraView.Inverse();
+    float3   CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+    float    NearPlane      = 0.1f;
+    float    FarPlane       = 100.f;
+    float    aspectRatio    = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
     // Projection matrix differs between DX and OpenGL
     auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
     // Compute world-view-projection matrix
@@ -374,7 +389,7 @@ void GLTFViewer::Render()
         CamAttribs->mProjT        = Proj.Transpose();
         CamAttribs->mViewProjT    = CameraViewProj.Transpose();
         CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
-        CamAttribs->f4Position = float4(CameraWorldPos, 1);
+        CamAttribs->f4Position    = float4(CameraWorldPos, 1);
     }
 
     {
@@ -396,8 +411,8 @@ void GLTFViewer::Render()
             EnvMapAttribs->TMAttribs.bLightAdaptation     = 0;
             EnvMapAttribs->TMAttribs.fWhitePoint          = m_RenderParams.WhitePoint;
             EnvMapAttribs->TMAttribs.fLuminanceSaturation = 1.0;
-            EnvMapAttribs->AverageLogLum = m_RenderParams.AverageLogLum;
-            EnvMapAttribs->MipLevel      =  m_EnvMapMipLevel;
+            EnvMapAttribs->AverageLogLum                  = m_RenderParams.AverageLogLum;
+            EnvMapAttribs->MipLevel                       = m_EnvMapMipLevel;
         }
         m_pImmediateContext->SetPipelineState(m_EnvMapPSO);
         m_pImmediateContext->CommitShaderResources(m_EnvMapSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
@@ -411,9 +426,10 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
     {
         const auto& mouseState = m_InputController.GetMouseState();
+
         float MouseDeltaX = 0;
         float MouseDeltaY = 0;
-        if (m_LastMouseState.PosX >=0 && m_LastMouseState.PosY >= 0 &&
+        if (m_LastMouseState.PosX >= 0 && m_LastMouseState.PosY >= 0 &&
             m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
         {
             MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
@@ -422,11 +438,12 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         m_LastMouseState = mouseState;
 
         constexpr float RotationSpeed = 0.005f;
+
         float fYawDelta   = MouseDeltaX * RotationSpeed;
         float fPitchDelta = MouseDeltaY * RotationSpeed;
         if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
         {
-            m_CameraYaw   += fYawDelta;
+            m_CameraYaw += fYawDelta;
             m_CameraPitch += fPitchDelta;
             m_CameraPitch = std::max(m_CameraPitch, -PI_F / 2.f);
             m_CameraPitch = std::min(m_CameraPitch, +PI_F / 2.f);
@@ -434,20 +451,20 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
         // Apply extra rotations to adjust the view to match Khronos GLTF viewer
         m_CameraRotation =
-            Quaternion::RotationFromAxisAngle(float3{1,0,0}, -m_CameraPitch) *
-            Quaternion::RotationFromAxisAngle(float3{0,1,0}, -m_CameraYaw)   *
+            Quaternion::RotationFromAxisAngle(float3{1, 0, 0}, -m_CameraPitch) *
+            Quaternion::RotationFromAxisAngle(float3{0, 1, 0}, -m_CameraYaw) *
             Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 
         if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT)
         {
-            auto CameraView = m_CameraRotation.ToMatrix();
+            auto CameraView  = m_CameraRotation.ToMatrix();
             auto CameraWorld = CameraView.Transpose();
 
             float3 CameraRight = float3::MakeVector(CameraWorld[0]);
             float3 CameraUp    = float3::MakeVector(CameraWorld[1]);
-            m_ModelRotation = 
+            m_ModelRotation =
                 Quaternion::RotationFromAxisAngle(CameraRight, -fPitchDelta) *
-                Quaternion::RotationFromAxisAngle(CameraUp,    -fYawDelta)   *
+                Quaternion::RotationFromAxisAngle(CameraUp, -fYawDelta) *
                 m_ModelRotation;
         }
 
@@ -470,4 +487,4 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     }
 }
 
-}
+} // namespace Diligent

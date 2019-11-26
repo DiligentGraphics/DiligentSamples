@@ -46,31 +46,31 @@ ShadowsSample::~ShadowsSample()
 {
 }
 
-void ShadowsSample::GetEngineInitializationAttribs(DeviceType         DevType,
-                                                   EngineCreateInfo&  Attribs,
-                                                   SwapChainDesc&     SCDesc)
+void ShadowsSample::GetEngineInitializationAttribs(DeviceType        DevType,
+                                                   EngineCreateInfo& Attribs,
+                                                   SwapChainDesc&    SCDesc)
 {
     SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
 #if VULKAN_SUPPORTED
-    if(DevType == DeviceType::Vulkan)
+    if (DevType == DeviceType::Vulkan)
     {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+        auto& VkAttrs                                = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.EnabledFeatures.samplerAnisotropy    = true;
         VkAttrs.EnabledFeatures.depthClamp           = true;
         VkAttrs.EnabledFeatures.textureCompressionBC = true;
     }
 #endif
 #if D3D12_SUPPORTED
-    if(DevType == DeviceType::D3D12)
+    if (DevType == DeviceType::D3D12)
     {
-        auto& D3D12Attrs = static_cast<EngineD3D12CreateInfo&>(Attribs);
-        D3D12Attrs.GPUDescriptorHeapSize[1] = 1024; // Sampler descriptors
+        auto& D3D12Attrs                           = static_cast<EngineD3D12CreateInfo&>(Attribs);
+        D3D12Attrs.GPUDescriptorHeapSize[1]        = 1024; // Sampler descriptors
         D3D12Attrs.GPUDescriptorHeapDynamicSize[1] = 1024;
     }
 #endif
 }
 
-void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
     std::string MeshFileName = "Powerplant/Powerplant.sdkmesh";
@@ -79,16 +79,17 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pD
     FileSystem::SplitFilePath(MeshFileName, &Directory, nullptr);
     m_Mesh.LoadGPUResources(Directory.c_str(), pDevice, m_pImmediateContext);
 
-    m_LightAttribs.ShadowAttribs.iNumCascades               = 4;
-    m_LightAttribs.ShadowAttribs.fFixedDepthBias            = 0.0025f;
-    m_LightAttribs.ShadowAttribs.iFixedFilterSize           = 5;
-    m_LightAttribs.ShadowAttribs.fFilterWorldSize           = 0.1f;
+    m_LightAttribs.ShadowAttribs.iNumCascades     = 4;
+    m_LightAttribs.ShadowAttribs.fFixedDepthBias  = 0.0025f;
+    m_LightAttribs.ShadowAttribs.iFixedFilterSize = 5;
+    m_LightAttribs.ShadowAttribs.fFilterWorldSize = 0.1f;
+
     m_LightAttribs.f4Direction    = float3(-0.522699475f, -0.481321275f, -0.703671455f);
     m_LightAttribs.f4Intensity    = float4(1, 0.8f, 0.5f, 1);
     m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
 
     m_Camera.SetPos(float3(70, 10, 0.f));
-    m_Camera.SetRotation(-PI_F/2.f, 0);
+    m_Camera.SetRotation(-PI_F / 2.f, 0);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
@@ -109,10 +110,13 @@ void ShadowsSample::UpdateUI()
 
         {
             constexpr int MinShadowMapSize = 512;
-            int ShadowMapComboId = 0;
-            while((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowSettings.Resolution))
+            int           ShadowMapComboId = 0;
+            while ((MinShadowMapSize << ShadowMapComboId) != static_cast<int>(m_ShadowSettings.Resolution))
                 ++ShadowMapComboId;
-            if (ImGui::Combo("Shadow map size", &ShadowMapComboId, "512\0" "1024\0" "2048\0\0"))
+            if (ImGui::Combo("Shadow map size", &ShadowMapComboId,
+                             "512\0"
+                             "1024\0"
+                             "2048\0\0"))
             {
                 m_ShadowSettings.Resolution = MinShadowMapSize << ShadowMapComboId;
                 CreateShadowMap();
@@ -124,7 +128,9 @@ void ShadowsSample::UpdateUI()
 
         {
             int Is32Bit = m_ShadowSettings.Format == TEX_FORMAT_D16_UNORM ? 0 : 1;
-            if (ImGui::Combo("Shadow map format", &Is32Bit, "16-bit\0" "32-bit\0\0"))
+            if (ImGui::Combo("Shadow map format", &Is32Bit,
+                             "16-bit\0"
+                             "32-bit\0\0"))
             {
                 m_ShadowSettings.Format = Is32Bit == 0 ? TEX_FORMAT_D16_UNORM : TEX_FORMAT_D32_FLOAT;
                 CreatePipelineStates();
@@ -134,6 +140,7 @@ void ShadowsSample::UpdateUI()
 
         {
             static_assert(SHADOW_MODE_PCF == 1 && SHADOW_MODE_VSM == 2 && SHADOW_MODE_EVSM2 == 3 && SHADOW_MODE_EVSM4 == 4, "Unexpected constant");
+            // clang-format off
             const char* ShadowModes[]
             {
                 "PCF",
@@ -141,6 +148,7 @@ void ShadowsSample::UpdateUI()
                 "EVSM2",
                 "EVSM4"
             };
+            // clang-format on
             int iShadowModeComboItem = m_ShadowSettings.iShadowMode - 1;
             if (ImGui::Combo("Shadow mode", &iShadowModeComboItem, ShadowModes, _countof(ShadowModes)))
             {
@@ -151,6 +159,7 @@ void ShadowsSample::UpdateUI()
         }
 
         {
+            // clang-format off
             const std::pair<int, const char*> FilterSizes[] =
             {
                 {0, "World-constant"},
@@ -159,6 +168,7 @@ void ShadowsSample::UpdateUI()
                 {5, "Fixed 5x5"},
                 {7, "Fixed 7x7"}
             };
+            // clang-format on
             if (ImGui::Combo("Shadow filter size", &m_LightAttribs.ShadowAttribs.iFixedFilterSize, FilterSizes, _countof(FilterSizes)))
             {
                 m_ShadowSettings.FilterAcrossCascades = m_LightAttribs.ShadowAttribs.iFixedFilterSize > 0;
@@ -166,11 +176,11 @@ void ShadowsSample::UpdateUI()
             }
         }
 
-        if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM   ||
+        if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM ||
             m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
             m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
         {
-            if(ImGui::Checkbox("32-bit filterable Format", &m_ShadowSettings.Is32BitFilterableFmt))
+            if (ImGui::Checkbox("32-bit filterable Format", &m_ShadowSettings.Is32BitFilterableFmt))
             {
                 CreateShadowMap();
             }
@@ -183,16 +193,18 @@ void ShadowsSample::UpdateUI()
             {
                 m_ShadowSettings.PartitioningFactor = clamp(m_ShadowSettings.PartitioningFactor, 0.f, 1.f);
             }
+            // clang-format off
             ImGui::Checkbox("Snap cascades",     &m_ShadowSettings.SnapCascades);
             ImGui::Checkbox("Stabilize extents", &m_ShadowSettings.StabilizeExtents);
             ImGui::Checkbox("Equalize extents",  &m_ShadowSettings.EqualizeExtents);
+            // clang-format on
             if (ImGui::Checkbox("Use best cascade", &m_ShadowSettings.SearchBestCascade))
             {
                 CreatePipelineStates();
             }
             ImGui::TreePop();
         }
-        
+
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Filtering"))
         {
@@ -221,7 +233,7 @@ void ShadowsSample::UpdateUI()
             if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM ||
                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
-                ImGui::SliderFloat("Light bleeding reduction", &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, 0, 0.99f,  "%.4f", 3);
+                ImGui::SliderFloat("Light bleeding reduction", &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, 0, 0.99f, "%.4f", 3);
 
             if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM)
                 ImGui::SliderFloat("VSM Bias", &m_LightAttribs.ShadowAttribs.fVSMBias, 0, 1, "%.4f", 3);
@@ -241,29 +253,29 @@ void ShadowsSample::UpdateUI()
 }
 
 
-void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT*  VertexElement,
-                                                              Uint32                           Stride,
-                                                              InputLayoutDesc&                 Layout,
-                                                              std::vector<LayoutElement>&      Elements)
+void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT* VertexElement,
+                                                              Uint32                          Stride,
+                                                              InputLayoutDesc&                Layout,
+                                                              std::vector<LayoutElement>&     Elements)
 {
     Elements.clear();
     for (Uint32 input_elem = 0; VertexElement[input_elem].Stream != 0xFF; ++input_elem)
     {
-        const auto& SrcElem = VertexElement[input_elem];
-        Int32 InputIndex = -1;
-        switch(SrcElem.Usage)
+        const auto& SrcElem    = VertexElement[input_elem];
+        Int32       InputIndex = -1;
+        switch (SrcElem.Usage)
         {
             case DXSDKMESH_VERTEX_SEMANTIC_POSITION:
                 InputIndex = 0;
-            break;
+                break;
 
             case DXSDKMESH_VERTEX_SEMANTIC_NORMAL:
                 InputIndex = 1;
-            break;
+                break;
 
             case DXSDKMESH_VERTEX_SEMANTIC_TEXCOORD:
                 InputIndex = 2;
-            break;
+                break;
         }
 
         if (InputIndex >= 0)
@@ -271,19 +283,19 @@ void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VE
             Uint32     NumComponents = 0;
             VALUE_TYPE ValueType     = VT_UNDEFINED;
             Bool       IsNormalized  = False;
-            switch(SrcElem.Type)
+            switch (SrcElem.Type)
             {
                 case DXSDKMESH_VERTEX_DATA_TYPE_FLOAT2:
                     NumComponents = 2;
                     ValueType     = VT_FLOAT32;
                     IsNormalized  = False;
-                break;
+                    break;
 
                 case DXSDKMESH_VERTEX_DATA_TYPE_FLOAT3:
                     NumComponents = 3;
                     ValueType     = VT_FLOAT32;
                     IsNormalized  = False;
-                break;
+                    break;
 
                 default:
                     UNEXPECTED("Unsupported data type. Please add appropriate case statement.");
@@ -297,18 +309,20 @@ void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VE
 
 void ShadowsSample::CreatePipelineStates()
 {
-    ShaderCreateInfo ShaderCI;
+    ShaderCreateInfo                               ShaderCI;
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.UseCombinedTextureSamplers = true;
 
     ShaderMacroHelper Macros;
+    // clang-format off
     Macros.AddShaderMacro( "SHADOW_MODE",            m_ShadowSettings.iShadowMode);
     Macros.AddShaderMacro( "SHADOW_FILTER_SIZE",     m_LightAttribs.ShadowAttribs.iFixedFilterSize);
     Macros.AddShaderMacro( "FILTER_ACROSS_CASCADES", m_ShadowSettings.FilterAcrossCascades);
     Macros.AddShaderMacro( "BEST_CASCADE_SEARCH",    m_ShadowSettings.SearchBestCascade );
+    // clang-format on
     ShaderCI.Macros = Macros;
 
     ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -318,9 +332,9 @@ void ShadowsSample::CreatePipelineStates()
     RefCntAutoPtr<IShader> pVS;
     m_pDevice->CreateShader(ShaderCI, &pVS);
 
-    ShaderCI.Desc.Name   = "Mesh PS";
-    ShaderCI.EntryPoint  = "MeshPS";
-    ShaderCI.FilePath    = "MeshPS.psh";
+    ShaderCI.Desc.Name       = "Mesh PS";
+    ShaderCI.EntryPoint      = "MeshPS";
+    ShaderCI.FilePath        = "MeshPS.psh";
     ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
     RefCntAutoPtr<IShader> pPS;
     m_pDevice->CreateShader(ShaderCI, &pPS);
@@ -337,64 +351,71 @@ void ShadowsSample::CreatePipelineStates()
     m_PSOIndex.resize(m_Mesh.GetNumVBs());
     m_RenderMeshPSO.clear();
     m_RenderMeshShadowPSO.clear();
-    for(Uint32 vb = 0; vb < m_Mesh.GetNumVBs(); ++vb)
+    for (Uint32 vb = 0; vb < m_Mesh.GetNumVBs(); ++vb)
     {
-        PipelineStateDesc PSODesc;
+        PipelineStateDesc          PSODesc;
         std::vector<LayoutElement> Elements;
-        auto& InputLayout = PSODesc.GraphicsPipeline.InputLayout;
+        auto&                      InputLayout = PSODesc.GraphicsPipeline.InputLayout;
         DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(m_Mesh.VBElements(vb), m_Mesh.GetVertexStride(vb), InputLayout, Elements);
-        
+
         //  Try to find PSO with the same layout
         Uint32 pso;
-        for (pso=0; pso < m_RenderMeshPSO.size(); ++pso)
+        for (pso = 0; pso < m_RenderMeshPSO.size(); ++pso)
         {
             const auto& PSOLayout = m_RenderMeshPSO[pso]->GetDesc().GraphicsPipeline.InputLayout;
+
             bool IsSameLayout =
-                PSOLayout.NumElements == InputLayout.NumElements && 
+                PSOLayout.NumElements == InputLayout.NumElements &&
                 memcmp(PSOLayout.LayoutElements, InputLayout.LayoutElements, sizeof(LayoutElement) * InputLayout.NumElements) == 0;
-            
+
             if (IsSameLayout)
                 break;
         }
-        
+
         m_PSOIndex[vb] = pso;
         if (pso < static_cast<Uint32>(m_RenderMeshPSO.size()))
             continue;
 
+        // clang-format off
         StaticSamplerDesc StaticSamplers[] =
         {
             {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", Sam_Aniso4xWrap}
         };
+        // clang-format on
         PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
         PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
+        // clang-format off
         ShaderResourceVariableDesc Vars[] = 
         {
             {SHADER_TYPE_PIXEL, "g_tex2DDiffuse",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
             {SHADER_TYPE_PIXEL, m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
         };
+        // clang-format on
         PSODesc.ResourceLayout.Variables    = Vars;
         PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-        PSODesc.Name = "Mesh PSO";
+        PSODesc.Name                 = "Mesh PSO";
         PSODesc.GraphicsPipeline.pVS = pVS;
         PSODesc.GraphicsPipeline.pPS = pPS;
 
-        PSODesc.GraphicsPipeline.RTVFormats[0] = m_pSwapChain->GetDesc().ColorBufferFormat;
-        PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-        PSODesc.GraphicsPipeline.DSVFormat = m_pSwapChain->GetDesc().DepthBufferFormat;
-        PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSODesc.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+        PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
+        PSODesc.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+        PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
         RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
         m_pDevice->CreatePipelineState(PSODesc, &pRenderMeshPSO);
+        // clang-format off
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,  "cbLightAttribs")->Set(m_LightAttribsCB);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbLightAttribs")->Set(m_LightAttribsCB);
+        // clang-format on
 
-        PSODesc.Name = "Mesh Shadow PSO";
-        PSODesc.GraphicsPipeline.pPS        = nullptr;
-        PSODesc.GraphicsPipeline.pVS        = pShadowVS;
+        PSODesc.Name                              = "Mesh Shadow PSO";
+        PSODesc.GraphicsPipeline.pPS              = nullptr;
+        PSODesc.GraphicsPipeline.pVS              = pShadowVS;
         PSODesc.GraphicsPipeline.NumRenderTargets = 0;
         PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
         PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
@@ -423,10 +444,11 @@ void ShadowsSample::InitializeResourceBindings()
     m_ShadowSRBs.clear();
     m_SRBs.resize(m_Mesh.GetNumMaterials());
     m_ShadowSRBs.resize(m_Mesh.GetNumMaterials());
-    for(Uint32 mat = 0; mat < m_Mesh.GetNumMaterials(); ++mat)
+    for (Uint32 mat = 0; mat < m_Mesh.GetNumMaterials(); ++mat)
     {
         {
             const auto& Mat = m_Mesh.GetMaterial(mat);
+
             RefCntAutoPtr<IShaderResourceBinding> pSRB;
             m_RenderMeshPSO[0]->CreateShaderResourceBinding(&pSRB, true);
             VERIFY(Mat.pDiffuseRV != nullptr, "Material must have diffuse color texture");
@@ -469,12 +491,12 @@ void ShadowsSample::CreateShadowMap()
     if (!m_pComparisonSampler)
     {
         SamplerDesc ComparsionSampler;
-        ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS; 
-        // Note: anisotropic filtering requires SampleGrad to fix artifacts at 
+        ComparsionSampler.ComparisonFunc = COMPARISON_FUNC_LESS;
+        // Note: anisotropic filtering requires SampleGrad to fix artifacts at
         // cascade boundaries
-        ComparsionSampler.MinFilter      = FILTER_TYPE_COMPARISON_LINEAR;
-        ComparsionSampler.MagFilter      = FILTER_TYPE_COMPARISON_LINEAR;
-        ComparsionSampler.MipFilter      = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MinFilter = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MagFilter = FILTER_TYPE_COMPARISON_LINEAR;
+        ComparsionSampler.MipFilter = FILTER_TYPE_COMPARISON_LINEAR;
         m_pDevice->CreateSampler(ComparsionSampler, &m_pComparisonSampler);
     }
     SMMgrInitInfo.pComparisonSampler = m_pComparisonSampler;
@@ -498,16 +520,19 @@ void ShadowsSample::CreateShadowMap()
 void ShadowsSample::RenderShadowMap()
 {
     auto iNumShadowCascades = m_LightAttribs.ShadowAttribs.iNumCascades;
-    for(int iCascade = 0; iCascade < iNumShadowCascades; ++iCascade)
+    for (int iCascade = 0; iCascade < iNumShadowCascades; ++iCascade)
     {
         const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
         auto WorldToLightViewSpaceMatr = m_LightAttribs.ShadowAttribs.mWorldToLightViewT.Transpose();
         auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
+
         CameraAttribs ShadowCameraAttribs = {};
+
         ShadowCameraAttribs.mViewT     = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
         ShadowCameraAttribs.mProjT     = CascadeProjMatr.Transpose();
         ShadowCameraAttribs.mViewProjT = WorldToLightProjSpaceMatr.Transpose();
+
         ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSettings.Resolution);
         ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSettings.Resolution);
         ShadowCameraAttribs.f4ViewportSize.z = 1.f / ShadowCameraAttribs.f4ViewportSize.x;
@@ -538,8 +563,8 @@ void ShadowsSample::Render()
 
     // Reset default framebuffer
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    // Clear the back buffer 
-    const float ClearColor[] = {0.23f, 0.5f, 0.74f, 1.0f}; 
+    // Clear the back buffer
+    const float ClearColor[] = {0.23f, 0.5f, 0.74f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -548,17 +573,19 @@ void ShadowsSample::Render()
         *LightData = m_LightAttribs;
     }
 
-    const auto& CameraView  = m_Camera.GetViewMatrix();
-    const auto& CameraWorld = m_Camera.GetWorldMatrix();
-    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
-    const auto& Proj = m_Camera.GetProjMatrix();
+    const auto& CameraView     = m_Camera.GetViewMatrix();
+    const auto& CameraWorld    = m_Camera.GetWorldMatrix();
+    float3      CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+    const auto& Proj           = m_Camera.GetProjMatrix();
+
     auto CameraViewProj = CameraView * Proj;
+
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
         CamAttribs->mProjT        = Proj.Transpose();
         CamAttribs->mViewProjT    = CameraViewProj.Transpose();
         CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
-        CamAttribs->f4Position = float4(CameraWorldPos, 1);
+        CamAttribs->f4Position    = float4(CameraWorldPos, 1);
     }
 
     ViewFrustumExt Frutstum;
@@ -575,28 +602,28 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
     for (Uint32 meshIdx = 0; meshIdx < m_Mesh.GetNumMeshes(); ++meshIdx)
     {
         const auto& SubMesh = m_Mesh.GetMesh(meshIdx);
-        BoundBox BB;
+        BoundBox    BB;
         BB.Min = SubMesh.BoundingBoxCenter - SubMesh.BoundingBoxExtents * 0.5f;
         BB.Max = SubMesh.BoundingBoxCenter + SubMesh.BoundingBoxExtents * 0.5f;
         // Notice that for shadow pass we test against frustum with open near plane
         if (GetBoxVisibility(Frustum, BB, bIsShadowPass ? FRUSTUM_PLANE_FLAG_OPEN_NEAR : FRUSTUM_PLANE_FLAG_FULL_FRUSTUM) == BoxVisibility::Invisible)
             continue;
 
-        IBuffer* pVBs[]  = {m_Mesh.GetMeshVertexBuffer(meshIdx, 0)};
-        Uint32 Offsets[] = {0};
+        IBuffer* pVBs[]    = {m_Mesh.GetMeshVertexBuffer(meshIdx, 0)};
+        Uint32   Offsets[] = {0};
         pCtx->SetVertexBuffers(0, 1, pVBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
-        auto* pIB = m_Mesh.GetMeshIndexBuffer(meshIdx);
-        auto IBFormat = m_Mesh.GetIBFormat(meshIdx);
-        
+        auto* pIB      = m_Mesh.GetMeshIndexBuffer(meshIdx);
+        auto  IBFormat = m_Mesh.GetIBFormat(meshIdx);
+
         pCtx->SetIndexBuffer(pIB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-        auto PSOIndex = m_PSOIndex[SubMesh.VertexBuffers[0]];
-        auto& pPSO = (bIsShadowPass ? m_RenderMeshShadowPSO : m_RenderMeshPSO)[PSOIndex];
+        auto  PSOIndex = m_PSOIndex[SubMesh.VertexBuffers[0]];
+        auto& pPSO     = (bIsShadowPass ? m_RenderMeshShadowPSO : m_RenderMeshPSO)[PSOIndex];
         pCtx->SetPipelineState(pPSO);
 
         // Draw all subsets
-        for(Uint32 subsetIdx = 0; subsetIdx < SubMesh.NumSubsets; ++subsetIdx)
+        for (Uint32 subsetIdx = 0; subsetIdx < SubMesh.NumSubsets; ++subsetIdx)
         {
             const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
             pCtx->CommitShaderResources((bIsShadowPass ? m_ShadowSRBs : m_SRBs)[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
@@ -618,15 +645,17 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
         const auto& mouseState = m_InputController.GetMouseState();
         if (m_LastMouseState.PosX >= 0 &&
             m_LastMouseState.PosY >= 0 &&
-           (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)
+            (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)
         {
             constexpr float LightRotationSpeed = 0.001f;
-            float fYawDelta   = (mouseState.PosX - m_LastMouseState.PosX) * LightRotationSpeed;
-            float fPitchDelta = (mouseState.PosY - m_LastMouseState.PosY) * LightRotationSpeed;
-            float3& f3LightDir = reinterpret_cast<float3&>(m_LightAttribs.f4Direction);
+
+            float   fYawDelta   = (mouseState.PosX - m_LastMouseState.PosX) * LightRotationSpeed;
+            float   fPitchDelta = (mouseState.PosY - m_LastMouseState.PosY) * LightRotationSpeed;
+            float3& f3LightDir  = reinterpret_cast<float3&>(m_LightAttribs.f4Direction);
+
             f3LightDir = float4(f3LightDir, 0) *
-                           float4x4::RotationArbitrary(m_Camera.GetWorldUp(),    fYawDelta) * 
-                           float4x4::RotationArbitrary(m_Camera.GetWorldRight(), fPitchDelta);
+                float4x4::RotationArbitrary(m_Camera.GetWorldUp(), fYawDelta) *
+                float4x4::RotationArbitrary(m_Camera.GetWorldRight(), fPitchDelta);
         }
 
         m_LastMouseState = mouseState;
@@ -634,10 +663,10 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
 
 
     ShadowMapManager::DistributeCascadeInfo DistrInfo;
-    DistrInfo.pCameraView = &m_Camera.GetViewMatrix();
-    DistrInfo.pCameraProj = &m_Camera.GetProjMatrix();
+    DistrInfo.pCameraView   = &m_Camera.GetViewMatrix();
+    DistrInfo.pCameraProj   = &m_Camera.GetProjMatrix();
     float3 f3LightDirection = float3(m_LightAttribs.f4Direction.x, m_LightAttribs.f4Direction.y, m_LightAttribs.f4Direction.z);
-    DistrInfo.pLightDir   = &f3LightDirection;
+    DistrInfo.pLightDir     = &f3LightDirection;
 
     DistrInfo.fPartitioningFactor = m_ShadowSettings.PartitioningFactor;
     DistrInfo.SnapCascades        = m_ShadowSettings.SnapCascades;
@@ -649,10 +678,10 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
 
 void ShadowsSample::WindowResize(Uint32 Width, Uint32 Height)
 {
-    float NearPlane = 0.1f;
-    float FarPlane = 250.f;
+    float NearPlane   = 0.1f;
+    float FarPlane    = 250.f;
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
     m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f, m_pDevice->GetDeviceCaps().IsGLDevice());
 }
 
-}
+} // namespace Diligent

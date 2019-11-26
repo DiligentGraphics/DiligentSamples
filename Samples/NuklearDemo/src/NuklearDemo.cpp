@@ -47,13 +47,15 @@ NuklearDemo::~NuklearDemo()
     nk_diligent_shutdown(m_pNkDlgCtx);
 }
 
-void NuklearDemo::Initialize(IEngineFactory* pEngineFactory, IRenderDevice *pDevice, IDeviceContext **ppContexts, Uint32 NumDeferredCtx, ISwapChain *pSwapChain)
+void NuklearDemo::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
 {
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     constexpr Uint32 NuklearMaxVBSize = 512 * 1024;
     constexpr Uint32 NuklearMaxIBSize = 128 * 1024;
+
     const auto& SCDesc = m_pSwapChain->GetDesc();
+
     m_pNkDlgCtx = nk_diligent_init(m_pDevice, SCDesc.Width, SCDesc.Height, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, NuklearMaxVBSize, NuklearMaxIBSize);
     m_pNkCtx    = nk_diligent_get_nk_ctx(m_pNkDlgCtx);
 
@@ -73,7 +75,7 @@ void NuklearDemo::UpdateUI()
 
     overview(m_pNkCtx);
 
-    nk_input_begin(m_pNkCtx);// Needs to go before msg loop
+    nk_input_begin(m_pNkCtx); // Needs to go before msg loop
 }
 
 // Render a frame
@@ -98,4 +100,4 @@ void NuklearDemo::WindowResize(Uint32 Width, Uint32 Height)
     nk_diligent_resize(m_pNkDlgCtx, m_pImmediateContext, Width, Height);
 }
 
-}
+} // namespace Diligent

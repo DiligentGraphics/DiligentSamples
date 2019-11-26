@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -37,24 +37,27 @@ class NuklearDemo final : public SampleBase
 public:
     ~NuklearDemo();
 
-    virtual void Initialize(IEngineFactory*   pEngineFactory,
-                            IRenderDevice*    pDevice, 
-                            IDeviceContext**  ppContexts, 
-                            Uint32            NumDeferredCtx, 
-                            ISwapChain*       pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Nuklear Demo";}
-    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
+    virtual void Initialize(IEngineFactory*  pEngineFactory,
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Nuklear Demo"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 #if PLATFORM_WIN32
-    virtual bool HandleNativeMessage(const void* pNativeMsgData)override final;
+    virtual bool HandleNativeMessage(const void* pNativeMsgData) override final;
 #endif
 
 private:
     void UpdateUI();
 
     nk_diligent_context* m_pNkDlgCtx = nullptr;
-    nk_context*         m_pNkCtx     = nullptr;
+    nk_context*          m_pNkCtx    = nullptr;
 };
 
-}
+} // namespace Diligent

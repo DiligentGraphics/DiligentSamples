@@ -15,6 +15,6 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 NK_API int nk_diligent_handle_win32_event(nk_context* ctx, HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

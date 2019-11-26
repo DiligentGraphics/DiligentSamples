@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include "SampleBase.h"
 #include "BasicMath.h"
@@ -38,19 +38,22 @@ class ShadowsSample final : public SampleBase
 {
 public:
     ~ShadowsSample();
-    virtual void GetEngineInitializationAttribs(DeviceType         DevType,
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&     SCDesc)override final;
+    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
+                                                EngineCreateInfo& Attribs,
+                                                SwapChainDesc&    SCDesc) override final;
 
-    virtual void Initialize(IEngineFactory*   pEngineFactory,
-                            IRenderDevice*    pDevice, 
-                            IDeviceContext**  ppContexts, 
-                            Uint32            NumDeferredCtx, 
-                            ISwapChain*       pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "Shadows Sample";}
-    virtual void WindowResize(Uint32 Width, Uint32 Height)override final;
+    virtual void Initialize(IEngineFactory*  pEngineFactory,
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "Shadows Sample"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
     void DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const struct ViewFrustumExt& Frustum);
@@ -60,33 +63,33 @@ private:
     void RenderShadowMap();
     void UpdateUI();
 
-    static void DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT*  VertexElement,
-                                                          Uint32                           Stride,
-                                                          InputLayoutDesc&                 Layout,
-                                                          std::vector<LayoutElement>&      Elements);
+    static void DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VERTEX_ELEMENT* VertexElement,
+                                                          Uint32                          Stride,
+                                                          InputLayoutDesc&                Layout,
+                                                          std::vector<LayoutElement>&     Elements);
 
     struct ShadowSettings
     {
-        bool  SnapCascades         = true;
-        bool  StabilizeExtents     = true;
-        bool  EqualizeExtents      = true;
-        bool  SearchBestCascade    = true;
-        bool  FilterAcrossCascades = true;
-        int   Resolution           = 2048;
-        float PartitioningFactor   = 0.95f;
-        TEXTURE_FORMAT Format      = TEX_FORMAT_D16_UNORM;
-        int   iShadowMode          = SHADOW_MODE_PCF;
+        bool           SnapCascades         = true;
+        bool           StabilizeExtents     = true;
+        bool           EqualizeExtents      = true;
+        bool           SearchBestCascade    = true;
+        bool           FilterAcrossCascades = true;
+        int            Resolution           = 2048;
+        float          PartitioningFactor   = 0.95f;
+        TEXTURE_FORMAT Format               = TEX_FORMAT_D16_UNORM;
+        int            iShadowMode          = SHADOW_MODE_PCF;
 
-        bool   Is32BitFilterableFmt = true;
-    }m_ShadowSettings;
+        bool Is32BitFilterableFmt = true;
+    } m_ShadowSettings;
 
-    DXSDKMesh                                          m_Mesh;
+    DXSDKMesh m_Mesh;
 
-    LightAttribs                                       m_LightAttribs;
-    FirstPersonCamera                                  m_Camera;
-    MouseState                                         m_LastMouseState;
-    
-    ShadowMapManager                                   m_ShadowMapMgr;
+    LightAttribs      m_LightAttribs;
+    FirstPersonCamera m_Camera;
+    MouseState        m_LastMouseState;
+
+    ShadowMapManager m_ShadowMapMgr;
 
     RefCntAutoPtr<IBuffer>                             m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer>                             m_LightAttribsCB;
@@ -96,8 +99,8 @@ private:
     std::vector<RefCntAutoPtr<IShaderResourceBinding>> m_SRBs;
     std::vector<RefCntAutoPtr<IShaderResourceBinding>> m_ShadowSRBs;
 
-    RefCntAutoPtr<ISampler>                            m_pComparisonSampler;
-    RefCntAutoPtr<ISampler>                            m_pFilterableShadowMapSampler;
+    RefCntAutoPtr<ISampler> m_pComparisonSampler;
+    RefCntAutoPtr<ISampler> m_pFilterableShadowMapSampler;
 };
 
-}
+} // namespace Diligent

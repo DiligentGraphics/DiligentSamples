@@ -26,7 +26,7 @@
 #include "../../../ThirdParty/nuklear/nuklear.h"
 
 #ifndef NOMINMAX
-#   define NOMINMAX
+#    define NOMINMAX
 #endif
 #include <Windows.h>
 
@@ -39,13 +39,13 @@ bool NuklearDemo::HandleNativeMessage(const void* pNativeMsgData)
 {
     struct WindowsMessageData
     {
-        HWND hWnd;
-        UINT message;
+        HWND   hWnd;
+        UINT   message;
         WPARAM wParam;
         LPARAM lParam;
-    }const* pWin32Msg  = reinterpret_cast<const WindowsMessageData*>(pNativeMsgData);
+    } const* pWin32Msg = reinterpret_cast<const WindowsMessageData*>(pNativeMsgData);
 
     return nk_diligent_handle_win32_event(m_pNkCtx, pWin32Msg->hWnd, pWin32Msg->message, pWin32Msg->wParam, pWin32Msg->lParam) != 0;
 }
 
-}
+} // namespace Diligent

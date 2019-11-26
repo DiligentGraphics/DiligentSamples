@@ -21,7 +21,7 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 #include <vector>
 #include "SampleBase.h"
@@ -36,14 +36,16 @@ class GLTFViewer final : public SampleBase
 {
 public:
     ~GLTFViewer();
-    virtual void Initialize(IEngineFactory*   pEngineFactory,
-                            IRenderDevice*    pDevice, 
-                            IDeviceContext**  ppContexts, 
-                            Uint32            NumDeferredCtx, 
-                            ISwapChain*       pSwapChain)override final;
-    virtual void Render()override final;
-    virtual void Update(double CurrTime, double ElapsedTime)override final;
-    virtual const Char* GetSampleName()const override final{return "GLTF Viewer";}
+    virtual void Initialize(IEngineFactory*  pEngineFactory,
+                            IRenderDevice*   pDevice,
+                            IDeviceContext** ppContexts,
+                            Uint32           NumDeferredCtx,
+                            ISwapChain*      pSwapChain) override final;
+
+    virtual void Render() override final;
+    virtual void Update(double CurrTime, double ElapsedTime) override final;
+
+    virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
 
 private:
     void CreateEnvMapPSO();
@@ -59,29 +61,32 @@ private:
         Irradiance,
         PrefilteredEnvMap,
         NumModes
-    }m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
+    } m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
-    Quaternion m_CameraRotation = {0,0,0,1};
+    Quaternion m_CameraRotation = {0, 0, 0, 1};
     Quaternion m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
     float4x4   m_ModelTransform;
-    float      m_CameraDist      = 0.9f;
-    float3     m_LightDirection;
-    float4     m_LightColor      = float4(1,1,1,1);
-    float      m_LightIntensity  = 3.f;
-    float      m_EnvMapMipLevel  = 1.f;
-    int        m_SelectedModel   = 0;
+
+    float m_CameraDist = 0.9f;
+
+    float3 m_LightDirection;
+    float4 m_LightColor     = float4(1, 1, 1, 1);
+    float  m_LightIntensity = 3.f;
+    float  m_EnvMapMipLevel = 1.f;
+    int    m_SelectedModel  = 0;
+
     static const std::pair<const char*, const char*> GLTFModels[];
 
-    bool               m_PlayAnimation   = false;
-    int                m_AnimationIndex  = 0;
+    bool               m_PlayAnimation  = false;
+    int                m_AnimationIndex = 0;
     std::vector<float> m_AnimationTimers;
 
-    std::unique_ptr<GLTF_PBR_Renderer> m_GLTFRenderer;
-    std::unique_ptr<GLTF::Model>       m_Model;
-    RefCntAutoPtr<IBuffer> m_CameraAttribsCB;
-    RefCntAutoPtr<IBuffer> m_LightAttribsCB;
+    std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
+    std::unique_ptr<GLTF::Model>          m_Model;
+    RefCntAutoPtr<IBuffer>                m_CameraAttribsCB;
+    RefCntAutoPtr<IBuffer>                m_LightAttribsCB;
     RefCntAutoPtr<IPipelineState>         m_EnvMapPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
@@ -92,4 +97,4 @@ private:
     float      m_CameraPitch = 0;
 };
 
-}
+} // namespace Diligent

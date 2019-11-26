@@ -15,14 +15,16 @@
  *  of the possibility of such damages.
  */
 
-#pragma once 
+#pragma once
 
 namespace Diligent
 {
-    class IRenderDevice;
-    class IDeviceContext;
-    enum TEXTURE_FORMAT : uint16_t;
-}
+
+class IRenderDevice;
+class IDeviceContext;
+enum TEXTURE_FORMAT : uint16_t;
+
+} // namespace Diligent
 
 NK_API struct nk_diligent_context* nk_diligent_init(Diligent::IRenderDevice* device,
                                                     unsigned int             width,

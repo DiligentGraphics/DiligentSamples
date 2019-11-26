@@ -73,6 +73,7 @@ struct nk_diligent_context
     struct nk_buffer     cmds  = {};
 
     struct nk_draw_null_texture null = {};
+
     unsigned int max_vertex_buffer_size = 0;
     unsigned int max_index_buffer_size  = 0;
 
@@ -80,13 +81,13 @@ struct nk_diligent_context
     RefCntAutoPtr<IRenderDevice>          device;
     RefCntAutoPtr<IPipelineState>         pso;
     RefCntAutoPtr<IBuffer>                const_buffer;
-    RefCntAutoPtr<ITextureView>           font_texture_view; 
-    RefCntAutoPtr<IShaderResourceBinding> srb; 
-    RefCntAutoPtr<IBuffer>                vertex_buffer; 
-    RefCntAutoPtr<IBuffer>                index_buffer; 
+    RefCntAutoPtr<ITextureView>           font_texture_view;
+    RefCntAutoPtr<IShaderResourceBinding> srb;
+    RefCntAutoPtr<IBuffer>                vertex_buffer;
+    RefCntAutoPtr<IBuffer>                index_buffer;
 } d3d11;
 
-NK_API struct nk_context *nk_diligent_get_nk_ctx(nk_diligent_context* nk_dlg_ctx)
+NK_API struct nk_context* nk_diligent_get_nk_ctx(nk_diligent_context* nk_dlg_ctx)
 {
     VERIFY_EXPR(nk_dlg_ctx != nullptr);
     return &nk_dlg_ctx->ctx;
@@ -98,6 +99,7 @@ static float4x4 nk_get_projection_matrix(int width, int height, bool IsGL)
     const float R = (float)width;
     const float T = 0.0f;
     const float B = (float)height;
+    // clang-format off
     return float4x4
     {
            2.0f / (R - L),              0.0f,   0.0f,   0.0f,
@@ -105,6 +107,7 @@ static float4x4 nk_get_projection_matrix(int width, int height, bool IsGL)
                      0.0f,              0.0f,   0.5f,   0.0f,
         (R + L) / (L - R), (T + B) / (B - T),   0.5f,   1.0f
     };
+    // clang-format on
 }
 
 static const char* NuklearVertexShaderSource = R"(
@@ -155,13 +158,13 @@ float4 ps(PS_INPUT vs_output) : SV_Target
 }
 )";
 
-NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
-                                                    unsigned int        width,
-                                                    unsigned int        height,
-                                                    TEXTURE_FORMAT      BackBufferFmt,
-                                                    TEXTURE_FORMAT      DepthBufferFmt,
-                                                    unsigned int        max_vertex_buffer_size,
-                                                    unsigned int        max_index_buffer_size)
+NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
+                                                    unsigned int   width,
+                                                    unsigned int   height,
+                                                    TEXTURE_FORMAT BackBufferFmt,
+                                                    TEXTURE_FORMAT DepthBufferFmt,
+                                                    unsigned int   max_vertex_buffer_size,
+                                                    unsigned int   max_index_buffer_size)
 {
     nk_diligent_context* nk_dlg_ctx = new nk_diligent_context;
 
@@ -177,19 +180,19 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
     nk_buffer_init_default(&nk_dlg_ctx->cmds);
 
     PipelineStateDesc PSODesc;
-    auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+    auto&             GraphicsPipeline            = PSODesc.GraphicsPipeline;
     GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     GraphicsPipeline.RasterizerDesc.ScissorEnable = True;
     GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-    GraphicsPipeline.NumRenderTargets  = 1;
-    GraphicsPipeline.RTVFormats[0]     = BackBufferFmt;
-    GraphicsPipeline.DSVFormat         = DepthBufferFmt;
-    GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    GraphicsPipeline.NumRenderTargets             = 1;
+    GraphicsPipeline.RTVFormats[0]                = BackBufferFmt;
+    GraphicsPipeline.DSVFormat                    = DepthBufferFmt;
+    GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.UseCombinedTextureSamplers = True;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    
+
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -208,12 +211,14 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
         device->CreateShader(ShaderCI, &pPS);
     }
 
+    // clang-format off
     LayoutElement Elements[] = 
     {
         { 0, 0, 2, VT_FLOAT32},
         { 1, 0, 2, VT_FLOAT32},
         { 2, 0, 4, VT_UINT8, True},
     };
+    // clang-format on
     GraphicsPipeline.InputLayout.NumElements    = _countof(Elements);
     GraphicsPipeline.InputLayout.LayoutElements = Elements;
 
@@ -221,9 +226,9 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
         float4x4 proj = nk_get_projection_matrix(width, height, device->GetDeviceCaps().IsGLDevice());
 
         BufferDesc CBDesc;
-        CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
-        CBDesc.uiSizeInBytes  = sizeof(proj);
-        CBDesc.Usage          = USAGE_DEFAULT;
+        CBDesc.BindFlags     = BIND_UNIFORM_BUFFER;
+        CBDesc.uiSizeInBytes = sizeof(proj);
+        CBDesc.Usage         = USAGE_DEFAULT;
         BufferData InitData(&proj, sizeof(proj));
 
         device->CreateBuffer(CBDesc, &InitData, &nk_dlg_ctx->const_buffer);
@@ -231,6 +236,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
 
 
     auto& RT0Blend = GraphicsPipeline.BlendDesc.RenderTargets[0];
+
     RT0Blend.BlendEnable           = True;
     RT0Blend.SrcBlend              = BLEND_FACTOR_SRC_ALPHA;
     RT0Blend.DestBlend             = BLEND_FACTOR_INV_SRC_ALPHA;
@@ -240,6 +246,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
     RT0Blend.BlendOpAlpha          = BLEND_OPERATION_ADD;
     RT0Blend.RenderTargetWriteMask = COLOR_MASK_ALL;
 
+    // clang-format off
     StaticSamplerDesc StaticSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "texture0", Sam_LinearClamp}
@@ -249,12 +256,13 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice*      device,
     {
         {SHADER_TYPE_PIXEL, "texture0", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
+    // clang-format on
 
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumVariables      = _countof(Variables);
     PSODesc.ResourceLayout.Variables         = Variables;
-    
+
     GraphicsPipeline.pVS = pVS;
     GraphicsPipeline.pPS = pPS;
 
@@ -297,9 +305,9 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
                    IDeviceContext*             device_ctx,
                    enum nk_anti_aliasing       AA)
 {
-    const float blend_factors[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    Uint32 offsets[] = {0};
-    IBuffer* pVBs[] = {nk_dlg_ctx->vertex_buffer};
+    const float blend_factors[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    Uint32      offsets[]        = {0};
+    IBuffer*    pVBs[]           = {nk_dlg_ctx->vertex_buffer};
     device_ctx->SetVertexBuffers(0, 1, pVBs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     device_ctx->SetIndexBuffer(nk_dlg_ctx->index_buffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     device_ctx->SetPipelineState(nk_dlg_ctx->pso);
@@ -313,16 +321,18 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
     device_ctx->SetViewports(1, &nk_dlg_ctx->viewport, static_cast<Uint32>(nk_dlg_ctx->viewport.Width), static_cast<Uint32>(nk_dlg_ctx->viewport.Height));
 
 
-    // Convert from command queue into draw list and draw to screen 
+    // Convert from command queue into draw list and draw to screen
     // Load draw vertices & elements directly into vertex + element buffer
     const struct nk_draw_command* cmd = nullptr;
+
     Uint32 offset = 0;
     {
         MapHelper<nk_diligent_vertex> vertices(device_ctx, nk_dlg_ctx->vertex_buffer, MAP_WRITE, MAP_FLAG_DISCARD);
-        MapHelper<Uint16> indices(device_ctx, nk_dlg_ctx->index_buffer, MAP_WRITE, MAP_FLAG_DISCARD);
-        
+        MapHelper<Uint16>             indices(device_ctx, nk_dlg_ctx->index_buffer, MAP_WRITE, MAP_FLAG_DISCARD);
+
         // fill converting configuration
         struct nk_convert_config config;
+        // clang-format off
         NK_STORAGE const struct nk_draw_vertex_layout_element vertex_layout[] =
         {
             {NK_VERTEX_POSITION, NK_FORMAT_FLOAT,    NK_OFFSETOF(struct nk_diligent_vertex, position)},
@@ -330,6 +340,7 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
             {NK_VERTEX_COLOR,    NK_FORMAT_R8G8B8A8, NK_OFFSETOF(struct nk_diligent_vertex, col)},
             {NK_VERTEX_LAYOUT_END}
         };
+        // clang-format on
         memset(&config, 0, sizeof(config));
         config.vertex_layout        = vertex_layout;
         config.vertex_size          = sizeof(struct nk_diligent_vertex);
@@ -353,14 +364,15 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
     nk_draw_foreach(cmd, &nk_dlg_ctx->ctx, &nk_dlg_ctx->cmds)
     {
         auto* texture_view = reinterpret_cast<ITextureView*>(cmd->texture.ptr);
-        VERIFY(texture_view == nk_dlg_ctx->font_texture_view, "Unexpected font texture view"); (void)texture_view;
+        VERIFY(texture_view == nk_dlg_ctx->font_texture_view, "Unexpected font texture view");
+        (void)texture_view;
         if (!cmd->elem_count) continue;
 
         Rect scissor;
-        scissor.left    = std::max(static_cast<Int32>(cmd->clip_rect.x), 0);
-        scissor.right   = std::max(static_cast<Int32>(cmd->clip_rect.x + cmd->clip_rect.w), scissor.left);
-        scissor.top     = std::max(static_cast<Int32>(cmd->clip_rect.y), 0);
-        scissor.bottom  = std::max(static_cast<Int32>(cmd->clip_rect.y + cmd->clip_rect.h), scissor.top);
+        scissor.left   = std::max(static_cast<Int32>(cmd->clip_rect.x), 0);
+        scissor.right  = std::max(static_cast<Int32>(cmd->clip_rect.x + cmd->clip_rect.w), scissor.left);
+        scissor.top    = std::max(static_cast<Int32>(cmd->clip_rect.y), 0);
+        scissor.bottom = std::max(static_cast<Int32>(cmd->clip_rect.y + cmd->clip_rect.h), scissor.top);
 
         Attribs.NumIndices         = cmd->elem_count;
         Attribs.FirstIndexLocation = offset;
@@ -377,7 +389,7 @@ NK_API void nk_diligent_resize(nk_diligent_context* nk_dlg_ctx, IDeviceContext* 
 {
     VERIFY_EXPR(nk_dlg_ctx != nullptr && nk_dlg_ctx->device != nullptr);
 
-    nk_dlg_ctx->viewport.Width = (float)width;
+    nk_dlg_ctx->viewport.Width  = (float)width;
     nk_dlg_ctx->viewport.Height = (float)height;
 
     float4x4 proj = nk_get_projection_matrix(width, height, nk_dlg_ctx->device->GetDeviceCaps().IsGLDevice());
@@ -403,27 +415,27 @@ nk_diligent_font_stash_end(nk_diligent_context* nk_dlg_ctx,
 {
     VERIFY_EXPR(nk_dlg_ctx != nullptr && nk_dlg_ctx->device != nullptr);
 
-    const void *image; int w, h;
+    const void* image;
+    int         w, h;
     image = nk_font_atlas_bake(&nk_dlg_ctx->atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
 
     // upload font to texture and create texture view
     RefCntAutoPtr<ITexture> font_texture;
 
     TextureDesc desc;
-    desc.Name           = "Nuklear font texture";
-    desc.Type           = RESOURCE_DIM_TEX_2D;
-    desc.Width          = static_cast<Uint32>(w);
-    desc.Height         = static_cast<Uint32>(h);
-    desc.MipLevels      = 1;
-    desc.ArraySize      = 1;
-    desc.Format         = TEX_FORMAT_RGBA8_UNORM;
-    desc.Usage          = USAGE_STATIC;
-    desc.BindFlags      = BIND_SHADER_RESOURCE;
+    desc.Name      = "Nuklear font texture";
+    desc.Type      = RESOURCE_DIM_TEX_2D;
+    desc.Width     = static_cast<Uint32>(w);
+    desc.Height    = static_cast<Uint32>(h);
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format    = TEX_FORMAT_RGBA8_UNORM;
+    desc.Usage     = USAGE_STATIC;
+    desc.BindFlags = BIND_SHADER_RESOURCE;
 
-    TextureSubResData mip0data[]  =
-    {
-        {image, desc.Width * 4}
-    };
+    TextureSubResData mip0data[] =
+        {
+            {image, desc.Width * 4}};
     TextureData data(mip0data, _countof(mip0data));
     nk_dlg_ctx->device->CreateTexture(desc, &data, &font_texture);
 
