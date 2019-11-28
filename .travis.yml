@@ -11,7 +11,7 @@ before_install:
   - git clone https://github.com/DiligentGraphics/DiligentCore.git ../DiligentCore --recursive
   - git clone https://github.com/DiligentGraphics/DiligentTools.git ../DiligentTools --recursive
   - git clone https://github.com/DiligentGraphics/DiligentFX.git ../DiligentFX --recursive
-  - . ../DiligentCore/BuildTools/Scripts/travis/before_install.sh
+  - . ./DiligentCore/BuildTools/Scripts/travis/before_install.sh
 
 addons:
   apt:
