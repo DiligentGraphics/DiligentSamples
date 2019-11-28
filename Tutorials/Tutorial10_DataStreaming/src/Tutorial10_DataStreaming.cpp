@@ -41,7 +41,7 @@ class StreamingBuffer
 public:
     StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, Uint32 Size, size_t NumContexts, const Char* Name) :
         m_BufferSize{Size},
-        m_MapInfo{NumContexts}
+        m_MapInfo(NumContexts)
     {
         BufferDesc BuffDesc;
         BuffDesc.Name           = Name;
