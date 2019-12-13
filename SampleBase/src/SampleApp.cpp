@@ -128,11 +128,11 @@ void SampleApp::InitializeDiligentEngine(
             auto* pFactoryD3D11 = GetEngineFactoryD3D11();
             m_pEngineFactory    = pFactoryD3D11;
             Uint32 NumAdapters  = 0;
-            pFactoryD3D11->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
-            std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
+            pFactoryD3D11->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
+            std::vector<AdapterAttribs> Adapters(NumAdapters);
             if (NumAdapters > 0)
             {
-                pFactoryD3D11->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
+                pFactoryD3D11->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
             }
             else
             {
@@ -183,11 +183,11 @@ void SampleApp::InitializeDiligentEngine(
             auto* pFactoryD3D12 = GetEngineFactoryD3D12();
             m_pEngineFactory    = pFactoryD3D12;
             Uint32 NumAdapters  = 0;
-            pFactoryD3D12->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
-            std::vector<HardwareAdapterAttribs> Adapters(NumAdapters);
+            pFactoryD3D12->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
+            std::vector<AdapterAttribs> Adapters(NumAdapters);
             if (NumAdapters > 0)
             {
-                pFactoryD3D12->EnumerateHardwareAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
+                pFactoryD3D12->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
             }
             else
             {

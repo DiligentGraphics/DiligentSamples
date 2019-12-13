@@ -87,7 +87,7 @@ protected:
     RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;
     std::vector<RefCntAutoPtr<IDeviceContext>> m_pDeferredContexts;
     RefCntAutoPtr<ISwapChain>                  m_pSwapChain;
-    HardwareAdapterAttribs                     m_AdapterAttribs;
+    AdapterAttribs                             m_AdapterAttribs;
     std::vector<DisplayModeAttribs>            m_DisplayModes;
 
     std::unique_ptr<SampleBase> m_TheSample;
