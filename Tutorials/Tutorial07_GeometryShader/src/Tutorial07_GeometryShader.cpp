@@ -67,12 +67,13 @@ void Tutorial07_GeometryShader::GetEngineInitializationAttribs(DeviceType       
 }
 
 static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
-                                           const ShaderCreateInfo& ShaderCI)
+                                           const ShaderCreateInfo& ShaderCI,
+                                           bool                    ConvertToGLSL)
 {
     RefCntAutoPtr<IShader> pShader;
 
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED
-    if (pDevice->GetDeviceCaps().IsVulkanDevice())
+    if (ConvertToGLSL)
     {
         // glslang currently does not produce geometry shader bytecode that can be
         // properly linked with other shader stages. So we will manually convert HLSL to GLSL
@@ -152,6 +153,10 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
+    // For geometry shader, glslang currently produces SPIRV that is incompatible with other
+    // stages, so for Vulkan backend we explicitly convert HLSL to GLSL first.
+    const auto ConvertToGLSL = m_pDevice->GetDeviceCaps().IsVulkanDevice();
+
     // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
@@ -159,7 +164,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube VS";
         ShaderCI.FilePath        = "cube.vsh";
-        pVS                      = CreateShader(m_pDevice, ShaderCI);
+        pVS                      = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
     // Create a geometry shader
@@ -169,7 +174,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube GS";
         ShaderCI.FilePath        = "cube.gsh";
-        pGS                      = CreateShader(m_pDevice, ShaderCI);
+        pGS                      = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
     // Create a pixel shader
@@ -179,7 +184,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube PS";
         ShaderCI.FilePath        = "cube.psh";
-        pPS                      = CreateShader(m_pDevice, ShaderCI);
+        pPS                      = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
     // clang-format off

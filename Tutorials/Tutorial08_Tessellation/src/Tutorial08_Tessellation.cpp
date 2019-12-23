@@ -82,11 +82,12 @@ void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType        D
 }
 
 static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
-                                           const ShaderCreateInfo& ShaderCI)
+                                           const ShaderCreateInfo& ShaderCI,
+                                           bool                    ConvertToGLSL)
 {
     RefCntAutoPtr<IShader> pShader;
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED
-    if (pDevice->GetDeviceCaps().IsVulkanDevice())
+    if (ConvertToGLSL)
     {
         // glslang currently does not produce GS/HS/DS bytecode that can be properly
         // linked with other shader stages. So we will manually convert HLSL to GLSL
@@ -167,6 +168,10 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
+    // For tessellation stages, glslang currently produces SPIRV that is incompatible with other
+    // stages, so for Vulkan backend we explicitly convert HLSL to GLSL first.
+    const auto ConvertToGLSL = m_pDevice->GetDeviceCaps().IsVulkanDevice();
+
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
@@ -179,7 +184,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.Desc.Name       = "Terrain VS";
         ShaderCI.FilePath        = "terrain.vsh";
 
-        pVS = CreateShader(m_pDevice, ShaderCI);
+        pVS = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
 
@@ -192,7 +197,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.Desc.Name       = "Terrain GS";
         ShaderCI.FilePath        = "terrain.gsh";
 
-        pGS = CreateShader(m_pDevice, ShaderCI);
+        pGS = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
     // Create a hull shader
@@ -205,7 +210,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         MacroHelper.AddShaderMacro("BLOCK_SIZE", m_BlockSize);
         ShaderCI.Macros = MacroHelper;
 
-        pHS = CreateShader(m_pDevice, ShaderCI);
+        pHS = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
     // Create a domain shader
@@ -217,7 +222,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.FilePath        = "terrain.dsh";
         ShaderCI.Macros          = nullptr;
 
-        pDS = CreateShader(m_pDevice, ShaderCI);
+        pDS = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
     }
 
     // Create a pixel shader
@@ -228,7 +233,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.Desc.Name       = "Terrain PS";
         ShaderCI.FilePath        = "terrain.psh";
 
-        pPS = CreateShader(m_pDevice, ShaderCI);
+        pPS = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
 
         if (bWireframeSupported)
         {
@@ -236,7 +241,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
             ShaderCI.Desc.Name  = "Wireframe Terrain PS";
             ShaderCI.FilePath   = "terrain_wire.psh";
 
-            pWirePS = CreateShader(m_pDevice, ShaderCI);
+            pWirePS = CreateShader(m_pDevice, ShaderCI, ConvertToGLSL);
         }
     }
 
