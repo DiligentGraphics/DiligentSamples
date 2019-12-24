@@ -83,7 +83,8 @@ void ImguiDemo::UpdateUI()
 // Render a frame
 void ImguiDemo::Render()
 {
-    m_pImmediateContext->ClearRenderTarget(nullptr, &m_ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    m_pImmediateContext->ClearRenderTarget(pRTV, &m_ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 

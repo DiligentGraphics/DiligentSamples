@@ -1,6 +1,6 @@
 # Tutorial10 - Data Streaming
 
-This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
+This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_NO_OVERWRITE`
 flags to efficiently stream varying amounts of data to GPU.
 
 ![](Animation_Large.gif)
@@ -20,7 +20,7 @@ The sample employs the following strategy to upload varying amounts of data to t
 4. Unmap the buffer and issue draw command. Note that in Direct3D12 and Vulkan backends, unmapping the buffer is not required
    and can be safely skipped to improve performance
 5. When mapping the buffer next time, check if the remaining space is enough to encompass the new polygon data.
-   * If there is enough space, map the buffer with `MAP_FLAG_DO_NOT_SYNCHRONIZE` flag. This will tell the system 
+   * If there is enough space, map the buffer with `MAP_FLAG_NO_OVERWRITE` flag. This will tell the system 
      to return previously allocated memory. It is the responsibility of the application to not overwrite the memory that 
      is in use by the GPU. Write polygon data at current offset and update the offset.
    * If there is not enough space, reset the offset to zero and map the buffer with `MAP_FLAG_DISCARD` flag to request new
@@ -83,8 +83,8 @@ Uint32 StreamingBuffer::Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNu
     if (MapInfo.m_MappedData == nullptr)
     {
         // If current offset is zero, we are mapping the buffer for the first time after it has been flushed. Use MAP_FLAG_DISCARD flag.
-        // Otherwise use MAP_FLAG_DO_NOT_SYNCHRONIZE flag.
-        MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_DO_NOT_SYNCHRONIZE);
+        // Otherwise use MAP_FLAG_NO_OVERWRITE flag.
+        MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_NO_OVERWRITE);
     }
 
     auto Offset = MapInfo.m_CurrOffset;

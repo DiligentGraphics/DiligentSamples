@@ -638,12 +638,14 @@ void SampleApp::Render()
     if (!m_pImmediateContext)
         return;
 
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_TheSample->Render();
 
     // Restore default render target in case the sample has changed it
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     if (m_pImGui)
     {
         m_pImGui->Render(m_pImmediateContext);
@@ -675,7 +677,7 @@ void SampleApp::Present()
         while (auto Capture = m_pScreenCapture->GetCapture())
         {
             MappedTextureSubresource TexData;
-            m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_SYNCHRONIZE, nullptr, TexData);
+            m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
             const auto& TexDesc = Capture.pTexture->GetDesc();
 
             Image::EncodeInfo Info;

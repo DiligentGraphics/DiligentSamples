@@ -210,14 +210,15 @@ void Tutorial17_MSAA::Render()
         // Set off-screen multi-sampled render target and depth-stencil buffer
         pRTV = m_pMSColorRTV;
         pDSV = m_pMSDepthDSV;
-        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
     else
     {
         // Render directly to the current swap chain back buffer.
-        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        pDSV = m_pSwapChain->GetDepthBufferDSV();
     }
 
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 

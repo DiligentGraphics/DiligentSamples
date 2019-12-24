@@ -633,9 +633,6 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
 
     // Remove elevation map from resource mapping to release the resource
     m_pResMapping->RemoveResourceByName("g_tex2DElevationMap");
-
-    // Restore default render target
-    pContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 

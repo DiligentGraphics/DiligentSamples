@@ -81,8 +81,10 @@ void NuklearDemo::UpdateUI()
 // Render a frame
 void NuklearDemo::Render()
 {
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+
     const float4 ClearColor = {0.45f, 0.55f, 0.60f, 1.00f};
-    m_pImmediateContext->ClearRenderTarget(nullptr, &ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, &ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     nk_diligent_render(m_pNkDlgCtx, m_pImmediateContext, NK_ANTI_ALIASING_ON);
 }

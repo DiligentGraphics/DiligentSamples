@@ -529,8 +529,6 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
 
         m_EarthHemisphere.Render(m_pImmediateContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
     }
-
-    pContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 
@@ -572,25 +570,20 @@ void AtmosphereSample::Render()
     // render targets
     auto* pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, m_pImmediateContext);
 
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     const float Zero[]       = {0.f, 0.f, 0.f, 0.f};
-    m_pImmediateContext->ClearRenderTarget(nullptr, m_bEnableLightScattering ? Zero : ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, m_bEnableLightScattering ? Zero : ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    ITextureView *pRTV = nullptr, *pDSV = nullptr;
     if (m_bEnableLightScattering)
     {
         pRTV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
         pDSV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearRenderTarget(pRTV, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    }
-    else
-    {
-        pRTV = nullptr;
-        pDSV = nullptr;
-        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -658,8 +651,9 @@ void AtmosphereSample::Render()
         FrameAttribs.ptex2DSrcColorBufferRTV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
         FrameAttribs.ptex2DSrcDepthBufferSRV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         FrameAttribs.ptex2DSrcDepthBufferDSV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+        FrameAttribs.ptex2DDstColorBufferRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        FrameAttribs.ptex2DDstDepthBufferDSV = m_pSwapChain->GetDepthBufferDSV();
         FrameAttribs.ptex2DShadowMapSRV      = m_ShadowMapMgr.GetSRV();
-        FrameAttribs.pDstRTV                 = nullptr; // mpBackBufferRTV;
 
         // Perform the post processing
         m_pLightSctrPP->PerformPostProcessing(FrameAttribs, m_PPAttribs);

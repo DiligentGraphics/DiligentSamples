@@ -282,10 +282,11 @@ void Tutorial12_RenderTarget::Render()
     DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     // Clear the default render target
     const float Zero[] = {0.0f, 0.0f, 0.0f, 1.0f};
-    m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearRenderTarget(nullptr, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the render target pipeline state
     m_pImmediateContext->SetPipelineState(m_pRTPSO);

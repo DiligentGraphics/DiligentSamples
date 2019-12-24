@@ -191,7 +191,9 @@ Subset rendering procedure is generally the same as in previous tutorials. Few d
 so every context should set the default render target:
 
 ```cpp
-pCtx->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+pCtx->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 ```
 
 Note that render targets are set and transitioned to correct states by the main thread, so we use

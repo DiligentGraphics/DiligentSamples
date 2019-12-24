@@ -239,10 +239,12 @@ to the main framebuffer using our post-processing effect shader.
 
 ```cpp
 const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };
-m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr,
+auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV,
                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearRenderTarget(nullptr, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0,
+m_pImmediateContext->ClearRenderTarget(pRTV, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0,
                                        RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 m_pImmediateContext->SetPipelineState(m_pRTPSO);

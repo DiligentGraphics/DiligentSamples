@@ -168,7 +168,8 @@ public:
 #    endif
                 EngineD3D12CreateInfo EngineCI;
 #    ifdef _DEBUG
-                EngineCI.EnableDebugLayer = true;
+                // There is a bug in D3D12 debug layer that causes memory leaks in this tutorial
+                //EngineCI.EnableDebugLayer = true;
 #    endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -355,11 +356,17 @@ public:
 
     void Render()
     {
+        // Set render targets before issuing any draw command.
+        // Note that Present() unbinds the back buffer if it is set as render target.
+        auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
         // Clear the back buffer
         const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
         // Let the engine perform required state transitions
-        m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // Set the pipeline state in the immediate context
         m_pImmediateContext->SetPipelineState(m_pPSO);

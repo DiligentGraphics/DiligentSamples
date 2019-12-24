@@ -387,10 +387,12 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*  pEngineFactory,
 // Render a frame
 void Tutorial08_Tessellation::Render()
 {
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     unsigned int NumHorzBlocks = m_HeightMapWidth / m_BlockSize;
     unsigned int NumVertBlocks = m_HeightMapHeight / m_BlockSize;

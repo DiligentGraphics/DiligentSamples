@@ -178,15 +178,16 @@ Before rendering anything on the screen we want to clear it:
 
 ```cpp
 const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0,
+auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0,
                                        RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
-Passing `nullptr` makes the engine clear default (i.e. the swap chain's) render 
-and depth buffers. Clearing the depth buffer is not really necessary, but we will 
-keep it here for consistency. Using `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` flag tells the
-engine to perform required state transitions.
+Clearing the depth buffer is not really necessary, but we will keep it here for consistency.
+Using `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` flag tells the engine to perform required
+state transitions.
 
 Next, we need to set our pipeline state in the immediate device context:
 

@@ -66,8 +66,8 @@ public:
         if (MapInfo.m_MappedData == nullptr)
         {
             // If current offset is zero, we are mapping the buffer for the first time after it has been flushed. Use MAP_FLAG_DISCARD flag.
-            // Otherwise use MAP_FLAG_DO_NOT_SYNCHRONIZE flag.
-            MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_DO_NOT_SYNCHRONIZE);
+            // Otherwise use MAP_FLAG_NO_OVERWRITE flag.
+            MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_NO_OVERWRITE);
         }
 
         auto Offset = MapInfo.m_CurrOffset;
@@ -629,7 +629,8 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context
     // Render targets are set and transitioned to correct states by the main thread, here we only verify states
-    pCtx->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    pCtx->SetRenderTargets(1, &pRTV, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType = VT_UINT32;
@@ -733,10 +734,12 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 // Render a frame
 void Tutorial10_DataStreaming::Render()
 {
+    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(nullptr, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(nullptr, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_StreamingIB->AllowPersistentMapping(m_bAllowPersistentMap);
     m_StreamingVB->AllowPersistentMapping(m_bAllowPersistentMap);

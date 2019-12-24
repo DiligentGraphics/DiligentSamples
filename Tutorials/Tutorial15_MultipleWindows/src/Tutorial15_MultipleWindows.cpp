@@ -180,7 +180,8 @@ public:
 #    endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
 #    ifdef _DEBUG
-                EngD3D12Attribs.EnableDebugLayer = true;
+                // There is currently a bug in D3D12 debug layer that causes memory leaks in this tutorial.
+                // EngD3D12Attribs.EnableDebugLayer = true;
 #    endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
@@ -381,22 +382,14 @@ public:
     {
         for (size_t i = 0; i < m_Windows.size(); ++i)
         {
-            ITextureView* pRTV = nullptr;
-            ITextureView* pDSV = nullptr;
-            if (i == 0)
-            {
-                m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            }
-            else
-            {
-                auto& WndInfo = m_Windows[i];
-                if (!WndInfo.pSwapChain)
-                    continue;
+            auto& WndInfo = m_Windows[i];
+            if (!WndInfo.pSwapChain)
+                continue;
 
-                pRTV = WndInfo.pSwapChain->GetCurrentBackBufferRTV();
-                pDSV = WndInfo.pSwapChain->GetDepthBufferDSV();
-                m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            }
+            ITextureView* pRTV = WndInfo.pSwapChain->GetCurrentBackBufferRTV();
+            ITextureView* pDSV = WndInfo.pSwapChain->GetDepthBufferDSV();
+            m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
 
             // Clear the back buffer
             const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
