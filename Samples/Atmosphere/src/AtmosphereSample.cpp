@@ -862,7 +862,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
 #endif
 }
 
-void AtmosphereSample ::WindowResize(Uint32 Width, Uint32 Height)
+void AtmosphereSample::WindowResize(Uint32 Width, Uint32 Height)
 {
     m_pLightSctrPP->OnWindowResize(m_pDevice, Width, Height);
     // Flush is required because Intel driver does not release resources until

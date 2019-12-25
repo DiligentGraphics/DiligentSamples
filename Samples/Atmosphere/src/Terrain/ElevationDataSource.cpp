@@ -141,12 +141,12 @@ ElevationDataSource::~ElevationDataSource(void)
 {
 }
 
-Uint16 ElevationDataSource ::GetGlobalMinElevation() const
+Uint16 ElevationDataSource::GetGlobalMinElevation() const
 {
     return m_MinMaxElevation[QuadTreeNodeLocation()].first;
 }
 
-Uint16 ElevationDataSource ::GetGlobalMaxElevation() const
+Uint16 ElevationDataSource::GetGlobalMaxElevation() const
 {
     return m_MinMaxElevation[QuadTreeNodeLocation()].second;
 }
@@ -262,7 +262,7 @@ void ElevationDataSource::RecomputePatchMinMaxElevations(const QuadTreeNodeLocat
 }
 
 // Calculates min/max elevations for the hierarchy
-void ElevationDataSource ::CalculateMinMaxElevations()
+void ElevationDataSource::CalculateMinMaxElevations()
 {
     // Calculate min/max elevations starting from the finest level
     for (HierarchyReverseIterator it(m_iNumLevels); it.IsValid(); it.Next())
