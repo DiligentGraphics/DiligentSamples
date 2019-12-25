@@ -61,6 +61,16 @@ public:
         height = m_InitialWindowHeight;
     }
 
+    virtual GoldenImageMode GetGoldenImageMode() const override final
+    {
+        return m_GoldenImgMode;
+    }
+
+    virtual int GetExitCode() const override final
+    {
+        return m_ExitCode;
+    }
+
 protected:
     void InitializeDiligentEngine(
 #if PLATFORM_LINUX
@@ -81,6 +91,9 @@ protected:
         m_pSwapChain->SetWindowedMode();
     }
 
+    void CompareGoldenImage(const std::string& FileName, ScreenCapture::CaptureInfo& Capture);
+    void SaveScreenCapture(const std::string& FileName, ScreenCapture::CaptureInfo& Capture);
+
     DeviceType                                 m_DeviceType = DeviceType::Undefined;
     RefCntAutoPtr<IEngineFactory>              m_pEngineFactory;
     RefCntAutoPtr<IRenderDevice>               m_pDevice;
@@ -92,17 +105,18 @@ protected:
 
     std::unique_ptr<SampleBase> m_TheSample;
 
-    int         m_InitialWindowWidth  = 0;
-    int         m_InitialWindowHeight = 0;
-    int         m_ValidationLevel     = -1;
-    std::string m_AppTitle;
-    Uint32      m_AdapterId = 0;
-    std::string m_AdapterDetailsString;
-    int         m_SelectedDisplayMode = 0;
-    bool        m_bVSync              = false;
-    bool        m_bFullScreenMode     = false;
-    bool        m_bShowAdaptersDialog = true;
-    double      m_CurrentTime         = 0;
+    int          m_InitialWindowWidth  = 0;
+    int          m_InitialWindowHeight = 0;
+    int          m_ValidationLevel     = -1;
+    std::string  m_AppTitle;
+    Uint32       m_AdapterId   = 0;
+    ADAPTER_TYPE m_AdapterType = ADAPTER_TYPE_UNKNOWN;
+    std::string  m_AdapterDetailsString;
+    int          m_SelectedDisplayMode = 0;
+    bool         m_bVSync              = false;
+    bool         m_bFullScreenMode     = false;
+    bool         m_bShowAdaptersDialog = true;
+    double       m_CurrentTime         = 0;
 
     struct ScreenCaptureInfo
     {
@@ -110,7 +124,7 @@ protected:
         std::string      Directory;
         std::string      FileName        = "frame";
         double           CaptureFPS      = 30;
-        double           LastCaptureTime = 0;
+        double           LastCaptureTime = -1e+10;
         Uint32           FramesToCapture = 0;
         Uint32           CurrentFrame    = 0;
         EImageFileFormat FileFormat      = EImageFileFormat::png;
@@ -121,6 +135,9 @@ protected:
     std::unique_ptr<ScreenCapture> m_pScreenCapture;
 
     std::unique_ptr<ImGuiImplDiligent> m_pImGui;
+
+    GoldenImageMode m_GoldenImgMode = GoldenImageMode::None;
+    int             m_ExitCode      = 0;
 };
 
 } // namespace Diligent

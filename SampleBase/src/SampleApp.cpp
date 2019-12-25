@@ -139,11 +139,27 @@ void SampleApp::InitializeDiligentEngine(
                 LOG_ERROR_AND_THROW("Failed to find Direct3D11-compatible hardware adapters");
             }
 
-            m_AdapterAttribs       = Adapters[m_AdapterId];
-            Uint32 NumDisplayModes = 0;
-            pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
-            m_DisplayModes.resize(NumDisplayModes);
-            pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+            if (m_AdapterType == ADAPTER_TYPE_SOFTWARE)
+            {
+                for (Uint32 i = 0; i < Adapters.size(); ++i)
+                {
+                    if (Adapters[i].AdapterType == m_AdapterType)
+                    {
+                        m_AdapterId = i;
+                        LOG_INFO_MESSAGE("Found software adapter '", Adapters[i].Description, "'");
+                        break;
+                    }
+                }
+            }
+
+            m_AdapterAttribs = Adapters[m_AdapterId];
+            if (m_AdapterType != ADAPTER_TYPE_SOFTWARE)
+            {
+                Uint32 NumDisplayModes = 0;
+                pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
+                m_DisplayModes.resize(NumDisplayModes);
+                pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+            }
 
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
@@ -201,11 +217,27 @@ void SampleApp::InitializeDiligentEngine(
 #    endif
             }
 
-            m_AdapterAttribs       = Adapters[m_AdapterId];
-            Uint32 NumDisplayModes = 0;
-            pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
-            m_DisplayModes.resize(NumDisplayModes);
-            pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+            if (m_AdapterType == ADAPTER_TYPE_SOFTWARE)
+            {
+                for (Uint32 i = 0; i < Adapters.size(); ++i)
+                {
+                    if (Adapters[i].AdapterType == m_AdapterType)
+                    {
+                        m_AdapterId = i;
+                        LOG_INFO_MESSAGE("Found software adapter '", Adapters[i].Description, "'");
+                        break;
+                    }
+                }
+            }
+
+            m_AdapterAttribs = Adapters[m_AdapterId];
+            if (m_AdapterType != ADAPTER_TYPE_SOFTWARE)
+            {
+                Uint32 NumDisplayModes = 0;
+                pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
+                m_DisplayModes.resize(NumDisplayModes);
+                pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
+            }
 
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
@@ -328,6 +360,12 @@ void SampleApp::InitializeDiligentEngine(
 
     if (m_ScreenCaptureInfo.AllowCapture)
     {
+        if (m_GoldenImgMode == GoldenImageMode::Capture || m_GoldenImgMode == GoldenImageMode::Compare)
+        {
+            // Capture only one frame
+            m_ScreenCaptureInfo.FramesToCapture = 1;
+        }
+
         m_pScreenCapture.reset(new ScreenCapture(m_pDevice));
     }
 }
@@ -570,15 +608,40 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         }
         else if (!(Arg = GetArgument(pos, "adapter")).empty())
         {
-            auto AdapterId = atoi(Arg.c_str());
-            VERIFY_EXPR(AdapterId >= 0);
-            m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
+            if (StrCmpNoCase(Arg.c_str(), "sw", Arg.length()) == 0)
+            {
+                m_AdapterType = ADAPTER_TYPE_SOFTWARE;
+            }
+            else
+            {
+                auto AdapterId = atoi(Arg.c_str());
+                VERIFY_EXPR(AdapterId >= 0);
+                m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
+            }
         }
         else if (!(Arg = GetArgument(pos, "adapters_dialog")).empty())
         {
             m_bShowAdaptersDialog = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
         }
-
+        else if (!(Arg = GetArgument(pos, "golden_image_mode")).empty())
+        {
+            if (StrCmpNoCase(Arg.c_str(), "none", Arg.length()) == 0)
+            {
+                m_GoldenImgMode = GoldenImageMode::None;
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "capture", Arg.length()) == 0)
+            {
+                m_GoldenImgMode = GoldenImageMode::Capture;
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "compare", Arg.length()) == 0)
+            {
+                m_GoldenImgMode = GoldenImageMode::Compare;
+            }
+            else
+            {
+                LOG_ERROR_MESSAGE("Unknown golden image mode. The following are allowed values: 'none', 'capture', 'compare'");
+            }
+        }
 
         pos = strchr(pos, '-');
     }
@@ -652,6 +715,91 @@ void SampleApp::Render()
     }
 }
 
+void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::CaptureInfo& Capture)
+{
+    RefCntAutoPtr<Image> pGoldenImg;
+    CreateImageFromFile(FileName.c_str(), &pGoldenImg, nullptr);
+    if (!pGoldenImg)
+    {
+        LOG_ERROR_MESSAGE("Failed to load golden image from file ", FileName);
+        m_ExitCode = -1;
+        return;
+    }
+
+    const auto& TexDesc       = Capture.pTexture->GetDesc();
+    const auto& GoldenImgDesc = pGoldenImg->GetDesc();
+    if (GoldenImgDesc.Width != TexDesc.Width)
+    {
+        LOG_ERROR_MESSAGE("Golden image width (", GoldenImgDesc.Width, ") does not match the captured image width (", TexDesc.Width, ")");
+        m_ExitCode = -1;
+        return;
+    }
+    if (GoldenImgDesc.Height != TexDesc.Height)
+    {
+        LOG_ERROR_MESSAGE("Golden image height (", GoldenImgDesc.Height, ") does not match the captured image height (", TexDesc.Height, ")");
+        m_ExitCode = -1;
+        return;
+    }
+
+    MappedTextureSubresource TexData;
+    m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
+    auto CapturedPixels = Image::ConvertImageData(TexDesc.Width, TexDesc.Height,
+                                                  reinterpret_cast<const Uint8*>(TexData.pData), TexData.Stride,
+                                                  TexDesc.Format, TEX_FORMAT_RGBA8_UNORM, false /*Keep alpha*/);
+    m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
+    m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
+
+    auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
+    for (Uint32 row = 0; row < TexDesc.Height; ++row)
+    {
+        for (Uint32 col = 0; col < TexDesc.Width; ++col)
+        {
+            const auto* SrcPixel = &CapturedPixels[(col + row * TexDesc.Width) * 3];
+            const auto* DstPixel = pGoldenImgPixels + row * GoldenImgDesc.RowStride + col * GoldenImgDesc.NumComponents;
+
+            if (SrcPixel[0] != DstPixel[0] || SrcPixel[1] != DstPixel[1] || SrcPixel[2] != DstPixel[2])
+                ++m_ExitCode;
+        }
+    }
+}
+
+void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::CaptureInfo& Capture)
+{
+    MappedTextureSubresource TexData;
+    m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
+    const auto& TexDesc = Capture.pTexture->GetDesc();
+
+    Image::EncodeInfo Info;
+    Info.Width       = TexDesc.Width;
+    Info.Height      = TexDesc.Height;
+    Info.TexFormat   = TexDesc.Format;
+    Info.KeepAlpha   = m_ScreenCaptureInfo.KeepAlpha;
+    Info.pData       = TexData.pData;
+    Info.Stride      = TexData.Stride;
+    Info.FileFormat  = m_ScreenCaptureInfo.FileFormat;
+    Info.JpegQuality = m_ScreenCaptureInfo.JpegQuality;
+
+    RefCntAutoPtr<IDataBlob> pEncodedImage;
+    Image::Encode(Info, &pEncodedImage);
+    m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
+    m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
+
+    FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
+    if (pFile)
+    {
+        auto res = pFile->Write(pEncodedImage->GetDataPtr(), pEncodedImage->GetSize());
+        if (!res)
+        {
+            LOG_ERROR_MESSAGE("Failed to write screen capture file '", FileName, "'.");
+        }
+        pFile.Close();
+    }
+    else
+    {
+        LOG_ERROR_MESSAGE("Failed to create screen capture file '", FileName, "'. Verify that the directory exists and the app has sufficient rights to write to this directory.");
+    }
+}
+
 void SampleApp::Present()
 {
     if (!m_pSwapChain)
@@ -667,6 +815,18 @@ void SampleApp::Present()
 
             --m_ScreenCaptureInfo.FramesToCapture;
             ++m_ScreenCaptureInfo.CurrentFrame;
+
+            if (m_GoldenImgMode != GoldenImageMode::None)
+            {
+                VERIFY(m_ScreenCaptureInfo.FramesToCapture == 0, "Only single frame is expected to be captured in golden image capture/comparison modes");
+                // Idle the context to make the capture available
+                m_pImmediateContext->WaitForIdle();
+                if (!m_pScreenCapture->HasCapture())
+                {
+                    LOG_ERROR_MESSAGE("Screen capture is not available after idling the context");
+                    m_ExitCode = -1;
+                }
+            }
         }
     }
 
@@ -676,46 +836,31 @@ void SampleApp::Present()
     {
         while (auto Capture = m_pScreenCapture->GetCapture())
         {
-            MappedTextureSubresource TexData;
-            m_pImmediateContext->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
-            const auto& TexDesc = Capture.pTexture->GetDesc();
-
-            Image::EncodeInfo Info;
-            Info.Width       = TexDesc.Width;
-            Info.Height      = TexDesc.Height;
-            Info.TexFormat   = TexDesc.Format;
-            Info.KeepAlpha   = m_ScreenCaptureInfo.KeepAlpha;
-            Info.pData       = TexData.pData;
-            Info.Stride      = TexData.Stride;
-            Info.FileFormat  = m_ScreenCaptureInfo.FileFormat;
-            Info.JpegQuality = m_ScreenCaptureInfo.JpegQuality;
-
-            RefCntAutoPtr<IDataBlob> pEncodedImage;
-            Image::Encode(Info, &pEncodedImage);
-            m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
-            m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
-            std::stringstream FileNameSS;
-            if (!m_ScreenCaptureInfo.Directory.empty())
+            std::string FileName;
             {
-                FileNameSS << m_ScreenCaptureInfo.Directory << '/';
-            }
-            FileNameSS << m_ScreenCaptureInfo.FileName << std::setw(3) << std::setfill('0') << Capture.Id
-                       << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : ".png");
-            auto FileName = FileNameSS.str();
-
-            FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
-            if (pFile)
-            {
-                auto res = pFile->Write(pEncodedImage->GetDataPtr(), pEncodedImage->GetSize());
-                if (!res)
+                std::stringstream FileNameSS;
+                if (!m_ScreenCaptureInfo.Directory.empty())
                 {
-                    LOG_ERROR("Failed to write screen capture file '", FileName, "'.");
+                    FileNameSS << m_ScreenCaptureInfo.Directory;
+                    if (m_ScreenCaptureInfo.Directory.back() != '/')
+                        FileNameSS << '/';
                 }
-                pFile.Close();
+                FileNameSS << m_ScreenCaptureInfo.FileName;
+                if (m_GoldenImgMode == GoldenImageMode::None)
+                {
+                    FileNameSS << std::setw(3) << std::setfill('0') << Capture.Id;
+                }
+                FileNameSS << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : ".png");
+                FileName = FileNameSS.str();
+            }
+
+            if (m_GoldenImgMode == GoldenImageMode::Compare)
+            {
+                CompareGoldenImage(FileName, Capture);
             }
             else
             {
-                LOG_ERROR("Failed to create screen capture file '", FileName, "'. Verify that the directory exists and the app has sufficient rights to write to this directory.");
+                SaveScreenCapture(FileName, Capture);
             }
         }
     }
