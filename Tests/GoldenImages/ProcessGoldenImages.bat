@@ -36,7 +36,16 @@ set Tutorials=Tutorial01_HelloTriangle^
               Tutorial04_Instancing^
               Tutorial05_TextureArray^
               Tutorial06_Multithreading^
-              Tutorial07_GeometryShader
+              Tutorial07_GeometryShader^
+              Tutorial08_Tessellation^
+              Tutorial09_Quads^
+              Tutorial10_DataStreaming^
+              Tutorial11_ResourceUpdates^
+              Tutorial12_RenderTarget^
+              Tutorial13_ShadowMap^
+              Tutorial14_ComputeShader^
+              Tutorial16_BindlessResources^
+              Tutorial17_MSAA
 
 set ERROR=0
 set APP_ID=1
@@ -75,7 +84,6 @@ EXIT /B %ERROR%
 
 
 :gen_golden_img
-    setlocal
 
     set app_folder=%1
     shift
