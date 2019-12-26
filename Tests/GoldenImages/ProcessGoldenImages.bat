@@ -1,11 +1,13 @@
 @echo off
 
-rem %1: path to the root of the build tree
-rem %2: configuration (Debug, Release, etc.)
-rem %3: mode (capture or compare)
-rem %4... : rendering backends to run
+rem  %1: path to the root of the build tree
+rem  %2: configuration (Debug, Release, etc.)
+rem  %3: mode (capture or compare)
+rem  %4... : rendering backends to run (d3d11, d3d12, gl, vk)
 
-rem Enable delayed expansion to be able to use !ERRORLEVEL!
+rem  example:  ProcessGoldenImages.bat d:\Projects\DiligentEngine\build\Win64 Debug compare d3d11 d3d12
+
+rem  Enable delayed expansion to be able to use !ERRORLEVEL!
 setlocal ENABLEDELAYEDEXPANSION
 
 set img_width=512
@@ -55,14 +57,15 @@ set Samples=Atmosphere^
 
 set ERROR=0
 set APP_ID=1
+
 for %%X in (%Tutorials%) do (
     call :gen_golden_img Tutorials %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
     set /a APP_ID=!APP_ID!*2
 )
 
 for %%X in (%Samples%) do (
-    call :gen_golden_img Samples %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
-    set /a APP_ID=!APP_ID!*2
+   call :gen_golden_img Samples %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
+   set /a APP_ID=!APP_ID!*2
 )
 
 cd Tests/GoldenImages
@@ -106,9 +109,9 @@ EXIT /B %ERROR%
         set app_path=%build_folder%/DiligentSamples/%app_folder%/%app_name%/%config%/%app_name%.exe
         set capture_name=%app_name%_gi_%%X
 
-        REM !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless you use  !!!
-        REM !!!   !ERRORLEVEL! instead of %ERRORLEVEL% and use this command at the start of your code:    !!!
-        REM !!!   setlocal ENABLEDELAYEDEXPANSION                                                         !!!
+        rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
+        rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
+        rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
         !app_path! -mode %%X -adapter sw -width %img_width% -height %img_height% -golden_image_mode %golden_img_mode% -capture_path ../golden_images -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
 
         if "%golden_img_mode%" == "compare" (

@@ -55,7 +55,7 @@ test_script:
 
 after_test:
   - 'cd %APPVEYOR_BUILD_FOLDER%'
-  - 7z a golden_images-"%CONFIGURATION%".zip .\*\*\golden_images\*
+  - if %test_mode%==capture 7z a golden_images-"%CONFIGURATION%".zip .\*\*\golden_images\*
 
 artifacts:
   - path: \golden_images-*.zip
