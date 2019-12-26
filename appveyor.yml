@@ -58,5 +58,5 @@ after_test:
   - 7z a golden_images-"%CONFIGURATION%".zip .\*\*\golden_images\*
 
 artifacts:
-  - path: \*.zip
+  - path: \golden_images-*.zip
     name: golden_images-zip
