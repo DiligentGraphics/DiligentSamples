@@ -48,4 +48,4 @@ build:
 
 test_script:
   - 'cd %APPVEYOR_BUILD_FOLDER%\Tests\GoldenImages'
-  - run_tests.bat c:\projects\build
+  - '%APPVEYOR_BUILD_FOLDER%\BuildTools\Scripts\appveyor\run_tests.bat c:\projects\build'
