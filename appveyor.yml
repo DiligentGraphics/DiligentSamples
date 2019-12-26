@@ -10,6 +10,7 @@ image:
 - Visual Studio 2019
 
 environment:
+  test_mode: capture
   matrix:
     - platform: x64
       configuration: Debug
@@ -50,4 +51,12 @@ build:
 
 test_script:
   - 'cd %APPVEYOR_BUILD_FOLDER%\Tests\GoldenImages'
-  - '%APPVEYOR_BUILD_FOLDER%\BuildTools\Scripts\appveyor\run_tests.bat c:\projects\build'
+  - '%APPVEYOR_BUILD_FOLDER%\BuildTools\Scripts\appveyor\run_tests.bat c:\projects\build %test_mode%'
+
+after_test:
+  - 'cd %APPVEYOR_BUILD_FOLDER%'
+  - 7z a golden_images-"%CONFIGURATION%".zip .\Samples\*\golden_images\* .\Tutorials\*\golden_images\*
+
+artifacts:
+  - path: c:\projects\DiligentSamples\*.zip
+    name: golden_images-zip
