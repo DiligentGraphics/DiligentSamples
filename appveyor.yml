@@ -55,7 +55,7 @@ test_script:
 
 after_test:
   - 'cd %APPVEYOR_BUILD_FOLDER%'
-  - 7z a golden_images-"%CONFIGURATION%".zip .\Samples\*\golden_images\* .\Tutorials\*\golden_images\*
+  - 7z a golden_images-"%CONFIGURATION%".zip .\*\*\golden_images\*
 
 artifacts:
   - path: c:\projects\DiligentSamples\*.zip
