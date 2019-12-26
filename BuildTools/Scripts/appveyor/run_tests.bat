@@ -1,14 +1,10 @@
-setlocal ENABLEDELAYEDEXPANSION
-
-set ERROR=0
-
 if "%PLATFORM_NAME%"=="Windows" (
-    rem  call is required here because otherwise exit /b command in the bat file will terminate this shell too
-    call ProcessGoldenImages.bat %1 %CONFIGURATION% compare d3d11 d3d12 || set ERROR=!errorlevel!
+    rem  Note: 'exit /b' command in the bat file will terminate this shell too 
+	rem  (which is what we want in this case).
+	rem  We can run the script with 'call' to keep this shell running.
+    ProcessGoldenImages.bat %1 %CONFIGURATION% compare d3d11 d3d12
 )
 
 if "%PLATFORM_NAME%"=="Windows8.1" (
-    call ProcessGoldenImages.bat %1 %CONFIGURATION% compare d3d11 || set ERROR=!errorlevel!
+    ProcessGoldenImages.bat %1 %CONFIGURATION% compare d3d11
 )
-
-exit /B %ERROR%
