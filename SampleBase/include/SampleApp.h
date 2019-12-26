@@ -116,6 +116,7 @@ protected:
     bool         m_bVSync              = false;
     bool         m_bFullScreenMode     = false;
     bool         m_bShowAdaptersDialog = true;
+    bool         m_bShowUI             = true;
     double       m_CurrentTime         = 0;
 
     struct ScreenCaptureInfo

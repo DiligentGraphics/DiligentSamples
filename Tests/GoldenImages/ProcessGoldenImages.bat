@@ -51,7 +51,7 @@ call :gen_golden_img Tutorials Tutorial17_MSAA %rest_args% || set /a ERROR=%ERRO
 
 call :gen_golden_img Samples Atmosphere %rest_args% || set /a ERROR=%ERROR%+65536
 call :gen_golden_img Samples GLTFViewer %rest_args% || set /a ERROR=%ERROR%+131072
-rem call :gen_golden_img Samples ImguiDemo %rest_args% || set /a ERROR=%ERROR%+262144
+call :gen_golden_img Samples ImguiDemo %rest_args% || set /a ERROR=%ERROR%+262144
 call :gen_golden_img Samples NuklearDemo  %rest_args% || set /a ERROR=%ERROR%+524288
 call :gen_golden_img Samples Shadows %rest_args% || set /a ERROR=%ERROR%+1048576
 
@@ -67,6 +67,12 @@ EXIT /B %ERROR%
 
     set app_name=%1
     shift
+
+    set show_ui=1
+    if "%app_folder%" == "Samples" (
+        set show_ui=0
+        if "%app_name%" == "ImguiDemo" set show_ui=1
+    )
 
     set backends=
     :loop2
@@ -92,7 +98,7 @@ EXIT /B %ERROR%
         REM !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless you use  !!!
         REM !!!   !ERRORLEVEL! instead of %ERRORLEVEL% and use this command at the start of your code:    !!!
         REM !!!   setlocal ENABLEDELAYEDEXPANSION                                                         !!!
-        !app_path! -mode %%X -adapter sw -width %img_width% -height %img_height% -golden_image_mode %golden_img_mode% -capture_path ../golden_images -capture_name !capture_name! -capture_format png
+        !app_path! -mode %%X -adapter sw -width %img_width% -height %img_height% -golden_image_mode %golden_img_mode% -capture_path ../golden_images -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
 
         if "%golden_img_mode%" == "compare" (
             if !ERRORLEVEL! NEQ 0 (

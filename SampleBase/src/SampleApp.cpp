@@ -623,6 +623,10 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         {
             m_bShowAdaptersDialog = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
         }
+        else if (!(Arg = GetArgument(pos, "show_ui")).empty())
+        {
+            m_bShowUI = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
+        }
         else if (!(Arg = GetArgument(pos, "golden_image_mode")).empty())
         {
             if (StrCmpNoCase(Arg.c_str(), "none", Arg.length()) == 0)
@@ -711,7 +715,15 @@ void SampleApp::Render()
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     if (m_pImGui)
     {
-        m_pImGui->Render(m_pImmediateContext);
+        if (m_bShowUI)
+        {
+            // No need to call EndFrame as ImGui::Render calls it automatically
+            m_pImGui->Render(m_pImmediateContext);
+        }
+        else
+        {
+            m_pImGui->EndFrame();
+        }
     }
 }
 
@@ -750,6 +762,8 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
 
     auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
+
+    m_ExitCode = 0;
     for (Uint32 row = 0; row < TexDesc.Height; ++row)
     {
         for (Uint32 col = 0; col < TexDesc.Width; ++col)
