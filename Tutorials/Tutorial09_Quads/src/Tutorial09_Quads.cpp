@@ -354,8 +354,9 @@ void Tutorial09_Quads::InitializeQuads()
 {
     m_Quads.resize(m_NumQuads);
 
-    std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
-                         //Use 0 as the seed to always generate the same sequence
+    std::mt19937 gen; // Standard mersenne_twister_engine. Use default seed
+                      // to generate consistent distribution.
+
     std::uniform_real_distribution<float> scale_distr(0.01f, 0.05f);
     std::uniform_real_distribution<float> pos_distr(-0.95f, +0.95f);
     std::uniform_real_distribution<float> move_dir_distr(-0.1f, +0.1f);
@@ -382,8 +383,8 @@ void Tutorial09_Quads::InitializeQuads()
 
 void Tutorial09_Quads::UpdateQuads(float elapsedTime)
 {
-    std::random_device rd;        //Will be used to obtain a seed for the random number engine
-    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::mt19937 gen; // Standard mersenne_twister_engine. Use default seed
+                      // to generate consistent distribution.
 
     std::uniform_real_distribution<float> rot_distr(-PI_F * 0.5f, +PI_F * 0.5f);
     for (int quad = 0; quad < m_NumQuads; ++quad)

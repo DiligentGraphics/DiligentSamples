@@ -196,8 +196,8 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
 
     float fGridSize = static_cast<float>(m_GridSize);
 
-    std::random_device rd;        //Will be used to obtain a seed for the random number engine
-    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::mt19937 gen; // Standard mersenne_twister_engine. Use default seed
+                      // to generate consistent distribution.
 
     std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
     std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);

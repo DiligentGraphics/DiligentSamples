@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 
-project(ShadowsSample CXX)
+project(Shadows CXX)
 
 set(SOURCE
     src/ShadowsSample.cpp
@@ -24,15 +24,15 @@ set(ASSETS
     ${POWERPLANT_FILES}
 )
 
-add_sample_app("ShadowsSample" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(ShadowsSample PRIVATE Diligent-AssetLoader DiligentFX)
+add_sample_app("Shadows" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+target_link_libraries(Shadows PRIVATE Diligent-AssetLoader DiligentFX)
 
-target_include_directories(ShadowsSample
+target_include_directories(Shadows
 PRIVATE
     ../../../DiligentFX/Shaders/Common/public/
 )
 
-add_custom_command(TARGET ShadowsSample PRE_BUILD 
+add_custom_command(TARGET Shadows PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/Shadows.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
 )

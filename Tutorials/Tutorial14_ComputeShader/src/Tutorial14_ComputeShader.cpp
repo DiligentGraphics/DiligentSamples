@@ -250,8 +250,8 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
 
     std::vector<ParticleAttribs> ParticleData(m_NumParticles);
 
-    std::random_device rd;        //Will be used to obtain a seed for the random number engine
-    std::mt19937       gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::mt19937 gen; // Standard mersenne_twister_engine. Use default seed
+                      // to generate consistent distribution.
 
     std::uniform_real_distribution<float> pos_distr(-1.f, +1.f);
     std::uniform_real_distribution<float> size_distr(0.5f, 1.f);
@@ -261,11 +261,11 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     fSize                            = std::min(fMaxParticleSize, fSize);
     for (auto& particle : ParticleData)
     {
-        particle.f2NewPos.x   = pos_distr(rd);
-        particle.f2NewPos.y   = pos_distr(rd);
-        particle.f2NewSpeed.x = pos_distr(rd) * fSize * 5.f;
-        particle.f2NewSpeed.y = pos_distr(rd) * fSize * 5.f;
-        particle.fSize        = fSize * size_distr(rd);
+        particle.f2NewPos.x   = pos_distr(gen);
+        particle.f2NewPos.y   = pos_distr(gen);
+        particle.f2NewSpeed.x = pos_distr(gen) * fSize * 5.f;
+        particle.f2NewSpeed.y = pos_distr(gen) * fSize * 5.f;
+        particle.fSize        = fSize * size_distr(gen);
     }
 
     BufferData VBData;

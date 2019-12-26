@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 
-project(AtmosphereSample CXX)
+project(Atmosphere CXX)
 
 set(SOURCE
     src/AtmosphereSample.cpp
@@ -52,7 +52,7 @@ set(TERRAIN_TILES
 
 set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
-add_sample_app("AtmosphereSample" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
+add_sample_app("Atmosphere" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
 set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/terrain"
@@ -71,7 +71,7 @@ set_source_files_properties(${TERRAIN_TILES} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources/Terrain/Tiles"
 )
 
-target_include_directories(AtmosphereSample
+target_include_directories(Atmosphere
 PRIVATE
     src
     src/Terrain
@@ -80,14 +80,14 @@ PRIVATE
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public
 )
 
-target_link_libraries(AtmosphereSample
+target_link_libraries(Atmosphere
 PRIVATE
     Diligent-GraphicsAccessories
     Diligent-TextureLoader
     DiligentFX
 )
 
-add_custom_command(TARGET AtmosphereSample PRE_BUILD 
+add_custom_command(TARGET Atmosphere PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
