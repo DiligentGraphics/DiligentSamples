@@ -41,7 +41,7 @@ before_build:
   - echo add_subdirectory(DiligentFX) >> CMakeLists.txt
   - echo add_subdirectory(DiligentSamples) >> CMakeLists.txt
   - echo %PLATFORM%
-  - cmake -S . -B ./build -G "Visual Studio 15 2017" -A %PLATFORM%
+  - cmake -S . -B ./build -G "Visual Studio 16 2019" -A %PLATFORM%
 
 build:
   project: c:\projects\build\DiligentSamples_Test.sln
