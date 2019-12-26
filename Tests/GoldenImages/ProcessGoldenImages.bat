@@ -47,6 +47,12 @@ set Tutorials=Tutorial01_HelloTriangle^
               Tutorial16_BindlessResources^
               Tutorial17_MSAA
 
+set Samples=Atmosphere^
+            GLTFViewer^
+            ImguiDemo^
+            NuklearDemo^
+            Shadows
+
 set ERROR=0
 set APP_ID=1
 for %%X in (%Tutorials%) do (
@@ -54,28 +60,10 @@ for %%X in (%Tutorials%) do (
     set /a APP_ID=!APP_ID!*2
 )
 
-::call :gen_golden_img Tutorials Tutorial01_HelloTriangle %rest_args% || set /a ERROR=%ERROR%+1
-::call :gen_golden_img Tutorials Tutorial02_Cube %rest_args% || set /a ERROR=%ERROR%+2
-::call :gen_golden_img Tutorials Tutorial03_Texturing %rest_args% || set /a ERROR=%ERROR%+4
-::call :gen_golden_img Tutorials Tutorial04_Instancing %rest_args% || set /a ERROR=%ERROR%+8
-::call :gen_golden_img Tutorials Tutorial05_TextureArray %rest_args% || set /a ERROR=%ERROR%+16
-::call :gen_golden_img Tutorials Tutorial06_Multithreading %rest_args% || set /a ERROR=%ERROR%+32
-::call :gen_golden_img Tutorials Tutorial07_GeometryShader %rest_args% || set /a ERROR=%ERROR%+64
-::call :gen_golden_img Tutorials Tutorial08_Tessellation %rest_args% || set /a ERROR=%ERROR%+128
-::call :gen_golden_img Tutorials Tutorial09_Quads %rest_args% || set /a ERROR=%ERROR%+256
-::call :gen_golden_img Tutorials Tutorial10_DataStreaming %rest_args% || set /a ERROR=%ERROR%+512
-::call :gen_golden_img Tutorials Tutorial11_ResourceUpdates %rest_args% || set /a ERROR=%ERROR%+1024
-::call :gen_golden_img Tutorials Tutorial12_RenderTarget %rest_args% || set /a ERROR=%ERROR%+2048
-::call :gen_golden_img Tutorials Tutorial13_ShadowMap %rest_args% || set /a ERROR=%ERROR%+4096
-::call :gen_golden_img Tutorials Tutorial14_ComputeShader %rest_args% || set /a ERROR=%ERROR%+8192
-::call :gen_golden_img Tutorials Tutorial16_BindlessResources %rest_args% || set /a ERROR=%ERROR%+16384
-::call :gen_golden_img Tutorials Tutorial17_MSAA %rest_args% || set /a ERROR=%ERROR%+32768
-::
-::call :gen_golden_img Samples Atmosphere %rest_args% || set /a ERROR=%ERROR%+65536
-::call :gen_golden_img Samples GLTFViewer %rest_args% || set /a ERROR=%ERROR%+131072
-::call :gen_golden_img Samples ImguiDemo %rest_args% || set /a ERROR=%ERROR%+262144
-::call :gen_golden_img Samples NuklearDemo  %rest_args% || set /a ERROR=%ERROR%+524288
-::call :gen_golden_img Samples Shadows %rest_args% || set /a ERROR=%ERROR%+1048576
+for %%X in (%Samples%) do (
+    call :gen_golden_img Samples %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
+    set /a APP_ID=!APP_ID!*2
+)
 
 cd Tests/GoldenImages
 
