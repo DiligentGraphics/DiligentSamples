@@ -30,15 +30,28 @@ set rest_args=
 
 cd ../..
 
-set ERROR=0
+set Tutorials=Tutorial01_HelloTriangle^
+              Tutorial02_Cube^
+              Tutorial03_Texturing^
+              Tutorial04_Instancing^
+              Tutorial05_TextureArray^
+              Tutorial06_Multithreading^
+              Tutorial07_GeometryShader
 
-call :gen_golden_img Tutorials Tutorial01_HelloTriangle %rest_args% || set /a ERROR=%ERROR%+1
-call :gen_golden_img Tutorials Tutorial02_Cube %rest_args% || set /a ERROR=%ERROR%+2
-call :gen_golden_img Tutorials Tutorial03_Texturing %rest_args% || set /a ERROR=%ERROR%+4
-call :gen_golden_img Tutorials Tutorial04_Instancing %rest_args% || set /a ERROR=%ERROR%+8
-call :gen_golden_img Tutorials Tutorial05_TextureArray %rest_args% || set /a ERROR=%ERROR%+16
-call :gen_golden_img Tutorials Tutorial06_Multithreading %rest_args% || set /a ERROR=%ERROR%+32
-call :gen_golden_img Tutorials Tutorial07_GeometryShader %rest_args% || set /a ERROR=%ERROR%+64
+set ERROR=0
+set APP_ID=1
+for %%X in (%Tutorials%) do (
+    call :gen_golden_img Tutorials %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
+    set /a APP_ID=!APP_ID!*2
+)
+
+::call :gen_golden_img Tutorials Tutorial01_HelloTriangle %rest_args% || set /a ERROR=%ERROR%+1
+::call :gen_golden_img Tutorials Tutorial02_Cube %rest_args% || set /a ERROR=%ERROR%+2
+::call :gen_golden_img Tutorials Tutorial03_Texturing %rest_args% || set /a ERROR=%ERROR%+4
+::call :gen_golden_img Tutorials Tutorial04_Instancing %rest_args% || set /a ERROR=%ERROR%+8
+::call :gen_golden_img Tutorials Tutorial05_TextureArray %rest_args% || set /a ERROR=%ERROR%+16
+::call :gen_golden_img Tutorials Tutorial06_Multithreading %rest_args% || set /a ERROR=%ERROR%+32
+::call :gen_golden_img Tutorials Tutorial07_GeometryShader %rest_args% || set /a ERROR=%ERROR%+64
 ::call :gen_golden_img Tutorials Tutorial08_Tessellation %rest_args% || set /a ERROR=%ERROR%+128
 ::call :gen_golden_img Tutorials Tutorial09_Quads %rest_args% || set /a ERROR=%ERROR%+256
 ::call :gen_golden_img Tutorials Tutorial10_DataStreaming %rest_args% || set /a ERROR=%ERROR%+512
@@ -62,6 +75,8 @@ EXIT /B %ERROR%
 
 
 :gen_golden_img
+    setlocal
+
     set app_folder=%1
     shift
 
