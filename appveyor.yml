@@ -13,11 +13,11 @@ environment:
   matrix:
     - platform: x64
       configuration: Debug
-	  platform_name: Windows
+      platform_name: Windows
 
     - platform: x64
       configuration: Release
-	  platform_name: Windows
+      platform_name: Windows
 
 # clone directory
 clone_folder: c:\projects\DiligentSamples
