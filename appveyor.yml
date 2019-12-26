@@ -45,3 +45,7 @@ build:
   project: c:\projects\build\DiligentSamples_Test.sln
   verbosity: minimal
   parallel: true
+
+test_script:
+  - 'cd %APPVEYOR_BUILD_FOLDER%\DiligentSamples\Tests\GoldenImages'
+  - 'run_tests.bat %APPVEYOR_BUILD_FOLDER%\build'
