@@ -117,6 +117,7 @@ EXIT /B %ERROR%
                 echo Successfully generated golden image for %app_name%-%%X
             )
         )
+		echo.
     )
 
     cd ../../../
