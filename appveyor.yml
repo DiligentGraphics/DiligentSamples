@@ -47,5 +47,5 @@ build:
   parallel: true
 
 test_script:
-  - 'cd %APPVEYOR_BUILD_FOLDER%\DiligentSamples\Tests\GoldenImages'
-  - 'run_tests.bat %APPVEYOR_BUILD_FOLDER%\build'
+  - 'cd %APPVEYOR_BUILD_FOLDER%\Tests\GoldenImages'
+  - run_tests.bat c:\projects\build
