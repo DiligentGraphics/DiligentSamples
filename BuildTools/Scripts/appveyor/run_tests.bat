@@ -1,4 +1,4 @@
-@echo off
+rem @echo off - this will hide all output!
 
 if "%PLATFORM_NAME%"=="Windows" (
 	ProcessGoldenImages.bat %1 %CONFIGURATION% compare d3d11 d3d12
