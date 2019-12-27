@@ -97,12 +97,12 @@ EXIT /B %ERROR%
         goto loop2
     :end_loop2
 
-    set golden_img_dir=%app_folder%/%app_name%/golden_images
+    cd "%app_folder%/%app_name%/assets"
+
+    set golden_img_dir=../../../Tests/GoldenImages/%app_folder%/%app_name%
     if not exist "%golden_img_dir%" (
         md "%golden_img_dir%"
     )
-   
-    cd "%app_folder%/%app_name%/assets"
 
     set EXIT_CODE=0
     for %%X in (%backends%) do (
@@ -113,7 +113,7 @@ EXIT /B %ERROR%
         rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
         rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
         rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
-        !app_path! -mode %%X -adapter sw -width %img_width% -height %img_height% -golden_image_mode %golden_img_mode% -capture_path ../golden_images -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
+        !app_path! -mode %%X -adapter sw -width %img_width% -height %img_height% -golden_image_mode %golden_img_mode% -capture_path %golden_img_dir% -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
 
         if "%golden_img_mode%" == "compare" (
             if !ERRORLEVEL! NEQ 0 (

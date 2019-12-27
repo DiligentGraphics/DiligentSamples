@@ -11,7 +11,7 @@ image:
 
 environment:
   # use 'capture' to generate golden images and upload them as build artifacts
-  test_mode: compare
+  test_mode: capture
 
   matrix:
     - platform: x64
@@ -57,7 +57,7 @@ test_script:
 
 after_test:
   - 'cd %APPVEYOR_BUILD_FOLDER%'
-  - if %test_mode%==capture 7z a golden_images-"%CONFIGURATION%".zip .\*\*\golden_images\*
+  - if %test_mode%==capture 7z a golden_images-"%CONFIGURATION%".zip .\Tests\GoldenImages\*\*
 
 artifacts:
   - path: \golden_images-*.zip

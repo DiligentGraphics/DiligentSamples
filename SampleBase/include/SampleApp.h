@@ -137,8 +137,9 @@ protected:
 
     std::unique_ptr<ImGuiImplDiligent> m_pImGui;
 
-    GoldenImageMode m_GoldenImgMode = GoldenImageMode::None;
-    int             m_ExitCode      = 0;
+    GoldenImageMode m_GoldenImgMode           = GoldenImageMode::None;
+    int             m_GoldenImgPixelTolerance = 0;
+    int             m_ExitCode                = 0;
 };
 
 } // namespace Diligent

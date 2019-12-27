@@ -24,6 +24,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdlib>
+#include <cmath>
 
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
@@ -646,6 +647,10 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
                 LOG_ERROR_MESSAGE("Unknown golden image mode. The following are allowed values: 'none', 'capture', 'compare'");
             }
         }
+        else if (!(Arg = GetArgument(pos, "golden_image_tolerance")).empty())
+        {
+            m_GoldenImgPixelTolerance = atoi(Arg.c_str());
+        }
 
         pos = strchr(pos, '-');
     }
@@ -770,8 +775,9 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
         {
             const auto* SrcPixel = &CapturedPixels[(col + row * TexDesc.Width) * 3];
             const auto* DstPixel = pGoldenImgPixels + row * GoldenImgDesc.RowStride + col * GoldenImgDesc.NumComponents;
-
-            if (SrcPixel[0] != DstPixel[0] || SrcPixel[1] != DstPixel[1] || SrcPixel[2] != DstPixel[2])
+            if (std::abs(int{SrcPixel[0]} - int{DstPixel[0]}) > m_GoldenImgPixelTolerance ||
+                std::abs(int{SrcPixel[1]} - int{DstPixel[1]}) > m_GoldenImgPixelTolerance ||
+                std::abs(int{SrcPixel[2]} - int{DstPixel[2]}) > m_GoldenImgPixelTolerance)
                 ++m_ExitCode;
         }
     }
