@@ -823,6 +823,7 @@ void SampleApp::Present()
     {
         if (m_CurrentTime - m_ScreenCaptureInfo.LastCaptureTime >= 1.0 / m_ScreenCaptureInfo.CaptureFPS)
         {
+            m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
             m_pScreenCapture->Capture(m_pSwapChain, m_pImmediateContext, m_ScreenCaptureInfo.CurrentFrame);
 
             m_ScreenCaptureInfo.LastCaptureTime = m_CurrentTime;
