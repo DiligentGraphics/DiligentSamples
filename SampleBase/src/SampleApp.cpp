@@ -373,6 +373,26 @@ void SampleApp::InitializeDiligentEngine(
 
 void SampleApp::InitializeSample()
 {
+#if PLATFORM_WIN32
+    if (!m_DisplayModes.empty())
+    {
+        const HWND hDesktop = GetDesktopWindow();
+
+        RECT rc;
+        GetWindowRect(hDesktop, &rc);
+        Uint32 ScreenWidth  = static_cast<Uint32>(rc.right - rc.left);
+        Uint32 ScreenHeight = static_cast<Uint32>(rc.bottom - rc.top);
+        for (int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
+        {
+            if (ScreenWidth == m_DisplayModes[i].Width && ScreenHeight == m_DisplayModes[i].Height)
+            {
+                m_SelectedDisplayMode = i;
+                break;
+            }
+        }
+    }
+#endif
+
     //auto UIScale = m_TheSample->GetUIScale();
     //if(UIScale != 1)
     //{
@@ -408,44 +428,28 @@ void SampleApp::UpdateAdaptersDialog()
         {
             ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, m_AdapterAttribs.DedicatedVideoMemory >> 20);
 
-            std::vector<const char*> DisplayModes(m_DisplayModes.size());
-            std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
-            for (int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
-            {
-                static constexpr const char* ScalingModeStr[] =
-                    {
-                        ""
-                        " Centered",
-                        " Stretched" //
-                    };
-                const auto& Mode = m_DisplayModes[i];
-
-                std::stringstream ss;
-                float             RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
-                ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
-                DisplayModeStrings[i] = ss.str();
-                DisplayModes[i]       = DisplayModeStrings[i].c_str();
-            }
-
-            {
-                const HWND hDesktop = GetDesktopWindow();
-
-                RECT rc;
-                GetWindowRect(hDesktop, &rc);
-                Uint32 ScreenWidth  = static_cast<Uint32>(rc.right - rc.left);
-                Uint32 ScreenHeight = static_cast<Uint32>(rc.bottom - rc.top);
-                for (int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
-                {
-                    if (ScreenWidth == m_DisplayModes[i].Width && ScreenHeight == m_DisplayModes[i].Height)
-                    {
-                        m_SelectedDisplayMode = i;
-                        break;
-                    }
-                }
-            }
-
             if (!m_DisplayModes.empty())
             {
+                std::vector<const char*> DisplayModes(m_DisplayModes.size());
+                std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
+                for (int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
+                {
+                    static constexpr const char* ScalingModeStr[] =
+                        {
+                            ""
+                            " Centered",
+                            " Stretched" //
+                        };
+                    const auto& Mode = m_DisplayModes[i];
+
+                    std::stringstream ss;
+
+                    float RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
+                    ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
+                    DisplayModeStrings[i] = ss.str();
+                    DisplayModes[i]       = DisplayModeStrings[i].c_str();
+                }
+
                 ImGui::SetNextItemWidth(220);
                 ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
             }
