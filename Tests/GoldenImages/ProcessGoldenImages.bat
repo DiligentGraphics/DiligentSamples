@@ -51,9 +51,10 @@ set Tutorials=Tutorial01_HelloTriangle^
 
 set Samples=Atmosphere^
             GLTFViewer^
-            ImguiDemo^
             NuklearDemo^
             Shadows
+
+rem  ImguiDemo has fps counter in the UI, so we have to skip it
 
 set ERROR=0
 set APP_ID=1
