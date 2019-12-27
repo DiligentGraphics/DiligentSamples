@@ -10,7 +10,9 @@ image:
 - Visual Studio 2019
 
 environment:
+  # use 'capture' to generate golden images and upload them as build artifacts
   test_mode: compare
+
   matrix:
     - platform: x64
       configuration: Debug
