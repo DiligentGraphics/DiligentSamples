@@ -12,7 +12,7 @@ image:
 environment:
   # use 'capture' to generate golden images and upload them as build artifacts
   # use 'compare' to render and comare with golden references
-  test_mode: capture
+  test_mode: compare
 
   matrix:
     - platform: x64
