@@ -97,7 +97,7 @@ void SampleApp::InitializeDiligentEngine(
         case DeviceType::D3D11:
         {
             EngineD3D11CreateInfo EngineCI;
-            EngineCI.AdapterId = m_AdapterId;
+
 #    ifdef DEVELOPMENT
             EngineCI.DebugFlags |=
                 D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
@@ -162,6 +162,7 @@ void SampleApp::InitializeDiligentEngine(
                 pFactoryD3D11->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
             }
 
+            EngineCI.AdapterId = m_AdapterId;
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
 
@@ -175,7 +176,7 @@ void SampleApp::InitializeDiligentEngine(
         case DeviceType::D3D12:
         {
             EngineD3D12CreateInfo EngineCI;
-            EngineCI.AdapterId = m_AdapterId;
+
 #    ifdef DEVELOPMENT
             EngineCI.EnableDebugLayer = true;
 #    endif
@@ -240,6 +241,7 @@ void SampleApp::InitializeDiligentEngine(
                 pFactoryD3D12->EnumerateDisplayModes(EngineCI.MinimumFeatureLevel, m_AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, m_DisplayModes.data());
             }
 
+            EngineCI.AdapterId = m_AdapterId;
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
 
