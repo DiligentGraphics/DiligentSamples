@@ -6,7 +6,7 @@ set(SOURCE
     src/Tutorial00_HelloLinux.cpp
 )
 
-add_executable(Tutorial00_HelloLinux WIN32 ${SOURCE})
+add_executable(Tutorial00_HelloLinux ${SOURCE})
 target_compile_options(Tutorial00_HelloLinux PRIVATE -DENGINE_DLL)
 
 target_include_directories(Tutorial00_HelloLinux PRIVATE "../../../DiligentCore")
