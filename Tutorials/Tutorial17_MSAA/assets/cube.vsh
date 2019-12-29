@@ -25,7 +25,7 @@ void main(in  uint    InstID : SV_InstanceID,
           in  VSInput VSIn,
           out PSInput PSIn) 
 {
-    const uint GridDim = 7;
+    const uint GridDim = 7u;
     int GridX = int(InstID % GridDim) - int(GridDim) / 2;
     int GridY = int(InstID / GridDim) - int(GridDim) / 2;
 
