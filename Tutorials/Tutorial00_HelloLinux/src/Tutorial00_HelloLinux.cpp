@@ -184,6 +184,11 @@ public:
     {
     }
 
+    ~Tutorial00App()
+    {
+        m_pImmediateContext->Flush();
+    }
+
     bool OnGLContextCreated(Display* display, Window NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
