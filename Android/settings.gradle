@@ -17,4 +17,4 @@ include 'Common',
         ':Tutorial12_RenderTarget',
         ':Tutorial13_ShadowMap',
         ':Tutorial14_ComputeShader'
-project(':Common').projectDir = new File(settingsDir, '../../Common/NativeApp/Android')
+project(':Common').projectDir = new File(settingsDir, '../../DiligentTools/NativeApp/Android')
