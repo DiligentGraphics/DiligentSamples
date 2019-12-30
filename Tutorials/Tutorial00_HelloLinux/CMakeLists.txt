@@ -18,7 +18,7 @@ set_target_properties(Tutorial00_HelloLinux PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
-if(OPENGL_SUPPORTED)
+if(GL_SUPPORTED)
     target_link_libraries(Tutorial00_HelloLinux PRIVATE Diligent-GraphicsEngineOpenGL-shared GL X11)
 endif()
 

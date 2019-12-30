@@ -78,15 +78,7 @@ struct xcb_size_hints_t
 #    define PLATFORM_LINUX 1
 #endif
 
-#ifndef ENGINE_DLL
-#    define ENGINE_DLL 1
-#endif
-
-#ifndef GL_SUPPORTED
-#    define GL_SUPPORTED 1
-#endif
-
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED
 #    include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
 #endif
 
@@ -191,7 +183,7 @@ public:
         m_pImmediateContext->Flush();
     }
 
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED
     bool OnGLContextCreated(Display* display, Window NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
@@ -483,7 +475,7 @@ int xcb_main()
 
 #endif
 
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED
 int x_main()
 {
     std::unique_ptr<Tutorial00App> TheApp(new Tutorial00App);
@@ -653,7 +645,7 @@ int main(int argc, char** argv)
 
 #if VULKAN_SUPPORTED
     DevType = DeviceType::Vulkan;
-#elif OPENGL_SUPPORTED
+#elif GL_SUPPORTED
     DevType = DeviceType::OpenGL;
 #else
 #    error No supported backends
@@ -668,7 +660,7 @@ int main(int argc, char** argv)
             pos += strlen(Key);
             if (strcasecmp(pos, "GL") == 0)
             {
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED
                 DevType = DeviceType::OpenGL;
 #else
                 std::cerr << "OpenGL is not supported";
@@ -699,7 +691,7 @@ int main(int argc, char** argv)
     }
 #endif
 
-#if OPENGL_SUPPORTED
+#if GL_SUPPORTED
     if (DevType == DeviceType::OpenGL)
     {
         return x_main();
