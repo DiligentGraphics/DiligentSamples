@@ -22,7 +22,9 @@
 */
 
 #include "SampleApp.h"
-#include "ImGuiImplLinuxXCB.h"
+#if VULKAN_SUPPORTED
+#    include "ImGuiImplLinuxXCB.h"
+#endif
 #include "ImGuiImplLinuxX11.h"
 
 namespace Diligent

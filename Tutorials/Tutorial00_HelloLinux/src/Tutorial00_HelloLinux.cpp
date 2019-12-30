@@ -86,7 +86,9 @@ struct xcb_size_hints_t
 #    define GL_SUPPORTED 1
 #endif
 
-#include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
+#if OPENGL_SUPPORTED
+#    include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
+#endif
 
 #if VULKAN_SUPPORTED
 #    include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
@@ -189,6 +191,7 @@ public:
         m_pImmediateContext->Flush();
     }
 
+#if OPENGL_SUPPORTED
     bool OnGLContextCreated(Display* display, Window NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
@@ -204,6 +207,7 @@ public:
 
         return true;
     }
+#endif
 
 #if VULKAN_SUPPORTED
     bool InitVulkan(XCBInfo& xcbInfo)
@@ -479,6 +483,7 @@ int xcb_main()
 
 #endif
 
+#if OPENGL_SUPPORTED
 int x_main()
 {
     std::unique_ptr<Tutorial00App> TheApp(new Tutorial00App);
@@ -640,13 +645,20 @@ int x_main()
 
     return 0;
 }
+#endif
 
 int main(int argc, char** argv)
 {
-    DeviceType DevType = DeviceType::OpenGL;
+    DeviceType DevType = DeviceType::Undefined;
 
-#ifdef VULKAN_SUPPORTED
+#if VULKAN_SUPPORTED
     DevType = DeviceType::Vulkan;
+#elif OPENGL_SUPPORTED
+    DevType = DeviceType::OpenGL;
+#else
+#    error No supported backends
+#endif
+
     if (argc > 1)
     {
         const auto* Key = "-mode ";
@@ -656,11 +668,21 @@ int main(int argc, char** argv)
             pos += strlen(Key);
             if (strcasecmp(pos, "GL") == 0)
             {
+#if OPENGL_SUPPORTED
                 DevType = DeviceType::OpenGL;
+#else
+                std::cerr << "OpenGL is not supported";
+                return -1;
+#endif
             }
             else if (strcasecmp(pos, "VK") == 0)
             {
+#if VULKAN_SUPPORTED
                 DevType = DeviceType::Vulkan;
+#else
+                std::cerr << "Vulkan is not supported";
+                return -1;
+#endif
             }
             else
             {
@@ -670,11 +692,19 @@ int main(int argc, char** argv)
         }
     }
 
+#if VULKAN_SUPPORTED
     if (DevType == DeviceType::Vulkan)
     {
         return xcb_main();
     }
 #endif
 
-    return x_main();
+#if OPENGL_SUPPORTED
+    if (DevType == DeviceType::OpenGL)
+    {
+        return x_main();
+    }
+#endif
+
+    return -1;
 }

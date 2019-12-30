@@ -18,7 +18,9 @@ set_target_properties(Tutorial00_HelloLinux PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
-target_link_libraries(Tutorial00_HelloLinux PRIVATE GL X11 Diligent-GraphicsEngineOpenGL-shared)
+if(OPENGL_SUPPORTED)
+    target_link_libraries(Tutorial00_HelloLinux PRIVATE Diligent-GraphicsEngineOpenGL-shared GL X11)
+endif()
 
 if(VULKAN_SUPPORTED)
     target_link_libraries(Tutorial00_HelloLinux PRIVATE Diligent-GraphicsEngineVk-shared xcb)
