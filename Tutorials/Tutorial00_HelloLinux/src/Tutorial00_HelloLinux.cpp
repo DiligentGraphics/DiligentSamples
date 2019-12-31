@@ -562,9 +562,9 @@ int x_main()
     }
 
     int Flags = GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
-#ifdef _DEBUG
+#    ifdef _DEBUG
     Flags |= GLX_CONTEXT_DEBUG_BIT_ARB;
-#endif
+#    endif
 
     int major_version = 4;
     int minor_version = 3;
