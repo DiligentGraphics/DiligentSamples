@@ -94,6 +94,13 @@ void SampleApp::InitializeDiligentEngine(
     if (m_ScreenCaptureInfo.AllowCapture)
         SCDesc.Usage |= SWAP_CHAIN_USAGE_COPY_SOURCE;
 
+#if PLATFORM_MACOS
+    // We need at least 3 buffers on Metal to avoid massive
+    // peformance degradation in full screen mode.
+    // https://github.com/KhronosGroup/MoltenVK/issues/808
+    SCDesc.BufferCount = 3;
+#endif
+
     std::vector<IDeviceContext*> ppContexts;
     switch (m_DeviceType)
     {
