@@ -356,7 +356,7 @@ void Tutorial14_ComputeShader::Initialize(IEngineFactory*  pEngineFactory,
                                           ISwapChain*      pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
-    if (!deviceCaps.bComputeShadersSupported)
+    if (!deviceCaps.Features.ComputeShaders)
     {
         throw std::runtime_error("Compute shaders are required to run this tutorial");
     }

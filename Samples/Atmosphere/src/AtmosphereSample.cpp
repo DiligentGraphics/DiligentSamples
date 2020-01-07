@@ -65,7 +65,7 @@ void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, Engine
 void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
-    if (!deviceCaps.bComputeShadersSupported)
+    if (!deviceCaps.Features.ComputeShaders)
     {
         throw std::runtime_error("Compute shaders are required to run this sample");
     }

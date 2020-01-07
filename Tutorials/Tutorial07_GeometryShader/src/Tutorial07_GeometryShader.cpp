@@ -271,7 +271,7 @@ void Tutorial07_GeometryShader::Initialize(IEngineFactory*  pEngineFactory,
                                            ISwapChain*      pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
-    if (!deviceCaps.bGeometryShadersSupported)
+    if (!deviceCaps.Features.GeometryShaders)
     {
         throw std::runtime_error("Geometry shaders are not supported");
     }

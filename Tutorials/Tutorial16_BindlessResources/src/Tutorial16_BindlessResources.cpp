@@ -119,7 +119,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         ShaderCI.FilePath        = "cube.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
 
-        if (m_pDevice->GetDeviceCaps().bBindlessSupported)
+        if (m_pDevice->GetDeviceCaps().Features.BindlessResources)
         {
             ShaderMacroHelper Macros;
             Macros.AddShaderMacro("BINDLESS", 1);

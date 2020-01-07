@@ -132,7 +132,7 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
 
 void Tutorial08_Tessellation::CreatePipelineStates()
 {
-    const bool bWireframeSupported = m_pDevice->GetDeviceCaps().bGeometryShadersSupported;
+    const bool bWireframeSupported = m_pDevice->GetDeviceCaps().Features.GeometryShaders;
 
     ShaderMacroHelper MacroHelper;
 
@@ -377,7 +377,7 @@ void Tutorial08_Tessellation::Initialize(IEngineFactory*  pEngineFactory,
                                          ISwapChain*      pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();
-    if (!deviceCaps.bTessellationSupported)
+    if (!deviceCaps.Features.Tessellation)
     {
         throw std::runtime_error("Hardware tessellation is not supported");
     }
