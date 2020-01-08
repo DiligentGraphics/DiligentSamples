@@ -48,20 +48,6 @@ SampleBase* CreateSample()
 AtmosphereSample::AtmosphereSample()
 {}
 
-void AtmosphereSample::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& Attribs, SwapChainDesc& SCDesc)
-{
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
-#if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
-    {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
-
-        VkAttrs.EnabledFeatures.depthClamp                        = true;
-        VkAttrs.EnabledFeatures.shaderStorageImageExtendedFormats = true;
-    }
-#endif
-}
-
 void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
 {
     const auto& deviceCaps = pDevice->GetDeviceCaps();

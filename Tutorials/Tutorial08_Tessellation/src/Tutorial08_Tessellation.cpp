@@ -69,21 +69,6 @@ struct GlobalConstants
 
 } // namespace
 
-void Tutorial08_Tessellation::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                             EngineCreateInfo& Attribs,
-                                                             SwapChainDesc&    SCDesc)
-{
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
-#if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
-    {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
-
-        VkAttrs.EnabledFeatures.geometryShader     = true;
-        VkAttrs.EnabledFeatures.tessellationShader = true;
-    }
-#endif
-}
 
 static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
                                            const ShaderCreateInfo& ShaderCI,

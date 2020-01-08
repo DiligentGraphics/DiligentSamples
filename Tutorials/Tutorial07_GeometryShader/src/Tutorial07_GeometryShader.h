@@ -36,9 +36,6 @@ namespace Diligent
 class Tutorial07_GeometryShader final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
-                                                EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc) override final;
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,

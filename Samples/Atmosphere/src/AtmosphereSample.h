@@ -43,10 +43,6 @@ public:
     AtmosphereSample();
     ~AtmosphereSample();
 
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
-                                                EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc) override final;
-
     virtual void        Initialize(IEngineFactory*  pEngineFactory,
                                    IRenderDevice*   pDevice,
                                    IDeviceContext** ppContexts,

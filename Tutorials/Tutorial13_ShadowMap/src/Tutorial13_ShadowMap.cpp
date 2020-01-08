@@ -44,20 +44,6 @@ SampleBase* CreateSample()
     return new Tutorial13_ShadowMap();
 }
 
-void Tutorial13_ShadowMap::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                          EngineCreateInfo& Attribs,
-                                                          SwapChainDesc&    SCDesc)
-{
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
-#if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
-    {
-        auto& VkAttrs                      = static_cast<EngineVkCreateInfo&>(Attribs);
-        VkAttrs.EnabledFeatures.depthClamp = true;
-    }
-#endif
-}
-
 void Tutorial13_ShadowMap::CreateCubePSO()
 {
     // Create a shader source stream factory to load shaders from files.
