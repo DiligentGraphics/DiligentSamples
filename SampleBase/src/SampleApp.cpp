@@ -210,8 +210,13 @@ void SampleApp::InitializeDiligentEngine(
             LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
 #    endif
             auto* pFactoryD3D12 = GetEngineFactoryD3D12();
-            m_pEngineFactory    = pFactoryD3D12;
-            Uint32 NumAdapters  = 0;
+            if (!pFactoryD3D12->LoadD3D12())
+            {
+                LOG_ERROR_AND_THROW("Failed to load Direct3D12");
+            }
+
+            m_pEngineFactory   = pFactoryD3D12;
+            Uint32 NumAdapters = 0;
             pFactoryD3D12->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
             std::vector<AdapterAttribs> Adapters(NumAdapters);
             if (NumAdapters > 0)
