@@ -7,7 +7,7 @@ the GPU operation, such as the number of primitives rendered, command processing
 
 ## Queries
 
-Queries operate by enclosing a sequence of commands in interest in BeginQuery()/EndQuery() block.
+Queries operate by enclosing a sequence of commands in interest in `BeginQuery()`/`EndQuery()` block.
 Queries are intrinsically asynchronous, which means that the query result can't be accessed immediately,
 but rather becomes available later after the commands are executed by the GPU. The queries provide tools
 to check the data availability and retrieve it, see the desription of
@@ -27,6 +27,12 @@ facilitate the query usage: `ScopedQueryHelper` should be used for pipeline stat
 following code example shows:
 
 ```cpp
+std::unique_ptr<ScopedQueryHelper>   m_pPipelineStatsQuery;
+std::unique_ptr<ScopedQueryHelper>   m_pOcclusionQuery;
+std::unique_ptr<DurationQueryHelper> m_pDurationQuery;
+
+// ...
+
 m_pPipelineStatsQuery->Begin(m_pImmediateContext);
 m_pOcclusionQuery->Begin(m_pImmediateContext);
 m_pDurationQuery->Begin(m_pImmediateContext);
