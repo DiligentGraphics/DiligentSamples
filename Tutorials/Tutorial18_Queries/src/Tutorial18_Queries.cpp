@@ -124,7 +124,7 @@ void Tutorial18_Queries::UpdateUI()
                       << "VS Invocations" << std::endl
                       << "Clipping Invocations" << std::endl
                       << "Rasterized Primitives" << std::endl
-                      << "PSI nvocations" << std::endl;
+                      << "PS Invocations" << std::endl;
 
             values_ss << m_PipelineStatsData.InputVertices << std::endl
                       << m_PipelineStatsData.InputPrimitives << std::endl

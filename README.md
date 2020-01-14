@@ -31,6 +31,7 @@ To build and run the applications in the module, please follow the [instructions
   - [15 - Multiple Windows](https://github.com/DiligentGraphics/DiligentSamples#tutorial-15---multiple-windows)
   - [16 - Bindless Resources](https://github.com/DiligentGraphics/DiligentSamples#tutorial-16---bindless-resources)
   - [17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples#tutorial-17---msaa)
+  - [18 - Queries](https://github.com/DiligentGraphics/DiligentSamples#tutorial-18---queries)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLTF Viewer](https://github.com/DiligentGraphics/DiligentSamples#gltf-viewer)
@@ -171,6 +172,14 @@ This tutorial demonstrates how to use multisample anti-aliasing (MSAA) to make
 geometrical edges look smoother and more temporarily stable.
 
 ![](Tutorials/Tutorial17_MSAA/Animation_Large.gif)
+
+
+## [Tutorial 18 - Queries](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial18_Queries)
+
+This tutorial demonstrates how to use queries to retrieve various information about
+the GPU operation, such as the number of primitives rendered, command processing duration, etc.
+
+![](Tutorials/Tutorial18_Queries/Animation_Large.gif)
 
 # Samples
 

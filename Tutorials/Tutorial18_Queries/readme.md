@@ -10,7 +10,9 @@ the GPU operation, such as the number of primitives rendered, command processing
 Queries operate by enclosing a sequence of commands in interest in BeginQuery()/EndQuery() block.
 Queries are intrinsically asynchronous, which means that the query result can't be accessed immediately,
 but rather becomes available later after the commands are executed by the GPU. The queries provide tools
-to check the data availability and retrieve it, see the desription of `IQuery` interface for details.
+to check the data availability and retrieve it, see the desription of
+[IQuery](https://github.com/DiligentGraphics/DiligentCore/blob/master/Graphics/GraphicsEngine/interface/Query.h)
+interface for details.
 
 ## Checking Query Support
 
