@@ -116,38 +116,45 @@ void Tutorial18_Queries::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Query data", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        std::stringstream params_ss, values_ss;
-        if (m_pPipelineStatsQuery)
+        if (m_pPipelineStatsQuery || m_pOcclusionQuery || m_pDurationQuery)
         {
-            params_ss << "Input vertices" << std::endl
-                      << "Input primitives" << std::endl
-                      << "VS Invocations" << std::endl
-                      << "Clipping Invocations" << std::endl
-                      << "Rasterized Primitives" << std::endl
-                      << "PS Invocations" << std::endl;
+            std::stringstream params_ss, values_ss;
+            if (m_pPipelineStatsQuery)
+            {
+                params_ss << "Input vertices" << std::endl
+                          << "Input primitives" << std::endl
+                          << "VS Invocations" << std::endl
+                          << "Clipping Invocations" << std::endl
+                          << "Rasterized Primitives" << std::endl
+                          << "PS Invocations" << std::endl;
 
-            values_ss << m_PipelineStatsData.InputVertices << std::endl
-                      << m_PipelineStatsData.InputPrimitives << std::endl
-                      << m_PipelineStatsData.VSInvocations << std::endl
-                      << m_PipelineStatsData.ClippingInvocations << std::endl
-                      << m_PipelineStatsData.ClippingPrimitives << std::endl
-                      << m_PipelineStatsData.PSInvocations << std::endl;
+                values_ss << m_PipelineStatsData.InputVertices << std::endl
+                          << m_PipelineStatsData.InputPrimitives << std::endl
+                          << m_PipelineStatsData.VSInvocations << std::endl
+                          << m_PipelineStatsData.ClippingInvocations << std::endl
+                          << m_PipelineStatsData.ClippingPrimitives << std::endl
+                          << m_PipelineStatsData.PSInvocations << std::endl;
+            }
+
+            if (m_pOcclusionQuery)
+            {
+                params_ss << "Samples rendered" << std::endl;
+                values_ss << m_OcclusionData.NumSamples << std::endl;
+            }
+
+            if (m_pDurationQuery)
+            {
+                params_ss << "Render time (mus)" << std::endl;
+                values_ss << static_cast<int>(m_RenderDuration * 1000000) << std::endl;
+            }
+            ImGui::TextDisabled("%s", params_ss.str().c_str());
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", values_ss.str().c_str());
         }
-
-        if (m_pOcclusionQuery)
+        else
         {
-            params_ss << "Samples rendered" << std::endl;
-            values_ss << m_OcclusionData.NumSamples << std::endl;
+            ImGui::TextDisabled("Queries are not supported by this device");
         }
-
-        if (m_pDurationQuery)
-        {
-            params_ss << "Render time (mus)" << std::endl;
-            values_ss << static_cast<int>(m_RenderDuration * 1000000) << std::endl;
-        }
-        ImGui::TextDisabled("%s", params_ss.str().c_str());
-        ImGui::SameLine();
-        ImGui::TextDisabled("%s", values_ss.str().c_str());
     }
     ImGui::End();
 }
