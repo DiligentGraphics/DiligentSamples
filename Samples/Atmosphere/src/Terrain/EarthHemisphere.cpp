@@ -44,6 +44,7 @@
 //--------------------------------------------------------------------------------------
 
 #include <algorithm>
+#include <cfloat>
 
 #include "EarthHemisphere.h"
 
