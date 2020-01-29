@@ -90,7 +90,7 @@ struct xcb_size_hints_t
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include "Graphics/GraphicsEngine/interface/SwapChain.h"
 
-#include "Common/interface/RefCntAutoPtr.h"
+#include "Common/interface/RefCntAutoPtr.hpp"
 
 
 using namespace Diligent;
