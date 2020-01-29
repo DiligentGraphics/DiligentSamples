@@ -33,7 +33,7 @@ class SampleAppIOS final : public SampleApp
 public:
     virtual void Initialize(int deviceType, void* layer) override final
     {
-        m_DeviceType = static_cast<Diligent::DeviceType>(deviceType);
+        m_DeviceType = static_cast<RENDER_DEVICE_TYPE>(deviceType);
         InitializeDiligentEngine(layer);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplIOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));

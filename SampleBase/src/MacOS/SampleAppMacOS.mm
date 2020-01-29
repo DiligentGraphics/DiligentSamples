@@ -35,12 +35,12 @@ class SampleAppMacOS final : public SampleApp
 public:
     SampleAppMacOS()
     {
-        m_DeviceType = DeviceType::OpenGL;
+        m_DeviceType = RENDER_DEVICE_TYPE_GL;
     }
 
     virtual void Initialize(void* view)override final
     {
-        m_DeviceType = view == nullptr ? DeviceType::OpenGL : DeviceType::Vulkan;
+        m_DeviceType = view == nullptr ? RENDER_DEVICE_TYPE_GL : RENDER_DEVICE_TYPE_VULKAN;
         InitializeDiligentEngine(view);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplMacOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
