@@ -32,7 +32,7 @@
 #include "xcb_keysyms/xcb_keysyms.h"
 
 #include "InputController.h"
-#include "DebugUtilities.h"
+#include "DebugUtilities.hpp"
 
 namespace Diligent
 {
