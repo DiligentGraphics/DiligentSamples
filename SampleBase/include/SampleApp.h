@@ -32,13 +32,13 @@
 #include <memory>
 
 #include "NativeAppBase.h"
-#include "RefCntAutoPtr.h"
+#include "RefCntAutoPtr.hpp"
 #include "EngineFactory.h"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
 #include "SampleBase.h"
-#include "ScreenCapture.h"
+#include "ScreenCapture.hpp"
 #include "Image.h"
 
 namespace Diligent
@@ -98,7 +98,7 @@ protected:
     void CompareGoldenImage(const std::string& FileName, ScreenCapture::CaptureInfo& Capture);
     void SaveScreenCapture(const std::string& FileName, ScreenCapture::CaptureInfo& Capture);
 
-    DeviceType                                 m_DeviceType = DeviceType::Undefined;
+    RENDER_DEVICE_TYPE                         m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
     RefCntAutoPtr<IEngineFactory>              m_pEngineFactory;
     RefCntAutoPtr<IRenderDevice>               m_pDevice;
     RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;

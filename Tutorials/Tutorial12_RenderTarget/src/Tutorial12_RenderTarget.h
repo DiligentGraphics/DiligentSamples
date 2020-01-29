@@ -28,7 +28,7 @@
 #pragma once
 
 #include "SampleBase.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 
 namespace Diligent
 {
@@ -36,9 +36,9 @@ namespace Diligent
 class Tutorial12_RenderTarget final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
-                                                EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc) override final;
+    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&     SCDesc) override final;
 
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,

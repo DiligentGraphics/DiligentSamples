@@ -28,13 +28,13 @@
 #include <cmath>
 #include <array>
 #include "GLTFViewer.h"
-#include "MapHelper.h"
-#include "BasicMath.h"
+#include "MapHelper.hpp"
+#include "BasicMath.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
-#include "ShaderMacroHelper.h"
-#include "FileSystem.h"
+#include "ShaderMacroHelper.hpp"
+#include "FileSystem.hpp"
 #include "imgui.h"
 #include "imGuIZMO.h"
 

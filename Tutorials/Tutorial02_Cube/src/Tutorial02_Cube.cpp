@@ -26,7 +26,7 @@
  */
 
 #include "Tutorial02_Cube.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 
 namespace Diligent

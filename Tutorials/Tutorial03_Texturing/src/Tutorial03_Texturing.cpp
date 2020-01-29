@@ -26,7 +26,7 @@
  */
 
 #include "Tutorial03_Texturing.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 

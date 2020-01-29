@@ -47,7 +47,7 @@
 
 #include <vector>
 #include "BasicTypes.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 #include "HierarchyArray.h"
 #include "DynamicQuadTreeNode.h"
 

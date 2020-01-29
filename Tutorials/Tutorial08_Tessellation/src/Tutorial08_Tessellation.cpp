@@ -26,13 +26,13 @@
  */
 
 #include "Tutorial08_Tessellation.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "ShaderMacroHelper.h"
+#include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED
-#    include "HLSL2GLSLConverterImpl.h"
+#    include "HLSL2GLSLConverterImpl.hpp"
 #endif
 
 namespace Diligent

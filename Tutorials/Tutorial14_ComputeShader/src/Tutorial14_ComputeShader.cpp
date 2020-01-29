@@ -28,10 +28,10 @@
 #include <random>
 
 #include "Tutorial14_ComputeShader.h"
-#include "BasicMath.h"
-#include "MapHelper.h"
+#include "BasicMath.hpp"
+#include "MapHelper.hpp"
 #include "imgui.h"
-#include "ShaderMacroHelper.h"
+#include "ShaderMacroHelper.hpp"
 
 namespace Diligent
 {

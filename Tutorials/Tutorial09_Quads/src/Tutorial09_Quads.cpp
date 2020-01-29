@@ -31,7 +31,7 @@
 #include <algorithm>
 
 #include "Tutorial09_Quads.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "imgui.h"
@@ -50,21 +50,21 @@ Tutorial09_Quads::~Tutorial09_Quads()
     StopWorkerThreads();
 }
 
-void Tutorial09_Quads::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                      EngineCreateInfo& Attribs,
-                                                      SwapChainDesc&    SCDesc)
+void Tutorial09_Quads::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                      EngineCreateInfo&  Attribs,
+                                                      SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
     Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if D3D12_SUPPORTED
-    if (DevType == DeviceType::D3D12)
+    if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
         EngineD3D12CreateInfo& EngD3D12Attribs    = static_cast<EngineD3D12CreateInfo&>(Attribs);
         EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
     }
 #endif
 #if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
+    if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
         auto& VkAttrs                       = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize             = 128 << 20;
@@ -218,11 +218,11 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     LayoutElement LayoutElems[] =
     {
         // Attribute 0 - QuadRotationAndScale
-        LayoutElement{0, 0, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{0, 0, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 1 - QuadCenter
-        LayoutElement{1, 0, 2, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{1, 0, 2, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 2 - TexArrInd
-        LayoutElement{2, 0, 1, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE}
+        LayoutElement{2, 0, 1, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
     };
     // clang-format on
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;

@@ -28,7 +28,7 @@
 #pragma once
 
 #include "SampleBase.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 #include "EarthHemisphere.h"
 #include "ElevationDataSource.h"
 #include "EpipolarLightScattering.h"

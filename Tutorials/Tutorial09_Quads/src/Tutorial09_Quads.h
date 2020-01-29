@@ -32,8 +32,8 @@
 #include <thread>
 #include <mutex>
 #include "SampleBase.h"
-#include "BasicMath.h"
-#include "ThreadSignal.h"
+#include "BasicMath.hpp"
+#include "ThreadSignal.hpp"
 
 namespace Diligent
 {
@@ -42,9 +42,9 @@ class Tutorial09_Quads final : public SampleBase
 {
 public:
     ~Tutorial09_Quads() override;
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
-                                                EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc) override final;
+    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&     SCDesc) override final;
 
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,

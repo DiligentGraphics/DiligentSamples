@@ -26,13 +26,13 @@
  */
 
 #include "ShadowsSample.h"
-#include "MapHelper.h"
-#include "FileSystem.h"
-#include "ShaderMacroHelper.h"
+#include "MapHelper.hpp"
+#include "FileSystem.hpp"
+#include "ShaderMacroHelper.hpp"
 #include "CommonlyUsedStates.h"
-#include "StringTools.h"
+#include "StringTools.hpp"
 #include "GraphicsUtilities.h"
-#include "AdvancedMath.h"
+#include "AdvancedMath.hpp"
 #include "imgui.h"
 #include "imGuIZMO.h"
 #include "ImGuiUtils.h"
@@ -50,14 +50,14 @@ ShadowsSample::~ShadowsSample()
 {
 }
 
-void ShadowsSample::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                   EngineCreateInfo& Attribs,
-                                                   SwapChainDesc&    SCDesc)
+void ShadowsSample::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                   EngineCreateInfo&  Attribs,
+                                                   SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
 
 #if D3D12_SUPPORTED
-    if (DevType == DeviceType::D3D12)
+    if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
         auto& D3D12Attrs                           = static_cast<EngineD3D12CreateInfo&>(Attribs);
         D3D12Attrs.GPUDescriptorHeapSize[1]        = 1024; // Sampler descriptors

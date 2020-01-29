@@ -32,11 +32,11 @@
 
 #include "PlatformDefinitions.h"
 #include "SampleApp.h"
-#include "Errors.h"
-#include "StringTools.h"
-#include "MapHelper.h"
+#include "Errors.hpp"
+#include "StringTools.hpp"
+#include "MapHelper.hpp"
 #include "Image.h"
-#include "FileWrapper.h"
+#include "FileWrapper.hpp"
 
 #if D3D11_SUPPORTED
 #    include "EngineFactoryD3D11.h"
@@ -105,7 +105,7 @@ void SampleApp::InitializeDiligentEngine(
     switch (m_DeviceType)
     {
 #if D3D11_SUPPORTED
-        case DeviceType::D3D11:
+        case RENDER_DEVICE_TYPE_D3D11:
         {
             EngineD3D11CreateInfo EngineCI;
 
@@ -133,9 +133,8 @@ void SampleApp::InitializeDiligentEngine(
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, SCDesc);
 
 #    if ENGINE_DLL
-            GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
             // Load the dll and import GetEngineFactoryD3D11() function
-            LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
+            auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
             auto* pFactoryD3D11 = GetEngineFactoryD3D11();
             m_pEngineFactory    = pFactoryD3D11;
@@ -184,7 +183,7 @@ void SampleApp::InitializeDiligentEngine(
 #endif
 
 #if D3D12_SUPPORTED
-        case DeviceType::D3D12:
+        case RENDER_DEVICE_TYPE_D3D12:
         {
             EngineD3D12CreateInfo EngineCI;
 
@@ -205,9 +204,8 @@ void SampleApp::InitializeDiligentEngine(
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, SCDesc);
 
 #    if ENGINE_DLL
-            GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
             // Load the dll and import GetEngineFactoryD3D12() function
-            LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
+            auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
             auto* pFactoryD3D12 = GetEngineFactoryD3D12();
             if (!pFactoryD3D12->LoadD3D12())
@@ -227,7 +225,7 @@ void SampleApp::InitializeDiligentEngine(
             {
 #    if D3D11_SUPPORTED
                 LOG_ERROR_MESSAGE("Failed to find Direct3D12-compatible hardware adapters. Attempting to initialize the engine in Direct3D11 mode.");
-                m_DeviceType = DeviceType::D3D11;
+                m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
                 InitializeDiligentEngine(NativeWindowHandle);
                 return;
 #    else
@@ -268,17 +266,15 @@ void SampleApp::InitializeDiligentEngine(
 #endif
 
 #if GL_SUPPORTED || GLES_SUPPORTED
-        case DeviceType::OpenGL:
-        case DeviceType::OpenGLES:
+        case RENDER_DEVICE_TYPE_GL:
+        case RENDER_DEVICE_TYPE_GLES:
         {
 #    if !PLATFORM_MACOS
             VERIFY_EXPR(NativeWindowHandle != nullptr);
 #    endif
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
-            // Declare function pointer
-            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
             // Load the dll and import GetEngineFactoryOpenGL() function
-            LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
+            auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #    endif
             auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
             m_pEngineFactory     = pFactoryOpenGL;
@@ -301,12 +297,11 @@ void SampleApp::InitializeDiligentEngine(
 #endif
 
 #if VULKAN_SUPPORTED
-        case DeviceType::Vulkan:
+        case RENDER_DEVICE_TYPE_VULKAN:
         {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
-            GetEngineFactoryVkType GetEngineFactoryVk = nullptr;
             // Load the dll and import GetEngineFactoryVk() function
-            LoadGraphicsEngineVk(GetEngineFactoryVk);
+            auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
             EngineVkCreateInfo EngVkAttribs;
 #    ifdef DEVELOPMENT
@@ -338,7 +333,7 @@ void SampleApp::InitializeDiligentEngine(
 
 
 #if METAL_SUPPORTED
-        case DeviceType::Metal:
+        case RENDER_DEVICE_TYPE_METAL:
         {
             EngineMtlCreateInfo MtlAttribs;
 
@@ -361,12 +356,12 @@ void SampleApp::InitializeDiligentEngine(
     switch (m_DeviceType)
     {
         // clang-format off
-        case DeviceType::D3D11:    m_AppTitle.append(" (D3D11)");    break;
-        case DeviceType::D3D12:    m_AppTitle.append(" (D3D12)");    break;
-        case DeviceType::OpenGL:   m_AppTitle.append(" (OpenGL)");   break;
-        case DeviceType::OpenGLES: m_AppTitle.append(" (OpenGLES)"); break;
-        case DeviceType::Vulkan:   m_AppTitle.append(" (Vulkan)");   break;
-        case DeviceType::Metal:    m_AppTitle.append(" (Metal)");    break;
+        case RENDER_DEVICE_TYPE_D3D11:  m_AppTitle.append(" (D3D11)");    break;
+        case RENDER_DEVICE_TYPE_D3D12:  m_AppTitle.append(" (D3D12)");    break;
+        case RENDER_DEVICE_TYPE_GL:     m_AppTitle.append(" (OpenGL)");   break;
+        case RENDER_DEVICE_TYPE_GLES:   m_AppTitle.append(" (OpenGLES)"); break;
+        case RENDER_DEVICE_TYPE_VULKAN: m_AppTitle.append(" (Vulkan)");   break;
+        case RENDER_DEVICE_TYPE_METAL:  m_AppTitle.append(" (Metal)");    break;
         default: UNEXPECTED("Unknown/unsupported device type");
             // clang-format on
     }
@@ -434,7 +429,7 @@ void SampleApp::InitializeSample()
 void SampleApp::UpdateAdaptersDialog()
 {
 #if PLATFORM_WIN32
-    if (m_DeviceType == DeviceType::D3D11 || m_DeviceType == DeviceType::D3D12)
+    if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11 || m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
         const auto& SCDesc = m_pSwapChain->GetDesc();
 
@@ -542,7 +537,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             if (StrCmpNoCase(Arg.c_str(), "D3D11", Arg.length()) == 0)
             {
 #if D3D11_SUPPORTED
-                m_DeviceType = DeviceType::D3D11;
+                m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
 #else
                 LOG_ERROR_MESSAGE("Direct3D11 is not supported. Please select another device type");
 #endif
@@ -550,7 +545,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             else if (StrCmpNoCase(Arg.c_str(), "D3D12", Arg.length()) == 0)
             {
 #if D3D12_SUPPORTED
-                m_DeviceType = DeviceType::D3D12;
+                m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
 #else
                 LOG_ERROR_MESSAGE("Direct3D12 is not supported. Please select another device type");
 #endif
@@ -558,7 +553,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             else if (StrCmpNoCase(Arg.c_str(), "GL", Arg.length()) == 0)
             {
 #if GL_SUPPORTED || GLES_SUPPORTED
-                m_DeviceType = DeviceType::OpenGL;
+                m_DeviceType = RENDER_DEVICE_TYPE_GL;
 #else
                 LOG_ERROR_MESSAGE("OpenGL is not supported. Please select another device type");
 #endif
@@ -566,7 +561,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             else if (StrCmpNoCase(Arg.c_str(), "VK", Arg.length()) == 0)
             {
 #if VULKAN_SUPPORTED
-                m_DeviceType = DeviceType::Vulkan;
+                m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
 #else
                 LOG_ERROR_MESSAGE("Vulkan is not supported. Please select another device type");
 #endif
@@ -677,19 +672,19 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         pos = strchr(pos, '-');
     }
 
-    if (m_DeviceType == DeviceType::Undefined)
+    if (m_DeviceType == RENDER_DEVICE_TYPE_UNDEFINED)
     {
         SelectDeviceType();
-        if (m_DeviceType == DeviceType::Undefined)
+        if (m_DeviceType == RENDER_DEVICE_TYPE_UNDEFINED)
         {
 #if D3D12_SUPPORTED
-            m_DeviceType = DeviceType::D3D12;
+            m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
 #elif VULKAN_SUPPORTED
-            m_DeviceType = DeviceType::Vulkan;
+            m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
 #elif D3D11_SUPPORTED
-            m_DeviceType = DeviceType::D3D11;
+            m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
 #elif GL_SUPPORTED || GLES_SUPPORTED
-            m_DeviceType = DeviceType::OpenGL;
+            m_DeviceType = RENDER_DEVICE_TYPE_GL;
 #endif
         }
     }

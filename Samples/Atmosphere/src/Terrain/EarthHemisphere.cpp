@@ -57,10 +57,10 @@ namespace Diligent
 } // namespace Diligent
 
 #include "ElevationDataSource.h"
-#include "MapHelper.h"
-#include "GraphicsAccessories.h"
+#include "MapHelper.hpp"
+#include "GraphicsAccessories.hpp"
 #include "GraphicsUtilities.h"
-#include "ShaderMacroHelper.h"
+#include "ShaderMacroHelper.hpp"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
 
@@ -921,7 +921,7 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
 
     ViewFrustumExt ViewFrustum;
     auto           DevType = m_pDevice->GetDeviceCaps().DevType;
-    ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, DevType == DeviceType::D3D11 || DevType == DeviceType::D3D12);
+    ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, DevType == RENDER_DEVICE_TYPE_D3D11 || DevType == RENDER_DEVICE_TYPE_D3D12);
 
     {
         MapHelper<TerrainAttribs> TerrainAttribs(pContext, m_pcbTerrainAttribs, MAP_WRITE, MAP_FLAG_DISCARD);

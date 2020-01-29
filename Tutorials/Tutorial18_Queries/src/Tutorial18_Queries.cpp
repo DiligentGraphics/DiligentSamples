@@ -28,7 +28,7 @@
 #include <sstream>
 
 #include "Tutorial18_Queries.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"

@@ -28,9 +28,9 @@
 #pragma once
 
 #include "SampleBase.h"
-#include "BasicMath.h"
-#include "ScopedQueryHelper.h"
-#include "DurationQueryHelper.h"
+#include "BasicMath.hpp"
+#include "ScopedQueryHelper.hpp"
+#include "DurationQueryHelper.hpp"
 
 namespace Diligent
 {

@@ -28,7 +28,7 @@
 #pragma once
 
 #include "SampleBase.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 #include "DXSDKMeshLoader.h"
 #include "FirstPersonCamera.h"
 #include "ShadowMapManager.h"
@@ -42,9 +42,9 @@ class ShadowsSample final : public SampleBase
 {
 public:
     ~ShadowsSample();
-    virtual void GetEngineInitializationAttribs(DeviceType        DevType,
-                                                EngineCreateInfo& Attribs,
-                                                SwapChainDesc&    SCDesc) override final;
+    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&     SCDesc) override final;
 
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,

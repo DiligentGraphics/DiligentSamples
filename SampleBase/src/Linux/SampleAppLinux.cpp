@@ -35,7 +35,7 @@ class SampleAppLinux final : public SampleApp
 public:
     SampleAppLinux()
     {
-        m_DeviceType = DeviceType::OpenGL;
+        m_DeviceType = RENDER_DEVICE_TYPE_GL;
     }
 
     ~SampleAppLinux()
@@ -65,7 +65,7 @@ public:
     {
         try
         {
-            m_DeviceType = DeviceType::Vulkan;
+            m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
             struct XCBInfo
             {
                 xcb_connection_t* connection;

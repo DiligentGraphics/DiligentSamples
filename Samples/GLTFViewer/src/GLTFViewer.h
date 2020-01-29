@@ -31,7 +31,7 @@
 #include "SampleBase.h"
 #include "GLTFLoader.h"
 #include "GLTF_PBR_Renderer.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 
 namespace Diligent
 {

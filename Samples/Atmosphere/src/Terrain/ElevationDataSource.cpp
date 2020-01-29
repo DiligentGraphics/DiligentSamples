@@ -47,12 +47,12 @@
 #include <cmath>
 
 #include "ElevationDataSource.h"
-#include "FileWrapper.h"
-#include "DataBlobImpl.h"
+#include "FileWrapper.hpp"
+#include "DataBlobImpl.hpp"
 #include "Image.h"
-#include "BasicFileStream.h"
+#include "BasicFileStream.hpp"
 #include "TextureUtilities.h"
-#include "GraphicsAccessories.h"
+#include "GraphicsAccessories.hpp"
 
 namespace Diligent
 {

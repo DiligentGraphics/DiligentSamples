@@ -34,7 +34,7 @@
 namespace
 {
 
-Diligent::DeviceType g_DeviceType = Diligent::DeviceType::Undefined;
+Diligent::RENDER_DEVICE_TYPE g_DeviceType = Diligent::RENDER_DEVICE_TYPE_UNDEFINED;
 
 void SetButtonImage(HWND hwndDlg, int buttonId, int imageId, BOOL Enable)
 {
@@ -55,22 +55,22 @@ INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND   hwndDlg,
             switch (LOWORD(wParam))
             {
                 case ID_DIRECT3D11:
-                    g_DeviceType = Diligent::DeviceType::D3D11;
+                    g_DeviceType = Diligent::RENDER_DEVICE_TYPE_D3D11;
                     EndDialog(hwndDlg, wParam);
                     return TRUE;
 
                 case ID_DIRECT3D12:
-                    g_DeviceType = Diligent::DeviceType::D3D12;
+                    g_DeviceType = Diligent::RENDER_DEVICE_TYPE_D3D12;
                     EndDialog(hwndDlg, wParam);
                     return TRUE;
 
                 case ID_OPENGL:
-                    g_DeviceType = Diligent::DeviceType::OpenGL;
+                    g_DeviceType = Diligent::RENDER_DEVICE_TYPE_GL;
                     EndDialog(hwndDlg, wParam);
                     return TRUE;
 
                 case ID_VULKAN:
-                    g_DeviceType = Diligent::DeviceType::Vulkan;
+                    g_DeviceType = Diligent::RENDER_DEVICE_TYPE_VULKAN;
                     EndDialog(hwndDlg, wParam);
                     return TRUE;
             }

@@ -30,7 +30,7 @@
 #include <array>
 #include <random>
 #include "SampleBase.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 
 namespace Diligent
 {

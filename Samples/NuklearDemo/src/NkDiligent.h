@@ -30,8 +30,8 @@
 namespace Diligent
 {
 
-class IRenderDevice;
-class IDeviceContext;
+struct IRenderDevice;
+struct IDeviceContext;
 enum TEXTURE_FORMAT : uint16_t;
 
 } // namespace Diligent

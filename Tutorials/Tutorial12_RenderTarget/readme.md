@@ -167,11 +167,11 @@ In this tutorial we will use our own off-screen depth buffer, so we can
 save memory by not initializing the depth buffer in the swap chain:
 
 ```cpp
-void Tutorial12_RenderTarget::GetEngineInitializationAttribs(DeviceType         DevType,
+void Tutorial12_RenderTarget::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
                                                              EngineCreateInfo&  Attribs,
                                                              SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
     // In this tutorial we will be using off-screen depth-stencil buffer, so
     // we do not need the one in the swap chain.
     SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;

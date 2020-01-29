@@ -77,18 +77,18 @@ LayoutElement LayoutElems[] =
     // Per-instance data - second buffer slot
     // We will use four attributes to encode instance-specific 4x4 transformation matrix
     // Attribute 2 - first row
-    LayoutElement{2, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+    LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     // Attribute 3 - second row
-    LayoutElement{3, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+    LayoutElement{3, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     // Attribute 4 - third row
-    LayoutElement{4, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+    LayoutElement{4, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     // Attribute 5 - fourth row
-    LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE}
+    LayoutElement{5, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
 };
 ```
 
 Note that the last four attributes come from the vertex stream #1 and that `FREQUENCY_PER_INSTANCE`
-indicates that these are per-instance attributes. `LayoutElement::AutoOffset` and `LayoutElement::AutoStride` are
+indicates that these are per-instance attributes. `LAYOUT_ELEMENT_AUTO_OFFSET` and `LAYOUT_ELEMENT_AUTO_STRIDE` are
 special values that instruct the engine to automatically compute element offset and buffer stride assuming that
 elements are tightly packed.
 

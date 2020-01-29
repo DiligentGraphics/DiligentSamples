@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "EngineFactory.h"
-#include "RefCntAutoPtr.h"
+#include "RefCntAutoPtr.hpp"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
@@ -44,7 +44,7 @@ class SampleBase
 public:
     virtual ~SampleBase() {}
 
-    virtual void GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc);
+    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc);
 
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,

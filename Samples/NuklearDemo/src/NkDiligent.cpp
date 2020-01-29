@@ -55,10 +55,10 @@
 
 #include "RenderDevice.h"
 #include "DeviceContext.h"
-#include "RefCntAutoPtr.h"
-#include "BasicMath.h"
+#include "RefCntAutoPtr.hpp"
+#include "BasicMath.hpp"
 #include "CommonlyUsedStates.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 
 using namespace Diligent;
 

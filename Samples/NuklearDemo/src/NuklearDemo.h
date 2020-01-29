@@ -28,7 +28,7 @@
 #pragma once
 
 #include "SampleBase.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 
 struct nk_diligent_context;
 struct nk_context;

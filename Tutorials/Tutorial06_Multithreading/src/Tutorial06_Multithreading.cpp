@@ -30,7 +30,7 @@
 #include <algorithm>
 
 #include "Tutorial06_Multithreading.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "../../Common/src/TexturedCube.h"
@@ -50,14 +50,14 @@ Tutorial06_Multithreading::~Tutorial06_Multithreading()
     StopWorkerThreads();
 }
 
-void Tutorial06_Multithreading::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                               EngineCreateInfo& Attribs,
-                                                               SwapChainDesc&    SCDesc)
+void Tutorial06_Multithreading::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                               EngineCreateInfo&  Attribs,
+                                                               SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
     Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
+    if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
         auto& VkAttrs           = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames

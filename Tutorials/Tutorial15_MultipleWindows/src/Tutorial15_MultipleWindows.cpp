@@ -70,7 +70,7 @@
 #include "Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include "Graphics/GraphicsEngine/interface/SwapChain.h"
 
-#include "Common/interface/RefCntAutoPtr.h"
+#include "Common/interface/RefCntAutoPtr.hpp"
 
 using namespace Diligent;
 
@@ -149,7 +149,7 @@ public:
         switch (m_DeviceType)
         {
 #if D3D11_SUPPORTED
-            case DeviceType::D3D11:
+            case RENDER_DEVICE_TYPE_D3D11:
             {
                 EngineD3D11CreateInfo DeviceAttribs;
 #    ifdef _DEBUG
@@ -158,9 +158,8 @@ public:
                     D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
 #    endif
 #    if ENGINE_DLL
-                GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
                 // Load the dll and import GetEngineFactoryD3D11() function
-                LoadGraphicsEngineD3D11(GetEngineFactoryD3D11);
+                auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
@@ -175,12 +174,11 @@ public:
 
 
 #if D3D12_SUPPORTED
-            case DeviceType::D3D12:
+            case RENDER_DEVICE_TYPE_D3D12:
             {
 #    if ENGINE_DLL
-                GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
                 // Load the dll and import GetEngineFactoryD3D12() function
-                LoadGraphicsEngineD3D12(GetEngineFactoryD3D12);
+                auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
 #    ifdef _DEBUG
@@ -200,14 +198,12 @@ public:
 
 
 #if GL_SUPPORTED
-            case DeviceType::OpenGL:
+            case RENDER_DEVICE_TYPE_GL:
             {
 
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
-                // Declare function pointer
-                GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
                 // Load the dll and import GetEngineFactoryOpenGL() function
-                LoadGraphicsEngineOpenGL(GetEngineFactoryOpenGL);
+                auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #    endif
                 MessageBox(NULL, L"OpenGL backend does not currently support multiple swap chains", L"Error", MB_OK | MB_ICONWARNING);
                 auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
@@ -225,12 +221,11 @@ public:
 
 
 #if VULKAN_SUPPORTED
-            case DeviceType::Vulkan:
+            case RENDER_DEVICE_TYPE_VULKAN:
             {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
-                GetEngineFactoryVkType GetEngineFactoryVk = nullptr;
                 // Load the dll and import GetEngineFactoryVk() function
-                LoadGraphicsEngineVk(GetEngineFactoryVk);
+                auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngVkAttribs;
 #    ifdef _DEBUG
@@ -267,7 +262,7 @@ public:
             if (_stricmp(pos, "D3D11") == 0)
             {
 #if D3D11_SUPPORTED
-                m_DeviceType = DeviceType::D3D11;
+                m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
 #else
                 std::cerr << "Direct3D11 is not supported. Please select another device type";
                 return false;
@@ -276,7 +271,7 @@ public:
             else if (_stricmp(pos, "D3D12") == 0)
             {
 #if D3D12_SUPPORTED
-                m_DeviceType = DeviceType::D3D12;
+                m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
 #else
                 std::cerr << "Direct3D12 is not supported. Please select another device type";
                 return false;
@@ -285,7 +280,7 @@ public:
             else if (_stricmp(pos, "GL") == 0)
             {
 #if GL_SUPPORTED
-                m_DeviceType = DeviceType::OpenGL;
+                m_DeviceType = RENDER_DEVICE_TYPE_GL;
 #else
                 std::cerr << "OpenGL is not supported. Please select another device type";
                 return false;
@@ -294,7 +289,7 @@ public:
             else if (_stricmp(pos, "VK") == 0)
             {
 #if VULKAN_SUPPORTED
-                m_DeviceType = DeviceType::Vulkan;
+                m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
 #else
                 std::cerr << "Vulkan is not supported. Please select another device type";
                 return false;
@@ -309,13 +304,13 @@ public:
         else
         {
 #if D3D12_SUPPORTED
-            m_DeviceType = DeviceType::D3D12;
+            m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
 #elif VULKAN_SUPPORTED
-            m_DeviceType = DeviceType::Vulkan;
+            m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
 #elif D3D11_SUPPORTED
-            m_DeviceType = DeviceType::D3D11;
+            m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
 #elif GL_SUPPORTED
-            m_DeviceType = DeviceType::OpenGL;
+            m_DeviceType = RENDER_DEVICE_TYPE_GL;
 #endif
         }
         return true;
@@ -434,13 +429,13 @@ public:
         }
     }
 
-    DeviceType GetDeviceType() const { return m_DeviceType; }
+    RENDER_DEVICE_TYPE GetDeviceType() const { return m_DeviceType; }
 
 private:
     RefCntAutoPtr<IRenderDevice>  m_pDevice;
     RefCntAutoPtr<IDeviceContext> m_pImmediateContext;
     RefCntAutoPtr<IPipelineState> m_pPSO;
-    DeviceType                    m_DeviceType = DeviceType::D3D11;
+    RENDER_DEVICE_TYPE            m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
     struct WindowInfo
     {
         RefCntAutoPtr<ISwapChain> pSwapChain;
@@ -488,10 +483,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         TitleSS << L"Tutorial15: Multiple Windows";
         switch (g_pTheApp->GetDeviceType())
         {
-            case DeviceType::D3D11: TitleSS << L" (D3D11)"; break;
-            case DeviceType::D3D12: TitleSS << L" (D3D12)"; break;
-            case DeviceType::OpenGL: TitleSS << L" (GL)"; break;
-            case DeviceType::Vulkan: TitleSS << L" (VK)"; break;
+            case RENDER_DEVICE_TYPE_D3D11: TitleSS << L" (D3D11)"; break;
+            case RENDER_DEVICE_TYPE_D3D12: TitleSS << L" (D3D12)"; break;
+            case RENDER_DEVICE_TYPE_GL: TitleSS << L" (GL)"; break;
+            case RENDER_DEVICE_TYPE_VULKAN: TitleSS << L" (VK)"; break;
         }
         TitleSS << " - Window " << i;
         auto Title = TitleSS.str();

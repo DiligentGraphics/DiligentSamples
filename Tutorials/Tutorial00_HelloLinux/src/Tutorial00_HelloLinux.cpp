@@ -313,7 +313,7 @@ private:
     RefCntAutoPtr<IDeviceContext> m_pImmediateContext;
     RefCntAutoPtr<ISwapChain>     m_pSwapChain;
     RefCntAutoPtr<IPipelineState> m_pPSO;
-    DeviceType                    m_DeviceType = DeviceType::OpenGL;
+    RENDER_DEVICE_TYPE            m_DeviceType = RENDER_DEVICE_TYPE_GL;
 };
 
 using namespace Diligent;
@@ -641,12 +641,12 @@ int x_main()
 
 int main(int argc, char** argv)
 {
-    DeviceType DevType = DeviceType::Undefined;
+    RENDER_DEVICE_TYPE DevType = RENDER_DEVICE_TYPE_UNDEFINED;
 
 #if VULKAN_SUPPORTED
-    DevType = DeviceType::Vulkan;
+    DevType = RENDER_DEVICE_TYPE_VULKAN;
 #elif GL_SUPPORTED
-    DevType = DeviceType::OpenGL;
+    DevType = RENDER_DEVICE_TYPE_GL;
 #else
 #    error No supported backends
 #endif
@@ -661,7 +661,7 @@ int main(int argc, char** argv)
             if (strcasecmp(pos, "GL") == 0)
             {
 #if GL_SUPPORTED
-                DevType = DeviceType::OpenGL;
+                DevType = RENDER_DEVICE_TYPE_GL;
 #else
                 std::cerr << "OpenGL is not supported";
                 return -1;
@@ -670,7 +670,7 @@ int main(int argc, char** argv)
             else if (strcasecmp(pos, "VK") == 0)
             {
 #if VULKAN_SUPPORTED
-                DevType = DeviceType::Vulkan;
+                DevType = RENDER_DEVICE_TYPE_VULKAN;
 #else
                 std::cerr << "Vulkan is not supported";
                 return -1;
@@ -685,14 +685,14 @@ int main(int argc, char** argv)
     }
 
 #if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
+    if (DevType == RENDER_DEVICE_TYPE_VULKAN)
     {
         return xcb_main();
     }
 #endif
 
 #if GL_SUPPORTED
-    if (DevType == DeviceType::OpenGL)
+    if (DevType == RENDER_DEVICE_TYPE_GL)
     {
         return x_main();
     }

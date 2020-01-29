@@ -29,10 +29,10 @@
 #include <string>
 
 #include "Tutorial16_BindlessResources.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "ShaderMacroHelper.h"
+#include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.h"
 
@@ -144,15 +144,15 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         // Per-instance data - second buffer slot
         // We will use four attributes to encode instance-specific 4x4 transformation matrix
         // Attribute 2 - first row
-        LayoutElement{2, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 3 - second row
-        LayoutElement{3, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{3, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 4 - third row
-        LayoutElement{4, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{4, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 5 - fourth row
-        LayoutElement{5, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{5, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 6 - texture array index
-        LayoutElement{6, 1, 1, VT_UINT32,  False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{6, 1, 1, VT_UINT32,  False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     };
     // clang-format on
 

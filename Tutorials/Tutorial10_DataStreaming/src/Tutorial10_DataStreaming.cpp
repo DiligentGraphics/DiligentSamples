@@ -31,7 +31,7 @@
 #include <algorithm>
 
 #include "Tutorial10_DataStreaming.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "imgui.h"
@@ -130,21 +130,21 @@ Tutorial10_DataStreaming::~Tutorial10_DataStreaming()
     StopWorkerThreads();
 }
 
-void Tutorial10_DataStreaming::GetEngineInitializationAttribs(DeviceType        DevType,
-                                                              EngineCreateInfo& Attribs,
-                                                              SwapChainDesc&    SCDesc)
+void Tutorial10_DataStreaming::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                              EngineCreateInfo&  Attribs,
+                                                              SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DevType, Attribs, SCDesc);
+    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
     Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if D3D12_SUPPORTED
-    if (DevType == DeviceType::D3D12)
+    if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
         EngineD3D12CreateInfo& EngD3D12Attribs    = static_cast<EngineD3D12CreateInfo&>(Attribs);
         EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
     }
 #endif
 #if VULKAN_SUPPORTED
-    if (DevType == DeviceType::Vulkan)
+    if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
         auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
 
@@ -249,7 +249,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     LayoutElement LayoutElem[] =
     {
         // Attribute 0 - PolygonXY
-        LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::AutoOffset, LayoutElement::AutoStride, LayoutElement::FREQUENCY_PER_VERTEX}
+        LayoutElement{0, 0, 2, VT_FLOAT32, False, LAYOUT_ELEMENT_AUTO_OFFSET, LAYOUT_ELEMENT_AUTO_STRIDE, INPUT_ELEMENT_FREQUENCY_PER_VERTEX}
     };
     // clang-format on
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElem;
@@ -306,13 +306,13 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     LayoutElement BatchLayoutElems[] =
     {
         // Attribute 0 - PolygonXY
-        LayoutElement{0, 0, 2, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_VERTEX},
+        LayoutElement{0, 0, 2, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_VERTEX},
         // Attribute 1 - PolygonRotationAndScale
-        LayoutElement{1, 1, 4, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{1, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 2 - PolygonCenter
-        LayoutElement{2, 1, 2, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE},
+        LayoutElement{2, 1, 2, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // Attribute 3 - TexArrInd
-        LayoutElement{3, 1, 1, VT_FLOAT32, False, LayoutElement::FREQUENCY_PER_INSTANCE}
+        LayoutElement{3, 1, 1, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
     };
     // clang-format on
     PSODesc.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
@@ -414,8 +414,8 @@ void Tutorial10_DataStreaming::UpdateUI()
                 StartWorkerThreads(m_NumWorkerThreads);
             }
         }
-        if (m_pDevice->GetDeviceCaps().DevType == DeviceType::D3D12 ||
-            m_pDevice->GetDeviceCaps().DevType == DeviceType::Vulkan)
+        if (m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_D3D12 ||
+            m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_VULKAN)
         {
             ImGui::Checkbox("Persistent map", &m_bAllowPersistentMap);
         }

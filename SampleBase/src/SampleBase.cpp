@@ -27,17 +27,17 @@
 
 #include "PlatformDefinitions.h"
 #include "SampleBase.h"
-#include "Errors.h"
+#include "Errors.hpp"
 
 namespace Diligent
 {
 
-void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreateInfo& EngineCI, SwapChainDesc& /*SCDesc*/)
+void SampleBase::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& /*SCDesc*/)
 {
-    switch (DevType)
+    switch (DeviceType)
     {
 #if D3D11_SUPPORTED
-        case DeviceType::D3D11:
+        case RENDER_DEVICE_TYPE_D3D11:
         {
             //EngineD3D11CreateInfo& EngineD3D11CI = static_cast<EngineD3D11CreateInfo&>(EngineCI);
         }
@@ -45,7 +45,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #endif
 
 #if D3D12_SUPPORTED
-        case DeviceType::D3D12:
+        case RENDER_DEVICE_TYPE_D3D12:
         {
             EngineD3D12CreateInfo& EngineD3D12CI                  = static_cast<EngineD3D12CreateInfo&>(EngineCI);
             EngineD3D12CI.GPUDescriptorHeapDynamicSize[0]         = 32768;
@@ -58,7 +58,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #endif
 
 #if VULKAN_SUPPORTED
-        case DeviceType::Vulkan:
+        case RENDER_DEVICE_TYPE_VULKAN:
         {
             // EngineVkCreateInfo& EngVkAttribs = static_cast<EngineVkCreateInfo&>(EngineCI);
         }
@@ -66,7 +66,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #endif
 
 #if GL_SUPPORTED
-        case DeviceType::OpenGL:
+        case RENDER_DEVICE_TYPE_GL:
         {
             // Nothing to do
         }
@@ -74,7 +74,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #endif
 
 #if GLES_SUPPORTED
-        case DeviceType::OpenGLES:
+        case RENDER_DEVICE_TYPE_GLES:
         {
             // Nothing to do
         }
@@ -82,7 +82,7 @@ void SampleBase::GetEngineInitializationAttribs(DeviceType DevType, EngineCreate
 #endif
 
 #if METAL_SUPPORTED
-        case DeviceType::Metal:
+        case RENDER_DEVICE_TYPE_METAL:
         {
             // Nothing to do
         }

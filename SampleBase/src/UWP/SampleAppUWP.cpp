@@ -40,7 +40,7 @@ class SampleAppUWP final : public SampleApp
 public:
     SampleAppUWP()
     {
-        m_DeviceType = DeviceType::D3D12;
+        m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
     }
 
     virtual void OnSetWindow(Windows::UI::Core::CoreWindow^ window)override final
@@ -126,13 +126,13 @@ public:
 
             ID3D12Device *pd3d12Device = nullptr;
             ID3D11Device *pd3d11Device = nullptr;
-            if (m_DeviceType == DeviceType::D3D12)
+            if (m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
             {
                 // Store pointers to the Direct3D 11.1 API device and immediate context.
                 RefCntAutoPtr<IRenderDeviceD3D12> pRenderDeviceD3D12(m_pDevice, IID_RenderDeviceD3D12);
                 pd3d12Device = pRenderDeviceD3D12->GetD3D12Device();
             }
-            else if (m_DeviceType == DeviceType::D3D11)
+            else if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11)
             {
                 RefCntAutoPtr<IRenderDeviceD3D11> pRenderDeviceD3D11(m_pDevice, IID_RenderDeviceD3D11);
                 pd3d11Device = pRenderDeviceD3D11->GetD3D11Device();
@@ -192,11 +192,11 @@ public:
             SCDesc.DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
             auto window = m_DeviceResources->GetWindow();
             IDXGISwapChain3 *pDXGISwapChain3 = nullptr;
-            if (m_DeviceType == DeviceType::D3D12)
+            if (m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
             {
                 GetEngineFactoryD3D12()->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, reinterpret_cast<IUnknown*>(window), &m_pSwapChain);
             }
-            else if (m_DeviceType == DeviceType::D3D11)
+            else if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11)
             {
                 GetEngineFactoryD3D11()->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, reinterpret_cast<IUnknown*>(window), &m_pSwapChain);
             }
@@ -205,12 +205,12 @@ public:
         }
 
         IDXGISwapChain3 *pDXGISwapChain3 = nullptr;
-        if (m_DeviceType == DeviceType::D3D12)
+        if (m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
         {
             RefCntAutoPtr<ISwapChainD3D12> pSwapChainD3D12(m_pSwapChain, IID_SwapChainD3D12);
             pSwapChainD3D12->GetDXGISwapChain()->QueryInterface(__uuidof(pDXGISwapChain3), reinterpret_cast<void**>(&pDXGISwapChain3));
         }
-        else if (m_DeviceType == DeviceType::D3D11)
+        else if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11)
         {
             RefCntAutoPtr<ISwapChainD3D11> pSwapChainD3D11(m_pSwapChain, IID_SwapChainD3D11);
             pSwapChainD3D11->GetDXGISwapChain()->QueryInterface(__uuidof(pDXGISwapChain3), reinterpret_cast<void**>(&pDXGISwapChain3));

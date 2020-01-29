@@ -54,9 +54,9 @@
 #include "BufferView.h"
 #include "TextureView.h"
 #include "GraphicsTypes.h"
-#include "RefCntAutoPtr.h"
+#include "RefCntAutoPtr.hpp"
 
-#include "AdvancedMath.h"
+#include "AdvancedMath.hpp"
 
 namespace Diligent
 {

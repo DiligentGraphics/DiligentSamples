@@ -26,7 +26,7 @@
  */
 
 #include "TexturedCube.h"
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 #include "TextureUtilities.h"
 
 namespace Diligent

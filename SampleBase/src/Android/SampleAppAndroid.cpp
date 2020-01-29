@@ -35,7 +35,7 @@ class SampleAppAndroid final : public SampleApp
 public:
     SampleAppAndroid()
     {
-        m_DeviceType = DeviceType::OpenGLES;
+        m_DeviceType = RENDER_DEVICE_TYPE_GLES;
     }
 
     virtual void Initialize() override final

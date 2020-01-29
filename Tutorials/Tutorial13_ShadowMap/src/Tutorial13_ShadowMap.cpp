@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "Tutorial13_ShadowMap.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "../../Common/src/TexturedCube.h"

@@ -30,11 +30,11 @@
 #include <array>
 
 #include "AtmosphereSample.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "imgui.h"
 #include "imGuIZMO.h"
-#include "PlatformMisc.h"
+#include "PlatformMisc.hpp"
 #include "ImGuiUtils.h"
 
 namespace Diligent
@@ -59,7 +59,7 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice*
     SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
 
     m_bIsGLDevice = deviceCaps.IsGLDevice();
-    if (pDevice->GetDeviceCaps().DevType == DeviceType::OpenGLES)
+    if (pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_GLES)
     {
         m_ShadowSettings.Resolution                        = 512;
         m_TerrainRenderParams.m_FilterAcrossShadowCascades = false;

@@ -29,7 +29,7 @@
 #include <cmath>
 
 #include "Tutorial11_ResourceUpdates.h"
-#include "MapHelper.h"
+#include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 
@@ -541,12 +541,12 @@ void Tutorial11_ResourceUpdates::Update(double CurrTime, double ElapsedTime)
 
     static constexpr const double MapTexturePeriod = 0.05;
     const auto&                   deviceType       = m_pDevice->GetDeviceCaps().DevType;
-    if (CurrTime - m_LastMapTime > MapTexturePeriod * (deviceType == DeviceType::D3D11 ? 10.f : 1.f))
+    if (CurrTime - m_LastMapTime > MapTexturePeriod * (deviceType == RENDER_DEVICE_TYPE_D3D11 ? 10.f : 1.f))
     {
         m_LastMapTime = CurrTime;
-        if (deviceType == DeviceType::D3D11 || deviceType == DeviceType::D3D12 || deviceType == DeviceType::Vulkan)
+        if (deviceType == RENDER_DEVICE_TYPE_D3D11 || deviceType == RENDER_DEVICE_TYPE_D3D12 || deviceType == RENDER_DEVICE_TYPE_VULKAN)
         {
-            MapTexture(3, deviceType == DeviceType::D3D11);
+            MapTexture(3, deviceType == RENDER_DEVICE_TYPE_D3D11);
         }
     }
 }
