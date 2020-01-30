@@ -306,7 +306,7 @@ public:
             m_pSwapChain->Resize(Width, Height);
     }
 
-    DeviceType GetDeviceType() const { return m_DeviceType; }
+    RENDER_DEVICE_TYPE GetDeviceType() const { return m_DeviceType; }
 
 private:
     RefCntAutoPtr<IRenderDevice>  m_pDevice;
