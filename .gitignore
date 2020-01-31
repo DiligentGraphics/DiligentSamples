@@ -38,3 +38,4 @@ Release
 *.json
 *.db
 *.sqlite
+.idea
