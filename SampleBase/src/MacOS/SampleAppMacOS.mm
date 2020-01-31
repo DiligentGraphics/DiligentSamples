@@ -24,7 +24,7 @@
 #include <queue>
 #include <mutex>
 #import <Cocoa/Cocoa.h>
-#include "SampleApp.h"
+#include "SampleApp.hpp"
 #include "ImGuiImplMacOS.hpp"
 
 namespace Diligent
