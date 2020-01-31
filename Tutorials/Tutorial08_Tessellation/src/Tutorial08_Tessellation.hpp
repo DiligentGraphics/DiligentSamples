@@ -27,18 +27,15 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-
-class ImguiDemo final : public SampleBase
+class Tutorial08_Tessellation final : public SampleBase
 {
 public:
-    ~ImguiDemo();
-
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -48,16 +45,32 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Dear Imgui Demo"; }
-
-    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
+    virtual const Char* GetSampleName() const override final { return "Tutorial08: Tessellation"; }
 
 private:
+    void CreatePipelineStates();
+    void LoadTextures();
     void UpdateUI();
 
-    bool   m_ShowDemoWindow    = true;
-    bool   m_ShowAnotherWindow = false;
-    float4 m_ClearColor        = {0.45f, 0.55f, 0.60f, 1.00f};
+    RefCntAutoPtr<IPipelineState>         m_pPSO[2];
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB[2];
+    RefCntAutoPtr<IBuffer>                m_ShaderConstants;
+    RefCntAutoPtr<ITextureView>           m_HeightMapSRV;
+    RefCntAutoPtr<ITextureView>           m_ColorMapSRV;
+
+    float4x4 m_WorldViewProjMatrix;
+    float4x4 m_WorldViewMatrix;
+
+    bool  m_Animate              = true;
+    bool  m_Wireframe            = false;
+    float m_RotationAngle        = 0;
+    float m_TessDensity          = 32;
+    float m_Distance             = 10.f;
+    bool  m_AdaptiveTessellation = true;
+    int   m_BlockSize            = 32;
+
+    unsigned int m_HeightMapWidth  = 0;
+    unsigned int m_HeightMapHeight = 0;
 };
 
 } // namespace Diligent

@@ -27,14 +27,13 @@
 
 #pragma once
 
-#include "SampleBase.h"
-#include "ResourceMapping.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial14_ComputeShader final : public SampleBase
+class Tutorial03_Texturing final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
@@ -46,35 +45,21 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial14: Compute Shader"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial03: Texturing"; }
 
 private:
-    void CreateRenderParticlePSO();
-    void CreateUpdateParticlePSO();
-    void CreateParticleBuffers();
-    void CreateConsantBuffer();
-    void UpdateUI();
+    void CreatePipelineState();
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void LoadTexture();
 
-    int m_NumParticles    = 2000;
-    int m_ThreadGroupSize = 256;
-
-    RefCntAutoPtr<IPipelineState>         m_pRenderParticlePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pRenderParticleSRB;
-    RefCntAutoPtr<IPipelineState>         m_pResetParticleListsPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pResetParticleListsSRB;
-    RefCntAutoPtr<IPipelineState>         m_pMoveParticlesPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pMoveParticlesSRB;
-    RefCntAutoPtr<IPipelineState>         m_pCollideParticlesPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pCollideParticlesSRB;
-    RefCntAutoPtr<IPipelineState>         m_pUpdateParticleSpeedPSO;
-    RefCntAutoPtr<IBuffer>                m_Constants;
-    RefCntAutoPtr<IBuffer>                m_pParticleAttribsBuffer;
-    RefCntAutoPtr<IBuffer>                m_pParticleListsBuffer;
-    RefCntAutoPtr<IBuffer>                m_pParticleListHeadsBuffer;
-    RefCntAutoPtr<IResourceMapping>       m_pResMapping;
-
-    float m_fTimeDelta       = 0;
-    float m_fSimulationSpeed = 1;
+    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_VSConstants;
+    RefCntAutoPtr<ITextureView>           m_TextureSRV;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    float4x4                              m_WorldViewProjMatrix;
 };
 
 } // namespace Diligent

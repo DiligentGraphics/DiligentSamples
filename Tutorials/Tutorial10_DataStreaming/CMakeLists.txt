@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial10_DataStreaming.h
+    src/Tutorial10_DataStreaming.hpp
 )
 
 set(SHADERS

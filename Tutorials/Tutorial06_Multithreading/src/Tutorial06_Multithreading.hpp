@@ -31,21 +31,20 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 #include "ThreadSignal.hpp"
 
 namespace Diligent
 {
 
-class Tutorial09_Quads final : public SampleBase
+class Tutorial06_Multithreading final : public SampleBase
 {
 public:
-    ~Tutorial09_Quads() override;
+    ~Tutorial06_Multithreading() override;
     virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
                                                 EngineCreateInfo&  Attribs,
                                                 SwapChainDesc&     SCDesc) override final;
-
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -55,69 +54,55 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial09: Quads"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial06: Multithreaded rendering"; }
 
 private:
-    void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
+    void CreatePipelineState(std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
     void UpdateUI();
+    void PopulateInstanceData();
 
-    void InitializeQuads();
-    void CreateInstanceBuffer();
-    void UpdateQuads(float elapsedTime);
     void StartWorkerThreads(size_t NumThreads);
     void StopWorkerThreads();
-    template <bool UseBatch>
+
     void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
 
-    static void WorkerThreadFunc(Tutorial09_Quads* pThis, Uint32 ThreadNum);
+    static void WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum);
 
-    ThreadingTools::Signal m_RenderSubsetSignal;
-    ThreadingTools::Signal m_ExecuteCommandListsSignal;
-    ThreadingTools::Signal m_GotoNextFrameSignal;
+    ThreadingTools::Signal   m_RenderSubsetSignal;
+    ThreadingTools::Signal   m_ExecuteCommandListsSignal;
+    ThreadingTools::Signal   m_GotoNextFrameSignal;
+    std::mutex               m_NumThreadsCompletedMtx;
+    std::atomic_int          m_NumThreadsCompleted;
+    std::atomic_int          m_NumThreadsReady;
+    std::vector<std::thread> m_WorkerThreads;
 
-    std::mutex      m_NumThreadsCompletedMtx;
-    std::atomic_int m_NumThreadsCompleted;
-    std::atomic_int m_NumThreadsReady;
-
-    std::vector<std::thread>                 m_WorkerThreads;
     std::vector<RefCntAutoPtr<ICommandList>> m_CmdLists;
 
-    static constexpr int          NumStates = 5;
-    RefCntAutoPtr<IPipelineState> m_pPSO[2][NumStates];
-    RefCntAutoPtr<IBuffer>        m_QuadAttribsCB;
-    RefCntAutoPtr<IBuffer>        m_BatchDataBuffer;
+    RefCntAutoPtr<IPipelineState> m_pPSO;
+    RefCntAutoPtr<IBuffer>        m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>        m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>        m_InstanceConstants;
+    RefCntAutoPtr<IBuffer>        m_VSConstants;
 
-    static constexpr int                  NumTextures = 4;
+    static constexpr int NumTextures = 4;
+
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
-    RefCntAutoPtr<IShaderResourceBinding> m_BatchSRB;
     RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
-    RefCntAutoPtr<ITextureView>           m_TexArraySRV;
 
-    int m_NumQuads  = 1000;
-    int m_BatchSize = 5;
+    float4x4 m_ViewProjMatrix;
+    float4x4 m_RotationMatrix;
+    int      m_GridSize = 5;
 
     int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
 
-    struct QuadData
-    {
-        float2 Pos;
-        float2 MoveDir;
-        float  Size;
-        float  Angle;
-        float  RotSpeed;
-        int    TextureInd;
-        int    StateInd;
-    };
-    std::vector<QuadData> m_Quads;
-
     struct InstanceData
     {
-        float4 QuadRotationAndScale;
-        float2 QuadCenter;
-        float  TexArrInd;
+        float4x4 Matrix;
+        int      TextureInd;
     };
+    std::vector<InstanceData> m_InstanceData;
 };
 
 } // namespace Diligent

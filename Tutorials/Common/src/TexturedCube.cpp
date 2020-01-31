@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "TexturedCube.h"
+#include "TexturedCube.hpp"
 #include "BasicMath.hpp"
 #include "TextureUtilities.h"
 

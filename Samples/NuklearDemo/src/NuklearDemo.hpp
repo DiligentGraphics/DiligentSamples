@@ -27,15 +27,20 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
+
+struct nk_diligent_context;
+struct nk_context;
 
 namespace Diligent
 {
 
-class Tutorial05_TextureArray final : public SampleBase
+class NuklearDemo final : public SampleBase
 {
 public:
+    ~NuklearDemo();
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -45,29 +50,18 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial05: Texture Array"; }
+    virtual const Char* GetSampleName() const override final { return "Nuklear Demo"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
+#if PLATFORM_WIN32
+    virtual bool HandleNativeMessage(const void* pNativeMsgData) override final;
+#endif
 
 private:
-    void CreatePipelineState();
-    void CreateInstanceBuffer();
-    void LoadTextures();
     void UpdateUI();
-    void PopulateInstanceBuffer();
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO;
-    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
-    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
-    RefCntAutoPtr<IBuffer>                m_VSConstants;
-    RefCntAutoPtr<ITextureView>           m_TextureSRV;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
-
-    float4x4             m_ViewProjMatrix;
-    float4x4             m_RotationMatrix;
-    int                  m_GridSize   = 5;
-    static constexpr int MaxGridSize  = 32;
-    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
-    static constexpr int NumTextures  = 4;
+    nk_diligent_context* m_pNkDlgCtx = nullptr;
+    nk_context*          m_pNkCtx    = nullptr;
 };
 
 } // namespace Diligent

@@ -27,13 +27,13 @@
 
 #include <array>
 
-#include "Tutorial17_MSAA.h"
+#include "Tutorial17_MSAA.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {

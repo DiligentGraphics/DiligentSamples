@@ -22,8 +22,8 @@
 */
 
 #include <queue>
-#include "SampleApp.h"
-#include "ImGuiImplIOS.h"
+#include "SampleApp.hpp"
+#include "ImGuiImplIOS.hpp"
 
 namespace Diligent
 {

@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial14_ComputeShader.h
+    src/Tutorial14_ComputeShader.hpp
 )
 
 set(SHADERS

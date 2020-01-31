@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial11_ResourceUpdates.h
+    src/Tutorial11_ResourceUpdates.hpp
 )
 
 set(SHADERS

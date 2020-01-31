@@ -27,7 +27,7 @@
 
 #include <random>
 
-#include "Tutorial14_ComputeShader.h"
+#include "Tutorial14_ComputeShader.hpp"
 #include "BasicMath.hpp"
 #include "MapHelper.hpp"
 #include "imgui.h"

@@ -46,7 +46,7 @@
 #pragma once
 
 #include <vector>
-#include "DynamicQuadTreeNode.h"
+#include "DynamicQuadTreeNode.hpp"
 
 namespace Diligent
 {

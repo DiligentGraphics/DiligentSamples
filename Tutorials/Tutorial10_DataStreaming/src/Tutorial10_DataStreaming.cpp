@@ -30,12 +30,12 @@
 #include <math.h>
 #include <algorithm>
 
-#include "Tutorial10_DataStreaming.h"
+#include "Tutorial10_DataStreaming.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "imgui.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {

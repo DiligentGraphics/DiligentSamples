@@ -28,23 +28,25 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <vector>
 #include <thread>
 #include <mutex>
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 #include "ThreadSignal.hpp"
 
 namespace Diligent
 {
 
-class Tutorial06_Multithreading final : public SampleBase
+class Tutorial10_DataStreaming final : public SampleBase
 {
 public:
-    ~Tutorial06_Multithreading() override;
+    ~Tutorial10_DataStreaming() override;
     virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
                                                 EngineCreateInfo&  Attribs,
                                                 SwapChainDesc&     SCDesc) override final;
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -54,55 +56,88 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial06: Multithreaded rendering"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial10: Streaming"; }
 
 private:
-    void CreatePipelineState(std::vector<StateTransitionDesc>& Barriers);
+    void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
     void UpdateUI();
-    void PopulateInstanceData();
 
+    void InitializePolygons();
+    void InitializePolygonGeometry();
+    void CreateInstanceBuffer();
+    void UpdatePolygons(float elapsedTime);
     void StartWorkerThreads(size_t NumThreads);
     void StopWorkerThreads();
 
+    template <bool UseBatch>
     void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
 
-    static void WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum);
+    static void WorkerThreadFunc(Tutorial10_DataStreaming* pThis, Uint32 ThreadNum);
 
-    ThreadingTools::Signal   m_RenderSubsetSignal;
-    ThreadingTools::Signal   m_ExecuteCommandListsSignal;
-    ThreadingTools::Signal   m_GotoNextFrameSignal;
-    std::mutex               m_NumThreadsCompletedMtx;
-    std::atomic_int          m_NumThreadsCompleted;
-    std::atomic_int          m_NumThreadsReady;
+    ThreadingTools::Signal m_RenderSubsetSignal;
+    ThreadingTools::Signal m_ExecuteCommandListsSignal;
+    ThreadingTools::Signal m_GotoNextFrameSignal;
+
+    std::mutex      m_NumThreadsCompletedMtx;
+    std::atomic_int m_NumThreadsCompleted;
+    std::atomic_int m_NumThreadsReady;
+
     std::vector<std::thread> m_WorkerThreads;
 
     std::vector<RefCntAutoPtr<ICommandList>> m_CmdLists;
 
-    RefCntAutoPtr<IPipelineState> m_pPSO;
-    RefCntAutoPtr<IBuffer>        m_CubeVertexBuffer;
-    RefCntAutoPtr<IBuffer>        m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>        m_InstanceConstants;
-    RefCntAutoPtr<IBuffer>        m_VSConstants;
+    static constexpr const int    NumStates = 5;
+    RefCntAutoPtr<IPipelineState> m_pPSO[2][NumStates];
+    RefCntAutoPtr<IBuffer>        m_PolygonAttribsCB;
+    RefCntAutoPtr<IBuffer>        m_BatchDataBuffer;
 
-    static constexpr int NumTextures = 4;
+    static constexpr const int             MaxVertsInStreamingBuffer = 1024;
+    std::unique_ptr<class StreamingBuffer> m_StreamingVB;
+    std::unique_ptr<class StreamingBuffer> m_StreamingIB;
 
+    static constexpr int                  NumTextures = 4;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
+    RefCntAutoPtr<IShaderResourceBinding> m_BatchSRB;
     RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
+    RefCntAutoPtr<ITextureView>           m_TexArraySRV;
 
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
-    int      m_GridSize = 5;
+    int m_NumPolygons = 1000;
+    int m_BatchSize   = 5;
 
     int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
 
+    struct PolygonData
+    {
+        float2 Pos;
+        float2 MoveDir;
+        float  Size;
+        float  Angle;
+        float  RotSpeed;
+        int    TextureInd;
+        int    StateInd;
+        int    NumVerts;
+    };
+    std::vector<PolygonData> m_Polygons;
+
     struct InstanceData
     {
-        float4x4 Matrix;
-        int      TextureInd;
+        float4 PolygonRotationAndScale;
+        float2 PolygonCenter;
+        float  TexArrInd;
     };
-    std::vector<InstanceData> m_InstanceData;
+
+    static constexpr const Uint32 MinPolygonVerts = 3;
+    static constexpr const Uint32 MaxPolygonVerts = 10;
+    struct PolygonGeometry
+    {
+        std::vector<float2> Verts;
+        std::vector<Uint32> Inds;
+    };
+    std::vector<PolygonGeometry> m_PolygonGeo;
+    bool                         m_bAllowPersistentMap = false;
+    std::pair<Uint32, Uint32>    WritePolygon(const PolygonGeometry& PolygonGeo, IDeviceContext* pCtx, size_t CtxNum);
 };
 
 } // namespace Diligent

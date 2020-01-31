@@ -29,13 +29,13 @@
 #include <algorithm>
 #include <array>
 
-#include "AtmosphereSample.h"
+#include "AtmosphereSample.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "imgui.h"
 #include "imGuIZMO.h"
 #include "PlatformMisc.hpp"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {

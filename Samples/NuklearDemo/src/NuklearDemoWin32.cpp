@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "NuklearDemo.h"
+#include "NuklearDemo.hpp"
 
 #include "../../../ThirdParty/nuklear/nuklear.h"
 

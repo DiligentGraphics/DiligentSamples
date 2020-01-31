@@ -8,8 +8,8 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial12_RenderTarget.h
-    ../Common/src/TexturedCube.h
+    src/Tutorial12_RenderTarget.hpp
+    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS

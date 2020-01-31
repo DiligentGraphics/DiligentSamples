@@ -25,12 +25,12 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial12_RenderTarget.h"
+#include "Tutorial12_RenderTarget.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
 {

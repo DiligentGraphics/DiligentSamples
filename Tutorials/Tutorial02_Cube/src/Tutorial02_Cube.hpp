@@ -27,14 +27,13 @@
 
 #pragma once
 
-#include <vector>
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial16_BindlessResources final : public SampleBase
+class Tutorial02_Cube final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
@@ -46,52 +45,19 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial16: Bindless Resources"; }
-
-    struct ObjectGeometry
-    {
-        Uint32 FirstIndex = 0;
-        Uint32 NumIndices = 0;
-        Uint32 BaseVertex = 0;
-    };
+    virtual const Char* GetSampleName() const override final { return "Tutorial02: Cube"; }
 
 private:
     void CreatePipelineState();
-    void CreateGeometryBuffers();
-    void CreateInstanceBuffer();
-    void LoadTextures();
-    void UpdateUI();
-    void PopulateInstanceBuffer();
-
-    static constexpr int        NumTextures = 4;
-    std::vector<ObjectGeometry> m_Geometries;
-
-    bool m_BindlessMode = false;
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
-    RefCntAutoPtr<IPipelineState>         m_pBindlessPSO;
-    RefCntAutoPtr<IBuffer>                m_VertexBuffer;
-    RefCntAutoPtr<IBuffer>                m_IndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
+    RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
-    RefCntAutoPtr<IShaderResourceBinding> m_BindlessSRB;
-
-    struct InstanceData
-    {
-        float4x4 Matrix;
-        uint     TextureInd;
-    };
-    std::vector<InstanceData> m_InstanceData;
-    std::vector<Uint32>       m_GeometryType;
-
-    float4x4 m_ViewProjMatrix;
-    float4x4 m_RotationMatrix;
-
-    int m_GridSize = 5;
-
-    static constexpr int MaxGridSize  = 32;
-    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
+    float4x4                              m_WorldViewProjMatrix;
 };
 
 } // namespace Diligent

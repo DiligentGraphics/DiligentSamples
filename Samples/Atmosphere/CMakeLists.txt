@@ -9,11 +9,11 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/AtmosphereSample.h
-    src/Terrain/DynamicQuadTreeNode.h
-    src/Terrain/EarthHemisphere.h
-    src/Terrain/ElevationDataSource.h
-    src/Terrain/HierarchyArray.h
+    src/AtmosphereSample.hpp
+    src/Terrain/DynamicQuadTreeNode.hpp
+    src/Terrain/EarthHemisphere.hpp
+    src/Terrain/ElevationDataSource.hpp
+    src/Terrain/HierarchyArray.hpp
 )
 
 set(TERRAIN_SHADERS

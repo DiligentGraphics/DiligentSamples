@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial02_Cube.h
+    src/Tutorial02_Cube.hpp
 )
 
 set(SHADERS

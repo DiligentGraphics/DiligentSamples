@@ -28,7 +28,7 @@
 #include <math.h>
 #include <cmath>
 
-#include "Tutorial11_ResourceUpdates.h"
+#include "Tutorial11_ResourceUpdates.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"

@@ -27,15 +27,19 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial03_Texturing final : public SampleBase
+class Tutorial12_RenderTarget final : public SampleBase
 {
 public:
+    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
+                                                EngineCreateInfo&  Attribs,
+                                                SwapChainDesc&     SCDesc) override final;
+
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -45,21 +49,33 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial03: Texturing"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial12: Render Target"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
-    void CreatePipelineState();
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
-    void LoadTexture();
+    void CreateCubePSO();
+    void CreateRenderTargetPSO();
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    static constexpr TEXTURE_FORMAT RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
+    static constexpr TEXTURE_FORMAT DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
+    // Cube resources
+    RefCntAutoPtr<IPipelineState>         m_pCubePSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_VSConstants;
-    RefCntAutoPtr<ITextureView>           m_TextureSRV;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
+    RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
+
+    // Offscreen render target and depth-stencil
+    RefCntAutoPtr<ITextureView> m_pColorRTV;
+    RefCntAutoPtr<ITextureView> m_pDepthDSV;
+
+    RefCntAutoPtr<IBuffer>                m_RTPSConstants;
+    RefCntAutoPtr<IPipelineState>         m_pRTPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pRTSRB;
     float4x4                              m_WorldViewProjMatrix;
+    float                                 m_fCurrentTime = 0.f;
 };
 
 } // namespace Diligent

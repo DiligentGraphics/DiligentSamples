@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial08_Tessellation.h
+    src/Tutorial08_Tessellation.hpp
 )
 
 set(SHADERS

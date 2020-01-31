@@ -27,7 +27,7 @@
 
 #include <cmath>
 #include <array>
-#include "GLTFViewer.h"
+#include "GLTFViewer.hpp"
 #include "MapHelper.hpp"
 #include "BasicMath.hpp"
 #include "GraphicsUtilities.h"

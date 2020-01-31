@@ -28,7 +28,7 @@
 #pragma once
 
 #include "BasicMath.hpp"
-#include "InputController.h"
+#include "InputController.hpp"
 
 namespace Diligent
 {

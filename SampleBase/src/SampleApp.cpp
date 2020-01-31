@@ -31,11 +31,11 @@
 #include <cmath>
 
 #include "PlatformDefinitions.h"
-#include "SampleApp.h"
+#include "SampleApp.hpp"
 #include "Errors.hpp"
 #include "StringTools.hpp"
 #include "MapHelper.hpp"
-#include "Image.h"
+#include "Image.hpp"
 #include "FileWrapper.hpp"
 
 #if D3D11_SUPPORTED
@@ -59,7 +59,7 @@
 #endif
 
 #include "imgui.h"
-#include "ImGuiImplDiligent.h"
+#include "ImGuiImplDiligent.hpp"
 
 namespace Diligent
 {

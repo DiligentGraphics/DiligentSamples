@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/ShadowsSample.h
+    src/ShadowsSample.hpp
 )
 
 

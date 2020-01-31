@@ -26,7 +26,7 @@
  */
 
 #include "PlatformDefinitions.h"
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "Errors.hpp"
 
 namespace Diligent

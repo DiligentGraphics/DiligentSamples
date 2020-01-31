@@ -8,8 +8,8 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial17_MSAA.h
-    ../Common/src/TexturedCube.h
+    src/Tutorial17_MSAA.hpp
+    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS

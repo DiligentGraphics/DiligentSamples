@@ -27,9 +27,9 @@
 
 #include <limits>
 
-#include "SampleApp.h"
+#include "SampleApp.hpp"
 #include "resources/Win32AppResource.h"
-#include "ImGuiImplWin32.h"
+#include "ImGuiImplWin32.hpp"
 
 namespace
 {

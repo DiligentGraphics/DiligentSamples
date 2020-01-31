@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "InputController.h"
+#include "InputController.hpp"
 
 namespace Diligent
 {

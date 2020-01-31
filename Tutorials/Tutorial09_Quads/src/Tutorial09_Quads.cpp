@@ -30,12 +30,12 @@
 #include <cmath>
 #include <algorithm>
 
-#include "Tutorial09_Quads.h"
+#include "Tutorial09_Quads.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "imgui.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {

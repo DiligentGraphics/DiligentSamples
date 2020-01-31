@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial03_Texturing.h
+    src/Tutorial03_Texturing.hpp
 )
 
 set(SHADERS

@@ -27,13 +27,13 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial02_Cube final : public SampleBase
+class Tutorial04_Instancing final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
@@ -45,19 +45,27 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial02: Cube"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial04: Instancing"; }
 
 private:
     void CreatePipelineState();
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
+    void CreateInstanceBuffer();
+    void UpdateUI();
+    void PopulateInstanceBuffer();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
-    float4x4                              m_WorldViewProjMatrix;
+    RefCntAutoPtr<ITextureView>           m_TextureSRV;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+
+    float4x4             m_ViewProjMatrix;
+    float4x4             m_RotationMatrix;
+    int                  m_GridSize   = 5;
+    static constexpr int MaxGridSize  = 32;
+    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
 };
 
 } // namespace Diligent

@@ -27,15 +27,13 @@
 
 #pragma once
 
-#include <array>
-#include <random>
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial11_ResourceUpdates final : public SampleBase
+class Tutorial17_MSAA final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
@@ -47,42 +45,35 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial11: Resource Updates"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial17: MSAA"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
-    void CreatePipelineStates();
-    void CreateVertexBuffers();
-    void CreateIndexBuffer();
-    void LoadTextures();
+    void CreateCubePSO();
+    void UpdateUI();
+    void CreateMSAARenderTarget();
 
-    void WriteStripPattern(Uint8*, Uint32 Width, Uint32 Height, Uint32 Stride);
-    void WriteDiamondPattern(Uint8*, Uint32 Width, Uint32 Height, Uint32 Stride);
+    static constexpr TEXTURE_FORMAT DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
 
-    void UpdateTexture(Uint32 TexIndex);
-    void MapTexture(Uint32 TexIndex, bool MapEntireTexture);
-    void UpdateBuffer(Uint32 BufferIndex);
-    void MapDynamicBuffer(Uint32 BufferIndex);
+    // Cube resources
+    RefCntAutoPtr<IPipelineState>         m_pCubePSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
+    RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
-    RefCntAutoPtr<IPipelineState> m_pPSO, m_pPSO_NoCull;
-    RefCntAutoPtr<IBuffer>        m_CubeVertexBuffer[3];
-    RefCntAutoPtr<IBuffer>        m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>        m_VSConstants;
-    RefCntAutoPtr<IBuffer>        m_TextureUpdateBuffer;
+    // Offscreen multi-sampled render target and depth-stencil
+    RefCntAutoPtr<ITextureView> m_pMSColorRTV;
+    RefCntAutoPtr<ITextureView> m_pMSDepthDSV;
 
-    void DrawCube(const float4x4& WVPMatrix, IBuffer* pVertexBuffer, IShaderResourceBinding* pSRB);
+    Uint8  m_SampleCount           = 4;
+    Uint32 m_SupportedSampleCounts = 0;
 
-    static constexpr const size_t NumTextures         = 4;
-    static constexpr const Uint32 MaxUpdateRegionSize = 128;
-    static constexpr const Uint32 MaxMapRegionSize    = 128;
-
-    std::array<RefCntAutoPtr<ITexture>, NumTextures>               m_Textures;
-    std::array<RefCntAutoPtr<IShaderResourceBinding>, NumTextures> m_SRBs;
-
-    double       m_LastTextureUpdateTime = 0;
-    double       m_LastBufferUpdateTime  = 0;
-    double       m_LastMapTime           = 0;
-    std::mt19937 m_gen{0}; //Use 0 as the seed to always generate the same sequence
-    double       m_CurrTime;
+    float4x4 m_WorldViewProjMatrix;
+    float    m_fCurrentTime = 0.f;
+    bool     m_bRotateGrid  = true;
 };
 
 } // namespace Diligent

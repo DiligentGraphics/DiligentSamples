@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "BasicMath.h"
+#include "BasicMath.hpp"
 
 namespace Diligent
 {

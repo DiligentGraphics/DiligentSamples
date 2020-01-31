@@ -28,11 +28,11 @@
 #include <random>
 #include <string>
 
-#include "Tutorial05_TextureArray.h"
+#include "Tutorial05_TextureArray.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 
 namespace Diligent

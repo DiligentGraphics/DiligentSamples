@@ -27,13 +27,13 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial08_Tessellation final : public SampleBase
+class Tutorial05_TextureArray final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
@@ -45,32 +45,29 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial08: Tessellation"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial05: Texture Array"; }
 
 private:
-    void CreatePipelineStates();
+    void CreatePipelineState();
+    void CreateInstanceBuffer();
     void LoadTextures();
     void UpdateUI();
+    void PopulateInstanceBuffer();
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO[2];
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB[2];
-    RefCntAutoPtr<IBuffer>                m_ShaderConstants;
-    RefCntAutoPtr<ITextureView>           m_HeightMapSRV;
-    RefCntAutoPtr<ITextureView>           m_ColorMapSRV;
+    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
+    RefCntAutoPtr<IBuffer>                m_VSConstants;
+    RefCntAutoPtr<ITextureView>           m_TextureSRV;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
 
-    float4x4 m_WorldViewProjMatrix;
-    float4x4 m_WorldViewMatrix;
-
-    bool  m_Animate              = true;
-    bool  m_Wireframe            = false;
-    float m_RotationAngle        = 0;
-    float m_TessDensity          = 32;
-    float m_Distance             = 10.f;
-    bool  m_AdaptiveTessellation = true;
-    int   m_BlockSize            = 32;
-
-    unsigned int m_HeightMapWidth  = 0;
-    unsigned int m_HeightMapHeight = 0;
+    float4x4             m_ViewProjMatrix;
+    float4x4             m_RotationMatrix;
+    int                  m_GridSize   = 5;
+    static constexpr int MaxGridSize  = 32;
+    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
+    static constexpr int NumTextures  = 4;
 };
 
 } // namespace Diligent

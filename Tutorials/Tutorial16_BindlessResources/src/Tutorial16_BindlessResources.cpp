@@ -28,13 +28,13 @@
 #include <random>
 #include <string>
 
-#include "Tutorial16_BindlessResources.h"
+#include "Tutorial16_BindlessResources.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "ShaderMacroHelper.hpp"
 #include "imgui.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {

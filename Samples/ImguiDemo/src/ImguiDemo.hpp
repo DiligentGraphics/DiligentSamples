@@ -27,19 +27,17 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
-
-struct nk_diligent_context;
-struct nk_context;
 
 namespace Diligent
 {
 
-class NuklearDemo final : public SampleBase
+
+class ImguiDemo final : public SampleBase
 {
 public:
-    ~NuklearDemo();
+    ~ImguiDemo();
 
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
@@ -50,18 +48,16 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Nuklear Demo"; }
+    virtual const Char* GetSampleName() const override final { return "Dear Imgui Demo"; }
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
-#if PLATFORM_WIN32
-    virtual bool HandleNativeMessage(const void* pNativeMsgData) override final;
-#endif
 
 private:
     void UpdateUI();
 
-    nk_diligent_context* m_pNkDlgCtx = nullptr;
-    nk_context*          m_pNkCtx    = nullptr;
+    bool   m_ShowDemoWindow    = true;
+    bool   m_ShowAnotherWindow = false;
+    float4 m_ClearColor        = {0.45f, 0.55f, 0.60f, 1.00f};
 };
 
 } // namespace Diligent

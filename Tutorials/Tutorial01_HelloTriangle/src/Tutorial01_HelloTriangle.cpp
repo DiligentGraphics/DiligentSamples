@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial01_HelloTriangle.h"
+#include "Tutorial01_HelloTriangle.hpp"
 
 namespace Diligent
 {

@@ -21,11 +21,11 @@
 *  of the possibility of such damages.
 */
 
-#include "SampleApp.h"
+#include "SampleApp.hpp"
 #if VULKAN_SUPPORTED
-#    include "ImGuiImplLinuxXCB.h"
+#    include "ImGuiImplLinuxXCB.hpp"
 #endif
-#include "ImGuiImplLinuxX11.h"
+#include "ImGuiImplLinuxX11.hpp"
 
 namespace Diligent
 {

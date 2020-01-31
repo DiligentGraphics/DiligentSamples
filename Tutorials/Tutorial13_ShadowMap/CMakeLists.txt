@@ -8,8 +8,8 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial13_ShadowMap.h
-    ../Common/src/TexturedCube.h
+    src/Tutorial13_ShadowMap.hpp
+    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS

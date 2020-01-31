@@ -34,7 +34,7 @@
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
-#include "InputController.h"
+#include "InputController.hpp"
 
 namespace Diligent
 {

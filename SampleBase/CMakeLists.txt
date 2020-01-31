@@ -9,8 +9,8 @@ if(PLATFORM_WIN32)
         src/SampleApp.cpp
     )
     set(INCLUDE 
-        include/SampleApp.h
-        include/Win32/InputControllerWin32.h
+        include/SampleApp.hpp
+        include/Win32/InputControllerWin32.hpp
     )
     set(WIN32_RESOURCES
         src/Win32/resources/Win32AppResource.h
@@ -47,8 +47,8 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
         set(SAMPLE_BASE_UWP_INCLUDE
             ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/ImguiUWPEventHelper.h
             ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/InputControllerEventHandlerUWP.h
-            ${SAMPLE_BASE_SOURCE_DIR}/include/SampleApp.h
-            ${SAMPLE_BASE_SOURCE_DIR}/include/UWP/InputControllerUWP.h
+            ${SAMPLE_BASE_SOURCE_DIR}/include/SampleApp.hpp
+            ${SAMPLE_BASE_SOURCE_DIR}/include/UWP/InputControllerUWP.hpp
         )
 
         set(SAMPLE_BASE_UWP_INCLUDE_DIR
@@ -68,8 +68,8 @@ elseif(PLATFORM_ANDROID)
         src/SampleApp.cpp
     )
     set(INCLUDE 
-        include/Android/InputControllerAndroid.h
-        include/SampleApp.h
+        include/Android/InputControllerAndroid.hpp
+        include/SampleApp.hpp
     )
 elseif(PLATFORM_LINUX)
     set(SOURCE 
@@ -78,8 +78,8 @@ elseif(PLATFORM_LINUX)
         src/SampleApp.cpp
     )
     set(INCLUDE 
-        include/Linux/InputControllerLinux.h
-        include/SampleApp.h
+        include/Linux/InputControllerLinux.hpp
+        include/SampleApp.hpp
     )
 elseif(PLATFORM_MACOS)
 
@@ -89,8 +89,8 @@ elseif(PLATFORM_MACOS)
         src/SampleApp.cpp
     )
     set(INCLUDE
-        Include/MacOS/InputControllerMacOS.h
-        include/SampleApp.h
+        Include/MacOS/InputControllerMacOS.hpp
+        include/SampleApp.hpp
     )
 
 elseif(PLATFORM_IOS)
@@ -100,8 +100,8 @@ elseif(PLATFORM_IOS)
         src/SampleApp.cpp
     )
     set(INCLUDE
-        include/IOS/InputControllerIOS.h
-        include/SampleApp.h
+        include/IOS/InputControllerIOS.hpp
+        include/SampleApp.hpp
     )
 
 endif()
@@ -112,9 +112,9 @@ list(APPEND SOURCE
 )
 
 list(APPEND INCLUDE
-    include/FirstPersonCamera.h
-    include/InputController.h
-    include/SampleBase.h
+    include/FirstPersonCamera.hpp
+    include/InputController.hpp
+    include/SampleBase.hpp
 )
 
 

@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial09_Quads.h
+    src/Tutorial09_Quads.hpp
 )
 
 set(SHADERS

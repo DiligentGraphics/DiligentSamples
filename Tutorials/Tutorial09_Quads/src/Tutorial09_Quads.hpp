@@ -28,21 +28,20 @@
 #pragma once
 
 #include <atomic>
-#include <memory>
 #include <vector>
 #include <thread>
 #include <mutex>
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 #include "ThreadSignal.hpp"
 
 namespace Diligent
 {
 
-class Tutorial10_DataStreaming final : public SampleBase
+class Tutorial09_Quads final : public SampleBase
 {
 public:
-    ~Tutorial10_DataStreaming() override;
+    ~Tutorial09_Quads() override;
     virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
                                                 EngineCreateInfo&  Attribs,
                                                 SwapChainDesc&     SCDesc) override final;
@@ -56,24 +55,22 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial10: Streaming"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial09: Quads"; }
 
 private:
     void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
     void UpdateUI();
 
-    void InitializePolygons();
-    void InitializePolygonGeometry();
+    void InitializeQuads();
     void CreateInstanceBuffer();
-    void UpdatePolygons(float elapsedTime);
+    void UpdateQuads(float elapsedTime);
     void StartWorkerThreads(size_t NumThreads);
     void StopWorkerThreads();
-
     template <bool UseBatch>
     void RenderSubset(IDeviceContext* pCtx, Uint32 Subset);
 
-    static void WorkerThreadFunc(Tutorial10_DataStreaming* pThis, Uint32 ThreadNum);
+    static void WorkerThreadFunc(Tutorial09_Quads* pThis, Uint32 ThreadNum);
 
     ThreadingTools::Signal m_RenderSubsetSignal;
     ThreadingTools::Signal m_ExecuteCommandListsSignal;
@@ -83,18 +80,13 @@ private:
     std::atomic_int m_NumThreadsCompleted;
     std::atomic_int m_NumThreadsReady;
 
-    std::vector<std::thread> m_WorkerThreads;
-
+    std::vector<std::thread>                 m_WorkerThreads;
     std::vector<RefCntAutoPtr<ICommandList>> m_CmdLists;
 
-    static constexpr const int    NumStates = 5;
+    static constexpr int          NumStates = 5;
     RefCntAutoPtr<IPipelineState> m_pPSO[2][NumStates];
-    RefCntAutoPtr<IBuffer>        m_PolygonAttribsCB;
+    RefCntAutoPtr<IBuffer>        m_QuadAttribsCB;
     RefCntAutoPtr<IBuffer>        m_BatchDataBuffer;
-
-    static constexpr const int             MaxVertsInStreamingBuffer = 1024;
-    std::unique_ptr<class StreamingBuffer> m_StreamingVB;
-    std::unique_ptr<class StreamingBuffer> m_StreamingIB;
 
     static constexpr int                  NumTextures = 4;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
@@ -102,13 +94,13 @@ private:
     RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
     RefCntAutoPtr<ITextureView>           m_TexArraySRV;
 
-    int m_NumPolygons = 1000;
-    int m_BatchSize   = 5;
+    int m_NumQuads  = 1000;
+    int m_BatchSize = 5;
 
     int m_MaxThreads       = 8;
     int m_NumWorkerThreads = 4;
 
-    struct PolygonData
+    struct QuadData
     {
         float2 Pos;
         float2 MoveDir;
@@ -117,27 +109,15 @@ private:
         float  RotSpeed;
         int    TextureInd;
         int    StateInd;
-        int    NumVerts;
     };
-    std::vector<PolygonData> m_Polygons;
+    std::vector<QuadData> m_Quads;
 
     struct InstanceData
     {
-        float4 PolygonRotationAndScale;
-        float2 PolygonCenter;
+        float4 QuadRotationAndScale;
+        float2 QuadCenter;
         float  TexArrInd;
     };
-
-    static constexpr const Uint32 MinPolygonVerts = 3;
-    static constexpr const Uint32 MaxPolygonVerts = 10;
-    struct PolygonGeometry
-    {
-        std::vector<float2> Verts;
-        std::vector<Uint32> Inds;
-    };
-    std::vector<PolygonGeometry> m_PolygonGeo;
-    bool                         m_bAllowPersistentMap = false;
-    std::pair<Uint32, Uint32>    WritePolygon(const PolygonGeometry& PolygonGeo, IDeviceContext* pCtx, size_t CtxNum);
 };
 
 } // namespace Diligent

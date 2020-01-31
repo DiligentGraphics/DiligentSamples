@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial08_Tessellation.h"
+#include "Tutorial08_Tessellation.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"

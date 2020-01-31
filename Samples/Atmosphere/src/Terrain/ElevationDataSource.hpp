@@ -48,8 +48,8 @@
 #include <vector>
 #include "BasicTypes.h"
 #include "BasicMath.hpp"
-#include "HierarchyArray.h"
-#include "DynamicQuadTreeNode.h"
+#include "HierarchyArray.hpp"
+#include "DynamicQuadTreeNode.hpp"
 
 namespace Diligent
 {

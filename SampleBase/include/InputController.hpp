@@ -119,37 +119,37 @@ protected:
 
 // clang-format off
 #if PLATFORM_WIN32
-    #include "Win32/InputControllerWin32.h"
+    #include "Win32/InputControllerWin32.hpp"
     namespace Diligent
     {
         using InputController = InputControllerWin32;
     }
 #elif PLATFORM_UNIVERSAL_WINDOWS
-    #include "UWP/InputControllerUWP.h"
+    #include "UWP/InputControllerUWP.hpp"
     namespace Diligent
     {
         using InputController = InputControllerUWP;
     }
 #elif PLATFORM_MACOS
-    #include "MacOS/InputControllerMacOS.h"
+    #include "MacOS/InputControllerMacOS.hpp"
     namespace Diligent
     {
         using InputController = InputControllerMacOS;
     }
 #elif PLATFORM_IOS
-    #include "iOS/InputControllerIOS.h"
+    #include "iOS/InputControllerIOS.hpp"
     namespace Diligent
     {
         using InputController = InputControllerIOS;
     }
 #elif PLATFORM_LINUX
-    #include "Linux/InputControllerLinux.h"
+    #include "Linux/InputControllerLinux.hpp"
     namespace Diligent
     {
         using InputController = InputControllerLinux;
     }
 #elif PLATFORM_ANDROID
-    #include "Android/InputControllerAndroid.h"
+    #include "Android/InputControllerAndroid.hpp"
     namespace Diligent
     {
         using InputController = InputControllerAndroid;

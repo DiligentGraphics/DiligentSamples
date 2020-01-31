@@ -27,13 +27,13 @@
 
 #include <vector>
 
-#include "Tutorial13_ShadowMap.h"
+#include "Tutorial13_ShadowMap.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 #include "imGuIZMO.h"
 
 namespace Diligent

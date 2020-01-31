@@ -27,12 +27,12 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
-#include "EarthHemisphere.h"
-#include "ElevationDataSource.h"
-#include "EpipolarLightScattering.h"
-#include "ShadowMapManager.h"
+#include "EarthHemisphere.hpp"
+#include "ElevationDataSource.hpp"
+#include "EpipolarLightScattering.hpp"
+#include "ShadowMapManager.hpp"
 
 namespace Diligent
 {

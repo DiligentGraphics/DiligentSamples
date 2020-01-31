@@ -8,7 +8,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/NuklearDemo.h
+    src/NuklearDemo.hpp
     src/NkDiligent.h
 )
 

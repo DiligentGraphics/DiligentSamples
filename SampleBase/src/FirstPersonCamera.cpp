@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "FirstPersonCamera.h"
+#include "FirstPersonCamera.hpp"
 #include <algorithm>
 
 namespace Diligent

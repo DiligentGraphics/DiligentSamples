@@ -15,8 +15,9 @@
  *  of the possibility of such damages.
  */
 
-#include "InputController.h"
 #include <algorithm>
+
+#include "InputController.hpp"
 
 namespace Diligent
 {

@@ -27,11 +27,11 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
-#include "DXSDKMeshLoader.h"
-#include "FirstPersonCamera.h"
-#include "ShadowMapManager.h"
+#include "DXSDKMeshLoader.hpp"
+#include "FirstPersonCamera.hpp"
+#include "ShadowMapManager.hpp"
 
 namespace Diligent
 {

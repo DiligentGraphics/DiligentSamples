@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/GLTFViewer.h
+    src/GLTFViewer.hpp
 )
 
 set(SHADERS

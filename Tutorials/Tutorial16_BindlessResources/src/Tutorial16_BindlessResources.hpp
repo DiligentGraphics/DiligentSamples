@@ -28,18 +28,15 @@
 #pragma once
 
 #include <vector>
-#include "SampleBase.h"
-#include "GLTFLoader.h"
-#include "GLTF_PBR_Renderer.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class GLTFViewer final : public SampleBase
+class Tutorial16_BindlessResources final : public SampleBase
 {
 public:
-    ~GLTFViewer();
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -49,56 +46,52 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial16: Bindless Resources"; }
+
+    struct ObjectGeometry
+    {
+        Uint32 FirstIndex = 0;
+        Uint32 NumIndices = 0;
+        Uint32 BaseVertex = 0;
+    };
 
 private:
-    void CreateEnvMapPSO();
-    void CreateEnvMapSRB();
-    void LoadModel(const char* Path);
-    void ResetView();
+    void CreatePipelineState();
+    void CreateGeometryBuffers();
+    void CreateInstanceBuffer();
+    void LoadTextures();
     void UpdateUI();
+    void PopulateInstanceBuffer();
 
-    enum class BackgroundMode : int
+    static constexpr int        NumTextures = 4;
+    std::vector<ObjectGeometry> m_Geometries;
+
+    bool m_BindlessMode = false;
+
+    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IPipelineState>         m_pBindlessPSO;
+    RefCntAutoPtr<IBuffer>                m_VertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_IndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
+    RefCntAutoPtr<IBuffer>                m_VSConstants;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB[NumTextures];
+    RefCntAutoPtr<IShaderResourceBinding> m_BindlessSRB;
+
+    struct InstanceData
     {
-        None,
-        EnvironmentMap,
-        Irradiance,
-        PrefilteredEnvMap,
-        NumModes
-    } m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
+        float4x4 Matrix;
+        uint     TextureInd;
+    };
+    std::vector<InstanceData> m_InstanceData;
+    std::vector<Uint32>       m_GeometryType;
 
-    GLTF_PBR_Renderer::RenderInfo m_RenderParams;
+    float4x4 m_ViewProjMatrix;
+    float4x4 m_RotationMatrix;
 
-    Quaternion m_CameraRotation = {0, 0, 0, 1};
-    Quaternion m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
-    float4x4   m_ModelTransform;
+    int m_GridSize = 5;
 
-    float m_CameraDist = 0.9f;
-
-    float3 m_LightDirection;
-    float4 m_LightColor     = float4(1, 1, 1, 1);
-    float  m_LightIntensity = 3.f;
-    float  m_EnvMapMipLevel = 1.f;
-    int    m_SelectedModel  = 0;
-
-    static const std::pair<const char*, const char*> GLTFModels[];
-
-    bool               m_PlayAnimation  = false;
-    int                m_AnimationIndex = 0;
-    std::vector<float> m_AnimationTimers;
-
-    std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
-    std::unique_ptr<GLTF::Model>          m_Model;
-    RefCntAutoPtr<IBuffer>                m_CameraAttribsCB;
-    RefCntAutoPtr<IBuffer>                m_LightAttribsCB;
-    RefCntAutoPtr<IPipelineState>         m_EnvMapPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
-    RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
-    RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
-
-    MouseState m_LastMouseState;
-    float      m_CameraYaw   = 0;
-    float      m_CameraPitch = 0;
+    static constexpr int MaxGridSize  = 32;
+    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
 };
 
 } // namespace Diligent

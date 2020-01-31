@@ -29,13 +29,13 @@
 #include <string>
 #include <algorithm>
 
-#include "Tutorial06_Multithreading.h"
+#include "Tutorial06_Multithreading.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {

@@ -31,15 +31,15 @@
 #include <string>
 #include <memory>
 
-#include "NativeAppBase.h"
+#include "NativeAppBase.hpp"
 #include "RefCntAutoPtr.hpp"
 #include "EngineFactory.h"
 #include "RenderDevice.h"
 #include "DeviceContext.h"
 #include "SwapChain.h"
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "ScreenCapture.hpp"
-#include "Image.h"
+#include "Image.hpp"
 
 namespace Diligent
 {

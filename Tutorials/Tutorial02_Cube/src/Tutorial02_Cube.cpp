@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial02_Cube.h"
+#include "Tutorial02_Cube.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 

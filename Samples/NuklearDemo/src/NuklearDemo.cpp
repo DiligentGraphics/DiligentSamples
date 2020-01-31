@@ -27,7 +27,7 @@
 
 #include <climits>
 
-#include "NuklearDemo.h"
+#include "NuklearDemo.hpp"
 
 #define NK_INCLUDE_STANDARD_VARARGS
 #include "../../../ThirdParty/nuklear/nuklear.h"

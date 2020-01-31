@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "ShadowsSample.h"
+#include "ShadowsSample.hpp"
 #include "MapHelper.hpp"
 #include "FileSystem.hpp"
 #include "ShaderMacroHelper.hpp"
@@ -35,7 +35,7 @@
 #include "AdvancedMath.hpp"
 #include "imgui.h"
 #include "imGuIZMO.h"
-#include "ImGuiUtils.h"
+#include "ImGuiUtils.hpp"
 
 
 namespace Diligent

@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial16_BindlessResources.h
+    src/Tutorial16_BindlessResources.hpp
 )
 
 set(SHADERS

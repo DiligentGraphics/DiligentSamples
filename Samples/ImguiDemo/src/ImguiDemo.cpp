@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include "ImguiDemo.h"
+#include "ImguiDemo.hpp"
 #include "imgui.h"
 
 namespace Diligent

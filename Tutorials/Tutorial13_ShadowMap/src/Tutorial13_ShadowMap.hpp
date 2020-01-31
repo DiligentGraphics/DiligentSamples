@@ -27,13 +27,13 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
 namespace Diligent
 {
 
-class Tutorial04_Instancing final : public SampleBase
+class Tutorial13_ShadowMap final : public SampleBase
 {
 public:
     virtual void Initialize(IEngineFactory*  pEngineFactory,
@@ -45,27 +45,41 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial04: Instancing"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial13: Shadow Map"; }
 
 private:
-    void CreatePipelineState();
-    void CreateInstanceBuffer();
+    void CreateCubePSO();
+    void CreatePlanePSO();
+    void CreateShadowMapVisPSO();
+    void CreateVertexBuffer();
     void UpdateUI();
-    void PopulateInstanceBuffer();
+    void CreateShadowMap();
+    void RenderShadowMap();
+    void RenderCube(const float4x4& CameraViewProj, bool IsShadowPass);
+    void RenderPlane();
+    void RenderShadowMapVis();
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IPipelineState>         m_pCubePSO;
+    RefCntAutoPtr<IPipelineState>         m_pCubeShadowPSO;
+    RefCntAutoPtr<IPipelineState>         m_pPlanePSO;
+    RefCntAutoPtr<IPipelineState>         m_pShadowMapVisPSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
     RefCntAutoPtr<ITextureView>           m_TextureSRV;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_CubeSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_CubeShadowSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_PlaneSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_ShadowMapVisSRB;
+    RefCntAutoPtr<ITextureView>           m_ShadowMapDSV;
+    RefCntAutoPtr<ITextureView>           m_ShadowMapSRV;
 
-    float4x4             m_ViewProjMatrix;
-    float4x4             m_RotationMatrix;
-    int                  m_GridSize   = 5;
-    static constexpr int MaxGridSize  = 32;
-    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
+    float4x4       m_CubeWorldMatrix;
+    float4x4       m_CameraViewProjMatrix;
+    float4x4       m_WorldToShadowMapUVDepthMatr;
+    float3         m_LightDirection  = normalize(float3(-0.49f, -0.60f, 0.64f));
+    Uint32         m_ShadowMapSize   = 512;
+    TEXTURE_FORMAT m_ShadowMapFormat = TEX_FORMAT_D16_UNORM;
 };
 
 } // namespace Diligent

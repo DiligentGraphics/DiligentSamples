@@ -27,19 +27,17 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include "SampleBase.hpp"
 #include "BasicMath.hpp"
+#include "ScopedQueryHelper.hpp"
+#include "DurationQueryHelper.hpp"
 
 namespace Diligent
 {
 
-class Tutorial12_RenderTarget final : public SampleBase
+class Tutorial18_Queries final : public SampleBase
 {
 public:
-    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&     SCDesc) override final;
-
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -49,17 +47,12 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial12: Render Target"; }
-
-    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
+    virtual const Char* GetSampleName() const override final { return "Tutorial18: Queries"; }
 
 private:
     void CreateCubePSO();
-    void CreateRenderTargetPSO();
+    void UpdateUI();
 
-    static constexpr TEXTURE_FORMAT RenderTargetFormat = TEX_FORMAT_RGBA8_UNORM;
-    static constexpr TEXTURE_FORMAT DepthBufferFormat  = TEX_FORMAT_D32_FLOAT;
-    // Cube resources
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
@@ -67,15 +60,15 @@ private:
     RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
-    // Offscreen render target and depth-stencil
-    RefCntAutoPtr<ITextureView> m_pColorRTV;
-    RefCntAutoPtr<ITextureView> m_pDepthDSV;
+    std::unique_ptr<ScopedQueryHelper>   m_pPipelineStatsQuery;
+    std::unique_ptr<ScopedQueryHelper>   m_pOcclusionQuery;
+    std::unique_ptr<DurationQueryHelper> m_pDurationQuery;
 
-    RefCntAutoPtr<IBuffer>                m_RTPSConstants;
-    RefCntAutoPtr<IPipelineState>         m_pRTPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pRTSRB;
-    float4x4                              m_WorldViewProjMatrix;
-    float                                 m_fCurrentTime = 0.f;
+    QueryDataPipelineStatistics m_PipelineStatsData;
+    QueryDataOcclusion          m_OcclusionData;
+    double                      m_RenderDuration = 0;
+
+    float4x4 m_WorldViewProjMatrix;
 };
 
 } // namespace Diligent

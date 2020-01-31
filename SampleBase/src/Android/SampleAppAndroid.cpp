@@ -21,11 +21,11 @@
 *  of the possibility of such damages.
 */
 
-#include "AndroidFileSystem.h"
+#include "AndroidFileSystem.hpp"
 #include "EngineFactoryOpenGL.h"
-#include "SampleApp.h"
+#include "SampleApp.hpp"
 #include "RenderDeviceGLES.h"
-#include "ImGuiImplAndroid.h"
+#include "ImGuiImplAndroid.hpp"
 
 namespace Diligent
 {

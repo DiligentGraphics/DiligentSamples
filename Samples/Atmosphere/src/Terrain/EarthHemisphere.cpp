@@ -46,7 +46,7 @@
 #include <algorithm>
 #include <cfloat>
 
-#include "EarthHemisphere.h"
+#include "EarthHemisphere.hpp"
 
 namespace Diligent
 {
@@ -57,7 +57,7 @@ namespace Diligent
 
 } // namespace Diligent
 
-#include "ElevationDataSource.h"
+#include "ElevationDataSource.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsAccessories.hpp"
 #include "GraphicsUtilities.h"

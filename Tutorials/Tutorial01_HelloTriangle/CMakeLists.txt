@@ -7,7 +7,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/Tutorial01_HelloTriangle.h
+    src/Tutorial01_HelloTriangle.hpp
 )
 
 set(SHADERS)

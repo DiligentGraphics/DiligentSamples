@@ -21,7 +21,7 @@
 *  of the possibility of such damages.
 */
 
-#include "SampleApp.h"
+#include "SampleApp.hpp"
 #include "ImguiUWPEventHelper.h"
 #include "InputControllerEventHandlerUWP.h"
 #include "RenderDeviceD3D12.h"
@@ -30,7 +30,7 @@
 #include "SwapChainD3D11.h"
 #include "EngineFactoryD3D11.h"
 #include "EngineFactoryD3D12.h"
-#include "ImGuiImplUWP.h"
+#include "ImGuiImplUWP.hpp"
 
 namespace Diligent
 {

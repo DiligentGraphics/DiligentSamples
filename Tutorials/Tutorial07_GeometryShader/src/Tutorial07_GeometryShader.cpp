@@ -25,11 +25,11 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial07_GeometryShader.h"
+#include "Tutorial07_GeometryShader.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 
 #ifdef HLSL2GLSL_CONVERTER_SUPPORTED

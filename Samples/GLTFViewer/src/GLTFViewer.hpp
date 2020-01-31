@@ -27,17 +27,19 @@
 
 #pragma once
 
-#include "SampleBase.h"
+#include <vector>
+#include "SampleBase.hpp"
+#include "GLTFLoader.hpp"
+#include "GLTF_PBR_Renderer.hpp"
 #include "BasicMath.hpp"
-#include "ScopedQueryHelper.hpp"
-#include "DurationQueryHelper.hpp"
 
 namespace Diligent
 {
 
-class Tutorial18_Queries final : public SampleBase
+class GLTFViewer final : public SampleBase
 {
 public:
+    ~GLTFViewer();
     virtual void Initialize(IEngineFactory*  pEngineFactory,
                             IRenderDevice*   pDevice,
                             IDeviceContext** ppContexts,
@@ -47,28 +49,56 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial18: Queries"; }
+    virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
 
 private:
-    void CreateCubePSO();
+    void CreateEnvMapPSO();
+    void CreateEnvMapSRB();
+    void LoadModel(const char* Path);
+    void ResetView();
     void UpdateUI();
 
-    RefCntAutoPtr<IPipelineState>         m_pCubePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
-    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
-    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
-    RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
+    enum class BackgroundMode : int
+    {
+        None,
+        EnvironmentMap,
+        Irradiance,
+        PrefilteredEnvMap,
+        NumModes
+    } m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
 
-    std::unique_ptr<ScopedQueryHelper>   m_pPipelineStatsQuery;
-    std::unique_ptr<ScopedQueryHelper>   m_pOcclusionQuery;
-    std::unique_ptr<DurationQueryHelper> m_pDurationQuery;
+    GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
-    QueryDataPipelineStatistics m_PipelineStatsData;
-    QueryDataOcclusion          m_OcclusionData;
-    double                      m_RenderDuration = 0;
+    Quaternion m_CameraRotation = {0, 0, 0, 1};
+    Quaternion m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
+    float4x4   m_ModelTransform;
 
-    float4x4 m_WorldViewProjMatrix;
+    float m_CameraDist = 0.9f;
+
+    float3 m_LightDirection;
+    float4 m_LightColor     = float4(1, 1, 1, 1);
+    float  m_LightIntensity = 3.f;
+    float  m_EnvMapMipLevel = 1.f;
+    int    m_SelectedModel  = 0;
+
+    static const std::pair<const char*, const char*> GLTFModels[];
+
+    bool               m_PlayAnimation  = false;
+    int                m_AnimationIndex = 0;
+    std::vector<float> m_AnimationTimers;
+
+    std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
+    std::unique_ptr<GLTF::Model>          m_Model;
+    RefCntAutoPtr<IBuffer>                m_CameraAttribsCB;
+    RefCntAutoPtr<IBuffer>                m_LightAttribsCB;
+    RefCntAutoPtr<IPipelineState>         m_EnvMapPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
+    RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
+    RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
+
+    MouseState m_LastMouseState;
+    float      m_CameraYaw   = 0;
+    float      m_CameraPitch = 0;
 };
 
 } // namespace Diligent

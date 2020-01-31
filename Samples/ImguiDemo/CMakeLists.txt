@@ -8,7 +8,7 @@ set(SOURCE
 )
 
 set(INCLUDE
-    src/ImguiDemo.h
+    src/ImguiDemo.hpp
 )
 
 set(SHADERS

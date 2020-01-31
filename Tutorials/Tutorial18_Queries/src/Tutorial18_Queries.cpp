@@ -27,12 +27,12 @@
 
 #include <sstream>
 
-#include "Tutorial18_Queries.h"
+#include "Tutorial18_Queries.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
-#include "../../Common/src/TexturedCube.h"
+#include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 
 namespace Diligent
