@@ -84,6 +84,10 @@ EXIT /B %ERROR%
     set app_name=%1
     shift
 
+    rem  Who knows why, but without the echos below, the script fails on Appveyor.
+    @echo Testing %app_folder%/%app_name%...
+    @echo.
+
     set show_ui=1
     if "%app_folder%" == "Samples" (
         set show_ui=0
