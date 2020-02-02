@@ -35,6 +35,7 @@ cd ../..
 set Tutorials=Tutorial01_HelloTriangle^
               Tutorial02_Cube^
               Tutorial03_Texturing^
+              Tutorial03_Texturing-C^
               Tutorial04_Instancing^
               Tutorial05_TextureArray^
               Tutorial06_Multithreading^
