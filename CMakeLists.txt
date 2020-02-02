@@ -36,9 +36,11 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
     target_link_libraries(${APP_NAME}
     PRIVATE
+        # On Linux we must have Diligent-NativeAppBase go first, otherwise the linker 
+        # will fail to resolve Diligent::CreateApplication() function.
+        Diligent-NativeAppBase
         Diligent-BuildSettings
-        SampleBase
-        NativeAppBase
+        Diligent-SampleBase
     )
     set_common_target_properties(${APP_NAME})
 
@@ -98,11 +100,11 @@ endfunction()
 
 add_subdirectory(ThirdParty)
 
-if(TARGET NativeAppBase AND TARGET Diligent-TextureLoader AND TARGET Diligent-Imgui)
+if(TARGET Diligent-NativeAppBase AND TARGET Diligent-TextureLoader AND TARGET Diligent-Imgui)
     add_subdirectory(SampleBase)
 endif()
 
-if(NOT ${DILIGENT_BUILD_SAMPLE_BASE_ONLY} AND TARGET SampleBase)
+if(NOT ${DILIGENT_BUILD_SAMPLE_BASE_ONLY} AND TARGET Diligent-SampleBase)
     add_subdirectory(Samples)
     add_subdirectory(Tutorials)
 endif()

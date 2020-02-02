@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 
-project(SampleBase)
+project(Diligent-SampleBase)
 
 if(PLATFORM_WIN32)
     set(SOURCE 
@@ -22,7 +22,7 @@ if(PLATFORM_WIN32)
     )
 
     function(append_sample_base_win32_source TARGET_NAME)
-        get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
+        get_target_property(SAMPLE_BASE_SOURCE_DIR Diligent-SampleBase SOURCE_DIR)
         # We need to add .res file to executable target to make resources available
         set(RES_FILE ${SAMPLE_BASE_SOURCE_DIR}/src/Win32/resources/Win32AppResource.rc)
         target_sources(${TARGET_NAME} PRIVATE ${RES_FILE})
@@ -35,7 +35,7 @@ elseif(PLATFORM_UNIVERSAL_WINDOWS)
     # https://social.msdn.microsoft.com/Forums/en-US/269db513-64ef-4817-a025-43954f614eb3/lnk4264-why-are-static-libraries-not-recommended-when-authoring-windows-runtime-types?forum=winappswithnativecode
     # So as a workaround, we will include all source files into the target app project
     function(append_sample_base_uwp_source TARGET_NAME)
-        get_target_property(SAMPLE_BASE_SOURCE_DIR SampleBase SOURCE_DIR)
+        get_target_property(SAMPLE_BASE_SOURCE_DIR Diligent-SampleBase SOURCE_DIR)
 
         set(SAMPLE_BASE_UWP_SOURCE
             ${SAMPLE_BASE_SOURCE_DIR}/src/UWP/ImguiUWPEventHelper.cpp
@@ -118,28 +118,28 @@ list(APPEND INCLUDE
 )
 
 
-add_library(SampleBase STATIC ${SOURCE} ${INCLUDE})
-set_common_target_properties(SampleBase)
+add_library(Diligent-SampleBase STATIC ${SOURCE} ${INCLUDE})
+set_common_target_properties(Diligent-SampleBase)
 
-target_include_directories(SampleBase
+target_include_directories(Diligent-SampleBase
 PUBLIC
     include
 )
 
 if(MSVC)
-    target_compile_options(SampleBase PRIVATE -DUNICODE)
+    target_compile_options(Diligent-SampleBase PRIVATE -DUNICODE)
     
     if(PLATFORM_UNIVERSAL_WINDOWS)
         # Disable w4189: local variable is initialized but not referenced
         # Disable w4063: case is not a valid value for switch of enum
         # Consume the windows runtime extensions (/ZW)
-        target_compile_options(SampleBase INTERFACE /wd4189 /wd4063 /ZW)
+        target_compile_options(Diligent-SampleBase INTERFACE /wd4189 /wd4063 /ZW)
     endif()
 endif()
 
 get_supported_backends(ENGINE_LIBRARIES)
 
-target_link_libraries(SampleBase 
+target_link_libraries(Diligent-SampleBase 
 PRIVATE 
     Diligent-BuildSettings
 PUBLIC
@@ -149,15 +149,15 @@ PUBLIC
     Diligent-TargetPlatform
     Diligent-Imgui
     ${ENGINE_LIBRARIES}
-    NativeAppBase
+    Diligent-NativeAppBase
 )
 
 if(PLATFORM_UNIVERSAL_WINDOWS)
-    target_link_libraries(SampleBase PRIVATE dxguid.lib)
+    target_link_libraries(Diligent-SampleBase PRIVATE dxguid.lib)
 elseif(PLATFORM_ANDROID)
-    target_link_libraries(SampleBase PRIVATE GLESv3 PUBLIC native_app_glue)
+    target_link_libraries(Diligent-SampleBase PRIVATE GLESv3 PUBLIC native_app_glue)
 elseif(PLATFORM_LINUX)
-    target_link_libraries(SampleBase PRIVATE XCBKeySyms GL X11)
+    target_link_libraries(Diligent-SampleBase PRIVATE XCBKeySyms GL X11)
 elseif(PLATFORM_MACOS OR PLATFORM_IOS)
 
 endif()
@@ -166,10 +166,10 @@ source_group("src" FILES ${SOURCE})
 source_group("include" FILES ${INCLUDE})
 
 if(PLATFORM_WIN32)
-    target_sources(SampleBase PRIVATE ${WIN32_RESOURCES})
+    target_sources(Diligent-SampleBase PRIVATE ${WIN32_RESOURCES})
     source_group("resources" FILES ${WIN32_RESOURCES})
 endif()
 
-set_target_properties(SampleBase PROPERTIES
+set_target_properties(Diligent-SampleBase PROPERTIES
     FOLDER DiligentSamples
 )
