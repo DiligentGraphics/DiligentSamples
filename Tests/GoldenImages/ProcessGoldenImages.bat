@@ -84,6 +84,11 @@ EXIT /B %ERROR%
     set app_name=%1
     shift
 
+    @echo app_name: %app_name%
+    @echo app_folder: %app_folder%
+    @echo 1st arg %1
+    @echo 2nd arg %2
+
     set show_ui=1
     if "%app_folder%" == "Samples" (
         set show_ui=0
