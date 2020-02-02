@@ -122,19 +122,19 @@ EXIT /B %ERROR%
 
         if "%golden_img_mode%" == "compare" (
             if !ERRORLEVEL! NEQ 0 (
-                echo Golden image validation failed for %app_name%-%%X: !ERRORLEVEL! incosistent pixels found
+                echo Golden image validation failed for %app_name% [%%X]: !ERRORLEVEL! incosistent pixels found
                 set EXIT_CODE=1
                 ) else (
-                echo Golden image validation passed for %app_name%-%%X
+                echo Golden image validation passed for %app_name% [%%X]
             )
         )
         
         if "%golden_img_mode%" == "capture" (
             if !ERRORLEVEL! NEQ 0 (
-                echo Failed to generate golden image %app_name%-%%X
+                echo Failed to generate golden image %app_name% [%%X]
                 set EXIT_CODE=1
                 ) else (
-                echo Successfully generated golden image for %app_name%-%%X
+                echo Successfully generated golden image for %app_name% [%%X]
             )
         )
 		echo.
