@@ -143,13 +143,13 @@ target_link_libraries(SampleBase
 PRIVATE 
     Diligent-BuildSettings
 PUBLIC
-    NativeAppBase
-    Diligent-Common 
+    Diligent-Common
     Diligent-GraphicsTools
     Diligent-TextureLoader
     Diligent-TargetPlatform
     Diligent-Imgui
     ${ENGINE_LIBRARIES}
+    NativeAppBase
 )
 
 if(PLATFORM_UNIVERSAL_WINDOWS)
