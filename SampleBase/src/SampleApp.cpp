@@ -335,8 +335,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             auto* pFactoryMtl = GetEngineFactoryMtl();
             pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());
 
-            if (!m_pSwapChain && NativeWindowHandle != nullptr)
-                pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
+            if (!m_pSwapChain && pWindow != nullptr)
+                pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], SCDesc, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
