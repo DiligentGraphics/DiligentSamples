@@ -43,7 +43,10 @@ public:
     }
     virtual void OnGLContextCreated(Display* display, Window window) override final
     {
-        InitializeDiligentEngine(display, reinterpret_cast<void*>(static_cast<size_t>(window)));
+        LinuxNativeWindow LinuxWindow;
+        LinuxWindow.pDisplay = display;
+        LinuxWindow.WindowId = window;
+        InitializeDiligentEngine(display, &LinuxWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplLinuxX11(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         InitializeSample();
@@ -66,12 +69,10 @@ public:
         try
         {
             m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
-            struct XCBInfo
-            {
-                xcb_connection_t* connection;
-                uint32_t          window;
-            } xcbInfo = {connection, window};
-            InitializeDiligentEngine(nullptr, &xcbInfo);
+            LinuxNativeWindow LinuxWindow;
+            LinuxWindow.WindowId       = window;
+            LinuxWindow.pXCBConnection = connection;
+            InitializeDiligentEngine(nullptr, &LinuxWindow);
             const auto& SCDesc = m_pSwapChain->GetDesc();
             m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
             m_TheSample->GetInputController().InitXCBKeysms(connection);
