@@ -84,11 +84,7 @@ SampleApp::~SampleApp()
 }
 
 
-void SampleApp::InitializeDiligentEngine(
-#if PLATFORM_LINUX
-    void* display,
-#endif
-    void* NativeWindowHandle)
+void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 {
     SwapChainDesc SCDesc;
     if (m_ScreenCaptureInfo.AllowCapture)
@@ -176,8 +172,8 @@ void SampleApp::InitializeDiligentEngine(
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
 
-            if (NativeWindowHandle != nullptr)
-                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
+            if (pWindow != nullptr)
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
@@ -226,7 +222,7 @@ void SampleApp::InitializeDiligentEngine(
 #    if D3D11_SUPPORTED
                 LOG_ERROR_MESSAGE("Failed to find Direct3D12-compatible hardware adapters. Attempting to initialize the engine in Direct3D11 mode.");
                 m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
-                InitializeDiligentEngine(NativeWindowHandle);
+                InitializeDiligentEngine(pWindow);
                 return;
 #    else
                 LOG_ERROR_AND_THROW("Failed to find Direct3D12-compatible hardware adapters.");
@@ -259,8 +255,8 @@ void SampleApp::InitializeDiligentEngine(
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
 
-            if (!m_pSwapChain && NativeWindowHandle != nullptr)
-                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
+            if (!m_pSwapChain && pWindow != nullptr)
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
@@ -270,7 +266,7 @@ void SampleApp::InitializeDiligentEngine(
         case RENDER_DEVICE_TYPE_GLES:
         {
 #    if !PLATFORM_MACOS
-            VERIFY_EXPR(NativeWindowHandle != nullptr);
+            VERIFY_EXPR(pWindow != nullptr);
 #    endif
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
             // Load the dll and import GetEngineFactoryOpenGL() function
@@ -279,10 +275,7 @@ void SampleApp::InitializeDiligentEngine(
             auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
             m_pEngineFactory     = pFactoryOpenGL;
             EngineGLCreateInfo CreationAttribs;
-            CreationAttribs.pNativeWndHandle = NativeWindowHandle;
-#    if PLATFORM_LINUX
-            CreationAttribs.pDisplay = display;
-#    endif
+            CreationAttribs.Window = *pWindow;
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, SCDesc);
             if (CreationAttribs.NumDeferredContexts != 0)
             {
@@ -325,8 +318,8 @@ void SampleApp::InitializeDiligentEngine(
             {
                 LOG_ERROR_AND_THROW("Failed to initialize Vulkan.");
             }
-            if (!m_pSwapChain && NativeWindowHandle != nullptr)
-                pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, NativeWindowHandle, &m_pSwapChain);
+            if (!m_pSwapChain && pWindow != nullptr)
+                pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, *pWindow, &m_pSwapChain);
         }
         break;
 #endif

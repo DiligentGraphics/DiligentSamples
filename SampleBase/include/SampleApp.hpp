@@ -76,11 +76,7 @@ public:
     }
 
 protected:
-    void InitializeDiligentEngine(
-#if PLATFORM_LINUX
-        void* display,
-#endif
-        void* NativeWindowHandle);
+    void InitializeDiligentEngine(const NativeWindow* pWindow);
     void InitializeSample();
     void UpdateAdaptersDialog();
 

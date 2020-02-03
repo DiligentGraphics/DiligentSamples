@@ -165,7 +165,8 @@ public:
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
-                    pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, WndInfo.hWnd, &WndInfo.pSwapChain);
+                    Win32NativeWindow Window{hWnd};
+                    pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &WndInfo.pSwapChain);
                     SCDesc.IsPrimary = false;
                 }
             }
@@ -189,7 +190,8 @@ public:
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
-                    pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, WndInfo.hWnd, &WndInfo.pSwapChain);
+                    Win32NativeWindow Window{hWnd};
+                    pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &WndInfo.pSwapChain);
                     SCDesc.IsPrimary = false;
                 }
             }
@@ -212,7 +214,7 @@ public:
 
                 auto& WndInfo = m_Windows[0];
 
-                CreationAttribs.pNativeWndHandle = WndInfo.hWnd;
+                CreationAttribs.Window.hWnd = WndInfo.hWnd;
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(
                     CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &WndInfo.pSwapChain);
             }
@@ -235,7 +237,8 @@ public:
                 pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
-                    pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, WndInfo.hWnd, &WndInfo.pSwapChain);
+                    Win32NativeWindow Window{hWnd};
+                    pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, Window, &WndInfo.pSwapChain);
                     SCDesc.IsPrimary = false;
                 }
             }

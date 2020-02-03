@@ -186,7 +186,8 @@ public:
 
         try
         {
-            InitializeDiligentEngine(hWnd);
+            Win32NativeWindow Window{hWnd};
+            InitializeDiligentEngine(&Window);
 
             // Initialize Dear ImGUI
             const auto& SCDesc = m_pSwapChain->GetDesc();

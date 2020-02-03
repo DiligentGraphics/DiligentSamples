@@ -135,7 +135,7 @@ public:
         m_pImmediateContext->Flush();
     }
 
-    bool InitializeDiligentEngine(HWND NativeWindowHandle)
+    bool InitializeDiligentEngine(HWND hWnd)
     {
         SwapChainDesc SCDesc;
         switch (m_DeviceType)
@@ -155,7 +155,8 @@ public:
 #    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
-                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
+                Win32NativeWindow Window{hWnd};
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &m_pSwapChain);
             }
             break;
 #endif
@@ -175,7 +176,8 @@ public:
 #    endif
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
-                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, NativeWindowHandle, &m_pSwapChain);
+                Win32NativeWindow Window{hWnd};
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &m_pSwapChain);
             }
             break;
 #endif
@@ -192,7 +194,7 @@ public:
                 auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
-                EngineCI.pNativeWndHandle = NativeWindowHandle;
+                EngineCI.Window.hWnd = hWnd;
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
             }
             break;
@@ -213,8 +215,11 @@ public:
                 auto* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
 
-                if (!m_pSwapChain && NativeWindowHandle != nullptr)
-                    pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, NativeWindowHandle, &m_pSwapChain);
+                if (!m_pSwapChain && hWnd != nullptr)
+                {
+                    Win32NativeWindow Window{hWnd};
+                    pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, Window, &m_pSwapChain);
+                }
             }
             break;
 #endif
