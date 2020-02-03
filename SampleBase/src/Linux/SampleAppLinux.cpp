@@ -46,7 +46,7 @@ public:
         LinuxNativeWindow LinuxWindow;
         LinuxWindow.pDisplay = display;
         LinuxWindow.WindowId = window;
-        InitializeDiligentEngine(display, &LinuxWindow);
+        InitializeDiligentEngine(&LinuxWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplLinuxX11(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         InitializeSample();
@@ -72,7 +72,7 @@ public:
             LinuxNativeWindow LinuxWindow;
             LinuxWindow.WindowId       = window;
             LinuxWindow.pXCBConnection = connection;
-            InitializeDiligentEngine(nullptr, &LinuxWindow);
+            InitializeDiligentEngine(&LinuxWindow);
             const auto& SCDesc = m_pSwapChain->GetDesc();
             m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
             m_TheSample->GetInputController().InitXCBKeysms(connection);

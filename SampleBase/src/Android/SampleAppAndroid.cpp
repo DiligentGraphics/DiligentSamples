@@ -43,7 +43,9 @@ public:
         GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
         AndroidFileSystem::Init(app_->activity, native_activity_class_name_.c_str());
         SampleApp::Initialize();
-        InitializeDiligentEngine(app_->window);
+        AndroidNativeWindow Window;
+        Window.pAWindow = app_->window;
+        InitializeDiligentEngine(&Window);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplAndroid(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
         m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
