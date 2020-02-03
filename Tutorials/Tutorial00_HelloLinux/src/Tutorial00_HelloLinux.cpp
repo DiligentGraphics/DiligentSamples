@@ -192,7 +192,7 @@ public:
         auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
         EngineGLCreateInfo CreationAttribs;
-        CreationAttribs.Window.pWindow  = reinterpret_cast<void*>(static_cast<size_t>(NativeWindowHandle));
+        CreationAttribs.Window.WindowId = NativeWindowHandle;
         CreationAttribs.Window.pDisplay = display;
         pFactoryOpenGL->CreateDeviceAndSwapChainGL(
             CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
@@ -212,7 +212,7 @@ public:
         pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
         SwapChainDesc     SCDesc;
         LinuxNativeWindow XCBWindow;
-        XCBWindow.pWindow        = reinterpret_cast<void*>(static_cast<size_t>(xcbInfo.window));
+        XCBWindow.WindowId       = xcbInfo.window;
         XCBWindow.pXCBConnection = xcbInfo.connection;
         pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, XCBWindow, &m_pSwapChain);
     }
