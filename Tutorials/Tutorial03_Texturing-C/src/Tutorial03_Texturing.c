@@ -74,6 +74,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
 
     PSODesc.GraphicsPipeline.SmplDesc.Count               = 1;
     PSODesc.GraphicsPipeline.SampleMask                   = 0xFFFFFFFF;
+    PSODesc.GraphicsPipeline.NumViewports                 = 1;
 
     // clang-format on
 
