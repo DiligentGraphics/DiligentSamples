@@ -60,6 +60,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     PSODesc.IsComputePipeline = false;
 
     // clang-format off
+
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
@@ -70,41 +71,18 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
     PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-    PSODesc.CommandQueueMask                              = 1;
-
-    PSODesc.GraphicsPipeline.SmplDesc.Count               = 1;
-    PSODesc.GraphicsPipeline.SampleMask                   = 0xFFFFFFFF;
-    PSODesc.GraphicsPipeline.NumViewports                 = 1;
-
     // clang-format on
+
+    PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[0].RenderTargetWriteMask = COLOR_MASK_ALL;
+
+    PSODesc.CommandQueueMask                = 1;
+    PSODesc.GraphicsPipeline.SmplDesc.Count = 1;
+    PSODesc.GraphicsPipeline.SampleMask     = 0xFFFFFFFF;
+    PSODesc.GraphicsPipeline.NumViewports   = 1;
 
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = True;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc        = COMPARISON_FUNC_LESS;
-
-    PSODesc.GraphicsPipeline.DepthStencilDesc.FrontFace.StencilFailOp      = STENCIL_OP_KEEP;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.FrontFace.StencilDepthFailOp = STENCIL_OP_KEEP;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.FrontFace.StencilPassOp      = STENCIL_OP_KEEP;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.FrontFace.StencilFunc        = STENCIL_OP_KEEP;
-
-    PSODesc.GraphicsPipeline.DepthStencilDesc.BackFace.StencilFailOp      = STENCIL_OP_KEEP;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.BackFace.StencilDepthFailOp = STENCIL_OP_KEEP;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.BackFace.StencilPassOp      = STENCIL_OP_KEEP;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.BackFace.StencilFunc        = STENCIL_OP_KEEP;
-
-
-
-    for (size_t i = 0; i < MAX_RENDER_TARGETS; ++i)
-    {
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].SrcBlend              = BLEND_FACTOR_ONE;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].DestBlend             = BLEND_FACTOR_ZERO;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].BlendOp               = BLEND_OPERATION_ADD;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].SrcBlendAlpha         = BLEND_FACTOR_ONE;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].DestBlendAlpha        = BLEND_FACTOR_ZERO;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].BlendOpAlpha          = BLEND_OPERATION_ADD;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].LogicOp               = LOGIC_OP_NOOP;
-        PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[i].RenderTargetWriteMask = COLOR_MASK_ALL;
-    }
 
     PSODesc.GraphicsPipeline.RasterizerDesc.FillMode        = FILL_MODE_SOLID;
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode        = CULL_MODE_NONE;
