@@ -165,7 +165,7 @@ public:
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
-                    Win32NativeWindow Window{hWnd};
+                    Win32NativeWindow Window{WndInfo.hWnd};
                     pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &WndInfo.pSwapChain);
                     SCDesc.IsPrimary = false;
                 }
@@ -190,7 +190,7 @@ public:
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
-                    Win32NativeWindow Window{hWnd};
+                    Win32NativeWindow Window{WndInfo.hWnd};
                     pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &WndInfo.pSwapChain);
                     SCDesc.IsPrimary = false;
                 }
@@ -237,7 +237,7 @@ public:
                 pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
-                    Win32NativeWindow Window{hWnd};
+                    Win32NativeWindow Window{WndInfo.hWnd};
                     pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, Window, &WndInfo.pSwapChain);
                     SCDesc.IsPrimary = false;
                 }
