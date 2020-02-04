@@ -19,5 +19,6 @@ include 'Common',
         ':Tutorial13_ShadowMap',
         ':Tutorial14_ComputeShader',
         ':Tutorial16_BindlessResources',
-        ':Tutorial17_MSAA'
+        ':Tutorial17_MSAA',
+        ':Tutorial18_Queries'
 project(':Common').projectDir = new File(settingsDir, '../../DiligentTools/NativeApp/Android')
