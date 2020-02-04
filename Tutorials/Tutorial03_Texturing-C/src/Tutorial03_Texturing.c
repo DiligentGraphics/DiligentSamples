@@ -385,25 +385,46 @@ void CreateResources(IRenderDevice* pDevice, ISwapChain* pSwapChain)
 void ReleaseResources()
 {
     if (g_pCubeIndexBuffer)
+    {
         IObject_Release(g_pCubeIndexBuffer);
+        g_pCubeIndexBuffer = NULL;
+    }
 
     if (g_pCubeVertexBuffer)
+    {
         IObject_Release(g_pCubeVertexBuffer);
+        g_pCubeVertexBuffer = NULL;
+    }
 
     if (g_pSRB)
+    {
         IObject_Release(g_pSRB);
+        g_pSRB = NULL;
+    }
 
     if (g_pPSO)
+    {
         IObject_Release(g_pPSO);
+        g_pPSO = NULL;
+    }
 
     if (g_pVSConstants)
+    {
         IObject_Release(g_pVSConstants);
+        g_pVSConstants = NULL;
+    }
 
     if (g_pSwapChain)
+    {
         IObject_Release(g_pSwapChain);
+        g_pSwapChain = NULL;
+    }
 
     if (g_pDevice)
+    {
         IObject_Release(g_pDevice);
+        g_pDevice = NULL;
+    }
 }
 
 // Render a frame
