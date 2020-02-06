@@ -242,6 +242,7 @@ void InputControllerWin32::UpdateMousePos()
 {
     POINT MousePosition;
     GetCursorPos(&MousePosition);
+    ScreenToClient(GetActiveWindow(), &MousePosition);
     m_MouseState.PosX = static_cast<float>(MousePosition.x);
     m_MouseState.PosY = static_cast<float>(MousePosition.y);
 
