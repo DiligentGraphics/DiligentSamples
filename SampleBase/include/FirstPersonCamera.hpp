@@ -75,6 +75,11 @@ public:
 
     void SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis, bool IsRightHanded = false);
 
+    void SetHandness(bool IsRightHanded)
+    {
+        m_fHandness = IsRightHanded ? +1.f : -1.f;
+    }
+
 protected:
     float4x4 GetReferenceRotiation() const;
 
