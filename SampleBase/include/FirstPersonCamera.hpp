@@ -73,9 +73,11 @@ public:
     };
     const ProjectionAttribs& GetProjAttribs() { return m_ProjAttribs; }
 
-    void SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis);
+    void SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis, bool IsRightHanded = false);
 
 protected:
+    float4x4 GetReferenceRotiation() const;
+
     ProjectionAttribs m_ProjAttribs;
 
     MouseState m_LastMouseState;
@@ -97,6 +99,8 @@ protected:
     float m_fPitchAngle        = 0; // Pitch angle of camera
     float m_fSpeedUpScale      = 1.f;
     float m_fSuperSpeedUpScale = 1.f;
+    float m_fHandness          = -1.f; // -1 - left handed
+                                       // +1 - right handed
 };
 
 } // namespace Diligent

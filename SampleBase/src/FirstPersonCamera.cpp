@@ -91,18 +91,10 @@ void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
         }
     }
 
-    // clang-format off
-    float4x4 ReferenceRotation
-    {
-        m_ReferenceRightAxis.x, m_ReferenceUpAxis.x, m_ReferenceAheadAxis.x, 0,
-        m_ReferenceRightAxis.y, m_ReferenceUpAxis.y, m_ReferenceAheadAxis.y, 0,
-        m_ReferenceRightAxis.z, m_ReferenceUpAxis.z, m_ReferenceAheadAxis.z, 0,
-                             0,                   0,                      0, 1
-    };
-    // clang-format on
+    float4x4 ReferenceRotation = GetReferenceRotiation();
 
-    float4x4 CameraRotation = float4x4::RotationArbitrary(m_ReferenceUpAxis, -m_fYawAngle) *
-        float4x4::RotationArbitrary(m_ReferenceRightAxis, -m_fPitchAngle) *
+    float4x4 CameraRotation = float4x4::RotationArbitrary(m_ReferenceUpAxis, m_fYawAngle) *
+        float4x4::RotationArbitrary(m_ReferenceRightAxis, m_fPitchAngle) *
         ReferenceRotation;
     float4x4 WorldRotation = CameraRotation.Transpose();
 
@@ -113,7 +105,20 @@ void FirstPersonCamera::Update(InputController& Controller, float ElapsedTime)
     m_WorldMatrix = WorldRotation * float4x4::Translation(m_Pos);
 }
 
-void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis)
+float4x4 FirstPersonCamera::GetReferenceRotiation() const
+{
+    // clang-format off
+    return float4x4
+    {
+        m_ReferenceRightAxis.x, m_ReferenceUpAxis.x, m_ReferenceAheadAxis.x, 0,
+        m_ReferenceRightAxis.y, m_ReferenceUpAxis.y, m_ReferenceAheadAxis.y, 0,
+        m_ReferenceRightAxis.z, m_ReferenceUpAxis.z, m_ReferenceAheadAxis.z, 0,
+                             0,                   0,                      0, 1
+    };
+    // clang-format on
+}
+
+void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const float3& ReferenceUpAxis, bool IsRightHanded)
 {
     m_ReferenceRightAxis    = normalize(ReferenceRightAxis);
     m_ReferenceUpAxis       = ReferenceUpAxis - dot(ReferenceUpAxis, m_ReferenceRightAxis) * m_ReferenceRightAxis;
@@ -126,7 +131,8 @@ void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const
     }
     m_ReferenceUpAxis /= UpLen;
 
-    m_ReferenceAheadAxis = cross(m_ReferenceRightAxis, m_ReferenceUpAxis);
+    m_fHandness          = IsRightHanded ? +1.f : -1.f;
+    m_ReferenceAheadAxis = m_fHandness * cross(m_ReferenceRightAxis, m_ReferenceUpAxis);
     auto AheadLen        = length(m_ReferenceAheadAxis);
     if (AheadLen < Epsilon)
     {
@@ -139,7 +145,10 @@ void FirstPersonCamera::SetReferenceAxes(const float3& ReferenceRightAxis, const
 void FirstPersonCamera::SetLookAt(const float3& LookAt)
 {
     float3 ViewDir = LookAt - m_Pos;
-    m_fYawAngle    = atan2f(ViewDir.x, ViewDir.z);
+
+    ViewDir = ViewDir * GetReferenceRotiation();
+
+    m_fYawAngle = atan2f(ViewDir.x, ViewDir.z);
 
     float fXZLen  = sqrtf(ViewDir.z * ViewDir.z + ViewDir.x * ViewDir.x);
     m_fPitchAngle = -atan2f(ViewDir.y, fXZLen);
