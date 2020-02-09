@@ -85,11 +85,10 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pD
     m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
 
     m_Camera.SetPos(float3(70, 10, 0.f));
-    m_Camera.SetRotation(PI_F/2.f, 0);
+    m_Camera.SetRotation(PI_F / 2.f, 0);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
-    m_Camera.SetHandness(true);
 
     CreateUniformBuffer(pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
     CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);

@@ -104,8 +104,8 @@ protected:
     float m_fPitchAngle        = 0; // Pitch angle of camera
     float m_fSpeedUpScale      = 1.f;
     float m_fSuperSpeedUpScale = 1.f;
-    float m_fHandness          = -1.f; // -1 - left handed
-                                       // +1 - right handed
+    float m_fHandness          = 1.f; // -1 - left handed
+                                      // +1 - right handed
 };
 
 } // namespace Diligent
