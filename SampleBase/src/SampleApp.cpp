@@ -421,68 +421,68 @@ void SampleApp::InitializeSample()
 
 void SampleApp::UpdateAdaptersDialog()
 {
-#if PLATFORM_WIN32
-    if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11 || m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
-    {
-        const auto& SCDesc = m_pSwapChain->GetDesc();
+#if PLATFORM_WIN32 || PLATFORM_LINUX
+    const auto& SCDesc = m_pSwapChain->GetDesc();
 
-        Uint32 AdaptersWndWidth = std::min(330u, SCDesc.Width);
-        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(AdaptersWndWidth), 0), ImGuiCond_Always);
-        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(std::max(SCDesc.Width - AdaptersWndWidth, 10U) - 10), 10), ImGuiCond_Always);
-        ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
-        if (ImGui::Begin("Adapters", nullptr, ImGuiWindowFlags_NoResize))
+    Uint32 AdaptersWndWidth = std::min(330u, SCDesc.Width);
+    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(AdaptersWndWidth), 0), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(std::max(SCDesc.Width - AdaptersWndWidth, 10U) - 10), 10), ImGuiCond_Always);
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Adapters", nullptr, ImGuiWindowFlags_NoResize))
+    {
+        if (m_AdapterAttribs.AdapterType != ADAPTER_TYPE_UNKNOWN)
         {
             ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, m_AdapterAttribs.DedicatedVideoMemory >> 20);
+        }
 
+        if (!m_DisplayModes.empty())
+        {
+            std::vector<const char*> DisplayModes(m_DisplayModes.size());
+            std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
+            for (int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
+            {
+                static constexpr const char* ScalingModeStr[] =
+                    {
+                        ""
+                        " Centered",
+                        " Stretched" //
+                    };
+                const auto& Mode = m_DisplayModes[i];
+
+                std::stringstream ss;
+
+                float RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
+                ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
+                DisplayModeStrings[i] = ss.str();
+                DisplayModes[i]       = DisplayModeStrings[i].c_str();
+            }
+
+            ImGui::SetNextItemWidth(220);
+            ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
+        }
+
+        if (m_bFullScreenMode)
+        {
+            if (ImGui::Button("Go Windowed"))
+            {
+                SetWindowedMode();
+            }
+        }
+        else
+        {
             if (!m_DisplayModes.empty())
             {
-                std::vector<const char*> DisplayModes(m_DisplayModes.size());
-                std::vector<std::string> DisplayModeStrings(m_DisplayModes.size());
-                for (int i = 0; i < static_cast<int>(m_DisplayModes.size()); ++i)
+                if (ImGui::Button("Go Full Screen"))
                 {
-                    static constexpr const char* ScalingModeStr[] =
-                        {
-                            ""
-                            " Centered",
-                            " Stretched" //
-                        };
-                    const auto& Mode = m_DisplayModes[i];
-
-                    std::stringstream ss;
-
-                    float RefreshRate = static_cast<float>(Mode.RefreshRateNumerator) / static_cast<float>(Mode.RefreshRateDenominator);
-                    ss << Mode.Width << "x" << Mode.Height << "@" << std::fixed << std::setprecision(2) << RefreshRate << " Hz" << ScalingModeStr[static_cast<int>(Mode.Scaling)];
-                    DisplayModeStrings[i] = ss.str();
-                    DisplayModes[i]       = DisplayModeStrings[i].c_str();
-                }
-
-                ImGui::SetNextItemWidth(220);
-                ImGui::Combo("Display Modes", &m_SelectedDisplayMode, DisplayModes.data(), static_cast<int>(DisplayModes.size()));
-            }
-
-            if (m_bFullScreenMode)
-            {
-                if (ImGui::Button("Go Windowed"))
-                {
-                    SetWindowedMode();
+                    const auto& SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
+                    SetFullscreenMode(SelectedMode);
                 }
             }
-            else
-            {
-                if (!m_DisplayModes.empty())
-                {
-                    if (ImGui::Button("Go Full Screen"))
-                    {
-                        const auto& SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
-                        SetFullscreenMode(SelectedMode);
-                    }
-                }
-            }
-
-            ImGui::Checkbox("VSync", &m_bVSync);
         }
-        ImGui::End();
+
+        ImGui::Checkbox("VSync", &m_bVSync);
     }
+    ImGui::End();
 #endif
 }
 
