@@ -432,7 +432,7 @@ void SampleApp::UpdateAdaptersDialog()
     {
         if (m_AdapterAttribs.AdapterType != ADAPTER_TYPE_UNKNOWN)
         {
-            ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, m_AdapterAttribs.DedicatedVideoMemory >> 20);
+            ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, static_cast<int>(m_AdapterAttribs.DedicatedVideoMemory >> 20));
         }
 
         if (!m_DisplayModes.empty())

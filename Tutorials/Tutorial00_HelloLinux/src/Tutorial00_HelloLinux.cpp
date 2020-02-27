@@ -215,6 +215,8 @@ public:
         XCBWindow.WindowId       = xcbInfo.window;
         XCBWindow.pXCBConnection = xcbInfo.connection;
         pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, XCBWindow, &m_pSwapChain);
+
+        return true;
     }
 #endif
 
