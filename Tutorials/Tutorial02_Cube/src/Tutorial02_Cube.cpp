@@ -214,13 +214,9 @@ void Tutorial02_Cube::CreateIndexBuffer()
     m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
 }
 
-void Tutorial02_Cube::Initialize(IEngineFactory*  pEngineFactory,
-                                 IRenderDevice*   pDevice,
-                                 IDeviceContext** ppContexts,
-                                 Uint32           NumDeferredCtx,
-                                 ISwapChain*      pSwapChain)
+void Tutorial02_Cube::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineState();
     CreateVertexBuffer();

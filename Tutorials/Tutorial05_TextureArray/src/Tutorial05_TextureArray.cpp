@@ -175,19 +175,15 @@ void Tutorial05_TextureArray::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial05_TextureArray::Initialize(IEngineFactory*  pEngineFactory,
-                                         IRenderDevice*   pDevice,
-                                         IDeviceContext** ppContexts,
-                                         Uint32           NumDeferredCtx,
-                                         ISwapChain*      pSwapChain)
+void Tutorial05_TextureArray::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineState();
 
     // Load cube vertex and index buffers
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
-    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
 
     CreateInstanceBuffer();
     LoadTextures();

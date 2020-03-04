@@ -424,13 +424,9 @@ void Tutorial10_DataStreaming::UpdateUI()
 }
 
 
-void Tutorial10_DataStreaming::Initialize(IEngineFactory*  pEngineFactory,
-                                          IRenderDevice*   pDevice,
-                                          IDeviceContext** ppContexts,
-                                          Uint32           NumDeferredCtx,
-                                          ISwapChain*      pSwapChain)
+void Tutorial10_DataStreaming::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     m_MaxThreads       = static_cast<int>(m_pDeferredContexts.size());
     m_NumWorkerThreads = std::min(4, m_MaxThreads);
@@ -439,8 +435,8 @@ void Tutorial10_DataStreaming::Initialize(IEngineFactory*  pEngineFactory,
     CreatePipelineStates(Barriers);
     LoadTextures(Barriers);
 
-    m_StreamingVB.reset(new StreamingBuffer(pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2), 1 + NumDeferredCtx, "Streaming vertex buffer"));
-    m_StreamingIB.reset(new StreamingBuffer(pDevice, BIND_INDEX_BUFFER, MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1 + NumDeferredCtx, "Streaming index buffer"));
+    m_StreamingVB.reset(new StreamingBuffer(m_pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2), 1 + InitInfo.NumDeferredCtx, "Streaming vertex buffer"));
+    m_StreamingIB.reset(new StreamingBuffer(m_pDevice, BIND_INDEX_BUFFER, MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1 + InitInfo.NumDeferredCtx, "Streaming index buffer"));
 
     // Transition the buffers to required state
     Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);

@@ -39,6 +39,18 @@
 namespace Diligent
 {
 
+class ImGuiImplDiligent;
+
+struct SampleInitInfo
+{
+    IEngineFactory*    pEngineFactory = nullptr;
+    IRenderDevice*     pDevice        = nullptr;
+    IDeviceContext**   ppContexts     = nullptr;
+    Uint32             NumDeferredCtx = 0;
+    ISwapChain*        pSwapChain     = nullptr;
+    ImGuiImplDiligent* pImGui         = nullptr;
+};
+
 class SampleBase
 {
 public:
@@ -46,11 +58,7 @@ public:
 
     virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc);
 
-    virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice,
-                            IDeviceContext** ppContexts,
-                            Uint32           NumDeferredCtx,
-                            ISwapChain*      pSwapChain) = 0;
+    virtual void Initialize(const SampleInitInfo& InitInfo) = 0;
 
     virtual void Render()                                    = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
@@ -71,10 +79,12 @@ protected:
     RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;
     std::vector<RefCntAutoPtr<IDeviceContext>> m_pDeferredContexts;
     RefCntAutoPtr<ISwapChain>                  m_pSwapChain;
-    float                                      m_fSmoothFPS         = 0;
-    double                                     m_LastFPSTime        = 0;
-    Uint32                                     m_NumFramesRendered  = 0;
-    Uint32                                     m_CurrentFrameNumber = 0;
+    ImGuiImplDiligent*                         m_pImGui = nullptr;
+
+    float  m_fSmoothFPS         = 0;
+    double m_LastFPSTime        = 0;
+    Uint32 m_NumFramesRendered  = 0;
+    Uint32 m_CurrentFrameNumber = 0;
 
     InputController m_InputController;
 };
@@ -92,19 +102,16 @@ inline void SampleBase::Update(double CurrTime, double ElapsedTime)
     }
 }
 
-inline void SampleBase::Initialize(IEngineFactory*  pEngineFactory,
-                                   IRenderDevice*   pDevice,
-                                   IDeviceContext** ppContexts,
-                                   Uint32           NumDeferredCtx,
-                                   ISwapChain*      pSwapChain)
+inline void SampleBase::Initialize(const SampleInitInfo& InitInfo)
 {
-    m_pEngineFactory    = pEngineFactory;
-    m_pDevice           = pDevice;
-    m_pSwapChain        = pSwapChain;
-    m_pImmediateContext = ppContexts[0];
-    m_pDeferredContexts.resize(NumDeferredCtx);
-    for (Uint32 ctx = 0; ctx < NumDeferredCtx; ++ctx)
-        m_pDeferredContexts[ctx] = ppContexts[1 + ctx];
+    m_pEngineFactory    = InitInfo.pEngineFactory;
+    m_pDevice           = InitInfo.pDevice;
+    m_pSwapChain        = InitInfo.pSwapChain;
+    m_pImmediateContext = InitInfo.ppContexts[0];
+    m_pDeferredContexts.resize(InitInfo.NumDeferredCtx);
+    for (Uint32 ctx = 0; ctx < InitInfo.NumDeferredCtx; ++ctx)
+        m_pDeferredContexts[ctx] = InitInfo.ppContexts[1 + ctx];
+    m_pImGui = InitInfo.pImGui;
 }
 
 extern SampleBase* CreateSample();

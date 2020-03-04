@@ -414,7 +414,15 @@ void SampleApp::InitializeSample()
     Uint32 NumDeferredCtx = static_cast<Uint32>(m_pDeferredContexts.size());
     for (size_t ctx = 0; ctx < m_pDeferredContexts.size(); ++ctx)
         ppContexts[1 + ctx] = m_pDeferredContexts[ctx];
-    m_TheSample->Initialize(m_pEngineFactory, m_pDevice, ppContexts.data(), NumDeferredCtx, m_pSwapChain);
+
+    SampleInitInfo InitInfo;
+    InitInfo.pEngineFactory = m_pEngineFactory;
+    InitInfo.pDevice        = m_pDevice;
+    InitInfo.ppContexts     = ppContexts.data();
+    InitInfo.NumDeferredCtx = NumDeferredCtx;
+    InitInfo.pSwapChain     = m_pSwapChain;
+    InitInfo.pImGui         = m_pImGui.get();
+    m_TheSample->Initialize(InitInfo);
 
     m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
 }

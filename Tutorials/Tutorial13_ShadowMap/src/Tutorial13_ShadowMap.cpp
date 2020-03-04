@@ -408,18 +408,14 @@ void Tutorial13_ShadowMap::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
-                                      IRenderDevice*   pDevice,
-                                      IDeviceContext** ppContexts,
-                                      Uint32           NumDeferredCtx,
-                                      ISwapChain*      pSwapChain)
+void Tutorial13_ShadowMap::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     std::vector<StateTransitionDesc> Barriers;
     // Create dynamic uniform buffer that will store our transformation matrices
     // Dynamic buffers can be frequently updated by the CPU
-    CreateUniformBuffer(pDevice, sizeof(float4x4) * 2 + sizeof(float4), "VS constants CB", &m_VSConstants);
+    CreateUniformBuffer(m_pDevice, sizeof(float4x4) * 2 + sizeof(float4), "VS constants CB", &m_VSConstants);
     Barriers.emplace_back(m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
 
     CreateCubePSO();
@@ -431,12 +427,12 @@ void Tutorial13_ShadowMap::Initialize(IEngineFactory*  pEngineFactory,
     // In this tutorial we need vertices with normals
     CreateVertexBuffer();
     // Load index buffer
-    m_CubeIndexBuffer = TexturedCube::CreateIndexBuffer(pDevice);
+    m_CubeIndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice);
     // Explicitly transition vertex and index buffers to required states
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
     Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
     // Load texture
-    auto CubeTexture = TexturedCube::LoadTexture(pDevice, "DGLogo.png");
+    auto CubeTexture = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png");
     m_CubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(CubeTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     // Transition the texture to shader resource state
     Barriers.emplace_back(CubeTexture, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);

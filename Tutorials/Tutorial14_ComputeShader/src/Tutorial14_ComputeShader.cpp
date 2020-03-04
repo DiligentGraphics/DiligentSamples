@@ -349,19 +349,15 @@ void Tutorial14_ComputeShader::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial14_ComputeShader::Initialize(IEngineFactory*  pEngineFactory,
-                                          IRenderDevice*   pDevice,
-                                          IDeviceContext** ppContexts,
-                                          Uint32           NumDeferredCtx,
-                                          ISwapChain*      pSwapChain)
+void Tutorial14_ComputeShader::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
     if (!deviceCaps.Features.ComputeShaders)
     {
         throw std::runtime_error("Compute shaders are required to run this tutorial");
     }
 
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreateConsantBuffer();
     CreateRenderParticlePSO();

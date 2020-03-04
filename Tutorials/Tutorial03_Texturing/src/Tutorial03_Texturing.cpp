@@ -271,13 +271,9 @@ void Tutorial03_Texturing::LoadTexture()
 }
 
 
-void Tutorial03_Texturing::Initialize(IEngineFactory*  pEngineFactory,
-                                      IRenderDevice*   pDevice,
-                                      IDeviceContext** ppContexts,
-                                      Uint32           NumDeferredCtx,
-                                      ISwapChain*      pSwapChain)
+void Tutorial03_Texturing::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineState();
     CreateVertexBuffer();

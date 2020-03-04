@@ -355,19 +355,15 @@ void Tutorial08_Tessellation::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial08_Tessellation::Initialize(IEngineFactory*  pEngineFactory,
-                                         IRenderDevice*   pDevice,
-                                         IDeviceContext** ppContexts,
-                                         Uint32           NumDeferredCtx,
-                                         ISwapChain*      pSwapChain)
+void Tutorial08_Tessellation::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
     if (!deviceCaps.Features.Tessellation)
     {
         throw std::runtime_error("Hardware tessellation is not supported");
     }
 
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineStates();
     LoadTextures();

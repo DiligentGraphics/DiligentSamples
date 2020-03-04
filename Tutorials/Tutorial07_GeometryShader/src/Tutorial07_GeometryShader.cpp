@@ -251,26 +251,22 @@ void Tutorial07_GeometryShader::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial07_GeometryShader::Initialize(IEngineFactory*  pEngineFactory,
-                                           IRenderDevice*   pDevice,
-                                           IDeviceContext** ppContexts,
-                                           Uint32           NumDeferredCtx,
-                                           ISwapChain*      pSwapChain)
+void Tutorial07_GeometryShader::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
     if (!deviceCaps.Features.GeometryShaders)
     {
         throw std::runtime_error("Geometry shaders are not supported");
     }
 
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineState();
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
-    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
-    m_TextureSRV       = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
+    m_TextureSRV       = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 }
 

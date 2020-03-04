@@ -315,13 +315,9 @@ void Tutorial11_ResourceUpdates::LoadTextures()
 }
 
 
-void Tutorial11_ResourceUpdates::Initialize(IEngineFactory*  pEngineFactory,
-                                            IRenderDevice*   pDevice,
-                                            IDeviceContext** ppContexts,
-                                            Uint32           NumDeferredCtx,
-                                            ISwapChain*      pSwapChain)
+void Tutorial11_ResourceUpdates::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineStates();
     CreateVertexBuffers();
@@ -335,7 +331,7 @@ void Tutorial11_ResourceUpdates::Initialize(IEngineFactory*  pEngineFactory,
         VertBuffDesc.BindFlags      = BIND_VERTEX_BUFFER; // We do not really bind the buffer, but D3D11 wants at least one bind flag bit
         VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         VertBuffDesc.uiSizeInBytes  = MaxUpdateRegionSize * MaxUpdateRegionSize * 4;
-        pDevice->CreateBuffer(VertBuffDesc, nullptr, &m_TextureUpdateBuffer);
+        m_pDevice->CreateBuffer(VertBuffDesc, nullptr, &m_TextureUpdateBuffer);
     }
 }
 

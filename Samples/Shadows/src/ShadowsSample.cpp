@@ -66,14 +66,15 @@ void ShadowsSample::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType
 #endif
 }
 
-void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
+void ShadowsSample::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
+
     std::string MeshFileName = "Powerplant/Powerplant.sdkmesh";
     m_Mesh.Create(MeshFileName.c_str());
     std::string Directory;
     FileSystem::SplitFilePath(MeshFileName, &Directory, nullptr);
-    m_Mesh.LoadGPUResources(Directory.c_str(), pDevice, m_pImmediateContext);
+    m_Mesh.LoadGPUResources(Directory.c_str(), m_pDevice, m_pImmediateContext);
 
     m_LightAttribs.ShadowAttribs.iNumCascades     = 4;
     m_LightAttribs.ShadowAttribs.fFixedDepthBias  = 0.0025f;
@@ -90,8 +91,8 @@ void ShadowsSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pD
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
-    CreateUniformBuffer(pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
-    CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
     CreatePipelineStates();
 
     CreateShadowMap();

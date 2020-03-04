@@ -87,13 +87,9 @@ void main(in  PSInput  PSIn,
 )";
 
 
-void Tutorial01_HelloTriangle::Initialize(IEngineFactory*  pEngineFactory,
-                                          IRenderDevice*   pDevice,
-                                          IDeviceContext** ppContexts,
-                                          Uint32           NumDeferredCtx,
-                                          ISwapChain*      pSwapChain)
+void Tutorial01_HelloTriangle::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     // Pipeline state object encompasses configuration of all GPU stages
 
@@ -109,9 +105,9 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*  pEngineFactory,
     // This tutorial will render to a single render target
     PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
+    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Use the depth buffer format from the swap chain
-    PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
+    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
     PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // No back face culling for this tutorial
@@ -133,7 +129,7 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*  pEngineFactory,
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Triangle vertex shader";
         ShaderCI.Source          = VSSource;
-        pDevice->CreateShader(ShaderCI, &pVS);
+        m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     // Create a pixel shader
@@ -143,13 +139,13 @@ void Tutorial01_HelloTriangle::Initialize(IEngineFactory*  pEngineFactory,
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Triangle pixel shader";
         ShaderCI.Source          = PSSource;
-        pDevice->CreateShader(ShaderCI, &pPS);
+        m_pDevice->CreateShader(ShaderCI, &pPS);
     }
 
     // Finally, create the pipeline state
     PSODesc.GraphicsPipeline.pVS = pVS;
     PSODesc.GraphicsPipeline.pPS = pPS;
-    pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
 }
 
 // Render a frame

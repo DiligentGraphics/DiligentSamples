@@ -36,11 +36,7 @@ namespace Diligent
 class Tutorial08_Tessellation final : public SampleBase
 {
 public:
-    virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice,
-                            IDeviceContext** ppContexts,
-                            Uint32           NumDeferredCtx,
-                            ISwapChain*      pSwapChain) override final;
+    virtual void Initialize(const SampleInitInfo& InitInfo) override final;
 
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;

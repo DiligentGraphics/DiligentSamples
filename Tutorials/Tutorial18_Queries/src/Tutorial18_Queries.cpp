@@ -70,25 +70,21 @@ void Tutorial18_Queries::CreateCubePSO()
     m_pCubePSO->CreateShaderResourceBinding(&m_pCubeSRB, true);
 }
 
-void Tutorial18_Queries::Initialize(IEngineFactory*  pEngineFactory,
-                                    IRenderDevice*   pDevice,
-                                    IDeviceContext** ppContexts,
-                                    Uint32           NumDeferredCtx,
-                                    ISwapChain*      pSwapChain)
+void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreateCubePSO();
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
-    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
-    m_CubeTextureSRV   = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
+    m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     // Set cube texture SRV in the SRB
     m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 
     // Check query support
-    const auto& Features = pDevice->GetDeviceCaps().Features;
+    const auto& Features = m_pDevice->GetDeviceCaps().Features;
     if (Features.PipelineStatisticsQueries)
     {
         QueryDesc queryDesc;

@@ -48,18 +48,18 @@ SampleBase* CreateSample()
 AtmosphereSample::AtmosphereSample()
 {}
 
-void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
+void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = pDevice->GetDeviceCaps();
+    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
     if (!deviceCaps.Features.ComputeShaders)
     {
         throw std::runtime_error("Compute shaders are required to run this sample");
     }
 
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     m_bIsGLDevice = deviceCaps.IsGLDevice();
-    if (pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_GLES)
+    if (m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_GLES)
     {
         m_ShadowSettings.Resolution                        = 512;
         m_TerrainRenderParams.m_FilterAcrossShadowCascades = false;
@@ -125,10 +125,10 @@ void AtmosphereSample::Initialize(IEngineFactory* pEngineFactory, IRenderDevice*
         strNormalMapPaths[iTile] = m_strNormalMapTexPaths[iTile].c_str();
     }
 
-    CreateUniformBuffer(pDevice, sizeof(CameraAttribs), "Camera Attribs CB", &m_pcbCameraAttribs);
-    CreateUniformBuffer(pDevice, sizeof(LightAttribs), "Light Attribs CB", &m_pcbLightAttribs);
+    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera Attribs CB", &m_pcbCameraAttribs);
+    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light Attribs CB", &m_pcbLightAttribs);
 
-    const auto& SCDesc = pSwapChain->GetDesc();
+    const auto& SCDesc = m_pSwapChain->GetDesc();
     m_pLightSctrPP.reset(new EpipolarLightScattering(m_pDevice, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT));
     auto* pcMediaScatteringParams = m_pLightSctrPP->GetMediaAttribsCB();
 

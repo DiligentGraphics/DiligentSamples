@@ -51,9 +51,9 @@ NuklearDemo::~NuklearDemo()
     nk_diligent_shutdown(m_pNkDlgCtx);
 }
 
-void NuklearDemo::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
+void NuklearDemo::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     constexpr Uint32 NuklearMaxVBSize = 512 * 1024;
     constexpr Uint32 NuklearMaxIBSize = 128 * 1024;

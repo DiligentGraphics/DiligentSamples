@@ -40,9 +40,9 @@ ImguiDemo::~ImguiDemo()
 {
 }
 
-void ImguiDemo::Initialize(IEngineFactory* pEngineFactory, IRenderDevice* pDevice, IDeviceContext** ppContexts, Uint32 NumDeferredCtx, ISwapChain* pSwapChain)
+void ImguiDemo::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 }
 
 void ImguiDemo::UpdateUI()

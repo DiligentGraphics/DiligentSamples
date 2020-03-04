@@ -46,15 +46,11 @@ SampleBase* CreateSample()
     return new Tutorial03_Texturing();
 }
 
-void Tutorial03_Texturing::Initialize(IEngineFactory*  pEngineFactory,
-                                      IRenderDevice*   pDevice,
-                                      IDeviceContext** ppContexts,
-                                      Uint32           NumDeferredCtx,
-                                      ISwapChain*      pSwapChain)
+void Tutorial03_Texturing::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
-    ::CreateResources(pDevice, pSwapChain);
+    ::CreateResources(InitInfo.pDevice, InitInfo.pSwapChain);
 }
 
 Tutorial03_Texturing::~Tutorial03_Texturing()

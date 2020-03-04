@@ -36,11 +36,7 @@ namespace Diligent
 class Tutorial03_Texturing final : public SampleBase
 {
 public:
-    virtual void Initialize(IEngineFactory*  pEngineFactory,
-                            IRenderDevice*   pDevice,
-                            IDeviceContext** ppContexts,
-                            Uint32           NumDeferredCtx,
-                            ISwapChain*      pSwapChain) override final;
+    virtual void Initialize(const SampleInitInfo& InitInfo) override final;
 
     ~Tutorial03_Texturing();
 

@@ -98,16 +98,12 @@ void Tutorial17_MSAA::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial17_MSAA::Initialize(IEngineFactory*  pEngineFactory,
-                                 IRenderDevice*   pDevice,
-                                 IDeviceContext** ppContexts,
-                                 Uint32           NumDeferredCtx,
-                                 ISwapChain*      pSwapChain)
+void Tutorial17_MSAA::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
-    const auto& ColorFmtInfo = pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
-    const auto& DepthFmtInfo = pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
+    const auto& ColorFmtInfo = m_pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
+    const auto& DepthFmtInfo = m_pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
     m_SupportedSampleCounts  = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
     if (m_SupportedSampleCounts & 0x04)
         m_SampleCount = 4;
@@ -124,9 +120,9 @@ void Tutorial17_MSAA::Initialize(IEngineFactory*  pEngineFactory,
     CreateUniformBuffer(m_pDevice, sizeof(float4x4), "VS constants CB", &m_CubeVSConstants);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
-    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
-    m_CubeTextureSRV   = TexturedCube::LoadTexture(pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
+    m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     CreateCubePSO();
 }

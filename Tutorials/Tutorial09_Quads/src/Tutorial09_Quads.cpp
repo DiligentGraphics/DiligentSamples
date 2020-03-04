@@ -330,13 +330,9 @@ void Tutorial09_Quads::UpdateUI()
 }
 
 
-void Tutorial09_Quads::Initialize(IEngineFactory*  pEngineFactory,
-                                  IRenderDevice*   pDevice,
-                                  IDeviceContext** ppContexts,
-                                  Uint32           NumDeferredCtx,
-                                  ISwapChain*      pSwapChain)
+void Tutorial09_Quads::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     m_MaxThreads       = static_cast<int>(m_pDeferredContexts.size());
     m_NumWorkerThreads = std::min(7, m_MaxThreads);

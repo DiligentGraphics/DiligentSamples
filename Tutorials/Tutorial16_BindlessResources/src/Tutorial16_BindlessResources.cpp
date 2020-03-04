@@ -458,13 +458,9 @@ void Tutorial16_BindlessResources::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial16_BindlessResources::Initialize(IEngineFactory*  pEngineFactory,
-                                              IRenderDevice*   pDevice,
-                                              IDeviceContext** ppContexts,
-                                              Uint32           NumDeferredCtx,
-                                              ISwapChain*      pSwapChain)
+void Tutorial16_BindlessResources::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     CreatePipelineState();
     CreateGeometryBuffers();

@@ -142,13 +142,9 @@ void Tutorial06_Multithreading::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial06_Multithreading::Initialize(IEngineFactory*  pEngineFactory,
-                                           IRenderDevice*   pDevice,
-                                           IDeviceContext** ppContexts,
-                                           Uint32           NumDeferredCtx,
-                                           ISwapChain*      pSwapChain)
+void Tutorial06_Multithreading::Initialize(const SampleInitInfo& InitInfo)
 {
-    SampleBase::Initialize(pEngineFactory, pDevice, ppContexts, NumDeferredCtx, pSwapChain);
+    SampleBase::Initialize(InitInfo);
 
     m_MaxThreads       = static_cast<int>(m_pDeferredContexts.size());
     m_NumWorkerThreads = std::min(4, m_MaxThreads);
@@ -158,8 +154,8 @@ void Tutorial06_Multithreading::Initialize(IEngineFactory*  pEngineFactory,
     CreatePipelineState(Barriers);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
-    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(pDevice);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     // Explicitly transition vertex and index buffers to required states
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
     Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
