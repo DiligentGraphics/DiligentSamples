@@ -105,12 +105,12 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
             EngineD3D11CreateInfo EngineCI;
 
-#    ifdef DEVELOPMENT
+#    ifdef DILIGENT_DEVELOPMENT
             EngineCI.DebugFlags |=
                 D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
                 D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
 #    endif
-#    ifdef _DEBUG
+#    ifdef DILIGENT_DEBUG
             EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
 #    endif
 
@@ -183,7 +183,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
             EngineD3D12CreateInfo EngineCI;
 
-#    ifdef DEVELOPMENT
+#    ifdef DILIGENT_DEVELOPMENT
             EngineCI.EnableDebugLayer = true;
 #    endif
             if (m_ValidationLevel >= 1)
@@ -297,7 +297,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
             EngineVkCreateInfo EngVkAttribs;
-#    ifdef DEVELOPMENT
+#    ifdef DILIGENT_DEVELOPMENT
             EngVkAttribs.EnableValidation = true;
 #    endif
             if (m_ValidationLevel >= 1)

@@ -325,7 +325,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     {
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
         m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
-#ifdef _DEBUG
+#ifdef DILIGENT_DEBUG
         if (state > 0)
         {
             VERIFY(m_pPSO[1][state]->IsCompatibleWith(m_pPSO[1][0]), "PSOs are expected to be compatible");

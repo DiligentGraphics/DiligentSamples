@@ -152,7 +152,7 @@ public:
             case RENDER_DEVICE_TYPE_D3D11:
             {
                 EngineD3D11CreateInfo DeviceAttribs;
-#    ifdef _DEBUG
+#    ifdef DILIGENT_DEBUG
                 DeviceAttribs.DebugFlags |=
                     D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
                     D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
@@ -182,7 +182,7 @@ public:
                 auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngD3D12Attribs;
-#    ifdef _DEBUG
+#    ifdef DILIGENT_DEBUG
                 // There is currently a bug in D3D12 debug layer that causes memory leaks in this tutorial.
                 // EngD3D12Attribs.EnableDebugLayer = true;
 #    endif
@@ -230,7 +230,7 @@ public:
                 auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngVkAttribs;
-#    ifdef _DEBUG
+#    ifdef DILIGENT_DEBUG
                 EngVkAttribs.EnableValidation = true;
 #    endif
                 auto* pFactoryVk = GetEngineFactoryVk();
