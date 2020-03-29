@@ -13,10 +13,16 @@ set(INCLUDE
 set(SHADERS
     assets/shaders/env_map.vsh
     assets/shaders/env_map.psh
+)
+
+set(EXTERNAL_SHADERS
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMapping.fxh
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
+    ../../../DiligentFX/Shaders/Common/public/ShaderUtilities.fxh
 )
+
+set(ALL_SHADERS ${SHADERS} ${EXTERNAL_SHADERS})
 
 file(GLOB BOOM_BOX_MODEL LIST_DIRECTORIES false assets/models/BoomBoxWithAxes/*.*)
 file(GLOB CESIUM_MAN_MODEL LIST_DIRECTORIES false assets/models/CesiumMan/*.*)
@@ -33,21 +39,21 @@ set(ASSETS
     ${TEXTURES}
 )
 
-add_sample_app("GLTFViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("GLTFViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 target_link_libraries(GLTFViewer PRIVATE Diligent-AssetLoader DiligentFX)
 
 target_include_directories(GLTFViewer PRIVATE
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/
 )
 
-add_custom_command(TARGET GLTFViewer PRE_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMapping.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-)
+foreach(FILE ${EXTERNAL_SHADERS})
+    # Copy external shaders
+    add_custom_command(TARGET GLTFViewer PRE_BUILD 
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/${FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+    )
+endforeach(FILE)
 
-
-set_source_files_properties(${SHADERS} PROPERTIES
+set_source_files_properties(${ALL_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION Resources/shaders
 )
@@ -89,6 +95,7 @@ set_source_files_properties(${NORMAL_TANGENT_TEST_MODEL} PROPERTIES
 
 source_group("assets" FILES ${ASSETS})
 source_group("assets\\shaders" FILES ${SHADERS})
+source_group("assets\\shaders\\external" FILES ${EXTERNAL_SHADERS})
 source_group("assets\\textures" FILES ${TEXTURES})
 source_group("assets\\models\\BoomBoxWithAxes" FILES ${BOOM_BOX_MODEL})
 source_group("assets\\models\\CesiumMan" FILES ${CESIUM_MAN_MODEL})
