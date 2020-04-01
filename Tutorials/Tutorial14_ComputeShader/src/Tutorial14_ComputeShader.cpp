@@ -62,7 +62,9 @@ struct ParticleAttribs
 
 void Tutorial14_ComputeShader::CreateRenderParticlePSO()
 {
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues.
     PSODesc.Name = "Render particles PSO";
 
@@ -139,7 +141,7 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pRenderParticlePSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pRenderParticlePSO);
     m_pRenderParticlePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_Constants);
 }
 
@@ -203,7 +205,9 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
         m_pDevice->CreateShader(ShaderCI, &pUpdatedSpeedCS);
     }
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // This is a compute pipeline
     PSODesc.IsComputePipeline = true;
 
@@ -219,22 +223,22 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
 
     PSODesc.Name                = "Reset particle lists PSO";
     PSODesc.ComputePipeline.pCS = pResetParticleListsCS;
-    m_pDevice->CreatePipelineState(PSODesc, &m_pResetParticleListsPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
     m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
     PSODesc.Name                = "Move particles PSO";
     PSODesc.ComputePipeline.pCS = pMoveParticlesCS;
-    m_pDevice->CreatePipelineState(PSODesc, &m_pMoveParticlesPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pMoveParticlesPSO);
     m_pMoveParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
     PSODesc.Name                = "Collidse particles PSO";
     PSODesc.ComputePipeline.pCS = pCollideParticlesCS;
-    m_pDevice->CreatePipelineState(PSODesc, &m_pCollideParticlesPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCollideParticlesPSO);
     m_pCollideParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
     PSODesc.Name                = "Update particle speed PSO";
     PSODesc.ComputePipeline.pCS = pUpdatedSpeedCS;
-    m_pDevice->CreatePipelineState(PSODesc, &m_pUpdateParticleSpeedPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pUpdateParticleSpeedPSO);
     m_pUpdateParticleSpeedPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 }
 

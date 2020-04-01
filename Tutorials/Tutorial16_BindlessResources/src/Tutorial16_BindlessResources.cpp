@@ -60,7 +60,9 @@ void Tutorial16_BindlessResources::CreatePipelineState()
 {
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false;
 
@@ -191,7 +193,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
@@ -209,7 +211,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     if (pBindlessPS)
     {
         PSODesc.GraphicsPipeline.pPS = pBindlessPS;
-        m_pDevice->CreatePipelineState(PSODesc, &m_pBindlessPSO);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pBindlessPSO);
         m_pBindlessPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
         m_pBindlessPSO->CreateShaderResourceBinding(&m_BindlessSRB, true);
         m_BindlessMode = true;

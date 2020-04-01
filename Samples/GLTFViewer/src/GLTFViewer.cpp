@@ -299,7 +299,9 @@ void GLTFViewer::CreateEnvMapPSO()
     RefCntAutoPtr<IShader> pPS;
     m_pDevice->CreateShader(ShaderCI, &pPS);
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
     // clang-format off
@@ -331,7 +333,7 @@ void GLTFViewer::CreateEnvMapPSO()
     PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_EnvMapPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_EnvMapPSO);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs")->Set(m_EnvMapRenderAttribsCB);
     CreateEnvMapSRB();

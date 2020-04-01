@@ -95,7 +95,9 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
 
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Quad PSO";
@@ -199,7 +201,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     for (int state = 0; state < NumStates; ++state)
     {
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
-        m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[0][state]);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[0][state]);
 
         // Since we did not explcitly specify the type for 'QuadAttribs' variable, default
         // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -234,7 +236,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     for (int state = 0; state < NumStates; ++state)
     {
         PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
-        m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1][state]);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[1][state]);
 #ifdef DILIGENT_DEBUG
         if (state > 0)
         {

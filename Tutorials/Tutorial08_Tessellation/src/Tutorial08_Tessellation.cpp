@@ -123,7 +123,9 @@ void Tutorial08_Tessellation::CreatePipelineStates()
 
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Terrain PSO";
@@ -268,13 +270,13 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[0]);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[0]);
 
     if (bWireframeSupported)
     {
         PSODesc.GraphicsPipeline.pGS = pGS;
         PSODesc.GraphicsPipeline.pPS = pWirePS;
-        m_pDevice->CreatePipelineState(PSODesc, &m_pPSO[1]);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[1]);
     }
 
     for (Uint32 i = 0; i < _countof(m_pPSO); ++i)

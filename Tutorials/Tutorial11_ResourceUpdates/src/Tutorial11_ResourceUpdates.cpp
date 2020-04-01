@@ -109,7 +109,9 @@ void Tutorial11_ResourceUpdates::CreatePipelineStates()
 {
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Cube PSO";
@@ -210,7 +212,7 @@ void Tutorial11_ResourceUpdates::CreatePipelineStates()
     // clang-format on
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -218,7 +220,7 @@ void Tutorial11_ResourceUpdates::CreatePipelineStates()
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO_NoCull);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO_NoCull);
     m_pPSO_NoCull->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
 }
 

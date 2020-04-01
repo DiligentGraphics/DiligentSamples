@@ -42,7 +42,9 @@ void Tutorial03_Texturing::CreatePipelineState()
 {
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Cube PSO";
@@ -146,7 +148,7 @@ void Tutorial03_Texturing::CreatePipelineState()
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables

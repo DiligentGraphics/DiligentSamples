@@ -183,8 +183,10 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
 
     nk_buffer_init_default(&nk_dlg_ctx->cmds);
 
-    PipelineStateDesc PSODesc;
-    auto&             GraphicsPipeline            = PSODesc.GraphicsPipeline;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc          = PSOCreateInfo.PSODesc;
+    GraphicsPipelineDesc&   GraphicsPipeline = PSODesc.GraphicsPipeline;
+
     GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     GraphicsPipeline.RasterizerDesc.ScissorEnable = True;
     GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
@@ -270,7 +272,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
     GraphicsPipeline.pVS = pVS;
     GraphicsPipeline.pPS = pPS;
 
-    device->CreatePipelineState(PSODesc, &nk_dlg_ctx->pso);
+    device->CreatePipelineState(PSOCreateInfo, &nk_dlg_ctx->pso);
     nk_dlg_ctx->pso->GetStaticVariableByName(SHADER_TYPE_VERTEX, "buffer0")->Set(nk_dlg_ctx->const_buffer);
 
     {

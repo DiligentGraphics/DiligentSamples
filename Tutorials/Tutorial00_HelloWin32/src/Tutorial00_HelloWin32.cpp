@@ -303,7 +303,9 @@ public:
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
-        PipelineStateDesc PSODesc;
+        PipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
         // Pipeline state name is used by the engine to report issues.
         // It is always a good idea to give objects descriptive names.
         PSODesc.Name = "Simple triangle PSO";
@@ -355,7 +357,7 @@ public:
         // Finally, create the pipeline state
         PSODesc.GraphicsPipeline.pVS = pVS;
         PSODesc.GraphicsPipeline.pPS = pPS;
-        m_pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
     }
 
     void Render()

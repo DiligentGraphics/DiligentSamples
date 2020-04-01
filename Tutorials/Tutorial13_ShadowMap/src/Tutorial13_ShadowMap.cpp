@@ -83,7 +83,9 @@ void Tutorial13_ShadowMap::CreateCubePSO()
 
 
     // Create shadow pass PSO
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     PSODesc.Name = "Cube shadow PSO";
 
     // This is a graphics pipeline
@@ -133,14 +135,16 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     // will most likely want to do this.
     PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pCubeShadowPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCubeShadowPSO);
     m_pCubeShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
 }
 
 void Tutorial13_ShadowMap::CreatePlanePSO()
 {
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Plane PSO";
@@ -227,7 +231,7 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pPlanePSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPlanePSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -237,7 +241,9 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
 
 void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
 {
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
     PSODesc.Name = "Shadow Map Vis PSO";
 
     // This is a graphics pipeline
@@ -310,7 +316,7 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSODesc, &m_pShadowMapVisPSO);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pShadowMapVisPSO);
 }
 
 void Tutorial13_ShadowMap::CreateVertexBuffer()

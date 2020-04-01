@@ -62,10 +62,12 @@ void main(in  PSInput  PSIn,
 ## Initializing the Pipeline State
 
 Pipeline state is the object that encompasses the configuration of all GPU stages. To create a pipeline state,
-populate `PipelineStateDesc` structure:
+populate `PipelineStateCreateInfo` structure. The most important member of the structure that we will need to
+initialize is `PSODesc`:
 
 ```cpp
-PipelineStateDesc PSODesc;
+PipelineStateCreateInfo PSOCreateInfo;
+PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
 ```
 
 Start by giving the PSO a name. It is always a good idea to give all objects descriptive names as
@@ -161,7 +163,7 @@ Finally, we set the shaders in the `PSODesc` and create the pipeline state:
 ```cpp
 PSODesc.GraphicsPipeline.pVS = pVS;
 PSODesc.GraphicsPipeline.pPS = pPS;
-pDevice->CreatePipelineState(PSODesc, &m_pPSO);
+pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
 ```
 
 The pipeline state keeps references to the shader objects, so the app does not need to keep the references

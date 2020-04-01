@@ -158,7 +158,8 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
                                                   Uint32                           NumLayoutElements /*= 0*/,
                                                   Uint8                            SampleCount /*= 1*/)
 {
-    PipelineStateDesc PSODesc;
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
 
     // This is a graphics pipeline
     PSODesc.IsComputePipeline = false;
@@ -261,7 +262,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
     RefCntAutoPtr<IPipelineState> pPSO;
-    pDevice->CreatePipelineState(PSODesc, &pPSO);
+    pDevice->CreatePipelineState(PSOCreateInfo, &pPSO);
     return pPSO;
 }
 

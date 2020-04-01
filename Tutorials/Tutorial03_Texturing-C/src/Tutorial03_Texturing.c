@@ -49,44 +49,47 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
 {
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateDesc PSODesc;
-    memset(&PSODesc, 0, sizeof(PSODesc));
+    PipelineStateCreateInfo PSOCreateInfo;
+
+    memset(&PSOCreateInfo, 0, sizeof(PSOCreateInfo));
+
+    PipelineStateDesc* pPSODesc = &PSOCreateInfo.PSODesc;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc._DeviceObjectAttribs.Name = "Cube PSO";
+    pPSODesc->_DeviceObjectAttribs.Name = "Cube PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    pPSODesc->IsComputePipeline = false;
 
     // clang-format off
 
     // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    pPSODesc->GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
     const SwapChainDesc* pSCDesc = ISwapChain_GetDesc(pSwapChain);
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = pSCDesc->ColorBufferFormat;
+    pPSODesc->GraphicsPipeline.RTVFormats[0]                = pSCDesc->ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = pSCDesc->DepthBufferFormat;
+    pPSODesc->GraphicsPipeline.DSVFormat                    = pSCDesc->DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pPSODesc->GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     // clang-format on
 
-    PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[0].RenderTargetWriteMask = COLOR_MASK_ALL;
+    pPSODesc->GraphicsPipeline.BlendDesc.RenderTargets[0].RenderTargetWriteMask = COLOR_MASK_ALL;
 
-    PSODesc.CommandQueueMask                = 1;
-    PSODesc.GraphicsPipeline.SmplDesc.Count = 1;
-    PSODesc.GraphicsPipeline.SampleMask     = 0xFFFFFFFF;
-    PSODesc.GraphicsPipeline.NumViewports   = 1;
+    pPSODesc->CommandQueueMask                = 1;
+    pPSODesc->GraphicsPipeline.SmplDesc.Count = 1;
+    pPSODesc->GraphicsPipeline.SampleMask     = 0xFFFFFFFF;
+    pPSODesc->GraphicsPipeline.NumViewports   = 1;
 
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = True;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc        = COMPARISON_FUNC_LESS;
+    pPSODesc->GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
+    pPSODesc->GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = True;
+    pPSODesc->GraphicsPipeline.DepthStencilDesc.DepthFunc        = COMPARISON_FUNC_LESS;
 
-    PSODesc.GraphicsPipeline.RasterizerDesc.FillMode        = FILL_MODE_SOLID;
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode        = CULL_MODE_NONE;
-    PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = True;
+    pPSODesc->GraphicsPipeline.RasterizerDesc.FillMode        = FILL_MODE_SOLID;
+    pPSODesc->GraphicsPipeline.RasterizerDesc.CullMode        = CULL_MODE_NONE;
+    pPSODesc->GraphicsPipeline.RasterizerDesc.DepthClipEnable = True;
 
     ShaderCreateInfo ShaderCI;
     memset(&ShaderCI, 0, sizeof(ShaderCI));
@@ -158,14 +161,14 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     LayoutElems[1].Frequency            = INPUT_ELEMENT_FREQUENCY_PER_VERTEX;
     LayoutElems[1].InstanceDataStepRate = 1;
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    pPSODesc->GraphicsPipeline.pVS = pVS;
+    pPSODesc->GraphicsPipeline.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = 2;
+    pPSODesc->GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    pPSODesc->GraphicsPipeline.InputLayout.NumElements    = 2;
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    pPSODesc->ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
@@ -174,8 +177,8 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     Vars[0].Name         = "g_Texture";
     Vars[0].Type         = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = 1;
+    pPSODesc->ResourceLayout.Variables    = Vars;
+    pPSODesc->ResourceLayout.NumVariables = 1;
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
     StaticSamplerDesc StaticSamplers[1];
@@ -195,10 +198,10 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     StaticSamplers[0].Desc.ComparisonFunc = COMPARISON_FUNC_NEVER,
     StaticSamplers[0].Desc.MaxLOD         = +3.402823466e+38F;
 
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = 1;
+    pPSODesc->ResourceLayout.StaticSamplers    = StaticSamplers;
+    pPSODesc->ResourceLayout.NumStaticSamplers = 1;
 
-    IRenderDevice_CreatePipelineState(pDevice, &PSODesc, &g_pPSO);
+    IRenderDevice_CreatePipelineState(pDevice, &PSOCreateInfo, &g_pPSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables

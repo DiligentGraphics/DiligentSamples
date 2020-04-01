@@ -350,7 +350,9 @@ void ShadowsSample::CreatePipelineStates()
     m_RenderMeshShadowPSO.clear();
     for (Uint32 vb = 0; vb < m_Mesh.GetNumVBs(); ++vb)
     {
-        PipelineStateDesc          PSODesc;
+        PipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
         std::vector<LayoutElement> Elements;
         auto&                      InputLayout = PSODesc.GraphicsPipeline.InputLayout;
         DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(m_Mesh.VBElements(vb), m_Mesh.GetVertexStride(vb), InputLayout, Elements);
@@ -403,7 +405,7 @@ void ShadowsSample::CreatePipelineStates()
         PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
         RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
-        m_pDevice->CreatePipelineState(PSODesc, &pRenderMeshPSO);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &pRenderMeshPSO);
         // clang-format off
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,  "cbLightAttribs")->Set(m_LightAttribsCB);
@@ -427,7 +429,7 @@ void ShadowsSample::CreatePipelineStates()
         PSODesc.ResourceLayout.Variables                 = nullptr;
         PSODesc.ResourceLayout.NumVariables              = 0;
         RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
-        m_pDevice->CreatePipelineState(PSODesc, &pRenderMeshShadowPSO);
+        m_pDevice->CreatePipelineState(PSOCreateInfo, &pRenderMeshShadowPSO);
         pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
 
         m_RenderMeshPSO.emplace_back(std::move(pRenderMeshPSO));

@@ -126,7 +126,9 @@ Then, we need to create another pipeline state object that will store all the in
 required to render our small post-processing effect.
 
 ```cpp
-PipelineStateDesc RTPSODesc;
+PipelineStateCreateInfo RTPSOCreateInfo;
+PipelineStateDesc&      RTPSODesc = RTPSOCreateInfo.PSODesc;
+
 RTPSODesc.Name = "Render Target PSO";
 RTPSODesc.IsComputePipeline                             = false;
 RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
@@ -158,7 +160,7 @@ StaticSamplerDesc StaticSamplers[] =
 RTPSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
 RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-pDevice->CreatePipelineState(RTPSODesc, &m_pRTPSO);
+pDevice->CreatePipelineState(RTPSOCreateInfo, &m_pRTPSO);
 ```
 
 ## Creating Offscreen Render Target

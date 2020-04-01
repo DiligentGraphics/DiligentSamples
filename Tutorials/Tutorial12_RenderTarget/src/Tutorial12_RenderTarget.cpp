@@ -79,7 +79,9 @@ void Tutorial12_RenderTarget::CreateCubePSO()
 
 void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 {
-    PipelineStateDesc RTPSODesc;
+    PipelineStateCreateInfo RTPSOCreateInfo;
+    PipelineStateDesc&      RTPSODesc = RTPSOCreateInfo.PSODesc;
+
     // Pipeline state name is used by the engine to report issues
     // It is always a good idea to give objects descriptive names
     // clang-format off
@@ -172,7 +174,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
     RTPSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(RTPSODesc, &m_pRTPSO);
+    m_pDevice->CreatePipelineState(RTPSOCreateInfo, &m_pRTPSO);
 
     // Since we did not explcitly specify the type for Constants, default type
     // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
