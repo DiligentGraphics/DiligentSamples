@@ -453,7 +453,7 @@ void Tutorial16_BindlessResources::UpdateUI()
             PopulateInstanceBuffer();
         }
         {
-            ImGuiScopedDisabler Disable(!m_pBindlessPSO);
+            ImGui::ScopedDisabler Disable(!m_pBindlessPSO);
             ImGui::Checkbox("Bindless mode", &m_BindlessMode);
         }
     }

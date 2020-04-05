@@ -130,7 +130,7 @@ void Tutorial06_Multithreading::UpdateUI()
             PopulateInstanceData();
         }
         {
-            ImGuiScopedDisabler Disable(m_MaxThreads == 0);
+            ImGui::ScopedDisabler Disable(m_MaxThreads == 0);
             if (ImGui::SliderInt("Worker Threads", &m_NumWorkerThreads, 0, m_MaxThreads))
             {
                 StopWorkerThreads();
