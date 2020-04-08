@@ -49,7 +49,7 @@
 #include "ElevationDataSource.hpp"
 #include "FileWrapper.hpp"
 #include "DataBlobImpl.hpp"
-#include "Image.hpp"
+#include "Image.h"
 #include "BasicFileStream.hpp"
 #include "TextureUtilities.h"
 #include "GraphicsAccessories.hpp"

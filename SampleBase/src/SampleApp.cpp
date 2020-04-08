@@ -35,7 +35,7 @@
 #include "Errors.hpp"
 #include "StringTools.hpp"
 #include "MapHelper.hpp"
-#include "Image.hpp"
+#include "Image.h"
 #include "FileWrapper.hpp"
 
 #if D3D11_SUPPORTED
@@ -594,11 +594,11 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         {
             if (StrCmpNoCase(Arg.c_str(), "jpeg", Arg.length()) == 0 || StrCmpNoCase(Arg.c_str(), "jpg", Arg.length()) == 0)
             {
-                m_ScreenCaptureInfo.FileFormat = EImageFileFormat::jpeg;
+                m_ScreenCaptureInfo.FileFormat = IMAGE_FILE_FORMAT_JPEG;
             }
             else if (StrCmpNoCase(Arg.c_str(), "png", Arg.length()) == 0)
             {
-                m_ScreenCaptureInfo.FileFormat = EImageFileFormat::png;
+                m_ScreenCaptureInfo.FileFormat = IMAGE_FILE_FORMAT_PNG;
             }
             else
             {
@@ -889,7 +889,7 @@ void SampleApp::Present()
                 {
                     FileNameSS << std::setw(3) << std::setfill('0') << Capture.Id;
                 }
-                FileNameSS << (m_ScreenCaptureInfo.FileFormat == EImageFileFormat::jpeg ? ".jpg" : ".png");
+                FileNameSS << (m_ScreenCaptureInfo.FileFormat == IMAGE_FILE_FORMAT_JPEG ? ".jpg" : ".png");
                 FileName = FileNameSS.str();
             }
 

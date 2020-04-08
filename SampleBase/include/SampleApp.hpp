@@ -39,7 +39,7 @@
 #include "SwapChain.h"
 #include "SampleBase.hpp"
 #include "ScreenCapture.hpp"
-#include "Image.hpp"
+#include "Image.h"
 
 namespace Diligent
 {
@@ -121,16 +121,16 @@ protected:
 
     struct ScreenCaptureInfo
     {
-        bool             AllowCapture = false;
-        std::string      Directory;
-        std::string      FileName        = "frame";
-        double           CaptureFPS      = 30;
-        double           LastCaptureTime = -1e+10;
-        Uint32           FramesToCapture = 0;
-        Uint32           CurrentFrame    = 0;
-        EImageFileFormat FileFormat      = EImageFileFormat::png;
-        int              JpegQuality     = 95;
-        bool             KeepAlpha       = false;
+        bool              AllowCapture = false;
+        std::string       Directory;
+        std::string       FileName        = "frame";
+        double            CaptureFPS      = 30;
+        double            LastCaptureTime = -1e+10;
+        Uint32            FramesToCapture = 0;
+        Uint32            CurrentFrame    = 0;
+        IMAGE_FILE_FORMAT FileFormat      = IMAGE_FILE_FORMAT_PNG;
+        int               JpegQuality     = 95;
+        bool              KeepAlpha       = false;
 
     } m_ScreenCaptureInfo;
     std::unique_ptr<ScreenCapture> m_pScreenCapture;
