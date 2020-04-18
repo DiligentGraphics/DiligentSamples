@@ -638,15 +638,19 @@ void AtmosphereSample::Render()
         m_PPAttribs.uiEpipoleSamplingDensityFactor = std::min(m_PPAttribs.uiEpipoleSamplingDensityFactor, m_PPAttribs.uiInitialSampleStepInSlice);
 
         FrameAttribs.ptex2DSrcColorBufferSRV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        FrameAttribs.ptex2DSrcColorBufferRTV = m_pOffscreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
         FrameAttribs.ptex2DSrcDepthBufferSRV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        FrameAttribs.ptex2DSrcDepthBufferDSV = m_pOffscreenDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         FrameAttribs.ptex2DDstColorBufferRTV = m_pSwapChain->GetCurrentBackBufferRTV();
         FrameAttribs.ptex2DDstDepthBufferDSV = m_pSwapChain->GetDepthBufferDSV();
         FrameAttribs.ptex2DShadowMapSRV      = m_ShadowMapMgr.GetSRV();
 
+        // Begin new frame
+        m_pLightSctrPP->PrepareForNewFrame(FrameAttribs, m_PPAttribs);
+
+        // Render the sun
+        m_pLightSctrPP->RenderSun(pRTV->GetDesc().Format, pDSV->GetDesc().Format, 1);
+
         // Perform the post processing
-        m_pLightSctrPP->PerformPostProcessing(FrameAttribs, m_PPAttribs);
+        m_pLightSctrPP->PerformPostProcessing();
     }
 }
 
