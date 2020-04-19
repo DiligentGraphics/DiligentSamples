@@ -29,6 +29,7 @@
 
 #include "NuklearDemo.hpp"
 
+#define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_VARARGS
 #include "../../../ThirdParty/nuklear/nuklear.h"
 

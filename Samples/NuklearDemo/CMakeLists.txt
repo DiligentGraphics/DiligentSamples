@@ -31,6 +31,3 @@ if(MSVC)
     )
 endif()
 
-if(PLATFORM_IOS AND CMAKE_OSX_ARCHITECTURES MATCHES ".*arm.*")
-    target_compile_definitions(NuklearDemo PRIVATE NK_SIZE_TYPE=uintptr_t NK_POINTER_TYPE=uintptr_t)
-endif()
