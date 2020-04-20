@@ -23,9 +23,14 @@
 
 #include "AndroidFileSystem.hpp"
 #include "EngineFactoryOpenGL.h"
+#if VULKAN_SUPPORTED
+#    include "EngineFactoryVk.h"
+#endif
+
 #include "SampleApp.hpp"
 #include "RenderDeviceGLES.h"
 #include "ImGuiImplAndroid.hpp"
+
 
 namespace Diligent
 {
@@ -36,37 +41,112 @@ public:
     SampleAppAndroid()
     {
         m_DeviceType = RENDER_DEVICE_TYPE_GLES;
+#if VULKAN_SUPPORTED
+        m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
+#endif
     }
 
     virtual void Initialize() override final
     {
-        GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
+        switch (m_DeviceType)
+        {
+#if VULKAN_SUPPORTED
+            case RENDER_DEVICE_TYPE_VULKAN:
+                GetEngineFactoryVk()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
+                break;
+#endif
+
+            case RENDER_DEVICE_TYPE_GLES:
+                GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
+                break;
+
+            default:
+                UNEXPECTED("Unexpected device type");
+        }
+
         AndroidFileSystem::Init(app_->activity, native_activity_class_name_.c_str());
+
         SampleApp::Initialize();
+
         AndroidNativeWindow Window;
         Window.pAWindow = app_->window;
         InitializeDiligentEngine(&Window);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplAndroid(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
-        m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
+
+        switch (m_DeviceType)
+        {
+#if VULKAN_SUPPORTED
+            case RENDER_DEVICE_TYPE_VULKAN:
+                break;
+#endif
+
+            case RENDER_DEVICE_TYPE_GLES:
+                m_RenderDeviceGLES = RefCntAutoPtr<IRenderDeviceGLES>(m_pDevice, IID_RenderDeviceGLES);
+                break;
+
+            default:
+                UNEXPECTED("Unexpected device type");
+        }
+
         InitializeSample();
     }
 
     virtual int Resume(ANativeWindow* window) override final
     {
-        return m_RenderDeviceGLES->Resume(window);
+        switch (m_DeviceType)
+        {
+#if VULKAN_SUPPORTED
+            case RENDER_DEVICE_TYPE_VULKAN:
+                break;
+#endif
+
+            case RENDER_DEVICE_TYPE_GLES:
+                return m_RenderDeviceGLES->Resume(window);
+
+            default:
+                UNEXPECTED("Unexpected device type");
+        }
+
+        return EGL_NOT_INITIALIZED;
     }
 
     virtual void TermDisplay() override final
     {
-        // Tear down the EGL context currently associated with the display.
-        m_RenderDeviceGLES->Suspend();
+        switch (m_DeviceType)
+        {
+#if VULKAN_SUPPORTED
+            case RENDER_DEVICE_TYPE_VULKAN:
+                break;
+#endif
+
+            case RENDER_DEVICE_TYPE_GLES:
+                // Tear down the EGL context currently associated with the display.
+                m_RenderDeviceGLES->Suspend();
+                break;
+
+            default:
+                UNEXPECTED("Unexpected device type");
+        }
     }
 
     virtual void TrimMemory() override final
     {
         LOGI("Trimming memory");
-        m_RenderDeviceGLES->Invalidate();
+        switch (m_DeviceType)
+        {
+#if VULKAN_SUPPORTED
+            case RENDER_DEVICE_TYPE_VULKAN:
+                break;
+#endif
+
+            case RENDER_DEVICE_TYPE_GLES:
+                m_RenderDeviceGLES->Invalidate();
+                break;
+
+            default:
+                UNEXPECTED("Unexpected device type");
+        }
     }
 
     virtual int32_t HandleInput(AInputEvent* event) override final
