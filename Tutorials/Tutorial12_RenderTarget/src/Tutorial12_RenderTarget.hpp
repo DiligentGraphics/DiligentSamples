@@ -71,6 +71,7 @@ private:
     RefCntAutoPtr<IPipelineState>         m_pRTPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pRTSRB;
     float4x4                              m_WorldViewProjMatrix;
+    float2x2                              m_UVPreTransformMatrix;
     float                                 m_fCurrentTime = 0.f;
 };
 

@@ -30,6 +30,7 @@
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
+#include "ShaderMacroHelper.hpp"
 #include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
@@ -126,6 +127,18 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         m_pDevice->CreateShader(ShaderCI, &pRTVS);
     }
 
+
+#if PLATFORM_ANDROID
+    // Vulkan on mobile platforms may require handling surface pre-transforms
+    const bool TransformUVCoords = m_pDevice->GetDeviceCaps().IsVulkanDevice();
+#else
+    constexpr bool TransformUVCoords = false;
+#endif
+
+    ShaderMacroHelper Macros;
+    Macros.AddShaderMacro("TRANSFORM_UV", TransformUVCoords);
+    ShaderCI.Macros = Macros;
+
     // Create a pixel shader
     RefCntAutoPtr<IShader> pRTPS;
     {
@@ -140,7 +153,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         // Dynamic buffers can be frequently updated by the CPU
         BufferDesc CBDesc;
         CBDesc.Name           = "RTPS constants CB";
-        CBDesc.uiSizeInBytes  = sizeof(float4);
+        CBDesc.uiSizeInBytes  = sizeof(float4) + sizeof(float2x2) * 2;
         CBDesc.Usage          = USAGE_DYNAMIC;
         CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
         CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
@@ -260,9 +273,21 @@ void Tutorial12_RenderTarget::Render()
     }
 
     {
+        struct VSConstants
+        {
+            float Time;
+            float Padding0;
+            float Padding1;
+            float Padding2;
+
+            float2x2 UVPreTransform;
+            float2x2 UVPreTransformInv;
+        };
         // Map the render target PS constant buffer and fill it in with current time
-        MapHelper<float4> CBConstants(m_pImmediateContext, m_RTPSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        *CBConstants = float4(m_fCurrentTime, 0, 0, 0);
+        MapHelper<VSConstants> CBConstants(m_pImmediateContext, m_RTPSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        CBConstants->Time              = m_fCurrentTime;
+        CBConstants->UVPreTransform    = m_UVPreTransformMatrix;
+        CBConstants->UVPreTransformInv = m_UVPreTransformMatrix.Inverse();
     }
 
     // Bind vertex and index buffers
@@ -308,17 +333,23 @@ void Tutorial12_RenderTarget::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
 
     m_fCurrentTime = static_cast<float>(CurrTime);
-    // Set cube world view matrix
-    float4x4 CubeWorldView = float4x4::RotationY(static_cast<float>(CurrTime)) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0.0f, 0.0f, 5.0f);
-    float    NearPlane     = 0.1f;
-    float    FarPlane      = 100.f;
-    float    aspectRatio   = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
 
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.0f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
+    // Apply rotation
+    float4x4 CubeModelTransform = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);
+
+    // Camera is at (0, 0, -5) looking along the Z axis
+    float4x4 View = float4x4::Translation(0.f, 0.0f, 5.0f);
+
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    // We will have to transform UV coordinates when performing post-processing
+    m_UVPreTransformMatrix = float2x2{SrfPreTransform.m00, SrfPreTransform.m01, SrfPreTransform.m10, SrfPreTransform.m11};
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = CubeWorldView * Proj;
+    m_WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;
 }
 
 } // namespace Diligent

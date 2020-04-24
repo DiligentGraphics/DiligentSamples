@@ -1,6 +1,12 @@
 cbuffer Constants
 {
-    float4 g_Time; // yzw is unused
+    float g_Time;
+    float g_Padding0;
+    float g_Padding1;
+    float g_Padding2;
+
+    float4 g_UVPreTransform;    // Need to store this as float4, because 
+    float4 g_UVPreTransformInv; // there are layout problems with float2x2.
 };
 
 Texture2D    g_Texture;
@@ -33,6 +39,29 @@ void main(in  PSInput  PSIn,
     float2 UV = PSIn.UV;
 #endif
 
-    float2 DistortedUV = UV + float2(sin(UV.y*300.0)*0.1 * sin(g_Time.x*3.0), sin(UV.x*200.0)*0.02 * sin(g_Time.x*2.0));
+#if TRANSFORM_UV
+    // If pre-transform is applied, then current UV coordinates are in pre-transformed space.
+    // We need to transform them back to original space.
+    float2x2 UVTransformMatrixInv;
+    MATRIX_ELEMENT(UVTransformMatrixInv, 0, 0) = g_UVPreTransformInv.x;
+    MATRIX_ELEMENT(UVTransformMatrixInv, 1, 0) = g_UVPreTransformInv.y;
+    MATRIX_ELEMENT(UVTransformMatrixInv, 0, 1) = g_UVPreTransformInv.z;
+    MATRIX_ELEMENT(UVTransformMatrixInv, 1, 1) = g_UVPreTransformInv.w;
+    UV = mul(UV - float2(0.5, 0.5), UVTransformMatrixInv) + float2(0.5, 0.5);
+#endif
+
+    float2 DistortedUV = UV + float2(sin(UV.y*300.0)*0.1 * sin(g_Time*3.0), sin(UV.x*200.0)*0.02 * sin(g_Time*2.0));
+
+#if TRANSFORM_UV
+    // Now we need to transform DistortedUV back to pre-transformed space, because this is how
+    // off-screen buffer was rendered
+    float2x2 UVTransformMatrix;
+    MATRIX_ELEMENT(UVTransformMatrix, 0, 0) = g_UVPreTransform.x;
+    MATRIX_ELEMENT(UVTransformMatrix, 1, 0) = g_UVPreTransform.y;
+    MATRIX_ELEMENT(UVTransformMatrix, 0, 1) = g_UVPreTransform.z;
+    MATRIX_ELEMENT(UVTransformMatrix, 1, 1) = g_UVPreTransform.w;
+    DistortedUV = mul(DistortedUV - float2(0.5, 0.5), UVTransformMatrix) + float2(0.5, 0.5);
+#endif
+
     PSOut.Color = g_Texture.Sample(g_Texture_sampler, DistortedUV);
 }
