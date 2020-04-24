@@ -435,12 +435,18 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
             m_RotationAngle -= PI_F * 2.f;
     }
 
-    m_WorldViewMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0.f, 0.0f, m_Distance);
-    float NearPlane   = 0.1f;
-    float FarPlane    = 1000.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    float4x4 ModelMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F * 0.1f);
+    // Camera is at (0, 0, -m_Distance) looking along Z axis
+    float4x4 ViewMatrix = float4x4::Translation(0.f, 0.0f, m_Distance);
+
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 1000.f);
+
+    m_WorldViewMatrix = ModelMatrix * ViewMatrix * SrfPreTransform;
+
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = m_WorldViewMatrix * Proj;
 }

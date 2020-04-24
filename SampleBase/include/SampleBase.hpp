@@ -35,6 +35,7 @@
 #include "DeviceContext.h"
 #include "SwapChain.h"
 #include "InputController.hpp"
+#include "BasicMath.hpp"
 
 namespace Diligent
 {
@@ -74,6 +75,12 @@ public:
     }
 
 protected:
+    // Returns projection matrix adjusted to the current screen orientation
+    float4x4 GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const;
+
+    // Returns pretransform matrix that matches the current screen rotation
+    float4x4 GetSurfacePretransformMatrix(const float3& f3CameraViewAxis) const;
+
     RefCntAutoPtr<IEngineFactory>              m_pEngineFactory;
     RefCntAutoPtr<IRenderDevice>               m_pDevice;
     RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;

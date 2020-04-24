@@ -267,16 +267,20 @@ void Tutorial02_Cube::Update(double CurrTime, double ElapsedTime)
 
     const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
 
-    // Set cube world view matrix
-    float4x4 CubeWorldView = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f) *
-        float4x4::Translation(0.f, 0.0f, 5.0f);
-    float NearPlane   = 0.1f;
-    float FarPlane    = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    // Apply rotation
+    float4x4 CubeModelTransform = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);
+
+    // Camera is at (0, 0, -5) looking along the Z axis
+    float4x4 View = float4x4::Translation(0.f, 0.0f, 5.0f);
+
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+
     // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = CubeWorldView * Proj;
+    m_WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;
 }
 
 } // namespace Diligent

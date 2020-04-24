@@ -283,13 +283,14 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime)
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
-    float NearPlane   = 0.1f;
-    float FarPlane    = 100.f;
-    float aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+
     // Compute view-projection matrix
-    m_ViewProjMatrix = View * Proj;
+    m_ViewProjMatrix = View * SrfPreTransform * Proj;
 
     // Global rotation matrix
     m_RotationMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-static_cast<float>(CurrTime) * 0.25f);

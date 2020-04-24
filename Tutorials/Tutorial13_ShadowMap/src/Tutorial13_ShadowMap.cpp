@@ -640,14 +640,16 @@ void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
     // Animate the cube
     m_CubeWorldMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f);
 
-    float4x4 CameraView  = float4x4::Translation(0.f, -5.0f, -10.0f) * float4x4::RotationY(PI_F) * float4x4::RotationX(-PI_F * 0.2);
-    float    NearPlane   = 0.1f;
-    float    FarPlane    = 100.f;
-    float    aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, IsGL);
+    float4x4 CameraView = float4x4::Translation(0.f, -5.0f, -10.0f) * float4x4::RotationY(PI_F) * float4x4::RotationX(-PI_F * 0.2);
+
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+
     // Compute camera view-projection matrix
-    m_CameraViewProjMatrix = CameraView * Proj;
+    m_CameraViewProjMatrix = CameraView * SrfPreTransform * Proj;
 }
 
 } // namespace Diligent

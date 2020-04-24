@@ -267,17 +267,20 @@ void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime)
 
     if (m_bRotateGrid)
         m_fCurrentTime += static_cast<float>(ElapsedTime);
-    // Set cube world view matrix
-    float4x4 WorldView   = float4x4::RotationZ(m_fCurrentTime * 0.1f) * float4x4::Translation(0.0f, 0.0f, 30.0f);
-    float    NearPlane   = 0.1f;
-    float    FarPlane    = 100.f;
-    float    aspectRatio = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
 
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.0f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
+    // Set cube rotation
+    float4x4 Model = float4x4::RotationZ(m_fCurrentTime * 0.1f);
+
+    float4x4 View = float4x4::Translation(0.0f, 0.0f, 30.0f);
+
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute world-view-projection matrix
-    m_WorldViewProjMatrix = WorldView * Proj;
+    m_WorldViewProjMatrix = Model * View * SrfPreTransform * Proj;
 }
 
 } // namespace Diligent
