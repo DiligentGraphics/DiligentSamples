@@ -86,15 +86,14 @@ SampleApp::~SampleApp()
 
 void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 {
-    SwapChainDesc SCDesc;
     if (m_ScreenCaptureInfo.AllowCapture)
-        SCDesc.Usage |= SWAP_CHAIN_USAGE_COPY_SOURCE;
+        m_SwapChainInitDesc.Usage |= SWAP_CHAIN_USAGE_COPY_SOURCE;
 
 #if PLATFORM_MACOS
     // We need at least 3 buffers on Metal to avoid massive
     // peformance degradation in full screen mode.
     // https://github.com/KhronosGroup/MoltenVK/issues/808
-    SCDesc.BufferCount = 3;
+    m_SwapChainInitDesc.BufferCount = 3;
 #endif
 
     std::vector<IDeviceContext*> ppContexts;
@@ -126,7 +125,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 EngineCI.DebugFlags = D3D11_DEBUG_FLAG_NONE;
             }
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, SCDesc);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
 
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D11() function
@@ -173,7 +172,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
 
             if (pWindow != nullptr)
-                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], m_SwapChainInitDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
@@ -197,7 +196,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 EngineCI.EnableDebugLayer = false;
             }
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, SCDesc);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
 
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D12() function
@@ -256,7 +255,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && pWindow != nullptr)
-                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], SCDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], m_SwapChainInitDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
@@ -276,7 +275,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             m_pEngineFactory     = pFactoryOpenGL;
             EngineGLCreateInfo CreationAttribs;
             CreationAttribs.Window = *pWindow;
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, SCDesc);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, m_SwapChainInitDesc);
             if (CreationAttribs.NumDeferredContexts != 0)
             {
                 LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");
@@ -284,7 +283,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             }
             ppContexts.resize(1 + CreationAttribs.NumDeferredContexts);
             pFactoryOpenGL->CreateDeviceAndSwapChainGL(
-                CreationAttribs, &m_pDevice, ppContexts.data(), SCDesc, &m_pSwapChain);
+                CreationAttribs, &m_pDevice, ppContexts.data(), m_SwapChainInitDesc, &m_pSwapChain);
         }
         break;
 #endif
@@ -309,7 +308,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 EngVkAttribs.EnableValidation = false;
             }
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, SCDesc);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, m_SwapChainInitDesc);
             ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
             auto* pFactoryVk = GetEngineFactoryVk();
             m_pEngineFactory = pFactoryVk;
@@ -319,7 +318,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 LOG_ERROR_AND_THROW("Failed to initialize Vulkan.");
             }
             if (!m_pSwapChain && pWindow != nullptr)
-                pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], SCDesc, *pWindow, &m_pSwapChain);
+                pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], m_SwapChainInitDesc, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
@@ -330,13 +329,13 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
             EngineMtlCreateInfo MtlAttribs;
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, SCDesc);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, m_SwapChainInitDesc);
             ppContexts.resize(1 + MtlAttribs.NumDeferredContexts);
             auto* pFactoryMtl = GetEngineFactoryMtl();
             pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && pWindow != nullptr)
-                pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], SCDesc, *pWindow, &m_pSwapChain);
+                pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], m_SwapChainInitDesc, *pWindow, &m_pSwapChain);
         }
         break;
 #endif
@@ -398,14 +397,6 @@ void SampleApp::InitializeSample()
         }
     }
 #endif
-
-    //auto UIScale = m_TheSample->GetUIScale();
-    //if(UIScale != 1)
-    //{
-    //    std::stringstream fontscaling;
-    //    fontscaling << " GLOBAL fontscaling=" << UIScale;
-    //    TwDefine(fontscaling.str().c_str());
-    //}
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
@@ -725,7 +716,7 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 
 void SampleApp::Render()
 {
-    if (!m_pImmediateContext)
+    if (!m_pImmediateContext || !m_pSwapChain)
         return;
 
     ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();

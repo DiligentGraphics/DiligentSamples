@@ -119,6 +119,9 @@ protected:
     bool         m_bShowUI             = true;
     double       m_CurrentTime         = 0;
 
+    // We will need this when we have to recreate the swap chain (on Android)
+    SwapChainDesc m_SwapChainInitDesc;
+
     struct ScreenCaptureInfo
     {
         bool              AllowCapture = false;

@@ -74,6 +74,11 @@ public:
         return m_InputController;
     }
 
+    void ResetSwapChain(ISwapChain* pNewSwapChain)
+    {
+        m_pSwapChain = pNewSwapChain;
+    }
+
 protected:
     // Returns projection matrix adjusted to the current screen orientation
     float4x4 GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const;

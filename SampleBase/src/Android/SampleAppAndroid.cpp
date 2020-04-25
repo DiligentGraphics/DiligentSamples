@@ -98,7 +98,17 @@ public:
         {
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
-                break;
+            {
+                // Create a new swap chain for the new window
+                m_pSwapChain.Release();
+                AndroidNativeWindow AndroidWindow;
+                AndroidWindow.pAWindow = window;
+                GetEngineFactoryVk()->CreateSwapChainVk(m_pDevice, m_pImmediateContext,
+                                                        m_SwapChainInitDesc, AndroidWindow,
+                                                        &m_pSwapChain);
+                m_TheSample->ResetSwapChain(m_pSwapChain);
+                return m_pSwapChain ? EGL_SUCCESS : EGL_NOT_INITIALIZED;
+            }
 #endif
 
             case RENDER_DEVICE_TYPE_GLES:
@@ -117,6 +127,8 @@ public:
         {
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
+                // Destroy the swap chain as we will need to recreate it for the new window
+                m_pSwapChain.Release();
                 break;
 #endif
 
@@ -137,6 +149,7 @@ public:
         {
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
+
                 break;
 #endif
 
