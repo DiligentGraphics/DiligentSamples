@@ -544,10 +544,18 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             }
             else if (StrCmpNoCase(Arg.c_str(), "GL", Arg.length()) == 0)
             {
-#if GL_SUPPORTED || GLES_SUPPORTED
+#if GL_SUPPORTED
                 m_DeviceType = RENDER_DEVICE_TYPE_GL;
 #else
                 LOG_ERROR_MESSAGE("OpenGL is not supported. Please select another device type");
+#endif
+            }
+            else if (StrCmpNoCase(Arg.c_str(), "GLES", Arg.length()) == 0)
+            {
+#if GLES_SUPPORTED
+                m_DeviceType = RENDER_DEVICE_TYPE_GLES;
+#else
+                LOG_ERROR_MESSAGE("OpenGLES is not supported. Please select another device type");
 #endif
             }
             else if (StrCmpNoCase(Arg.c_str(), "VK", Arg.length()) == 0)
@@ -560,7 +568,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             }
             else
             {
-                LOG_ERROR_MESSAGE("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, VK");
+                LOG_ERROR_MESSAGE("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, GLES, VK");
             }
         }
         else if (!(Arg = GetArgument(pos, "capture_path")).empty())

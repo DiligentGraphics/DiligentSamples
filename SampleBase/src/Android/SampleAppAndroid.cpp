@@ -41,9 +41,6 @@ public:
     SampleAppAndroid()
     {
         m_DeviceType = RENDER_DEVICE_TYPE_GLES;
-#if VULKAN_SUPPORTED
-        m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
-#endif
     }
 
     virtual void Initialize() override final
