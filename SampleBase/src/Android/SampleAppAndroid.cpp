@@ -131,7 +131,10 @@ public:
 
             case RENDER_DEVICE_TYPE_GLES:
                 // Tear down the EGL context currently associated with the display.
-                m_RenderDeviceGLES->Suspend();
+                if (m_RenderDeviceGLES)
+                {
+                    m_RenderDeviceGLES->Suspend();
+                }
                 break;
 
             default:
@@ -151,7 +154,10 @@ public:
 #endif
 
             case RENDER_DEVICE_TYPE_GLES:
-                m_RenderDeviceGLES->Invalidate();
+                if (m_RenderDeviceGLES)
+                {
+                    m_RenderDeviceGLES->Invalidate();
+                }
                 break;
 
             default:
