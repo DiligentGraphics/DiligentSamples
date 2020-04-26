@@ -381,14 +381,15 @@ void GLTFViewer::Render()
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    float4x4 CameraView     = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
-    float4x4 CameraWorld    = CameraView.Inverse();
-    float3   CameraWorldPos = float3::MakeVector(CameraWorld[3]);
-    float    NearPlane      = 0.1f;
-    float    FarPlane       = 100.f;
-    float    aspectRatio    = static_cast<float>(m_pSwapChain->GetDesc().Width) / static_cast<float>(m_pSwapChain->GetDesc().Height);
-    // Projection matrix differs between DX and OpenGL
-    auto Proj = float4x4::Projection(PI_F / 4.f, aspectRatio, NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto     SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 CameraView      = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist) * SrfPreTransform;
+    float4x4 CameraWorld     = CameraView.Inverse();
+    float3   CameraWorldPos  = float3::MakeVector(CameraWorld[3]);
+
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+
     // Compute world-view-projection matrix
     auto CameraViewProj = CameraView * Proj;
 
