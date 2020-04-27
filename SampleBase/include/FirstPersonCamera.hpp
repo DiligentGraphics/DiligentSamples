@@ -29,6 +29,7 @@
 
 #include "BasicMath.hpp"
 #include "InputController.hpp"
+#include "GraphicsTypes.h"
 
 namespace Diligent
 {
@@ -42,11 +43,15 @@ public:
     void SetMoveSpeed(float MoveSpeed) { m_fMoveSpeed = MoveSpeed; }
     void SetRotationSpeed(float RotationSpeed) { m_fRotationSpeed = RotationSpeed; }
     void SetPos(const float3& Pos) { m_Pos = Pos; }
-    void SetProjAttribs(Float32 NearClipPlane,
-                        Float32 FarClipPlane,
-                        Float32 AspectRatio,
-                        Float32 FOV,
-                        bool    IsGL);
+
+    // AspectRatio = width / height accounting for surface pretransform
+    // (i.e. logical widht / logical height)
+    void SetProjAttribs(Float32           NearClipPlane,
+                        Float32           FarClipPlane,
+                        Float32           AspectRatio,
+                        Float32           FOV,
+                        SURFACE_TRANSFORM SrfPreTransform,
+                        bool              IsGL);
     void SetSpeedUpScales(Float32 SpeedUpScale, Float32 SuperSpeedUpScale);
 
 
@@ -65,11 +70,12 @@ public:
 
     struct ProjectionAttribs
     {
-        Float32 NearClipPlane = 1.f;
-        Float32 FarClipPlane  = 1000.f;
-        Float32 AspectRatio   = 1.f;
-        Float32 FOV           = PI_F / 4.f;
-        bool    IsGL          = false;
+        Float32           NearClipPlane = 1.f;
+        Float32           FarClipPlane  = 1000.f;
+        Float32           AspectRatio   = 1.f;
+        Float32           FOV           = PI_F / 4.f;
+        SURFACE_TRANSFORM PreTransform  = SURFACE_TRANSFORM_IDENTITY;
+        bool              IsGL          = false;
     };
     const ProjectionAttribs& GetProjAttribs() { return m_ProjAttribs; }
 

@@ -160,17 +160,41 @@ void FirstPersonCamera::SetRotation(float Yaw, float Pitch)
     m_fPitchAngle = Pitch;
 }
 
-void FirstPersonCamera::SetProjAttribs(Float32 NearClipPlane,
-                                       Float32 FarClipPlane,
-                                       Float32 AspectRatio,
-                                       Float32 FOV,
-                                       bool    IsGL)
+void FirstPersonCamera::SetProjAttribs(Float32           NearClipPlane,
+                                       Float32           FarClipPlane,
+                                       Float32           AspectRatio,
+                                       Float32           FOV,
+                                       SURFACE_TRANSFORM SrfPreTransform,
+                                       bool              IsGL)
 {
     m_ProjAttribs.NearClipPlane = NearClipPlane;
     m_ProjAttribs.FarClipPlane  = FarClipPlane;
     m_ProjAttribs.AspectRatio   = AspectRatio;
     m_ProjAttribs.FOV           = FOV;
+    m_ProjAttribs.PreTransform  = SrfPreTransform;
     m_ProjAttribs.IsGL          = IsGL;
+
+    float XScale, YScale;
+    if (SrfPreTransform == SURFACE_TRANSFORM_ROTATE_90 ||
+        SrfPreTransform == SURFACE_TRANSFORM_ROTATE_270 ||
+        SrfPreTransform == SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90 ||
+        SrfPreTransform == SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270)
+    {
+        // When the screen is rotated, vertical FOV becomes horizontal FOV
+        XScale = 1.f / std::tan(FOV / 2.f);
+        // Aspect ratio is width/height accounting for pretransform
+        YScale = XScale / AspectRatio;
+    }
+    else
+    {
+        YScale = 1.f / std::tan(FOV / 2.f);
+        XScale = YScale / AspectRatio;
+    }
+
+    float4x4 Proj;
+    Proj._11 = XScale;
+    Proj._22 = YScale;
+    Proj.SetNearFarClipPlanes(NearClipPlane, FarClipPlane, IsGL);
 
     m_ProjMatrix = float4x4::Projection(m_ProjAttribs.FOV, m_ProjAttribs.AspectRatio, m_ProjAttribs.NearClipPlane, m_ProjAttribs.FarClipPlane, IsGL);
 }

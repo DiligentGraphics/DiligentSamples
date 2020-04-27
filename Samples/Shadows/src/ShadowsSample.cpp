@@ -575,7 +575,10 @@ void ShadowsSample::Render()
         *LightData = m_LightAttribs;
     }
 
-    const auto& CameraView     = m_Camera.GetViewMatrix();
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    const auto  CameraView     = m_Camera.GetViewMatrix() * SrfPreTransform;
     const auto& CameraWorld    = m_Camera.GetWorldMatrix();
     float3      CameraWorldPos = float3::MakeVector(CameraWorld[3]);
     const auto& Proj           = m_Camera.GetProjMatrix();
@@ -683,7 +686,8 @@ void ShadowsSample::WindowResize(Uint32 Width, Uint32 Height)
     float NearPlane   = 0.1f;
     float FarPlane    = 250.f;
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
-    m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f, m_pDevice->GetDeviceCaps().IsGLDevice());
+    m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f,
+                            m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceCaps().IsGLDevice());
 }
 
 } // namespace Diligent
