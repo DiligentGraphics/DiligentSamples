@@ -56,7 +56,6 @@ public:
         if (m_SampleInitialized)
         {
             const auto& SCDesc = m_pSwapChain->GetDesc();
-            static_cast<ImGuiImplUWP*>(m_pImGui.get())->SetDisplaySize(SCDesc.Width, SCDesc.Height);
             m_TheSample->WindowResize(SCDesc.Width, SCDesc.Height);
         }
     }

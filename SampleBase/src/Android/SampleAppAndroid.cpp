@@ -69,7 +69,7 @@ public:
         Window.pAWindow = app_->window;
         InitializeDiligentEngine(&Window);
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplAndroid(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+        m_pImGui.reset(new ImGuiImplAndroid(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
 
         switch (m_DeviceType)
         {

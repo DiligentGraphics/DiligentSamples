@@ -709,7 +709,8 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 
     if (m_pImGui)
     {
-        m_pImGui->NewFrame();
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_pImGui->NewFrame(SCDesc.Width, SCDesc.Height, SCDesc.PreTransform);
         if (m_bShowAdaptersDialog)
         {
             UpdateAdaptersDialog();
