@@ -44,7 +44,7 @@ public:
         MacOSNativeWindow MacWindow{view};
         InitializeDiligentEngine(&MacWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplMacOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+        m_pImGui.reset(new ImGuiImplMacOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
         InitializeSample();
     }
 
@@ -67,8 +67,6 @@ public:
     {
         std::lock_guard<std::mutex> lock(AppMutex);
         SampleApp::WindowResize(width, height);
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        static_cast<ImGuiImplMacOS*>(m_pImGui.get())->SetDisplaySize(SCDesc.Width, SCDesc.Height);
     }
 
     virtual void Present()override

@@ -37,20 +37,13 @@ public:
         IOSNativeWindow IOSWindow{layer};
         InitializeDiligentEngine(&IOSWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplIOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+        m_pImGui.reset(new ImGuiImplIOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
         InitializeSample();
     }
 
     virtual void Render() override
     {
         SampleApp::Render();
-    }
-
-    virtual void Update(double CurrTime, double ElapsedTime) override
-    {
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        static_cast<ImGuiImplIOS*>(m_pImGui.get())->SetDisplaySize(SCDesc.Width, SCDesc.Height);
-        SampleApp::Update(CurrTime, ElapsedTime);
     }
 
     virtual void OnTouchBegan(float x, float y) override final
