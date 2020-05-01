@@ -36,6 +36,7 @@
 #    define NOMINMAX
 #endif
 #include <Windows.h>
+#include <crtdbg.h>
 
 #ifndef PLATFORM_WIN32
 #    define PLATFORM_WIN32 1

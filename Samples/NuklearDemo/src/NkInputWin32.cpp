@@ -25,6 +25,8 @@
  *  of the possibility of such damages.
  */
 
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_VARARGS
 #include "../../../ThirdParty/nuklear/nuklear.h"
 
 #ifndef NOMINMAX
