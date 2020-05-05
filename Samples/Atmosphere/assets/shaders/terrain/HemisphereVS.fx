@@ -38,10 +38,10 @@ void GetSunLightExtinctionAndSkyLight(in float3 f3PosWS,
     float3 f3DirFromEarthCentre = f3PosWS - f3EarthCentre;
     float fDistToCentre = length(f3DirFromEarthCentre);
     f3DirFromEarthCentre /= fDistToCentre;
-    float fHeightAboveSurface = fDistToCentre - g_MediaParams.fEarthRadius;
+    float fAltitude = fDistToCentre - g_MediaParams.fEarthRadius;
     float fCosZenithAngle = dot(f3DirFromEarthCentre, -g_LightAttribs.f4Direction.xyz);
 
-    float fRelativeHeightAboveSurface = fHeightAboveSurface / g_MediaParams.fAtmTopHeight;
+    float fRelativeHeightAboveSurface = (fAltitude - g_MediaParams.fAtmBottomAltitude) * g_MediaParams.fAtmAltitudeRangeInv;
     float2 f2ParticleDensityToAtmTop = g_tex2DOccludedNetDensityToAtmTop.SampleLevel( g_tex2DOccludedNetDensityToAtmTop_sampler, float2(fRelativeHeightAboveSurface, fCosZenithAngle*0.5 + 0.5), 0 );
     
     float3 f3RlghOpticalDepth = g_MediaParams.f4RayleighExtinctionCoeff.rgb * f2ParticleDensityToAtmTop.x;

@@ -241,7 +241,7 @@ void AtmosphereSample::UpdateUI()
                             ImGui::HelpMarker("Initial ray marching sample spacing on an epipolar line. Additional samples are added at discontinuities.");
                         }
 
-                        ImGui::SliderFloat("Refinement Threshold", &m_PPAttribs.fRefinementThreshold, 0, 0.5f);
+                        ImGui::SliderFloat("Refinement Threshold", &m_PPAttribs.fRefinementThreshold, 0.001f, 0.5f);
                         ImGui::HelpMarker("Refinement threshold controls detection of discontinuities. Smaller values produce more samples and higher quality, but at a higher performance cost.");
 
                         ImGui::Checkbox("Show Sampling", &m_PPAttribs.bShowSampling);

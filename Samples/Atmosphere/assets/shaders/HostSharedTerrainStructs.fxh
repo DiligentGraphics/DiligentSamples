@@ -47,7 +47,7 @@ struct TerrainAttribs
     TerrainAttribs() : 
         m_fElevationScale(0.1f),
 		m_fElevationSamplingInterval(32.f),
-        m_fEarthRadius(6360000.f),
+        m_fEarthRadius(6371000.f),
         m_fBaseMtrlTilingScale(200.f),
         m_f4TilingScale(500.f, 800.f, 80.f, 80.f)
     {
