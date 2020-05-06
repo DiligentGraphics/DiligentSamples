@@ -28,6 +28,7 @@ set(TERRAIN_SHADERS
 set(SHADERS
     assets/shaders/HostSharedTerrainStructs.fxh
 	../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh
+    ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringFunctions.fxh
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
     ../../../DiligentFX/Shaders/Common/public/Shadows.fxh
@@ -89,6 +90,7 @@ PRIVATE
 
 add_custom_command(TARGET Atmosphere PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringFunctions.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/Shadows.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"

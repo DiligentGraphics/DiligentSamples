@@ -2,6 +2,7 @@
 #include "HostSharedTerrainStructs.fxh"
 #include "ToneMappingStructures.fxh"
 #include "EpipolarLightScatteringStructures.fxh"
+#include "EpipolarLightScatteringFunctions.fxh"
 #include "TerrainShadersCommon.fxh"
 
 cbuffer cbTerrainAttribs
@@ -30,30 +31,6 @@ SamplerState        g_tex2DOccludedNetDensityToAtmTop_sampler;
 Texture2D< float3 > g_tex2DAmbientSkylight;
 SamplerState        g_tex2DAmbientSkylight_sampler;
 
-void GetSunLightExtinctionAndSkyLight(in float3 f3PosWS,
-                                      out float3 f3Extinction,
-                                      out float3 f3AmbientSkyLight)
-{
-    float3 f3EarthCentre = float3(0.0, -g_MediaParams.fEarthRadius, 0.0);
-    float3 f3DirFromEarthCentre = f3PosWS - f3EarthCentre;
-    float fDistToCentre = length(f3DirFromEarthCentre);
-    f3DirFromEarthCentre /= fDistToCentre;
-    float fAltitude = fDistToCentre - g_MediaParams.fEarthRadius;
-    float fCosZenithAngle = dot(f3DirFromEarthCentre, -g_LightAttribs.f4Direction.xyz);
-
-    float fRelativeHeightAboveSurface = (fAltitude - g_MediaParams.fAtmBottomAltitude) * g_MediaParams.fAtmAltitudeRangeInv;
-    float2 f2ParticleDensityToAtmTop = g_tex2DOccludedNetDensityToAtmTop.SampleLevel( g_tex2DOccludedNetDensityToAtmTop_sampler, float2(fRelativeHeightAboveSurface, fCosZenithAngle*0.5 + 0.5), 0 );
-    
-    float3 f3RlghOpticalDepth = g_MediaParams.f4RayleighExtinctionCoeff.rgb * f2ParticleDensityToAtmTop.x;
-    float3 f3MieOpticalDepth  = g_MediaParams.f4MieExtinctionCoeff.rgb      * f2ParticleDensityToAtmTop.y;
-        
-    // And total extinction for the current integration point:
-    f3Extinction = exp( -(f3RlghOpticalDepth + f3MieOpticalDepth) );
-    
-    f3AmbientSkyLight = g_tex2DAmbientSkylight.SampleLevel( g_tex2DAmbientSkylight_sampler, float2(fCosZenithAngle*0.5 + 0.5, 0.5), 0 );
-}
-
-
 void HemisphereVS(in float3 f3PosWS : ATTRIB0,
                   in float2 f2MaskUV0 : ATTRIB1,
                   out float4 f4PosPS : SV_Position,
@@ -76,5 +53,14 @@ void HemisphereVS(in float3 f3PosWS : ATTRIB0,
     VSOut.f3Tangent = normalize( cross(f3Normal, float3(0.0,0.0,1.0)) );
     VSOut.f3Bitangent = normalize( cross(VSOut.f3Tangent, f3Normal) );
 
-    GetSunLightExtinctionAndSkyLight(f3PosWS, VSOut.f3SunLightExtinction, VSOut.f3AmbientSkyLight);
+    GetSunLightExtinctionAndSkyLight(f3PosWS,
+        float3(0.0, -g_MediaParams.fEarthRadius, 0.0),
+        g_LightAttribs.f4Direction.xyz,
+        g_MediaParams,
+        g_tex2DOccludedNetDensityToAtmTop,
+        g_tex2DOccludedNetDensityToAtmTop_sampler,
+        g_tex2DAmbientSkylight,
+        g_tex2DAmbientSkylight_sampler,
+        VSOut.f3SunLightExtinction,
+        VSOut.f3AmbientSkyLight);
 }
