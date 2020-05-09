@@ -23,6 +23,7 @@ set_target_properties(Tutorial15_MultipleWindows PROPERTIES
 )
 
 target_compile_definitions(Tutorial15_MultipleWindows PRIVATE ENGINE_DLL=1)
+target_link_libraries(Tutorial15_MultipleWindows PRIVATE Diligent-BuildSettings)
 
 if(D3D11_SUPPORTED)
     target_link_libraries(Tutorial15_MultipleWindows PRIVATE Diligent-GraphicsEngineD3D11-shared)
