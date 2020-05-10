@@ -273,17 +273,30 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #    endif
             auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
             m_pEngineFactory     = pFactoryOpenGL;
-            EngineGLCreateInfo CreationAttribs;
-            CreationAttribs.Window = *pWindow;
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, CreationAttribs, m_SwapChainInitDesc);
-            if (CreationAttribs.NumDeferredContexts != 0)
+            EngineGLCreateInfo EngineCI;
+            EngineCI.Window = *pWindow;
+
+#    ifdef DILIGENT_DEVELOPMENT
+            EngineCI.CreateDebugContext = true;
+#    endif
+            if (m_ValidationLevel >= 1)
+            {
+                EngineCI.CreateDebugContext = true;
+            }
+            else if (m_ValidationLevel == 0)
+            {
+                EngineCI.CreateDebugContext = false;
+            }
+
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
+            if (EngineCI.NumDeferredContexts != 0)
             {
                 LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");
-                CreationAttribs.NumDeferredContexts = 0;
+                EngineCI.NumDeferredContexts = 0;
             }
-            ppContexts.resize(1 + CreationAttribs.NumDeferredContexts);
+            ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryOpenGL->CreateDeviceAndSwapChainGL(
-                CreationAttribs, &m_pDevice, ppContexts.data(), m_SwapChainInitDesc, &m_pSwapChain);
+                EngineCI, &m_pDevice, ppContexts.data(), m_SwapChainInitDesc, &m_pSwapChain);
         }
         break;
 #endif

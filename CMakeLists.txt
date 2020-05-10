@@ -109,6 +109,9 @@ if(NOT ${DILIGENT_BUILD_SAMPLE_BASE_ONLY} AND TARGET Diligent-SampleBase)
     add_subdirectory(Tutorials)
 endif()
 
+if(PLATFORM_ANDROID)
+    add_subdirectory(Android/HelloAR)
+endif()
 
 # Create a custom target to run source code formatting validation command
 add_format_validation_target(DiligentSamples "${CMAKE_CURRENT_SOURCE_DIR}" DiligentSamples)

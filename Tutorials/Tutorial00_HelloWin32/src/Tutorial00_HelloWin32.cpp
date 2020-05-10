@@ -196,6 +196,9 @@ public:
 
                 EngineGLCreateInfo EngineCI;
                 EngineCI.Window.hWnd = hWnd;
+#    ifdef DILIGENT_DEBUG
+                EngineCI.CreateDebugContext = true;
+#    endif
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
             }
             break;

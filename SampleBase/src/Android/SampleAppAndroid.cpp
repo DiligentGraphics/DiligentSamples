@@ -63,19 +63,19 @@ public:
         {
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
-                GetEngineFactoryVk()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
+                GetEngineFactoryVk()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str(), nullptr);
                 break;
 #endif
 
             case RENDER_DEVICE_TYPE_GLES:
-                GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str());
+                GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity, native_activity_class_name_.c_str(), nullptr);
                 break;
 
             default:
                 UNEXPECTED("Unexpected device type");
         }
 
-        AndroidFileSystem::Init(app_->activity, native_activity_class_name_.c_str());
+        AndroidFileSystem::Init(app_->activity, native_activity_class_name_.c_str(), nullptr);
 
         SampleApp::Initialize();
 

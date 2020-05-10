@@ -194,6 +194,9 @@ public:
         EngineGLCreateInfo CreationAttribs;
         CreationAttribs.Window.WindowId = NativeWindowHandle;
         CreationAttribs.Window.pDisplay = display;
+#    ifdef DILIGENT_DEBUG
+        CreationAttribs.CreateDebugContext = true;
+#    endif
         pFactoryOpenGL->CreateDeviceAndSwapChainGL(
             CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
 
