@@ -112,12 +112,14 @@ void PointCloudRenderer::Initialize(IRenderDevice* pDevice)
 
         PSODesc.Name = "Point cloud PSO";
 
-        PSODesc.IsComputePipeline                             = false;
-        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-        PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
-        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_POINT_LIST;
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+        PSODesc.IsComputePipeline                                  = false;
+        PSODesc.GraphicsPipeline.NumRenderTargets                  = 1;
+        PSODesc.GraphicsPipeline.RTVFormats[0]                     = TEX_FORMAT_RGBA8_UNORM;
+        PSODesc.GraphicsPipeline.DSVFormat                         = TEX_FORMAT_D24_UNORM_S8_UINT;
+        PSODesc.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_POINT_LIST;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_NONE;
+        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
+        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False;
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
