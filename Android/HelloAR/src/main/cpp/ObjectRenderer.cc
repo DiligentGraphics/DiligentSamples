@@ -44,6 +44,17 @@ const float4 kLightDirection(0.0f, 1.0f, 0.0f, 0.0f);
 
 } // namespace
 
+ObjRenderer::ObjRenderer() :
+    m_CubeTransformMat{float4x4::Identity()}
+{
+    // Inverse Z axis
+    m_CubeTransformMat._33 = -1;
+    // Translate to align bottom face with 0
+    m_CubeTransformMat = float4x4::Translation(0, 1, 0).Transpose() * m_CubeTransformMat;
+    // Scale
+    m_CubeTransformMat = float4x4::Scale(0.075f) * m_CubeTransformMat;
+}
+
 void ObjRenderer::Initialize(IRenderDevice* pDevice)
 {
     // Create shader constant buffer
@@ -75,14 +86,13 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
 
         PSODesc.Name = "Object rendering PSO";
 
-        PSODesc.IsComputePipeline                                     = false;
-        PSODesc.GraphicsPipeline.NumRenderTargets                     = 1;
-        PSODesc.GraphicsPipeline.RTVFormats[0]                        = TEX_FORMAT_RGBA8_UNORM;
-        PSODesc.GraphicsPipeline.DSVFormat                            = TEX_FORMAT_D24_UNORM_S8_UINT;
-        PSODesc.GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        PSODesc.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
+        PSODesc.IsComputePipeline                             = false;
+        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+        PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
+        PSODesc.GraphicsPipeline.DSVFormat                    = TEX_FORMAT_D24_UNORM_S8_UINT;
+        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -145,15 +155,11 @@ void ObjRenderer::Draw(IDeviceContext* pContext,
                        const float*    color_correction4,
                        const float*    object_color4)
 {
-    float4x4 axis_swap_mat;
-    axis_swap_mat._11 = 1;
-    axis_swap_mat._23 = 1;
-    axis_swap_mat._32 = -1;
-    axis_swap_mat._44 = 1;
+    float4x4 mv_mat  = view_mat * model_mat * m_CubeTransformMat;
+    float4x4 mvp_mat = projection_mat * mv_mat;
 
-    float4x4 mvp_mat              = projection_mat * view_mat * model_mat * axis_swap_mat;
-    float4x4 mv_mat               = view_mat * model_mat * axis_swap_mat;
-    float4   view_light_direction = normalize(mv_mat * kLightDirection);
+
+    float4 view_light_direction = normalize(mv_mat * kLightDirection);
 
     {
         struct ShaderConstants

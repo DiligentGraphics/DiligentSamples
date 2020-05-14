@@ -45,7 +45,7 @@ namespace hello_ar
 class ObjRenderer
 {
 public:
-    ObjRenderer()  = default;
+    ObjRenderer();
     ~ObjRenderer() = default;
 
     // Crates the resources. Must be called on the OpenGL thread prior to any other calls.
@@ -65,6 +65,8 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer>                m_pShaderConstants;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>                m_pCubeVertexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>                m_pCubeIndexBuffer;
+
+    Diligent::float4x4 m_CubeTransformMat;
 };
 
 } // namespace hello_ar

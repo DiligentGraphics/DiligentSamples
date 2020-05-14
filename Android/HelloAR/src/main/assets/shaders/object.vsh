@@ -24,6 +24,6 @@ struct PSInput
 void main(in  VSInput VSIn,
           out PSInput PSIn) 
 {
-    PSIn.Pos = mul(float4((VSIn.Pos + float3(0.0, 0.0, 1.0)) * 0.075, 1.0), g_ModelViewProjection);
+    PSIn.Pos = mul(float4(VSIn.Pos, 1.0), g_ModelViewProjection);
     PSIn.UV  = VSIn.UV;
 }
