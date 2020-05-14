@@ -171,7 +171,13 @@ void HelloArApplication::OnDrawFrame()
     }
 
     glViewport(0, 0, width_, height_);
+    glScissor(0, 0, width_, height_);
 
+    // The pixel ownership test, the scissor test, dithering, and the buffer writemasks affect the
+    // operation of glClear.
+    // Alpha function, blend function, logical operation, stenciling, texture mapping, and
+    // depth-buffering are ignored by glClear.
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClearDepthf(1.f);
@@ -207,7 +213,7 @@ void HelloArApplication::OnDrawFrame()
 
     // Invalidate state
     device_context_->InvalidateState();
-    // Restore original framebuffer
+    // Restore original framebuffer that was unbound by InvalidateState()
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DrawFramebuffer);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, ReadFramebuffer);
 
@@ -315,14 +321,10 @@ void HelloArApplication::OnDrawFrame()
         ArPointCloud_release(ar_point_cloud);
     }
 
-    // Reset the state. Without it something somewhere messes up some state, which brakes rendering.
-    device_context_->InvalidateState();
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DrawFramebuffer);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, ReadFramebuffer);
+    // We never call Present, so explicitly call FinishFrame()
+    device_context_->FinishFrame();
+
     glDepthMask(GL_TRUE);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glUseProgram(0);
     glBindProgramPipeline(0);
     glBindVertexArray(0);
