@@ -39,6 +39,7 @@ To build and run the applications in the module, please follow the [instructions
   - [Shadows](https://github.com/DiligentGraphics/DiligentSamples#shadows)
   - [Dear ImGui Demo](https://github.com/DiligentGraphics/DiligentSamples#dear-imgui-demo)
   - [Nuklear Demo](https://github.com/DiligentGraphics/DiligentSamples#nuklear-demo)
+  - [Hello AR](https://github.com/DiligentGraphics/DiligentSamples#hello-ar)
 - [Build and Run Instructions](https://github.com/DiligentGraphics/DiligentSamples#build-and-run-instructions)
 - [License](https://github.com/DiligentGraphics/DiligentSamples#license)
 - [Contributing](https://github.com/DiligentGraphics/DiligentSamples#contributing)
@@ -229,6 +230,13 @@ This sample demonstrates the integration of the engine with [dear imgui](https:/
 ![](Samples/NuklearDemo/Screenshot.png)
 
 This sample demonstrates the integration of the engine with [nuklear](https://github.com/vurtun/nuklear) UI library.
+
+
+## [Hello AR](Android/HelloAR)
+
+![](Android/HelloAR/Screenshot.png)
+
+This sample demonstrates how to use Diligent Engine in a basic Android AR application.
 
 
 # Build and Run Instructions
