@@ -630,6 +630,9 @@ void AtmosphereSample::Render()
 
         m_PPAttribs.f2ShadowMapTexelSize = float2(1.f / static_cast<float>(m_ShadowSettings.Resolution), 1.f / static_cast<float>(m_ShadowSettings.Resolution));
         m_PPAttribs.uiMaxSamplesOnTheRay = m_ShadowSettings.Resolution;
+
+        m_PPAttribs.uiNumSamplesOnTheRayAtDepthBreak = 32u;
+
         // During the ray marching, on each step we move by the texel size in either horz
         // or vert direction. So resolution of min/max mipmap should be the same as the
         // resolution of the original shadow map
