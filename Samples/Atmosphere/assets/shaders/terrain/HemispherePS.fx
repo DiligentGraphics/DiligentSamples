@@ -154,7 +154,10 @@ void HemispherePS(in float4 f4Pos : SV_Position,
     // We need to divide diffuse color by PI to get the reflectance value
     float3 SurfaceReflectance = SurfaceColor * EARTH_REFLECTANCE / PI;
 
-    FilteredShadow Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler, VSOut.f3PosInLightViewSpace.xyz, VSOut.fCameraSpaceZ);
+    float fCameraSpaceZ = f4Pos.w;
+    FilteredShadow Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler,
+                                            VSOut.f3PosInLightViewSpace.xyz, ddx(VSOut.f3PosInLightViewSpace.xyz), ddy(VSOut.f3PosInLightViewSpace.xyz),
+                                            fCameraSpaceZ);
     float DiffuseIllumination = max(0.0, dot(f3Normal, -g_LightAttribs.f4Direction.xyz));
     
     float3 f3CascadeColor = float3(0.0, 0.0, 0.0);

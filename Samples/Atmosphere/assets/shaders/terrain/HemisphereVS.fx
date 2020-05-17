@@ -46,7 +46,6 @@ void HemisphereVS(in float3 f3PosWS : ATTRIB0,
     
     float4 ShadowMapSpacePos = mul( float4(f3PosWS,1.0), g_LightAttribs.ShadowAttribs.mWorldToLightView);
     VSOut.f3PosInLightViewSpace = ShadowMapSpacePos.xyz / ShadowMapSpacePos.w;
-    VSOut.fCameraSpaceZ = f4PosPS.w;
     VSOut.f2MaskUV0 = f2MaskUV0;
     float3 f3Normal = normalize(f3PosWS - float3(0.0, -g_TerrainAttribs.m_fEarthRadius, 0.0));
     VSOut.f3Normal = f3Normal;

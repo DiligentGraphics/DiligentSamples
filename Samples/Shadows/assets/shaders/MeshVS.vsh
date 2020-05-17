@@ -29,7 +29,6 @@ struct VSOutput
     float3 PosInLightViewSpace 	: LIGHT_SPACE_POS;
     float3 NormalWS 	        : NORMALWS;
     float2 TexCoord 	        : TEXCOORD;
-    float  CameraSpaceZ	        : CAM_SPACE_Z;
 };
 
 void MeshVS(in  VSInput  VSIn,
@@ -43,7 +42,6 @@ void MeshVS(in  VSInput  VSIn,
 #endif
 
     VSOut.PositionPS   = mul(float4(VSIn.Position, 1.0), g_CameraAttribs.mViewProj);
-    VSOut.CameraSpaceZ = VSOut.PositionPS.w;
     VSOut.NormalWS     = VSIn.Normal;
     VSOut.TexCoord     = VSIn.TexCoord;
 }

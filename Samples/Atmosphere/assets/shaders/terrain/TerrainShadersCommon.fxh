@@ -32,7 +32,6 @@ struct HemisphereVSOutput
     float2 TileTexUV  : TileTextureUV;
     float3 f3Normal : Normal;
     float3 f3PosInLightViewSpace : POS_IN_LIGHT_VIEW_SPACE;
-    float fCameraSpaceZ : CAMERA_SPACE_Z;
     float2 f2MaskUV0 : MASK_UV0;
     float3 f3Tangent : TANGENT;
     float3 f3Bitangent : BITANGENT;
