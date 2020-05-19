@@ -681,6 +681,10 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         {
             m_GoldenImgPixelTolerance = atoi(Arg.c_str());
         }
+        else if (!(Arg = GetArgument(pos, "vsync")).empty())
+        {
+            m_bVSync = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || (StrCmpNoCase(Arg.c_str(), "on", Arg.length()) == 0) || Arg == "1";
+        }
 
         pos = strchr(pos, '-');
     }
