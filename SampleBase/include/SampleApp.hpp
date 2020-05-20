@@ -118,6 +118,7 @@ protected:
     bool         m_bShowAdaptersDialog = true;
     bool         m_bShowUI             = true;
     double       m_CurrentTime         = 0;
+    Uint32       m_MaxFrameLatency     = SwapChainDesc{}.BufferCount;
 
     // We will need this when we have to recreate the swap chain (on Android)
     SwapChainDesc m_SwapChainInitDesc;

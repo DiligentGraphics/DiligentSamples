@@ -60,6 +60,7 @@
 
 #include "imgui.h"
 #include "ImGuiImplDiligent.hpp"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {
@@ -413,6 +414,8 @@ void SampleApp::InitializeSample()
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
+    m_MaxFrameLatency = SCDesc.BufferCount;
+
     std::vector<IDeviceContext*> ppContexts(1 + m_pDeferredContexts.size());
     ppContexts[0]         = m_pImmediateContext;
     Uint32 NumDeferredCtx = static_cast<Uint32>(m_pDeferredContexts.size());
@@ -493,6 +496,39 @@ void SampleApp::UpdateAdaptersDialog()
         }
 
         ImGui::Checkbox("VSync", &m_bVSync);
+
+        if (m_pDevice->GetDeviceCaps().IsD3DDevice())
+        {
+            // clang-format off
+            std::pair<Uint32, const char*> FrameLatencies[] = 
+            {
+                {1, "1"},
+                {2, "2"},
+                {3, "3"},
+                {4, "4"},
+                {5, "5"},
+                {6, "6"},
+                {7, "7"},
+                {8, "8"},
+                {9, "9"},
+                {10, "10"}
+            };
+            // clang-format on
+
+            if (SCDesc.BufferCount <= _countof(FrameLatencies) && m_MaxFrameLatency <= _countof(FrameLatencies))
+            {
+                ImGui::SetNextItemWidth(120);
+                auto NumFrameLatencyItems = std::max(std::max(m_MaxFrameLatency, SCDesc.BufferCount), Uint32{4});
+                if (ImGui::Combo("Max frame latency", &m_MaxFrameLatency, FrameLatencies, NumFrameLatencyItems))
+                {
+                    m_pSwapChain->SetMaximumFrameLatency(m_MaxFrameLatency);
+                }
+            }
+            else
+            {
+                // 10+ buffer swap chain or frame latency? Something is not quite right
+            }
+        }
     }
     ImGui::End();
 #endif
