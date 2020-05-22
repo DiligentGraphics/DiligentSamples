@@ -37,6 +37,10 @@ float4 MeshPS(VSOutput VSOut) : SV_TARGET
 
     FilteredShadow Shadow;
     float CameraSpaceZ = VSOut.PositionPS.w;
+#   ifdef VULKAN
+        // In Vulkan SV_Position.w == 1 / VSOutput.SV_Position.w
+        CameraSpaceZ = 1.0 / CameraSpaceZ;
+#   endif
 #   if SHADOW_MODE == SHADOW_MODE_PCF
         Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler,
                                  VSOut.PosInLightViewSpace, ddx(VSOut.PosInLightViewSpace), ddy(VSOut.PosInLightViewSpace),

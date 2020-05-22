@@ -155,6 +155,10 @@ void HemispherePS(in float4 f4Pos : SV_Position,
     float3 SurfaceReflectance = SurfaceColor * EARTH_REFLECTANCE / PI;
 
     float fCameraSpaceZ = f4Pos.w;
+#   ifdef VULKAN
+        // In Vulkan SV_Position.w == 1 / VSOutput.SV_Position.w
+        fCameraSpaceZ = 1.0 / fCameraSpaceZ;
+#   endif
     FilteredShadow Shadow = FilterShadowMap(g_LightAttribs.ShadowAttribs, g_tex2DShadowMap, g_tex2DShadowMap_sampler,
                                             VSOut.f3PosInLightViewSpace.xyz, ddx(VSOut.f3PosInLightViewSpace.xyz), ddy(VSOut.f3PosInLightViewSpace.xyz),
                                             fCameraSpaceZ);
