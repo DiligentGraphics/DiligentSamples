@@ -11,6 +11,8 @@ set(INCLUDE
 )
 
 set(SHADERS
+    assets/shaders/BoundBox.vsh
+    assets/shaders/BoundBox.psh
     assets/shaders/env_map.vsh
     assets/shaders/env_map.psh
 )

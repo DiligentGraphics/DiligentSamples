@@ -90,9 +90,9 @@ void GLTFViewer::LoadModel(const char* Path)
     m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
     // Center and scale model
-    float3 ModelDim{m_Model->aabb[0][0], m_Model->aabb[1][1], m_Model->aabb[2][2]};
+    float3 ModelDim{m_Model->AABBTransform[0][0], m_Model->AABBTransform[1][1], m_Model->AABBTransform[2][2]};
     float  Scale     = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
-    auto   Translate = -float3(m_Model->aabb[3][0], m_Model->aabb[3][1], m_Model->aabb[3][2]);
+    auto   Translate = -float3(m_Model->AABBTransform[3][0], m_Model->AABBTransform[3][1], m_Model->AABBTransform[3][2]);
     Translate += -0.5f * ModelDim;
     float4x4 InvYAxis = float4x4::Identity();
     InvYAxis._22      = -1;
@@ -153,6 +153,8 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
 
     CreateEnvMapPSO();
+
+    CreateBoundBoxPSO(BackBufferFmt, DepthBufferFmt);
 
     m_LightDirection = normalize(float3(0.5f, -0.6f, -0.2f));
 
@@ -268,6 +270,11 @@ void GLTFViewer::UpdateUI()
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::RenderInfo::DebugViewType::SpecularIBL)]     = "Specular IBL";
             ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size()));
         }
+
+        ImGui::Combo("Bound box mode", reinterpret_cast<int*>(&m_BoundBoxMode),
+                     "None\0"
+                     "Local\0"
+                     "Global\0\0");
     }
     ImGui::End();
 }
@@ -367,6 +374,54 @@ void GLTFViewer::CreateEnvMapSRB()
     }
 }
 
+
+void GLTFViewer::CreateBoundBoxPSO(TEXTURE_FORMAT RTVFmt, TEXTURE_FORMAT DSVFmt)
+{
+    ShaderCreateInfo                               ShaderCI;
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.UseCombinedTextureSamplers = true;
+
+    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+    ShaderCI.Desc.Name       = "BoundBox VS";
+    ShaderCI.EntryPoint      = "BoundBoxVS";
+    ShaderCI.FilePath        = "BoundBox.vsh";
+    RefCntAutoPtr<IShader> pVS;
+    m_pDevice->CreateShader(ShaderCI, &pVS);
+
+    ShaderCI.Desc.Name       = "BoundBox PS";
+    ShaderCI.EntryPoint      = "BoundBoxPS";
+    ShaderCI.FilePath        = "BoundBox.psh";
+    ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+    RefCntAutoPtr<IShader> pPS;
+    m_pDevice->CreateShader(ShaderCI, &pPS);
+
+
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
+    PSODesc.Name = "BoundBox PSO";
+
+    PSODesc.GraphicsPipeline.NumRenderTargets = 1;
+    PSODesc.GraphicsPipeline.RTVFormats[0]    = RTVFmt;
+    PSODesc.GraphicsPipeline.DSVFormat        = DSVFmt;
+
+    PSODesc.GraphicsPipeline.pVS = pVS;
+    PSODesc.GraphicsPipeline.pPS = pPS;
+
+    PSODesc.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
+    PSODesc.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_LINE_LIST;
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_BoundBoxPSO);
+    m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
+    m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);
+}
+
 GLTFViewer::~GLTFViewer()
 {
 }
@@ -393,12 +448,36 @@ void GLTFViewer::Render()
     // Compute world-view-projection matrix
     auto CameraViewProj = CameraView * Proj;
 
+    m_RenderParams.ModelTransform = m_ModelTransform * m_ModelRotation.ToMatrix();
+
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
         CamAttribs->mProjT        = Proj.Transpose();
         CamAttribs->mViewProjT    = CameraViewProj.Transpose();
         CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
         CamAttribs->f4Position    = float4(CameraWorldPos, 1);
+
+        if (m_BoundBoxMode != BoundBoxMode::None)
+        {
+            float4x4 BBTransform;
+            if (m_BoundBoxMode == BoundBoxMode::Local)
+            {
+                BBTransform = m_Model->AABBTransform * m_RenderParams.ModelTransform;
+            }
+            else if (m_BoundBoxMode == BoundBoxMode::Global)
+            {
+                auto TransformedBB = BoundBox{m_Model->dimensions.min, m_Model->dimensions.max}.Transform(m_RenderParams.ModelTransform);
+                BBTransform        = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
+            }
+            else
+            {
+                UNEXPECTED("Unexpected bound box mode");
+            }
+
+
+            for (int row = 0; row < 4; ++row)
+                CamAttribs->f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
+        }
     }
 
     {
@@ -407,8 +486,15 @@ void GLTFViewer::Render()
         lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
     }
 
-    m_RenderParams.ModelTransform = m_ModelTransform * m_ModelRotation.ToMatrix();
     m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams);
+
+    if (m_BoundBoxMode != BoundBoxMode::None)
+    {
+        m_pImmediateContext->SetPipelineState(m_BoundBoxPSO);
+        m_pImmediateContext->CommitShaderResources(m_BoundBoxSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+        DrawAttribs DrawAttrs{24, DRAW_FLAG_VERIFY_ALL};
+        m_pImmediateContext->Draw(DrawAttrs);
+    }
 
     if (m_BackgroundMode != BackgroundMode::None)
     {

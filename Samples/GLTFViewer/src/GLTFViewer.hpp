@@ -50,6 +50,7 @@ public:
 private:
     void CreateEnvMapPSO();
     void CreateEnvMapSRB();
+    void CreateBoundBoxPSO(TEXTURE_FORMAT RTVFmt, TEXTURE_FORMAT DSVFmt);
     void LoadModel(const char* Path);
     void ResetView();
     void UpdateUI();
@@ -79,6 +80,14 @@ private:
 
     static const std::pair<const char*, const char*> GLTFModels[];
 
+    enum class BoundBoxMode : int
+    {
+        None = 0,
+        Local,
+        Global
+    };
+
+    BoundBoxMode       m_BoundBoxMode   = BoundBoxMode::None;
     bool               m_PlayAnimation  = false;
     int                m_AnimationIndex = 0;
     std::vector<float> m_AnimationTimers;
@@ -91,6 +100,9 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
     RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
+
+    RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;
 
     MouseState m_LastMouseState;
     float      m_CameraYaw   = 0;
