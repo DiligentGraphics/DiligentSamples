@@ -178,7 +178,10 @@ void GLTFViewer::UpdateUI()
 #ifdef PLATFORM_WIN32
         if (ImGui::Button("Load model"))
         {
-            auto FileName = FileSystem::OpenFileDialog("Select GLTF file", "glTF files\0*.gltf;*.glb\0");
+            FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+            OpenDialogAttribs.Title  = "Select GLTF file";
+            OpenDialogAttribs.Filter = "glTF files\0*.gltf;*.glb\0";
+            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
             if (!FileName.empty())
             {
                 LoadModel(FileName.c_str());
