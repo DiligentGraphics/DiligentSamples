@@ -15,6 +15,8 @@ set(INCLUDE
 set(SHADERS
     assets/cube.vsh
     assets/cube.psh
+    assets/lighting.vsh
+    assets/lighting_glsl.psh
     assets/DGLogo.png
 )
 

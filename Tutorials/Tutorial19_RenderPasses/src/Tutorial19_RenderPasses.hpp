@@ -53,9 +53,11 @@ public:
 
 private:
     void CreateCubePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
+    void CreateLightingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void UpdateUI();
     void CreateRenderPass();
     void DrawScene();
+    void ApplyLighting();
 
     RefCntAutoPtr<IFramebuffer> CreateFramebuffer(ITextureView* pDstRenderTarget);
     IFramebuffer*               GetCurrentFramebuffer();
@@ -69,6 +71,10 @@ private:
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
+
+    RefCntAutoPtr<IPipelineState>         m_pLightingPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pLightingSRB;
+
 
     RefCntAutoPtr<IRenderPass> m_pRenderPass;
 

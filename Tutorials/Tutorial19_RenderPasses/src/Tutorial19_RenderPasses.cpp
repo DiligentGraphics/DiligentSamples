@@ -151,6 +151,88 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
+void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
+{
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
+    PSODesc.Name = "Deferred lighting PSO";
+
+    PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
+    PSODesc.GraphicsPipeline.SubpassIndex = 1;
+
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+
+    // TEMPORARY:
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_EQUAL;
+
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+    ShaderCI.UseCombinedTextureSamplers = true;
+
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Create a vertex shader
+    RefCntAutoPtr<IShader> pVS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Light volume VS";
+        ShaderCI.FilePath        = "lighting.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pVS);
+        VERIFY_EXPR(pVS != nullptr);
+    }
+
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL;
+
+    // Create a pixel shader
+    RefCntAutoPtr<IShader> pPS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Lighting PS";
+        ShaderCI.FilePath        = "lighting_glsl.psh";
+        m_pDevice->CreateShader(ShaderCI, &pPS);
+        VERIFY_EXPR(pPS != nullptr);
+    }
+
+    // clang-format off
+    const LayoutElement LayoutElems[] =
+    {
+        LayoutElement{0, 0, 3, VT_FLOAT32, False}, // Attribute 0 - vertex position
+        LayoutElement{1, 0, 2, VT_FLOAT32, False}  // Attribute 1 - texture coordinates
+    };
+    // clang-format on
+
+    PSODesc.GraphicsPipeline.pVS = pVS;
+    PSODesc.GraphicsPipeline.pPS = pPS;
+
+    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+
+    // Define variable type that will be used by default
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+    // clang-format off
+    ShaderResourceVariableDesc Vars[] = 
+    {
+        {SHADER_TYPE_PIXEL, "in_Color", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_PIXEL, "in_DepthZ", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+    };
+    // clang-format on
+    PSODesc.ResourceLayout.Variables    = Vars;
+    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pLightingPSO);
+    VERIFY_EXPR(m_pLightingPSO != nullptr);
+
+    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_CubeVSConstants);
+}
+
+
 void Tutorial19_RenderPasses::CreateRenderPass()
 {
     // Attachment 0 - Color buffer
@@ -282,6 +364,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
     CreateCubePSO(pShaderSourceFactory);
+    CreateLightingPSO(pShaderSourceFactory);
 
     StateTransitionDesc Barriers[3] = //
         {
@@ -296,6 +379,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial19_RenderPasses::WindowResize(Uint32 Width, Uint32 Height)
 {
     m_FramebufferCache.clear();
+    m_pLightingSRB.Release();
 }
 
 RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureView* pDstRenderTarget)
@@ -363,6 +447,15 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     m_pDevice->CreateFramebuffer(FBDesc, &pFramebuffer);
     VERIFY_EXPR(pFramebuffer != nullptr);
 
+
+    if (!m_pLightingSRB)
+    {
+        m_pLightingPSO->CreateShaderResourceBinding(&m_pLightingSRB, true);
+        m_pLightingSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_Color")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightingSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_DepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
+
+
     return pFramebuffer;
 }
 
@@ -412,6 +505,29 @@ void Tutorial19_RenderPasses::DrawScene()
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
+void Tutorial19_RenderPasses::ApplyLighting()
+{
+    // Bind vertex and index buffers
+    //Uint32   offset   = 0;
+    //IBuffer* pBuffs[] = {m_CubeVertexBuffer};
+    //m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    //m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+
+    // Set the cube's pipeline state
+    m_pImmediateContext->SetPipelineState(m_pLightingPSO);
+
+    // Commit the cube shader's resources
+    m_pImmediateContext->CommitShaderResources(m_pLightingSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+
+    // Draw the grid
+    DrawIndexedAttribs DrawAttrs;
+    DrawAttrs.IndexType    = VT_UINT32; // Index type
+    DrawAttrs.NumIndices   = 36;
+    DrawAttrs.NumInstances = 49;
+    DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
+    m_pImmediateContext->DrawIndexed(DrawAttrs);
+}
+
 // Render a frame
 void Tutorial19_RenderPasses::Render()
 {
@@ -448,7 +564,7 @@ void Tutorial19_RenderPasses::Render()
 
     m_pImmediateContext->NextSubpass();
 
-
+    ApplyLighting();
 
     m_pImmediateContext->EndRenderPass(true);
 }
