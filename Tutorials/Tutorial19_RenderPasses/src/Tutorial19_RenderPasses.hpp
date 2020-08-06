@@ -80,7 +80,7 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_pCameraAttribsCB;
+    RefCntAutoPtr<IBuffer>                m_pShaderConstantsCB;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
     RefCntAutoPtr<IBuffer> m_pLightsBuffer;
@@ -93,7 +93,9 @@ private:
     float4x4 m_CameraViewProjMatrix;
     float4x4 m_CameraViewProjInvMatrix;
 
-    int m_LightsCount = 10000;
+    int  m_LightsCount      = 10000;
+    bool m_ShowLightVolumes = false;
+    bool m_AnimateLights    = true;
 
     constexpr static int GridDim = 7;
 

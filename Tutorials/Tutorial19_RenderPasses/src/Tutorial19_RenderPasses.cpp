@@ -42,11 +42,12 @@ namespace Diligent
 namespace
 {
 
-struct CameraAttribs
+struct ShaderConstants
 {
     float4x4 ViewProjMatrix;
     float4x4 ViewProjInvMatrix;
     float4   ViewportSize;
+    int      ShowLightVolumes;
 };
 
 } // namespace
@@ -157,7 +158,7 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCubePSO);
     VERIFY_EXPR(m_pCubePSO != nullptr);
 
-    m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "CameraAttribs")->Set(m_pCameraAttribsCB);
+    m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ShaderConstants")->Set(m_pShaderConstantsCB);
 
     m_pCubePSO->CreateShaderResourceBinding(&m_pCubeSRB, true);
     VERIFY_EXPR(m_pCubeSRB != nullptr);
@@ -250,8 +251,8 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
     m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pLightingPSO);
     VERIFY_EXPR(m_pLightingPSO != nullptr);
 
-    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "CameraAttribs")->Set(m_pCameraAttribsCB);
-    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "CameraAttribs")->Set(m_pCameraAttribsCB);
+    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ShaderConstants")->Set(m_pShaderConstantsCB);
+    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "ShaderConstants")->Set(m_pShaderConstantsCB);
 }
 
 
@@ -380,6 +381,9 @@ void Tutorial19_RenderPasses::UpdateUI()
             InitLights();
             CreateLightsBuffer();
         }
+
+        ImGui::Checkbox("Show light volumes", &m_ShowLightVolumes);
+        ImGui::Checkbox("Animate lights", &m_AnimateLights);
     }
     ImGui::End();
 }
@@ -388,7 +392,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs CB", &m_pCameraAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(ShaderConstants), "Camera attribs CB", &m_pShaderConstantsCB);
 
     // Load textured cube
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
@@ -523,7 +527,7 @@ void Tutorial19_RenderPasses::DrawScene()
 
     {
         // Map the cube's constant buffer and fill it in with its view-projection matrix
-        MapHelper<CameraAttribs> CameraMatrices(m_pImmediateContext, m_pCameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<ShaderConstants> CameraMatrices(m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD);
         CameraMatrices->ViewProjMatrix    = m_CameraViewProjMatrix.Transpose();
         CameraMatrices->ViewProjInvMatrix = m_CameraViewProjInvMatrix.Transpose();
         CameraMatrices->ViewportSize      = float4{
@@ -532,6 +536,7 @@ void Tutorial19_RenderPasses::DrawScene()
             1.f / static_cast<float>(SCDesc.Width),
             1.f / static_cast<float>(SCDesc.Height) //
         };
+        CameraMatrices->ShowLightVolumes = m_ShowLightVolumes ? 1 : 0;
     }
 
     // Bind vertex and index buffers
@@ -677,7 +682,8 @@ void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    UpdateLights(static_cast<float>(ElapsedTime));
+    if (m_AnimateLights)
+        UpdateLights(static_cast<float>(ElapsedTime));
 
     float4x4 View = float4x4::Translation(0.0f, 0.0f, 30.0f);
 

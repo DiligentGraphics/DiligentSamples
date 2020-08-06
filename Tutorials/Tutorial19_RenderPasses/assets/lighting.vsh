@@ -1,4 +1,4 @@
-cbuffer CameraAttribs
+cbuffer ShaderConstants
 {
     float4x4 g_CameraViewProj;
     float4x4 g_CameraViewInvProj;
