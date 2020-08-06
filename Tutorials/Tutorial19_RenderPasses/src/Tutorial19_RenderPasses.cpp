@@ -373,8 +373,10 @@ void Tutorial19_RenderPasses::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (ImGui::SliderInt("Lights count", &m_LightsCount, 100, 50000))
+        if (ImGui::InputInt("Lights count", &m_LightsCount, 100, 1000))
         {
+            m_LightsCount = std::max(m_LightsCount, 100);
+            m_LightsCount = std::min(m_LightsCount, 50000);
             InitLights();
             CreateLightsBuffer();
         }
@@ -548,7 +550,7 @@ void Tutorial19_RenderPasses::DrawScene()
     DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = 49;
+    DrawAttrs.NumInstances = GridDim * GridDim;
     DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
@@ -584,6 +586,30 @@ void Tutorial19_RenderPasses::ApplyLighting()
 
 void Tutorial19_RenderPasses::UpdateLights(float fElapsedTime)
 {
+    float3 VolumeMin{-static_cast<float>(GridDim), -static_cast<float>(GridDim), -static_cast<float>(GridDim)};
+    float3 VolumeMax{+static_cast<float>(GridDim), +static_cast<float>(GridDim), +static_cast<float>(GridDim)};
+    for (int light = 0; light < m_LightsCount; ++light)
+    {
+        auto& Light = m_Lights[light];
+        auto& Dir   = m_LightMoveDirs[light];
+        Light.Location += Dir * fElapsedTime;
+        auto ClampCoordinate = [](float& Coord, float& Dir, float Min, float Max) //
+        {
+            if (Coord < Min)
+            {
+                Coord += (Min - Coord) * 2.f;
+                Dir *= -1.f;
+            }
+            else if (Coord > Max)
+            {
+                Coord -= (Coord - Max) * 2.f;
+                Dir *= -1.f;
+            }
+        };
+        ClampCoordinate(Light.Location.x, Dir.x, VolumeMin.x, VolumeMax.x);
+        ClampCoordinate(Light.Location.y, Dir.y, VolumeMin.y, VolumeMax.y);
+        ClampCoordinate(Light.Location.z, Dir.z, VolumeMin.z, VolumeMax.z);
+    }
 }
 
 void Tutorial19_RenderPasses::InitLights()
@@ -593,9 +619,15 @@ void Tutorial19_RenderPasses::InitLights()
     m_Lights.resize(m_LightsCount);
     for (auto& Light : m_Lights)
     {
-        Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 15.f;
+        Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 2.0 * static_cast<float>(GridDim);
         Light.Size     = 0.1f + Rnd() * 0.5f;
         Light.Color    = float3{Rnd(), Rnd(), Rnd()};
+    }
+
+    m_LightMoveDirs.resize(m_Lights.size());
+    for (auto& MoveDir : m_LightMoveDirs)
+    {
+        MoveDir = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 1.f;
     }
 }
 

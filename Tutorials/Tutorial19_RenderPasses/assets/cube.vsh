@@ -30,11 +30,11 @@ void main(in  uint    InstID : SV_InstanceID,
     int GridX = int(InstID % GridDim) - int(GridDim) / 2;
     int GridY = int(InstID / GridDim) - int(GridDim) / 2;
 
-    float3 Pos = VSIn.Pos;
-    Pos.x += float(GridX) * 2.75;
-    Pos.y += float(GridY) * 2.75;
-    Pos.z += float(GridX + GridY) * 2.0;
+    float3 Pos = VSIn.Pos * 0.9;
+    Pos.x += float(GridX) * 2.0;
+    Pos.y += float(GridY) * 2.0;
+    Pos.z += float(GridX + GridY);
     
     PSIn.Pos = mul( float4(Pos, 1.0), g_CameraViewProj);
-    PSIn.UV  = (VSIn.UV - float2(0.5, 0.5)) * 0.9 + float2(0.5, 0.5);
+    PSIn.UV  = VSIn.UV;
 }

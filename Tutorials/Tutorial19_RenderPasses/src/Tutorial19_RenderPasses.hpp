@@ -95,9 +95,12 @@ private:
 
     int m_LightsCount = 10000;
 
+    constexpr static int GridDim = 7;
+
     std::unordered_map<ITextureView*, RefCntAutoPtr<IFramebuffer>> m_FramebufferCache;
 
     std::vector<LightAttribs> m_Lights;
+    std::vector<float3>       m_LightMoveDirs;
 };
 
 } // namespace Diligent
