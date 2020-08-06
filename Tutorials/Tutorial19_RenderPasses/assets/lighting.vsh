@@ -10,11 +10,16 @@ struct VSInput
 {
     float3 Pos : ATTRIB0;
     float2 UV  : ATTRIB1;
+
+    float4 LightLocation : ATTRIB2;
+    float3 LightColor    : ATTRIB3;
 };
 
 struct PSInput 
 { 
-    float4 Pos : SV_POSITION; 
+    float4 Pos           : SV_POSITION; 
+    float4 LightLocation : LIGHT_LOCATION;
+    float3 LightColor    : LIGHT_COLOR;
 };
 
 // Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex
@@ -24,13 +29,9 @@ void main(in  uint    InstID : SV_InstanceID,
           in  VSInput VSIn,
           out PSInput PSIn) 
 {
-    const uint GridDim = 7u;
-    int GridX = int(InstID % GridDim) - int(GridDim) / 2;
-    int GridY = int(InstID / GridDim) - int(GridDim) / 2;
-
-    float3 Pos = VSIn.Pos;
-    Pos.x += float(GridX) * 2.75;
-    Pos.y += float(GridY) * 2.75;
-    Pos.z *= 0.25;
+    float3 Pos = VSIn.LightLocation.xyz + VSIn.Pos * VSIn.LightLocation.w;
     PSIn.Pos = mul( float4(Pos, 1.0), g_WorldViewProj);
+
+    PSIn.LightLocation = VSIn.LightLocation;
+    PSIn.LightColor    = VSIn.LightColor;
 }

@@ -34,6 +34,7 @@
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
+#include "FastRand.hpp"
 
 namespace Diligent
 {
@@ -161,12 +162,13 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
     PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
     PSODesc.GraphicsPipeline.SubpassIndex = 1;
 
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    PSODesc.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_BACK;
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False; // Do not write depth
 
     // TEMPORARY:
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_EQUAL;
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -203,7 +205,9 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
     const LayoutElement LayoutElems[] =
     {
         LayoutElement{0, 0, 3, VT_FLOAT32, False}, // Attribute 0 - vertex position
-        LayoutElement{1, 0, 2, VT_FLOAT32, False}  // Attribute 1 - texture coordinates
+        LayoutElement{1, 0, 2, VT_FLOAT32, False}, // Attribute 1 - texture coordinates
+        LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Attribute 2 - vertex position
+        LayoutElement{3, 1, 3, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}  // Attribute 3 - texture coordinates
     };
     // clang-format on
 
@@ -332,6 +336,20 @@ void Tutorial19_RenderPasses::CreateRenderPass()
     VERIFY_EXPR(m_pRenderPass != nullptr);
 }
 
+void Tutorial19_RenderPasses::CreateLightsBuffer()
+{
+    m_pLightsBuffer.Release();
+
+    BufferDesc VertBuffDesc;
+    VertBuffDesc.Name           = "Lights instances buffer";
+    VertBuffDesc.Usage          = USAGE_DYNAMIC;
+    VertBuffDesc.BindFlags      = BIND_VERTEX_BUFFER;
+    VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+    VertBuffDesc.uiSizeInBytes  = sizeof(LightAttribs) * m_LightsCount;
+
+    m_pDevice->CreateBuffer(VertBuffDesc, nullptr, &m_pLightsBuffer);
+}
+
 void Tutorial19_RenderPasses::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -339,6 +357,8 @@ void Tutorial19_RenderPasses::UpdateUI()
     {
         if (ImGui::SliderInt("Lights count", &m_LightsCount, 100, 50000))
         {
+            InitLights();
+            CreateLightsBuffer();
         }
     }
     ImGui::End();
@@ -358,6 +378,8 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     CreateRenderPass();
+    CreateLightsBuffer();
+    InitLights();
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -366,10 +388,11 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     CreateCubePSO(pShaderSourceFactory);
     CreateLightingPSO(pShaderSourceFactory);
 
-    StateTransitionDesc Barriers[3] = //
+    StateTransitionDesc Barriers[] = //
         {
             {m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
             {m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true},
+            {m_pLightsBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
             {m_CubeTextureSRV->GetTexture(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true} //
         };
 
@@ -507,25 +530,48 @@ void Tutorial19_RenderPasses::DrawScene()
 
 void Tutorial19_RenderPasses::ApplyLighting()
 {
-    // Bind vertex and index buffers
-    //Uint32   offset   = 0;
-    //IBuffer* pBuffs[] = {m_CubeVertexBuffer};
-    //m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
-    //m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+    {
+        // Map the cube's constant buffer and fill it in with its view-projection matrix
+        MapHelper<LightAttribs> LightsData(m_pImmediateContext, m_pLightsBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
+        memcpy(LightsData, m_Lights.data(), m_Lights.size() * sizeof(m_Lights[0]));
+    }
 
-    // Set the cube's pipeline state
+    // Bind vertex and index buffers
+    Uint32   Offsets[2] = {};
+    IBuffer* pBuffs[2]  = {m_CubeVertexBuffer, m_pLightsBuffer};
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+
+    // Set the lighting PSO
     m_pImmediateContext->SetPipelineState(m_pLightingPSO);
 
-    // Commit the cube shader's resources
+    // Commit shader resources
     m_pImmediateContext->CommitShaderResources(m_pLightingSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    // Draw the grid
+    // Draw lights
     DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = 49;
+    DrawAttrs.NumInstances = m_LightsCount;
     DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->DrawIndexed(DrawAttrs);
+}
+
+void Tutorial19_RenderPasses::UpdateLights(float fElapsedTime)
+{
+}
+
+void Tutorial19_RenderPasses::InitLights()
+{
+    FastRandReal<float> Rnd{0, 0, 1};
+
+    m_Lights.resize(m_LightsCount);
+    for (auto& Light : m_Lights)
+    {
+        Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 20.f;
+        Light.Size     = 0.1f + Rnd() * 0.2f;
+        Light.Color    = float3{Rnd(), Rnd(), Rnd()};
+    }
 }
 
 // Render a frame
@@ -550,10 +596,10 @@ void Tutorial19_RenderPasses::Render()
 
     ClearValues[2].DepthStencil.Depth = 1.f;
 
-    ClearValues[3].Color[0] = 0.125f;
-    ClearValues[3].Color[1] = 0.125f;
-    ClearValues[3].Color[2] = 0.125f;
-    ClearValues[3].Color[3] = 0.125f;
+    ClearValues[3].Color[0] = 0.0f;
+    ClearValues[3].Color[1] = 0.0f;
+    ClearValues[3].Color[2] = 0.0f;
+    ClearValues[3].Color[3] = 0.0f;
 
     RPBeginInfo.pClearValues        = ClearValues;
     RPBeginInfo.ClearValueCount     = _countof(ClearValues);
@@ -573,6 +619,8 @@ void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
+
+    UpdateLights(static_cast<float>(ElapsedTime));
 
     // Set cube rotation
     float4x4 Model = float4x4::RotationZ(m_fCurrentTime * 0.1f);

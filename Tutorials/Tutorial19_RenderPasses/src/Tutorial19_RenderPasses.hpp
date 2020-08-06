@@ -28,6 +28,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
@@ -58,11 +59,21 @@ private:
     void CreateRenderPass();
     void DrawScene();
     void ApplyLighting();
+    void CreateLightsBuffer();
+    void UpdateLights(float fElapsedTime);
+    void InitLights();
 
     RefCntAutoPtr<IFramebuffer> CreateFramebuffer(ITextureView* pDstRenderTarget);
     IFramebuffer*               GetCurrentFramebuffer();
 
     static constexpr TEXTURE_FORMAT DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
+
+    struct LightAttribs
+    {
+        float3 Location;
+        float  Size;
+        float3 Color;
+    };
 
     // Cube resources
     RefCntAutoPtr<IPipelineState>         m_pCubePSO;
@@ -72,18 +83,21 @@ private:
     RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
+    RefCntAutoPtr<IBuffer> m_pLightsBuffer;
+
     RefCntAutoPtr<IPipelineState>         m_pLightingPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pLightingSRB;
-
 
     RefCntAutoPtr<IRenderPass> m_pRenderPass;
 
     float4x4 m_WorldViewProjMatrix;
     float    m_fCurrentTime = 0.f;
 
-    int m_LightsCount = 1000;
+    int m_LightsCount = 10000;
 
     std::unordered_map<ITextureView*, RefCntAutoPtr<IFramebuffer>> m_FramebufferCache;
+
+    std::vector<LightAttribs> m_Lights;
 };
 
 } // namespace Diligent
