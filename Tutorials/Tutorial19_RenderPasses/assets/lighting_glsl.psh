@@ -21,9 +21,8 @@ void main()
     float DistToLight = length(WorldPos.xyz - in_LightLocation.xyz);
     float LightRadius = in_LightLocation.w;
     float Attenuation = clamp(1.0 - DistToLight/LightRadius, 0.0, 1.0);
-    //Attenuation *= Attenuation;
-    //if (Attenuation == 0)
-    //    discard;
+    if (Attenuation == 0)
+        discard;
 
     out_Color.rgb = subpassLoad(in_Color).rgb * in_LightColor.rgb * Attenuation;
     out_Color.a = 1.0;

@@ -179,8 +179,13 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False; // Do not write depth
 
-    // TEMPORARY:
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+    auto& RT0Blend          = PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[0];
+    RT0Blend.BlendEnable    = True;
+    RT0Blend.BlendOp        = BLEND_OPERATION_ADD;
+    RT0Blend.SrcBlend       = BLEND_FACTOR_ONE;
+    RT0Blend.DestBlend      = BLEND_FACTOR_ONE;
+    RT0Blend.SrcBlendAlpha  = BLEND_FACTOR_ZERO;
+    RT0Blend.DestBlendAlpha = BLEND_FACTOR_ONE;
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -588,8 +593,8 @@ void Tutorial19_RenderPasses::InitLights()
     m_Lights.resize(m_LightsCount);
     for (auto& Light : m_Lights)
     {
-        Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 20.f;
-        Light.Size     = 0.1f + Rnd() * 0.2f;
+        Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 15.f;
+        Light.Size     = 0.1f + Rnd() * 0.5f;
         Light.Color    = float3{Rnd(), Rnd(), Rnd()};
     }
 }
