@@ -772,7 +772,7 @@ void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime)
     if (m_AnimateLights)
         UpdateLights(static_cast<float>(ElapsedTime));
 
-    float4x4 View = float4x4::Translation(0.0f, 0.0f, 30.0f);
+    float4x4 View = float4x4::Translation(0.0f, 0.0f, 25.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
     auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
