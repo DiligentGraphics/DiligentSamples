@@ -437,7 +437,7 @@ void Tutorial19_RenderPasses::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (ImGui::InputInt("Lights count", &m_LightsCount, 100, 1000))
+        if (ImGui::InputInt("Lights count", &m_LightsCount, 100, 1000, ImGuiInputTextFlags_EnterReturnsTrue))
         {
             m_LightsCount = std::max(m_LightsCount, 100);
             m_LightsCount = std::min(m_LightsCount, 50000);
