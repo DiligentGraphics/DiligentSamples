@@ -1,0 +1,14 @@
+layout(input_attachment_index = 0, binding = 0) uniform subpassInput in_Color;
+layout(input_attachment_index = 1, binding = 1) uniform subpassInput in_DepthZ;
+
+layout(location = 0) out vec4 out_Color;
+
+void main()
+{
+    float Depth = subpassLoad(in_DepthZ).x;
+    if (Depth == 1.0)
+        discard;
+
+    out_Color.rgb = subpassLoad(in_Color).rgb * 0.125;
+    out_Color.a = 1.0;
+}

@@ -165,7 +165,7 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
-void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
+void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
     PipelineStateCreateInfo PSOCreateInfo;
     PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
@@ -201,7 +201,7 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Light volume VS";
-        ShaderCI.FilePath        = "lighting.vsh";
+        ShaderCI.FilePath        = "light_volume.vsh";
         m_pDevice->CreateShader(ShaderCI, &pVS);
         VERIFY_EXPR(pVS != nullptr);
     }
@@ -214,7 +214,7 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Lighting PS";
-        ShaderCI.FilePath        = "lighting_glsl.psh";
+        ShaderCI.FilePath        = "light_volume_glsl.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }
@@ -248,11 +248,74 @@ void Tutorial19_RenderPasses::CreateLightingPSO(IShaderSourceInputStreamFactory*
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pLightingPSO);
-    VERIFY_EXPR(m_pLightingPSO != nullptr);
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pLightVolumePSO);
+    VERIFY_EXPR(m_pLightVolumePSO != nullptr);
 
-    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ShaderConstants")->Set(m_pShaderConstantsCB);
-    m_pLightingPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "ShaderConstants")->Set(m_pShaderConstantsCB);
+    m_pLightVolumePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ShaderConstants")->Set(m_pShaderConstantsCB);
+    m_pLightVolumePSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "ShaderConstants")->Set(m_pShaderConstantsCB);
+}
+
+void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
+{
+    PipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+
+    PSODesc.Name = "Ambient light PSO";
+
+    PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
+    PSODesc.GraphicsPipeline.SubpassIndex = 1;
+
+    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False; // Disable depth
+
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+    ShaderCI.UseCombinedTextureSamplers = true;
+
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    // Create a vertex shader
+    RefCntAutoPtr<IShader> pVS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Ambient light VS";
+        ShaderCI.FilePath        = "ambient_light.vsh";
+        m_pDevice->CreateShader(ShaderCI, &pVS);
+        VERIFY_EXPR(pVS != nullptr);
+    }
+
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL;
+
+    // Create a pixel shader
+    RefCntAutoPtr<IShader> pPS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "Ambient light PS";
+        ShaderCI.FilePath        = "ambient_light_glsl.psh";
+        m_pDevice->CreateShader(ShaderCI, &pPS);
+        VERIFY_EXPR(pPS != nullptr);
+    }
+
+    PSODesc.GraphicsPipeline.pVS = pVS;
+    PSODesc.GraphicsPipeline.pPS = pPS;
+
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+
+    // clang-format off
+    ShaderResourceVariableDesc Vars[] = 
+    {
+        {SHADER_TYPE_PIXEL, "in_Color", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_PIXEL, "in_DepthZ", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+    };
+    // clang-format on
+    PSODesc.ResourceLayout.Variables    = Vars;
+    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pAmbientLightPSO);
+    VERIFY_EXPR(m_pAmbientLightPSO != nullptr);
 }
 
 
@@ -408,7 +471,8 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
     CreateCubePSO(pShaderSourceFactory);
-    CreateLightingPSO(pShaderSourceFactory);
+    CreateLightVolumePSO(pShaderSourceFactory);
+    CreateAmbientLightPSO(pShaderSourceFactory);
 
     StateTransitionDesc Barriers[] = //
         {
@@ -424,7 +488,8 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial19_RenderPasses::WindowResize(Uint32 Width, Uint32 Height)
 {
     m_FramebufferCache.clear();
-    m_pLightingSRB.Release();
+    m_pLightVolumeSRB.Release();
+    m_pAmbientLightSRB.Release();
 }
 
 RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureView* pDstRenderTarget)
@@ -493,13 +558,19 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     VERIFY_EXPR(pFramebuffer != nullptr);
 
 
-    if (!m_pLightingSRB)
+    if (!m_pLightVolumeSRB)
     {
-        m_pLightingPSO->CreateShaderResourceBinding(&m_pLightingSRB, true);
-        m_pLightingSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_Color")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pLightingSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_DepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightVolumePSO->CreateShaderResourceBinding(&m_pLightVolumeSRB, true);
+        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_Color")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_DepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
+    if (!m_pAmbientLightSRB)
+    {
+        m_pAmbientLightPSO->CreateShaderResourceBinding(&m_pAmbientLightSRB, true);
+        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_Color")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_DepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
 
     return pFramebuffer;
 }
@@ -562,6 +633,20 @@ void Tutorial19_RenderPasses::DrawScene()
 
 void Tutorial19_RenderPasses::ApplyLighting()
 {
+    // Set the lighting PSO
+    m_pImmediateContext->SetPipelineState(m_pAmbientLightPSO);
+
+    // Commit shader resources
+    m_pImmediateContext->CommitShaderResources(m_pAmbientLightSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+
+    {
+        // Draw quad
+        DrawAttribs DrawAttrs;
+        DrawAttrs.NumVertices = 4;
+        DrawAttrs.Flags       = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
+        m_pImmediateContext->Draw(DrawAttrs);
+    }
+
     {
         // Map the cube's constant buffer and fill it in with its view-projection matrix
         MapHelper<LightAttribs> LightsData(m_pImmediateContext, m_pLightsBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -575,18 +660,20 @@ void Tutorial19_RenderPasses::ApplyLighting()
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Set the lighting PSO
-    m_pImmediateContext->SetPipelineState(m_pLightingPSO);
+    m_pImmediateContext->SetPipelineState(m_pLightVolumePSO);
 
     // Commit shader resources
-    m_pImmediateContext->CommitShaderResources(m_pLightingSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+    m_pImmediateContext->CommitShaderResources(m_pLightVolumeSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    // Draw lights
-    DrawIndexedAttribs DrawAttrs;
-    DrawAttrs.IndexType    = VT_UINT32; // Index type
-    DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = m_LightsCount;
-    DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
-    m_pImmediateContext->DrawIndexed(DrawAttrs);
+    {
+        // Draw lights
+        DrawIndexedAttribs DrawAttrs;
+        DrawAttrs.IndexType    = VT_UINT32; // Index type
+        DrawAttrs.NumIndices   = 36;
+        DrawAttrs.NumInstances = m_LightsCount;
+        DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
+        m_pImmediateContext->DrawIndexed(DrawAttrs);
+    }
 }
 
 void Tutorial19_RenderPasses::UpdateLights(float fElapsedTime)
@@ -625,7 +712,7 @@ void Tutorial19_RenderPasses::InitLights()
     for (auto& Light : m_Lights)
     {
         Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 2.0 * static_cast<float>(GridDim);
-        Light.Size     = 0.1f + Rnd() * 0.5f;
+        Light.Size     = 0.25f + Rnd() * 0.25f;
         Light.Color    = float3{Rnd(), Rnd(), Rnd()};
     }
 
@@ -658,10 +745,10 @@ void Tutorial19_RenderPasses::Render()
 
     ClearValues[2].DepthStencil.Depth = 1.f;
 
-    ClearValues[3].Color[0] = 0.0f;
-    ClearValues[3].Color[1] = 0.0f;
-    ClearValues[3].Color[2] = 0.0f;
-    ClearValues[3].Color[3] = 0.0f;
+    ClearValues[3].Color[0] = 0.0625f;
+    ClearValues[3].Color[1] = 0.0625f;
+    ClearValues[3].Color[2] = 0.0625f;
+    ClearValues[3].Color[3] = 0.f;
 
     RPBeginInfo.pClearValues        = ClearValues;
     RPBeginInfo.ClearValueCount     = _countof(ClearValues);

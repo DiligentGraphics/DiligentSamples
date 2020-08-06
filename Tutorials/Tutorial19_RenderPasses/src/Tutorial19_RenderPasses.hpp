@@ -54,7 +54,8 @@ public:
 
 private:
     void CreateCubePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
-    void CreateLightingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
+    void CreateLightVolumePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
+    void CreateAmbientLightPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void UpdateUI();
     void CreateRenderPass();
     void DrawScene();
@@ -85,8 +86,10 @@ private:
 
     RefCntAutoPtr<IBuffer> m_pLightsBuffer;
 
-    RefCntAutoPtr<IPipelineState>         m_pLightingPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pLightingSRB;
+    RefCntAutoPtr<IPipelineState>         m_pLightVolumePSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pLightVolumeSRB;
+    RefCntAutoPtr<IPipelineState>         m_pAmbientLightPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pAmbientLightSRB;
 
     RefCntAutoPtr<IRenderPass> m_pRenderPass;
 
