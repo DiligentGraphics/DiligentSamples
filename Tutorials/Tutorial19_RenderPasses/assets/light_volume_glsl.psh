@@ -1,5 +1,8 @@
-layout(input_attachment_index = 0, binding = 0) uniform subpassInput in_Color;
-layout(input_attachment_index = 1, binding = 1) uniform subpassInput in_DepthZ;
+precision highp float;
+precision highp int;
+ 
+layout(input_attachment_index = 0, binding = 0) uniform highp subpassInput in_Color;
+layout(input_attachment_index = 1, binding = 1) uniform highp subpassInput in_DepthZ;
 
 layout(location = 0) in  vec4 in_LightLocation;
 layout(location = 1) in  vec3 in_LightColor;
@@ -22,7 +25,7 @@ void main()
     float DistToLight = length(WorldPos.xyz - in_LightLocation.xyz);
     float LightRadius = in_LightLocation.w;
     float Attenuation = clamp(1.0 - DistToLight/LightRadius, 0.0, 1.0);
-    if (Attenuation == 0 && g_ShowLightVolumes == 0)
+    if (Attenuation == 0.0 && g_ShowLightVolumes == 0)
         discard;
 
     out_Color.rgb = subpassLoad(in_Color).rgb * in_LightColor.rgb * Attenuation;

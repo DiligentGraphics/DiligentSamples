@@ -213,7 +213,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Lighting PS";
+        ShaderCI.Desc.Name       = "Light volume PS";
         ShaderCI.FilePath        = "light_volume_glsl.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
