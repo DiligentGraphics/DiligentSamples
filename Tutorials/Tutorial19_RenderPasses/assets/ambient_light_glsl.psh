@@ -12,6 +12,6 @@ void main()
     if (Depth == 1.0)
         discard;
 
-    out_Color.rgb = subpassLoad(in_Color).rgb * 0.125;
+    out_Color.rgb = subpassLoad(in_Color).rgb * 0.2;
     out_Color.a = 1.0;
 }
