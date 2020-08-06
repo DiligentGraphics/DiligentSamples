@@ -80,7 +80,7 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_pCubeSRB;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
-    RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
+    RefCntAutoPtr<IBuffer>                m_pCameraAttribsCB;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
     RefCntAutoPtr<IBuffer> m_pLightsBuffer;
@@ -90,8 +90,8 @@ private:
 
     RefCntAutoPtr<IRenderPass> m_pRenderPass;
 
-    float4x4 m_WorldViewProjMatrix;
-    float    m_fCurrentTime = 0.f;
+    float4x4 m_CameraViewProjMatrix;
+    float4x4 m_CameraViewProjInvMatrix;
 
     int m_LightsCount = 10000;
 

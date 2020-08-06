@@ -1,6 +1,7 @@
-cbuffer Constants
+cbuffer CameraAttribs
 {
-    float4x4 g_WorldViewProj;
+    float4x4 g_CameraViewProj;
+    float4x4 g_CameraViewInvProj;
 };
 
 // Vertex shader takes two inputs: vertex position and uv coordinates.
@@ -32,7 +33,8 @@ void main(in  uint    InstID : SV_InstanceID,
     float3 Pos = VSIn.Pos;
     Pos.x += float(GridX) * 2.75;
     Pos.y += float(GridY) * 2.75;
-    Pos.z *= 0.25;
-    PSIn.Pos = mul( float4(Pos, 1.0), g_WorldViewProj);
+    Pos.z += float(GridX + GridY) * 2.0;
+    
+    PSIn.Pos = mul( float4(Pos, 1.0), g_CameraViewProj);
     PSIn.UV  = (VSIn.UV - float2(0.5, 0.5)) * 0.9 + float2(0.5, 0.5);
 }
