@@ -1,0 +1,26 @@
+Texture2D<float4> in_Color;
+SamplerState      in_Color_sampler;
+
+Texture2D<float4> in_DepthZ;
+SamplerState      in_DepthZ_sampler;
+
+struct PSInput
+{
+    float4 Pos : SV_POSITION;
+};
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET0;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float Depth = in_DepthZ.Load(int3(PSIn.Pos.xy, 0)).x;
+    if (Depth == 1.0)
+        discard;
+
+    PSOut.Color.rgb = in_Color.Load(int3(PSIn.Pos.xy, 0)).rgb * 0.2;
+    PSOut.Color.a = 1.0;
+}

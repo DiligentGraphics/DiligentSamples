@@ -206,15 +206,15 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL;
-
+    const auto IsVulkan = m_pDevice->GetDeviceCaps().IsVulkanDevice();
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
+        ShaderCI.SourceLanguage  = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Light volume PS";
-        ShaderCI.FilePath        = "light_volume_glsl.psh";
+        ShaderCI.FilePath        = IsVulkan ? "light_volume_glsl.psh" : "light_volume_hlsl.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }
@@ -286,15 +286,16 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL;
+    const auto IsVulkan = m_pDevice->GetDeviceCaps().IsVulkanDevice();
 
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
+        ShaderCI.SourceLanguage  = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Ambient light PS";
-        ShaderCI.FilePath        = "ambient_light_glsl.psh";
+        ShaderCI.FilePath        = IsVulkan ? "ambient_light_glsl.psh" : "ambient_light_hlsl.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }

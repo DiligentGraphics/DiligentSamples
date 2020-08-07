@@ -16,7 +16,7 @@ struct VSInput
     float3 LightColor    : ATTRIB3;
 };
 
-struct PSInput 
+struct PSInput
 { 
     float4 Pos           : SV_POSITION; 
     float4 LightLocation : LIGHT_LOCATION;

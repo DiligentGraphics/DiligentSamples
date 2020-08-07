@@ -1,0 +1,46 @@
+Texture2D<float4> in_Color;
+SamplerState      in_Color_sampler;
+
+Texture2D<float4> in_DepthZ;
+SamplerState      in_DepthZ_sampler;
+
+struct PSInput
+{ 
+    float4 Pos           : SV_POSITION; 
+    float4 LightLocation : LIGHT_LOCATION;
+    float3 LightColor    : LIGHT_COLOR;
+};
+
+cbuffer ShaderConstants
+{
+    float4x4 g_ViewProj;
+    float4x4 g_ViewProjInv;
+    float4   g_ViewportSize;
+    int      g_ShowLightVolumes;
+};
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET0;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float Depth = in_DepthZ.Load(int3(PSIn.Pos.xy, 0)).x;
+    float4 ClipSpacePos = float4(PSIn.Pos.xy * g_ViewportSize.zw * float2(2.0, -2.0) + float2(-1.0, 1.0), Depth, 1.0);
+    float4 WorldPos = mul(ClipSpacePos, g_ViewProjInv);
+    WorldPos.xyz /= WorldPos.w;
+    float DistToLight = length(WorldPos.xyz - PSIn.LightLocation.xyz);
+    float LightRadius = PSIn.LightLocation.w;
+    float Attenuation = clamp(1.0 - DistToLight/LightRadius, 0.0, 1.0);
+    if (Attenuation == 0.0 && g_ShowLightVolumes == 0)
+        discard;
+
+    float3 Color = in_Color.Load(int3(PSIn.Pos.xy, 0)).rgb;
+    PSOut.Color.rgb = Color.rgb * PSIn.LightColor.rgb * Attenuation;
+    if (g_ShowLightVolumes != 0)
+        PSOut.Color.rgb += PSIn.LightColor.rgb * 0.05;
+
+    PSOut.Color.a = 1.0;
+}

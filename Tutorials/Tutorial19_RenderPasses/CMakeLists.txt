@@ -17,8 +17,10 @@ set(SHADERS
     assets/cube.psh
     assets/light_volume.vsh
     assets/light_volume_glsl.psh
+    assets/light_volume_hlsl.psh
     assets/ambient_light.vsh
     assets/ambient_light_glsl.psh
+    assets/ambient_light_hlsl.psh
     assets/DGLogo.png
 )
 
