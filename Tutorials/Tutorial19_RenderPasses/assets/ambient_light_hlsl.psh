@@ -1,8 +1,8 @@
-Texture2D<float4> in_Color;
-SamplerState      in_Color_sampler;
+Texture2D<float4> g_SubpassInputColor;
+SamplerState      g_SubpassInputColor_sampler;
 
-Texture2D<float4> in_DepthZ;
-SamplerState      in_DepthZ_sampler;
+Texture2D<float4> g_SubpassInputDepthZ;
+SamplerState      g_SubpassInputDepthZ_sampler;
 
 struct PSInput
 {
@@ -17,10 +17,10 @@ struct PSOutput
 void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
-    float Depth = in_DepthZ.Load(int3(PSIn.Pos.xy, 0)).x;
+    float Depth = g_SubpassInputDepthZ.Load(int3(PSIn.Pos.xy, 0)).x;
     if (Depth == 1.0)
         discard;
 
-    PSOut.Color.rgb = in_Color.Load(int3(PSIn.Pos.xy, 0)).rgb * 0.2;
+    PSOut.Color.rgb = g_SubpassInputColor.Load(int3(PSIn.Pos.xy, 0)).rgb * 0.2;
     PSOut.Color.a = 1.0;
 }

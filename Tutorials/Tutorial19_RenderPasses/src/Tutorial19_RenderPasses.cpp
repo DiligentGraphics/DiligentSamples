@@ -241,8 +241,8 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
-        {SHADER_TYPE_PIXEL, "in_Color", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
-        {SHADER_TYPE_PIXEL, "in_DepthZ", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+        {SHADER_TYPE_PIXEL, "g_SubpassInputColor", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
@@ -308,8 +308,8 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     // clang-format off
     ShaderResourceVariableDesc Vars[] = 
     {
-        {SHADER_TYPE_PIXEL, "in_Color", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
-        {SHADER_TYPE_PIXEL, "in_DepthZ", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+        {SHADER_TYPE_PIXEL, "g_SubpassInputColor", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+        {SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
     PSODesc.ResourceLayout.Variables    = Vars;
@@ -563,15 +563,15 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     if (!m_pLightVolumeSRB)
     {
         m_pLightVolumePSO->CreateShaderResourceBinding(&m_pLightVolumeSRB, true);
-        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_Color")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_DepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     if (!m_pAmbientLightSRB)
     {
         m_pAmbientLightPSO->CreateShaderResourceBinding(&m_pAmbientLightSRB, true);
-        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_Color")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "in_DepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     return pFramebuffer;
