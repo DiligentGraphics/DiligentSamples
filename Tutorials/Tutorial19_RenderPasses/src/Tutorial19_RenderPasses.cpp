@@ -487,8 +487,11 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 }
 
-void Tutorial19_RenderPasses::WindowResize(Uint32 Width, Uint32 Height)
+void Tutorial19_RenderPasses::PreWindowResize()
 {
+    // In Direct3D11, all references to the swap chain must be released
+    // before the swap chain can be resized. WindowResize() is called
+    // after the swap chain has been resized.
     m_FramebufferCache.clear();
     m_pLightVolumeSRB.Release();
     m_pAmbientLightSRB.Release();

@@ -749,6 +749,7 @@ void SampleApp::WindowResize(int width, int height)
 {
     if (m_pSwapChain)
     {
+        m_TheSample->PreWindowResize();
         m_pSwapChain->Resize(width, height);
         auto SCWidth  = m_pSwapChain->GetDesc().Width;
         auto SCHeight = m_pSwapChain->GetDesc().Height;

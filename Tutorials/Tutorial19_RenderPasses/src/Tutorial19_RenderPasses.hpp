@@ -50,7 +50,7 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial19: Render Passes"; }
 
-    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
+    virtual void PreWindowResize() override final;
 
 private:
     void CreateCubePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);

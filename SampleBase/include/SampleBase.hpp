@@ -63,6 +63,7 @@ public:
 
     virtual void Render()                                    = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
+    virtual void PreWindowResize() {}
     virtual void WindowResize(Uint32 Width, Uint32 Height) {}
     virtual bool HandleNativeMessage(const void* pNativeMsgData) { return false; }
 
