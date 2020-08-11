@@ -29,6 +29,9 @@ void main(in  PSInput  PSIn,
 {
     float Depth = g_SubpassInputDepthZ.Load(int3(PSIn.Pos.xy, 0)).x;
     float4 ClipSpacePos = float4(PSIn.Pos.xy * g_ViewportSize.zw * float2(2.0, -2.0) + float2(-1.0, 1.0), Depth, 1.0);
+#if defined(DESKTOP_GL) || defined(GL_ES)
+    ClipSpacePos.y *= -1.0;
+#endif
     float4 WorldPos = mul(ClipSpacePos, g_ViewProjInv);
     WorldPos.xyz /= WorldPos.w;
     float DistToLight = length(WorldPos.xyz - PSIn.LightLocation.xyz);

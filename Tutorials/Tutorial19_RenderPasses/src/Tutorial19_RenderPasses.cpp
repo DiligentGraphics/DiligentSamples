@@ -520,6 +520,15 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     RefCntAutoPtr<ITexture> pColorBuffer;
     m_pDevice->CreateTexture(TexDesc, nullptr, &pColorBuffer);
 
+    RefCntAutoPtr<ITexture> pOpenGLOffsreenColorBuffer;
+    if (pDstRenderTarget == nullptr)
+    {
+        TexDesc.Name   = "OpenGL Offscreen Render Target";
+        TexDesc.Format = SCDesc.ColorBufferFormat;
+        m_pDevice->CreateTexture(TexDesc, nullptr, &pOpenGLOffsreenColorBuffer);
+        pDstRenderTarget = pOpenGLOffsreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+    }
+
 
     TexDesc.Name   = "Depth Z G-buffer";
     TexDesc.Format = RPDesc.pAttachments[1].Format;
@@ -582,7 +591,9 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
 
 IFramebuffer* Tutorial19_RenderPasses::GetCurrentFramebuffer()
 {
-    auto* pCurrentBackBufferRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    auto* pCurrentBackBufferRTV = m_pDevice->GetDeviceCaps().IsGLDevice() ?
+        nullptr :
+        m_pSwapChain->GetCurrentBackBufferRTV();
 
     auto fb_it = m_FramebufferCache.find(pCurrentBackBufferRTV);
     if (fb_it != m_FramebufferCache.end())
@@ -766,7 +777,17 @@ void Tutorial19_RenderPasses::Render()
 
     ApplyLighting();
 
-    m_pImmediateContext->EndRenderPass(true);
+    m_pImmediateContext->EndRenderPass();
+
+    if (m_pDevice->GetDeviceCaps().IsGLDevice())
+    {
+        auto* pOffscreenRenderTarget = pFramebuffer->GetDesc().ppAttachments[3]->GetTexture();
+        auto* pBackBuffer            = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
+
+        CopyTextureAttribs CopyAttribs{pOffscreenRenderTarget, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                       pBackBuffer, RESOURCE_STATE_TRANSITION_MODE_TRANSITION};
+        m_pImmediateContext->CopyTexture(CopyAttribs);
+    }
 }
 
 void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime)
