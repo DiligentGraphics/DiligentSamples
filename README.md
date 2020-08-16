@@ -190,6 +190,14 @@ the GPU operation, such as the number of primitives rendered, command processing
 
 ![](Tutorials/Tutorial18_Queries/Animation_Large.gif)
 
+
+## [Tutorial 19 - Render passes](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial19_RenderPasses)
+
+This tutorial demonstrates how to use the render passes API to implement simple deferred shading.
+
+![](Tutorials/Tutorial19_RenderPasses/Animation_Large.gif)
+
+
 # Samples
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)
