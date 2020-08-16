@@ -54,6 +54,16 @@ public:
         if (m_pSwapChain)
             m_pSwapChain->Resize(0, 0, SURFACE_TRANSFORM_OPTIMAL);
 
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        if (m_WindowWidth != SCDesc.Width || m_WindowHeight != SCDesc.Height || m_PreTransform != SCDesc.PreTransform)
+        {
+            m_WindowWidth  = SCDesc.Width;
+            m_WindowHeight = SCDesc.Height;
+            m_PreTransform = SCDesc.PreTransform;
+
+            m_TheSample->WindowResize(static_cast<int>(m_WindowWidth), static_cast<int>(m_WindowHeight));
+        }
+
         SampleApp::DrawFrame();
     }
 
@@ -84,6 +94,10 @@ public:
         InitializeDiligentEngine(&Window);
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplAndroid(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+
+        m_WindowWidth  = SCDesc.Width;
+        m_WindowHeight = SCDesc.Height;
+        m_PreTransform = SCDesc.PreTransform;
 
         switch (m_DeviceType)
         {
@@ -265,6 +279,10 @@ public:
 
 private:
     RefCntAutoPtr<IRenderDeviceGLES> m_RenderDeviceGLES;
+
+    Uint32            m_WindowWidth  = 0;
+    Uint32            m_WindowHeight = 0;
+    SURFACE_TRANSFORM m_PreTransform = SURFACE_TRANSFORM_OPTIMAL;
 };
 
 NativeAppBase* CreateApplication()

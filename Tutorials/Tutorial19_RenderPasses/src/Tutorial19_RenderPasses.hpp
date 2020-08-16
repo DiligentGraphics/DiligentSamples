@@ -51,6 +51,7 @@ public:
     virtual const Char* GetSampleName() const override final { return "Tutorial19: Render Passes"; }
 
     virtual void PreWindowResize() override final;
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
     void CreateCubePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
@@ -63,11 +64,13 @@ private:
     void CreateLightsBuffer();
     void UpdateLights(float fElapsedTime);
     void InitLights();
+    void ReleaseWindowResources();
 
     RefCntAutoPtr<IFramebuffer> CreateFramebuffer(ITextureView* pDstRenderTarget);
     IFramebuffer*               GetCurrentFramebuffer();
 
-    static constexpr TEXTURE_FORMAT DepthBufferFormat = TEX_FORMAT_D32_FLOAT;
+    // Use 16-bit format to make sure it works on mobile devices
+    static constexpr TEXTURE_FORMAT DepthBufferFormat = TEX_FORMAT_D16_UNORM;
 
     struct LightAttribs
     {
