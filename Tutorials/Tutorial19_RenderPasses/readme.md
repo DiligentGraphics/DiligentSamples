@@ -43,13 +43,13 @@ The render pass consists of two subpasses. The first subpass is a G-buffer pass:
 and populates two buffers - color and depth. The second pass is a lighting pass. It renders
 light volumes and applies simple distance-based lighting to the G-buffer.
 Using the render passes API lets the driver reorder the operations and fuse G-buffer pass and
-lighting pass into single tile-based operation thus avoiding the need to store intermediate G-buffer
-data to the main memory.
+lighting pass into a single tile operation thus avoiding the need to store intermediate G-buffer
+data to the main memory and reading it back.
 
 ## Creating Render Pass
 
 To create a render pass we need to prepare an instance of `RenderPassDesc` struct.
-But first we need to prepare some auxiliary data.
+But first we need to define some auxiliary data.
 
 ### Render Pass Attachments
 
@@ -124,7 +124,7 @@ we will need to keep the final image to display it on the screen.
 ### Subpasses
 
 As discussed above, the render pass will have two subpasses.
-The first subpass is G-buffer pass, the second one is the
+The first subpass is the G-buffer pass, the second one is the
 lighting pass:
 
 ```cpp
