@@ -8,12 +8,13 @@ Render passes is a feature of the next-generation APIs that allows applications 
 that better maps to tiled-deferred rendering architectures used by virtually all mobile platforms. Unlike immediate
 rendering architectures typical for desktop platforms, tiled-deferred renderers split the screen into small tiles (e.g. 64x64 pixels,
 the actual size depends on multiple factors including render target format, fast memory size, GPU vendor, etc.)
-and perform rendering operations tile after tile. This allows to keep all data in a fast GPU-local cache, which is both
+and perform rendering operations tile after tile. This allows GPU to keep all data in a fast GPU-local cache, which is both
 faster and more power-efficient. When GPU is done processing one tile, it flushes all the data to the main memory and
 moves to the next tile.
 
 Render passes were introduced to give applications explicit control over tile operations. A good metal model of a render pass
-is a set of operations that the GPU performs in a local tile cache before flushing the data to the main memory. 
+is a set of operations that the GPU performs in a local tile cache before flushing the data to the main memory and moving to the
+next tile. 
 
 
 A render pass is defined by the following key components:
@@ -26,21 +27,21 @@ A render pass is defined by the following key components:
 - *Subpasses*. A render pass has one more subpasses. Every subpass defines a subset of render pass attachments that are used as output
   attachments, input attachments and resolve attachments. 
 
-- *Subpass dependencies* that define subpass attachment state transitions (e.g. from render target to input attachment)
+- *Subpass dependencies* that define subpass attachment state transitions (e.g. from render target to input attachment).
 
-Diligent Engine enables applications to use and intermix both more render target API and render passes API.
-While the former one is a more implicit way, the latter is a more explicit way. Most importantly, 
-**no state transitions are allowed within the render pass**. As a result, an application must not use 
+Diligent Engine enables applications to use and intermix render target API and render passes API.
+While the former one is a more implicit way, the latter is a more explicit approach and requires more effort from the application
+developers. Most importantly, **no state transitions are allowed within the render pass**. As a result, an application must not use 
 `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` with any command while a render pass is active.
 
 
 
 ## Deferred Shading Using Render Passes
 
-This tutorial demonstrates a simple deferred shading renderer using render passes.
+This tutorial demonstrates a simple deferred shading renderer implemented using render passes API.
 The render pass consists of two subpasses. The first subpass is a G-buffer pass: it renders the scene
-it populates two buffer - color and depth. The second pass is a lighting pass. It renders
-light volumes and applies simple distance-based lighting of the G-buffer.
+and populates two buffers - color and depth. The second pass is a lighting pass. It renders
+light volumes and applies simple distance-based lighting to the G-buffer.
 Using the render passes API lets the driver reorder the operations and fuse G-buffer pass and
 lighting pass into single tile-based operation thus avoiding the need to store intermediate G-buffer
 data to the main memory.
@@ -83,8 +84,8 @@ memory. Also note that as the store operation we use `ATTACHMENT_STORE_OP_DISCAR
 the driver to discard all the data after the end of the render pass thus avoiding the need to
 write it back to the main memory.
 
-The second attachment is the normalized device Z coordinate. Note that we could've extract this from the
-depth buffer (attacment 3), but we can't use it as both depth-stencil and input attachment during the second
+The second attachment is the normalized device Z coordinate. Note that we can't extract this from the
+depth buffer (attacment 3), as we can't use it as both depth-stencil and input attachment during the second
 lighting subpass.
 
 ```cpp
@@ -107,7 +108,7 @@ Attachments[2].LoadOp       = ATTACHMENT_LOAD_OP_CLEAR;
 Attachments[2].StoreOp      = ATTACHMENT_STORE_OP_DISCARD;
 ```
 
-The last attachment is the final buffer where the shaded result will be written:
+The last attachment is the final buffer where the shaded result will be written to:
 
 ```cpp
 Attachments[3].Format       = m_pSwapChain->GetDesc().ColorBufferFormat;
@@ -152,7 +153,7 @@ The `AttachmentReference` struct defines the attachment number
 as well as its state during the subpass. 
 
 The second subpass uses attachments 0 and 1 as input attachments,
-attachment 2 as depth-stencil buffer, and attachment 4 as render target:
+attachment 2 as depth-stencil buffer, and attachment 3 as render target:
 
 ```cpp
 AttachmentReference RTAttachmentRefs1[] =
@@ -177,8 +178,8 @@ Subpasses[1].pInputAttachments           = InputAttachmentRefs1;
 
 ### Dependencies
 
-Each subpass defines the states for all its attachment, and the
-states are transitioned by the system when going from one render pass to the
+Each subpass defines the states of all its attachments, and the
+attachments are transitioned between the states when going from one subpasspass to the
 next. However, besides attachment states, a render pass must also specify
 execution dependencies.
 In our specific example, attachments 0 and 1 are used as render targets in the
@@ -232,7 +233,7 @@ PSODesc.GraphicsPipeline.SubpassIndex = 0;
 ```
 
 Note that when `pRenderPass` is not null, all render target
-formats as well as depth-stencil format must be `TEX_FORMAT_RGBA8_UNKNOWN`,
+formats as well as depth-stencil format must be `TEX_FORMAT_UNKNOWN`,
 and the number of render targets must be 0.
 
 ### Using Subpass Attachments in the Shader
@@ -246,7 +247,7 @@ layout(input_attachment_index = 0, binding = 0) uniform highp subpassInput g_Sub
 layout(input_attachment_index = 1, binding = 1) uniform highp subpassInput g_SubpassInputDepthZ;
 ```
 
-In the shader, use `subpassLoad` function to load the subpass fragment:
+In the shader, use `subpassLoad` function to load the subpass data:
 
 ```glsl
 float Depth = subpassLoad(g_SubpassInputDepthZ).r;
@@ -357,13 +358,31 @@ ApplyLighting();
 m_pImmediateContext->EndRenderPass();
 ```
 
+A very important aspect of render passes that needs to be mentioned again is that
+state transitions are not allowed between `BeginRenderPass` and `EndRenderPass` calls.
+The tutorial explicitly transitions all resources it uses to correct state during the initialization:
+
+```cpp
+StateTransitionDesc Barriers[] =
+{
+    {m_pShaderConstantsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
+    {m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
+    {m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true},
+    {m_pLightsBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
+    {m_CubeTextureSRV->GetTexture(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true} //
+};
+m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+```
+
+and then uses `RESOURCE_STATE_TRANSITION_MODE_VERIFY` mode with every call that requires state transition mode.
+
 ## Further Reading
 
 Diligent Engine's render passes API largely resembles Vulkan, so
 [Vulkan spec](https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#renderpass)
 will provide the most comprehensive description.
 ARM software maintains a list of [Vulkan best practices for mobile developers](https://github.com/ARM-software/vulkan_best_practice_for_mobile_developers)
-that describe 
+that include 
 [attachment load/store operations](https://github.com/ARM-software/vulkan_best_practice_for_mobile_developers/blob/master/samples/performance/render_passes/render_passes_tutorial.md),
-[working with attachment layouts](https://github.com/ARM-software/vulkan_best_practice_for_mobile_developers/blob/master/samples/performance/layout_transitions/layout_transitions_tutorial.md),
+[attachment layouts transitions](https://github.com/ARM-software/vulkan_best_practice_for_mobile_developers/blob/master/samples/performance/layout_transitions/layout_transitions_tutorial.md),
 and [subpasses](https://github.com/ARM-software/vulkan_best_practice_for_mobile_developers/blob/master/samples/performance/render_subpasses/render_subpasses_tutorial.md).

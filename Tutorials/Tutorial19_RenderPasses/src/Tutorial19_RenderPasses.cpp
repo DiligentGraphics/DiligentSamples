@@ -72,12 +72,12 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
 
     // Pipeline state name is used by the engine to report issues.
-    // It is always a good idea to give objects descriptive names.
     PSODesc.Name = "Cube PSO";
 
-
     PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-    PSODesc.GraphicsPipeline.SubpassIndex = 0;
+    PSODesc.GraphicsPipeline.SubpassIndex = 0; // This PSO will be used within the first subpass
+    // When pRenderPass is not null, all RTVFormats and DSVFormat must be TEX_FORMAT_UNKNOWN,
+    // while NumRenderTargets must be 0
 
     PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
@@ -92,7 +92,7 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     ShaderCI.UseCombinedTextureSamplers = true;
 
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    // Create a vertex shader
+    // Create cube vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -103,7 +103,7 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    // Create a pixel shader
+    // Create cube pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
@@ -173,13 +173,14 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     PSODesc.Name = "Deferred lighting PSO";
 
     PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-    PSODesc.GraphicsPipeline.SubpassIndex = 1;
+    PSODesc.GraphicsPipeline.SubpassIndex = 1; // This PSO will be used within the second subpass
 
     PSODesc.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_BACK;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False; // Do not write depth
 
+    // We will use alpha-blending to accumulate influence of all lights
     auto& RT0Blend          = PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[0];
     RT0Blend.BlendEnable    = True;
     RT0Blend.BlendOp        = BLEND_OPERATION_ADD;
@@ -210,6 +211,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
+        // For Vulkan, we will use special version that uses native input attachments
         ShaderCI.SourceLanguage  = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
@@ -223,9 +225,9 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     const LayoutElement LayoutElems[] =
     {
         LayoutElement{0, 0, 3, VT_FLOAT32, False}, // Attribute 0 - vertex position
-        LayoutElement{1, 0, 2, VT_FLOAT32, False}, // Attribute 1 - texture coordinates
-        LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Attribute 2 - vertex position
-        LayoutElement{3, 1, 3, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}  // Attribute 3 - texture coordinates
+        LayoutElement{1, 0, 2, VT_FLOAT32, False}, // Attribute 1 - texture coordinates (we don't use them)
+        LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Attribute 2 - light position
+        LayoutElement{3, 1, 3, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}  // Attribute 3 - light color
     };
     // clang-format on
 
@@ -263,7 +265,7 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     PSODesc.Name = "Ambient light PSO";
 
     PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-    PSODesc.GraphicsPipeline.SubpassIndex = 1;
+    PSODesc.GraphicsPipeline.SubpassIndex = 1; // This PSO will be used within the second subpass
 
     PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
@@ -401,9 +403,9 @@ void Tutorial19_RenderPasses::CreateRenderPass()
     SubpassDependencyDesc Dependencies[1];
     Dependencies[0].SrcSubpass    = 0;
     Dependencies[0].DstSubpass    = 1;
-    Dependencies[0].SrcStageMask  = PIPELINE_STAGE_FLAG_RENDER_TARGET | PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
+    Dependencies[0].SrcStageMask  = PIPELINE_STAGE_FLAG_RENDER_TARGET;
     Dependencies[0].DstStageMask  = PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-    Dependencies[0].SrcAccessMask = ACCESS_FLAG_RENDER_TARGET_WRITE | ACCESS_FLAG_DEPTH_STENCIL_WRITE;
+    Dependencies[0].SrcAccessMask = ACCESS_FLAG_RENDER_TARGET_WRITE;
     Dependencies[0].DstAccessMask = ACCESS_FLAG_SHADER_READ;
 
     RenderPassDesc RPDesc;
@@ -475,6 +477,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     CreateLightVolumePSO(pShaderSourceFactory);
     CreateAmbientLightPSO(pShaderSourceFactory);
 
+    // Transition all resources to required states as no transitions are allowed within the render pass.
     StateTransitionDesc Barriers[] = //
         {
             {m_pShaderConstantsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
@@ -513,7 +516,7 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
 {
     const auto& RPDesc = m_pRenderPass->GetDesc();
     const auto& SCDesc = m_pSwapChain->GetDesc();
-    // Create window-size multi-sampled offscreen render target
+    // Create window-size offscreen render target
     TextureDesc TexDesc;
     TexDesc.Name      = "Color G-buffer";
     TexDesc.Type      = RESOURCE_DIM_TEX_2D;
@@ -532,6 +535,8 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     RefCntAutoPtr<ITexture> pColorBuffer;
     m_pDevice->CreateTexture(TexDesc, nullptr, &pColorBuffer);
 
+    // OpenGL does not allow combining swap chain render target with any
+    // other render target, so we have to create an auxiliary texture.
     RefCntAutoPtr<ITexture> pOpenGLOffsreenColorBuffer;
     if (pDstRenderTarget == nullptr)
     {
@@ -583,6 +588,8 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     m_pDevice->CreateFramebuffer(FBDesc, &pFramebuffer);
     VERIFY_EXPR(pFramebuffer != nullptr);
 
+
+    // Create SRBs that reference the framebuffer textures
 
     if (!m_pLightVolumeSRB)
     {
@@ -641,6 +648,7 @@ void Tutorial19_RenderPasses::DrawScene()
     // Bind vertex and index buffers
     Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
+    // Note that RESOURCE_STATE_TRANSITION_MODE_TRANSITION are not allowed inside render pass!
     m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
@@ -684,6 +692,7 @@ void Tutorial19_RenderPasses::ApplyLighting()
     // Bind vertex and index buffers
     Uint32   Offsets[2] = {};
     IBuffer* pBuffs[2]  = {m_CubeVertexBuffer, m_pLightsBuffer};
+    // Note that RESOURCE_STATE_TRANSITION_MODE_TRANSITION are not allowed inside render pass!
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
@@ -734,6 +743,8 @@ void Tutorial19_RenderPasses::UpdateLights(float fElapsedTime)
 
 void Tutorial19_RenderPasses::InitLights()
 {
+    // Randomly distribute lights within the volume
+
     FastRandReal<float> Rnd{0, 0, 1};
 
     m_Lights.resize(m_LightsCount);
@@ -761,18 +772,22 @@ void Tutorial19_RenderPasses::Render()
     RPBeginInfo.pFramebuffer = pFramebuffer;
 
     OptimizedClearValue ClearValues[4];
+    // Color
     ClearValues[0].Color[0] = 0.f;
     ClearValues[0].Color[1] = 0.f;
     ClearValues[0].Color[2] = 0.f;
     ClearValues[0].Color[3] = 0.f;
 
+    // Depth Z
     ClearValues[1].Color[0] = 1.f;
     ClearValues[1].Color[1] = 1.f;
     ClearValues[1].Color[2] = 1.f;
     ClearValues[1].Color[3] = 1.f;
 
+    // Depth buffer
     ClearValues[2].DepthStencil.Depth = 1.f;
 
+    // Final color buffer
     ClearValues[3].Color[0] = 0.0625f;
     ClearValues[3].Color[1] = 0.0625f;
     ClearValues[3].Color[2] = 0.0625f;
@@ -793,6 +808,7 @@ void Tutorial19_RenderPasses::Render()
 
     if (m_pDevice->GetDeviceCaps().IsGLDevice())
     {
+        // In OpenGL we now have to copy our off-screen buffer to the default framebuffer
         auto* pOffscreenRenderTarget = pFramebuffer->GetDesc().ppAttachments[3]->GetTexture();
         auto* pBackBuffer            = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
 
