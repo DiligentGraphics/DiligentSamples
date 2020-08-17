@@ -10,7 +10,10 @@ void main()
 {
     float Depth = subpassLoad(g_SubpassInputDepthZ).x;
     if (Depth == 1.0)
+    {
+        // Discard background pixels
         discard;
+    }
 
     out_Color.rgb = subpassLoad(g_SubpassInputColor).rgb * 0.2;
     out_Color.a = 1.0;
