@@ -458,7 +458,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    CreateUniformBuffer(m_pDevice, sizeof(ShaderConstants), "Camera attribs CB", &m_pShaderConstantsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(ShaderConstants), "Shader constants CB", &m_pShaderConstantsCB);
 
     // Load textured cube
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
@@ -629,22 +629,6 @@ IFramebuffer* Tutorial19_RenderPasses::GetCurrentFramebuffer()
 
 void Tutorial19_RenderPasses::DrawScene()
 {
-    const auto& SCDesc = m_pSwapChain->GetDesc();
-
-    {
-        // Map the cube's constant buffer and fill it in with its view-projection matrix
-        MapHelper<ShaderConstants> CameraMatrices(m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        CameraMatrices->ViewProjMatrix    = m_CameraViewProjMatrix.Transpose();
-        CameraMatrices->ViewProjInvMatrix = m_CameraViewProjInvMatrix.Transpose();
-        CameraMatrices->ViewportSize      = float4{
-            static_cast<float>(SCDesc.Width),
-            static_cast<float>(SCDesc.Height),
-            1.f / static_cast<float>(SCDesc.Width),
-            1.f / static_cast<float>(SCDesc.Height) //
-        };
-        CameraMatrices->ShowLightVolumes = m_ShowLightVolumes ? 1 : 0;
-    }
-
     // Bind vertex and index buffers
     Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
@@ -765,6 +749,22 @@ void Tutorial19_RenderPasses::InitLights()
 // Render a frame
 void Tutorial19_RenderPasses::Render()
 {
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+
+    {
+        // Update constant buffer
+        MapHelper<ShaderConstants> Constants(m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        Constants->ViewProjMatrix    = m_CameraViewProjMatrix.Transpose();
+        Constants->ViewProjInvMatrix = m_CameraViewProjInvMatrix.Transpose();
+        Constants->ViewportSize      = float4{
+            static_cast<float>(SCDesc.Width),
+            static_cast<float>(SCDesc.Height),
+            1.f / static_cast<float>(SCDesc.Width),
+            1.f / static_cast<float>(SCDesc.Height) //
+        };
+        Constants->ShowLightVolumes = m_ShowLightVolumes ? 1 : 0;
+    }
+
     auto* pFramebuffer = GetCurrentFramebuffer();
 
     BeginRenderPassAttribs RPBeginInfo;
