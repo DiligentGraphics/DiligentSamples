@@ -134,13 +134,12 @@ struct PS_INPUT
     float2 uv  : TEXCOORD;
 };
 
-PS_INPUT vs(VS_INPUT vs_input)
+void vs(in  VS_INPUT vs_input,
+        out PS_INPUT vs_output)
 {
-    PS_INPUT vs_output;
     vs_output.pos = mul(ProjectionMatrix, float4(vs_input.pos.xy, 0.0, 1.0));
     vs_output.col = vs_input.col;
     vs_output.uv  = vs_input.uv;
-    return vs_output;
 }
 )";
 

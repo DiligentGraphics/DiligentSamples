@@ -1,7 +1,9 @@
 cbuffer ShaderConstants
 {
-    float4x4 g_CameraViewProj;
-    float4x4 g_CameraViewInvProj;
+    float4x4 g_ViewProj;
+    float4x4 g_ViewProjInv;
+    float4   g_ViewportSize;
+    int      g_ShowLightVolumes;
 };
 
 // Vertex shader takes two inputs: vertex position and uv coordinates.
@@ -31,7 +33,7 @@ void main(in  uint    InstID : SV_InstanceID,
           out PSInput PSIn) 
 {
     float3 Pos = VSIn.LightLocation.xyz + VSIn.Pos.xyz * VSIn.LightLocation.w;
-    PSIn.Pos = mul( float4(Pos, 1.0), g_CameraViewProj);
+    PSIn.Pos = mul( float4(Pos, 1.0), g_ViewProj);
 
     PSIn.LightLocation = VSIn.LightLocation;
     PSIn.LightColor    = VSIn.LightColor;
