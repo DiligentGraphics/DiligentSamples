@@ -48,7 +48,8 @@ set Tutorials=Tutorial01_HelloTriangle^
               Tutorial13_ShadowMap^
               Tutorial14_ComputeShader^
               Tutorial16_BindlessResources^
-              Tutorial17_MSAA
+              Tutorial17_MSAA^
+              Tutorial19_RenderPasses
 
 set Samples=Atmosphere^
             GLTFViewer^
