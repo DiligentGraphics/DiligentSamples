@@ -1,27 +1,10 @@
 apply plugin: 'com.android.application'
-
-buildDir '../build/HelloAR'
-
-def setVersionName = { ->
-    if (project.hasProperty("androidVersionName")) {
-        println("Replacing versionName with supplied build parameter: " +
-                "$androidVersionName")
-        return androidVersionName
-    } else {
-        return "1.0"
-    }
-}
+apply from: "../../../DiligentTools/NativeApp/Android/android_common.gradle"
 
 android {
-    compileSdkVersion 28
     defaultConfig {
-        applicationId "com.google.ar.core.examples.c.helloar"
-
         // 24 is the minimum since ARCore only works with 24 and higher.
         minSdkVersion 24
-        targetSdkVersion 28
-        versionCode 1
-        versionName setVersionName()
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -32,6 +15,12 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    packagingOptions {
+        pickFirst "lib/**/libGraphicsEngine*.so"
+        pickFirst "lib/**/lib${project.name}.so"
+        pickFirst "lib/**/libarcore_sdk_c.so"
+        exclude 'lib/**/*.so'
     }
 }
 
