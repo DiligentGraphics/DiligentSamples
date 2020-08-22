@@ -17,12 +17,14 @@ android {
             assets.srcDirs = ['../../Tutorials/Tutorial09_Quads/assets']
         }
     }
+    packagingOptions {
+        pickFirst "lib/**/libGraphicsEngine*.so"
+        pickFirst "lib/**/lib${project.name}.so"
+        exclude 'lib/**/*.so'
+    }
 }
-
-buildDir '../build/Tutorial09_Quads'
 
 dependencies {
     implementation project(":Common")
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:28.0.0'
 }
