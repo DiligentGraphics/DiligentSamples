@@ -101,9 +101,12 @@ void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
         m_pOcclusionQuery.reset(new ScopedQueryHelper{m_pDevice, queryDesc, 2});
     }
 
-    if (Features.TimestampQueries)
+    if (Features.DurationQueries)
     {
-        m_pDurationQuery.reset(new DurationQueryHelper{m_pDevice, 2});
+        QueryDesc queryDesc;
+        queryDesc.Name = "Duration query";
+        queryDesc.Type = QUERY_TYPE_DURATION;
+        m_pDurationQuery.reset(new ScopedQueryHelper{m_pDevice, queryDesc, 2});
     }
 }
 
@@ -140,8 +143,16 @@ void Tutorial18_Queries::UpdateUI()
 
             if (m_pDurationQuery)
             {
-                params_ss << "Render time (mus)" << std::endl;
-                values_ss << static_cast<int>(m_RenderDuration * 1000000) << std::endl;
+                if (m_DurationData.Frequency > 0)
+                {
+                    params_ss << "Render time (mus)" << std::endl;
+                    values_ss << std::fixed << std::setprecision(0)
+                              << static_cast<float>(m_DurationData.Duration) / static_cast<float>(m_DurationData.Frequency) * 1000000.f << std::endl;
+                }
+                else
+                {
+                    params_ss << "Render time unavailable" << std::endl;
+                }
             }
             ImGui::TextDisabled("%s", params_ss.str().c_str());
             ImGui::SameLine();
@@ -201,7 +212,7 @@ void Tutorial18_Queries::Render()
 
     // End queries
     if (m_pDurationQuery)
-        m_pDurationQuery->End(m_pImmediateContext, m_RenderDuration);
+        m_pDurationQuery->End(m_pImmediateContext, &m_DurationData, sizeof(m_DurationData));
     if (m_pOcclusionQuery)
         m_pOcclusionQuery->End(m_pImmediateContext, &m_OcclusionData, sizeof(m_OcclusionData));
     if (m_pPipelineStatsQuery)

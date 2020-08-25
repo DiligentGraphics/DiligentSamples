@@ -56,13 +56,13 @@ private:
     RefCntAutoPtr<IBuffer>                m_CubeVSConstants;
     RefCntAutoPtr<ITextureView>           m_CubeTextureSRV;
 
-    std::unique_ptr<ScopedQueryHelper>   m_pPipelineStatsQuery;
-    std::unique_ptr<ScopedQueryHelper>   m_pOcclusionQuery;
-    std::unique_ptr<DurationQueryHelper> m_pDurationQuery;
+    std::unique_ptr<ScopedQueryHelper> m_pPipelineStatsQuery;
+    std::unique_ptr<ScopedQueryHelper> m_pOcclusionQuery;
+    std::unique_ptr<ScopedQueryHelper> m_pDurationQuery;
 
     QueryDataPipelineStatistics m_PipelineStatsData;
     QueryDataOcclusion          m_OcclusionData;
-    double                      m_RenderDuration = 0;
+    QueryDataDuration           m_DurationData;
 
     float4x4 m_WorldViewProjMatrix;
 };
