@@ -386,6 +386,10 @@ void AtmosphereSample::UpdateUI()
                             m_PPAttribs.f4CustomMieBeta  = m_f3CustomMieBeta;
                         }
                     }
+                    else
+                    {
+                        ImGui::Checkbox("Use Ozone approximation", &m_PPAttribs.bUseOzoneApproximation);
+                    }
 
                     ImGui::EndTabItem();
                 }
