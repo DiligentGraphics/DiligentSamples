@@ -49,6 +49,7 @@ set Tutorials=Tutorial01_HelloTriangle^
               Tutorial14_ComputeShader^
               Tutorial16_BindlessResources^
               Tutorial17_MSAA^
+			  Tutorial18_Queries^
               Tutorial19_RenderPasses
 
 set Samples=Atmosphere^
@@ -94,7 +95,8 @@ EXIT /B %ERROR%
         set show_ui=0
         if "%app_name%" == "ImguiDemo" set show_ui=1
     )
-
+	if "%app_name%" == "Tutorial18_Queries" set show_ui=0
+	
     set backends=
     :loop2
         if "%1"=="" goto end_loop2
