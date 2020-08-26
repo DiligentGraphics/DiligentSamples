@@ -97,7 +97,7 @@ private:
 
     bool   m_bEnableLightScattering = true;
     float  m_fElapsedTime           = 0.f;
-    float3 m_f3CustomRlghBeta, m_f3CustomMieBeta;
+    float3 m_f3CustomRlghBeta, m_f3CustomMieBeta, m_f3CustomOzoneAbsoprtion;
 
     RefCntAutoPtr<ITexture> m_pOffscreenColorBuffer;
     RefCntAutoPtr<ITexture> m_pOffscreenDepthBuffer;

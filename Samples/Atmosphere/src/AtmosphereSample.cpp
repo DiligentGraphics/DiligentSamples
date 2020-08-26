@@ -88,8 +88,9 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
             m_PPAttribs.bIs32BitMinMaxMipMap = TRUE;
     }
 
-    m_f3CustomRlghBeta = m_PPAttribs.f4CustomRlghBeta;
-    m_f3CustomMieBeta  = m_PPAttribs.f4CustomMieBeta;
+    m_f3CustomRlghBeta        = m_PPAttribs.f4CustomRlghBeta;
+    m_f3CustomMieBeta         = m_PPAttribs.f4CustomMieBeta;
+    m_f3CustomOzoneAbsoprtion = m_PPAttribs.f4CustomOzoneAbsorption;
 
     m_strRawDEMDataFile       = "Terrain\\HeightMap.tif";
     m_strMtrlMaskFile         = "Terrain\\Mask.png";
@@ -358,11 +359,13 @@ void AtmosphereSample::UpdateUI()
                         m_PPAttribs.fAerosolAbsorbtionScale = clamp(m_PPAttribs.fAerosolAbsorbtionScale, 0.0f, 5.0f);
 
                     ImGui::Checkbox("Use custom scattering coeffs", &m_PPAttribs.bUseCustomSctrCoeffs);
+                    ImGui::Checkbox("Use Ozone approximation", &m_PPAttribs.bUseOzoneApproximation);
 
                     if (m_PPAttribs.bUseCustomSctrCoeffs)
                     {
-                        static constexpr float RLGH_COLOR_SCALE = 5e-5f;
-                        static constexpr float MIE_COLOR_SCALE  = 5e-5f;
+                        static constexpr float RLGH_COLOR_SCALE  = 5e-5f;
+                        static constexpr float MIE_COLOR_SCALE   = 5e-5f;
+                        static constexpr float OZONE_COLOR_SCALE = 1e-5f;
 
                         {
                             float3 RayleighColor = m_f3CustomRlghBeta / RLGH_COLOR_SCALE;
@@ -380,15 +383,21 @@ void AtmosphereSample::UpdateUI()
                             }
                         }
 
+                        if (m_PPAttribs.bUseOzoneApproximation)
+                        {
+                            float3 OzoneAbsorption = m_f3CustomOzoneAbsoprtion / OZONE_COLOR_SCALE;
+                            if (ImGui::ColorEdit3("Ozone Absorbption", &OzoneAbsorption.r))
+                            {
+                                m_f3CustomOzoneAbsoprtion = max(OzoneAbsorption, float3(1, 1, 1) / 255.f) * OZONE_COLOR_SCALE;
+                            }
+                        }
+
                         if (ImGui::Button("Update coefficients"))
                         {
-                            m_PPAttribs.f4CustomRlghBeta = m_f3CustomRlghBeta;
-                            m_PPAttribs.f4CustomMieBeta  = m_f3CustomMieBeta;
+                            m_PPAttribs.f4CustomRlghBeta        = m_f3CustomRlghBeta;
+                            m_PPAttribs.f4CustomMieBeta         = m_f3CustomMieBeta;
+                            m_PPAttribs.f4CustomOzoneAbsorption = m_f3CustomOzoneAbsoprtion;
                         }
-                    }
-                    else
-                    {
-                        ImGui::Checkbox("Use Ozone approximation", &m_PPAttribs.bUseOzoneApproximation);
                     }
 
                     ImGui::EndTabItem();
