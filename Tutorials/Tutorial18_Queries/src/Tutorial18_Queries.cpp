@@ -108,6 +108,11 @@ void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
         queryDesc.Type = QUERY_TYPE_DURATION;
         m_pDurationQuery.reset(new ScopedQueryHelper{m_pDevice, queryDesc, 2});
     }
+
+    if (Features.TimestampQueries)
+    {
+        m_pDurationFromTimestamps.reset(new DurationQueryHelper{m_pDevice, 2});
+    }
 }
 
 void Tutorial18_Queries::UpdateUI()
@@ -115,7 +120,7 @@ void Tutorial18_Queries::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Query data", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (m_pPipelineStatsQuery || m_pOcclusionQuery || m_pDurationQuery)
+        if (m_pPipelineStatsQuery || m_pOcclusionQuery || m_pDurationQuery || m_pDurationFromTimestamps)
         {
             std::stringstream params_ss, values_ss;
             if (m_pPipelineStatsQuery)
@@ -145,15 +150,22 @@ void Tutorial18_Queries::UpdateUI()
             {
                 if (m_DurationData.Frequency > 0)
                 {
-                    params_ss << "Render time (mus)" << std::endl;
+                    params_ss << "Duration (mus)" << std::endl;
                     values_ss << std::fixed << std::setprecision(0)
                               << static_cast<float>(m_DurationData.Duration) / static_cast<float>(m_DurationData.Frequency) * 1000000.f << std::endl;
                 }
                 else
                 {
-                    params_ss << "Render time unavailable" << std::endl;
+                    params_ss << "Duration unavailable" << std::endl;
                 }
             }
+
+            if (m_pDurationFromTimestamps)
+            {
+                params_ss << "Duration from TS (mus)" << std::endl;
+                values_ss << static_cast<int>(m_DurationFromTimestamps * 1000000) << std::endl;
+            }
+
             ImGui::TextDisabled("%s", params_ss.str().c_str());
             ImGui::SameLine();
             ImGui::TextDisabled("%s", values_ss.str().c_str());
@@ -205,12 +217,19 @@ void Tutorial18_Queries::Render()
         m_pPipelineStatsQuery->Begin(m_pImmediateContext);
     if (m_pOcclusionQuery)
         m_pOcclusionQuery->Begin(m_pImmediateContext);
+    if (m_pDurationFromTimestamps)
+        m_pDurationFromTimestamps->Begin(m_pImmediateContext);
     if (m_pDurationQuery)
         m_pDurationQuery->Begin(m_pImmediateContext);
 
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 
     // End queries
+    if (m_pDurationFromTimestamps)
+        m_pDurationFromTimestamps->End(m_pImmediateContext, m_DurationFromTimestamps);
+    // Note that recording the query itself may take measurable amount of time, so
+    // if m_pDurationFromTimestamps and m_pDurationQuery queries are nested, the results
+    // may noticeably differ.
     if (m_pDurationQuery)
         m_pDurationQuery->End(m_pImmediateContext, &m_DurationData, sizeof(m_DurationData));
     if (m_pOcclusionQuery)
