@@ -365,7 +365,7 @@ void AtmosphereSample::UpdateUI()
                     {
                         static constexpr float RLGH_COLOR_SCALE  = 5e-5f;
                         static constexpr float MIE_COLOR_SCALE   = 5e-5f;
-                        static constexpr float OZONE_COLOR_SCALE = 1e-5f;
+                        static constexpr float OZONE_COLOR_SCALE = 5e-6f;
 
                         {
                             float3 RayleighColor = m_f3CustomRlghBeta / RLGH_COLOR_SCALE;
