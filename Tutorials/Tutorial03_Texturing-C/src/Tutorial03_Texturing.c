@@ -60,7 +60,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     pPSODesc->_DeviceObjectAttribs.Name = "Cube PSO";
 
     // This is a graphics pipeline
-    pPSODesc->IsComputePipeline = false;
+    pPSODesc->PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
 

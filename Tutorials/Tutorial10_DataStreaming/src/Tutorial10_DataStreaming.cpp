@@ -184,7 +184,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     PSODesc.Name = "Polygon PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target

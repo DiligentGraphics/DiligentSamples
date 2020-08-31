@@ -88,7 +88,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
     // clang-format off
     RTPSODesc.Name                                          = "Render Target PSO";
     // This is a graphics pipeline
-    RTPSODesc.IsComputePipeline                             = false;
+    RTPSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
     // This tutorial will render to a single render target
     RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer

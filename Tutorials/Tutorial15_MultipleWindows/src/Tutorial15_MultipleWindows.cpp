@@ -333,7 +333,7 @@ public:
         PSODesc.Name = "Simple triangle PSO";
 
         // This is a graphics pipeline
-        PSODesc.IsComputePipeline = false;
+        PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
         // clang-format off
         // This tutorial will render to a single render target

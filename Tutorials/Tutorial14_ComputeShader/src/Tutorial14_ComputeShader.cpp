@@ -69,7 +69,7 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
     PSODesc.Name = "Render particles PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target
@@ -209,7 +209,7 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
 
     // This is a compute pipeline
-    PSODesc.IsComputePipeline = true;
+    PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
 
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
     // clang-format off

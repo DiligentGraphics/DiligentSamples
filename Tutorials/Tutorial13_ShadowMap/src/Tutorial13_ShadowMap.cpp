@@ -89,7 +89,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     PSODesc.Name = "Cube shadow PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // Shadow pass doesn't use any render target outputs
@@ -150,7 +150,7 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     PSODesc.Name = "Plane PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial renders to a single render target
@@ -247,7 +247,7 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     PSODesc.Name = "Shadow Map Vis PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial renders to a single render target

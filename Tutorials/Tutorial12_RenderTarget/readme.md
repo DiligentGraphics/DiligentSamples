@@ -130,7 +130,7 @@ PipelineStateCreateInfo RTPSOCreateInfo;
 PipelineStateDesc&      RTPSODesc = RTPSOCreateInfo.PSODesc;
 
 RTPSODesc.Name = "Render Target PSO";
-RTPSODesc.IsComputePipeline                             = false;
+RTPSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
 RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
 RTPSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
 RTPSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;

@@ -80,7 +80,7 @@ PSODesc.Name = "Simple triangle PSO";
 There are two types of pipeline states: graphics and compute. This one is a graphics one:
 
 ```cpp
-PSODesc.IsComputePipeline = false; 
+PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 ```
 
 Next, we need to describe which outputs the pipeline state uses. This one has one output, the screen,

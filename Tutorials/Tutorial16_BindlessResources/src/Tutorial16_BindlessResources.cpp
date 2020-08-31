@@ -64,7 +64,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
