@@ -163,9 +163,10 @@ void Tutorial01_HelloTriangle::Render()
 
     // Set the pipeline state in the immediate context
     m_pImmediateContext->SetPipelineState(m_pPSO);
-    // Commit shader resources. Even though in this example we don't really
-    // have any resources, this call also sets the shaders in OpenGL backend.
-    m_pImmediateContext->CommitShaderResources(nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // Typically we should now call CommitShaderResources(), however shaders in this example don't
+    // use any resources.
+
     DrawAttribs drawAttrs;
     drawAttrs.NumVertices = 3; // We will render 3 vertices
     m_pImmediateContext->Draw(drawAttrs);

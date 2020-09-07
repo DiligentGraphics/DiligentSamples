@@ -261,11 +261,16 @@ m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRAN
 m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
 
-Since our shader uses shader resources, we need to commit the SRB object:
+Next step is very important: we need to commit shader resources:
 
 ```cpp
 m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 ```
+
+The first argument of `CommitShaderResources()` is the shader resource binding object. 
+The `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` tells the system that resources need to be
+transitioned to correct states by the engine. Transitioning resources introduces some overhead
+and can be avoided when it is known that resources are already in correct states.
 
 
 Finally, this time the draw call is an indexed one:

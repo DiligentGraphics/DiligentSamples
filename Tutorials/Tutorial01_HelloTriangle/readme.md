@@ -197,16 +197,8 @@ Next, we need to set our pipeline state in the immediate device context:
 m_pImmediateContext->SetPipelineState(m_pPSO);
 ```
 
-Next step is very important: we need to commit all shader resources:
-
-```cpp
-m_pImmediateContext->CommitShaderResources(nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-```
-
-The first argument of `CommitShaderResources()` is the shader resource binding object. We do not have
-one in this tutorial. The `RESOURCE_STATE_TRANSITION_MODE_TRANSITION` tells the system that resources
-need to be transitioned to correct states. Transitioning resources introduces some overhead and can be
-avoided when it is known that resources are already in correct states.
+Typically after setting the pipeline state we should call `CommitShaderResources()`,
+however shaders in this example don't use any resources.
 
 Finally, we invoke the draw command that renders our 3 vertices:
 
