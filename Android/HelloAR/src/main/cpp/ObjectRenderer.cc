@@ -86,7 +86,7 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
 
         PSODesc.Name = "Object rendering PSO";
 
-        PSODesc.IsComputePipeline                             = false;
+        PSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
         PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
         PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
         PSODesc.GraphicsPipeline.DSVFormat                    = TEX_FORMAT_D24_UNORM_S8_UINT;

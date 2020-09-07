@@ -117,7 +117,7 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
         PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
         PSODesc.Name                    = "Backround PSO";
 
-        PSODesc.IsComputePipeline                             = false;
+        PSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
         PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
         PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
         PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
