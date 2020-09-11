@@ -103,7 +103,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
     PSODesc.Name = "Quad PSO";
 
     // This is a graphics pipeline
-    PSODesc.IsComputePipeline = false;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target

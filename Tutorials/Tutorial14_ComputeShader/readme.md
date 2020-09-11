@@ -413,7 +413,7 @@ PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
 PSODesc.Name = "Reset particle lists PSO";
 
 // This is a compute pipeline
-PSODesc.IsComputePipeline = true;
+PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
 
 PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 ShaderResourceVariableDesc Vars[] = 
