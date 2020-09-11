@@ -77,7 +77,7 @@ Diligent Engine uses these names in error reporting:
 PSODesc.Name = "Simple triangle PSO"; 
 ```
 
-There are two types of pipeline states: graphics and compute. This one is a graphics one:
+There are different types of pipeline states: graphics, compute, mesh, etc. This one is a graphics pipeline:
 
 ```cpp
 PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
