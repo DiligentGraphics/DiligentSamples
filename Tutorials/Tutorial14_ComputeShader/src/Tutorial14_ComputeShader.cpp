@@ -353,14 +353,15 @@ void Tutorial14_ComputeShader::UpdateUI()
     ImGui::End();
 }
 
+void Tutorial14_ComputeShader::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
+}
+
 void Tutorial14_ComputeShader::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
-    if (!deviceCaps.Features.ComputeShaders)
-    {
-        throw std::runtime_error("Compute shaders are required to run this tutorial");
-    }
-
     SampleBase::Initialize(InitInfo);
 
     CreateConsantBuffer();

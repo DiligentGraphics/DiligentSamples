@@ -51,17 +51,19 @@ ShadowsSample::~ShadowsSample()
 }
 
 void ShadowsSample::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                   EngineCreateInfo&  Attribs,
+                                                   EngineCreateInfo&  EngineCI,
                                                    SwapChainDesc&     SCDesc)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.DepthClamp = DEVICE_FEATURE_STATE_OPTIONAL;
 
 #if D3D12_SUPPORTED
     if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
-        auto& D3D12Attrs                           = static_cast<EngineD3D12CreateInfo&>(Attribs);
-        D3D12Attrs.GPUDescriptorHeapSize[1]        = 1024; // Sampler descriptors
-        D3D12Attrs.GPUDescriptorHeapDynamicSize[1] = 1024;
+        auto& D3D12CI                           = static_cast<EngineD3D12CreateInfo&>(EngineCI);
+        D3D12CI.GPUDescriptorHeapSize[1]        = 1024; // Sampler descriptors
+        D3D12CI.GPUDescriptorHeapDynamicSize[1] = 1024;
     }
 #endif
 }

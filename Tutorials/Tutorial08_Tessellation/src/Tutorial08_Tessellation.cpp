@@ -304,14 +304,16 @@ void Tutorial08_Tessellation::UpdateUI()
     ImGui::End();
 }
 
+void Tutorial08_Tessellation::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.Tessellation    = DEVICE_FEATURE_STATE_ENABLED;
+    EngineCI.Features.GeometryShaders = DEVICE_FEATURE_STATE_OPTIONAL;
+}
+
 void Tutorial08_Tessellation::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
-    if (!deviceCaps.Features.Tessellation)
-    {
-        throw std::runtime_error("Hardware tessellation is not supported");
-    }
-
     SampleBase::Initialize(InitInfo);
 
     CreatePipelineStates();

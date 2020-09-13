@@ -460,6 +460,13 @@ void Tutorial16_BindlessResources::UpdateUI()
     ImGui::End();
 }
 
+void Tutorial16_BindlessResources::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.BindlessResources = DEVICE_FEATURE_STATE_OPTIONAL;
+}
+
 void Tutorial16_BindlessResources::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);

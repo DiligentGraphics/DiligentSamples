@@ -48,17 +48,20 @@ SampleBase* CreateSample()
 AtmosphereSample::AtmosphereSample()
 {}
 
+void AtmosphereSample::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
+    EngineCI.Features.DepthClamp     = DEVICE_FEATURE_STATE_OPTIONAL;
+}
+
 void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
-    if (!deviceCaps.Features.ComputeShaders)
-    {
-        throw std::runtime_error("Compute shaders are required to run this sample");
-    }
-
     SampleBase::Initialize(InitInfo);
 
-    m_bIsGLDevice = deviceCaps.IsGLDevice();
+    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
+    m_bIsGLDevice          = deviceCaps.IsGLDevice();
     if (m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_GLES)
     {
         m_ShadowSettings.Resolution                        = 512;

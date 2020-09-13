@@ -70,6 +70,17 @@ void Tutorial18_Queries::CreateCubePSO()
     m_pCubePSO->CreateShaderResourceBinding(&m_pCubeSRB, true);
 }
 
+void Tutorial18_Queries::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.OcclusionQueries          = DEVICE_FEATURE_STATE_OPTIONAL;
+    EngineCI.Features.BinaryOcclusionQueries    = DEVICE_FEATURE_STATE_OPTIONAL;
+    EngineCI.Features.TimestampQueries          = DEVICE_FEATURE_STATE_OPTIONAL;
+    EngineCI.Features.PipelineStatisticsQueries = DEVICE_FEATURE_STATE_OPTIONAL;
+    EngineCI.Features.DurationQueries           = DEVICE_FEATURE_STATE_OPTIONAL;
+}
+
 void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);

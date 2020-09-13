@@ -200,14 +200,16 @@ void Tutorial07_GeometryShader::UpdateUI()
     ImGui::End();
 }
 
+void Tutorial07_GeometryShader::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.GeometryShaders = DEVICE_FEATURE_STATE_ENABLED;
+}
+
+
 void Tutorial07_GeometryShader::Initialize(const SampleInitInfo& InitInfo)
 {
-    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
-    if (!deviceCaps.Features.GeometryShaders)
-    {
-        throw std::runtime_error("Geometry shaders are not supported");
-    }
-
     SampleBase::Initialize(InitInfo);
 
     CreatePipelineState();

@@ -130,14 +130,24 @@ void Tutorial13_ShadowMap::CreateCubePSO()
 
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
-    // Disable depth clipping to render objects that are closer than near
-    // clipping plane. This is not required for this tutorial, but real applications
-    // will most likely want to do this.
-    PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+    if (m_pDevice->GetDeviceCaps().Features.DepthClamp)
+    {
+        // Disable depth clipping to render objects that are closer than near
+        // clipping plane. This is not required for this tutorial, but real applications
+        // will most likely want to do this.
+        PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+    }
 
     m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCubeShadowPSO);
     m_pCubeShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
+}
+
+void Tutorial13_ShadowMap::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+{
+    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+
+    EngineCI.Features.DepthClamp = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial13_ShadowMap::CreatePlanePSO()
