@@ -1,0 +1,75 @@
+#version 460
+#extension GL_NV_mesh_shader : require
+
+// from task shader
+#define GROUP_SIZE 32
+
+layout(local_size_x = 24) in;
+layout(max_vertices = 24, max_primitives = 12) out;
+layout(triangles) out;
+
+// built-in output variables
+//out uint gl_PrimitiveCountNV;
+//out uint gl_PrimitiveIndicesNV[max_primitives * 3]
+//out gl_MeshPerVertexNV {
+//  vec4 gl_Position;
+//} gl_MeshVerticesNV[max_vertices]
+
+layout(location=0) out vec2 out_UV[];
+layout(location=1) out vec4 out_Color[];
+
+
+layout(std140) uniform CubeData
+{
+    vec4  sphereRadius;
+    vec4  pos[24];
+    vec4  uv[24];
+    uvec4 indices[36 / 4];
+} g_Cube;
+
+layout(std140) uniform Constants
+{
+    mat4x4 g_ViewMat;
+    mat4x4 g_ViewProjMat;
+    vec4   g_Frustum[6];
+    float  g_CoTanHalfFov;
+};
+
+taskNV in Task {
+    vec3  pos[GROUP_SIZE];
+    float LODs[GROUP_SIZE];
+} Input;
+
+
+vec4 Rainbow(float factor)
+{
+    float h   = factor / 1.45;
+    vec3  col = vec3(abs(h * 6.0 - 3.0) - 1.0, 2.0 - abs(h * 6.0 - 2.0), 2.0 - abs(h * 6.0 - 4.0));
+    return vec4(clamp(col, vec3(0.0), vec3(1.0)), 1.0);
+}
+
+void main()
+{
+    const uint gid = gl_WorkGroupID.x;
+    const uint I   = gl_LocalInvocationID.x;
+
+    vec3  pos = Input.pos[gid];
+    float LOD = Input.LODs[gid];
+    
+    gl_MeshVerticesNV[I].gl_Position = g_ViewProjMat * vec4(pos.xyz + g_Cube.pos[I].xyz, 1.0);
+    out_UV[I]    = g_Cube.uv[I].xy;
+    out_Color[I] = Rainbow(LOD);
+
+    // only 9 threads write indices
+    if (I < (36/4))
+    {
+        gl_PrimitiveIndicesNV[I*4+0] = g_Cube.indices[I].x;
+        gl_PrimitiveIndicesNV[I*4+1] = g_Cube.indices[I].y;
+        gl_PrimitiveIndicesNV[I*4+2] = g_Cube.indices[I].z;
+        gl_PrimitiveIndicesNV[I*4+3] = g_Cube.indices[I].w;
+    }
+
+    // only one thread write primitive count 
+    if (I == 20)
+        gl_PrimitiveCountNV = 12;
+}
