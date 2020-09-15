@@ -323,8 +323,6 @@ void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
 
-    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
-
     // Apply rotation
     float4x4 CubeModelTransform = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);
 

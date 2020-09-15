@@ -374,8 +374,6 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
-
     // Set world view matrix
     if (m_Animate)
     {

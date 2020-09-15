@@ -645,8 +645,6 @@ void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
-
     // Animate the cube
     m_CubeWorldMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f);
 

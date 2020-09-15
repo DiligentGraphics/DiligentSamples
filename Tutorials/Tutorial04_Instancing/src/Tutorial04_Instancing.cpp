@@ -222,8 +222,6 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    const bool IsGL = m_pDevice->GetDeviceCaps().IsGLDevice();
-
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
