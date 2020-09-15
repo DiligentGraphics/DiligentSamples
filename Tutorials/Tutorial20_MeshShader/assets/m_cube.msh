@@ -33,10 +33,12 @@ layout(std140) uniform Constants
     mat4x4 g_ViewProjMat;
     vec4   g_Frustum[6];
     float  g_CoTanHalfFov;
+    bool   g_FrustumCulling;
+    bool   g_Animate;
 };
 
 taskNV in Task {
-    vec3  pos[GROUP_SIZE];
+    vec4  pos[GROUP_SIZE];
     float LODs[GROUP_SIZE];
 } Input;
 
@@ -53,10 +55,11 @@ void main()
     const uint gid = gl_WorkGroupID.x;
     const uint I   = gl_LocalInvocationID.x;
 
-    vec3  pos = Input.pos[gid];
-    float LOD = Input.LODs[gid];
+    vec3  pos   = Input.pos[gid].xyz;
+    float scale = Input.pos[gid].w;
+    float LOD   = Input.LODs[gid];
     
-    gl_MeshVerticesNV[I].gl_Position = g_ViewProjMat * vec4(pos.xyz + g_Cube.pos[I].xyz, 1.0);
+    gl_MeshVerticesNV[I].gl_Position = g_ViewProjMat * vec4(pos + g_Cube.pos[I].xyz * scale, 1.0);
     out_UV[I]    = g_Cube.uv[I].xy;
     out_Color[I] = Rainbow(LOD);
 

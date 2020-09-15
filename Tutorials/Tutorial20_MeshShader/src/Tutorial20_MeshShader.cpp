@@ -58,8 +58,9 @@ struct DrawStatistics
 
 struct DrawTask
 {
-    float4 BasePos;
-    float4 CurrPos; // will be modified in shader
+    float2 BasePos;  // read-only
+    float  Scale;    // read-only
+    uint   Time;     // read-write
 };
 static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be aligned to 16 bytes");
 
@@ -70,6 +71,7 @@ struct Constants
     Plane3D  Frustum[6];
     float    CoTanHalfFov;
     uint     FrustumCulling; // bool
+    uint     Animate;        // bool
 };
 
 } // namespace
@@ -115,7 +117,7 @@ void Tutorial20_MeshShader::CreateCube()
 
     CubeData Data;
 
-    // radius of circumscribed sphere (edge length = sqrt(3) / 2)
+    // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
     Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * sqrt(3.0f) * 0.5f, 0, 0, 0};
 
     static_assert(sizeof(Data.pos) == sizeof(CubePos), "size mismatch");
@@ -144,7 +146,7 @@ void Tutorial20_MeshShader::CreateCube()
 void Tutorial20_MeshShader::CreateDrawTasks()
 {
     const int2          GridDim{128, 128};
-    FastRandReal<float> Rnd{0, -1.f, 1.f};
+    FastRandReal<float> Rnd{0, 0.f, 1.f};
 
     std::vector<DrawTask> DrawTasks;
     DrawTasks.resize(GridDim.x * GridDim.y);
@@ -156,11 +158,11 @@ void Tutorial20_MeshShader::CreateDrawTasks()
             int   idx = x + y * GridDim.x;
             auto& dst = DrawTasks[idx];
 
-            dst.BasePos.x = (x - GridDim.x / 2) * 4.0f + Rnd();
-            dst.BasePos.z = (y - GridDim.y / 2) * 4.0f + Rnd();
-            dst.BasePos.y = Rnd();
-            dst.BasePos.w = Rnd();
-            dst.CurrPos   = dst.BasePos;
+            dst.BasePos.x = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
+            dst.BasePos.y = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
+            //dst.BasePos.y = (Rnd() * 2.f - 1.f);
+            dst.Scale     = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
+            dst.Time      = uint(Rnd() * float(0xFFFF));
         }
     }
 
@@ -518,6 +520,7 @@ void Tutorial20_MeshShader::Render()
         CBConstants->ViewProjMat    = m_ViewProjMatrix; //.Transpose();
         CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
         CBConstants->FrustumCulling = m_FrustumCulling;
+        CBConstants->Animate        = m_Animate;
 
         ViewFrustum Frustum;
         ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
