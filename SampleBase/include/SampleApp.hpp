@@ -75,6 +75,11 @@ public:
         return m_ExitCode;
     }
 
+    virtual bool IsReady() const override final
+    {
+        return m_pDevice && m_pSwapChain && m_pImmediateContext;
+    }
+
 protected:
     void InitializeDiligentEngine(const NativeWindow* pWindow);
     void InitializeSample();
