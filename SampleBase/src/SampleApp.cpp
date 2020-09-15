@@ -171,6 +171,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineCI.AdapterId = m_AdapterId;
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
+            if (!m_pDevice)
+            {
+                LOG_ERROR_AND_THROW("Failed to create Direct3D11 render device and contexts.");
+            }
 
             if (pWindow != nullptr)
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, ppContexts[0], m_SwapChainInitDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
@@ -254,6 +258,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineCI.AdapterId = m_AdapterId;
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
+            if (!m_pDevice)
+            {
+                LOG_ERROR_AND_THROW("Failed to create Direct3D12 render device and contexts.");
+            }
 
             if (!m_pSwapChain && pWindow != nullptr)
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, ppContexts[0], m_SwapChainInitDesc, FullScreenModeDesc{}, *pWindow, &m_pSwapChain);
@@ -298,6 +306,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             pFactoryOpenGL->CreateDeviceAndSwapChainGL(
                 EngineCI, &m_pDevice, ppContexts.data(), m_SwapChainInitDesc, &m_pSwapChain);
+            if (!m_pDevice)
+            {
+                LOG_ERROR_AND_THROW("Failed to create GL render device and contexts.");
+            }
         }
         break;
 #endif
@@ -329,8 +341,9 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
-                LOG_ERROR_AND_THROW("Failed to initialize Vulkan.");
+                LOG_ERROR_AND_THROW("Failed to create Vulkan render device and contexts.");
             }
+
             if (!m_pSwapChain && pWindow != nullptr)
                 pFactoryVk->CreateSwapChainVk(m_pDevice, ppContexts[0], m_SwapChainInitDesc, *pWindow, &m_pSwapChain);
         }
