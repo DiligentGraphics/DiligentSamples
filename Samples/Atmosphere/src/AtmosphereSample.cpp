@@ -76,8 +76,8 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 
     const auto& RG16UAttribs = m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RG16_UNORM);
     const auto& RG32FAttribs = m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RG32_FLOAT);
-    m_bRG16UFmtSupported     = RG16UAttribs.Supported && RG16UAttribs.ColorRenderable;
-    m_bRG32FFmtSupported     = RG32FAttribs.Supported && RG32FAttribs.ColorRenderable;
+    m_bRG16UFmtSupported     = RG16UAttribs.Supported && (RG16UAttribs.BindFlags & BIND_RENDER_TARGET);
+    m_bRG32FFmtSupported     = RG32FAttribs.Supported && (RG32FAttribs.BindFlags & BIND_RENDER_TARGET);
     if (!m_bRG16UFmtSupported && !m_bRG32FFmtSupported)
     {
         m_PPAttribs.bUse1DMinMaxTree = FALSE;
