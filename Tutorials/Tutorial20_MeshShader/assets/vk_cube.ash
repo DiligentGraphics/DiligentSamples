@@ -43,6 +43,7 @@ layout(std140) buffer Statistics
 };
 
 
+// The sphere is visible when the distance from each plane is greater than or equal to the radius of the sphere.
 bool IsVisible(vec3 cubeCenter, float radius)
 {
     vec4 center = vec4(cubeCenter, 1.0);
@@ -57,19 +58,30 @@ bool IsVisible(vec3 cubeCenter, float radius)
 
 float CalcDetailLevel(vec3 cubeCenter, float radius)
 {
-    // https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space
+    // cubeCenter is also the center of the sphere. 
+    // radius - radius of circumscribed sphere
+
+    // get position in view space
     vec3  pos   = (g_ViewMat * vec4(cubeCenter, 1.0)).xyz;
+
+    // square of distance from camera to circumscribed sphere
     float dist2 = dot(pos, pos);
-    float size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius); // sphere size in screen space
+
+    // calculate sphere size in screen space
+    float size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
+
+    // calculate detail level
     float level = clamp(1.0 - size, 0.0, 1.0);
     return level;
 }
 
+// Task shader output data. Must be less than 16Kb.
 taskNV out Task {
     vec4  pos[GROUP_SIZE];
     float LODs[GROUP_SIZE];
 } Output;
 
+// This value used to calculate number of cubes that will be rendered after frustum culling
 shared uint s_TaskCount;
 
 
@@ -102,6 +114,8 @@ void main()
     // frustum culling
     if (!g_FrustumCulling || IsVisible(pos, g_Cube.sphereRadius.x * scale))
     {
+        // Acquire index that will be used to safely access shader output.
+        // Each thread has unique index.
         uint index = atomicAdd(s_TaskCount, 1);
 
         Output.pos[index]  = vec4(pos, scale);
@@ -116,6 +130,7 @@ void main()
 
     if (gl_LocalInvocationIndex == 0)
     {
+        // Set the number of mesh shader workgroups.
         gl_TaskCountNV = s_TaskCount;
         
         // update statistics

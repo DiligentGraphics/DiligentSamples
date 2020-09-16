@@ -30,6 +30,7 @@ cbuffer Constants
 
 RWByteAddressBuffer  Statistics;
 
+// Payload size must be less than 16kb.
 struct Payload
 {
     float PosX[GROUP_SIZE];
@@ -39,10 +40,11 @@ struct Payload
     float LODs[GROUP_SIZE];
 };
 
+// Payload will be used in mesh shader.
 groupshared Payload s_Payload;
-groupshared uint    s_TaskCount;
 
 
+// The sphere is visible when the distance from each plane is greater than or equal to the radius of the sphere.
 bool IsVisible(float3 cubeCenter, float radius)
 {
     float4 center = float4(cubeCenter, 1.0);
@@ -57,14 +59,25 @@ bool IsVisible(float3 cubeCenter, float radius)
 
 float CalcDetailLevel(float3 cubeCenter, float radius)
 {
-    // https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space
+    // cubeCenter is also the center of the sphere. 
+    // radius - radius of circumscribed sphere
+    
+    // get position in view space
     float3 pos   = mul(float4(cubeCenter, 1.0), g_ViewMat).xyz;
+    
+    // square of distance from camera to circumscribed sphere
     float  dist2 = dot(pos, pos);
-    float  size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius); // sphere radius in screen space
+    
+    // calculate sphere size in screen space
+    float  size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
+    
+    // calculate detail level
     float  level = clamp(1.0 - size, 0.0, 1.0);
     return level;
 }
 
+// This value used to calculate number of cubes that will be rendered after frustum culling
+groupshared uint s_TaskCount;
 
 [numthreads(GROUP_SIZE,1,1)]
 void main(in uint I : SV_GroupIndex,
@@ -90,12 +103,15 @@ void main(in uint I : SV_GroupIndex,
 
     if (g_Animate)
     {
+        // write new time to draw task
         DrawTasks[gid].Time = time + g_ElapsedTime;
     }
 
     // frustum culling
     if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
     {
+        // Acquire index that will be used to safely access payload.
+        // Each thread has unique index.
         uint index = 0;
         InterlockedAdd(s_TaskCount, 1, index);
         
@@ -108,8 +124,6 @@ void main(in uint I : SV_GroupIndex,
     
     // all thread must complete thir work that we can read s_TaskCount
     GroupMemoryBarrierWithGroupSync();
-    
-    DispatchMesh(s_TaskCount, 1, 1, s_Payload);
 
     if (I == 0)
     {
@@ -117,4 +131,8 @@ void main(in uint I : SV_GroupIndex,
         uint origin;
         Statistics.InterlockedAdd(0, s_TaskCount, origin);
     }
+    
+    // This function must be called exactly once per amplification shader.
+    // The DispatchMesh call implies a GroupMemoryBarrierWithGroupSync(), and ends the amplification shader group's execution.
+    DispatchMesh(s_TaskCount, 1, 1, s_Payload);
 }

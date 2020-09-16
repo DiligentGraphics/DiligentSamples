@@ -146,6 +146,12 @@ void Tutorial20_MeshShader::CreateCube()
 
 void Tutorial20_MeshShader::CreateDrawTasks()
 {
+    // In this tutorial draw tasks contains:
+    //  * cube position in grid
+    //  * cube scale factor
+    //  * time that used for animation and will be updated in shader.
+    // Additionally you can store model transformation matrix, mesh and material IDs, etc.
+
     const int2          GridDim{128, 128};
     FastRandReal<float> Rnd{0, 0.f, 1.f};
 
@@ -161,8 +167,8 @@ void Tutorial20_MeshShader::CreateDrawTasks()
 
             dst.BasePos.x = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
             dst.BasePos.y = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
-            dst.Scale = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
-            dst.Time  = Rnd() * PI_F;
+            dst.Scale     = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
+            dst.Time      = Rnd() * PI_F;
         }
     }
 
@@ -185,6 +191,9 @@ void Tutorial20_MeshShader::CreateDrawTasks()
 
 void Tutorial20_MeshShader::CreateStatisticsBuffer()
 {
+    // This buffer used as atomic counter in amplification shader to show
+    // how much cube are rendered with and without frustum culling.
+
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Statistics buffer";
     BuffDesc.Usage         = USAGE_DEFAULT;
@@ -194,6 +203,8 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsBuffer);
     VERIFY_EXPR(m_pStatisticsBuffer != nullptr);
+
+    // Staging buffer needed to read data from statistics buffer.
 
     BuffDesc.Name           = "Statistics staging buffer";
     BuffDesc.Usage          = USAGE_STAGING;
@@ -253,17 +264,23 @@ void Tutorial20_MeshShader::CreatePipelineState()
     PSODesc.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
     PSODesc.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
-    PSODesc.GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_UNDEFINED;
 
-    // Define variable type that will be used by default
+    // Topology defined in mesh shader, this value is not used.
+    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_UNDEFINED;
+
+    // Define variable type that will be used by default.
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
-    // Vulkan driver crashes when used task shader that compiled with DXC, so use GLSL version.
+    // Vulkan driver crashes when used task shader that compiled with DXC, so use the GLSL version.
     const bool IsVulkan = m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_VULKAN;
 
     ShaderCreateInfo ShaderCI;
-    ShaderCI.SourceLanguage             = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM : SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.ShaderCompiler             = IsVulkan ? SHADER_COMPILER_GLSLANG : SHADER_COMPILER_DXC;
+    ShaderCI.SourceLanguage = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM : SHADER_SOURCE_LANGUAGE_HLSL;
+
+    // For Direct3D12 we must use new DXIL compiler that supports mesh shaders.
+    ShaderCI.ShaderCompiler = IsVulkan ? SHADER_COMPILER_GLSLANG : SHADER_COMPILER_DXC;
+
+    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
     // Create a shader source stream factory to load shaders from files.
@@ -400,7 +417,7 @@ void Tutorial20_MeshShader::Render()
     m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {
-        // Map the buffer and write current world-view-projection matrix
+        // Map the buffer and write current view, view-projection matrix and other constants.
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants->ViewMat        = m_ViewMatrix.Transpose();
         CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
@@ -409,34 +426,44 @@ void Tutorial20_MeshShader::Render()
         CBConstants->ElapsedTime    = m_ElapsedTime;
         CBConstants->Animate        = m_Animate;
 
+        // Calculate frustum planes from view-projection matrix.
         ViewFrustum Frustum;
         ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
 
+        // Each frustum plane must be normalized.
         for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
         {
             Plane3D plane  = Frustum.GetPlane(ViewFrustum::PLANE_IDX(i));
             float   invlen = 1.0f / length(plane.Normal);
             plane.Normal *= invlen;
             plane.Distance *= invlen;
+
             CBConstants->Frustum[i] = plane;
         }
     }
 
+    // Amplification shader runs with 32 threads and task count must be aligned to 32
+    // to prevent lass of tasks or access outside the array.
     VERIFY_EXPR(m_DrawTaskCount % 32 == 0);
 
     DrawMeshAttribs drawAttrs(m_DrawTaskCount / 32, DRAW_FLAG_VERIFY_ALL);
     m_pImmediateContext->DrawMesh(drawAttrs);
 
-    // copy statistics to staging buffer
+    // Copy statistics to staging buffer
     {
+        m_VisibleCubes = 0;
+
         m_pImmediateContext->CopyBuffer(m_pStatisticsBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
                                         m_pStatisticsStaging, Uint32(m_FrameId & 1) * sizeof(DrawStatistics), sizeof(DrawStatistics),
                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        // We should use synchronizations to safely access to mapped memory.
         m_pImmediateContext->SignalFence(m_pStatisticsAvailable, m_FrameId);
 
-        // read statistics from previous frame
+        // Read statistics from previous frame.
         if (m_FrameId > 0)
         {
+            // Synchronize
             Uint64 PrevId = m_FrameId - 1;
             m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevId, false);
 
@@ -467,7 +494,7 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
 
     float4x4 RotationMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F * 0.1f);
 
-    // Camera is at (0, 0, -5) looking along the Z axis
+    // Set camera position
     float4x4 View = float4x4::Translation(0.f, -4.0f, m_CameraHeight);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
@@ -476,10 +503,11 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
     // Get projection matrix adjusted to the current screen orientation
     auto Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
 
-    // compute view and view-projection matrices
+    // Compute view and view-projection matrices
     m_ViewMatrix     = RotationMatrix * View * SrfPreTransform;
     m_ViewProjMatrix = m_ViewMatrix * Proj;
 
+    // Time will be used in shader
     m_ElapsedTime = float(ElapsedTime);
 }
 
