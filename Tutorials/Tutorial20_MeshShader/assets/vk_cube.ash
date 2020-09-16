@@ -9,7 +9,7 @@ struct DrawTask
 {
     vec2  BasePos;  // read-only
     float Scale;    // read-only
-    uint  Time;     // read-write
+    float Time;     // read-write
 };
 
 layout(std140) buffer DrawTasks
@@ -27,10 +27,12 @@ layout(std140) uniform CubeData
 
 layout(std140) uniform Constants
 {
-    mat4x4 g_ViewMat;
-    mat4x4 g_ViewProjMat;
+    layout(row_major) mat4x4 g_ViewMat;
+    layout(row_major) mat4x4 g_ViewProjMat;
+
     vec4   g_Frustum[6];
     float  g_CoTanHalfFov;
+    float  g_ElapsedTime;
     bool   g_FrustumCulling;
     bool   g_Animate;
 };
@@ -56,8 +58,9 @@ bool IsVisible(vec3 cubeCenter, float radius)
 float CalcDetailLevel(vec3 cubeCenter, float radius)
 {
     // https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space
-    float dist  = (g_ViewMat * vec4(cubeCenter, 0.0)).z;
-    float size  = g_CoTanHalfFov * radius / sqrt(dist * dist - radius * radius); // sphere size in screen space
+    vec3  pos   = (g_ViewMat * vec4(cubeCenter, 1.0)).xyz;
+    float dist2 = dot(pos, pos);
+    float size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius); // sphere size in screen space
     float level = clamp(1.0 - size, 0.0, 1.0);
     return level;
 }
@@ -86,14 +89,14 @@ void main()
     DrawTask task  = g_DrawTasks[gid];
     vec3     pos   = vec3(task.BasePos, 0.0).xzy;
     float    scale = task.Scale;
-    uint     time  = task.Time;
+    float    time  = task.Time;
 
     // simulation
-    pos.y = sin(float(time) * 0.001);
+    pos.y = sin(time);
 
     if (g_Animate)
     {
-        g_DrawTasks[gid].Time = time + 1;
+        g_DrawTasks[gid].Time = time + g_ElapsedTime;
     }
     
     // frustum culling

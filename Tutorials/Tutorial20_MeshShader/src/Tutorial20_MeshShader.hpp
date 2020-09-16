@@ -45,8 +45,7 @@ public:
     virtual const Char* GetSampleName() const override final { return "Tutorial20: Mesh shader"; }
 
 private:
-    void CreateMeshPipeline();
-    void CreateGraphicsPipeline();
+    void CreatePipelineState();
     void CreateCube();
     void CreateDrawTasks();
     void CreateStatisticsBuffer();
@@ -68,7 +67,6 @@ private:
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
-    Bool                                  m_SupportsMeshShader = False;
 
     float4x4    m_ViewProjMatrix;
     float4x4    m_ViewMatrix;
@@ -78,6 +76,8 @@ private:
     const float m_FOV            = PI_F / 4.0f;
     const float m_CoTanHalfFov   = 1.0f / std::tan(m_FOV * 0.5f);
     float       m_LodScale       = 4.0f;
+    float       m_CameraHeight   = 10.0f;
+    float       m_ElapsedTime    = 0.0f;
     Uint32      m_VisibleCubes   = 0;
 };
 

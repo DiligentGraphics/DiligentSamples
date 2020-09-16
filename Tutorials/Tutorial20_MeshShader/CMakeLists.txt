@@ -11,11 +11,12 @@ set(INCLUDE
 )
 
 set(SHADERS
-    assets/m_cube.ash
-    assets/m_cube.msh
-    assets/g_cube.vsh
-    assets/g_cube.gsh
-    assets/cube.psh
+    assets/dx_cube.ash
+    assets/dx_cube.msh
+    assets/dx_cube.psh
+    assets/vk_cube.ash
+    assets/vk_cube.msh
+    assets/vk_cube.psh
 )
 
 set(ASSETS
