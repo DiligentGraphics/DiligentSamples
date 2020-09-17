@@ -136,7 +136,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             m_pEngineFactory    = pFactoryD3D11;
             Uint32 NumAdapters  = 0;
             pFactoryD3D11->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
-            std::vector<AdapterAttribs> Adapters(NumAdapters);
+            std::vector<GraphicsAdapterInfo> Adapters(NumAdapters);
             if (NumAdapters > 0)
             {
                 pFactoryD3D11->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
@@ -150,7 +150,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             {
                 for (Uint32 i = 0; i < Adapters.size(); ++i)
                 {
-                    if (Adapters[i].AdapterType == m_AdapterType)
+                    if (Adapters[i].Type == m_AdapterType)
                     {
                         m_AdapterId = i;
                         LOG_INFO_MESSAGE("Found software adapter '", Adapters[i].Description, "'");
@@ -216,7 +216,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             m_pEngineFactory   = pFactoryD3D12;
             Uint32 NumAdapters = 0;
             pFactoryD3D12->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, 0);
-            std::vector<AdapterAttribs> Adapters(NumAdapters);
+            std::vector<GraphicsAdapterInfo> Adapters(NumAdapters);
             if (NumAdapters > 0)
             {
                 pFactoryD3D12->EnumerateAdapters(EngineCI.MinimumFeatureLevel, NumAdapters, Adapters.data());
@@ -237,7 +237,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             {
                 for (Uint32 i = 0; i < Adapters.size(); ++i)
                 {
-                    if (Adapters[i].AdapterType == m_AdapterType)
+                    if (Adapters[i].Type == m_AdapterType)
                     {
                         m_AdapterId = i;
                         LOG_INFO_MESSAGE("Found software adapter '", Adapters[i].Description, "'");
@@ -458,9 +458,9 @@ void SampleApp::UpdateAdaptersDialog()
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Adapters", nullptr, ImGuiWindowFlags_NoResize))
     {
-        if (m_AdapterAttribs.AdapterType != ADAPTER_TYPE_UNKNOWN)
+        if (m_AdapterAttribs.Type != ADAPTER_TYPE_UNKNOWN)
         {
-            ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, static_cast<int>(m_AdapterAttribs.DedicatedVideoMemory >> 20));
+            ImGui::TextDisabled("Adapter: %s (%d MB)", m_AdapterAttribs.Description, static_cast<int>(m_AdapterAttribs.DeviceLocalMemory >> 20));
         }
 
         if (!m_DisplayModes.empty())
