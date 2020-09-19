@@ -26,7 +26,8 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
         copy_required_dlls(${APP_NAME})
         append_sample_base_win32_source(${APP_NAME})
     elseif(PLATFORM_UNIVERSAL_WINDOWS)
-            append_sample_base_uwp_source(${APP_NAME})
+        append_sample_base_uwp_source(${APP_NAME})
+        package_required_dlls(${APP_NAME})
     endif()
 
     target_include_directories(${APP_NAME}
