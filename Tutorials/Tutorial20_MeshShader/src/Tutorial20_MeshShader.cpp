@@ -211,7 +211,7 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
     BuffDesc.BindFlags      = BIND_NONE;
     BuffDesc.Mode           = BUFFER_MODE_UNDEFINED;
     BuffDesc.CPUAccessFlags = CPU_ACCESS_READ;
-    BuffDesc.uiSizeInBytes  = sizeof(DrawStatistics) * 2;
+    BuffDesc.uiSizeInBytes  = sizeof(DrawStatistics) * m_StatisticsHistorySize;
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsStaging);
     VERIFY_EXPR(m_pStatisticsStaging != nullptr);
@@ -443,27 +443,32 @@ void Tutorial20_MeshShader::Render()
         m_VisibleCubes = 0;
 
         m_pImmediateContext->CopyBuffer(m_pStatisticsBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % 0x01) * sizeof(DrawStatistics), sizeof(DrawStatistics),
+                                        m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % m_StatisticsHistorySize) * sizeof(DrawStatistics), sizeof(DrawStatistics),
                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // We should use synchronizations to safely access to mapped memory.
         m_pImmediateContext->SignalFence(m_pStatisticsAvailable, m_FrameId);
 
         // Read statistics from previous frame.
-        if (m_FrameId > 0)
-        {
-            // Synchronize
-            Uint64 PrevId = m_FrameId - 1;
-            m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevId, false);
+        Uint64 PrevFrameId = m_pStatisticsAvailable->GetCompletedValue();
 
-            PVoid mapped = nullptr;
-            m_pImmediateContext->MapBuffer(m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT, mapped);
-            if (mapped)
-            {
-                m_VisibleCubes = static_cast<DrawStatistics*>(mapped)[PrevId & 0x01].visibleCubes;
-                m_pImmediateContext->UnmapBuffer(m_pStatisticsStaging, MAP_READ);
-            }
+        // Synchronize
+        if (m_FrameId - PrevFrameId > m_StatisticsHistorySize)
+        {
+            PrevFrameId = m_FrameId - m_StatisticsHistorySize / 2;
+            m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevFrameId, false);
         }
+
+        Uint64 PrevId = PrevFrameId % m_StatisticsHistorySize;
+
+        PVoid mapped = nullptr;
+        m_pImmediateContext->MapBuffer(m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT, mapped);
+        if (mapped)
+        {
+            m_VisibleCubes = static_cast<DrawStatistics*>(mapped)[PrevId].visibleCubes;
+            m_pImmediateContext->UnmapBuffer(m_pStatisticsStaging, MAP_READ);
+        }
+
         ++m_FrameId;
     }
 }
