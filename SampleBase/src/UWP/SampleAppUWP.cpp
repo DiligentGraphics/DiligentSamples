@@ -194,11 +194,13 @@ public:
             IDXGISwapChain3 *pDXGISwapChain3 = nullptr;
             if (m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
             {
-                GetEngineFactoryD3D12()->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, UWPWindow, &m_pSwapChain);
+                RefCntAutoPtr<IEngineFactoryD3D12> pFactoryD3D12{m_pEngineFactory, IID_EngineFactoryD3D12};
+                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, UWPWindow, &m_pSwapChain);
             }
             else if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11)
             {
-                GetEngineFactoryD3D11()->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, UWPWindow, &m_pSwapChain);
+                RefCntAutoPtr<IEngineFactoryD3D11> pFactoryD3D11{m_pEngineFactory, IID_EngineFactoryD3D11};
+                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, UWPWindow, &m_pSwapChain);
             }
             else
                 UNEXPECTED("Unexpected device type");

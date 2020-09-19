@@ -45,7 +45,7 @@ struct CubeData
     // for frustum culling
     float4 sphereRadius;
 
-    // each array element in UB aligned to 16 bytes
+    // each array element in UB is 16-byte aligned
     float4 pos[24];
     float4 uv[24];
     uint4  indices[36 / 3];
@@ -62,7 +62,7 @@ struct DrawTask
     float  Scale;   // read-only
     float  Time;    // read-write
 };
-static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be aligned to 16 bytes");
+static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be 16-byte aligned");
 
 struct Constants
 {
@@ -119,7 +119,7 @@ void Tutorial20_MeshShader::CreateCube()
     CubeData Data;
 
     // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
-    Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * sqrt(3.0f) * 0.5f, 0, 0, 0};
+    Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
 
     static_assert(sizeof(Data.pos) == sizeof(CubePos), "size mismatch");
     std::memcpy(Data.pos, CubePos, sizeof(CubePos));
@@ -149,7 +149,7 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     // In this tutorial draw tasks contains:
     //  * cube position in grid
     //  * cube scale factor
-    //  * time that used for animation and will be updated in shader.
+    //  * time that is used for animation and will be updated in the shader.
     // Additionally you can store model transformation matrix, mesh and material IDs, etc.
 
     const int2          GridDim{128, 128};
@@ -192,7 +192,7 @@ void Tutorial20_MeshShader::CreateDrawTasks()
 void Tutorial20_MeshShader::CreateStatisticsBuffer()
 {
     // This buffer used as atomic counter in amplification shader to show
-    // how much cube are rendered with and without frustum culling.
+    // how many cubes are rendered with and without frustum culling.
 
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Statistics buffer";
@@ -204,7 +204,7 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsBuffer);
     VERIFY_EXPR(m_pStatisticsBuffer != nullptr);
 
-    // Staging buffer needed to read data from statistics buffer.
+    // Staging buffer is needed to read data from statistics buffer.
 
     BuffDesc.Name           = "Statistics staging buffer";
     BuffDesc.Usage          = USAGE_STAGING;
@@ -265,19 +265,19 @@ void Tutorial20_MeshShader::CreatePipelineState()
     PSODesc.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
     PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
 
-    // Topology defined in mesh shader, this value is not used.
+    // Topology is defined in the mesh shader, this value is not used.
     PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_UNDEFINED;
 
     // Define variable type that will be used by default.
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
-    // Vulkan driver crashes when used task shader that compiled with DXC, so use the GLSL version.
+    // Currently, Vulkan driver crashes when using task shader compiled by DXC, so use GLSL version.
     const bool IsVulkan = m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_VULKAN;
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM : SHADER_SOURCE_LANGUAGE_HLSL;
 
-    // For Direct3D12 we must use new DXIL compiler that supports mesh shaders.
+    // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
     ShaderCI.ShaderCompiler = IsVulkan ? SHADER_COMPILER_GLSLANG : SHADER_COMPILER_DXC;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
@@ -320,17 +320,6 @@ void Tutorial20_MeshShader::CreatePipelineState()
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }
-
-    // clang-format off
-    // Shader variables should typically be mutable, which means they are expected
-    // to change on a per-instance basis
-    ShaderResourceVariableDesc Vars[] = 
-    {
-        {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
-    };
-    // clang-format on
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // clang-format off
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
@@ -454,7 +443,7 @@ void Tutorial20_MeshShader::Render()
         m_VisibleCubes = 0;
 
         m_pImmediateContext->CopyBuffer(m_pStatisticsBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        m_pStatisticsStaging, Uint32(m_FrameId & 1) * sizeof(DrawStatistics), sizeof(DrawStatistics),
+                                        m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % 0x01) * sizeof(DrawStatistics), sizeof(DrawStatistics),
                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // We should use synchronizations to safely access to mapped memory.
@@ -468,10 +457,10 @@ void Tutorial20_MeshShader::Render()
             m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevId, false);
 
             PVoid mapped = nullptr;
-            m_pImmediateContext->MapBuffer(m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT | MAP_FLAG_NO_OVERWRITE, mapped);
+            m_pImmediateContext->MapBuffer(m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT, mapped);
             if (mapped)
             {
-                m_VisibleCubes = static_cast<DrawStatistics*>(mapped)[Uint32(PrevId & 1)].visibleCubes;
+                m_VisibleCubes = static_cast<DrawStatistics*>(mapped)[PrevId & 0x01].visibleCubes;
                 m_pImmediateContext->UnmapBuffer(m_pStatisticsStaging, MAP_READ);
             }
         }
