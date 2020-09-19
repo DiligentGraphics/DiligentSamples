@@ -113,7 +113,7 @@ void main(in uint I : SV_GroupIndex,
     ...
 ```
 
-After frustum culling we atomically increase value in `s_TaskCount`, in `index` we get a unique index for arrays in payload.
+After frustum culling we atomically increase value in `s_TaskCount`, in `index` we get a unique index to access arrays in the payload.
 ```hlsl
     if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
     {
@@ -256,7 +256,7 @@ if (I < 12)
 
 ## Creating cube
 
-Cube creation has been changed - now we don’t need vertex and index buffers, mesh shader will read data from shader resource.
+Cube creation has been changed - now we donâ€™t need vertex and index buffers, mesh shader will read data from shader resource.
 We use a constant buffer because we have only one small mesh, if we have a big number of large meshes we should use an unordered access buffer.
 All elements in the array in constant buffer must be aligned to 16 bytes.
 Also we store the radius of the circumscribed sphere for the cube.
@@ -450,8 +450,8 @@ m_pImmediateContext->DrawMesh(drawAttrs);
 ```
 
 ## Further Reading
-[Introduction to Turing Mesh Shaders](https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/)
-[Vulkan spec](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#shaders-task)
-[GLSL spec](https://github.com/KhronosGroup/GLSL/blob/master/extensions/nv/GLSL_NV_mesh_shader.txt)
-[DirectX spec](https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html)
-[Radius of projected sphere in screen space](https://stackoverflow.com/a/21649403)
+[Introduction to Turing Mesh Shaders](https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/)</br>
+[Vulkan spec](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#shaders-task)</br>
+[GLSL spec](https://github.com/KhronosGroup/GLSL/blob/master/extensions/nv/GLSL_NV_mesh_shader.txt)</br>
+[DirectX spec](https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html)</br>
+[Radius of projected sphere in screen space](https://stackoverflow.com/a/21649403)</br>
