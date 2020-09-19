@@ -1,0 +1,81 @@
+
+// from amplification shader
+#define GROUP_SIZE 32
+
+struct Payload
+{
+    float PosX[GROUP_SIZE];
+    float PosY[GROUP_SIZE];
+    float PosZ[GROUP_SIZE];
+    float Scale[GROUP_SIZE];
+    float LODs[GROUP_SIZE];
+};
+
+struct PSInput 
+{
+    float4 Pos   : SV_POSITION; 
+    float4 Color : COLOR;
+    float2 UV    : TEXCOORD;
+};
+
+cbuffer CubeData
+{
+    float4 g_SphereRadius;
+    float4 g_Positions[24];
+    float4 g_UVs[24];
+    uint4  g_Indices[36 / 3]; // 3 indices per element
+};
+
+cbuffer Constants
+{
+    float4x4 g_ViewMat;
+    float4x4 g_ViewProjMat;
+    float4   g_Frustum[6];
+    float    g_CoTanHalfFov;
+    float    g_ElapsedTime;
+    bool     g_FrustumCulling;
+    bool     g_Animate;
+};
+
+
+// generate color
+float4 Rainbow(float factor)
+{
+    float  h   = factor / 1.35;
+    float3 col = float3(abs(h * 6.0 - 3.0) - 1.0, 2.0 - abs(h * 6.0 - 2.0), 2.0 - abs(h * 6.0 - 4.0));
+    return float4(clamp(col, float3(0.0, 0.0, 0.0), float3(1.0, 1.0, 1.0)), 1.0);
+}
+
+
+[numthreads(24,1,1)] // use only 24 threads of 32 maximum available
+[outputtopology("triangle")] // output primitive type is triangle list
+void main(in uint I   : SV_GroupIndex,   // thread index used to access mesh shader output
+          in uint gid : SV_GroupID,      // work group index used to access amplification shader output
+          in  payload  Payload  payload, // All amplification shader output can be accessed by mesh shader
+          out indices  uint3    tris[12],
+          out vertices PSInput  verts[24])
+{
+    // Cube contains 24 vertices, 36 indices for 12 triangles.
+    // Only the input values from the the first active thread are used.
+    SetMeshOutputCounts(24, 12);
+    
+    float3 pos;
+    float  scale = payload.Scale[gid];
+    float  LOD   = payload.LODs[gid];
+    pos.x = payload.PosX[gid];
+    pos.y = payload.PosY[gid];
+    pos.z = payload.PosZ[gid];
+    
+    // each thread writes to only one vertex
+    verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
+    verts[I].UV  = g_UVs[I].xy;
+    
+    // LOD doesn't affect on vertices count, just show LOD with different colors
+    verts[I].Color = Rainbow(LOD);
+    
+    // only 12 threads writes indices
+    if (I < 12)
+    {
+        tris[I] = g_Indices[I].xyz;
+    }
+}
