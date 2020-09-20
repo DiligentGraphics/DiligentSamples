@@ -1,43 +1,15 @@
 #version 460
 #extension GL_NV_mesh_shader : require
+#extension GL_GOOGLE_include_directive : require
 
-#ifndef GROUP_SIZE
-#   define GROUP_SIZE 32
-#endif
+#include "structures.h"
 
 layout(local_size_x = GROUP_SIZE) in;
-
-struct DrawTask
-{
-    vec2  BasePos;  // read-only
-    float Scale;    // read-only
-    float Time;     // read-write
-};
 
 layout(std140) buffer DrawTasks
 {
     DrawTask g_DrawTasks[];
 };
-
-layout(std140) uniform Constants
-{
-    layout(row_major) mat4x4 g_ViewMat;
-    layout(row_major) mat4x4 g_ViewProjMat;
-
-    vec4   g_Frustum[6];
-    float  g_CoTanHalfFov;
-    float  g_ElapsedTime;
-    bool   g_FrustumCulling;
-    bool   g_Animate;
-};
-
-layout(std140) uniform CubeData
-{
-    vec4  sphereRadius;
-    vec4  pos[24];
-    vec4  uv[24];
-    uvec4 indices[36 / 3];
-} g_Cube;
 
 layout(std140) buffer Statistics
 {
@@ -114,14 +86,14 @@ void main()
     }
     
     // frustum culling
-    if (!g_FrustumCulling || IsVisible(pos, g_Cube.sphereRadius.x * scale))
+    if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
     {
         // Acquire index that will be used to safely access shader output.
         // Each thread has unique index.
         uint index = atomicAdd(s_TaskCount, 1);
 
         Output.pos[index]  = vec4(pos, scale);
-        Output.LODs[index] = CalcDetailLevel(pos, g_Cube.sphereRadius.x * scale);
+        Output.LODs[index] = CalcDetailLevel(pos, g_SphereRadius.x * scale);
     }
 
     // all threads must complete their work so that we can read s_TaskCount

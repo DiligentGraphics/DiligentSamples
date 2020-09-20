@@ -1,37 +1,4 @@
-
-#ifndef GROUP_SIZE
-#   define GROUP_SIZE 32
-#endif
-
-struct DrawTask
-{
-    float2 BasePos;  // read-only
-    float  Scale;    // read-only
-    float  Time;     // read-write
-};
-
-RWStructuredBuffer<DrawTask> DrawTasks;
-
-cbuffer Constants
-{
-    float4x4 g_ViewMat;
-    float4x4 g_ViewProjMat;
-    float4   g_Frustum[6];
-    float    g_CoTanHalfFov;
-    float    g_ElapsedTime;
-    bool     g_FrustumCulling;
-    bool     g_Animate;
-};
-
-cbuffer CubeData
-{
-    float4 g_SphereRadius;
-    float4 g_Positions[24];
-    float4 g_UVs[24];
-    uint4  g_Indices[36 / 3];
-};
-
-RWByteAddressBuffer Statistics;
+#include "structures.h"
 
 // Payload size must be less than 16kb.
 struct Payload
@@ -42,6 +9,9 @@ struct Payload
     float Scale[GROUP_SIZE];
     float LODs[GROUP_SIZE];
 };
+RWStructuredBuffer<DrawTask> DrawTasks;
+
+RWByteAddressBuffer  Statistics;
 
 // Payload will be used in mesh shader.
 groupshared Payload s_Payload;

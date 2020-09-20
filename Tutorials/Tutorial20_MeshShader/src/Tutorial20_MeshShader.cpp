@@ -40,41 +40,15 @@ namespace Diligent
 namespace
 {
 
-struct CubeData
-{
-    // for frustum culling
-    float4 sphereRadius;
-
-    // each array element in UB is 16-byte aligned
-    float4 pos[24];
-    float4 uv[24];
-    uint4  indices[36 / 3];
-};
+#define cbuffer struct
+#include "../assets/structures.h"
 
 struct DrawStatistics
 {
     Uint32 visibleCubes;
 };
 
-struct DrawTask
-{
-    float2 BasePos; // read-only
-    float  Scale;   // read-only
-    float  Time;    // read-write
-};
 static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be 16-byte aligned");
-
-struct Constants
-{
-    float4x4 ViewMat;
-    float4x4 ViewProjMat;
-    Plane3D  Frustum[6];
-
-    float CoTanHalfFov;
-    float ElapsedTime;
-    uint  FrustumCulling; // bool
-    uint  Animate;        // bool
-};
 
 } // namespace
 
@@ -119,17 +93,17 @@ void Tutorial20_MeshShader::CreateCube()
 
     CubeData Data;
 
-    // radius of the circumscribed sphere = (edge_length * sqrt(3) / 2)
-    Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
+    // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
+    Data.g_SphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
 
-    static_assert(sizeof(Data.pos) == sizeof(CubePos), "size mismatch");
-    std::memcpy(Data.pos, CubePos, sizeof(CubePos));
+    static_assert(sizeof(Data.g_Positions) == sizeof(CubePos), "size mismatch");
+    std::memcpy(Data.g_Positions, CubePos, sizeof(CubePos));
 
-    static_assert(sizeof(Data.uv) == sizeof(CubeUV), "size mismatch");
-    std::memcpy(Data.uv, CubeUV, sizeof(CubeUV));
+    static_assert(sizeof(Data.g_UVs) == sizeof(CubeUV), "size mismatch");
+    std::memcpy(Data.g_UVs, CubeUV, sizeof(CubeUV));
 
-    static_assert(sizeof(Data.indices) == sizeof(Indices), "size mismatch");
-    std::memcpy(Data.indices, Indices, sizeof(Indices));
+    static_assert(sizeof(Data.g_Indices) == sizeof(Indices), "size mismatch");
+    std::memcpy(Data.g_Indices, Indices, sizeof(Indices));
 
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Cube vertex & index buffer";
@@ -414,26 +388,26 @@ void Tutorial20_MeshShader::Render()
     {
         // Map the buffer and write current view, view-projection matrix and other constants.
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->ViewMat        = m_ViewMatrix.Transpose();
-        CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
-        CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
-        CBConstants->FrustumCulling = m_FrustumCulling;
-        CBConstants->ElapsedTime    = m_ElapsedTime;
-        CBConstants->Animate        = m_Animate;
+        CBConstants->g_ViewMat        = m_ViewMatrix.Transpose();
+        CBConstants->g_ViewProjMat    = m_ViewProjMatrix.Transpose();
+        CBConstants->g_CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
+        CBConstants->g_FrustumCulling = m_FrustumCulling;
+        CBConstants->g_ElapsedTime    = m_ElapsedTime;
+        CBConstants->g_Animate        = m_Animate;
 
         // Calculate frustum planes from view-projection matrix.
         ViewFrustum Frustum;
         ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
 
         // Each frustum plane must be normalized.
-        for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
+        for (uint i = 0; i < _countof(CBConstants->g_Frustum); ++i)
         {
             Plane3D plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
             float   invlen = 1.0f / length(plane.Normal);
             plane.Normal *= invlen;
             plane.Distance *= invlen;
 
-            CBConstants->Frustum[i] = plane;
+            CBConstants->g_Frustum[i] = plane;
         }
     }
 

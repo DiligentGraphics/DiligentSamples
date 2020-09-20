@@ -17,6 +17,7 @@ set(SHADERS
     assets/vk_cube.ash
     assets/vk_cube.msh
     assets/vk_cube.psh
+    assets/structures.h
 )
 
 set(ASSETS
