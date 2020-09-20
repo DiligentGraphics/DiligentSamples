@@ -69,10 +69,11 @@ struct Constants
     float4x4 ViewMat;
     float4x4 ViewProjMat;
     Plane3D  Frustum[6];
-    float    CoTanHalfFov;
-    float    ElapsedTime;
-    uint     FrustumCulling; // bool
-    uint     Animate;        // bool
+
+    float CoTanHalfFov;
+    float ElapsedTime;
+    uint  FrustumCulling; // bool
+    uint  Animate;        // bool
 };
 
 } // namespace
@@ -118,7 +119,7 @@ void Tutorial20_MeshShader::CreateCube()
 
     CubeData Data;
 
-    // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
+    // radius of the circumscribed sphere = (edge_length * sqrt(3) / 2)
     Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
 
     static_assert(sizeof(Data.pos) == sizeof(CubePos), "size mismatch");
@@ -146,8 +147,8 @@ void Tutorial20_MeshShader::CreateCube()
 
 void Tutorial20_MeshShader::CreateDrawTasks()
 {
-    // In this tutorial draw tasks contains:
-    //  * cube position in grid
+    // In this tutorial draw tasks contain:
+    //  * cube position in the grid
     //  * cube scale factor
     //  * time that is used for animation and will be updated in the shader.
     // Additionally you can store model transformation matrix, mesh and material IDs, etc.
@@ -173,11 +174,12 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     }
 
     BufferDesc BuffDesc;
-    BuffDesc.Name          = "Draw tasks buffer";
-    BuffDesc.Usage         = USAGE_DEFAULT;
-    BuffDesc.BindFlags     = BIND_UNORDERED_ACCESS;
-    BuffDesc.Mode          = BUFFER_MODE_RAW;
-    BuffDesc.uiSizeInBytes = sizeof(DrawTasks[0]) * Uint32(DrawTasks.size());
+    BuffDesc.Name              = "Draw tasks buffer";
+    BuffDesc.Usage             = USAGE_DEFAULT;
+    BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS;
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
+    BuffDesc.uiSizeInBytes     = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
 
     BufferData BufData;
     BufData.pData    = DrawTasks.data();
@@ -186,12 +188,12 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
     VERIFY_EXPR(m_pDrawTasks != nullptr);
 
-    m_DrawTaskCount = Uint32(DrawTasks.size());
+    m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
 }
 
 void Tutorial20_MeshShader::CreateStatisticsBuffer()
 {
-    // This buffer used as atomic counter in amplification shader to show
+    // This buffer is used as an atomic counter in the amplification shader to show
     // how many cubes are rendered with and without frustum culling.
 
     BufferDesc BuffDesc;
@@ -204,14 +206,14 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsBuffer);
     VERIFY_EXPR(m_pStatisticsBuffer != nullptr);
 
-    // Staging buffer is needed to read data from statistics buffer.
+    // Staging buffer is needed to read the data from statistics buffer.
 
     BuffDesc.Name           = "Statistics staging buffer";
     BuffDesc.Usage          = USAGE_STAGING;
     BuffDesc.BindFlags      = BIND_NONE;
     BuffDesc.Mode           = BUFFER_MODE_UNDEFINED;
     BuffDesc.CPUAccessFlags = CPU_ACCESS_READ;
-    BuffDesc.uiSizeInBytes  = sizeof(DrawStatistics) * 2;
+    BuffDesc.uiSizeInBytes  = sizeof(DrawStatistics) * m_StatisticsHistorySize;
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsStaging);
     VERIFY_EXPR(m_pStatisticsStaging != nullptr);
@@ -280,13 +282,17 @@ void Tutorial20_MeshShader::CreatePipelineState()
     // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
     ShaderCI.ShaderCompiler = IsVulkan ? SHADER_COMPILER_GLSLANG : SHADER_COMPILER_DXC;
 
-    // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+
+    ShaderMacroHelper Macros;
+    Macros.AddShaderMacro("GROUP_SIZE", ASGroupSize);
+
+    ShaderCI.Macros = Macros;
 
     RefCntAutoPtr<IShader> pAS;
     {
@@ -422,7 +428,7 @@ void Tutorial20_MeshShader::Render()
         // Each frustum plane must be normalized.
         for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
         {
-            Plane3D plane  = Frustum.GetPlane(ViewFrustum::PLANE_IDX(i));
+            Plane3D plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
             float   invlen = 1.0f / length(plane.Normal);
             plane.Normal *= invlen;
             plane.Distance *= invlen;
@@ -431,11 +437,11 @@ void Tutorial20_MeshShader::Render()
         }
     }
 
-    // Amplification shader runs with 32 threads and task count must be aligned to 32
-    // to prevent lass of tasks or access outside the array.
-    VERIFY_EXPR(m_DrawTaskCount % 32 == 0);
+    // Amplification shader executes 32 threads per group and the task count must be aligned to 32
+    // to prevent loss of tasks or access outside of the data array.
+    VERIFY_EXPR(m_DrawTaskCount % ASGroupSize == 0);
 
-    DrawMeshAttribs drawAttrs(m_DrawTaskCount / 32, DRAW_FLAG_VERIFY_ALL);
+    DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
     m_pImmediateContext->DrawMesh(drawAttrs);
 
     // Copy statistics to staging buffer
@@ -443,27 +449,33 @@ void Tutorial20_MeshShader::Render()
         m_VisibleCubes = 0;
 
         m_pImmediateContext->CopyBuffer(m_pStatisticsBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % 0x01) * sizeof(DrawStatistics), sizeof(DrawStatistics),
+                                        m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % m_StatisticsHistorySize) * sizeof(DrawStatistics), sizeof(DrawStatistics),
                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // We should use synchronizations to safely access to mapped memory.
         m_pImmediateContext->SignalFence(m_pStatisticsAvailable, m_FrameId);
 
         // Read statistics from previous frame.
-        if (m_FrameId > 0)
-        {
-            // Synchronize
-            Uint64 PrevId = m_FrameId - 1;
-            m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevId, false);
+        Uint64 PrevFrameId = m_pStatisticsAvailable->GetCompletedValue();
 
-            PVoid mapped = nullptr;
-            m_pImmediateContext->MapBuffer(m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT, mapped);
-            if (mapped)
-            {
-                m_VisibleCubes = static_cast<DrawStatistics*>(mapped)[PrevId & 0x01].visibleCubes;
-                m_pImmediateContext->UnmapBuffer(m_pStatisticsStaging, MAP_READ);
-            }
+        // Synchronize
+        if (m_FrameId - PrevFrameId > m_StatisticsHistorySize)
+        {
+            // In theory we should never get here as we wait for more than enough
+            // frames.
+            PrevFrameId = m_FrameId - m_StatisticsHistorySize / 2;
+            m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevFrameId, false);
         }
+
+        Uint64 PrevId = PrevFrameId % m_StatisticsHistorySize;
+
+        // Read the staging data
+        {
+            MapHelper<DrawStatistics> StagingData(m_pImmediateContext, m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT);
+            if (StagingData)
+                m_VisibleCubes = StagingData[PrevId].visibleCubes;
+        }
+
         ++m_FrameId;
     }
 }

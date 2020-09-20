@@ -1,8 +1,10 @@
 #version 460
 #extension GL_NV_mesh_shader : require
 
-// from task shader
-#define GROUP_SIZE 32
+// from the task shader
+#ifndef GROUP_SIZE
+#   define GROUP_SIZE 32
+#endif
 
 // use only 24 threads of 32 maximum available
 layout(local_size_x = 24) in;
@@ -43,7 +45,7 @@ layout(std140) uniform Constants
     layout(row_major) mat4x4 g_ViewMat;
     layout(row_major) mat4x4 g_ViewProjMat;
 
-    vec4   g_Frustum[6];
+    vec4   g_Frustum[6];    // xyz == plane normal, w == distance
     float  g_CoTanHalfFov;
     float  g_ElapsedTime;
     bool   g_FrustumCulling;

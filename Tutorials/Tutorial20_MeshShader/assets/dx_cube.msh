@@ -1,7 +1,10 @@
 
-// from amplification shader
-#define GROUP_SIZE 32
+// from the amplification shader
+#ifndef GROUP_SIZE
+#   define GROUP_SIZE 32
+#endif
 
+// Same as in the amplification shader
 struct Payload
 {
     float PosX[GROUP_SIZE];
@@ -30,7 +33,7 @@ cbuffer Constants
 {
     float4x4 g_ViewMat;
     float4x4 g_ViewProjMat;
-    float4   g_Frustum[6];
+    float4   g_Frustum[6];   // xyz == plane normal, w == distance
     float    g_CoTanHalfFov;
     float    g_ElapsedTime;
     bool     g_FrustumCulling;
@@ -70,10 +73,10 @@ void main(in uint I   : SV_GroupIndex,   // thread index used to access mesh sha
     verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
     verts[I].UV  = g_UVs[I].xy;
     
-    // LOD doesn't affect on vertices count, just show LOD with different colors
+    // LOD doesn't affect the vertex count, we just display it as color
     verts[I].Color = Rainbow(LOD);
     
-    // only 12 threads writes indices
+    // Only 12 threads write indices. We must not access the array outside of its bounds.
     if (I < 12)
     {
         tris[I] = g_Indices[I].xyz;

@@ -1,4 +1,7 @@
-#define GROUP_SIZE 32
+
+#ifndef GROUP_SIZE
+#   define GROUP_SIZE 32
+#endif
 
 struct DrawTask
 {
@@ -8,14 +11,6 @@ struct DrawTask
 };
 
 RWStructuredBuffer<DrawTask> DrawTasks;
-
-cbuffer CubeData
-{
-    float4 g_SphereRadius;
-    float4 g_Positions[24];
-    float4 g_UVs[24];
-    uint4  g_Indices[36 / 3];
-};
 
 cbuffer Constants
 {
@@ -28,7 +23,15 @@ cbuffer Constants
     bool     g_Animate;
 };
 
-RWByteAddressBuffer  Statistics;
+cbuffer CubeData
+{
+    float4 g_SphereRadius;
+    float4 g_Positions[24];
+    float4 g_UVs[24];
+    uint4  g_Indices[36 / 3];
+};
+
+RWByteAddressBuffer Statistics;
 
 // Payload size must be less than 16kb.
 struct Payload
@@ -44,7 +47,8 @@ struct Payload
 groupshared Payload s_Payload;
 
 
-// The sphere is visible when the distance from each plane is greater than or equal to the radius of the sphere.
+// The sphere is visible when the distance from each plane is greater than or
+// equal to the radius of the sphere.
 bool IsVisible(float3 cubeCenter, float radius)
 {
     float4 center = float4(cubeCenter, 1.0);
@@ -59,8 +63,8 @@ bool IsVisible(float3 cubeCenter, float radius)
 
 float CalcDetailLevel(float3 cubeCenter, float radius)
 {
-    // cubeCenter is also the center of the sphere. 
-    // radius - radius of circumscribed sphere
+    // cubeCenter - the center of the sphere 
+    // radius     - the radius of circumscribed sphere
     
     // get position in view space
     float3 pos   = mul(float4(cubeCenter, 1.0), g_ViewMat).xyz;
@@ -76,11 +80,12 @@ float CalcDetailLevel(float3 cubeCenter, float radius)
     return level;
 }
 
-// This value used to calculate number of cubes that will be rendered after frustum culling
+// This value is used to calculate tne number of cubes that will be
+// rendered after the frustum culling
 groupshared uint s_TaskCount;
 
 [numthreads(GROUP_SIZE,1,1)]
-void main(in uint I : SV_GroupIndex,
+void main(in uint I  : SV_GroupIndex,
           in uint wg : SV_GroupID)
 {
     // initialize shared variable
@@ -98,7 +103,7 @@ void main(in uint I : SV_GroupIndex,
     float      scale = task.Scale;
     float      time  = task.Time;
 
-    // simulation
+    // Simple animation
     pos.y = sin(time);
 
     if (g_Animate)
@@ -110,8 +115,8 @@ void main(in uint I : SV_GroupIndex,
     // frustum culling
     if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
     {
-        // Acquire index that will be used to safely access payload.
-        // Each thread has unique index.
+        // Acquire index that will be used to safely access the payload.
+        // Each thread will use a unique index.
         uint index = 0;
         InterlockedAdd(s_TaskCount, 1, index);
         
@@ -122,7 +127,7 @@ void main(in uint I : SV_GroupIndex,
         s_Payload.LODs[index]  = CalcDetailLevel(pos, g_SphereRadius.x * scale);
     }
     
-    // all thread must complete thir work that we can read s_TaskCount
+    // all threads must complete their work so that we can read s_TaskCount
     GroupMemoryBarrierWithGroupSync();
 
     if (I == 0)

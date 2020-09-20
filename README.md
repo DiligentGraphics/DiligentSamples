@@ -35,6 +35,7 @@ To build and run the applications in the module, please follow the [instructions
   - [17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples#tutorial-17---msaa)
   - [18 - Queries](https://github.com/DiligentGraphics/DiligentSamples#tutorial-18---queries)
   - [19 - Render Passes](https://github.com/DiligentGraphics/DiligentSamples#tutorial-19---render-passes)
+  - [20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-20---mesh-shader)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLTF Viewer](https://github.com/DiligentGraphics/DiligentSamples#gltf-viewer)
@@ -197,6 +198,14 @@ the GPU operation, such as the number of primitives rendered, command processing
 This tutorial demonstrates how to use the render passes API to implement simple deferred shading.
 
 ![](Tutorials/Tutorial19_RenderPasses/Animation_Large.gif)
+
+
+## [Tutorial 20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial20_MeshShader)
+
+This tutorial deomstrates how to use amplification and mesh shaders, the new programmable stages, to implement
+frustum culling and LOD calculation on the GPU.
+
+![](Tutorials/Tutorial20_MeshShader/Animation_Large.gif)
 
 
 # Samples

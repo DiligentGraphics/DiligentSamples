@@ -59,7 +59,10 @@ private:
     RefCntAutoPtr<IBuffer> m_pStatisticsBuffer;
     RefCntAutoPtr<IBuffer> m_pStatisticsStaging;
     RefCntAutoPtr<IFence>  m_pStatisticsAvailable;
-    Uint64                 m_FrameId = 0;
+    Uint64                 m_FrameId               = 0;
+    const Uint32           m_StatisticsHistorySize = 8;
+
+    static constexpr Int32 ASGroupSize = 32;
 
     Uint32                 m_DrawTaskCount = 0;
     RefCntAutoPtr<IBuffer> m_pDrawTasks;
