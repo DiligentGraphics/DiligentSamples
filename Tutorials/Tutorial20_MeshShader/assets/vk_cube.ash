@@ -62,8 +62,7 @@ float CalcDetailLevel(vec3 cubeCenter, float radius)
 
 // Task shader output data. Must be less than 16Kb.
 taskNV out Task {
-    vec4  pos[GROUP_SIZE];
-    float LODs[GROUP_SIZE];
+    Payload payload;
 } Output;
 
 // This value used to calculate the number of cubes that will be rendered after the frustum culling
@@ -103,8 +102,11 @@ void main()
         // Each thread has unique index.
         uint index = atomicAdd(s_TaskCount, 1);
 
-        Output.pos[index]  = vec4(pos, scale);
-        Output.LODs[index] = CalcDetailLevel(pos, g_CubeData.SphereRadius.x * scale);
+        Output.payload.PosX[index] = pos.x;
+        Output.payload.PosY[index] = pos.y;
+        Output.payload.PosZ[index] = pos.z;
+        Output.payload.Scale[index] = scale;
+        Output.payload.LODs[index] = CalcDetailLevel(pos, g_CubeData.SphereRadius.x * scale);
     }
 
     // all threads must complete their work so that we can read s_TaskCount

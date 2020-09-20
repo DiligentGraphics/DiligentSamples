@@ -42,8 +42,7 @@ layout(location=1) out vec4 out_Color[];
 
 // All task shader output can be accessed by mesh shader
 taskNV in Task {
-    vec4  pos[GROUP_SIZE];
-    float LODs[GROUP_SIZE];
+    Payload payload;
 } Input;
 
 
@@ -63,9 +62,10 @@ void main()
     // local invocation index used to access mesh shader output
     const uint I   = gl_LocalInvocationID.x;
 
-    vec3  pos   = Input.pos[gid].xyz;
-    float scale = Input.pos[gid].w;
-    float LOD   = Input.LODs[gid];
+    Payload payload = Input.payload;
+    vec3  pos   = vec3(payload.PosX[gid], payload.PosY[gid], payload.PosZ[gid]);
+    float scale = payload.Scale[gid];
+    float LOD   = payload.LODs[gid];
     
     // each thread writes to only one vertex
     gl_MeshVerticesNV[I].gl_Position = g_Constants.ViewProjMat * vec4(pos + g_CubeData.Positions[I].xyz * scale, 1.0);
