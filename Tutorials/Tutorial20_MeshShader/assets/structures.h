@@ -1,14 +1,13 @@
 
 #ifndef GROUP_SIZE
-#define GROUP_SIZE 32
+#   define GROUP_SIZE 32
 #endif
 
 #ifdef VULKAN
-#define float2   vec2
-#define float4   vec4
-#define uint4    uvec4
-#define float4x4 layout(row_major) mat4x4 // row major matrices for compatibility with DirectX
-#define cbuffer  layout(std140) uniform
+#   define float2   vec2
+#   define float4   vec4
+#   define uint4    uvec4
+#   define float4x4 mat4x4
 #endif
 
 struct DrawTask
@@ -18,23 +17,23 @@ struct DrawTask
     float  Time;    // read-write
 };
 
-cbuffer CubeData
+struct CubeData
 {
-    float4 g_SphereRadius;
-    float4 g_Positions[24];
-    float4 g_UVs[24];
-    uint4  g_Indices[36 / 3]; // 3 indices per element
+    float4 SphereRadius;
+    float4 Positions[24];
+    float4 UVs[24];
+    uint4  Indices[36 / 3]; // 3 indices per element
 };
 
-cbuffer Constants
+struct Constants
 {
-    float4x4 g_ViewMat;
-    float4x4 g_ViewProjMat;
-    float4   g_Frustum[6];
-    float    g_CoTanHalfFov;
-    float    g_ElapsedTime;
-    bool     g_FrustumCulling;
-    bool     g_Animate;
+    float4x4 ViewMat;
+    float4x4 ViewProjMat;
+    float4   Frustum[6];
+    float    CoTanHalfFov;
+    float    ElapsedTime;
+    bool     FrustumCulling;
+    bool     Animate;
 };
 
 #ifndef VULKAN

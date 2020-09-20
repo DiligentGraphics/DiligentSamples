@@ -40,7 +40,6 @@ namespace Diligent
 namespace
 {
 
-#define cbuffer struct
 #include "../assets/structures.h"
 
 struct DrawStatistics
@@ -94,16 +93,16 @@ void Tutorial20_MeshShader::CreateCube()
     CubeData Data;
 
     // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
-    Data.g_SphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
+    Data.SphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
 
-    static_assert(sizeof(Data.g_Positions) == sizeof(CubePos), "size mismatch");
-    std::memcpy(Data.g_Positions, CubePos, sizeof(CubePos));
+    static_assert(sizeof(Data.Positions) == sizeof(CubePos), "size mismatch");
+    std::memcpy(Data.Positions, CubePos, sizeof(CubePos));
 
-    static_assert(sizeof(Data.g_UVs) == sizeof(CubeUV), "size mismatch");
-    std::memcpy(Data.g_UVs, CubeUV, sizeof(CubeUV));
+    static_assert(sizeof(Data.UVs) == sizeof(CubeUV), "size mismatch");
+    std::memcpy(Data.UVs, CubeUV, sizeof(CubeUV));
 
-    static_assert(sizeof(Data.g_Indices) == sizeof(Indices), "size mismatch");
-    std::memcpy(Data.g_Indices, Indices, sizeof(Indices));
+    static_assert(sizeof(Data.Indices) == sizeof(Indices), "size mismatch");
+    std::memcpy(Data.Indices, Indices, sizeof(Indices));
 
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Cube vertex & index buffer";
@@ -327,10 +326,10 @@ void Tutorial20_MeshShader::CreatePipelineState()
 
     m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics")->Set(m_pStatisticsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
     m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "CubeData")->Set(m_CubeBuffer);
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Constants")->Set(m_pConstants);
-    m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "CubeData")->Set(m_CubeBuffer);
-    m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "Constants")->Set(m_pConstants);
+    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
+    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
+    m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
+    m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants")->Set(m_pConstants);
     m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
@@ -388,26 +387,26 @@ void Tutorial20_MeshShader::Render()
     {
         // Map the buffer and write current view, view-projection matrix and other constants.
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->g_ViewMat        = m_ViewMatrix.Transpose();
-        CBConstants->g_ViewProjMat    = m_ViewProjMatrix.Transpose();
-        CBConstants->g_CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
-        CBConstants->g_FrustumCulling = m_FrustumCulling;
-        CBConstants->g_ElapsedTime    = m_ElapsedTime;
-        CBConstants->g_Animate        = m_Animate;
+        CBConstants->ViewMat        = m_ViewMatrix.Transpose();
+        CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
+        CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
+        CBConstants->FrustumCulling = m_FrustumCulling;
+        CBConstants->ElapsedTime    = m_ElapsedTime;
+        CBConstants->Animate        = m_Animate;
 
         // Calculate frustum planes from view-projection matrix.
         ViewFrustum Frustum;
         ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
 
         // Each frustum plane must be normalized.
-        for (uint i = 0; i < _countof(CBConstants->g_Frustum); ++i)
+        for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
         {
             Plane3D plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
             float   invlen = 1.0f / length(plane.Normal);
             plane.Normal *= invlen;
             plane.Distance *= invlen;
 
-            CBConstants->g_Frustum[i] = plane;
+            CBConstants->Frustum[i] = plane;
         }
     }
 

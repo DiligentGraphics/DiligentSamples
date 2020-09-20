@@ -1,5 +1,15 @@
 #include "structures.h"
 
+cbuffer cbCubeData
+{
+    CubeData g_CubeData;
+}
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
+
 struct PSInput 
 {
     float4 Pos   : SV_POSITION; 
@@ -37,8 +47,8 @@ void main(in uint I   : SV_GroupIndex,   // thread index used to access mesh sha
     pos.z = payload.PosZ[gid];
     
     // each thread writes to only one vertex
-    verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
-    verts[I].UV  = g_UVs[I].xy;
+    verts[I].Pos = mul(float4(pos + g_CubeData.Positions[I].xyz * scale, 1.0), g_Constants.ViewProjMat);
+    verts[I].UV  = g_CubeData.UVs[I].xy;
     
     // LOD doesn't affect the vertex count, we just display it as color
     verts[I].Color = Rainbow(LOD);
@@ -46,6 +56,6 @@ void main(in uint I   : SV_GroupIndex,   // thread index used to access mesh sha
     // Only 12 threads write indices. We must not access the array outside of its bounds.
     if (I < 12)
     {
-        tris[I] = g_Indices[I].xyz;
+        tris[I] = g_CubeData.Indices[I].xyz;
     }
 }

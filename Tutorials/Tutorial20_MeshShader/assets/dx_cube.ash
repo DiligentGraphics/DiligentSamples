@@ -1,15 +1,16 @@
 #include "structures.h"
 
-// Payload size must be less than 16kb.
-struct Payload
-{
-    float PosX[GROUP_SIZE];
-    float PosY[GROUP_SIZE];
-    float PosZ[GROUP_SIZE];
-    float Scale[GROUP_SIZE];
-    float LODs[GROUP_SIZE];
-};
 RWStructuredBuffer<DrawTask> DrawTasks;
+
+cbuffer cbCubeData
+{
+    CubeData g_CubeData;
+}
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
 
 RWByteAddressBuffer  Statistics;
 
@@ -25,7 +26,7 @@ bool IsVisible(float3 cubeCenter, float radius)
 
     for (int i = 0; i < 6; ++i)
     {
-        if (dot(g_Frustum[i], center) < -radius)
+        if (dot(g_Constants.Frustum[i], center) < -radius)
             return false;
     }
     return true;
@@ -37,13 +38,13 @@ float CalcDetailLevel(float3 cubeCenter, float radius)
     // radius     - the radius of circumscribed sphere
     
     // get position in view space
-    float3 pos   = mul(float4(cubeCenter, 1.0), g_ViewMat).xyz;
+    float3 pos   = mul(float4(cubeCenter, 1.0), g_Constants.ViewMat).xyz;
     
     // square of distance from camera to circumscribed sphere
     float  dist2 = dot(pos, pos);
     
     // calculate sphere size in screen space
-    float  size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
+    float  size  = g_Constants.CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
     
     // calculate detail level
     float  level = clamp(1.0 - size, 0.0, 1.0);
@@ -76,14 +77,14 @@ void main(in uint I  : SV_GroupIndex,
     // Simple animation
     pos.y = sin(time);
 
-    if (g_Animate)
+    if (g_Constants.Animate)
     {
         // write new time to draw task
-        DrawTasks[gid].Time = time + g_ElapsedTime;
+        DrawTasks[gid].Time = time + g_Constants.ElapsedTime;
     }
 
     // frustum culling
-    if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
+    if (!g_Constants.FrustumCulling || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
     {
         // Acquire index that will be used to safely access the payload.
         // Each thread will use a unique index.
@@ -94,7 +95,7 @@ void main(in uint I  : SV_GroupIndex,
         s_Payload.PosY[index]  = pos.y;
         s_Payload.PosZ[index]  = pos.z;
         s_Payload.Scale[index] = scale;
-        s_Payload.LODs[index]  = CalcDetailLevel(pos, g_SphereRadius.x * scale);
+        s_Payload.LODs[index]  = CalcDetailLevel(pos, g_CubeData.SphereRadius.x * scale);
     }
     
     // all threads must complete their work so that we can read s_TaskCount

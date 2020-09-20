@@ -11,6 +11,17 @@ layout(std140) buffer DrawTasks
     DrawTask g_DrawTasks[];
 };
 
+// row major matrices for compatibility with DirectX
+layout(std140, row_major) uniform cbConstants
+{
+    Constants g_Constants;
+};
+
+layout(std140, row_major) uniform cbCubeData
+{
+    CubeData g_CubeData;
+};
+
 layout(std140) buffer Statistics
 {
     uint g_VisibleCubes; // atomic
@@ -24,7 +35,7 @@ bool IsVisible(vec3 cubeCenter, float radius)
 
     for (int i = 0; i < 6; ++i)
     {
-        if (dot(g_Frustum[i], center) < -radius)
+        if (dot(g_Constants.Frustum[i], center) < -radius)
             return false;
     }
     return true;
@@ -36,13 +47,13 @@ float CalcDetailLevel(vec3 cubeCenter, float radius)
     // radius - radius of circumscribed sphere
 
     // get position in view space
-    vec3  pos   = (g_ViewMat * vec4(cubeCenter, 1.0)).xyz;
+    vec3  pos   = (g_Constants.ViewMat * vec4(cubeCenter, 1.0)).xyz;
 
     // square of distance from camera to circumscribed sphere
     float dist2 = dot(pos, pos);
 
     // calculate sphere size in screen space
-    float size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
+    float size  = g_Constants.CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
 
     // calculate detail level
     float level = clamp(1.0 - size, 0.0, 1.0);
@@ -80,20 +91,20 @@ void main()
     // Simple animation
     pos.y = sin(time);
 
-    if (g_Animate)
+    if (g_Constants.Animate)
     {
-        g_DrawTasks[gid].Time = time + g_ElapsedTime;
+        g_DrawTasks[gid].Time = time + g_Constants.ElapsedTime;
     }
     
     // frustum culling
-    if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
+    if (!g_Constants.FrustumCulling || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
     {
         // Acquire index that will be used to safely access shader output.
         // Each thread has unique index.
         uint index = atomicAdd(s_TaskCount, 1);
 
         Output.pos[index]  = vec4(pos, scale);
-        Output.LODs[index] = CalcDetailLevel(pos, g_SphereRadius.x * scale);
+        Output.LODs[index] = CalcDetailLevel(pos, g_CubeData.SphereRadius.x * scale);
     }
 
     // all threads must complete their work so that we can read s_TaskCount
