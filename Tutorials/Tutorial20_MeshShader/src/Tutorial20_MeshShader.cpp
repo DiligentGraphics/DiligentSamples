@@ -139,17 +139,17 @@ void Tutorial20_MeshShader::CreateDrawTasks()
             int   idx = x + y * GridDim.x;
             auto& dst = DrawTasks[idx];
 
-            dst.BasePos.x = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
-            dst.BasePos.y = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
-            dst.Scale     = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
-            dst.Time      = Rnd() * PI_F;
+            dst.BasePos.x  = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
+            dst.BasePos.y  = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
+            dst.Scale      = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
+            dst.TimeOffset = Rnd() * PI_F;
         }
     }
 
     BufferDesc BuffDesc;
     BuffDesc.Name              = "Draw tasks buffer";
     BuffDesc.Usage             = USAGE_DEFAULT;
-    BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS;
+    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
     BuffDesc.uiSizeInBytes     = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
@@ -325,7 +325,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
     VERIFY_EXPR(m_pSRB != nullptr);
 
     m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics")->Set(m_pStatisticsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
+    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
     m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
     m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
     m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
@@ -390,9 +390,8 @@ void Tutorial20_MeshShader::Render()
         CBConstants->ViewMat        = m_ViewMatrix.Transpose();
         CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
         CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
-        CBConstants->FrustumCulling = m_FrustumCulling;
-        CBConstants->ElapsedTime    = m_ElapsedTime;
-        CBConstants->Animate        = m_Animate;
+        CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
+        CBConstants->CurrTime       = static_cast<float>(m_CurrTime);
 
         // Calculate frustum planes from view-projection matrix.
         ViewFrustum Frustum;
@@ -464,6 +463,7 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
         m_RotationAngle += static_cast<float>(ElapsedTime) * 0.2f;
         if (m_RotationAngle > PI_F * 2.f)
             m_RotationAngle -= PI_F * 2.f;
+        m_CurrTime += static_cast<float>(ElapsedTime);
     }
 
     float4x4 RotationMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F * 0.1f);
@@ -480,9 +480,6 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
     // Compute view and view-projection matrices
     m_ViewMatrix     = RotationMatrix * View * SrfPreTransform;
     m_ViewProjMatrix = m_ViewMatrix * Proj;
-
-    // Time will be used in shader
-    m_ElapsedTime = float(ElapsedTime);
 }
 
 } // namespace Diligent

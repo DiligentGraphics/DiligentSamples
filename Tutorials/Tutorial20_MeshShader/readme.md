@@ -50,27 +50,35 @@ The shader will need to use some global data: a view matrix and cotangent of the
 six frustum planes for frustum culling; elapsed time to animate cube positions. This information is stored in a regular constant buffer:
 
 ```hlsl
-cbuffer Constants
+struct Constants
 {
-    float4x4 g_ViewMat;
-    float4x4 g_ViewProjMat;
-    float4   g_Frustum[6];   // xyz == plane normal, w == distance
-    float    g_CoTanHalfFov;
-    float    g_ElapsedTime;
-    bool     g_FrustumCulling;
-    bool     g_Animate;
+    float4x4 ViewMat;
+    float4x4 ViewProjMat;
+    float4   Frustum[6];
+    float    CoTanHalfFov;
+    float    ElapsedTime;
+    bool     FrustumCulling;
+    bool     Animate;
 };
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
 ```
 
 Another piece of information that the amplification shader will use is the cube geometry, which is provided through another constant buffer.
 The shader only needs the radius of the circumscribed sphere, which it will use for frustum culling:
 
 ```hlsl
-cbuffer CubeData
+struct CubeData
 {
     float4 g_SphereRadius;
     ...
 };
+cbuffer cbCubeData
+{
+    CubeData g_CubeData;
+}
 ```
 
 An RW-buffer `Statistics` is used to count the number of visible cubes after frustum culling. The value is not used in the shaders,
@@ -135,7 +143,7 @@ The `gid` is the global index of the draw task data.
     if (g_Animate)
     {
         // write new time to draw task
-        DrawTasks[gid].Time = time + g_ElapsedTime;
+        DrawTasks[gid].Time = time + g_Constants.ElapsedTime;
     }
 ```
 
@@ -145,7 +153,7 @@ The `index` variable returned by `InterlockedAdd` stores the index to access the
 guaranteed to be unique for all threads, so that they will all be working on different array elements:
 
 ```hlsl
-    if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
+    if (!g_Constants.FrustumCulling || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
     {
         uint index = 0;
         InterlockedAdd(s_TaskCount, 1, index);
@@ -154,7 +162,7 @@ guaranteed to be unique for all threads, so that they will all be working on dif
         s_Payload.PosY[index]  = pos.y;
         s_Payload.PosZ[index]  = pos.z;
         s_Payload.Scale[index] = scale;
-        s_Payload.LODs[index]  = CalcDetailLevel(pos, g_SphereRadius.x * scale);
+        s_Payload.LODs[index]  = CalcDetailLevel(pos, g_CubeData.SphereRadius.x * scale);
     }
 ```
 
@@ -223,24 +231,13 @@ pos.z = payload.PosZ[gid];
 ```
 
 The mesh shader uses the same cube constant buffer as the amplification shader, 
-but it also uses the cube vertex attributes and indices:
-
-```hlsl
-cbuffer CubeData
-{
-    ...
-    float4 g_Positions[24];
-    float4 g_UVs[24];
-    uint4  g_Indices[36 / 3]; // 3 indices per element
-};
-```
-
+but it also uses the cube vertex attributes and indices.
 Each mesh shader thread works on only one output vertex identified by the group index `I`.
 Much like regular vertex shader, it transforms the vertex using the view-projection matrix:
 
 ```hlsl
-verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
-verts[I].UV  = g_UVs[I].xy;
+verts[I].Pos = mul(float4(pos + g_CubeData.Positions[I].xyz * scale, 1.0), g_CubeData.ViewProjMat);
+verts[I].UV  = g_CubeData.UVs[I].xy;
 ```
 
 As we mentioned earlier, LOD doesn't affect the vertex count, we simply display it as color:
@@ -264,7 +261,7 @@ Note that we must not access the array outside of its bounds.
 ```hlsl
 if (I < 12)
 {
-    tris[I] = g_Indices[I].xyz;
+    tris[I] = g_CubeData.Indices[I].xyz;
 }
 ```
 

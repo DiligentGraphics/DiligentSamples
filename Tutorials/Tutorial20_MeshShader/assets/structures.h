@@ -12,9 +12,9 @@
 
 struct DrawTask
 {
-    float2 BasePos; // read-only
-    float  Scale;   // read-only
-    float  Time;    // read-write
+    float2 BasePos;
+    float  Scale;
+    float  TimeOffset;
 };
 
 struct CubeData
@@ -30,10 +30,11 @@ struct Constants
     float4x4 ViewMat;
     float4x4 ViewProjMat;
     float4   Frustum[6];
-    float    CoTanHalfFov;
-    float    ElapsedTime;
-    bool     FrustumCulling;
-    bool     Animate;
+
+    float CoTanHalfFov;
+    float CurrTime;
+    uint  FrustumCulling;
+    uint  Padding;
 };
 
 // Payload size must be less than 16kb.

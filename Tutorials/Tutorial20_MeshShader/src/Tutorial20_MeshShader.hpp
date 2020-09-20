@@ -80,7 +80,7 @@ private:
     const float m_CoTanHalfFov   = 1.0f / std::tan(m_FOV * 0.5f);
     float       m_LodScale       = 4.0f;
     float       m_CameraHeight   = 10.0f;
-    float       m_ElapsedTime    = 0.0f;
+    float       m_CurrTime       = 0.0f;
     Uint32      m_VisibleCubes   = 0;
 };
 

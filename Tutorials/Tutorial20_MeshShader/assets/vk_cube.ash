@@ -6,12 +6,12 @@
 
 layout(local_size_x = GROUP_SIZE) in;
 
-layout(std140) buffer DrawTasks
+layout(std140) readonly buffer DrawTasks
 {
     DrawTask g_DrawTasks[];
 };
 
-// row major matrices for compatibility with DirectX
+// Use row major matrices for compatibility with DirectX
 layout(std140, row_major) uniform cbConstants
 {
     Constants g_Constants;
@@ -71,13 +71,13 @@ shared uint s_TaskCount;
 
 void main()
 {
-    // initialize shared variable
+    // Initialize shared variable
     if (gl_LocalInvocationIndex == 0)
     {
         s_TaskCount = 0;
     }
 
-    // flush cache and synchronize
+    // Flush the cache and synchronize
     memoryBarrierShared();
     barrier();
 
@@ -85,18 +85,13 @@ void main()
     DrawTask task  = g_DrawTasks[gid];
     vec3     pos   = vec3(task.BasePos, 0.0).xzy;
     float    scale = task.Scale;
-    float    time  = task.Time;
+    float    timeOffset  = task.TimeOffset;
 
     // Simple animation
-    pos.y = sin(time);
-
-    if (g_Constants.Animate)
-    {
-        g_DrawTasks[gid].Time = time + g_Constants.ElapsedTime;
-    }
+    pos.y = sin(g_Constants.CurrTime + timeOffset);
     
-    // frustum culling
-    if (!g_Constants.FrustumCulling || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
+    // Frustum culling
+    if (g_Constants.FrustumCulling == 0u || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
     {
         // Acquire index that will be used to safely access shader output.
         // Each thread has unique index.
