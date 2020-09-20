@@ -33,17 +33,17 @@ void main(in uint I  : SV_GroupIndex,
 
 Because mesh and amplification shaders don't have any built-in input attributes except for thread ID and group ID, we use structured
 buffer to pass draw commands down to them. A real application will likely use at least transformation, mesh ID and material ID for each object.
-In this tutorial for simplicity we will only provide the cube position in a 2D grid (`BasePos`), its scale (`Scale`), and time (`Time`) that will be used
-by the shader for animation:
+In this tutorial for simplicity we will only provide the cube position in a 2D grid (`BasePos`), its scale (`Scale`), and time offset (`TimeOffset`)
+that is used by the shader for animation:
 
 ```hlsl
 struct DrawTask
 {
-    float2 BasePos;  // read-only
-    float  Scale;    // read-only
-    float  Time;     // read-write
+    float2 BasePos;
+    float  Scale;
+    float  TimeOffset;
 };
-RWStructuredBuffer<DrawTask> DrawTasks;
+StructuredBuffer<DrawTask> DrawTasks;
 ```
 
 The shader will need to use some global data: a view matrix and cotangent of the half FOV of the camera to calculate the cube detail level (LOD);
@@ -57,8 +57,8 @@ struct Constants
     float4   Frustum[6];
     float    CoTanHalfFov;
     float    ElapsedTime;
-    bool     FrustumCulling;
-    bool     Animate;
+    uint     FrustumCulling;
+    uint     Padding;
 };
 cbuffer cbConstants
 {
@@ -72,7 +72,7 @@ The shader only needs the radius of the circumscribed sphere, which it will use 
 ```hlsl
 struct CubeData
 {
-    float4 g_SphereRadius;
+    float4 SphereRadius;
     ...
 };
 cbuffer cbCubeData
@@ -81,14 +81,14 @@ cbuffer cbCubeData
 }
 ```
 
-An RW-buffer `Statistics` is used to count the number of visible cubes after frustum culling. The value is not used in the shaders,
+An RW-buffer `Statistics` is used to count the number of visible cubes after the frustum culling. The value is not used in the shaders,
 but is read back on the CPU to show the counter in the UI:
 
 ```hlsl
 RWByteAddressBuffer Statistics;
 ```
 
-The data that mesh shader invocations will be working on (vertex positions, scale, LOD) 
+The data that the mesh shader invocations will be working on (vertex positions, scale, LOD) 
 is stored in a shared memory. Each thread in the group will work on its own element:
 
 ```hlsl
@@ -115,13 +115,13 @@ groupshared uint s_TaskCount;
 void main(in uint I : SV_GroupIndex,
           in uint wg : SV_GroupID)
 {
-    // initialize shared variable
+    // Reset the counter from the first thread in the group
     if (I == 0)
     {
         s_TaskCount = 0;
     }
 
-    // flush cache and synchronize
+    // Flush the cache and synchronize
     GroupMemoryBarrierWithGroupSync();
     ...
 ```
@@ -135,16 +135,10 @@ The `gid` is the global index of the draw task data.
     DrawTask   task  = DrawTasks[gid];
     float3     pos   = float3(task.BasePos, 0.0).xzy;
     float      scale = task.Scale;
-    float      time  = task.Time;
+    float      timeOffset  = task.TimeOffset;
 
     // Simple animation
-    pos.y = sin(time);
-
-    if (g_Animate)
-    {
-        // write new time to draw task
-        DrawTasks[gid].Time = time + g_Constants.ElapsedTime;
-    }
+    pos.y = sin(g_Constants.CurrTime + timeOffset);
 ```
 
 It then performs frustum culling using the object position and if the object is visible, 
@@ -153,7 +147,7 @@ The `index` variable returned by `InterlockedAdd` stores the index to access the
 guaranteed to be unique for all threads, so that they will all be working on different array elements:
 
 ```hlsl
-    if (!g_Constants.FrustumCulling || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
+    if (g_Constants.FrustumCulling == 0 || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
     {
         uint index = 0;
         InterlockedAdd(s_TaskCount, 1, index);
@@ -170,7 +164,7 @@ guaranteed to be unique for all threads, so that they will all be working on dif
 its visbility by comparing the distances to the sphere radius.
 
 The LOD calculation (`CalcDetailLevel` function) is based on computing the object bounding sphere radius in screen space.
-For detailed analysis of the algorithm, see the link in [Further Reading](#further-reading).
+For detailed description of the algorithm, see the link in [Further Reading](#further-reading).
 
 After the payload has been written, we need to issue another barrier to wait until all threads reach the same point.
 After that we can safely read the `s_TaskCount` value.
@@ -187,9 +181,9 @@ The `DispatchMesh()` call implies a `GroupMemoryBarrierWithGroupSync()`, and end
 
     if (I == 0)
     {
-        // update statistics
-        uint origin;
-        Statistics.InterlockedAdd(0, s_TaskCount, origin);
+        // Update statistics from the first thread
+        uint orig_value;
+        Statistics.InterlockedAdd(0, s_TaskCount, orig_value);
     }
     
     DispatchMesh(s_TaskCount, 1, 1, s_Payload);
@@ -197,11 +191,11 @@ The `DispatchMesh()` call implies a `GroupMemoryBarrierWithGroupSync()`, and end
 
 ## Mesh shader
 
-Recall that the purpose of the mesh shader in this tutorial is to compute vertex positions, very much
-like vertex shader in a traditional pipeline, and also output primitives. Unlike vertex shader though, 
+Recall that the purpose of the mesh shader in this tutorial is to compute the vertex positions, very much
+like vertex shader in a traditional pipeline, and also to output primitives. Unlike vertex shader though, 
 mesh shader invocations run in compute groups very much like compute shaders and can share the data between threads.
 
-We will only use 24 threads out of the 32 maximum available.
+We will use 24 threads out of the 32 maximum threads available.
 We will produce 24 vertices and 12 primitives with 36 indices.
 `SV_GroupIndex` indicates the mesh shader invocation index (0 to 23 in our case).
 `SV_GroupID` indicates the amplification shader output (0 to `s_TaskCount-1`).
@@ -240,7 +234,7 @@ verts[I].Pos = mul(float4(pos + g_CubeData.Positions[I].xyz * scale, 1.0), g_Cub
 verts[I].UV  = g_CubeData.UVs[I].xy;
 ```
 
-As we mentioned earlier, LOD doesn't affect the vertex count, we simply display it as color:
+As we mentioned earlier, LOD doesn't affect the vertex count, and we simply display it as color:
 
 ```hlsl
 float4 Rainbow(float factor)
@@ -254,7 +248,7 @@ float4 Rainbow(float factor)
 verts[I].Color = Rainbow(LOD);
 ```
 
-Finally, we output primitives (the 6 cube faces consisting of 12 traingles total).
+Finally, we output primitives (the 6 cube faces consisting of 12 triangles total).
 Only the first 12 threads write the indices.
 Note that we must not access the array outside of its bounds.
 
@@ -302,7 +296,7 @@ const uint4 Indices[] =
 };
 
 CubeData Data;
-Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * sqrt(3.0f) * 0.5f, 0, 0, 0};
+Data.sphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
 std::memcpy(Data.pos, CubePos, sizeof(CubePos));
 std::memcpy(Data.uv, CubeUV, sizeof(CubeUV));
 std::memcpy(Data.indices, Indices, sizeof(Indices));
@@ -369,7 +363,7 @@ m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
 
 ## Draw task data initialization
 
-As we discussed earlier, amplification shaders read their arguments from the unordered access buffer.
+As we discussed earlier, amplification shaders read their arguments from the structured buffer.
 We initialize the draw tasks data by distributing the cubes on a 2D grid and generating random
 scales and animation time offsets:
 
@@ -378,7 +372,7 @@ struct DrawTask
 {
     float2 BasePos;
     float  Scale;
-    float  Time;
+    float  TimeOffset;
 };
 
 const int2          GridDim{128, 128};
@@ -394,22 +388,21 @@ for (int y = 0; y < GridDim.y; ++y)
         int   idx = x + y * GridDim.x;
         auto& dst = DrawTasks[idx];
 
-        dst.BasePos.x = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
-        dst.BasePos.y = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
-        dst.Scale     = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
-        dst.Time      = Rnd() * PI_F;
+        dst.BasePos.x  = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
+        dst.BasePos.y  = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
+        dst.Scale      = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
+        dst.TimeOffset = Rnd() * PI_F;
     }
 }
 ```
 
-We use the unordered access buffer because the data size may be greater than supported by a constant buffer,
-and because we update the time value on the GPU in the amplification shader:
+We use the structured buffer because the data size may be larger than supported by a constant buffer:
 
 ```cpp
 BufferDesc BuffDesc;
 BuffDesc.Name          = "Draw tasks buffer";
 BuffDesc.Usage         = USAGE_DEFAULT;
-BuffDesc.BindFlags     = BIND_UNORDERED_ACCESS;
+BuffDesc.BindFlags     = BIND_SHADER_RESOURCE;
 BuffDesc.Mode          = BUFFER_MODE_STRUCTURED;
 BuffDesc.uiSizeInBytes = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
 
@@ -463,7 +456,7 @@ for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
 }
 ```
 
-Finally, we are ready to launch the amplification shader, which is very similar to dispatching compute groups.
+We are now finally ready to launch the amplification shader, which is very similar to dispatching compute groups.
 The shader runs 32 threads per group, so we need to dispatch just `m_DrawTaskCount / ASGroupSize` groups
 (in this example the task count is always a multiple of 32):
 
