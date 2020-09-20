@@ -1,7 +1,9 @@
 #version 460
 #extension GL_NV_mesh_shader : require
 
-#define GROUP_SIZE 32
+#ifndef GROUP_SIZE
+#   define GROUP_SIZE 32
+#endif
 
 layout(local_size_x = GROUP_SIZE) in;
 
@@ -81,7 +83,7 @@ taskNV out Task {
     float LODs[GROUP_SIZE];
 } Output;
 
-// This value used to calculate number of cubes that will be rendered after frustum culling
+// This value used to calculate the number of cubes that will be rendered after the frustum culling
 shared uint s_TaskCount;
 
 
@@ -103,7 +105,7 @@ void main()
     float    scale = task.Scale;
     float    time  = task.Time;
 
-    // simulation
+    // Simple animation
     pos.y = sin(time);
 
     if (g_Animate)
@@ -122,7 +124,7 @@ void main()
         Output.LODs[index] = CalcDetailLevel(pos, g_Cube.sphereRadius.x * scale);
     }
 
-    // all thread must complete thir work that we can read s_TaskCount
+    // all threads must complete their work so that we can read s_TaskCount
     barrier();
 
     // invalidate cache to read actual value from s_TaskCount
