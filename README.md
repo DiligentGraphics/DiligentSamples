@@ -35,6 +35,7 @@ To build and run the applications in the module, please follow the [instructions
   - [17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples#tutorial-17---msaa)
   - [18 - Queries](https://github.com/DiligentGraphics/DiligentSamples#tutorial-18---queries)
   - [19 - Render Passes](https://github.com/DiligentGraphics/DiligentSamples#tutorial-19---render-passes)
+  - [20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-20---mesh-shader)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLTF Viewer](https://github.com/DiligentGraphics/DiligentSamples#gltf-viewer)
