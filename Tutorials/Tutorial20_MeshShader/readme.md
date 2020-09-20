@@ -1,11 +1,12 @@
 # Tutorial20 - Mesh shader
 
-This tutorial deomstrates how to use mesh shaders to implement frustum culling and LOD calculation on the GPU.
+This tutorial deomstrates how to use amplification and mesh shaders, the new programmable stages, to implement
+frustum culling and LOD calculation on the GPU.
 
 
 
 Mesh shader is designed to replace the traditional primitive generation pipeline that consists of vertex attribute fetch stage, vertex shader,
-tessellation and geometry shader with a new fully programmable pipeline that is much more efficienct and flexibile. The new pipeline consists
+tessellation and geometry shader, with a new fully programmable pipeline that is much more efficienct and flexibile. The new pipeline consists
 of a two new programmable stages - the mesh shader itself, which in its simplest form implements the functionality of the vertex shader,
 but is much more powerful, and an optional amplification (or task) shader stage. The amplification shader adds an extra indirection level.
 It can generate up to 65k mesh shader invocations and can be used for culling, level-of-details (LOD) selection, etc.
@@ -13,7 +14,7 @@ It can generate up to 65k mesh shader invocations and can be used for culling, l
 Mesh shaders are supported in DirectX 12.2 and are an extension in Vulkan.
 
 In this tutorial, we will use amplification shader stage to perform view-frustum culling and LOD selection. The mesh shader will be responsible
-for computing positions of the object and generating its topology. Note that for the sake of simplicity in this tutorial we do not change
+for computing vertex positions and generating primitives. Note that for the sake of simplicity in this tutorial we do not change
 the geometry based on the LOD, but only output it as a color.
 
 ## Amplification shader
@@ -43,9 +44,9 @@ struct DrawTask
     float  Time;     // read-write
 };
 RWStructuredBuffer<DrawTask> DrawTasks;
+```
 
-
-The shader will need to use some data: a view matrix and cotangent of the half FOV of the camera to calculate the cube detail level (LOD);
+The shader will need to have access to some data: a view matrix and cotangent of the half FOV of the camera to calculate the cube detail level (LOD);
 six frustum planes for frustum culling; elapsed time to animate cube positions. This information is stored in a regular constant buffer:
 
 ```hlsl
@@ -61,8 +62,8 @@ cbuffer Constants
 };
 ```
 
-Another piece of information that the amplification shader will use is the cube geometry.
-The shader only needs the radius of the circumscribed sphere, which it will use for frustum culling.
+Another piece of information that the amplification shader will use is the cube geometry, which is provided through another constant buffer.
+The shader only needs the radius of the circumscribed sphere, which it will use for frustum culling:
 
 ```hlsl
 cbuffer CubeData
@@ -72,15 +73,15 @@ cbuffer CubeData
 };
 ```
 
-Buffer with a single `uint` variable is used to count the number of visible cubes after frustum culling. The value is not used in the shaders,
-but is intended to be read back on the CPU to show the counter in the UI:
+An RW-buffer `Statistics` is used to count the number of visible cubes after frustum culling. The value is not used in the shaders,
+but is read back on the CPU to show the counter in the UI:
 
 ```hlsl
 RWByteAddressBuffer Statistics;
 ```
 
 The data that mesh shader invocations will be working on (vertex positions, scale, LOD) 
-is stored in a shared memory. Each thread in the group will work on its own element.
+is stored in a shared memory. Each thread in the group will work on its own element:
 
 ```hlsl
 struct Payload
@@ -92,8 +93,8 @@ struct Payload
     float LODs[GROUP_SIZE];
 };
 groupshared Payload s_Payload;
-```
 
+...
 
 void main(...)
 {
@@ -137,9 +138,9 @@ void main(in uint I : SV_GroupIndex,
     ...
 ```
 
-The shader then performs frustum culling and if the object is visible, atomically increases the shared `s_TaskCount` value.
+The shader then performs frustum culling and if the object is visible, atomically increments the shared `s_TaskCount` value.
 The returned `index` variable stores the index to access the arrays in the payload. The index is
-guaranteed to be unique for all threads, so that they will all be working on different array elements.
+guaranteed to be unique for all threads, so that they will all be working on different array elements:
 
 ```hlsl
     if (!g_FrustumCulling || IsVisible(pos, g_SphereRadius.x * scale))
@@ -197,7 +198,7 @@ float CalcDetailLevel(float3 cubeCenter, float radius)
 }
 ```
 
-After the payload has been written, we need to issue another barrier to wait until all threads reach this point.
+After the payload has been written, we need to issue another barrier to wait until all threads reach the same point.
 After that we can safely read the `s_TaskCount` value.
 The first thread in the group atomically adds this value to the `Statistics` buffer, which is much faster than incrementing
 the counter from each thread because it minimizes the access to global memory.
@@ -255,7 +256,8 @@ pos.y = payload.PosY[gid];
 pos.z = payload.PosZ[gid];
 ```
 
-In the mesh shader we will also use the cube vertex attributes and indices.
+The mesh shader uses the same cube constant buffer as the amplification shader, 
+but it also uses the cube vertex attributes and indices:
 
 ```hlsl
 cbuffer CubeData
@@ -267,7 +269,7 @@ cbuffer CubeData
 };
 ```
 
-Each thread writes to only one output vertex:
+Each mesh shader thread works on only one output vertex identified by group index `I`:
 
 ```hlsl
 verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
@@ -288,7 +290,7 @@ float4 Rainbow(float factor)
 verts[I].Color = Rainbow(LOD);
 ```
 
-Finally, we output the triangle list. Only the first 12 threads write the indices.
+Finally, we output the triangles. Only the first 12 threads write the indices.
 Note that we must not access the array outside of its bounds.
 
 ```hlsl
@@ -299,9 +301,9 @@ if (I < 12)
 ```
 
 
-## Preparing the cube
+## Preparing the cube data
 
-Note that the cube data is arranged differently compared to previous tutoruial - we don’t need vertex and index buffers,
+Note that the cube data is arranged differently compared to previous tutoruials - we don’t need vertex and index buffers,
 the mesh shader will read the data from the shader resource directly.
 We keep all data in a constant buffer because we only have one small mesh. However, a real application
 should use a structured or an unordered access buffer.
@@ -356,9 +358,11 @@ m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_CubeBuffer);
 
 ## Initializing the Pipeline State
 
-The initialization of amplification and mesh shaders is largely identical to initialization of shaders of other types. The only difference is the new shader types.
-Similar is true for pipline state initialization. Notice the new `PIPELINE_TYPE_MESH` pipeliene type.
+The initialization of amplification and mesh shaders is largely identical to initialization of shaders of other types.
+The only difference is the new shader types (`SHADER_TYPE_AMPLIFICATION` and `SHADER_TYPE_MESH`).
+Similar is true for pipline state initialization. Notice also the new `PIPELINE_TYPE_MESH` pipeliene type.
 Some fields of the `GraphicsPipeline` struct like `LayoutElements` and `PrimitiveTopology` are irrelevant for mesh shaders and are ignored.
+The mesh shader pipeline state uses the same pixel shader stage as the traditional vertex pipeline.
 
 ```cpp
 PSODesc.PipelineType = PIPELINE_TYPE_MESH;
@@ -401,8 +405,8 @@ m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
 ## Draw task data initialization
 
 As we discussed earlier, amplification shaders read their arguments from the unordered access buffer.
-We initialize the draw tasks data by distributing the cubes on a 2D grid and add generating random
-scale and animation time offset:
+We initialize the draw tasks data by distributing the cubes on a 2D grid and generating random
+scales and animation time offsets:
 
 ```cpp
 struct DrawTask
@@ -441,7 +445,7 @@ BufferDesc BuffDesc;
 BuffDesc.Name          = "Draw tasks buffer";
 BuffDesc.Usage         = USAGE_DEFAULT;
 BuffDesc.BindFlags     = BIND_UNORDERED_ACCESS;
-BuffDesc.Mode          = BUFFER_MODE_RAW;
+BuffDesc.Mode          = BUFFER_MODE_STRUCTURED;
 BuffDesc.uiSizeInBytes = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
 
 BufferData BufData;
@@ -455,15 +459,15 @@ m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
 ## Rendering
 
 First we prepare the data that will be required by the mesh shader: we calculate the field of view (FOV) 
-and cotangent of the half FOV, as these values are used to build the projection matrix and to 
-calculate LODs in the shader:
+of the camera and cotangent of the half FOV, as these values are used to build the projection matrix and to 
+calculate LODs in the shader. 
 
 ```cpp
 const float m_FOV            = PI_F / 4.0f;
 const float m_CoTanHalfFov   = 1.0f / std::tan(m_FOV * 0.5f);
 ```
 
-Next, we upload the values to the GPU.
+And upload the values into the constant buffer:
 
 ```cpp
 MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -475,8 +479,9 @@ CBConstants->ElapsedTime    = m_ElapsedTime;
 CBConstants->Animate        = m_Animate;
 ```
 
-`ExtractViewFrustumPlanesFromMatrix()` calculates unnormalized frustum planes from the view-projection matrix.
-We need to normalize them to test with spheres.
+We use `ExtractViewFrustumPlanesFromMatrix()` to calculate the view frustum planes from the view-projection matrix.
+Notice that the planes are not normalized and we need to normalize them to use for sphere culling.
+The normalized plane normals are written into the constant buffer as well:
 
 ```cpp
 ViewFrustum Frustum;
@@ -494,7 +499,7 @@ for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
 ```
 
 At the final step, we launch the amplification shader, which is very similar to dispatching compute groups.
-The shader runs 32 threads per group, so we need to dispatch just a `m_DrawTaskCount / 32` groups as in this
+The shader runs 32 threads per group, so we need to dispatch just a `m_DrawTaskCount / ASGroupSize` groups as in this
 example the task count is always a multiple of 32.
 
 ```cpp
