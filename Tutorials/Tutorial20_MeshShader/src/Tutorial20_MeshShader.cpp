@@ -174,11 +174,12 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     }
 
     BufferDesc BuffDesc;
-    BuffDesc.Name          = "Draw tasks buffer";
-    BuffDesc.Usage         = USAGE_DEFAULT;
-    BuffDesc.BindFlags     = BIND_UNORDERED_ACCESS;
-    BuffDesc.Mode          = BUFFER_MODE_RAW;
-    BuffDesc.uiSizeInBytes = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+    BuffDesc.Name              = "Draw tasks buffer";
+    BuffDesc.Usage             = USAGE_DEFAULT;
+    BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS;
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
+    BuffDesc.uiSizeInBytes     = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
 
     BufferData BufData;
     BufData.pData    = DrawTasks.data();

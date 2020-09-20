@@ -31,7 +31,7 @@ cbuffer Constants
     bool     g_Animate;
 };
 
-RWByteAddressBuffer  Statistics;
+RWByteAddressBuffer Statistics;
 
 // Payload size must be less than 16kb.
 struct Payload
@@ -85,7 +85,7 @@ float CalcDetailLevel(float3 cubeCenter, float radius)
 groupshared uint s_TaskCount;
 
 [numthreads(GROUP_SIZE,1,1)]
-void main(in uint I : SV_GroupIndex,
+void main(in uint I  : SV_GroupIndex,
           in uint wg : SV_GroupID)
 {
     // initialize shared variable
