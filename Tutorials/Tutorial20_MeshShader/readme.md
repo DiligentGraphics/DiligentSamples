@@ -46,7 +46,7 @@ struct DrawTask
 RWStructuredBuffer<DrawTask> DrawTasks;
 ```
 
-The shader will need to have access to some data: a view matrix and cotangent of the half FOV of the camera to calculate the cube detail level (LOD);
+The shader will need to use some global data: a view matrix and cotangent of the half FOV of the camera to calculate the cube detail level (LOD);
 six frustum planes for frustum culling; elapsed time to animate cube positions. This information is stored in a regular constant buffer:
 
 ```hlsl
@@ -93,32 +93,12 @@ struct Payload
     float LODs[GROUP_SIZE];
 };
 groupshared Payload s_Payload;
-
-...
-
-void main(...)
-{
-    ...
-
-    const uint gid   = wg * GROUP_SIZE + I;
-    DrawTask   task  = DrawTasks[gid];
-    float3     pos   = float3(task.BasePos, 0.0).xzy;
-    float      scale = task.Scale;
-    float      time  = task.Time;
-
-    // Simple animation
-    pos.y = sin(time);
-
-    if (g_Animate)
-    {
-        // write new time to draw task
-        DrawTasks[gid].Time = time + g_ElapsedTime;
-    }
 ```
 
-`s_TaskCount` shared variable is used to generate a unique index for each thread after frustum culling.
-To avoid data races only one thread initializes the counter to zero. All threads then issue a barrier to make 
-the value visible and wait until all threads reach this point.
+To get unique index in each thread, we willuse the `s_TaskCount` shared variable.
+At the start of the shader we reset the counter to zero. We only write the value from the first thread
+in the group to avoid data races and then issue a barrier to make the value visible to other threads
+and make sure that all threads are at the same step.
 
 ```hlsl
 groupshared uint s_TaskCount;
@@ -138,7 +118,28 @@ void main(in uint I : SV_GroupIndex,
     ...
 ```
 
-The shader then performs frustum culling and if the object is visible, atomically increments the shared `s_TaskCount` value.
+The shader reads the thread-specific values and computes
+the position for its draw task:
+
+```
+    const uint gid   = wg * GROUP_SIZE + I;
+    DrawTask   task  = DrawTasks[gid];
+    float3     pos   = float3(task.BasePos, 0.0).xzy;
+    float      scale = task.Scale;
+    float      time  = task.Time;
+
+    // Simple animation
+    pos.y = sin(time);
+
+    if (g_Animate)
+    {
+        // write new time to draw task
+        DrawTasks[gid].Time = time + g_ElapsedTime;
+    }
+```
+
+It then performs frustum culling using the object position and if the object is visible, 
+atomically increments the shared `s_TaskCount` value and compute the LOD ().
 The returned `index` variable stores the index to access the arrays in the payload. The index is
 guaranteed to be unique for all threads, so that they will all be working on different array elements:
 
@@ -156,47 +157,12 @@ guaranteed to be unique for all threads, so that they will all be working on dif
     }
 ```
 
-For frustum culling, we calculate the distance from each plane to a sphere.
+`IsVisible()` function calculates the distance from each plane to a sphere.
 The `g_Frustum[i].xyz` contains the plane normal, `g_Frustum[i].w` is the distance to the plane.
 The sphere is visible when the distance from each plane is greater than or equal to the radius of the sphere.
 
-```hlsl
-bool IsVisible(float3 cubeCenter, float radius)
-{
-    float4 center = float4(cubeCenter, 1.0);
-
-    for (int i = 0; i < 6; ++i)
-    {
-        if (dot(g_Frustum[i], center) < -radius)
-            return false;
-    }
-    return true;
-}
-```
-
-For LOD calculation we calculate the sphere radius in screen space.
+For LOD calculation (`CalcDetailLevel()` function) we calculate the sphere radius in screen space.
 For a detailed analysis of the algorithm, see the link in [Further Reading](#further-reading).
-
-```hlsl
-float CalcDetailLevel(float3 cubeCenter, float radius)
-{
-    // cubeCenter - the center of the sphere 
-    // radius     - the radius of circumscribed sphere
-    
-    // get position in view space
-    float3 pos   = mul(float4(cubeCenter, 1.0), g_ViewMat).xyz;
-    
-    // square of distance from camera to circumscribed sphere
-    float  dist2 = dot(pos, pos);
-    
-    // calculate sphere size in screen space
-    float  size  = g_CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
-    
-    // calculate detail level
-    float  level = clamp(1.0 - size, 0.0, 1.0);
-    return level;
-}
-```
 
 After the payload has been written, we need to issue another barrier to wait until all threads reach the same point.
 After that we can safely read the `s_TaskCount` value.
@@ -229,8 +195,8 @@ in compute groups very much like compute shaders and can share the data between 
 
 We will only use 24 threads out of the 32 maximum available.
 We will produce 24 vertices and 12 primitives with 36 indices.
-`SV_GroupIndex` is used to access the mesh shader output.
-`SV_GroupID` is used to access the amplification shader output.
+`SV_GroupIndex` indicates the mesh shader invocation index (0 to 23 in our case).
+`SV_GroupID` indicates the amplification shader output (0 to `s_TaskCount-1`).
 
 ```hlsl
 [numthreads(24,1,1)]
@@ -269,7 +235,7 @@ cbuffer CubeData
 };
 ```
 
-Each mesh shader thread works on only one output vertex identified by group index `I`:
+Each mesh shader thread works on only one output vertex identified by the group index `I`:
 
 ```hlsl
 verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
@@ -303,11 +269,11 @@ if (I < 12)
 
 ## Preparing the cube data
 
-Note that the cube data is arranged differently compared to previous tutoruials - we don’t need vertex and index buffers,
+In this tutorail the cube data is arranged differently compared to the previous ones - we don’t need vertex and index buffers,
 the mesh shader will read the data from the shader resource directly.
 We keep all data in a constant buffer because we only have one small mesh. However, a real application
 should use a structured or an unordered access buffer.
-All elements in the array in the constant buffer must be aligned to 16 bytes.
+All elements in the array in the constant buffer must be 16-byte aligned.
 
 ```cpp
 struct CubeData
@@ -458,7 +424,7 @@ m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
 
 ## Rendering
 
-First we prepare the data that will be required by the mesh shader: we calculate the field of view (FOV) 
+To issue the draw command, we first prepare the data that will be required by the mesh shader: we calculate the field of view (FOV) 
 of the camera and cotangent of the half FOV, as these values are used to build the projection matrix and to 
 calculate LODs in the shader. 
 
@@ -467,7 +433,7 @@ const float m_FOV            = PI_F / 4.0f;
 const float m_CoTanHalfFov   = 1.0f / std::tan(m_FOV * 0.5f);
 ```
 
-And upload the values into the constant buffer:
+and upload the values into the constant buffer:
 
 ```cpp
 MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -498,9 +464,9 @@ for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
 }
 ```
 
-At the final step, we launch the amplification shader, which is very similar to dispatching compute groups.
-The shader runs 32 threads per group, so we need to dispatch just a `m_DrawTaskCount / ASGroupSize` groups as in this
-example the task count is always a multiple of 32.
+Finally, we launch the amplification shader, which is very similar to dispatching compute groups.
+The shader runs 32 threads per group, so we need to dispatch just `m_DrawTaskCount / ASGroupSize` groups
+(in this example the task count is always a multiple of 32):
 
 ```cpp
 DrawMeshAttribs drawAttrs(m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL);
@@ -508,6 +474,7 @@ m_pImmediateContext->DrawMesh(drawAttrs);
 ```
 
 ## Further Reading
+
 [Introduction to Turing Mesh Shaders](https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/)</br>
 [Vulkan spec](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#shaders-task)</br>
 [GLSL spec](https://github.com/KhronosGroup/GLSL/blob/master/extensions/nv/GLSL_NV_mesh_shader.txt)</br>
