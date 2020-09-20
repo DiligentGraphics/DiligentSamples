@@ -199,6 +199,14 @@ This tutorial demonstrates how to use the render passes API to implement simple 
 ![](Tutorials/Tutorial19_RenderPasses/Animation_Large.gif)
 
 
+## [Tutorial 20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial20_MeshShader)
+
+This tutorial deomstrates how to use amplification and mesh shaders, the new programmable stages, to implement
+frustum culling and LOD calculation on the GPU.
+
+![](Tutorials/Tutorial20_MeshShader/Animation_Large.gif)
+
+
 # Samples
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)

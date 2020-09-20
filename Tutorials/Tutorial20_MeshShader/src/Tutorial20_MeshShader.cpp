@@ -441,7 +441,7 @@ void Tutorial20_MeshShader::Render()
     // to prevent loss of tasks or access outside of the data array.
     VERIFY_EXPR(m_DrawTaskCount % ASGroupSize == 0);
 
-    DrawMeshAttribs drawAttrs(m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL);
+    DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
     m_pImmediateContext->DrawMesh(drawAttrs);
 
     // Copy statistics to staging buffer

@@ -3,11 +3,11 @@
 This tutorial deomstrates how to use amplification and mesh shaders, the new programmable stages, to implement
 frustum culling and LOD calculation on the GPU.
 
-
+![](Animation_Large.gif)
 
 Mesh shader pipeline is designed to replace the traditional primitive generation pipeline that consists of vertex attribute fetch stage, vertex shader,
-tessellation and geometry shader, with a new fully programmable pipeline that is much more efficienct and flexibile. The new pipeline consists
-of a two new programmable stages - the mesh shader itself, which in its simplest form implements the functionality of the vertex shader,
+tessellation and geometry shader, with a new fully programmable pipeline that is much more efficient and flexibile. The new pipeline consists
+of two new programmable stages - the mesh shader itself, which in its simplest form implements the functionality of the vertex shader,
 but is much more powerful, and an optional amplification (or task) shader stage. The amplification shader adds an extra indirection level.
 It can generate up to 65k mesh shader invocations and can be used for culling, level-of-details (LOD) selection, etc.
 
@@ -95,7 +95,7 @@ struct Payload
 groupshared Payload s_Payload;
 ```
 
-To get a unique index in each thread, we willuse the `s_TaskCount` shared variable.
+To get a unique index in each thread, we will use the `s_TaskCount` shared variable.
 At the start of the shader we reset the counter to zero. We only write the value from the first thread
 in the group to avoid data races and then issue a barrier to make the value visible to other threads
 and make sure that all threads are at the same step.
@@ -166,11 +166,11 @@ For detailed analysis of the algorithm, see the link in [Further Reading](#furth
 
 After the payload has been written, we need to issue another barrier to wait until all threads reach the same point.
 After that we can safely read the `s_TaskCount` value.
-The first thread in the group atomically adds this value to the `Statistics` buffer. Note that this is much faster than incrementing
+The first thread in the group atomically adds this value to the global `Statistics` counter. Note that this is much faster than incrementing
 the counter from each thread because it minimizes the access to global memory.
 
 The final step of the amplification shader is calling the `DispatchMesh()` function with the number of groups and the payload.
-For compatibility with Vulkan API you should only use X group count.
+For compatibility with Vulkan API you should only use the X group count.
 The `DispatchMesh()` function must be called exactly once per amplification shader.
 The `DispatchMesh()` call implies a `GroupMemoryBarrierWithGroupSync()`, and ends the amplification shader group's execution.
 
@@ -211,7 +211,7 @@ void main(in uint I   : SV_GroupIndex,
     SetMeshOutputCounts(24, 12);
 ```
 
-First, we read the amplification shader output using the group id (`gid`):
+We read the amplification shader output using the group id (`gid`):
 
 ```hlsl
 float3 pos;
@@ -272,7 +272,7 @@ if (I < 12)
 ## Preparing the cube data
 
 In this tutorail the cube data is arranged differently compared to the previous ones - we don’t have separate vertex and index buffers,
-the mesh shader reads the data from the shader resource directly.
+the mesh shader reads the data from the buffer directly.
 We keep all data in a constant buffer because we only have one small mesh. However, a real application
 should use a structured or an unordered access buffer.
 All elements in the array in the constant buffer must be 16-byte aligned.
@@ -466,12 +466,12 @@ for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
 }
 ```
 
-Finally, we ready to launch the amplification shader, which is very similar to dispatching compute groups.
+Finally, we are ready to launch the amplification shader, which is very similar to dispatching compute groups.
 The shader runs 32 threads per group, so we need to dispatch just `m_DrawTaskCount / ASGroupSize` groups
 (in this example the task count is always a multiple of 32):
 
 ```cpp
-DrawMeshAttribs drawAttrs(m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL);
+DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
 m_pImmediateContext->DrawMesh(drawAttrs);
 ```
 
