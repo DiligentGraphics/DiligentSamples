@@ -12,14 +12,6 @@ struct DrawTask
 
 RWStructuredBuffer<DrawTask> DrawTasks;
 
-cbuffer CubeData
-{
-    float4 g_SphereRadius;
-    float4 g_Positions[24];
-    float4 g_UVs[24];
-    uint4  g_Indices[36 / 3];
-};
-
 cbuffer Constants
 {
     float4x4 g_ViewMat;
@@ -29,6 +21,14 @@ cbuffer Constants
     float    g_ElapsedTime;
     bool     g_FrustumCulling;
     bool     g_Animate;
+};
+
+cbuffer CubeData
+{
+    float4 g_SphereRadius;
+    float4 g_Positions[24];
+    float4 g_UVs[24];
+    uint4  g_Indices[36 / 3];
 };
 
 RWByteAddressBuffer Statistics;

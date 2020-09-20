@@ -5,7 +5,7 @@ frustum culling and LOD calculation on the GPU.
 
 
 
-Mesh shader is designed to replace the traditional primitive generation pipeline that consists of vertex attribute fetch stage, vertex shader,
+Mesh shader pipeline is designed to replace the traditional primitive generation pipeline that consists of vertex attribute fetch stage, vertex shader,
 tessellation and geometry shader, with a new fully programmable pipeline that is much more efficienct and flexibile. The new pipeline consists
 of a two new programmable stages - the mesh shader itself, which in its simplest form implements the functionality of the vertex shader,
 but is much more powerful, and an optional amplification (or task) shader stage. The amplification shader adds an extra indirection level.
@@ -95,7 +95,7 @@ struct Payload
 groupshared Payload s_Payload;
 ```
 
-To get unique index in each thread, we willuse the `s_TaskCount` shared variable.
+To get a unique index in each thread, we willuse the `s_TaskCount` shared variable.
 At the start of the shader we reset the counter to zero. We only write the value from the first thread
 in the group to avoid data races and then issue a barrier to make the value visible to other threads
 and make sure that all threads are at the same step.
@@ -119,9 +119,10 @@ void main(in uint I : SV_GroupIndex,
 ```
 
 The shader reads the thread-specific values and computes
-the position for its draw task:
+the position of the object using its draw task arguments.
+The `gid` is the global index of the draw task data.
 
-```
+```hlsl
     const uint gid   = wg * GROUP_SIZE + I;
     DrawTask   task  = DrawTasks[gid];
     float3     pos   = float3(task.BasePos, 0.0).xzy;
@@ -139,8 +140,8 @@ the position for its draw task:
 ```
 
 It then performs frustum culling using the object position and if the object is visible, 
-atomically increments the shared `s_TaskCount` value and compute the LOD ().
-The returned `index` variable stores the index to access the arrays in the payload. The index is
+atomically increments the shared `s_TaskCount` value and computes the LOD.
+The `index` variable returned by `InterlockedAdd` stores the index to access the arrays in the payload. The index is
 guaranteed to be unique for all threads, so that they will all be working on different array elements:
 
 ```hlsl
@@ -157,16 +158,15 @@ guaranteed to be unique for all threads, so that they will all be working on dif
     }
 ```
 
-`IsVisible()` function calculates the distance from each plane to a sphere.
-The `g_Frustum[i].xyz` contains the plane normal, `g_Frustum[i].w` is the distance to the plane.
-The sphere is visible when the distance from each plane is greater than or equal to the radius of the sphere.
+`IsVisible()` function calculates the signed distance from each frustum plane to the sphere and computes
+its visbility by comparing the distances to the sphere radius.
 
-For LOD calculation (`CalcDetailLevel()` function) we calculate the sphere radius in screen space.
-For a detailed analysis of the algorithm, see the link in [Further Reading](#further-reading).
+The LOD calculation (`CalcDetailLevel` function) is based on computing the object bounding sphere radius in screen space.
+For detailed analysis of the algorithm, see the link in [Further Reading](#further-reading).
 
 After the payload has been written, we need to issue another barrier to wait until all threads reach the same point.
 After that we can safely read the `s_TaskCount` value.
-The first thread in the group atomically adds this value to the `Statistics` buffer, which is much faster than incrementing
+The first thread in the group atomically adds this value to the `Statistics` buffer. Note that this is much faster than incrementing
 the counter from each thread because it minimizes the access to global memory.
 
 The final step of the amplification shader is calling the `DispatchMesh()` function with the number of groups and the payload.
@@ -190,8 +190,8 @@ The `DispatchMesh()` call implies a `GroupMemoryBarrierWithGroupSync()`, and end
 ## Mesh shader
 
 Recall that the purpose of the mesh shader in this tutorial is to compute vertex positions, very much
-like vertex shader in a traditional pipeline. Unlike vertex shader though, mesh shader invocations run
-in compute groups very much like compute shaders and can share the data between threads.
+like vertex shader in a traditional pipeline, and also output primitives. Unlike vertex shader though, 
+mesh shader invocations run in compute groups very much like compute shaders and can share the data between threads.
 
 We will only use 24 threads out of the 32 maximum available.
 We will produce 24 vertices and 12 primitives with 36 indices.
@@ -211,7 +211,7 @@ void main(in uint I   : SV_GroupIndex,
     SetMeshOutputCounts(24, 12);
 ```
 
-First, we read the amplification shader output:
+First, we read the amplification shader output using the group id (`gid`):
 
 ```hlsl
 float3 pos;
@@ -235,14 +235,15 @@ cbuffer CubeData
 };
 ```
 
-Each mesh shader thread works on only one output vertex identified by the group index `I`:
+Each mesh shader thread works on only one output vertex identified by the group index `I`.
+Much like regular vertex shader, it transforms the vertex using the view-projection matrix:
 
 ```hlsl
 verts[I].Pos = mul(float4(pos + g_Positions[I].xyz * scale, 1.0), g_ViewProjMat);
 verts[I].UV  = g_UVs[I].xy;
 ```
 
-LOD doesn't affect the vertex count, we just display it as color:
+As we mentioned earlier, LOD doesn't affect the vertex count, we simply display it as color:
 
 ```hlsl
 float4 Rainbow(float factor)
@@ -256,7 +257,8 @@ float4 Rainbow(float factor)
 verts[I].Color = Rainbow(LOD);
 ```
 
-Finally, we output the triangles. Only the first 12 threads write the indices.
+Finally, we output primitives (the 6 cube faces consisting of 12 traingles total).
+Only the first 12 threads write the indices.
 Note that we must not access the array outside of its bounds.
 
 ```hlsl
@@ -269,8 +271,8 @@ if (I < 12)
 
 ## Preparing the cube data
 
-In this tutorail the cube data is arranged differently compared to the previous ones - we don’t need vertex and index buffers,
-the mesh shader will read the data from the shader resource directly.
+In this tutorail the cube data is arranged differently compared to the previous ones - we don’t have separate vertex and index buffers,
+the mesh shader reads the data from the shader resource directly.
 We keep all data in a constant buffer because we only have one small mesh. However, a real application
 should use a structured or an unordered access buffer.
 All elements in the array in the constant buffer must be 16-byte aligned.
@@ -445,9 +447,9 @@ CBConstants->ElapsedTime    = m_ElapsedTime;
 CBConstants->Animate        = m_Animate;
 ```
 
-We use `ExtractViewFrustumPlanesFromMatrix()` to calculate the view frustum planes from the view-projection matrix.
-Notice that the planes are not normalized and we need to normalize them to use for sphere culling.
-The normalized plane normals are written into the constant buffer as well:
+We also use `ExtractViewFrustumPlanesFromMatrix()` function to calculate the view frustum planes from the
+view-projection matrix. Notice that the planes are not normalized and we need to normalize them to use for
+sphere culling. The resulting plane attributes are written into the constant buffer as well:
 
 ```cpp
 ViewFrustum Frustum;
@@ -464,7 +466,7 @@ for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
 }
 ```
 
-Finally, we launch the amplification shader, which is very similar to dispatching compute groups.
+Finally, we ready to launch the amplification shader, which is very similar to dispatching compute groups.
 The shader runs 32 threads per group, so we need to dispatch just `m_DrawTaskCount / ASGroupSize` groups
 (in this example the task count is always a multiple of 32):
 
@@ -472,6 +474,8 @@ The shader runs 32 threads per group, so we need to dispatch just `m_DrawTaskCou
 DrawMeshAttribs drawAttrs(m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL);
 m_pImmediateContext->DrawMesh(drawAttrs);
 ```
+
+And that's it!
 
 ## Further Reading
 

@@ -19,14 +19,6 @@ layout(std140) buffer DrawTasks
     DrawTask g_DrawTasks[];
 };
 
-layout(std140) uniform CubeData
-{
-    vec4  sphereRadius;
-    vec4  pos[24];
-    vec4  uv[24];
-    uvec4 indices[36 / 4];
-} g_Cube;
-
 layout(std140) uniform Constants
 {
     layout(row_major) mat4x4 g_ViewMat;
@@ -38,6 +30,14 @@ layout(std140) uniform Constants
     bool   g_FrustumCulling;
     bool   g_Animate;
 };
+
+layout(std140) uniform CubeData
+{
+    vec4  sphereRadius;
+    vec4  pos[24];
+    vec4  uv[24];
+    uvec4 indices[36 / 3];
+} g_Cube;
 
 layout(std140) buffer Statistics
 {
