@@ -173,7 +173,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
-                LOG_ERROR_AND_THROW("Failed to create Direct3D11 render device and contexts.");
+                LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in Direct3D11 mode. The API may not be available, "
+                                    "or required features may not be supported by this GPU/driver/OS version.");
             }
 
             if (pWindow != nullptr)
@@ -260,7 +261,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
-                LOG_ERROR_AND_THROW("Failed to create Direct3D12 render device and contexts.");
+                LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in Direct3D12 mode. The API may not be available, "
+                                    "or required features may not be supported by this GPU/driver/OS version.");
             }
 
             if (!m_pSwapChain && pWindow != nullptr)
@@ -308,7 +310,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 EngineCI, &m_pDevice, ppContexts.data(), m_SwapChainInitDesc, &m_pSwapChain);
             if (!m_pDevice)
             {
-                LOG_ERROR_AND_THROW("Failed to create GL render device and contexts.");
+                LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in OpenGL mode. The API may not be available, "
+                                    "or required features may not be supported by this GPU/driver/OS version.");
             }
         }
         break;
@@ -341,7 +344,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
-                LOG_ERROR_AND_THROW("Failed to create Vulkan render device and contexts.");
+                LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in Vulkan mode. The API may not be available, "
+                                    "or required features may not be supported by this GPU/driver/OS version.");
             }
 
             if (!m_pSwapChain && pWindow != nullptr)
