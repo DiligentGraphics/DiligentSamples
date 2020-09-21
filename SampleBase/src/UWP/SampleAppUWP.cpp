@@ -51,6 +51,11 @@ public:
 
     virtual void OnWindowSizeChanged()override final
     {
+        if (m_SampleInitialized)
+        {
+            m_TheSample->PreWindowResize();
+        }
+
         InitWindowSizeDependentResources();
 
         if (m_SampleInitialized)
