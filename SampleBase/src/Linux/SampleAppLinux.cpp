@@ -41,15 +41,23 @@ public:
     ~SampleAppLinux()
     {
     }
-    virtual void OnGLContextCreated(Display* display, Window window) override final
+    virtual bool OnGLContextCreated(Display* display, Window window) override final
     {
-        LinuxNativeWindow LinuxWindow;
-        LinuxWindow.pDisplay = display;
-        LinuxWindow.WindowId = window;
-        InitializeDiligentEngine(&LinuxWindow);
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplLinuxX11(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
-        InitializeSample();
+        try
+        {
+            LinuxNativeWindow LinuxWindow;
+            LinuxWindow.pDisplay = display;
+            LinuxWindow.WindowId = window;
+            InitializeDiligentEngine(&LinuxWindow);
+            const auto& SCDesc = m_pSwapChain->GetDesc();
+            m_pImGui.reset(new ImGuiImplLinuxX11(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+            InitializeSample();
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
     }
 
     virtual int HandleXEvent(XEvent* xev) override final
