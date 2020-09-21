@@ -1,4 +1,4 @@
-#include "structures.h"
+#include "structures.fxh"
 
 // Draw task arguments
 StructuredBuffer<DrawTask> DrawTasks;

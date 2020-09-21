@@ -2,7 +2,7 @@
 #extension GL_NV_mesh_shader : require
 #extension GL_GOOGLE_include_directive : require
 
-#include "structures.h"
+#include "structures.fxh"
 
 // row major matrices for compatibility with DirectX
 layout(std140, row_major) uniform cbConstants

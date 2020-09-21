@@ -40,7 +40,7 @@ namespace Diligent
 namespace
 {
 
-#include "../assets/structures.h"
+#include "../assets/structures.fxh"
 
 struct DrawStatistics
 {

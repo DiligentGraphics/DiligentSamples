@@ -2,7 +2,7 @@
 #extension GL_NV_mesh_shader : require
 #extension GL_GOOGLE_include_directive : require
 
-#include "structures.h"
+#include "structures.fxh"
 
 layout(local_size_x = GROUP_SIZE) in;
 
