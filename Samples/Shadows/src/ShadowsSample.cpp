@@ -219,7 +219,7 @@ void ShadowsSample::UpdateUI()
             if (m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF)
             {
                 ImGui::SliderFloat("Max depth bias slope", &m_LightAttribs.ShadowAttribs.fReceiverPlaneDepthBiasClamp, 0, 20);
-                ImGui::SliderFloat("Fixed depth bias", &m_LightAttribs.ShadowAttribs.fFixedDepthBias, 0, 1, "%.4f", 3);
+                ImGui::SliderFloat("Fixed depth bias", &m_LightAttribs.ShadowAttribs.fFixedDepthBias, 0, 1, "%.4f", ImGuiSliderFlags_Logarithmic);
             }
 
             if (m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
@@ -232,10 +232,10 @@ void ShadowsSample::UpdateUI()
             if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM ||
                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM2 ||
                 m_ShadowSettings.iShadowMode == SHADOW_MODE_EVSM4)
-                ImGui::SliderFloat("Light bleeding reduction", &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, 0, 0.99f, "%.4f", 3);
+                ImGui::SliderFloat("Light bleeding reduction", &m_LightAttribs.ShadowAttribs.fVSMLightBleedingReduction, 0, 0.99f, "%.4f", ImGuiSliderFlags_Logarithmic);
 
             if (m_ShadowSettings.iShadowMode == SHADOW_MODE_VSM)
-                ImGui::SliderFloat("VSM Bias", &m_LightAttribs.ShadowAttribs.fVSMBias, 0, 1, "%.4f", 3);
+                ImGui::SliderFloat("VSM Bias", &m_LightAttribs.ShadowAttribs.fVSMBias, 0, 1, "%.4f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::TreePop();
         }
