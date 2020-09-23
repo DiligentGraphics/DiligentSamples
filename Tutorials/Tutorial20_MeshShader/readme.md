@@ -1,7 +1,7 @@
 # Tutorial20 - Mesh shader
 
-This tutorial deomstrates how to use amplification and mesh shaders, the new programmable stages, to implement
-frustum culling and LOD calculation on the GPU.
+This tutorial demonstrates how to use amplification and mesh shaders, the new programmable stages, to implement
+view frustum culling and object LOD calculation on the GPU.
 
 ![](Animation_Large.gif)
 
@@ -88,7 +88,7 @@ but is read back on the CPU to show the counter in the UI:
 RWByteAddressBuffer Statistics;
 ```
 
-The data that the mesh shader invocations will be working on (vertex positions, scale, LOD) 
+The data that the amplification shader invocations will be working on (vertex positions, scale, LOD) 
 is stored in a shared memory. Each thread in the group will work on its own element:
 
 ```hlsl
@@ -161,7 +161,7 @@ guaranteed to be unique for all threads, so that they will all be working on dif
 ```
 
 `IsVisible()` function calculates the signed distance from each frustum plane to the sphere and computes
-its visbility by comparing the distances to the sphere radius.
+its visibility by comparing the distances to the sphere radius.
 
 The LOD calculation (`CalcDetailLevel` function) is based on computing the object bounding sphere radius in screen space.
 For detailed description of the algorithm, see the link in [Further Reading](#further-reading).
@@ -171,8 +171,8 @@ After that we can safely read the `s_TaskCount` value.
 The first thread in the group atomically adds this value to the global `Statistics` counter. Note that this is much faster than incrementing
 the counter from each thread because it minimizes the access to global memory.
 
-The final step of the amplification shader is calling the `DispatchMesh()` function with the number of groups and the payload.
-For compatibility with Vulkan API you should only use the X group count.
+The final step of the amplification shader is calling the `DispatchMesh()` function with the number of groups and the payload
+that will spawn an s_TaskCount mesh shader invocations. For compatibility with Vulkan API you should only use the X group count.
 The `DispatchMesh()` function must be called exactly once per amplification shader.
 The `DispatchMesh()` call implies a `GroupMemoryBarrierWithGroupSync()`, and ends the amplification shader group's execution.
 
@@ -262,7 +262,7 @@ if (I < 12)
 
 ## Preparing the cube data
 
-In this tutorail the cube data is arranged differently compared to the previous ones - we don’t have separate vertex and index buffers,
+In this tutorial the cube data is arranged differently compared to the previous ones - we don’t have separate vertex and index buffers,
 the mesh shader reads the data from the buffer directly.
 We keep all data in a constant buffer because we only have one small mesh. However, a real application
 should use a structured or an unordered access buffer.
@@ -319,7 +319,7 @@ m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_CubeBuffer);
 
 The initialization of amplification and mesh shaders is largely identical to initialization of shaders of other types.
 The only difference is the new shader types (`SHADER_TYPE_AMPLIFICATION` and `SHADER_TYPE_MESH`).
-Similar is true for pipline state initialization. Notice also the new `PIPELINE_TYPE_MESH` pipeliene type.
+Similar is true for pipeline state initialization. Notice also the new `PIPELINE_TYPE_MESH` pipeline type.
 Some fields of the `GraphicsPipeline` struct like `LayoutElements` and `PrimitiveTopology` are irrelevant for mesh shaders and are ignored.
 The mesh shader pipeline state uses the same pixel shader stage as the traditional vertex pipeline.
 

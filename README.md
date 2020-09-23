@@ -202,8 +202,8 @@ This tutorial demonstrates how to use the render passes API to implement simple 
 
 ## [Tutorial 20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial20_MeshShader)
 
-This tutorial deomstrates how to use amplification and mesh shaders, the new programmable stages, to implement
-frustum culling and LOD calculation on the GPU.
+This tutorial demonstrates how to use amplification and mesh shaders, the new programmable stages, to implement
+view frustum culling and object LOD calculation on the GPU.
 
 ![](Tutorials/Tutorial20_MeshShader/Animation_Large.gif)
 
