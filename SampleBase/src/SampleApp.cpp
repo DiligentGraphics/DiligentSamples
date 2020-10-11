@@ -397,7 +397,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 
     if (m_ScreenCaptureInfo.AllowCapture)
     {
-        if (m_GoldenImgMode == GoldenImageMode::Capture || m_GoldenImgMode == GoldenImageMode::Compare)
+        if (m_GoldenImgMode != GoldenImageMode::None)
         {
             // Capture only one frame
             m_ScreenCaptureInfo.FramesToCapture = 1;
@@ -725,9 +725,13 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
             {
                 m_GoldenImgMode = GoldenImageMode::Compare;
             }
+            else if (StrCmpNoCase(Arg.c_str(), "compare_update", Arg.length()) == 0)
+            {
+                m_GoldenImgMode = GoldenImageMode::CompareUpdate;
+            }
             else
             {
-                LOG_ERROR_MESSAGE("Unknown golden image mode. The following are allowed values: 'none', 'capture', 'compare'");
+                LOG_ERROR_MESSAGE("Unknown golden image mode. The following are allowed values: 'none', 'capture', 'compare', 'compare_update'");
             }
         }
         else if (!(Arg = GetArgument(pos, "golden_image_tolerance")).empty())
@@ -853,7 +857,6 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
                                                   reinterpret_cast<const Uint8*>(TexData.pData), TexData.Stride,
                                                   TexDesc.Format, TEX_FORMAT_RGBA8_UNORM, false /*Keep alpha*/);
     m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
-    m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
 
     auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
 
@@ -891,7 +894,6 @@ void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::Ca
     RefCntAutoPtr<IDataBlob> pEncodedImage;
     Image::Encode(Info, &pEncodedImage);
     m_pImmediateContext->UnmapTextureSubresource(Capture.pTexture, 0, 0);
-    m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
 
     FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
     if (pFile)
@@ -964,14 +966,17 @@ void SampleApp::Present()
                 FileName = FileNameSS.str();
             }
 
-            if (m_GoldenImgMode == GoldenImageMode::Compare)
+            if (m_GoldenImgMode == GoldenImageMode::Compare || m_GoldenImgMode == GoldenImageMode::CompareUpdate)
             {
                 CompareGoldenImage(FileName, Capture);
             }
-            else
+
+            if (m_GoldenImgMode == GoldenImageMode::Capture || m_GoldenImgMode == GoldenImageMode::CompareUpdate)
             {
                 SaveScreenCapture(FileName, Capture);
             }
+
+            m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
         }
     }
 }
