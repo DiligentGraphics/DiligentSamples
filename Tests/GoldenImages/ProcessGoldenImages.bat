@@ -1,17 +1,37 @@
 @echo off
 
-rem  %1: path to the root of the build tree
-rem  %2: configuration (Debug, Release, etc.)
-rem  %3: mode (capture or compare)
-rem  %4... : rendering backends to run (d3d11, d3d12, gl, vk)
+set num_args=0
+for %%x in (%*) do Set /A num_args+=1
 
-rem  example:  ProcessGoldenImages.bat d:\Projects\DiligentEngine\build\Win64 Debug compare d3d11 d3d12
+if "%num_args%" LSS "5" (
+    echo Command line format:
+    echo.
+    echo   ProcessGoldenImages.bat build_path config mode extra_args backends
+    echo.
+    echo build_path - path to the root of the build tree
+    echo config     - configuration (Debug, Release, etc.^)
+    echo mode       - golden image processing mode (capture or compare^)
+    echo extra_args - extra arguments for command line (e.g. "-adater sw"^)
+    echo backends   - list of rendering backends (e.g. d3d11 d3d12 gl vk^)
+    echo. 
+    echo Example:
+    echo   ProcessGoldenImages.bat c:\Projects\DiligentEngine\build\Win64 Debug compare "-adapter sw" d3d11 d3d12
+    EXIT /B -1
+)
+
 
 rem  Enable delayed expansion to be able to use !ERRORLEVEL!
 setlocal ENABLEDELAYEDEXPANSION
 
-set img_width=512
-set img_height=512
+if "%golden_img_width%" == "" (
+    set golden_img_width=512
+)
+if "%golden_img_height%" == "" (
+    set golden_img_height=512
+)
+if "%golden_images_root_dir%" == "" (
+    set golden_images_root_dir=../../../Tests/GoldenImages
+)
 
 set build_folder=%1
 shift
@@ -20,6 +40,9 @@ set config=%1
 shift
 
 set golden_img_mode=%1
+shift
+
+set extra_agrs=%1
 shift
 
 set rest_args=
@@ -107,7 +130,7 @@ EXIT /B %ERROR%
 
     cd "%app_folder%/%app_name%/assets"
 
-    set golden_img_dir=../../../Tests/GoldenImages/%app_folder%/%app_name%
+    set golden_img_dir=%golden_images_root_dir%/%app_folder%/%app_name%
     if not exist "%golden_img_dir%" (
         md "%golden_img_dir%"
     )
@@ -121,7 +144,7 @@ EXIT /B %ERROR%
         rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
         rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
         rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
-        !app_path! -mode %%X -adapter sw -width %img_width% -height %img_height% -golden_image_mode %golden_img_mode% -capture_path %golden_img_dir% -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
+        !app_path! -mode %%X %extra_agrs% -width %golden_img_width% -height %golden_img_height% -golden_image_mode %golden_img_mode% -capture_path %golden_img_dir% -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
 
         if "%golden_img_mode%" == "compare" (
             if !ERRORLEVEL! NEQ 0 (
