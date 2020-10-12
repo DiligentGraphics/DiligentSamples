@@ -33,7 +33,7 @@ if "%golden_images_root_dir%" == "" (
     set golden_images_root_dir=../../../Tests/GoldenImages
 )
 
-set build_folder=%1
+set build_folder=%~1
 shift
 
 set config=%1
