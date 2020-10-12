@@ -146,23 +146,21 @@ EXIT /B %ERROR%
         rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
         !app_path! -mode %%X %extra_agrs% -width %golden_img_width% -height %golden_img_height% -golden_image_mode %golden_img_mode% -capture_path %golden_img_dir% -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
 
-        if "%golden_img_mode%" == "compare" (
-            if !ERRORLEVEL! NEQ 0 (
+        if !ERRORLEVEL! NEQ 0 (
+            if !ERRORLEVEL! GEQ 0 (
                 echo Golden image validation failed for %app_name% [%%X]: !ERRORLEVEL! incosistent pixels found
-                set EXIT_CODE=1
-                ) else (
-                echo Golden image validation passed for %app_name% [%%X]
+                if "%golden_img_mode%" == "compare_update" echo Golden image updated
+            ) else (
+                if "%golden_img_mode%" == "compare" echo Golden image validation failed for %app_name% [%%X]
+                if "%golden_img_mode%" == "capture" echo Failed to generate golden image for %app_name% [%%X]
+                if "%golden_img_mode%" == "compare_update" echo Unable to validate or update golden image for %app_name% [%%X]
             )
+        ) else (
+            if "%golden_img_mode%" == "compare" echo Golden image validation passed for %app_name% [%%X]
+            if "%golden_img_mode%" == "capture" echo Successfully generated golden image for %app_name% [%%X]
+            if "%golden_img_mode%" == "compare_update" echo Golden image validation passed for %app_name%. Image updated. [%%X]
         )
-        
-        if "%golden_img_mode%" == "capture" (
-            if !ERRORLEVEL! NEQ 0 (
-                echo Failed to generate golden image %app_name% [%%X]
-                set EXIT_CODE=1
-                ) else (
-                echo Successfully generated golden image for %app_name% [%%X]
-            )
-        )
+
 		echo.
         echo.
     )

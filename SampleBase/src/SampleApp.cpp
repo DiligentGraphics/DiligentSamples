@@ -832,7 +832,7 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     if (!pGoldenImg)
     {
         LOG_ERROR_MESSAGE("Failed to load golden image from file ", FileName);
-        m_ExitCode = -1;
+        m_ExitCode = -2;
         return;
     }
 
@@ -841,13 +841,13 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     if (GoldenImgDesc.Width != TexDesc.Width)
     {
         LOG_ERROR_MESSAGE("Golden image width (", GoldenImgDesc.Width, ") does not match the captured image width (", TexDesc.Width, ")");
-        m_ExitCode = -1;
+        m_ExitCode = -3;
         return;
     }
     if (GoldenImgDesc.Height != TexDesc.Height)
     {
         LOG_ERROR_MESSAGE("Golden image height (", GoldenImgDesc.Height, ") does not match the captured image height (", TexDesc.Height, ")");
-        m_ExitCode = -1;
+        m_ExitCode = -4;
         return;
     }
 
@@ -902,12 +902,14 @@ void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::Ca
         if (!res)
         {
             LOG_ERROR_MESSAGE("Failed to write screen capture file '", FileName, "'.");
+            m_ExitCode = -5;
         }
         pFile.Close();
     }
     else
     {
         LOG_ERROR_MESSAGE("Failed to create screen capture file '", FileName, "'. Verify that the directory exists and the app has sufficient rights to write to this directory.");
+        m_ExitCode = -6;
     }
 }
 
