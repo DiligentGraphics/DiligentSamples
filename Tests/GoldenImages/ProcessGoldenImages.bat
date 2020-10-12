@@ -155,6 +155,7 @@ EXIT /B %ERROR%
                 if "%golden_img_mode%" == "capture" echo Failed to generate golden image for %app_name% [%%X]
                 if "%golden_img_mode%" == "compare_update" echo Unable to validate or update golden image for %app_name% [%%X]
             )
+            set EXIT_CODE=1
         ) else (
             if "%golden_img_mode%" == "compare" echo Golden image validation passed for %app_name% [%%X]
             if "%golden_img_mode%" == "capture" echo Successfully generated golden image for %app_name% [%%X]
