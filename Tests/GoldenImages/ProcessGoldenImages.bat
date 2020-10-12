@@ -42,7 +42,7 @@ shift
 set golden_img_mode=%1
 shift
 
-set extra_agrs=%1
+set extra_agrs=%~1  :: ~ removes surrounding quotes
 shift
 
 set rest_args=
