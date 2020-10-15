@@ -226,22 +226,22 @@ void Tutorial20_MeshShader::CreatePipelineState()
 {
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     PSODesc.Name = "Mesh shader";
 
-    PSODesc.PipelineType                                          = PIPELINE_TYPE_MESH;
-    PSODesc.GraphicsPipeline.NumRenderTargets                     = 1;
-    PSODesc.GraphicsPipeline.RTVFormats[0]                        = m_pSwapChain->GetDesc().ColorBufferFormat;
-    PSODesc.GraphicsPipeline.DSVFormat                            = m_pSwapChain->GetDesc().DepthBufferFormat;
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
-    PSODesc.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
-    PSODesc.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
+    PSODesc.PipelineType                                                = PIPELINE_TYPE_MESH;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets                     = 1;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                        = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                            = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
 
     // Topology is defined in the mesh shader, this value is not used.
-    PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_UNDEFINED;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_UNDEFINED;
 
     // Define variable type that will be used by default.
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
@@ -315,10 +315,11 @@ void Tutorial20_MeshShader::CreatePipelineState()
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    PSODesc.GraphicsPipeline.pAS = pAS;
-    PSODesc.GraphicsPipeline.pMS = pMS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
+    PSOCreateInfo.pAS = pAS;
+    PSOCreateInfo.pMS = pMS;
+    PSOCreateInfo.pPS = pPS;
+
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
     VERIFY_EXPR(m_pPSO != nullptr);
 
     m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);

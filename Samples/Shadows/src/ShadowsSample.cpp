@@ -352,18 +352,18 @@ void ShadowsSample::CreatePipelineStates()
     m_RenderMeshShadowPSO.clear();
     for (Uint32 vb = 0; vb < m_Mesh.GetNumVBs(); ++vb)
     {
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
         std::vector<LayoutElement> Elements;
-        auto&                      InputLayout = PSODesc.GraphicsPipeline.InputLayout;
+        auto&                      InputLayout = PSOCreateInfo.GraphicsPipeline.InputLayout;
         DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(m_Mesh.VBElements(vb), m_Mesh.GetVertexStride(vb), InputLayout, Elements);
 
         //  Try to find PSO with the same layout
         Uint32 pso;
         for (pso = 0; pso < m_RenderMeshPSO.size(); ++pso)
         {
-            const auto& PSOLayout = m_RenderMeshPSO[pso]->GetDesc().GraphicsPipeline.InputLayout;
+            const auto& PSOLayout = m_RenderMeshPSO[pso]->GetGraphicsPipelineDesc().InputLayout;
 
             bool IsSameLayout =
                 PSOLayout.NumElements == InputLayout.NumElements &&
@@ -396,42 +396,43 @@ void ShadowsSample::CreatePipelineStates()
         PSODesc.ResourceLayout.Variables    = Vars;
         PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-        PSODesc.Name                 = "Mesh PSO";
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
+        PSODesc.Name      = "Mesh PSO";
+        PSOCreateInfo.pVS = pVS;
+        PSOCreateInfo.pPS = pPS;
 
-        PSODesc.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-        PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
-        PSODesc.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-        PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets           = 1;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
         RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &pRenderMeshPSO);
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshPSO);
         // clang-format off
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,  "cbLightAttribs")->Set(m_LightAttribsCB);
         pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbLightAttribs")->Set(m_LightAttribsCB);
         // clang-format on
 
-        PSODesc.Name                              = "Mesh Shadow PSO";
-        PSODesc.GraphicsPipeline.pPS              = nullptr;
-        PSODesc.GraphicsPipeline.pVS              = pShadowVS;
-        PSODesc.GraphicsPipeline.NumRenderTargets = 0;
-        PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
-        PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
+        PSODesc.Name      = "Mesh Shadow PSO";
+        PSOCreateInfo.pPS = nullptr;
+        PSOCreateInfo.pVS = pShadowVS;
+
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 0;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
 
         // It is crucial to disable depth clip to allow shadows from objects
         // behind the near cascade clip plane!
-        PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
-        PSODesc.ResourceLayout.StaticSamplers            = nullptr;
-        PSODesc.ResourceLayout.NumStaticSamplers         = 0;
-        PSODesc.ResourceLayout.Variables                 = nullptr;
-        PSODesc.ResourceLayout.NumVariables              = 0;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+        PSODesc.ResourceLayout.StaticSamplers                  = nullptr;
+        PSODesc.ResourceLayout.NumStaticSamplers               = 0;
+        PSODesc.ResourceLayout.Variables                       = nullptr;
+        PSODesc.ResourceLayout.NumVariables                    = 0;
         RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &pRenderMeshShadowPSO);
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshShadowPSO);
         pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
 
         m_RenderMeshPSO.emplace_back(std::move(pRenderMeshPSO));

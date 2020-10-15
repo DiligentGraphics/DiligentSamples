@@ -53,7 +53,7 @@ m_pMSDepthDSV = pDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
 When creating a PSO object, we need to specify the number of samples as well:
 
 ```cpp
-PSODesc.GraphicsPipeline.SmplDesc.Count = m_SampleCount;
+PSOCreateInfo.PSODesc.GraphicsPipeline.SmplDesc.Count = m_SampleCount;
 ```
 
 Other than that, there is nothing new compared to previous tutorials.

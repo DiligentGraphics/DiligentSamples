@@ -113,16 +113,17 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
 
     // Create pipeline state
     {
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
-        PSODesc.Name                    = "Backround PSO";
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
+		
+        PSODesc.Name = "Backround PSO";
 
-        PSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
-        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-        PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
-        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+        PSODesc.PipelineType                                        = PIPELINE_TYPE_GRAPHICS;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM;
@@ -154,14 +155,14 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
                 LayoutElement{1, 0, 2, VT_FLOAT32, False}  // TexCoord
             };
 
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
+        PSOCreateInfo.pVS = pVS;
+        PSOCreateInfo.pPS = pPS;
 
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements    = 2;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = 2;
 
         PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        pDevice->CreatePipelineState(PSOCreateInfo, &m_pRenderBackgroundPSO);
+        pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pRenderBackgroundPSO);
         VERIFY(m_pRenderBackgroundPSO, "Failed to create background PSO");
 
         m_pRenderBackgroundPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "sTexture")->Set(m_pCameraTextureSRV);

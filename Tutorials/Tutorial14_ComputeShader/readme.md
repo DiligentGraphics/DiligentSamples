@@ -406,8 +406,8 @@ except that there is way fewer states to describe. Resource layout is pretty
 much everything you need to specify except for the compute shader itself:
 
 ```cpp
-PipelineStateCreateInfo PSOCreateInfo;
-PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+ComputePipelineStateCreateInfo PSOCreateInfo;
+PipelineStateDesc&             PSODesc = PSOCreateInfo.PSODesc;
 
 // Pipeline state name is used by the engine to report issues.
 PSODesc.Name = "Reset particle lists PSO";
@@ -423,8 +423,8 @@ ShaderResourceVariableDesc Vars[] =
 PSODesc.ResourceLayout.Variables    = Vars;
 PSODesc.ResourceLayout.NumVariables = _countof(Vars);
     
-PSODesc.ComputePipeline.pCS = pResetParticleListsCS;
-m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
+PSOCreateInfo.pCS = pResetParticleListsCS;
+m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
 m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 ```
 

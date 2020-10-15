@@ -74,29 +74,28 @@ void Tutorial08_Tessellation::CreatePipelineStates()
 
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Terrain PSO";
+    PSOCreateInfo.PSODesc.Name = "Terrain PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
     // Cull back faces. For some reason, in OpenGL the order is reversed
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
     // Enable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
     // clang-format on
 
     // Create dynamic uniform buffer that will store shader constants
@@ -183,13 +182,13 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         }
     }
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pHS = pHS;
-    PSODesc.GraphicsPipeline.pDS = pDS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pHS = pHS;
+    PSOCreateInfo.pDS = pDS;
+    PSOCreateInfo.pPS = pPS;
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // clang-format off
     ShaderResourceVariableDesc Vars[] = 
@@ -198,8 +197,8 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         {SHADER_TYPE_PIXEL,                      "g_Texture",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // clang-format off
     // Define static sampler for g_HeightMap and g_Texture. Static samplers should be used whenever possible
@@ -214,16 +213,16 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         {SHADER_TYPE_PIXEL,                     "g_Texture",   SamLinearClampDesc}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[0]);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO[0]);
 
     if (bWireframeSupported)
     {
-        PSODesc.GraphicsPipeline.pGS = pGS;
-        PSODesc.GraphicsPipeline.pPS = pWirePS;
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[1]);
+        PSOCreateInfo.pGS = pGS;
+        PSOCreateInfo.pPS = pWirePS;
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO[1]);
     }
 
     for (Uint32 i = 0; i < _countof(m_pPSO); ++i)

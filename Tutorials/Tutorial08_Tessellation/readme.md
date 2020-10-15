@@ -169,7 +169,7 @@ Pipeline state initialization is done in the same way as in previous tutorials. 
 is that primitive topology is one-control-point patchlist:
 
 ```cpp
-PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+PSOCreateInfo.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
 ```
 
 Two pipeline state objects are created. The first one renders terrain in normal mode, the second

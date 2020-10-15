@@ -309,8 +309,8 @@ void GLTFViewer::CreateEnvMapPSO()
     RefCntAutoPtr<IShader> pPS;
     m_pDevice->CreateShader(ShaderCI, &pPS);
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
@@ -333,17 +333,17 @@ void GLTFViewer::CreateEnvMapPSO()
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    PSODesc.Name                 = "EnvMap PSO";
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSODesc.Name      = "EnvMap PSO";
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-    PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
-    PSODesc.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-    PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets           = 1;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_EnvMapPSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_EnvMapPSO);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs")->Set(m_EnvMapRenderAttribsCB);
     CreateEnvMapSRB();
@@ -402,25 +402,25 @@ void GLTFViewer::CreateBoundBoxPSO(TEXTURE_FORMAT RTVFmt, TEXTURE_FORMAT DSVFmt)
     m_pDevice->CreateShader(ShaderCI, &pPS);
 
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     PSODesc.Name = "BoundBox PSO";
 
-    PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-    PSODesc.GraphicsPipeline.RTVFormats[0]    = RTVFmt;
-    PSODesc.GraphicsPipeline.DSVFormat        = DSVFmt;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 1;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]    = RTVFmt;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat        = DSVFmt;
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-    PSODesc.GraphicsPipeline.NumRenderTargets           = 1;
-    PSODesc.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-    PSODesc.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_LINE_LIST;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets           = 1;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_LINE_LIST;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_BoundBoxPSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_BoundBoxPSO);
     m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);
 }

@@ -65,22 +65,22 @@ void PlaneRenderer::Initialize(IRenderDevice* pDevice)
 
     // Create pipeline state
     {
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
         PSODesc.Name = "Plane rendering PSO";
 
-        PSODesc.PipelineType                                          = PIPELINE_TYPE_GRAPHICS;
-        PSODesc.GraphicsPipeline.NumRenderTargets                     = 1;
-        PSODesc.GraphicsPipeline.RTVFormats[0]                        = TEX_FORMAT_RGBA8_UNORM;
-        PSODesc.GraphicsPipeline.DSVFormat                            = TEX_FORMAT_D24_UNORM_S8_UINT;
-        PSODesc.GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        PSODesc.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable    = False;
+        PSODesc.PipelineType                                                = PIPELINE_TYPE_GRAPHICS;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets                     = 1;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                        = TEX_FORMAT_RGBA8_UNORM;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat                            = TEX_FORMAT_D24_UNORM_S8_UINT;
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable    = False;
 
-        auto& RT0       = PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[0];
+        auto& RT0       = PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0];
         RT0.BlendEnable = True;
         RT0.SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
         RT0.DestBlend   = BLEND_FACTOR_INV_SRC_ALPHA;
@@ -122,14 +122,14 @@ void PlaneRenderer::Initialize(IRenderDevice* pDevice)
         };
         // clang-format on
 
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
+        PSOCreateInfo.pVS = pVS;
+        PSOCreateInfo.pPS = pPS;
 
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements    = 1;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = 1;
 
         PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        pDevice->CreatePipelineState(PSOCreateInfo, &m_pPlanePSO);
+        pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPlanePSO);
         VERIFY(m_pPlanePSO, "Failed to create plane PSO");
 
         m_pPlanePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_pShaderConstants);

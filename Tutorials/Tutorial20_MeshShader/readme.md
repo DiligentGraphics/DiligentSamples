@@ -355,10 +355,10 @@ RefCntAutoPtr<IShader> pPS;
     
 ...
 
-PSODesc.GraphicsPipeline.pAS = pAS;
-PSODesc.GraphicsPipeline.pMS = pMS;
-PSODesc.GraphicsPipeline.pPS = pPS;
-m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
+PSOCreateInfo.pAS = pAS;
+PSOCreateInfo.pMS = pMS;
+PSOCreateInfo.pPS = pPS;
+m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
 ```
 
 ## Draw task data initialization

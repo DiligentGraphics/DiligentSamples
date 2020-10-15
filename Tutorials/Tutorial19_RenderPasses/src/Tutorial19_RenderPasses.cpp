@@ -68,20 +68,20 @@ void Tutorial19_RenderPasses::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE 
 
 void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     // Pipeline state name is used by the engine to report issues.
     PSODesc.Name = "Cube PSO";
 
-    PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-    PSODesc.GraphicsPipeline.SubpassIndex = 0; // This PSO will be used within the first subpass
+    PSOCreateInfo.GraphicsPipeline.pRenderPass  = m_pRenderPass;
+    PSOCreateInfo.GraphicsPipeline.SubpassIndex = 0; // This PSO will be used within the first subpass
     // When pRenderPass is not null, all RTVFormats and DSVFormat must be TEX_FORMAT_UNKNOWN,
     // while NumRenderTargets must be 0
 
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
@@ -122,11 +122,11 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     };
     // clang-format on
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
@@ -155,7 +155,7 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
     PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCubePSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pCubePSO);
     VERIFY_EXPR(m_pCubePSO != nullptr);
 
     m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ShaderConstants")->Set(m_pShaderConstantsCB);
@@ -167,21 +167,21 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
 
 void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     PSODesc.Name = "Deferred lighting PSO";
 
-    PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-    PSODesc.GraphicsPipeline.SubpassIndex = 1; // This PSO will be used within the second subpass
+    PSOCreateInfo.GraphicsPipeline.pRenderPass  = m_pRenderPass;
+    PSOCreateInfo.GraphicsPipeline.SubpassIndex = 1; // This PSO will be used within the second subpass
 
-    PSODesc.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_BACK;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False; // Do not write depth
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False; // Do not write depth
 
     // We will use alpha-blending to accumulate influence of all lights
-    auto& RT0Blend          = PSODesc.GraphicsPipeline.BlendDesc.RenderTargets[0];
+    auto& RT0Blend          = PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0];
     RT0Blend.BlendEnable    = True;
     RT0Blend.BlendOp        = BLEND_OPERATION_ADD;
     RT0Blend.SrcBlend       = BLEND_FACTOR_ONE;
@@ -231,11 +231,11 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     };
     // clang-format on
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
     // Define variable type that will be used by default
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
@@ -250,7 +250,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pLightVolumePSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pLightVolumePSO);
     VERIFY_EXPR(m_pLightVolumePSO != nullptr);
 
     m_pLightVolumePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ShaderConstants")->Set(m_pShaderConstantsCB);
@@ -259,17 +259,17 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
 
 void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     PSODesc.Name = "Ambient light PSO";
 
-    PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-    PSODesc.GraphicsPipeline.SubpassIndex = 1; // This PSO will be used within the second subpass
+    PSOCreateInfo.GraphicsPipeline.pRenderPass  = m_pRenderPass;
+    PSOCreateInfo.GraphicsPipeline.SubpassIndex = 1; // This PSO will be used within the second subpass
 
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False; // Disable depth
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False; // Disable depth
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -302,8 +302,8 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
         VERIFY_EXPR(pPS != nullptr);
     }
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
@@ -317,7 +317,7 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pAmbientLightPSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pAmbientLightPSO);
     VERIFY_EXPR(m_pAmbientLightPSO != nullptr);
 }
 

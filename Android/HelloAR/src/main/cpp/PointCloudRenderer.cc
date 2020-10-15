@@ -107,19 +107,19 @@ void PointCloudRenderer::Initialize(IRenderDevice* pDevice)
 
     // Create pipeline state
     {
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
         PSODesc.Name = "Point cloud PSO";
 
-        PSODesc.PipelineType                                       = PIPELINE_TYPE_GRAPHICS;
-        PSODesc.GraphicsPipeline.NumRenderTargets                  = 1;
-        PSODesc.GraphicsPipeline.RTVFormats[0]                     = TEX_FORMAT_RGBA8_UNORM;
-        PSODesc.GraphicsPipeline.DSVFormat                         = TEX_FORMAT_D24_UNORM_S8_UINT;
-        PSODesc.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_POINT_LIST;
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_NONE;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False;
+        PSODesc.PipelineType                                             = PIPELINE_TYPE_GRAPHICS;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets                  = 1;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                     = TEX_FORMAT_RGBA8_UNORM;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat                         = TEX_FORMAT_D24_UNORM_S8_UINT;
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology                 = PRIMITIVE_TOPOLOGY_POINT_LIST;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode           = CULL_MODE_NONE;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable      = True;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False;
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -147,14 +147,14 @@ void PointCloudRenderer::Initialize(IRenderDevice* pDevice)
 
         LayoutElement LayoutElems[] = {LayoutElement{0, 0, 4, VT_FLOAT32, False}};
 
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
+        PSOCreateInfo.pVS = pVS;
+        PSOCreateInfo.pPS = pPS;
 
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements    = 1;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = 1;
 
         PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        pDevice->CreatePipelineState(PSOCreateInfo, &m_pPointCloudPSO);
+        pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPointCloudPSO);
         VERIFY(m_pPointCloudPSO, "Failed to create point cloud PSO");
 
         m_pPointCloudPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_pVSConstants);

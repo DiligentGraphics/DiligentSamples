@@ -80,27 +80,26 @@ void Tutorial12_RenderTarget::CreateCubePSO()
 
 void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 {
-    PipelineStateCreateInfo RTPSOCreateInfo;
-    PipelineStateDesc&      RTPSODesc = RTPSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo RTPSOCreateInfo;
 
     // Pipeline state name is used by the engine to report issues
     // It is always a good idea to give objects descriptive names
     // clang-format off
-    RTPSODesc.Name                                          = "Render Target PSO";
+    RTPSOCreateInfo.PSODesc.Name                                  = "Render Target PSO";
     // This is a graphics pipeline
-    RTPSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
+    RTPSOCreateInfo.PSODesc.PipelineType                          = PIPELINE_TYPE_GRAPHICS;
     // This tutorial will render to a single render target
-    RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    RTPSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    RTPSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    RTPSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    RTPSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    RTPSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    RTPSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    RTPSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     // Cull back faces
-    RTPSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    RTPSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
-    RTPSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    RTPSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
     // clang-format on
 
     ShaderCreateInfo ShaderCI;
@@ -160,11 +159,11 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         m_pDevice->CreateBuffer(CBDesc, nullptr, &m_RTPSConstants);
     }
 
-    RTPSODesc.GraphicsPipeline.pVS = pRTVS;
-    RTPSODesc.GraphicsPipeline.pPS = pRTPS;
+    RTPSOCreateInfo.pVS = pRTVS;
+    RTPSOCreateInfo.pPS = pRTPS;
 
     // Define variable type that will be used by default
-    RTPSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    RTPSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // clang-format off
     // Shader variables should typically be mutable, which means they are expected
@@ -174,8 +173,8 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         { SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
     };
     // clang-format on
-    RTPSODesc.ResourceLayout.Variables    = Vars;
-    RTPSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    RTPSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+    RTPSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // clang-format off
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
@@ -184,10 +183,10 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         { SHADER_TYPE_PIXEL, "g_Texture", Sam_LinearClamp }
     };
     // clang-format on
-    RTPSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    RTPSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    RTPSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(RTPSOCreateInfo, &m_pRTPSO);
+    m_pDevice->CreateGraphicsPipelineState(RTPSOCreateInfo, &m_pRTPSO);
 
     // Since we did not explcitly specify the type for Constants, default type
     // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly

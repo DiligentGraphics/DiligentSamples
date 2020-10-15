@@ -100,10 +100,10 @@ RefCntAutoPtr<IShader> pGS;
 
 // ...
 
-PSODesc.GraphicsPipeline.pVS = pVS;
-PSODesc.GraphicsPipeline.pGS = pGS;
-PSODesc.GraphicsPipeline.pPS = pPS;
-pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
+PSOCreateInfo.pVS = pVS;
+PSOCreateInfo.pGS = pGS;
+PSOCreateInfo.pPS = pPS;
+pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
 ```
 
 Rendering is performed in the same way as in Tutorial03.

@@ -81,18 +81,18 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
 
     // Create pipeline state
     {
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
         PSODesc.Name = "Object rendering PSO";
 
-        PSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
-        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-        PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
-        PSODesc.GraphicsPipeline.DSVFormat                    = TEX_FORMAT_D24_UNORM_S8_UINT;
-        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+        PSODesc.PipelineType                                        = PIPELINE_TYPE_GRAPHICS;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_RGBA8_UNORM;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat                    = TEX_FORMAT_D24_UNORM_S8_UINT;
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -131,14 +131,14 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
         };
         // clang-format on
 
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
+        PSOCreateInfo.pVS = pVS;
+        PSOCreateInfo.pPS = pPS;
 
-        PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-        PSODesc.GraphicsPipeline.InputLayout.NumElements    = 2;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+        PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = 2;
 
         PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        pDevice->CreatePipelineState(PSOCreateInfo, &m_pObjectPSO);
+        pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pObjectPSO);
         VERIFY(m_pObjectPSO, "Failed to create object PSO");
 
         m_pObjectPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_pShaderConstants);

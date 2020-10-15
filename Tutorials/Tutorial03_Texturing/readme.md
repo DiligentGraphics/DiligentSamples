@@ -77,8 +77,8 @@ ShaderResourceVariableDesc Vars[] =
 {
     {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
 };
-PSODesc.ResourceLayout.Variables    = Vars;
-PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 ```
 
 Mutable resources are set through the object called *shader resource binding*, or SRB. SRB
@@ -104,8 +104,8 @@ StaticSamplerDesc StaticSamplers[] =
 {
     {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
 };
-PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 ```
 
 If static sampler is specified for a texture, the sampler set in the shader resource view is ignored.

@@ -576,8 +576,8 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     RefCntAutoPtr<IShader> pGenerateNormalMapPS;
     pDevice->CreateShader(ShaderCI, &pGenerateNormalMapPS);
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
     // clang-format off
@@ -592,20 +592,20 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     PSODesc.ResourceLayout.Variables    = ShaderVars;
 
     PSODesc.Name           = "Render Normal Map";
-    auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+    auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
     GraphicsPipeline.DepthStencilDesc.DepthEnable         = false;
     GraphicsPipeline.DepthStencilDesc.DepthWriteEnable    = false;
     GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
     GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
     GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
-    GraphicsPipeline.pVS                                  = pScreenSizeQuadVS;
-    GraphicsPipeline.pPS                                  = pGenerateNormalMapPS;
+    PSOCreateInfo.pVS                                     = pScreenSizeQuadVS;
+    PSOCreateInfo.pPS                                     = pGenerateNormalMapPS;
     GraphicsPipeline.NumRenderTargets                     = 1;
     GraphicsPipeline.RTVFormats[0]                        = TEX_FORMAT_RG8_UNORM;
     GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     RefCntAutoPtr<IPipelineState> pRenderNormalMapPSO;
-    pDevice->CreatePipelineState(PSOCreateInfo, &pRenderNormalMapPSO);
+    pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderNormalMapPSO);
     pRenderNormalMapPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 
     RefCntAutoPtr<IShaderResourceBinding> pRenderNormalMapSRB;
@@ -754,12 +754,12 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
         RefCntAutoPtr<IShader> pHemisphereZOnlyVS;
         pDevice->CreateShader(ShaderCI, &pHemisphereZOnlyVS);
 
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
         PSODesc.Name                                          = "Render Hemisphere Z Only";
         PSODesc.ResourceLayout.DefaultVariableType            = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        auto& GraphicsPipeline                                = PSODesc.GraphicsPipeline;
+        auto& GraphicsPipeline                                = PSOCreateInfo.GraphicsPipeline;
         GraphicsPipeline.DepthStencilDesc                     = DSS_Default;
         GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
         GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
@@ -775,8 +775,8 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
         GraphicsPipeline.InputLayout.NumElements    = _countof(Inputs);
         GraphicsPipeline.DSVFormat                  = m_Params.ShadowMapFormat;
         GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        GraphicsPipeline.pVS                        = pHemisphereZOnlyVS;
-        pDevice->CreatePipelineState(PSOCreateInfo, &m_pHemisphereZOnlyPSO);
+        PSOCreateInfo.pVS                           = pHemisphereZOnlyVS;
+        pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pHemisphereZOnlyPSO);
         m_pHemisphereZOnlyPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
     }
@@ -883,8 +883,8 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
                 {0, 0, 3, VT_FLOAT32},
                 {1, 0, 2, VT_FLOAT32}};
 
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 
         PSODesc.Name = "RenderHemisphere";
 
@@ -905,20 +905,20 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
         PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-        auto& GraphicsPipeline = PSODesc.GraphicsPipeline;
+        auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
         GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
         GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
         GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
         GraphicsPipeline.InputLayout.LayoutElements           = Inputs;
         GraphicsPipeline.InputLayout.NumElements              = _countof(Inputs);
-        GraphicsPipeline.pVS                                  = m_pHemisphereVS;
-        GraphicsPipeline.pPS                                  = pHemispherePS;
+        PSOCreateInfo.pVS                                     = m_pHemisphereVS;
+        PSOCreateInfo.pPS                                     = pHemispherePS;
         GraphicsPipeline.RTVFormats[0]                        = m_Params.DstRTVFormat;
         GraphicsPipeline.NumRenderTargets                     = 1;
         GraphicsPipeline.DSVFormat                            = TEX_FORMAT_D32_FLOAT;
         GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pHemispherePSO);
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pHemispherePSO);
         m_pHemispherePSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemispherePSO->CreateShaderResourceBinding(&m_pHemisphereSRB, true);
         m_pHemisphereSRB->BindResources(SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING);

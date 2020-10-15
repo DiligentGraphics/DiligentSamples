@@ -307,29 +307,28 @@ public:
     {
         // Pipeline state object encompasses configuration of all GPU stages
 
-        PipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
         // Pipeline state name is used by the engine to report issues.
         // It is always a good idea to give objects descriptive names.
-        PSODesc.Name = "Simple triangle PSO";
+        PSOCreateInfo.PSODesc.Name = "Simple triangle PSO";
 
         // This is a graphics pipeline
-        PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+        PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
         // clang-format off
         // This tutorial will render to a single render target
-        PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
         // Set render target format which is the format of the swap chain's color buffer
-        PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
         // Use the depth buffer format from the swap chain
-        PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
         // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-        PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         // No back face culling for this tutorial
-        PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
         // Disable depth testing
-        PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
         // clang-format on
 
         ShaderCreateInfo ShaderCI;
@@ -359,9 +358,9 @@ public:
         }
 
         // Finally, create the pipeline state
-        PSODesc.GraphicsPipeline.pVS = pVS;
-        PSODesc.GraphicsPipeline.pPS = pPS;
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
+        PSOCreateInfo.pVS = pVS;
+        PSOCreateInfo.pPS = pPS;
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
     }
 
     void Render()

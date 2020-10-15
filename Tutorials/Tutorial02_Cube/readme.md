@@ -69,19 +69,19 @@ Similar to Tutorial01, pixel (fragment) shader simply interpolates vertex colors
 ## Initializing the Pipeline State
 
 In this tutorial, we will be using depth buffer, so besides color output, we need to specify
-the format of the depth output in the `PSODesc`:
+the format of the depth output in the `PSOCreateInfo`:
 
 ```cpp
-PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
-PSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
-PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
+PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
+PSOCreateInfo.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
+PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 ```
 
 Also, we will enable back-face culling:
 
 ```cpp
-PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
 ```
 
 In this tutorial, we create shaders from files rather than from the source code strings. Diligent Engine
@@ -136,8 +136,8 @@ LayoutElement LayoutElems[] =
     // Attribute 1 - vertex color
     LayoutElement{1, 0, 4, VT_FLOAT32, False}
 };
-PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 ```
 
 Our shader has one variable that needs to be bound by the application, a uniform buffer `Constants`.
@@ -146,7 +146,7 @@ Shader variables can be assigned one of three types, static, dynamic, or mutable
 for details. If no explicit type is provided for a variable, default type will be used:
 
 ```cpp
-PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 ```
 
 `Constants` uniform buffer is a static resource variable. Static variables are bound directly to the pipeline state and 

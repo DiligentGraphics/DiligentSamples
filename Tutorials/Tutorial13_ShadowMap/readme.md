@@ -43,20 +43,20 @@ m_ShadowMapDSV = ShadowMap->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
 There are few specifics of the shadow pass PSO initialization. First, there are no render targets:
 
 ```cpp
-PSODesc.Name                              = "Cube shadow PSO";
+PSOCreateInfo.PSODesc.Name                      = "Cube shadow PSO";
 // Shadow pass doesn't use any render target outputs
-PSODesc.GraphicsPipeline.NumRenderTargets = 0;
-PSODesc.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
+PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 0;
+PSOCreateInfo.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
 // The DSV format is the shadow map format
-PSODesc.GraphicsPipeline.DSVFormat        = m_ShadowMapFormat;
+PSOCreateInfo.GraphicsPipeline.DSVFormat        = m_ShadowMapFormat;
 ```
 
 Since we don't use render targets, we also don't need a pixel shader:
 
 ```cpp
-PSODesc.GraphicsPipeline.pVS              = pShadowVS;
+PSOCreateInfo.GraphicsPipeline.pVS              = pShadowVS;
 // We don't use pixel shader as we are only interested in populating the depth buffer
-PSODesc.GraphicsPipeline.pPS              = nullptr;
+PSOCreateInfo.GraphicsPipeline.pPS              = nullptr;
 ```
 
 Finally, we typically want to disable depth clipping. This is to make sure that
@@ -64,7 +64,7 @@ objects that are closer than the near clipping plane are still rendered into the
 shadow map.
 
 ```cpp
-PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+PSOCreateInfo.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 ```
 
 ## Rendering the shadow map

@@ -62,31 +62,30 @@ struct ParticleAttribs
 
 void Tutorial14_ComputeShader::CreateRenderParticlePSO()
 {
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     // Pipeline state name is used by the engine to report issues.
-    PSODesc.Name = "Render particles PSO";
+    PSOCreateInfo.PSODesc.Name = "Render particles PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     // Disable back face culling
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
     // clang-format on
 
-    auto& BlendDesc = PSODesc.GraphicsPipeline.BlendDesc;
+    auto& BlendDesc = PSOCreateInfo.GraphicsPipeline.BlendDesc;
 
     BlendDesc.RenderTargets[0].BlendEnable = True;
     BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
@@ -124,11 +123,11 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // clang-format off
     // Shader variables should typically be mutable, which means they are expected
@@ -138,10 +137,10 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
         {SHADER_TYPE_VERTEX, "g_Particles", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pRenderParticlePSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pRenderParticlePSO);
     m_pRenderParticlePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_Constants);
 }
 
@@ -205,8 +204,8 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
         m_pDevice->CreateShader(ShaderCI, &pUpdatedSpeedCS);
     }
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    ComputePipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&             PSODesc = PSOCreateInfo.PSODesc;
 
     // This is a compute pipeline
     PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
@@ -221,24 +220,24 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
     PSODesc.ResourceLayout.Variables    = Vars;
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-    PSODesc.Name                = "Reset particle lists PSO";
-    PSODesc.ComputePipeline.pCS = pResetParticleListsCS;
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
+    PSODesc.Name      = "Reset particle lists PSO";
+    PSOCreateInfo.pCS = pResetParticleListsCS;
+    m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
     m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
-    PSODesc.Name                = "Move particles PSO";
-    PSODesc.ComputePipeline.pCS = pMoveParticlesCS;
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pMoveParticlesPSO);
+    PSODesc.Name      = "Move particles PSO";
+    PSOCreateInfo.pCS = pMoveParticlesCS;
+    m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_pMoveParticlesPSO);
     m_pMoveParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
-    PSODesc.Name                = "Collidse particles PSO";
-    PSODesc.ComputePipeline.pCS = pCollideParticlesCS;
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCollideParticlesPSO);
+    PSODesc.Name      = "Collidse particles PSO";
+    PSOCreateInfo.pCS = pCollideParticlesCS;
+    m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_pCollideParticlesPSO);
     m_pCollideParticlesPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 
-    PSODesc.Name                = "Update particle speed PSO";
-    PSODesc.ComputePipeline.pCS = pUpdatedSpeedCS;
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pUpdateParticleSpeedPSO);
+    PSODesc.Name      = "Update particle speed PSO";
+    PSOCreateInfo.pCS = pUpdatedSpeedCS;
+    m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_pUpdateParticleSpeedPSO);
     m_pUpdateParticleSpeedPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 }
 

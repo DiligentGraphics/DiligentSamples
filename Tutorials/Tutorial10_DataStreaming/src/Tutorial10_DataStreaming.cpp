@@ -176,29 +176,28 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
 
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     // Pipeline state name is used by the engine to report issues
     // It is always a good idea to give objects descriptive names
-    PSODesc.Name = "Polygon PSO";
+    PSOCreateInfo.PSODesc.Name = "Polygon PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Disable back face culling
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
     // clang-format on
 
     ShaderCreateInfo ShaderCI;
@@ -254,14 +253,14 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
         LayoutElement{0, 0, 2, VT_FLOAT32, False, LAYOUT_ELEMENT_AUTO_OFFSET, LAYOUT_ELEMENT_AUTO_STRIDE, INPUT_ELEMENT_FREQUENCY_PER_VERTEX}
     };
     // clang-format on
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElem;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElem);
+    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElem;
+    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElem);
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
@@ -270,8 +269,8 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
     SamplerDesc SamLinearClampDesc
@@ -284,13 +283,13 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
     for (int state = 0; state < NumStates; ++state)
     {
-        PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[0][state]);
+        PSOCreateInfo.GraphicsPipeline.BlendDesc = BlendState[state];
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO[0][state]);
         // Since we did not explcitly specify the type for 'PolygonAttribs' variable, default
         // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
         // change and are bound directly to the pipeline state object.
@@ -301,7 +300,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     }
 
 
-    PSODesc.Name = "Batched Polygon PSO";
+    PSOCreateInfo.PSODesc.Name = "Batched Polygon PSO";
     // Define vertex shader input layout
     // This tutorial uses two types of input: per-vertex data and per-instance data.
     // clang-format off
@@ -317,16 +316,16 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
         LayoutElement{3, 1, 1, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
     };
     // clang-format on
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(BatchLayoutElems);
+    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = BatchLayoutElems;
+    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(BatchLayoutElems);
 
-    PSODesc.GraphicsPipeline.pVS = pVSBatched;
-    PSODesc.GraphicsPipeline.pPS = pPSBatched;
+    PSOCreateInfo.pVS = pVSBatched;
+    PSOCreateInfo.pPS = pPSBatched;
 
     for (int state = 0; state < NumStates; ++state)
     {
-        PSODesc.GraphicsPipeline.BlendDesc = BlendState[state];
-        m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO[1][state]);
+        PSOCreateInfo.GraphicsPipeline.BlendDesc = BlendState[state];
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO[1][state]);
 #ifdef DILIGENT_DEBUG
         if (state > 0)
         {

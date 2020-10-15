@@ -228,8 +228,8 @@ one difference: the PSO description structure should use the `pRenderPass`
 and `SubpassIndex` members:
 
 ```cpp
-PSODesc.GraphicsPipeline.pRenderPass  = m_pRenderPass;
-PSODesc.GraphicsPipeline.SubpassIndex = 0;
+PSOCreateInfo.GraphicsPipeline.pRenderPass  = m_pRenderPass;
+PSOCreateInfo.GraphicsPipeline.SubpassIndex = 0;
 ```
 
 Note that when `pRenderPass` is not null, all render target

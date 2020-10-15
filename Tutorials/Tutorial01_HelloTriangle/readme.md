@@ -62,52 +62,51 @@ void main(in  PSInput  PSIn,
 ## Initializing the Pipeline State
 
 Pipeline state is the object that encompasses the configuration of all GPU stages. To create a pipeline state,
-populate `PipelineStateCreateInfo` structure. The most important member of the structure that we will need to
+populate `GraphicsPipelineStateCreateInfo` structure. The most important member of the structure that we will need to
 initialize is `PSODesc`:
 
 ```cpp
-PipelineStateCreateInfo PSOCreateInfo;
-PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+GraphicsPipelineStateCreateInfo PSOCreateInfo;
 ```
 
 Start by giving the PSO a name. It is always a good idea to give all objects descriptive names as
 Diligent Engine uses these names in error reporting:
 
 ```cpp
-PSODesc.Name = "Simple triangle PSO"; 
+PSOCreateInfo.PSODesc.Name = "Simple triangle PSO"; 
 ```
 
 There are different types of pipeline states: graphics, compute, mesh, etc. This one is a graphics pipeline:
 
 ```cpp
-PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 ```
 
 Next, we need to describe which outputs the pipeline state uses. This one has one output, the screen,
 whose format can be queried through the swap chain object:
 
 ```cpp
-PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0]    = pSwapChain->GetDesc().ColorBufferFormat;
-PSODesc.GraphicsPipeline.DSVFormat        = pSwapChain->GetDesc().DepthBufferFormat;
+PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 1;
+PSOCreateInfo.GraphicsPipeline.RTVFormats[0]    = pSwapChain->GetDesc().ColorBufferFormat;
+PSOCreateInfo.GraphicsPipeline.DSVFormat        = pSwapChain->GetDesc().DepthBufferFormat;
 ```
 
 Next, we need to define what kind of primitives the pipeline can render, which are triangles in our case:
 
 ```cpp
-PSODesc.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+PSOCreateInfo.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 ```
 
 In this example, we do not want to worry about culling back-facing triangles, so we disable it:
 
 ```cpp
-PSODesc.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
 ```
 
 This pipeline state does not use depth testing:
 
 ```cpp
-PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 ```
 
 The pipeline state also allows configuring several other states (rasterizer state, blend state, input layout etc.),
@@ -158,12 +157,12 @@ RefCntAutoPtr<IShader> pPS;
 }
 ```
 
-Finally, we set the shaders in the `PSODesc` and create the pipeline state:
+Finally, we set the shaders in the `PSOCreateInfo` and create the graphics pipeline state:
 
 ```cpp
-PSODesc.GraphicsPipeline.pVS = pVS;
-PSODesc.GraphicsPipeline.pPS = pPS;
-pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
+PSOCreateInfo.pVS = pVS;
+PSOCreateInfo.pPS = pPS;
+pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
 ```
 
 The pipeline state keeps references to the shader objects, so the app does not need to keep the references

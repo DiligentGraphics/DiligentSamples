@@ -42,29 +42,28 @@ void Tutorial03_Texturing::CreatePipelineState()
 {
     // Pipeline state object encompasses configuration of all GPU stages
 
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Cube PSO";
+    PSOCreateInfo.PSODesc.Name = "Cube PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial will render to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Cull back faces
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
     // clang-format on
 
     ShaderCreateInfo ShaderCI;
@@ -113,14 +112,14 @@ void Tutorial03_Texturing::CreatePipelineState()
     };
     // clang-format on
 
-    PSODesc.GraphicsPipeline.pVS = pVS;
-    PSODesc.GraphicsPipeline.pPS = pPS;
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
 
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // clang-format off
     // Shader variables should typically be mutable, which means they are expected
@@ -130,8 +129,8 @@ void Tutorial03_Texturing::CreatePipelineState()
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // clang-format off
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
@@ -145,10 +144,10 @@ void Tutorial03_Texturing::CreatePipelineState()
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables

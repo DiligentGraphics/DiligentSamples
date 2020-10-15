@@ -13,9 +13,9 @@ in Tutorial 03. The only difference is that this time the rendering of our cube 
 into our offscreen render target, and we must ensure that the PSO uses corresponding formats:
 
 ```cpp
-PSODesc.GraphicsPipeline.NumRenderTargets = 1;
-PSODesc.GraphicsPipeline.RTVFormats[0]    = RenderTargetFormat;
-PSODesc.GraphicsPipeline.DSVFormat        = DepthBufferFormat;
+PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 1;
+PSOCreateInfo.GraphicsPipeline.RTVFormats[0]    = RenderTargetFormat;
+PSOCreateInfo.GraphicsPipeline.DSVFormat        = DepthBufferFormat;
 ```
 
 ## Shaders
@@ -126,22 +126,21 @@ Then, we need to create another pipeline state object that will store all the in
 required to render our small post-processing effect.
 
 ```cpp
-PipelineStateCreateInfo RTPSOCreateInfo;
-PipelineStateDesc&      RTPSODesc = RTPSOCreateInfo.PSODesc;
+GraphicsPipelineStateCreateInfo RTPSOCreateInfo;
 
-RTPSODesc.Name = "Render Target PSO";
-RTPSODesc.PipelineType                                  = PIPELINE_TYPE_GRAPHICS;
-RTPSODesc.GraphicsPipeline.NumRenderTargets             = 1;
-RTPSODesc.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
-RTPSODesc.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
-RTPSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-RTPSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
-RTPSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-RTPSODesc.GraphicsPipeline.pVS = pRTVS;
-RTPSODesc.GraphicsPipeline.pPS = pRTPS;
+PSOCreateInfo.PSODesc.Name = "Render Target PSO";
+PSOCreateInfo.PSODesc.PipelineType                          = PIPELINE_TYPE_GRAPHICS;
+PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
+PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = pSwapChain->GetDesc().ColorBufferFormat;
+PSOCreateInfo.GraphicsPipeline.DSVFormat                    = pSwapChain->GetDesc().DepthBufferFormat;
+PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+PSOCreateInfo.pVS = pRTVS;
+PSOCreateInfo.pPS = pRTPS;
 
 // Define variable type that will be used by default
-RTPSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
 // Shader variables should typically be mutable, which means they are expected
 // to change on a per-instance basis
@@ -149,18 +148,18 @@ ShaderResourceVariableDesc Vars[] =
 {
     { SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
 };
-RTPSODesc.ResourceLayout.Variables    = Vars;
-RTPSODesc.ResourceLayout.NumVariables = _countof(Vars);
+PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
 // Define static sampler for g_Texture. Static samplers should be used whenever possible
 StaticSamplerDesc StaticSamplers[] =
 {
     { SHADER_TYPE_PIXEL, "g_Texture", Sam_LinearClamp }
 };
-RTPSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-RTPSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-pDevice->CreatePipelineState(RTPSOCreateInfo, &m_pRTPSO);
+pDevice->CreateGraphicsPipelineState(RTPSOCreateInfo, &m_pRTPSO);
 ```
 
 ## Creating Offscreen Render Target

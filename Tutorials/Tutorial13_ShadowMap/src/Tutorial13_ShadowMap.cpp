@@ -83,25 +83,24 @@ void Tutorial13_ShadowMap::CreateCubePSO()
 
 
     // Create shadow pass PSO
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
-    PSODesc.Name = "Cube shadow PSO";
+    PSOCreateInfo.PSODesc.Name = "Cube shadow PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // Shadow pass doesn't use any render target outputs
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 0;
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_UNKNOWN;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 0;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = TEX_FORMAT_UNKNOWN;
     // The DSV format is the shadow map format
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_ShadowMapFormat;
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_ShadowMapFormat;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Cull back faces
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
     // clang-format on
 
     ShaderCreateInfo ShaderCI;
@@ -120,25 +119,25 @@ void Tutorial13_ShadowMap::CreateCubePSO()
         ShaderCI.FilePath        = "cube_shadow.vsh";
         m_pDevice->CreateShader(ShaderCI, &pShadowVS);
     }
-    PSODesc.GraphicsPipeline.pVS = pShadowVS;
+    PSOCreateInfo.pVS = pShadowVS;
 
     // We don't use pixel shader as we are only interested in populating the depth buffer
-    PSODesc.GraphicsPipeline.pPS = nullptr;
+    PSOCreateInfo.pPS = nullptr;
 
-    PSODesc.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
-    PSODesc.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     if (m_pDevice->GetDeviceCaps().Features.DepthClamp)
     {
         // Disable depth clipping to render objects that are closer than near
         // clipping plane. This is not required for this tutorial, but real applications
         // will most likely want to do this.
-        PSODesc.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
     }
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pCubeShadowPSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pCubeShadowPSO);
     m_pCubeShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
 }
@@ -152,29 +151,28 @@ void Tutorial13_ShadowMap::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE Dev
 
 void Tutorial13_ShadowMap::CreatePlanePSO()
 {
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSODesc.Name = "Plane PSO";
+    PSOCreateInfo.PSODesc.Name = "Plane PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial renders to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     // No cull
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Enable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
     // clang-format on
 
     ShaderCreateInfo ShaderCI;
@@ -209,11 +207,11 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
         m_pDevice->CreateShader(ShaderCI, &pPlanePS);
     }
 
-    PSODesc.GraphicsPipeline.pVS = pPlaneVS;
-    PSODesc.GraphicsPipeline.pPS = pPlanePS;
+    PSOCreateInfo.pVS = pPlaneVS;
+    PSOCreateInfo.pPS = pPlanePS;
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // clang-format off
     // Shader variables should typically be mutable, which means they are expected
@@ -223,8 +221,8 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
         {SHADER_TYPE_PIXEL, "g_ShadowMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static comparison sampler for g_ShadowMap. Static samplers should be used whenever possible
     SamplerDesc ComparsionSampler;
@@ -238,10 +236,10 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
         {SHADER_TYPE_PIXEL, "g_ShadowMap", ComparsionSampler}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pPlanePSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPlanePSO);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -251,27 +249,26 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
 
 void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
 {
-    PipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&      PSODesc = PSOCreateInfo.PSODesc;
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
-    PSODesc.Name = "Shadow Map Vis PSO";
+    PSOCreateInfo.PSODesc.Name = "Shadow Map Vis PSO";
 
     // This is a graphics pipeline
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // clang-format off
     // This tutorial renders to a single render target
-    PSODesc.GraphicsPipeline.NumRenderTargets             = 1;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSODesc.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_pSwapChain->GetDesc().ColorBufferFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSODesc.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
+    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_pSwapChain->GetDesc().DepthBufferFormat;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSODesc.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     // No cull
-    PSODesc.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
     // Disable depth testing
-    PSODesc.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
     // clang-format on
 
     ShaderCreateInfo ShaderCI;
@@ -306,11 +303,11 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
         m_pDevice->CreateShader(ShaderCI, &pShadowMapVisPS);
     }
 
-    PSODesc.GraphicsPipeline.pVS = pShadowMapVisVS;
-    PSODesc.GraphicsPipeline.pPS = pShadowMapVisPS;
+    PSOCreateInfo.pVS = pShadowMapVisVS;
+    PSOCreateInfo.pPS = pShadowMapVisPS;
 
     // Define variable type that will be used by default
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
     // clang-format off
     SamplerDesc SamLinearClampDesc
@@ -323,10 +320,10 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
         {SHADER_TYPE_PIXEL, "g_ShadowMap", SamLinearClampDesc}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
-    m_pDevice->CreatePipelineState(PSOCreateInfo, &m_pShadowMapVisPSO);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pShadowMapVisPSO);
 }
 
 void Tutorial13_ShadowMap::CreateVertexBuffer()
