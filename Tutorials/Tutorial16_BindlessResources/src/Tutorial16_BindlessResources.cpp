@@ -369,7 +369,7 @@ void Tutorial16_BindlessResources::CreateGeometryBuffers()
     {
         BufferDesc VertBuffDesc;
         VertBuffDesc.Name          = "Geometry vertex buffer";
-        VertBuffDesc.Usage         = USAGE_STATIC;
+        VertBuffDesc.Usage         = USAGE_IMMUTABLE;
         VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
         VertBuffDesc.uiSizeInBytes = static_cast<Uint32>(sizeof(Vertex) * Vertices.size());
         BufferData VBData;
@@ -381,7 +381,7 @@ void Tutorial16_BindlessResources::CreateGeometryBuffers()
     {
         BufferDesc IndBuffDesc;
         IndBuffDesc.Name          = "Geometry index buffer";
-        IndBuffDesc.Usage         = USAGE_STATIC;
+        IndBuffDesc.Usage         = USAGE_IMMUTABLE;
         IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
         IndBuffDesc.uiSizeInBytes = static_cast<Uint32>(sizeof(Indices[0]) * Indices.size());
         BufferData IBData;

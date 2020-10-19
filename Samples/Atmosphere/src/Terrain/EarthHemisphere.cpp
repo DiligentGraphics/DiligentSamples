@@ -255,7 +255,7 @@ public:
         IndexBufferDesc.Name          = "Ring mesh index buffer";
         IndexBufferDesc.uiSizeInBytes = (Uint32)(IB.size() * sizeof(IB[0]));
         IndexBufferDesc.BindFlags     = BIND_INDEX_BUFFER;
-        IndexBufferDesc.Usage         = USAGE_STATIC;
+        IndexBufferDesc.Usage         = USAGE_IMMUTABLE;
         BufferData IBInitData;
         IBInitData.pData    = IB.data();
         IBInitData.DataSize = IndexBufferDesc.uiSizeInBytes;
@@ -502,7 +502,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     HeightMapDesc.Width     = iHeightMapDim;
     HeightMapDesc.Height    = iHeightMapDim;
     HeightMapDesc.Format    = TEX_FORMAT_R16_UINT;
-    HeightMapDesc.Usage     = USAGE_STATIC;
+    HeightMapDesc.Usage     = USAGE_IMMUTABLE;
     HeightMapDesc.BindFlags = BIND_SHADER_RESOURCE;
     HeightMapDesc.MipLevels = ComputeMipLevelsCount(HeightMapDesc.Width, HeightMapDesc.Height);
 
@@ -788,7 +788,7 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
     BufferDesc VBDesc;
     VBDesc.Name          = "Hemisphere vertex buffer";
     VBDesc.uiSizeInBytes = (Uint32)(VB.size() * sizeof(VB[0]));
-    VBDesc.Usage         = USAGE_STATIC;
+    VBDesc.Usage         = USAGE_IMMUTABLE;
     VBDesc.BindFlags     = BIND_VERTEX_BUFFER;
     BufferData VBInitData;
     VBInitData.pData    = VB.data();

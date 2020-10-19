@@ -233,7 +233,7 @@ void Tutorial11_ResourceUpdates::CreateVertexBuffers()
         BufferDesc VertBuffDesc;
         VertBuffDesc.Name = "Cube vertex buffer";
         if (i == 0)
-            VertBuffDesc.Usage = USAGE_STATIC;
+            VertBuffDesc.Usage = USAGE_IMMUTABLE;
         else if (i == 1)
             VertBuffDesc.Usage = USAGE_DEFAULT;
         else
@@ -268,7 +268,7 @@ void Tutorial11_ResourceUpdates::CreateIndexBuffer()
     // Create index buffer
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_STATIC;
+    IndBuffDesc.Usage         = USAGE_IMMUTABLE;
     IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
     IndBuffDesc.uiSizeInBytes = sizeof(Indices);
     BufferData IBData;
@@ -287,7 +287,7 @@ void Tutorial11_ResourceUpdates::LoadTextures()
         FileNameSS << "DGLogo" << i << ".png";
         auto FileName   = FileNameSS.str();
         loadInfo.IsSRGB = true;
-        loadInfo.Usage  = USAGE_STATIC;
+        loadInfo.Usage  = USAGE_IMMUTABLE;
         if (i == 2)
         {
             loadInfo.Usage = USAGE_DEFAULT;

@@ -435,7 +435,7 @@ nk_diligent_font_stash_end(nk_diligent_context* nk_dlg_ctx,
     desc.MipLevels = 1;
     desc.ArraySize = 1;
     desc.Format    = TEX_FORMAT_RGBA8_UNORM;
-    desc.Usage     = USAGE_STATIC;
+    desc.Usage     = USAGE_IMMUTABLE;
     desc.BindFlags = BIND_SHADER_RESOURCE;
 
     TextureSubResData mip0data[] =

@@ -204,13 +204,13 @@ Vertex CubeVerts[8] =
 ```
 
 Similar to unifrom buffer, to create a vertex buffer, we populate `BufferDesc` structure. Since
-the data in the buffer will never change, we create the buffer with static usage (`USAGE_STATIC`)
+the data in the buffer will never change, we create the buffer with immutable usage (`USAGE_IMMUTABLE`)
 and provide initial data to `CreateBuffer()`:
 
 ```cpp
 BufferDesc VertBuffDesc;
 VertBuffDesc.Name          = "Cube vertex buffer";
-VertBuffDesc.Usage         = USAGE_STATIC;
+VertBuffDesc.Usage         = USAGE_IMMUTABLE;
 VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
 VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
 BufferData VBData;

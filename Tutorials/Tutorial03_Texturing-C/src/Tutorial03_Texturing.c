@@ -287,7 +287,7 @@ void CreateVertexBuffer(IRenderDevice* pDevice)
     memset(&VertBuffDesc, 0, sizeof(VertBuffDesc));
     VertBuffDesc._DeviceObjectAttribs.Name = "Cube vertex buffer";
 
-    VertBuffDesc.Usage            = USAGE_STATIC;
+    VertBuffDesc.Usage            = USAGE_IMMUTABLE;
     VertBuffDesc.BindFlags        = BIND_VERTEX_BUFFER;
     VertBuffDesc.uiSizeInBytes    = sizeof(CubeVerts);
     VertBuffDesc.CommandQueueMask = 1;
@@ -318,7 +318,7 @@ void CreateIndexBuffer(IRenderDevice* pDevice)
     memset(&IndBuffDesc, 0, sizeof(IndBuffDesc));
     IndBuffDesc._DeviceObjectAttribs.Name = "Index vertex buffer";
 
-    IndBuffDesc.Usage            = USAGE_STATIC;
+    IndBuffDesc.Usage            = USAGE_IMMUTABLE;
     IndBuffDesc.BindFlags        = BIND_INDEX_BUFFER;
     IndBuffDesc.uiSizeInBytes    = sizeof(Indices);
     IndBuffDesc.CommandQueueMask = 1;
@@ -335,7 +335,7 @@ void LoadTexture(IRenderDevice* pDevice)
     TextureLoadInfo loadInfo;
     memset(&loadInfo, 0, sizeof(loadInfo));
     loadInfo.IsSRGB       = true;
-    loadInfo.Usage        = USAGE_STATIC;
+    loadInfo.Usage        = USAGE_IMMUTABLE;
     loadInfo.BindFlags    = BIND_SHADER_RESOURCE;
     loadInfo.GenerateMips = True;
 

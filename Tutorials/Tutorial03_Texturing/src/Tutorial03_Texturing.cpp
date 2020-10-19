@@ -224,7 +224,7 @@ void Tutorial03_Texturing::CreateVertexBuffer()
 
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_STATIC;
+    VertBuffDesc.Usage         = USAGE_IMMUTABLE;
     VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
     VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
     BufferData VBData;
@@ -249,7 +249,7 @@ void Tutorial03_Texturing::CreateIndexBuffer()
 
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_STATIC;
+    IndBuffDesc.Usage         = USAGE_IMMUTABLE;
     IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
     IndBuffDesc.uiSizeInBytes = sizeof(Indices);
     BufferData IBData;

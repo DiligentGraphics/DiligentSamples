@@ -106,7 +106,7 @@ void Tutorial20_MeshShader::CreateCube()
 
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Cube vertex & index buffer";
-    BuffDesc.Usage         = USAGE_STATIC;
+    BuffDesc.Usage         = USAGE_IMMUTABLE;
     BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
     BuffDesc.uiSizeInBytes = sizeof(Data);
 

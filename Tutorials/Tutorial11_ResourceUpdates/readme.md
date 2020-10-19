@@ -15,7 +15,7 @@ The most basic way to supply data into a buffer is to provide it at initializati
 // Create index buffer
 BufferDesc IndBuffDesc;
 IndBuffDesc.Name          = "Cube index buffer";
-IndBuffDesc.Usage         = USAGE_STATIC;
+IndBuffDesc.Usage         = USAGE_IMMUTABLE;
 IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
 IndBuffDesc.uiSizeInBytes = sizeof(Indices);
 BufferData IBData;
@@ -24,9 +24,9 @@ IBData.DataSize = sizeof(Indices);
 pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_CubeIndexBuffer);
 ```
 
-Note that the contents of `USAGE_STATIC` buffers cannot be changed and initial data must be given at initialization.
+Note that the contents of `USAGE_IMMUTABLE` buffers cannot be changed and initial data must be given at initialization.
 Initial data can also be provided for `USAGE_DEFAULT` buffers, but not for `USAGE_DYNAMIC` buffers that are updated through mapping.
-Use `USAGE_STATIC` buffer for data that never changes (such as cube index buffer in this tutorial).
+Use `USAGE_IMMUTABLE` buffer for data that never changes (such as cube index buffer in this tutorial).
 
 ### Updating buffers with IBuffer::UpdateData()
 
@@ -137,7 +137,7 @@ to write data to the texture. Linear layouts are allowed in Direct3D12 and Vulka
 
 ### Texture initialization
 
-Similar to buffers, initial data can be supplied to textures at creation time. For `USAGE_STATIC` textures
+Similar to buffers, initial data can be supplied to textures at creation time. For `USAGE_IMMUTABLE` textures
 this is the only way.
 
 ```cpp
@@ -148,7 +148,7 @@ TexDesc.Width     = 1024;
 TexDesc.Height    = 1024;
 TexDesc.MipLevels = 1;
 TexDesc.BindFlags = BIND_SHADER_RESOURCE;
-TexDesc.Usage     = USAGE_STATIC;
+TexDesc.Usage     = USAGE_IMMUTABLE;
 
 TextureData InitData;
  // Pointer to subresouce data, one for every mip level
@@ -270,16 +270,16 @@ one CPU-side copy.
 
 The following table summarizes update methods for buffers:
 
-| Update scenario  | Usage         | Update Method         |   Comment           |
-| -----------------|---------------|-----------------------|---------------------|
-| Constant data    |`USAGE_STATIC` |n/a                    | Data can only be written during buffer initialization|
-| < Once per frame |`USAGE_DEFAULT`|`IBuffer::UpdateData()`|                     |
-| >= Once per frame|`USAGE_DYNAMIC`|`IBuffer::Map()`       | The content of dynamic buffers is invalidated at the end of every frame |
+| Update scenario  | Usage           | Update Method         |   Comment           |
+| -----------------|-----------------|-----------------------|---------------------|
+| Constant data    |`USAGE_IMMUTABLE`|n/a                    | Data can only be written during buffer initialization|
+| < Once per frame |`USAGE_DEFAULT`  |`IBuffer::UpdateData()`|                     |
+| >= Once per frame|`USAGE_DYNAMIC`  |`IBuffer::Map()`       | The content of dynamic buffers is invalidated at the end of every frame |
 
 The following table summarizes update methods for textures:
 
 | Update scenario  | Usage/Update Method                |   Comment                   |
 | -----------------| -----------------------------------|-----------------------------|
-| Constant data    | `USAGE_STATIC` / n/a                      | Data can only be written during texture initialization|
+| Constant data    | `USAGE_IMMUTABLE` / n/a            | Data can only be written during texture initialization |
 | < Once per frame | `USAGE_DEFAULT` + `ITexture::UpdateData()` or `USAGE_DYNAMIC` + `ITexture::Map()` |                |
-| >= Once per frame|                                           | Dynamic textures cannot be implemented the same way as dynamic buffers |
+| >= Once per frame|                                    | Dynamic textures cannot be implemented the same way as dynamic buffers |

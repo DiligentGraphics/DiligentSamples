@@ -303,7 +303,7 @@ std::memcpy(Data.indices, Indices, sizeof(Indices));
 
 BufferDesc BuffDesc;
 BuffDesc.Name          = "Cube vertex & index buffer";
-BuffDesc.Usage         = USAGE_STATIC;
+BuffDesc.Usage         = USAGE_IMMUTABLE;
 BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
 BuffDesc.uiSizeInBytes = sizeof(Data);
 

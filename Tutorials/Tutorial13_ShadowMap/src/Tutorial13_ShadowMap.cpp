@@ -390,7 +390,7 @@ void Tutorial13_ShadowMap::CreateVertexBuffer()
 
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_STATIC;
+    VertBuffDesc.Usage         = USAGE_IMMUTABLE;
     VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
     VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
     BufferData VBData;
