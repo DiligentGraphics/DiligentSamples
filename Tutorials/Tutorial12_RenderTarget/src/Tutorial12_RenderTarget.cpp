@@ -177,14 +177,14 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
     RTPSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // clang-format off
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    StaticSamplerDesc StaticSamplers[] =
+    // Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
+    ImmutableSamplerDesc ImtblSamplers[] =
     {
         { SHADER_TYPE_PIXEL, "g_Texture", Sam_LinearClamp }
     };
     // clang-format on
-    RTPSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    RTPSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    RTPSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    RTPSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
     m_pDevice->CreateGraphicsPipelineState(RTPSOCreateInfo, &m_pRTPSO);
 

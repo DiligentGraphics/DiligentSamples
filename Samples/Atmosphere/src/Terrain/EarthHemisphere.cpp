@@ -45,6 +45,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <array>
 
 #include "EarthHemisphere.hpp"
 
@@ -837,33 +838,34 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pShaderSourceFactory);
         Attrs.pShaderSourceStreamFactory = pShaderSourceFactory;
 
-        StaticSamplerDesc StaticSamplers[5];
-        StaticSamplers[0].ShaderStages         = SHADER_TYPE_PIXEL;
-        StaticSamplers[0].SamplerOrTextureName = "g_tex2DTileDiffuse";
-        StaticSamplers[0].Desc.AddressU        = TEXTURE_ADDRESS_WRAP;
-        StaticSamplers[0].Desc.AddressV        = TEXTURE_ADDRESS_WRAP;
-        StaticSamplers[0].Desc.AddressW        = TEXTURE_ADDRESS_WRAP;
+        std::array<ImmutableSamplerDesc, 5> ImtblSamplers = {};
 
-        StaticSamplers[1].ShaderStages         = SHADER_TYPE_PIXEL;
-        StaticSamplers[1].SamplerOrTextureName = "g_tex2DTileNM";
-        StaticSamplers[1].Desc                 = StaticSamplers[0].Desc;
+        ImtblSamplers[0].ShaderStages         = SHADER_TYPE_PIXEL;
+        ImtblSamplers[0].SamplerOrTextureName = "g_tex2DTileDiffuse";
+        ImtblSamplers[0].Desc.AddressU        = TEXTURE_ADDRESS_WRAP;
+        ImtblSamplers[0].Desc.AddressV        = TEXTURE_ADDRESS_WRAP;
+        ImtblSamplers[0].Desc.AddressW        = TEXTURE_ADDRESS_WRAP;
 
-        StaticSamplers[2].ShaderStages         = SHADER_TYPE_PIXEL;
-        StaticSamplers[2].SamplerOrTextureName = "g_tex2DNormalMap";
-        StaticSamplers[2].Desc.AddressU        = TEXTURE_ADDRESS_MIRROR;
-        StaticSamplers[2].Desc.AddressV        = TEXTURE_ADDRESS_MIRROR;
-        StaticSamplers[2].Desc.AddressW        = TEXTURE_ADDRESS_MIRROR;
+        ImtblSamplers[1].ShaderStages         = SHADER_TYPE_PIXEL;
+        ImtblSamplers[1].SamplerOrTextureName = "g_tex2DTileNM";
+        ImtblSamplers[1].Desc                 = ImtblSamplers[0].Desc;
 
-        StaticSamplers[3].ShaderStages         = SHADER_TYPE_PIXEL;
-        StaticSamplers[3].SamplerOrTextureName = "g_tex2DMtrlMap";
-        StaticSamplers[3].Desc                 = StaticSamplers[2].Desc;
+        ImtblSamplers[2].ShaderStages         = SHADER_TYPE_PIXEL;
+        ImtblSamplers[2].SamplerOrTextureName = "g_tex2DNormalMap";
+        ImtblSamplers[2].Desc.AddressU        = TEXTURE_ADDRESS_MIRROR;
+        ImtblSamplers[2].Desc.AddressV        = TEXTURE_ADDRESS_MIRROR;
+        ImtblSamplers[2].Desc.AddressW        = TEXTURE_ADDRESS_MIRROR;
 
-        StaticSamplers[4].ShaderStages         = SHADER_TYPE_PIXEL;
-        StaticSamplers[4].SamplerOrTextureName = "g_tex2DShadowMap";
-        StaticSamplers[4].Desc.MinFilter       = FILTER_TYPE_COMPARISON_LINEAR;
-        StaticSamplers[4].Desc.MagFilter       = FILTER_TYPE_COMPARISON_LINEAR;
-        StaticSamplers[4].Desc.MipFilter       = FILTER_TYPE_COMPARISON_LINEAR;
-        StaticSamplers[4].Desc.ComparisonFunc  = COMPARISON_FUNC_LESS;
+        ImtblSamplers[3].ShaderStages         = SHADER_TYPE_PIXEL;
+        ImtblSamplers[3].SamplerOrTextureName = "g_tex2DMtrlMap";
+        ImtblSamplers[3].Desc                 = ImtblSamplers[2].Desc;
+
+        ImtblSamplers[4].ShaderStages         = SHADER_TYPE_PIXEL;
+        ImtblSamplers[4].SamplerOrTextureName = "g_tex2DShadowMap";
+        ImtblSamplers[4].Desc.MinFilter       = FILTER_TYPE_COMPARISON_LINEAR;
+        ImtblSamplers[4].Desc.MagFilter       = FILTER_TYPE_COMPARISON_LINEAR;
+        ImtblSamplers[4].Desc.MipFilter       = FILTER_TYPE_COMPARISON_LINEAR;
+        ImtblSamplers[4].Desc.ComparisonFunc  = COMPARISON_FUNC_LESS;
 
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro("TEXTURING_MODE", m_Params.m_TexturingMode);
@@ -900,10 +902,10 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
             {SHADER_TYPE_PIXEL,  "g_tex2DShadowMap",                     SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
         };
         // clang-format on
-        PSODesc.ResourceLayout.Variables         = Vars;
-        PSODesc.ResourceLayout.NumVariables      = _countof(Vars);
-        PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-        PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+        PSODesc.ResourceLayout.Variables            = Vars;
+        PSODesc.ResourceLayout.NumVariables         = _countof(Vars);
+        PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers.data();
+        PSODesc.ResourceLayout.NumImmutableSamplers = static_cast<Uint32>(ImtblSamplers.size());
 
         auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 

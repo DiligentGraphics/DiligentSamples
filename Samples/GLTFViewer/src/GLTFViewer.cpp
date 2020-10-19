@@ -316,13 +316,13 @@ void GLTFViewer::CreateEnvMapPSO()
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
     // clang-format off
-    StaticSamplerDesc StaticSamplers[] =
+    ImmutableSamplerDesc ImmutableSamplers[] =
     {
         {SHADER_TYPE_PIXEL, "EnvMap", Sam_LinearClamp}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSODesc.ResourceLayout.ImmutableSamplers    = ImmutableSamplers;
+    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImmutableSamplers);
 
     // clang-format off
     ShaderResourceVariableDesc Vars[] = 

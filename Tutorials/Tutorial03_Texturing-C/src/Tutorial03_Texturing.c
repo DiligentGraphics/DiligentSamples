@@ -180,26 +180,26 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     pPSODesc->ResourceLayout.Variables    = Vars;
     pPSODesc->ResourceLayout.NumVariables = 1;
 
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
-    StaticSamplerDesc StaticSamplers[1];
+    // Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
+    ImmutableSamplerDesc ImtblSamplers[1];
 
-    memset(&StaticSamplers, 0, sizeof(StaticSamplers));
-    StaticSamplers[0].ShaderStages         = SHADER_TYPE_PIXEL;
-    StaticSamplers[0].SamplerOrTextureName = "g_Texture";
+    memset(&ImtblSamplers, 0, sizeof(ImtblSamplers));
+    ImtblSamplers[0].ShaderStages         = SHADER_TYPE_PIXEL;
+    ImtblSamplers[0].SamplerOrTextureName = "g_Texture";
 
-    StaticSamplers[0].Desc._DeviceObjectAttribs.Name = "Linear sampler";
+    ImtblSamplers[0].Desc._DeviceObjectAttribs.Name = "Linear sampler";
 
-    StaticSamplers[0].Desc.MinFilter      = FILTER_TYPE_LINEAR;
-    StaticSamplers[0].Desc.MagFilter      = FILTER_TYPE_LINEAR;
-    StaticSamplers[0].Desc.MipFilter      = FILTER_TYPE_LINEAR;
-    StaticSamplers[0].Desc.AddressU       = TEXTURE_ADDRESS_CLAMP;
-    StaticSamplers[0].Desc.AddressV       = TEXTURE_ADDRESS_CLAMP;
-    StaticSamplers[0].Desc.AddressW       = TEXTURE_ADDRESS_CLAMP;
-    StaticSamplers[0].Desc.ComparisonFunc = COMPARISON_FUNC_NEVER,
-    StaticSamplers[0].Desc.MaxLOD         = +3.402823466e+38F;
+    ImtblSamplers[0].Desc.MinFilter      = FILTER_TYPE_LINEAR;
+    ImtblSamplers[0].Desc.MagFilter      = FILTER_TYPE_LINEAR;
+    ImtblSamplers[0].Desc.MipFilter      = FILTER_TYPE_LINEAR;
+    ImtblSamplers[0].Desc.AddressU       = TEXTURE_ADDRESS_CLAMP;
+    ImtblSamplers[0].Desc.AddressV       = TEXTURE_ADDRESS_CLAMP;
+    ImtblSamplers[0].Desc.AddressW       = TEXTURE_ADDRESS_CLAMP;
+    ImtblSamplers[0].Desc.ComparisonFunc = COMPARISON_FUNC_NEVER,
+    ImtblSamplers[0].Desc.MaxLOD         = +3.402823466e+38F;
 
-    pPSODesc->ResourceLayout.StaticSamplers    = StaticSamplers;
-    pPSODesc->ResourceLayout.NumStaticSamplers = 1;
+    pPSODesc->ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    pPSODesc->ResourceLayout.NumImmutableSamplers = 1;
 
     IRenderDevice_CreateGraphicsPipelineState(pDevice, &PSOCreateInfo, &g_pPSO);
 

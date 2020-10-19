@@ -248,20 +248,20 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     ResourceLayout.Variables    = Vars;
     ResourceLayout.NumVariables = _countof(Vars);
 
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    // Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
     // clang-format off
     SamplerDesc SamLinearClampDesc
     {
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
         TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
     };
-    StaticSamplerDesc StaticSamplers[] = 
+    ImmutableSamplerDesc ImtblSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
     // clang-format on
-    ResourceLayout.StaticSamplers    = StaticSamplers;
-    ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
     RefCntAutoPtr<IPipelineState> pPSO;
     pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pPSO);

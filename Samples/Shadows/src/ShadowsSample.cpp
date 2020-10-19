@@ -380,13 +380,13 @@ void ShadowsSample::CreatePipelineStates()
             continue;
 
         // clang-format off
-        StaticSamplerDesc StaticSamplers[] =
+        ImmutableSamplerDesc ImtblSampler[] =
         {
             {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", Sam_Aniso4xWrap}
         };
         // clang-format on
-        ResourceLayout.StaticSamplers    = StaticSamplers;
-        ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+        ResourceLayout.ImmutableSamplers    = ImtblSampler;
+        ResourceLayout.NumImmutableSamplers = _countof(ImtblSampler);
 
         // clang-format off
         ShaderResourceVariableDesc Vars[] = 
@@ -430,10 +430,10 @@ void ShadowsSample::CreatePipelineStates()
 
         GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
 
-        ResourceLayout.StaticSamplers    = nullptr;
-        ResourceLayout.NumStaticSamplers = 0;
-        ResourceLayout.Variables         = nullptr;
-        ResourceLayout.NumVariables      = 0;
+        ResourceLayout.ImmutableSamplers    = nullptr;
+        ResourceLayout.NumImmutableSamplers = 0;
+        ResourceLayout.Variables            = nullptr;
+        ResourceLayout.NumVariables         = 0;
         RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
         m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshShadowPSO);
         pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);

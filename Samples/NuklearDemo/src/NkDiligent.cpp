@@ -252,7 +252,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
     RT0Blend.RenderTargetWriteMask = COLOR_MASK_ALL;
 
     // clang-format off
-    StaticSamplerDesc StaticSamplers[] = 
+    ImmutableSamplerDesc ImtblSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "texture0", Sam_LinearClamp}
     };
@@ -263,10 +263,10 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
     };
     // clang-format on
 
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumVariables      = _countof(Variables);
-    PSODesc.ResourceLayout.Variables         = Variables;
+    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+    PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    PSODesc.ResourceLayout.NumVariables         = _countof(Variables);
+    PSODesc.ResourceLayout.Variables            = Variables;
 
     PSOCreateInfo.pVS = pVS;
     PSOCreateInfo.pPS = pPS;

@@ -179,19 +179,19 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
     // clang-format off
-    // Define static sampler for g_Texture. Static samplers should be used whenever possible
+    // Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
     SamplerDesc SamLinearClampDesc
     {
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
         TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
     };
-    StaticSamplerDesc StaticSamplers[] = 
+    ImmutableSamplerDesc ImtblSamplers[] = 
     {
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
     // clang-format on
-    PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
 

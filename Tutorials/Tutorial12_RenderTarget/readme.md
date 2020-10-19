@@ -151,13 +151,13 @@ ShaderResourceVariableDesc Vars[] =
 PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
 PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-// Define static sampler for g_Texture. Static samplers should be used whenever possible
-StaticSamplerDesc StaticSamplers[] =
+// Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
+ImmutableSamplerDesc ImtblSamplers[] =
 {
     { SHADER_TYPE_PIXEL, "g_Texture", Sam_LinearClamp }
 };
-PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
 pDevice->CreateGraphicsPipelineState(RTPSOCreateInfo, &m_pRTPSO);
 ```
