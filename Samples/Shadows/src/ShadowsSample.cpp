@@ -353,7 +353,9 @@ void ShadowsSample::CreatePipelineStates()
     for (Uint32 vb = 0; vb < m_Mesh.GetNumVBs(); ++vb)
     {
         GraphicsPipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
+        PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
+        PipelineResourceLayoutDesc&     ResourceLayout   = PSODesc.ResourceLayout;
+        GraphicsPipelineDesc&           GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
         std::vector<LayoutElement> Elements;
         auto&                      InputLayout = PSOCreateInfo.GraphicsPipeline.InputLayout;
@@ -383,8 +385,8 @@ void ShadowsSample::CreatePipelineStates()
             {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", Sam_Aniso4xWrap}
         };
         // clang-format on
-        PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-        PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+        ResourceLayout.StaticSamplers    = StaticSamplers;
+        ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
         // clang-format off
         ShaderResourceVariableDesc Vars[] = 
@@ -393,18 +395,18 @@ void ShadowsSample::CreatePipelineStates()
             {SHADER_TYPE_PIXEL, m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
         };
         // clang-format on
-        PSODesc.ResourceLayout.Variables    = Vars;
-        PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+        ResourceLayout.Variables    = Vars;
+        ResourceLayout.NumVariables = _countof(Vars);
 
         PSODesc.Name      = "Mesh PSO";
         PSOCreateInfo.pVS = pVS;
         PSOCreateInfo.pPS = pPS;
 
-        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-        PSOCreateInfo.GraphicsPipeline.NumRenderTargets           = 1;
-        PSOCreateInfo.GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+        GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
+        GraphicsPipeline.NumRenderTargets           = 1;
+        GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
+        GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
 
         RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
         m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshPSO);
@@ -418,19 +420,20 @@ void ShadowsSample::CreatePipelineStates()
         PSOCreateInfo.pPS = nullptr;
         PSOCreateInfo.pVS = pShadowVS;
 
-        PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 0;
-        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
-        PSOCreateInfo.GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
+        GraphicsPipeline.NumRenderTargets = 0;
+        GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
+        GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
 
         // It is crucial to disable depth clip to allow shadows from objects
         // behind the near cascade clip plane!
-        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
+        GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
 
-        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
-        PSODesc.ResourceLayout.StaticSamplers                  = nullptr;
-        PSODesc.ResourceLayout.NumStaticSamplers               = 0;
-        PSODesc.ResourceLayout.Variables                       = nullptr;
-        PSODesc.ResourceLayout.NumVariables                    = 0;
+        GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+
+        ResourceLayout.StaticSamplers    = nullptr;
+        ResourceLayout.NumStaticSamplers = 0;
+        ResourceLayout.Variables         = nullptr;
+        ResourceLayout.NumVariables      = 0;
         RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
         m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshShadowPSO);
         pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);

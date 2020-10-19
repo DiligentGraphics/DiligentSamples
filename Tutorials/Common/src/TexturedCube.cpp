@@ -159,29 +159,32 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
                                                   Uint8                            SampleCount /*= 1*/)
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
+    PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
+    PipelineResourceLayoutDesc&     ResourceLayout   = PSODesc.ResourceLayout;
+    GraphicsPipelineDesc&           GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
     // This is a graphics pipeline
-    PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
     // Pipeline state name is used by the engine to report issues.
     // It is always a good idea to give objects descriptive names.
-    PSOCreateInfo.PSODesc.Name = "Cube PSO";
+    PSODesc.Name = "Cube PSO";
 
     // clang-format off
     // This tutorial will render to a single render target
-    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;
+    GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = RTVFormat;
+    GraphicsPipeline.RTVFormats[0]                = RTVFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    PSOCreateInfo.GraphicsPipeline.DSVFormat                    = DSVFormat;
+    GraphicsPipeline.DSVFormat                    = DSVFormat;
     // Set the desired number of samples
-    PSOCreateInfo.GraphicsPipeline.SmplDesc.Count               = SampleCount;
+    GraphicsPipeline.SmplDesc.Count               = SampleCount;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
-    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Cull back faces
-    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
+    GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
     // Enable depth testing
-    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+    GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
     // clang-format on
     ShaderCreateInfo ShaderCI;
     // Tell the system that the shader source code is in HLSL.
@@ -228,11 +231,11 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     PSOCreateInfo.pVS = pVS;
     PSOCreateInfo.pPS = pPS;
 
-    PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElements != nullptr ? LayoutElements : DefaultLayoutElems;
-    PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = LayoutElements != nullptr ? NumLayoutElements : _countof(DefaultLayoutElems);
+    GraphicsPipeline.InputLayout.LayoutElements = LayoutElements != nullptr ? LayoutElements : DefaultLayoutElems;
+    GraphicsPipeline.InputLayout.NumElements    = LayoutElements != nullptr ? NumLayoutElements : _countof(DefaultLayoutElems);
 
     // Define variable type that will be used by default
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
+    ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
     // Shader variables should typically be mutable, which means they are expected
     // to change on a per-instance basis
@@ -242,8 +245,8 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
         {SHADER_TYPE_PIXEL, "g_Texture", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
     };
     // clang-format on
-    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Vars;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+    ResourceLayout.Variables    = Vars;
+    ResourceLayout.NumVariables = _countof(Vars);
 
     // Define static sampler for g_Texture. Static samplers should be used whenever possible
     // clang-format off
@@ -257,8 +260,8 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
         {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
     };
     // clang-format on
-    PSOCreateInfo.PSODesc.ResourceLayout.StaticSamplers    = StaticSamplers;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
+    ResourceLayout.StaticSamplers    = StaticSamplers;
+    ResourceLayout.NumStaticSamplers = _countof(StaticSamplers);
 
     RefCntAutoPtr<IPipelineState> pPSO;
     pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pPSO);
