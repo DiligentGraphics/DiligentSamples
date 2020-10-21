@@ -307,8 +307,9 @@ void Tutorial08_Tessellation::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE 
 {
     SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
 
-    EngineCI.Features.Tessellation    = DEVICE_FEATURE_STATE_ENABLED;
-    EngineCI.Features.GeometryShaders = DEVICE_FEATURE_STATE_OPTIONAL;
+    EngineCI.Features.Tessellation      = DEVICE_FEATURE_STATE_ENABLED;
+    EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
+    EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial08_Tessellation::Initialize(const SampleInitInfo& InitInfo)

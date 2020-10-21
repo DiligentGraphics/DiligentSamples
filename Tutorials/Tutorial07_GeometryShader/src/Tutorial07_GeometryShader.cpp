@@ -203,7 +203,8 @@ void Tutorial07_GeometryShader::GetEngineInitializationAttribs(RENDER_DEVICE_TYP
 {
     SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
 
-    EngineCI.Features.GeometryShaders = DEVICE_FEATURE_STATE_ENABLED;
+    EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_ENABLED;
+    EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
 }
 
 

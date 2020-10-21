@@ -290,6 +290,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #    ifdef DILIGENT_DEVELOPMENT
             EngineCI.CreateDebugContext = true;
 #    endif
+            EngineCI.ForceNonSeparablePrograms = m_bForceNonSeprblProgs;
+
             if (m_ValidationLevel >= 1)
             {
                 EngineCI.CreateDebugContext = true;
@@ -741,6 +743,10 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         else if (!(Arg = GetArgument(pos, "vsync")).empty())
         {
             m_bVSync = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || (StrCmpNoCase(Arg.c_str(), "on", Arg.length()) == 0) || Arg == "1";
+        }
+        else if (!(Arg = GetArgument(pos, "non_separable_progs")).empty())
+        {
+            m_bForceNonSeprblProgs = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || (StrCmpNoCase(Arg.c_str(), "on", Arg.length()) == 0) || Arg == "1";
         }
 
         pos = strchr(pos, '-');
