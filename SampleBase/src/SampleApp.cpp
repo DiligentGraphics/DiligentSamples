@@ -365,6 +365,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, m_SwapChainInitDesc);
             ppContexts.resize(1 + MtlAttribs.NumDeferredContexts);
             auto* pFactoryMtl = GetEngineFactoryMtl();
+            m_pEngineFactory  = pFactoryMtl;
             pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());
 
             if (!m_pSwapChain && pWindow != nullptr)
