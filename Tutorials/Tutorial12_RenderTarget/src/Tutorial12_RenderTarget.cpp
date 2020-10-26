@@ -212,8 +212,7 @@ void Tutorial12_RenderTarget::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
 {
     // Create window-size offscreen render target
-    RefCntAutoPtr<ITexture> pRTColor;
-    TextureDesc             RTColorDesc;
+    TextureDesc RTColorDesc;
     RTColorDesc.Name      = "Offscreen render target";
     RTColorDesc.Type      = RESOURCE_DIM_TEX_2D;
     RTColorDesc.Width     = m_pSwapChain->GetDesc().Width;
@@ -228,22 +227,22 @@ void Tutorial12_RenderTarget::WindowResize(Uint32 Width, Uint32 Height)
     RTColorDesc.ClearValue.Color[1] = 0.350f;
     RTColorDesc.ClearValue.Color[2] = 0.350f;
     RTColorDesc.ClearValue.Color[3] = 1.f;
+    RefCntAutoPtr<ITexture> pRTColor;
     m_pDevice->CreateTexture(RTColorDesc, nullptr, &pRTColor);
     // Store the render target view
     m_pColorRTV = pRTColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
 
 
     // Create window-size depth buffer
-    RefCntAutoPtr<ITexture> pRTDepth;
-    TextureDesc             RTDepthDesc = RTColorDesc;
-    RTDepthDesc.Name                    = "Offscreen depth buffer";
-    RTDepthDesc.Format                  = DepthBufferFormat;
+    TextureDesc RTDepthDesc = RTColorDesc;
+    RTDepthDesc.Name        = "Offscreen depth buffer";
+    RTDepthDesc.Format      = DepthBufferFormat;
+    RTDepthDesc.BindFlags   = BIND_DEPTH_STENCIL;
     // Define optimal clear value
     RTDepthDesc.ClearValue.Format               = RTDepthDesc.Format;
     RTDepthDesc.ClearValue.DepthStencil.Depth   = 1;
     RTDepthDesc.ClearValue.DepthStencil.Stencil = 0;
-    // The depth buffer can be bound as a shader resource and as a depth-stencil buffer
-    RTDepthDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_DEPTH_STENCIL;
+    RefCntAutoPtr<ITexture> pRTDepth;
     m_pDevice->CreateTexture(RTDepthDesc, nullptr, &pRTDepth);
     // Store the depth-stencil view
     m_pDepthDSV = pRTDepth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
