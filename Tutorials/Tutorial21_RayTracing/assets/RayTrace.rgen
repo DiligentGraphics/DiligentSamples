@@ -1,0 +1,25 @@
+
+#include "structures.fxh"
+#include "RayUtils.fxh"
+
+RWTexture2D<float4> g_ColorBuffer;
+
+[shader("raygeneration")]
+void main()
+{
+    // Calculate ray direction from frustum rays.
+    float3  rayOrig = g_ConstantsCB.Position.xyz;
+    float2  uv      = float2(DispatchRaysIndex().xy) / float2(DispatchRaysDimensions().xy - 1);
+    float3  rayDir  = normalize(lerp(lerp(g_ConstantsCB.FrustumRayLB, g_ConstantsCB.FrustumRayRB, uv.x),
+                                     lerp(g_ConstantsCB.FrustumRayLT, g_ConstantsCB.FrustumRayRT, uv.x), uv.y)).xyz;
+
+    RayDesc ray;
+    ray.Origin    = rayOrig;
+    ray.Direction = rayDir;
+    ray.TMin      = g_ConstantsCB.ClipPlanes.x;
+    ray.TMax      = g_ConstantsCB.ClipPlanes.y;
+
+    PrimaryRayPayload payload = CastPrimaryRay(ray, 0);
+
+    g_ColorBuffer[DispatchRaysIndex().xy] = float4(payload.Color, 1.0);
+}
