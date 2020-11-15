@@ -366,12 +366,7 @@ void ShadowsSample::CreatePipelineStates()
         for (pso = 0; pso < m_RenderMeshPSO.size(); ++pso)
         {
             const auto& PSOLayout = m_RenderMeshPSO[pso]->GetGraphicsPipelineDesc().InputLayout;
-
-            bool IsSameLayout =
-                PSOLayout.NumElements == InputLayout.NumElements &&
-                memcmp(PSOLayout.LayoutElements, InputLayout.LayoutElements, sizeof(LayoutElement) * InputLayout.NumElements) == 0;
-
-            if (IsSameLayout)
+            if (PSOLayout == InputLayout)
                 break;
         }
 
@@ -554,6 +549,8 @@ void ShadowsSample::RenderShadowMap()
 
         ViewFrustumExt Frutstum;
         ExtractViewFrustumPlanesFromMatrix(WorldToLightProjSpaceMatr, Frutstum, m_pDevice->GetDeviceCaps().IsGLDevice());
+
+        //if (iCascade == 0)
         DrawMesh(m_pImmediateContext, true, Frutstum);
     }
 
