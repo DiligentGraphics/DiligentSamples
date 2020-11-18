@@ -32,7 +32,6 @@ struct Constants
     float4   FrustumRayLB;
     float4   FrustumRayRT;
     float4   FrustumRayRB;
-    float4x4 ProjMat;
 
     // texturing
     float   Padding1;

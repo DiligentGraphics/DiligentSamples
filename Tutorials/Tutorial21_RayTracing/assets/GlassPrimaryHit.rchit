@@ -38,7 +38,6 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         const int step = MAX_INTERF_SAMPLES / g_ConstantsCB.InterferentionSampleCount;
         for (int i = 0; i < MAX_INTERF_SAMPLES; i += step)
         {
-            ray.Direction = WorldRayDirection();
             float3 norm = normal;
             float3 color;
 
@@ -48,13 +47,13 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
             // Refraction at the interface between air and glass.
             if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
             {
-                ray.Direction = refract(ray.Direction, norm, AirIOR / GlassIOR);
+                ray.Direction = refract(WorldRayDirection(), norm, AirIOR / GlassIOR);
             }
             // Refraction at the interface between glass and air.
             else if (HitKind() == HIT_KIND_TRIANGLE_BACK_FACE)
             {
                 norm = -norm;
-                ray.Direction = refract(ray.Direction, norm, GlassIOR / AirIOR);
+                ray.Direction = refract(WorldRayDirection(), norm, GlassIOR / AirIOR);
             }
     
             // Total internal reflection.

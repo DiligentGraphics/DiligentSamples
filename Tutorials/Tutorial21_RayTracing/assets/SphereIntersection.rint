@@ -6,9 +6,14 @@ StructuredBuffer<BoxAttribs>  g_BoxAttribs;
 [shader("intersection")]
 void main()
 {
+    // In intersection shader we doesn't have any information about intersection.
+    // We use same AABB which used in BLAS build to calculate intersection.
+
+    // Get built-in variables.
+    float3  instanceOffset = WorldToObject4x3()[3];
+    float3  rayDir         = WorldRayDirection();
+
     // Calculate sphere center and radius.
-    float3      boxOff    = WorldToObject4x3()[3];
-    float3      rayDir    = WorldRayDirection();
     BoxAttribs  box       = g_BoxAttribs[InstanceID()];
     float3      boxMin    = float3(box.minX, box.minY, box.minZ);
     float3      boxMax    = float3(box.maxX, box.maxY, box.maxZ);
@@ -17,7 +22,7 @@ void main()
     float       radius    = min(boxSize.x, min(boxSize.y, boxSize.z)) * 0.5;
 
     // Test sphere and ray intersection.
-    float3 oc = WorldRayOrigin() - center + boxOff;
+    float3 oc = WorldRayOrigin() - center + instanceOffset;
     float  a  = dot(rayDir, rayDir);
     float  b  = 2.0 * dot(oc, rayDir);
     float  c  = dot(oc, oc) - radius * radius;
@@ -27,10 +32,12 @@ void main()
     {
         // Calcule intersection point and normal.
         float  hitT = (-b - sqrt(d)) / (2.0 * a);
-        float3 pos  = WorldRayOrigin() + rayDir * hitT + boxOff;
+        float3 pos  = WorldRayOrigin() + rayDir * hitT + instanceOffset;
 
         ProceduralGeomIntersectionAttribs attr;
         attr.Normal = normalize(pos - center);
+
+        // Send hit attributes to closest hit shader.
         ReportHit(hitT, RAY_KIND_PROCEDURAL_FRONT_FACE, attr);
     }
 }

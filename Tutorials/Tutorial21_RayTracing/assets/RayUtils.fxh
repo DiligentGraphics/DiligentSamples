@@ -14,12 +14,12 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
         payload.Color = float3(0.95, 0.18, 0.95);
         return payload;
     }
-    TraceRay(g_TLAS,            // Acceleration Structure
+    TraceRay(g_TLAS,            // Acceleration structure
              RAY_FLAG_NONE,
-             ~0,                // Instance Inclusion Mask
-             PRIMARY_RAY_INDEX, // Ray Contribution To Hit Group Index
-             HIT_GROUP_STRIDE,  // Multiplier For Geometry Contribution To Hit Group Index
-             PRIMARY_RAY_INDEX, // Miss Shader Index
+             ~0,                // Instance inclusion mask - all instances are visible
+             PRIMARY_RAY_INDEX, // Ray contribution to hit group index
+             HIT_GROUP_STRIDE,  // Multiplier for geometry contribution to hit group index
+             PRIMARY_RAY_INDEX, // Miss shader index
              ray,
              payload);
     return payload;
@@ -40,12 +40,12 @@ ShadowRayPayload CastShadow(RayDesc ray, uint Recursion)
         payload.Shading = 1.0;
         return payload;
     }
-    TraceRay(g_TLAS,            // Acceleration Structure
+    TraceRay(g_TLAS,            // Acceleration structure
              RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
-             OPAQUE_GEOM_MASK,  // Instance Inclusion Mask
-             SHADOW_RAY_INDEX,  // Ray Contribution To Hit Group Index
-             HIT_GROUP_STRIDE,  // Multiplier For Geometry Contribution To Hit Group Index
-             SHADOW_RAY_INDEX,  // Miss Shader Index
+             OPAQUE_GEOM_MASK,  // Instance inclusion mask - only opaque instances are visible
+             SHADOW_RAY_INDEX,  // Ray contribution to hit group index
+             HIT_GROUP_STRIDE,  // Multiplier for geometry contribution to hit group index
+             SHADOW_RAY_INDEX,  // Miss shader index
              ray,
              payload);
     return payload;
