@@ -22,7 +22,7 @@ void main(inout PrimaryRayPayload payload, in ProceduralGeomIntersectionAttribs 
     for (int j = 0; j < ReflBlur; ++j)
     {
         float2 offset = float2(g_ConstantsCB.DiscPoints[j / 2][(j % 2) * 2], g_ConstantsCB.DiscPoints[j / 2][(j % 2) * 2 + 1]);
-        ray.Direction = DirectionWithinCone(rayDir, offset * 0.0035);
+        ray.Direction = DirectionWithinCone(rayDir, offset * 0.01);
         color += CastPrimaryRay(ray, payload.Recursion + 1).Color;
     }
 

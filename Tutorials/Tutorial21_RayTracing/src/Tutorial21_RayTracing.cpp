@@ -99,7 +99,7 @@ void Tutorial21_RayTracing::CreateGraphicsPSO()
 
     PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImmutableSamplers;
     PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImmutableSamplers);
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC;
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pImageBlitPSO);
     VERIFY_EXPR(m_pImageBlitPSO != nullptr);
@@ -148,7 +148,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         ShaderCI.FilePath        = "RayTrace.rgen";
         ShaderCI.EntryPoint      = "main";
         m_pDevice->CreateShader(ShaderCI, &pRG);
-        CHECK_THROW(pRG != nullptr);
+        VERIFY_EXPR(pRG != nullptr);
     }
 
     // Create ray miss shaders.
@@ -159,13 +159,13 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         ShaderCI.FilePath        = "PrimaryMiss.rmiss";
         ShaderCI.EntryPoint      = "main";
         m_pDevice->CreateShader(ShaderCI, &pPrimaryMiss);
-        CHECK_THROW(pPrimaryMiss != nullptr);
+        VERIFY_EXPR(pPrimaryMiss != nullptr);
 
         ShaderCI.Desc.Name  = "Shadow ray miss shader";
         ShaderCI.FilePath   = "ShadowMiss.rmiss";
         ShaderCI.EntryPoint = "main";
         m_pDevice->CreateShader(ShaderCI, &pShadowMiss);
-        CHECK_THROW(pShadowMiss != nullptr);
+        VERIFY_EXPR(pShadowMiss != nullptr);
     }
 
     // Create ray closest hit shaders.
@@ -176,25 +176,25 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         ShaderCI.FilePath        = "CubePrimaryHit.rchit";
         ShaderCI.EntryPoint      = "main";
         m_pDevice->CreateShader(ShaderCI, &pCubePrimaryHit);
-        CHECK_THROW(pCubePrimaryHit != nullptr);
+        VERIFY_EXPR(pCubePrimaryHit != nullptr);
 
         ShaderCI.Desc.Name  = "Ground primary ray closest hit shader";
         ShaderCI.FilePath   = "Ground.rchit";
         ShaderCI.EntryPoint = "main";
         m_pDevice->CreateShader(ShaderCI, &pGroundHit);
-        CHECK_THROW(pGroundHit != nullptr);
+        VERIFY_EXPR(pGroundHit != nullptr);
 
         ShaderCI.Desc.Name  = "Glass primary ray closest hit shader";
         ShaderCI.FilePath   = "GlassPrimaryHit.rchit";
         ShaderCI.EntryPoint = "main";
         m_pDevice->CreateShader(ShaderCI, &pGlassPrimaryHit);
-        CHECK_THROW(pGlassPrimaryHit != nullptr);
+        VERIFY_EXPR(pGlassPrimaryHit != nullptr);
 
         ShaderCI.Desc.Name  = "Sphere primary ray closest hit shader";
         ShaderCI.FilePath   = "SpherePrimaryHit.rchit";
         ShaderCI.EntryPoint = "main";
         m_pDevice->CreateShader(ShaderCI, &pSpherePrimaryHit);
-        CHECK_THROW(pSpherePrimaryHit != nullptr);
+        VERIFY_EXPR(pSpherePrimaryHit != nullptr);
     }
 
     // Create ray intersection shader.
@@ -205,7 +205,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         ShaderCI.FilePath        = "SphereIntersection.rint";
         ShaderCI.EntryPoint      = "main";
         m_pDevice->CreateShader(ShaderCI, &pSphereIntersection);
-        CHECK_THROW(pSphereIntersection != nullptr);
+        VERIFY_EXPR(pSphereIntersection != nullptr);
     }
 
     // Setup shader groups
@@ -236,8 +236,11 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     // 0 - only one TraceRay() call.
     PSOCreateInfo.RayTracingPipeline.MaxRecursionDepth = MaxRecursionDepth;
 
-    // DirectX 12 only: set attribute and payload size. Value should be as small as possible to minimize memory usage.
-    PSOCreateInfo.MaxAttributeSize = std::max<Uint32>(sizeof(float2), sizeof(ProceduralGeomIntersectionAttribs));
+    // Per-shader data is not used.
+    PSOCreateInfo.RayTracingPipeline.ShaderRecordSize = 0;
+
+    // DirectX 12 only: set attribute and payload size. Values should be as small as possible to minimize memory usage.
+    PSOCreateInfo.MaxAttributeSize = std::max<Uint32>(sizeof(/*BuiltInTriangleIntersectionAttributes*/ float2), sizeof(ProceduralGeomIntersectionAttribs));
     PSOCreateInfo.MaxPayloadSize   = std::max<Uint32>(sizeof(PrimaryRayPayload), sizeof(ShadowRayPayload));
 
     // Define immutable sampler for g_Texture and g_GroundTexture. Immutable samplers should be used whenever possible
@@ -255,10 +258,10 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC;
 
     m_pDevice->CreateRayTracingPipelineState(PSOCreateInfo, &m_pRayTracingPSO);
-    CHECK_THROW(m_pRayTracingPSO != nullptr);
+    VERIFY_EXPR(m_pRayTracingPSO != nullptr);
 
     m_pRayTracingPSO->CreateShaderResourceBinding(&m_pRayTracingSRB, true);
-    CHECK_THROW(m_pRayTracingSRB != nullptr);
+    VERIFY_EXPR(m_pRayTracingSRB != nullptr);
 }
 
 void Tutorial21_RayTracing::LoadTextures()
@@ -338,7 +341,8 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
     };
     // clang-format on
 
-    // Create buffer with cube attributes
+    // Create buffer with cube attributes.
+    // This attributes will be used in hit shader to calculate UV and normal for intersection point.
     {
         CubeAttribs Attribs;
 
@@ -651,13 +655,13 @@ void Tutorial21_RayTracing::UpdateTLAS()
     Attribs.pInstances                   = Instances;
     Attribs.InstanceCount                = _countof(Instances);
     Attribs.HitGroupStride               = HitGroupStride;
+    Attribs.pInstanceBuffer              = m_InstanceBuffer;
+    Attribs.pScratchBuffer               = m_ScratchBuffer;
+    Attribs.Update                       = NeedUpdate;
     Attribs.TLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
     Attribs.BLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-    Attribs.pInstanceBuffer              = m_InstanceBuffer;
     Attribs.InstanceBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-    Attribs.pScratchBuffer               = m_ScratchBuffer;
     Attribs.ScratchBufferTransitionMode  = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-    Attribs.Update                       = NeedUpdate;
 
     // Bind hit shaders per instance, it allows you to change number of geometries in BLAS without invalidating shader binding table.
     Attribs.BindingMode = HIT_GROUP_BINDING_MODE_PER_INSTANCE;
@@ -692,7 +696,7 @@ void Tutorial21_RayTracing::CreateSBT()
     m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  PrimaryRayIndex, "SpherePrimaryHit");
 
     // Hit groups for shadow ray.
-    // Empty name means no shader are bound and hit shader invocation will be skiped.
+    // Empty name means no shaders are bound and hit shader invocation will be skipped.
     m_pSBT->BindHitGroupForAll(m_pTLAS, ShadowRayIndex, "");
 
     // We must specify intersection shader for procedural geometry.
@@ -791,7 +795,7 @@ void Tutorial21_RayTracing::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE De
 {
     SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
 
-    // Enable ray tracing feature.
+    // Require ray tracing feature.
     EngineCI.Features.RayTracing = DEVICE_FEATURE_STATE_ENABLED;
 }
 
@@ -839,7 +843,6 @@ void Tutorial21_RayTracing::Render()
         GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRT);
         // clang-format on
         m_Constants.Position = -float4{CameraWorldPos, 1.0f};
-        m_Constants.ProjMat  = m_Camera.GetProjMatrix();
 
         m_pImmediateContext->UpdateBuffer(m_ConstantsCB, 0, sizeof(m_Constants), &m_Constants, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -959,7 +962,7 @@ void Tutorial21_RayTracing::UpdateUI()
         else
         {
             ImGui::SliderFloat("Index or refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
-            m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + 0.01f;
+            m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + 0.02f;
         }
         ImGui::ColorEdit3("Reflection color", m_Constants.GlassReflectionColorMask.Data(), ImGuiColorEditFlags_NoAlpha);
         ImGui::ColorEdit3("Material color", m_Constants.GlassMaterialColor.Data(), ImGuiColorEditFlags_NoAlpha);
