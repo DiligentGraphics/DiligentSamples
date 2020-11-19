@@ -367,6 +367,11 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             auto* pFactoryMtl = GetEngineFactoryMtl();
             m_pEngineFactory  = pFactoryMtl;
             pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());
+            if (!m_pDevice)
+            {
+                LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in Metal mode. The API may not be available, "
+                                    "or required features may not be supported by this GPU/driver/OS version.");
+            }
 
             if (!m_pSwapChain && pWindow != nullptr)
                 pFactoryMtl->CreateSwapChainMtl(m_pDevice, ppContexts[0], m_SwapChainInitDesc, *pWindow, &m_pSwapChain);
