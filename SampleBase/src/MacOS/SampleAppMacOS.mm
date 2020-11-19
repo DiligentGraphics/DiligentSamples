@@ -38,9 +38,28 @@ public:
         m_DeviceType = RENDER_DEVICE_TYPE_GL;
     }
 
-    virtual void Initialize(void* view)override final
+    virtual void Initialize(void* view, RenderMode Mode)override final
     {
-        m_DeviceType = view == nullptr ? RENDER_DEVICE_TYPE_GL : RENDER_DEVICE_TYPE_VULKAN;
+        switch (Mode)
+        {
+            case RenderMode::OpenGL:
+                m_DeviceType = RENDER_DEVICE_TYPE_GL;
+                break;
+
+            case RenderMode::MoltenVK:
+                VERIFY_EXPR(view != nullptr);
+                m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
+                break;
+
+            case RenderMode::Metal:
+                VERIFY_EXPR(view != nullptr);
+                m_DeviceType = RENDER_DEVICE_TYPE_METAL;
+                break;
+
+            default:
+                UNEXPECTED("Unexpected render mode");
+        }
+
         MacOSNativeWindow MacWindow{view};
         InitializeDiligentEngine(&MacWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
@@ -77,7 +96,7 @@ public:
 
     virtual void HandleOSXEvent(void* _event, void* _view)override final
     {
-        auto* event = (NSEvent*)_event;
+        auto* event = (__bridge NSEvent*)_event;
 
         switch(event.type)
         {
@@ -127,7 +146,7 @@ public:
             }
         };
 
-        auto* view  = (NSView*)_view;
+        auto* view  = (__bridge NSView*)_view;
         if (!static_cast<ImGuiImplMacOS*>(m_pImGui.get())->HandleOSXEvent(event, view))
         {
             if (event.type == NSEventTypeLeftMouseDown ||
