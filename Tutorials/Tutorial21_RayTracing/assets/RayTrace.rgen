@@ -19,7 +19,7 @@ void main()
     ray.TMin      = g_ConstantsCB.ClipPlanes.x;
     ray.TMax      = g_ConstantsCB.ClipPlanes.y;
 
-    PrimaryRayPayload payload = CastPrimaryRay(ray, 0);
+    PrimaryRayPayload payload = CastPrimaryRay(ray, /*recursion*/0);
 
     g_ColorBuffer[DispatchRaysIndex().xy] = float4(payload.Color, 1.0);
 }

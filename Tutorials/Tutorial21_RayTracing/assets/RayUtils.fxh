@@ -7,10 +7,10 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
 {
     PrimaryRayPayload payload = {float3(0, 0, 0), 0.0, Recursion};
 
-    // Check recursion depth, because driver doesn't count number of recursions.
+    // Check recursion depth, because the driver doesn't count the number of recursions.
     if (Recursion > g_ConstantsCB.MaxRecursion)
     {
-        // pink color for debugging
+        // set pink color for debugging
         payload.Color = float3(0.95, 0.18, 0.95);
         return payload;
     }
@@ -34,7 +34,7 @@ ShadowRayPayload CastShadow(RayDesc ray, uint Recursion)
     // With this flags shadow casting executed as fast as possible.
     ShadowRayPayload payload = {0.0, Recursion};
     
-    // Check recursion depth, because driver doesn't count number of recursions.
+    // Check recursion depth, because the driver doesn't count the number of recursions.
     if (Recursion > g_ConstantsCB.MaxRecursion)
     {
         payload.Shading = 1.0;
@@ -76,19 +76,23 @@ void LightingPass(inout float3 Color, float3 Pos, float3 Norm, uint Recursion)
     RayDesc ray;
     float3  col = float3(0.0, 0.0, 0.0);
 
+    // Add a small offset to avoid self-intersections.
+    ray.Origin = Pos + Norm * SMALL_OFFSET;
+    ray.TMin   = 0.0;
+
     for (int i = 0; i < NUM_LIGHTS; ++i)
     {
-        ray.Origin = Pos + Norm * 0.01;
-        ray.TMin   = 0.0;
-        ray.TMax   = distance(g_ConstantsCB.LightPos[i].xyz, Pos) * 1.01;
+        // Limit max ray length by distance to light source.
+        ray.TMax = distance(g_ConstantsCB.LightPos[i].xyz, Pos) * 1.01;
 
         float3 rayDir = normalize(g_ConstantsCB.LightPos[i].xyz - Pos);
         float  NdotL   = max(0.0, dot(Norm, rayDir));
         float  shading = 0.0;
 
+        // Optimization - don't trace rays if NdotL is zero
         if (NdotL > 0.0)
         {
-            // Cast multiple rays that distributed within a cone.
+            // Cast multiple rays that are distributed within a cone.
             const int PCF = Recursion > 1 ? min(1, g_ConstantsCB.ShadowPCF) : g_ConstantsCB.ShadowPCF;
             for (int j = 0; j < PCF; ++j)
             {

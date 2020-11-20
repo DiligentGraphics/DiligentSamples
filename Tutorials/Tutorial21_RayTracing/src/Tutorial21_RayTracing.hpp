@@ -60,9 +60,6 @@ private:
     void UpdateUI();
 
     static constexpr int NumTextures       = 4;
-    static constexpr int HitGroupStride    = 2;
-    static constexpr int PrimaryRayIndex   = 0;
-    static constexpr int ShadowRayIndex    = 1;
     static constexpr int MaxRecursionDepth = 8;
     static constexpr int NumCubes          = 4;
 
