@@ -6,8 +6,8 @@ StructuredBuffer<BoxAttribs>  g_BoxAttribs;
 [shader("intersection")]
 void main()
 {
-    // In intersection shader we doesn't have any information about intersection.
-    // We use same AABB which used in BLAS build to calculate intersection.
+    // In the intersection shader we don't have any information about the intersection.
+    // We use same AABB which was used in BLAS build to calculate intersection.
 
     // Get built-in variables.
     float3  instanceOffset = WorldToObject4x3()[3];
@@ -30,14 +30,14 @@ void main()
 
     if (d >= 0)
     {
-        // Calcule intersection point and normal.
+        // Calculate intersection point and normal.
         float  hitT = (-b - sqrt(d)) / (2.0 * a);
         float3 pos  = WorldRayOrigin() + rayDir * hitT + instanceOffset;
 
         ProceduralGeomIntersectionAttribs attr;
         attr.Normal = normalize(pos - center);
 
-        // Send hit attributes to closest hit shader.
+        // Send hit attributes to the closest hit shader.
         ReportHit(hitT, RAY_KIND_PROCEDURAL_FRONT_FACE, attr);
     }
 }

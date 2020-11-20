@@ -12,11 +12,11 @@ void main(inout PrimaryRayPayload payload, in ProceduralGeomIntersectionAttribs 
     float3 rayDir = reflect(WorldRayDirection(), normal);
 
     RayDesc ray;
-    ray.Origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + normal * 0.01;
+    ray.Origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + normal * SMALL_OFFSET;
     ray.TMin   = 0.0;
     ray.TMax   = 100.0;
 
-    // Cast multiple rays that distributed within a cone.
+    // Cast multiple rays that are distributed within a cone.
     float3    color    = float3(0.0, 0.0, 0.0);
     const int ReflBlur = payload.Recursion > 1 ? 1 : g_ConstantsCB.SphereReflectionBlur;
     for (int j = 0; j < ReflBlur; ++j)
@@ -27,6 +27,8 @@ void main(inout PrimaryRayPayload payload, in ProceduralGeomIntersectionAttribs 
     }
 
     color /= float(ReflBlur);
+
+    // Apply color mask for reflected color.
     color *= g_ConstantsCB.SphereReflectionColorMask;
 
     payload.Color = color;

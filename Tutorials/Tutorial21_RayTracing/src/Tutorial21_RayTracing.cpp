@@ -118,9 +118,6 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
 
     // Add constants to shaders.
     ShaderMacroHelper Macros;
-    Macros.AddShaderMacro("HIT_GROUP_STRIDE", HitGroupStride);
-    Macros.AddShaderMacro("PRIMARY_RAY_INDEX", PrimaryRayIndex);
-    Macros.AddShaderMacro("SHADOW_RAY_INDEX", ShadowRayIndex);
     Macros.AddShaderMacro("NUM_TEXTURES", NumTextures);
 
     ShaderCreateInfo ShaderCI;
@@ -211,17 +208,27 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     // Setup shader groups
     const RayTracingGeneralShaderGroup GeneralShaders[] = //
         {
-            {"Main", pRG}, {"PrimaryMiss", pPrimaryMiss}, {"ShadowMiss", pShadowMiss} //
+            // Ray generation shader is an entry point for ray tracing pipeline.
+            {"Main", pRG},
+            // Primary ray miss shader.
+            {"PrimaryMiss", pPrimaryMiss},
+            // Shadow ray miss shader.
+            {"ShadowMiss", pShadowMiss} //
         };
     const RayTracingTriangleHitShaderGroup TriangleHitShaders[] = //
         {
-            {"CubePrimaryHit", pCubePrimaryHit}, {"GroundHit", pGroundHit}, {"GlassPrimaryHit", pGlassPrimaryHit} //
+            // Primary ray hit group for cube.
+            {"CubePrimaryHit", pCubePrimaryHit},
+            // Primary ray hit group for ground.
+            {"GroundHit", pGroundHit},
+            // Primary ray hit group for glass cube.
+            {"GlassPrimaryHit", pGlassPrimaryHit} //
         };
     const RayTracingProceduralHitShaderGroup ProceduralHitShaders[] = //
         {
-            // Intersection and closest hit shaders for sphere.
+            // Intersection and closest hit shaders for the sphere.
             {"SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit},
-            // Only intersection shader needed for shadows.
+            // Only the intersection shader needed for shadows.
             {"SphereShadowHit", pSphereIntersection} //
         };
 
@@ -246,7 +253,8 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     // Define immutable sampler for g_Texture and g_GroundTexture. Immutable samplers should be used whenever possible
     SamplerDesc SamLinearWrapDesc{
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-        TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP};
+        TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP //
+    };
     ImmutableSamplerDesc ImmutableSamplers[] = //
         {
             {SHADER_TYPE_RAY_CLOSEST_HIT, "g_Texture", SamLinearWrapDesc},
@@ -341,8 +349,8 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
     };
     // clang-format on
 
-    // Create buffer with cube attributes.
-    // This attributes will be used in hit shader to calculate UV and normal for intersection point.
+    // Create a buffer with cube attributes.
+    // These attributes will be used in the hit shader to calculate UV and normal for intersection point.
     {
         CubeAttribs Attribs;
 
@@ -400,33 +408,36 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
     {
         // Create BLAS
         BLASTriangleDesc Triangles;
-        Triangles.GeometryName         = "Cube";
-        Triangles.MaxVertexCount       = _countof(CubePos);
-        Triangles.VertexValueType      = VT_FLOAT32;
-        Triangles.VertexComponentCount = 3;
-        Triangles.MaxPrimitiveCount    = _countof(Indices) / 3;
-        Triangles.IndexType            = VT_UINT32;
+        {
+            Triangles.GeometryName         = "Cube";
+            Triangles.MaxVertexCount       = _countof(CubePos);
+            Triangles.VertexValueType      = VT_FLOAT32;
+            Triangles.VertexComponentCount = 3;
+            Triangles.MaxPrimitiveCount    = _countof(Indices) / 3;
+            Triangles.IndexType            = VT_UINT32;
 
-        BottomLevelASDesc ASDesc;
-        ASDesc.Name          = "Cube BLAS";
-        ASDesc.Flags         = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
-        ASDesc.pTriangles    = &Triangles;
-        ASDesc.TriangleCount = 1;
+            BottomLevelASDesc ASDesc;
+            ASDesc.Name          = "Cube BLAS";
+            ASDesc.Flags         = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
+            ASDesc.pTriangles    = &Triangles;
+            ASDesc.TriangleCount = 1;
 
-        m_pDevice->CreateBLAS(ASDesc, &m_pCubeBLAS);
-        VERIFY_EXPR(m_pCubeBLAS != nullptr);
+            m_pDevice->CreateBLAS(ASDesc, &m_pCubeBLAS);
+            VERIFY_EXPR(m_pCubeBLAS != nullptr);
+        }
 
         // Create scratch buffer
         RefCntAutoPtr<IBuffer> pScratchBuffer;
+        {
+            BufferDesc BuffDesc;
+            BuffDesc.Name          = "BLAS Scratch Buffer";
+            BuffDesc.Usage         = USAGE_DEFAULT;
+            BuffDesc.BindFlags     = BIND_RAY_TRACING;
+            BuffDesc.uiSizeInBytes = m_pCubeBLAS->GetScratchBufferSizes().Build;
 
-        BufferDesc BuffDesc;
-        BuffDesc.Name          = "BLAS Scratch Buffer";
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = m_pCubeBLAS->GetScratchBufferSizes().Build;
-
-        m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
-        VERIFY_EXPR(pScratchBuffer != nullptr);
+            m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
+            VERIFY_EXPR(pScratchBuffer != nullptr);
+        }
 
         // Build BLAS
         BLASBuildTriangleData TriangleData;
@@ -442,12 +453,17 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         TriangleData.Flags                = RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 
         BuildBLASAttribs Attribs;
-        Attribs.pBLAS                       = m_pCubeBLAS;
+        Attribs.pBLAS             = m_pCubeBLAS;
+        Attribs.pTriangleData     = &TriangleData;
+        Attribs.TriangleDataCount = 1;
+
+        // Scratch buffer will be used to store temporary data during BLAS build.
+        // Previous content in the scratch buffer will be discarded.
+        Attribs.pScratchBuffer = pScratchBuffer;
+
+        // Allow engine to change resource states.
         Attribs.BLASTransitionMode          = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
         Attribs.GeometryTransitionMode      = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-        Attribs.pTriangleData               = &TriangleData;
-        Attribs.TriangleDataCount           = 1;
-        Attribs.pScratchBuffer              = pScratchBuffer;
         Attribs.ScratchBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
         m_pImmediateContext->BuildBLAS(Attribs);
@@ -492,29 +508,32 @@ void Tutorial21_RayTracing::CreateProceduralBLAS()
     {
         // Create BLAS
         BLASBoundingBoxDesc BoxInfo;
-        BoxInfo.GeometryName = "Box";
-        BoxInfo.MaxBoxCount  = 1;
+        {
+            BoxInfo.GeometryName = "Box";
+            BoxInfo.MaxBoxCount  = 1;
 
-        BottomLevelASDesc ASDesc;
-        ASDesc.Name     = "Procedural BLAS";
-        ASDesc.Flags    = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
-        ASDesc.pBoxes   = &BoxInfo;
-        ASDesc.BoxCount = 1;
+            BottomLevelASDesc ASDesc;
+            ASDesc.Name     = "Procedural BLAS";
+            ASDesc.Flags    = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
+            ASDesc.pBoxes   = &BoxInfo;
+            ASDesc.BoxCount = 1;
 
-        m_pDevice->CreateBLAS(ASDesc, &m_pProceduralBLAS);
-        VERIFY_EXPR(m_pProceduralBLAS != nullptr);
+            m_pDevice->CreateBLAS(ASDesc, &m_pProceduralBLAS);
+            VERIFY_EXPR(m_pProceduralBLAS != nullptr);
+        }
 
         // Create scratch buffer
         RefCntAutoPtr<IBuffer> pScratchBuffer;
+        {
+            BufferDesc BuffDesc;
+            BuffDesc.Name          = "BLAS Scratch Buffer";
+            BuffDesc.Usage         = USAGE_DEFAULT;
+            BuffDesc.BindFlags     = BIND_RAY_TRACING;
+            BuffDesc.uiSizeInBytes = m_pProceduralBLAS->GetScratchBufferSizes().Build;
 
-        BufferDesc BuffDesc;
-        BuffDesc.Name          = "BLAS Scratch Buffer";
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = m_pProceduralBLAS->GetScratchBufferSizes().Build;
-
-        m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
-        VERIFY_EXPR(pScratchBuffer != nullptr);
+            m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
+            VERIFY_EXPR(pScratchBuffer != nullptr);
+        }
 
         // Build BLAS
         BLASBuildBoundingBoxData BoxData;
@@ -524,12 +543,17 @@ void Tutorial21_RayTracing::CreateProceduralBLAS()
         BoxData.pBoxBuffer   = m_BoxAttribsCB;
 
         BuildBLASAttribs Attribs;
-        Attribs.pBLAS                       = m_pProceduralBLAS;
+        Attribs.pBLAS        = m_pProceduralBLAS;
+        Attribs.pBoxData     = &BoxData;
+        Attribs.BoxDataCount = 1;
+
+        // Scratch buffer will be used to store temporary data during BLAS build.
+        // Previous content in the scratch buffer will be discarded.
+        Attribs.pScratchBuffer = pScratchBuffer;
+
+        // Allow engine to change resource states.
         Attribs.BLASTransitionMode          = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
         Attribs.GeometryTransitionMode      = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-        Attribs.pBoxData                    = &BoxData;
-        Attribs.BoxDataCount                = 1;
-        Attribs.pScratchBuffer              = pScratchBuffer;
         Attribs.ScratchBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
         m_pImmediateContext->BuildBLAS(Attribs);
@@ -538,7 +562,7 @@ void Tutorial21_RayTracing::CreateProceduralBLAS()
 
 void Tutorial21_RayTracing::UpdateTLAS()
 {
-    // Create or update top-level acceleration structures
+    // Create or update top-level acceleration structure
 
     static constexpr int NumInstances = NumCubes + 3;
 
@@ -644,27 +668,36 @@ void Tutorial21_RayTracing::UpdateTLAS()
     Instances[5].Transform.SetTranslation(-3.0f, 3.0f, -5.f);
 
     Instances[6].InstanceName = "Glass Instance";
-    Instances[6].CustomId     = 0; // box index
     Instances[6].pBLAS        = m_pCubeBLAS;
     Instances[6].Mask         = TRANSPARENT_GEOM_MASK;
     Instances[6].Transform.SetTranslation(4.0f, 4.5f, -7.0f);
 
     // Build or update TLAS
     BuildTLASAttribs Attribs;
-    Attribs.pTLAS                        = m_pTLAS;
-    Attribs.pInstances                   = Instances;
-    Attribs.InstanceCount                = _countof(Instances);
-    Attribs.HitGroupStride               = HitGroupStride;
-    Attribs.pInstanceBuffer              = m_InstanceBuffer;
-    Attribs.pScratchBuffer               = m_ScratchBuffer;
-    Attribs.Update                       = NeedUpdate;
+    Attribs.pTLAS  = m_pTLAS;
+    Attribs.Update = NeedUpdate;
+
+    // Scratch buffer will be used to store temporary data during TLAS build or update.
+    // Previous content in the scratch buffer will be discarded.
+    Attribs.pScratchBuffer = m_ScratchBuffer;
+
+    // Instance buffer will store instance data during TLAS build or update.
+    // Previous content in the instance buffer will be discarded.
+    Attribs.pInstanceBuffer = m_InstanceBuffer;
+
+    // Instances will be converted to the format that is required by the graphics driver and copied to the instance buffer.
+    Attribs.pInstances    = Instances;
+    Attribs.InstanceCount = _countof(Instances);
+
+    // Bind hit shaders per instance, it allows you to change the number of geometries in BLAS without invalidating the shader binding table.
+    Attribs.BindingMode    = HIT_GROUP_BINDING_MODE_PER_INSTANCE;
+    Attribs.HitGroupStride = HIT_GROUP_STRIDE;
+
+    // Allow engine to change resource states.
     Attribs.TLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
     Attribs.BLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
     Attribs.InstanceBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
     Attribs.ScratchBufferTransitionMode  = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-
-    // Bind hit shaders per instance, it allows you to change number of geometries in BLAS without invalidating shader binding table.
-    Attribs.BindingMode = HIT_GROUP_BINDING_MODE_PER_INSTANCE;
 
     m_pImmediateContext->BuildTLAS(Attribs);
 }
@@ -683,24 +716,24 @@ void Tutorial21_RayTracing::CreateSBT()
     // clang-format off
     m_pSBT->BindRayGenShader("Main");
 
-    m_pSBT->BindMissShader("PrimaryMiss", PrimaryRayIndex); // miss shader for primary ray
-    m_pSBT->BindMissShader("ShadowMiss",  ShadowRayIndex ); // miss shader for shadow ray
+    m_pSBT->BindMissShader("PrimaryMiss", PRIMARY_RAY_INDEX);
+    m_pSBT->BindMissShader("ShadowMiss",  SHADOW_RAY_INDEX );
 
     // Hit groups for primary ray
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1",  PrimaryRayIndex, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 2",  PrimaryRayIndex, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 3",  PrimaryRayIndex, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 4",  PrimaryRayIndex, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Ground Instance",  PrimaryRayIndex, "GroundHit"       );
-    m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",   PrimaryRayIndex, "GlassPrimaryHit" );
-    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  PrimaryRayIndex, "SpherePrimaryHit");
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 2",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 3",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 4",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Ground Instance",  PRIMARY_RAY_INDEX, "GroundHit"       );
+    m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",   PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
+    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  PRIMARY_RAY_INDEX, "SpherePrimaryHit");
 
     // Hit groups for shadow ray.
     // Empty name means no shaders are bound and hit shader invocation will be skipped.
-    m_pSBT->BindHitGroupForAll(m_pTLAS, ShadowRayIndex, "");
+    m_pSBT->BindHitGroupForAll(m_pTLAS, SHADOW_RAY_INDEX, "");
 
-    // We must specify intersection shader for procedural geometry.
-    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  ShadowRayIndex,  "SphereShadowHit");
+    // We must specify the intersection shader for procedural geometry.
+    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  SHADOW_RAY_INDEX,  "SphereShadowHit");
     // clang-format on
 }
 
@@ -716,7 +749,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     UpdateTLAS();
     CreateSBT();
 
-    // Create buffer with shared constants.
+    // Create a buffer with shared constants.
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Constant buffer";
     BuffDesc.uiSizeInBytes = sizeof(m_Constants);
@@ -737,57 +770,57 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB")->Set(m_ConstantsCB);
 
     // Initialize constants.
+    {
+        m_Constants.ClipPlanes   = float2{0.1f, 100.0f};
+        m_Constants.ShadowPCF    = 1;
+        m_Constants.MaxRecursion = MaxRecursionDepth / 2;
 
-    m_Constants.ClipPlanes   = float2{0.1f, 100.0f};
-    m_Constants.ShadowPCF    = 1;
-    m_Constants.MaxRecursion = MaxRecursionDepth / 2;
+        // Sphere constants.
+        m_Constants.SphereReflectionColorMask = {0.81f, 1.0f, 0.45f};
+        m_Constants.SphereReflectionBlur      = 1;
 
-    // Sphere constants.
-    m_Constants.SphereReflectionColorMask = {0.8f, 1.0f, 0.8f};
-    m_Constants.SphereReflectionBlur      = 1;
+        // Glass cube constants.
+        m_Constants.GlassReflectionColorMask = {0.25f, 0.02f, 0.50f};
+        m_Constants.GlassOpticalDepth        = 0.5f;
+        m_Constants.GlassMaterialColor       = {0.71f, 0.42f, 0.13f};
+        m_Constants.GlassIndexOfRefraction   = {1.01f, 1.02f};
+        m_Constants.GlassEnableInterference  = 0;
 
-    // Glass cube constants.
-    m_Constants.GlassReflectionColorMask  = {0.12f, 0.07f, 0.18f};
-    m_Constants.GlassOpticalDepth         = 0.3f;
-    m_Constants.GlassMaterialColor        = {0.9f, 1.0f, 0.43f};
-    m_Constants.GlassIndexOfRefraction    = {1.01f, 1.031f};
-    m_Constants.GlassEnableInterferention = 0;
+        // Wavelength to RGB and index of refraction interpolation factor.
+        m_Constants.InterferenceSamples[0]  = {0.140000f, 0.000000f, 0.266667f, 0.53f};
+        m_Constants.InterferenceSamples[1]  = {0.130031f, 0.037556f, 0.612267f, 0.25f};
+        m_Constants.InterferenceSamples[2]  = {0.100123f, 0.213556f, 0.785067f, 0.16f};
+        m_Constants.InterferenceSamples[3]  = {0.050277f, 0.533556f, 0.785067f, 0.00f};
+        m_Constants.InterferenceSamples[4]  = {0.000000f, 0.843297f, 0.619682f, 0.13f};
+        m_Constants.InterferenceSamples[5]  = {0.000000f, 0.927410f, 0.431834f, 0.38f};
+        m_Constants.InterferenceSamples[6]  = {0.000000f, 0.972325f, 0.270893f, 0.27f};
+        m_Constants.InterferenceSamples[7]  = {0.000000f, 0.978042f, 0.136858f, 0.19f};
+        m_Constants.InterferenceSamples[8]  = {0.324000f, 0.944560f, 0.029730f, 0.47f};
+        m_Constants.InterferenceSamples[9]  = {0.777600f, 0.871879f, 0.000000f, 0.64f};
+        m_Constants.InterferenceSamples[10] = {0.972000f, 0.762222f, 0.000000f, 0.77f};
+        m_Constants.InterferenceSamples[11] = {0.971835f, 0.482222f, 0.000000f, 0.62f};
+        m_Constants.InterferenceSamples[12] = {0.886744f, 0.202222f, 0.000000f, 0.73f};
+        m_Constants.InterferenceSamples[13] = {0.715967f, 0.000000f, 0.000000f, 0.68f};
+        m_Constants.InterferenceSamples[14] = {0.459920f, 0.000000f, 0.000000f, 0.91f};
+        m_Constants.InterferenceSamples[15] = {0.218000f, 0.000000f, 0.000000f, 0.99f};
+        m_Constants.InterferenceSampleCount = 4;
 
-    // Wavelength to RGB and index of refraction interpolation factor.
-    m_Constants.InterferentionSamples[0]  = {0.140000f, 0.000000f, 0.266667f, 0.53f};
-    m_Constants.InterferentionSamples[1]  = {0.130031f, 0.037556f, 0.612267f, 0.25f};
-    m_Constants.InterferentionSamples[2]  = {0.100123f, 0.213556f, 0.785067f, 0.16f};
-    m_Constants.InterferentionSamples[3]  = {0.050277f, 0.533556f, 0.785067f, 0.00f};
-    m_Constants.InterferentionSamples[4]  = {0.000000f, 0.843297f, 0.619682f, 0.13f};
-    m_Constants.InterferentionSamples[5]  = {0.000000f, 0.927410f, 0.431834f, 0.38f};
-    m_Constants.InterferentionSamples[6]  = {0.000000f, 0.972325f, 0.270893f, 0.27f};
-    m_Constants.InterferentionSamples[7]  = {0.000000f, 0.978042f, 0.136858f, 0.19f};
-    m_Constants.InterferentionSamples[8]  = {0.324000f, 0.944560f, 0.029730f, 0.47f};
-    m_Constants.InterferentionSamples[9]  = {0.777600f, 0.871879f, 0.000000f, 0.64f};
-    m_Constants.InterferentionSamples[10] = {0.972000f, 0.762222f, 0.000000f, 0.77f};
-    m_Constants.InterferentionSamples[11] = {0.971835f, 0.482222f, 0.000000f, 0.62f};
-    m_Constants.InterferentionSamples[12] = {0.886744f, 0.202222f, 0.000000f, 0.73f};
-    m_Constants.InterferentionSamples[13] = {0.715967f, 0.000000f, 0.000000f, 0.68f};
-    m_Constants.InterferentionSamples[14] = {0.459920f, 0.000000f, 0.000000f, 0.91f};
-    m_Constants.InterferentionSamples[15] = {0.218000f, 0.000000f, 0.000000f, 0.99f};
-    m_Constants.InterferentionSampleCount = 2;
+        m_Constants.AmbientColor  = float4(1.f, 1.f, 1.f, 0.f) * 0.015f;
+        m_Constants.LightPos[0]   = {8.00f, -8.0f, +0.00f, 0.f};
+        m_Constants.LightColor[0] = {1.00f, +0.8f, +0.80f, 0.f};
+        m_Constants.LightPos[1]   = {0.00f, -4.0f, -5.00f, 0.f};
+        m_Constants.LightColor[1] = {0.85f, +1.0f, +0.85f, 0.f};
 
-    m_Constants.AmbientColor  = float4(1.f, 1.f, 1.f, 0.f) * 0.015f;
-    m_Constants.LightPos[0]   = {8.00f, -8.0f, +0.00f, 0.f};
-    m_Constants.LightColor[0] = {1.00f, +0.8f, +0.80f, 0.f};
-    m_Constants.LightPos[1]   = {0.00f, -4.0f, -5.00f, 0.f};
-    m_Constants.LightColor[1] = {0.85f, +1.0f, +0.85f, 0.f};
-
-    // Random points on disc.
-    m_Constants.DiscPoints[0] = {+0.0f, +0.0f, +0.9f, -0.9f};
-    m_Constants.DiscPoints[1] = {-0.8f, +1.0f, -1.1f, -0.8f};
-    m_Constants.DiscPoints[2] = {+1.5f, +1.2f, -2.1f, +0.7f};
-    m_Constants.DiscPoints[3] = {+0.1f, -2.2f, -0.2f, +2.4f};
-    m_Constants.DiscPoints[4] = {+2.4f, -0.3f, -3.0f, +2.8f};
-    m_Constants.DiscPoints[5] = {+2.0f, -2.6f, +0.7f, +3.5f};
-    m_Constants.DiscPoints[6] = {-3.2f, -1.6f, +3.4f, +2.2f};
-    m_Constants.DiscPoints[7] = {-1.8f, -3.2f, -1.1f, +3.6f};
-
+        // Random points on disc.
+        m_Constants.DiscPoints[0] = {+0.0f, +0.0f, +0.9f, -0.9f};
+        m_Constants.DiscPoints[1] = {-0.8f, +1.0f, -1.1f, -0.8f};
+        m_Constants.DiscPoints[2] = {+1.5f, +1.2f, -2.1f, +0.7f};
+        m_Constants.DiscPoints[3] = {+0.1f, -2.2f, -0.2f, +2.4f};
+        m_Constants.DiscPoints[4] = {+2.4f, -0.3f, -3.0f, +2.8f};
+        m_Constants.DiscPoints[5] = {+2.0f, -2.6f, +0.7f, +3.5f};
+        m_Constants.DiscPoints[6] = {-3.2f, -1.6f, +3.4f, +2.2f};
+        m_Constants.DiscPoints[7] = {-1.8f, -3.2f, -1.1f, +3.6f};
+    }
     static_assert(sizeof(Constants) % 16 == 0, "must be aligned by 16 bytes");
 }
 
@@ -848,7 +881,6 @@ void Tutorial21_RayTracing::Render()
     }
 
     // Trace rays
-    if (m_pRayTracingSRB && m_pRayTracingPSO)
     {
         m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_GEN, "g_ColorBuffer")->Set(m_pColorRT->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
 
@@ -900,10 +932,12 @@ void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime)
 
 void Tutorial21_RayTracing::WindowResize(Uint32 Width, Uint32 Height)
 {
+    // Update projection matrix.
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
     m_Camera.SetProjAttribs(m_Constants.ClipPlanes.x, m_Constants.ClipPlanes.y, AspectRatio, PI_F / 4.f,
                             m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceCaps().IsGLDevice());
 
+    // Check if the image needs to be recreated.
     if (m_pColorRT != nullptr &&
         m_pColorRT->GetDesc().Width == Width &&
         m_pColorRT->GetDesc().Height == Height)
@@ -914,7 +948,7 @@ void Tutorial21_RayTracing::WindowResize(Uint32 Width, Uint32 Height)
 
     m_pColorRT = nullptr;
 
-    // Create window-size render targets
+    // Create window-size color image.
     TextureDesc RTDesc       = {};
     RTDesc.Name              = "Color buffer";
     RTDesc.Type              = RESOURCE_DIM_TEX_2D;
@@ -947,17 +981,17 @@ void Tutorial21_RayTracing::UpdateUI()
 
         ImGui::Separator();
         ImGui::Text("Glass cube");
-        ImGui::Checkbox("Interferention", &m_Constants.GlassEnableInterferention);
-        if (m_Constants.GlassEnableInterferention)
+        ImGui::Checkbox("Interference", &m_Constants.GlassEnableInterference);
+        if (m_Constants.GlassEnableInterference)
         {
             ImGui::SliderFloat("Index or refraction min", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
 
             m_Constants.GlassIndexOfRefraction.y = std::max(m_Constants.GlassIndexOfRefraction.x, m_Constants.GlassIndexOfRefraction.y);
             ImGui::SliderFloat("Index or refraction max", &m_Constants.GlassIndexOfRefraction.y, 1.0f, MaxIndexOfRefraction);
 
-            int rsamples = PlatformMisc::GetLSB(m_Constants.InterferentionSampleCount);
+            int rsamples = PlatformMisc::GetLSB(m_Constants.InterferenceSampleCount);
             ImGui::SliderInt("Refraction samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_INTERF_SAMPLES}), std::to_string(1 << rsamples).c_str());
-            m_Constants.InterferentionSampleCount = 1u << rsamples;
+            m_Constants.InterferenceSampleCount = 1u << rsamples;
         }
         else
         {
@@ -966,7 +1000,7 @@ void Tutorial21_RayTracing::UpdateUI()
         }
         ImGui::ColorEdit3("Reflection color", m_Constants.GlassReflectionColorMask.Data(), ImGuiColorEditFlags_NoAlpha);
         ImGui::ColorEdit3("Material color", m_Constants.GlassMaterialColor.Data(), ImGuiColorEditFlags_NoAlpha);
-        ImGui::SliderFloat("Optical depth", &m_Constants.GlassOpticalDepth, 0.0f, 1.5f);
+        ImGui::SliderFloat("Optical depth", &m_Constants.GlassOpticalDepth, 0.0f, 2.0f);
 
         ImGui::Separator();
         ImGui::Text("Sphere");

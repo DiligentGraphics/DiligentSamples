@@ -48,9 +48,9 @@ struct Constants
     float   GlassOpticalDepth;
     float4  GlassMaterialColor;
     float2  GlassIndexOfRefraction;  // min and max IOR
-    int     GlassEnableInterferention;
-    uint    InterferentionSampleCount; // 1..16
-    float4  InterferentionSamples[MAX_INTERF_SAMPLES]; // [rgb color] [IOR scale]
+    int     GlassEnableInterference;
+    uint    InterferenceSampleCount; // 1..16
+    float4  InterferenceSamples[MAX_INTERF_SAMPLES]; // [rgb color] [IOR scale]
 
     float4  DiscPoints[8]; // packed float2[16]
 
@@ -73,10 +73,23 @@ struct ProceduralGeomIntersectionAttribs
 };
 
 
-// For procedural intersections you must add custom hit kind.
-#define RAY_KIND_PROCEDURAL_FRONT_FACE 1
-#define RAY_KIND_PROCEDURAL_BACK_FACE  2
-
 // Instance mask.
 #define OPAQUE_GEOM_MASK      0x01
 #define TRANSPARENT_GEOM_MASK 0x02
+
+// Ray types
+#define HIT_GROUP_STRIDE  2
+#define PRIMARY_RAY_INDEX 0
+#define SHADOW_RAY_INDEX  1
+
+
+#ifndef __cplusplus
+
+// Small offset between ray intersection and new ray origin to avoid self-intersections.
+#    define SMALL_OFFSET 0.001
+
+// For procedural intersections you must add custom hit kind.
+#    define RAY_KIND_PROCEDURAL_FRONT_FACE 1
+#    define RAY_KIND_PROCEDURAL_BACK_FACE  2
+
+#endif
