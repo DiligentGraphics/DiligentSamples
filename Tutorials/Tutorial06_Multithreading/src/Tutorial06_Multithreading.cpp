@@ -265,7 +265,9 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading* pThi
 
         // Call FinishFrame() to release dynamic resources allocated by deferred contexts
         // IMPORTANT: we must wait until the command lists are submitted for execution
-        // because FinishFrame() invalidates all dynamic resources.
+        //            because FinishFrame() invalidates all dynamic resources.
+        // IMPORTANT: In Metal backend FinishFrame must be called from the same
+        //            thread that issued rendering commands.
         pDeferredCtx->FinishFrame();
 
         ++pThis->m_NumThreadsReady;
