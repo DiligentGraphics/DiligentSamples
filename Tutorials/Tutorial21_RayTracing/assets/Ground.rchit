@@ -10,16 +10,16 @@ SamplerState  g_GroundTexture_sampler; // By convention, texture samplers must u
 [shader("closesthit")]
 void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
-    // Calculate triangle barycentric.
+    // Calculate triangle barycentrics.
     float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
     
     // Get vertex indices for primitive.
-    uint3 face = g_CubeAttribsCB.Primitives[PrimitiveIndex()].xyz;
+    uint3 primitive = g_CubeAttribsCB.Primitives[PrimitiveIndex()].xyz;
     
     // Calculate texture coordinates.
-    float2 uv = g_CubeAttribsCB.UVs[face.x].xy * barycentrics.x +
-                g_CubeAttribsCB.UVs[face.y].xy * barycentrics.y +
-                g_CubeAttribsCB.UVs[face.z].xy * barycentrics.z;
+    float2 uv = g_CubeAttribsCB.UVs[primitive.x].xy * barycentrics.x +
+                g_CubeAttribsCB.UVs[primitive.y].xy * barycentrics.y +
+                g_CubeAttribsCB.UVs[primitive.z].xy * barycentrics.z;
     uv *= 32.0; // tiling
 
     payload.Color = g_GroundTexture.SampleLevel(g_GroundTexture_sampler, uv, 0).rgb;

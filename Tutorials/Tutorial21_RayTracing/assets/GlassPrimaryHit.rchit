@@ -20,16 +20,16 @@ float3 BlendWithReflection(float3 srcColor, float3 reflectionColor)
 [shader("closesthit")]
 void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
-    // Calculate triangle barycentric.
+    // Calculate triangle barycentrics.
     float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
     
     // Get vertex indices for primitive.
-    uint3 face = g_CubeAttribsCB.Primitives[PrimitiveIndex()].xyz;
+    uint3 primitive = g_CubeAttribsCB.Primitives[PrimitiveIndex()].xyz;
     
     // Calculate and transform triangle normal.
-    float3 normal = g_CubeAttribsCB.Normals[face.x].xyz * barycentrics.x +
-                    g_CubeAttribsCB.Normals[face.y].xyz * barycentrics.y +
-                    g_CubeAttribsCB.Normals[face.z].xyz * barycentrics.z;
+    float3 normal = g_CubeAttribsCB.Normals[primitive.x].xyz * barycentrics.x +
+                    g_CubeAttribsCB.Normals[primitive.y].xyz * barycentrics.y +
+                    g_CubeAttribsCB.Normals[primitive.z].xyz * barycentrics.z;
     normal        = normalize(mul((float3x3) ObjectToWorld3x4(), normal));
     
     // Air index of refraction
