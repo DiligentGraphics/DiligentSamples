@@ -862,11 +862,9 @@ void Tutorial21_RayTracing::Render()
             const float3 dir = cross(lp.Normal, rp.Normal);
             const float  len = dot(dir, dir);
 
-            if (std::abs(len) <= 1.0e-5)
-                return false;
+            VERIFY_EXPR(len > 1.0e-5);
 
             result = dir * (1.0f / sqrt(len));
-            return true;
         };
 
         // clang-format off

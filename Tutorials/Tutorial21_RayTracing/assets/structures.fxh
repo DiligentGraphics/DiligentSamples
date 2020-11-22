@@ -15,7 +15,7 @@ struct PrimaryRayPayload
 
 struct ShadowRayPayload
 {
-    float  Shading;
+    float  Shading;    // 0 - completely shaded, 1 - no shadow, 0..1 - for semi-transparent objects
     uint   Recursion;
 };
 

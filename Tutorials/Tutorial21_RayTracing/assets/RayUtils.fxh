@@ -87,22 +87,24 @@ void LightingPass(inout float3 Color, float3 Pos, float3 Norm, uint Recursion)
 
         float3 rayDir = normalize(g_ConstantsCB.LightPos[i].xyz - Pos);
         float  NdotL   = max(0.0, dot(Norm, rayDir));
-        float  shading = 0.0;
 
         // Optimization - don't trace rays if NdotL is zero
         if (NdotL > 0.0)
         {
             // Cast multiple rays that are distributed within a cone.
-            const int PCF = Recursion > 1 ? min(1, g_ConstantsCB.ShadowPCF) : g_ConstantsCB.ShadowPCF;
+            const int PCF     = Recursion > 1 ? min(1, g_ConstantsCB.ShadowPCF) : g_ConstantsCB.ShadowPCF;
+            float     shading = 0.0;
             for (int j = 0; j < PCF; ++j)
             {
                 float2 offset = float2(g_ConstantsCB.DiscPoints[j / 2][(j % 2) * 2], g_ConstantsCB.DiscPoints[j / 2][(j % 2) * 2 + 1]);
                 ray.Direction = DirectionWithinCone(rayDir, offset * 0.002);
                 shading       += saturate(CastShadow(ray, Recursion).Shading);
             }
+            
             shading = PCF > 0 ? shading / float(PCF) : 1.0;
+
+            col += Color * g_ConstantsCB.LightColor[i].rgb * NdotL * shading;
         }
-        col += Color * g_ConstantsCB.LightColor[i].rgb * NdotL * shading;
     }
-    Color = col * (1.f / float(NUM_LIGHTS)) + g_ConstantsCB.AmbientColor.rgb;
+    Color = col * (1.0 / float(NUM_LIGHTS)) + g_ConstantsCB.AmbientColor.rgb;
 }
