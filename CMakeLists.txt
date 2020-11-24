@@ -71,6 +71,13 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
                 "\"$<TARGET_FILE_DIR:${APP_NAME}>\"")
     endif()
 
+    if(PLATFORM_MACOS AND VULKAN_LIB_PATH)
+        # Configure rpath so that executables can find vulkan library
+        set_target_properties(${APP_NAME} PROPERTIES
+            BUILD_RPATH "${VULKAN_LIB_PATH}"
+        )
+    endif()
+
     if(DILIGENT_INSTALL_SAMPLES)
         # Install instructions
         file(RELATIVE_PATH TUTORIAL_REL_PATH "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
