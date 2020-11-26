@@ -29,6 +29,7 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 
 #include "Tutorial09_Quads.hpp"
 #include "MapHelper.hpp"
@@ -60,7 +61,7 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceT
     if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
         EngineD3D12CreateInfo& EngD3D12Attribs    = static_cast<EngineD3D12CreateInfo&>(Attribs);
-        EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
+        EngD3D12Attribs.NumCommandsToFlushCmdList = UINT_MAX; // Never flush the context while recording commands
     }
 #endif
 #if VULKAN_SUPPORTED
@@ -69,7 +70,7 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceT
         auto& VkAttrs                       = static_cast<EngineVkCreateInfo&>(Attribs);
         VkAttrs.DynamicHeapSize             = 128 << 20;
         VkAttrs.DynamicHeapPageSize         = 2 << 20;
-        VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
+        VkAttrs.NumCommandsToFlushCmdBuffer = UINT_MAX; // Never flush the context while recording commands
     }
 #endif
 }
