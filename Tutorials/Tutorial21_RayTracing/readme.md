@@ -233,10 +233,10 @@ m_pSBT->BindHitGroup(m_pTLAS, "Cube Instance 1", "Cube", PRIMARY_RAY_INDEX, "Cub
 ```
 These may be useful to bind unique hit groups for each geometry.
 
-In result SBT contains these map:
+In result SBT contains these table:
 
 | Instance | Geometry | Ray type | Location | Shader group | Shader constants |
-|---|----|---|---|---|---|
+|---|---|---|---|---|---|
 | Cube Instance 1 | Cube | primary | 0 | CubePrimaryHit | - |
 | - | - | shadow | 1 | skip | - |
 | Cube Instance 2 | Cube | primary | 2 | CubePrimaryHit | - |
@@ -251,6 +251,8 @@ In result SBT contains these map:
 | - | - | shadow | 11 | skip | - |
 | Sphere Instance | Box | primary | 12 | SpherePrimaryHit | - |
 | - | - | shadow | 13 | SphereShadowHit | - |
+
+'Shader group' and 'Shader constants' is what is actually stored into SBT, other fields in the table are used to calculate shader location.
 
 As alternative you can use `IShaderBindingTable::BindHitGroupByIndex()` to bind hit group to any location
 in range from `TLASBuildInfo::FirstContributionToHitGroupIndex` to `TLASBuildInfo::LastContributionToHitGroupIndex`,
@@ -529,6 +531,8 @@ With shadows shader call stack locks like:
 
 ![image](rt_callstack_2.png)
 
+Some hardware does not support ray recursion, but you can use a loop in the ray generation shader instead.
+
 
 ## Ray miss shader
 
@@ -567,6 +571,20 @@ ProceduralGeomIntersectionAttribs attr;
 ...
 ReportHit(hitT, RAY_KIND_PROCEDURAL_FRONT_FACE, attr);
 ```
+
+
+## Performance
+
+With default settings the execution time of shaders for all rays is approximately the same.
+
+![image](rt_performance_1.jpg)
+
+
+When we increase the number of rays per pixel then performance for some pixels increases dramatically.
+So you should minimize multiple rays per pixel and use temporal techniques like a TAA or denoising.
+
+![image](rt_performance_2.jpg)
+
 
 ## Further Reading
 
