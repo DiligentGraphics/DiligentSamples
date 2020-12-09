@@ -110,6 +110,8 @@ void Tutorial21_RayTracing::CreateGraphicsPSO()
 
 void Tutorial21_RayTracing::CreateRayTracingPSO()
 {
+    m_MaxRecursionDepth = std::min(m_MaxRecursionDepth, m_pDevice->GetDeviceProperties().MaxRayTracingRecursionDepth);
+
     // Create ray tracing pipeline.
     RayTracingPipelineStateCreateInfo PSOCreateInfo;
 
@@ -241,7 +243,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
 
     // Specify ray tracing recursion.
     // 0 - only one TraceRay() call.
-    PSOCreateInfo.RayTracingPipeline.MaxRecursionDepth = MaxRecursionDepth;
+    PSOCreateInfo.RayTracingPipeline.MaxRecursionDepth = static_cast<Uint8>(m_MaxRecursionDepth);
 
     // Per-shader data is not used.
     PSOCreateInfo.RayTracingPipeline.ShaderRecordSize = 0;
@@ -773,7 +775,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     {
         m_Constants.ClipPlanes   = float2{0.1f, 100.0f};
         m_Constants.ShadowPCF    = 1;
-        m_Constants.MaxRecursion = MaxRecursionDepth / 2;
+        m_Constants.MaxRecursion = m_MaxRecursionDepth / 2;
 
         // Sphere constants.
         m_Constants.SphereReflectionColorMask = {0.81f, 1.0f, 0.45f};
@@ -968,7 +970,7 @@ void Tutorial21_RayTracing::UpdateUI()
     {
         ImGui::Text("Use WASD to move camera");
         ImGui::SliderInt("Shadow blur", &m_Constants.ShadowPCF, 0, 16);
-        ImGui::SliderInt("Max recursion", &m_Constants.MaxRecursion, 0, MaxRecursionDepth);
+        ImGui::SliderInt("Max recursion", &m_Constants.MaxRecursion, 0, m_MaxRecursionDepth);
 
         for (int i = 0; i < NumCubes; ++i)
         {
