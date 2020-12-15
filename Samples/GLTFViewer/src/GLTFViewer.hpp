@@ -40,8 +40,8 @@ class GLTFViewer final : public SampleBase
 {
 public:
     ~GLTFViewer();
+    virtual void ProcessCommandLine(const char* CmdLine) override final;
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
-
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
@@ -54,6 +54,7 @@ private:
     void LoadModel(const char* Path);
     void ResetView();
     void UpdateUI();
+    void CreateGLTFResourceCache();
 
     enum class BackgroundMode : int
     {
@@ -68,7 +69,6 @@ private:
 
     Quaternion m_CameraRotation = {0, 0, 0, 1};
     Quaternion m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
-    float4x4   m_ModelTransform;
 
     float m_CameraDist = 0.9f;
 
@@ -103,6 +103,13 @@ private:
 
     RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;
+
+    bool                                 m_bUseResourceCache = false;
+    RefCntAutoPtr<GLTF::ResourceManager> m_pResourceMgr;
+    GLTF::ResourceCacheUseInfo           m_CacheUseInfo;
+
+    GLTF_PBR_Renderer::ModelResourceBindings m_ModelResourceBindings;
+    GLTF_PBR_Renderer::ResourceCacheBindings m_CacheBindings;
 
     MouseState m_LastMouseState;
     float      m_CameraYaw   = 0;

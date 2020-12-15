@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <array>
+
 #include "GLTFViewer.hpp"
 #include "MapHelper.hpp"
 #include "BasicMath.hpp"
@@ -80,14 +81,17 @@ void GLTFViewer::LoadModel(const char* Path)
 {
     if (m_Model)
     {
-        m_GLTFRenderer->ReleaseResourceBindings(*m_Model);
         m_PlayAnimation  = false;
         m_AnimationIndex = 0;
         m_AnimationTimers.clear();
     }
 
-    m_Model.reset(new GLTF::Model(m_pDevice, m_pImmediateContext, Path));
-    m_GLTFRenderer->InitializeResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
+    GLTF::Model::CreateInfo ModelCI;
+    ModelCI.FileName   = Path;
+    ModelCI.pCacheInfo = m_bUseResourceCache ? &m_CacheUseInfo : nullptr;
+    m_Model.reset(new GLTF::Model{m_pDevice, m_pImmediateContext, ModelCI});
+
+    m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
     // Center and scale model
     float3 ModelDim{m_Model->AABBTransform[0][0], m_Model->AABBTransform[1][1], m_Model->AABBTransform[2][2]};
@@ -96,7 +100,9 @@ void GLTFViewer::LoadModel(const char* Path)
     Translate += -0.5f * ModelDim;
     float4x4 InvYAxis = float4x4::Identity();
     InvYAxis._22      = -1;
-    m_ModelTransform  = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+
+    auto ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+    m_Model->Transform(ModelTransform);
 
     if (!m_Model->Animations.empty())
     {
@@ -114,6 +120,78 @@ void GLTFViewer::ResetView()
     m_CameraRotation = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 }
 
+std::string GetArgument(const char*& pos, const char* ArgName);
+
+void GLTFViewer::ProcessCommandLine(const char* CmdLine)
+{
+    const auto* pos = strchr(CmdLine, '-');
+    while (pos != nullptr)
+    {
+        ++pos;
+        std::string Arg;
+        if (!(Arg = GetArgument(pos, "use_cache")).empty())
+        {
+            m_bUseResourceCache = Arg == "1" || Arg == "true";
+        }
+        pos = strchr(pos, '-');
+    }
+}
+
+void GLTFViewer::CreateGLTFResourceCache()
+{
+    std::array<BufferSuballocatorCreateInfo, 3> Buffers = {};
+
+    Buffers[0].Desc.Name          = "GLTF basic vertex attribs buffer";
+    Buffers[0].Desc.BindFlags     = BIND_VERTEX_BUFFER;
+    Buffers[0].Desc.Usage         = USAGE_DEFAULT;
+    Buffers[0].Desc.uiSizeInBytes = sizeof(GLTF::Model::VertexBasicAttribs) * 16 << 10;
+
+    Buffers[1].Desc.Name          = "GLTF skin attribs buffer";
+    Buffers[1].Desc.BindFlags     = BIND_VERTEX_BUFFER;
+    Buffers[1].Desc.Usage         = USAGE_DEFAULT;
+    Buffers[1].Desc.uiSizeInBytes = sizeof(GLTF::Model::VertexSkinAttribs) * 16 << 10;
+
+    Buffers[2].Desc.Name          = "GLTF index buffer";
+    Buffers[2].Desc.BindFlags     = BIND_INDEX_BUFFER;
+    Buffers[2].Desc.Usage         = USAGE_DEFAULT;
+    Buffers[2].Desc.uiSizeInBytes = sizeof(Uint32) * 8 << 10;
+
+    std::array<DynamicTextureAtlasCreateInfo, 1> Atlases;
+    Atlases[0].Desc.Name      = "GLTF texture atlas";
+    Atlases[0].Desc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
+    Atlases[0].Desc.Usage     = USAGE_DEFAULT;
+    Atlases[0].Desc.BindFlags = BIND_SHADER_RESOURCE;
+    Atlases[0].Desc.Format    = TEX_FORMAT_RGBA8_UNORM;
+    Atlases[0].Desc.Width     = 4096;
+    Atlases[0].Desc.Height    = 4096;
+    Atlases[0].Desc.MipLevels = 6;
+
+    GLTF::ResourceManager::CreateInfo ResourceMgrCI;
+    ResourceMgrCI.BuffSuballocators    = Buffers.data();
+    ResourceMgrCI.NumBuffSuballocators = static_cast<Uint32>(Buffers.size());
+    ResourceMgrCI.TexAtlases           = Atlases.data();
+    ResourceMgrCI.NumTexAtlases        = static_cast<Uint32>(Atlases.size());
+
+    ResourceMgrCI.DefaultAtlasDesc.Desc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
+    ResourceMgrCI.DefaultAtlasDesc.Desc.Usage     = USAGE_DEFAULT;
+    ResourceMgrCI.DefaultAtlasDesc.Desc.BindFlags = BIND_SHADER_RESOURCE;
+    ResourceMgrCI.DefaultAtlasDesc.Desc.Width     = 4096;
+    ResourceMgrCI.DefaultAtlasDesc.Desc.Height    = 4096;
+    ResourceMgrCI.DefaultAtlasDesc.Desc.MipLevels = 6;
+
+    m_pResourceMgr = GLTF::ResourceManager::Create(m_pDevice, ResourceMgrCI);
+
+    m_CacheUseInfo.pResourceMgr     = m_pResourceMgr;
+    m_CacheUseInfo.VertexBuffer0Idx = 0;
+    m_CacheUseInfo.VertexBuffer1Idx = 1;
+    m_CacheUseInfo.IndexBufferIdx   = 2;
+
+    m_CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.NormalFormat       = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.OcclusionFormat    = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
+}
 
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 {
@@ -129,11 +207,12 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
 
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt         = BackBufferFmt;
-    RendererCI.DSVFmt         = DepthBufferFmt;
-    RendererCI.AllowDebugView = true;
-    RendererCI.UseIBL         = true;
-    RendererCI.FrontCCW       = true;
+    RendererCI.RTVFmt          = BackBufferFmt;
+    RendererCI.DSVFmt          = DepthBufferFmt;
+    RendererCI.AllowDebugView  = true;
+    RendererCI.UseIBL          = true;
+    RendererCI.FrontCCW        = true;
+    RendererCI.UseTextureAtals = m_bUseResourceCache;
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
@@ -157,6 +236,9 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     CreateBoundBoxPSO(BackBufferFmt, DepthBufferFmt);
 
     m_LightDirection = normalize(float3(0.5f, -0.6f, -0.2f));
+
+    if (m_bUseResourceCache)
+        CreateGLTFResourceCache();
 
     LoadModel(GLTFModels[m_SelectedModel].second);
 }
@@ -453,7 +535,7 @@ void GLTFViewer::Render()
     // Compute world-view-projection matrix
     auto CameraViewProj = CameraView * Proj;
 
-    m_RenderParams.ModelTransform = m_ModelTransform * m_ModelRotation.ToMatrix();
+    m_RenderParams.ModelTransform = m_ModelRotation.ToMatrix();
 
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -491,7 +573,16 @@ void GLTFViewer::Render()
         lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
     }
 
-    m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams);
+    if (m_bUseResourceCache)
+    {
+        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams, nullptr, &m_CacheBindings);
+    }
+    else
+    {
+        m_GLTFRenderer->Begin(m_pImmediateContext);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams, &m_ModelResourceBindings);
+    }
 
     if (m_BoundBoxMode != BoundBoxMode::None)
     {
