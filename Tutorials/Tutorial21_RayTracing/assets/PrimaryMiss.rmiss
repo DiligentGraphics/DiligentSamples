@@ -1,6 +1,8 @@
 
 #include "structures.fxh"
 
+ConstantBuffer<Constants> g_ConstantsCB;
+
 static const float3 Pallete[] = {
     float3(0.32, 0.00, 0.92),
     float3(0.00, 0.22, 0.90),
@@ -20,5 +22,6 @@ void main(inout PrimaryRayPayload payload)
     float3 color  = lerp(Pallete[idx], Pallete[idx+1], factor);
 
     payload.Color = color;
-    payload.Depth = RayTCurrent();
+    //payload.Depth = RayTCurrent(); // bug in DXC for SPIRV
+    payload.Depth = g_ConstantsCB.ClipPlanes.y;
 }
