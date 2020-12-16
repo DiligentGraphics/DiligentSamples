@@ -37,7 +37,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
 
     // Enable Interference - simulate rays with different wavelengths.
     // For optimization disable interference after several reflections/refractions.
-    if (g_ConstantsCB.GlassEnableInterference && payload.Recursion < 2)
+    if (g_ConstantsCB.GlassEnableInterference && payload.Recursion == 0)
     {
         float3  AccumColor = float3(0.0, 0.0, 0.0);
         float3  AccumMask  = float3(0.0, 0.0, 0.0);

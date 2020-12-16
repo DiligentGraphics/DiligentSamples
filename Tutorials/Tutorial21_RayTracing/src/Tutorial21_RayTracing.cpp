@@ -769,6 +769,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
     m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_GEN, "g_ConstantsCB")->Set(m_ConstantsCB);
+    m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_MISS, "g_ConstantsCB")->Set(m_ConstantsCB);
     m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB")->Set(m_ConstantsCB);
 
     // Initialize constants.
