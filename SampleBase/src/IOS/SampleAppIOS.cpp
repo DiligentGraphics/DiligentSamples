@@ -39,6 +39,16 @@ public:
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui.reset(new ImGuiImplIOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
         InitializeSample();
+
+        if (m_DeviceType == RENDER_DEVICE_TYPE_METAL)
+        {
+            // In Metal, FinishFrame must be called from the same thread
+            // that issued rendering commands. On iOS, however, initialization
+            // and rendering happen in different threads. To avoid issues with
+            // autorelease pool, we have to pop it now by calling FinishFrame.
+            m_pImmediateContext->Flush();
+            m_pImmediateContext->FinishFrame();
+        }
     }
 
     virtual void Render() override

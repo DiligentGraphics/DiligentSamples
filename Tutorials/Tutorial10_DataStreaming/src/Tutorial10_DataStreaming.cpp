@@ -29,6 +29,7 @@
 #include <string>
 #include <math.h>
 #include <algorithm>
+#include <limits>
 
 #include "Tutorial10_DataStreaming.hpp"
 #include "MapHelper.hpp"
@@ -140,7 +141,7 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE
     if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
         EngineD3D12CreateInfo& EngD3D12Attribs    = static_cast<EngineD3D12CreateInfo&>(Attribs);
-        EngD3D12Attribs.NumCommandsToFlushCmdList = 8192;
+        EngD3D12Attribs.NumCommandsToFlushCmdList = UINT_MAX; // Never flush the context while recording commands
     }
 #endif
 #if VULKAN_SUPPORTED
@@ -150,7 +151,7 @@ void Tutorial10_DataStreaming::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE
 
         VkAttrs.DynamicHeapSize             = 128 << 20;
         VkAttrs.DynamicHeapPageSize         = 2 << 20;
-        VkAttrs.NumCommandsToFlushCmdBuffer = 8192;
+        VkAttrs.NumCommandsToFlushCmdBuffer = UINT_MAX; // Never flush the context while recording commands
     }
 #endif
 }
@@ -611,7 +612,9 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming* pThis,
 
         // Call FinishFrame() to release dynamic resources allocated by deferred contexts
         // IMPORTANT: we must wait until the command lists are submitted for execution
-        // because FinishFrame() invalidates all dynamic resources
+        //            because FinishFrame() invalidates all dynamic resources.
+        // IMPORTANT: In Metal backend FinishFrame must be called from the same
+        //            thread that issued rendering commands.
         pDeferredCtx->FinishFrame();
 
         ++pThis->m_NumThreadsReady;

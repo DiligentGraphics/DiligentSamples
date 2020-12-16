@@ -122,7 +122,7 @@ protected:
     bool         m_bFullScreenMode      = false;
     bool         m_bShowAdaptersDialog  = true;
     bool         m_bShowUI              = true;
-    bool         m_bForceNonSeprblProgs = true;
+    bool         m_bForceNonSeprblProgs = false;
     double       m_CurrentTime          = 0;
     Uint32       m_MaxFrameLatency      = SwapChainDesc{}.BufferCount;
 

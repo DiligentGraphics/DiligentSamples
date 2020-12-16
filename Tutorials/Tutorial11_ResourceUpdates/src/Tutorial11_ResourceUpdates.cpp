@@ -542,7 +542,10 @@ void Tutorial11_ResourceUpdates::Update(double CurrTime, double ElapsedTime)
     if (CurrTime - m_LastMapTime > MapTexturePeriod * (deviceType == RENDER_DEVICE_TYPE_D3D11 ? 10.f : 1.f))
     {
         m_LastMapTime = CurrTime;
-        if (deviceType == RENDER_DEVICE_TYPE_D3D11 || deviceType == RENDER_DEVICE_TYPE_D3D12 || deviceType == RENDER_DEVICE_TYPE_VULKAN)
+        if (deviceType == RENDER_DEVICE_TYPE_D3D11 ||
+            deviceType == RENDER_DEVICE_TYPE_D3D12 ||
+            deviceType == RENDER_DEVICE_TYPE_VULKAN ||
+            deviceType == RENDER_DEVICE_TYPE_METAL)
         {
             MapTexture(3, deviceType == RENDER_DEVICE_TYPE_D3D11);
         }
