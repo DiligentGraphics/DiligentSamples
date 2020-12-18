@@ -35,9 +35,9 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
     // Air index of refraction
     const float  AirIOR = 1.0;
 
-    // Enable Interference - simulate rays with different wavelengths.
-    // For optimization disable interference after several reflections/refractions.
-    if (g_ConstantsCB.GlassEnableInterference && payload.Recursion == 0)
+    // Enable dispersion - simulate rays with different wavelengths.
+    // For optimization, disable dispersion after several reflections/refractions.
+    if (g_ConstantsCB.GlassEnableDispersion && payload.Recursion == 0)
     {
         float3  AccumColor = float3(0.0, 0.0, 0.0);
         float3  AccumMask  = float3(0.0, 0.0, 0.0);
@@ -47,14 +47,14 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         ray.TMax = 100.0;
     
         // Cast multiple rays with different wavelengths.
-        const int step = MAX_INTERF_SAMPLES / g_ConstantsCB.InterferenceSampleCount;
+        const int step = MAX_INTERF_SAMPLES / g_ConstantsCB.DispersionSampleCount;
         for (int i = 0; i < MAX_INTERF_SAMPLES; i += step)
         {
             float3 norm = normal;
             float3 color;
 
             // Calculate index of refraction for specified wavelength.
-            float  GlassIOR = lerp(g_ConstantsCB.GlassIndexOfRefraction.x, g_ConstantsCB.GlassIndexOfRefraction.y, g_ConstantsCB.InterferenceSamples[i].a);
+            float  GlassIOR = lerp(g_ConstantsCB.GlassIndexOfRefraction.x, g_ConstantsCB.GlassIndexOfRefraction.y, g_ConstantsCB.DispersionSamples[i].a);
 
             // Refraction at the interface between air and glass.
             if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
@@ -75,7 +75,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
                 ray.Direction = reflect(WorldRayDirection(), norm);
 
                 PrimaryRayPayload reflPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-                color = reflPayload.Color * g_ConstantsCB.InterferenceSamples[i].rgb;
+                color = reflPayload.Color * g_ConstantsCB.DispersionSamples[i].rgb;
 
                 if (HitKind() == HIT_KIND_TRIANGLE_BACK_FACE)
                 {
@@ -87,7 +87,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
                 ray.Origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
 
                 PrimaryRayPayload nextPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-                color = nextPayload.Color * g_ConstantsCB.InterferenceSamples[i].rgb;
+                color = nextPayload.Color * g_ConstantsCB.DispersionSamples[i].rgb;
                 
                 if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
                 {
@@ -96,7 +96,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
             }
 
             AccumColor += color;
-            AccumMask  += g_ConstantsCB.InterferenceSamples[i].rgb;
+            AccumMask  += g_ConstantsCB.DispersionSamples[i].rgb;
         }
     
         // Normalize accumulated color.

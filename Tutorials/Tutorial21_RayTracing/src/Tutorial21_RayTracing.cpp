@@ -787,26 +787,26 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
         m_Constants.GlassOpticalDepth        = 0.5f;
         m_Constants.GlassMaterialColor       = {0.71f, 0.42f, 0.13f};
         m_Constants.GlassIndexOfRefraction   = {1.01f, 1.02f};
-        m_Constants.GlassEnableInterference  = 0;
+        m_Constants.GlassEnableDispersion    = 0;
 
         // Wavelength to RGB and index of refraction interpolation factor.
-        m_Constants.InterferenceSamples[0]  = {0.140000f, 0.000000f, 0.266667f, 0.53f};
-        m_Constants.InterferenceSamples[1]  = {0.130031f, 0.037556f, 0.612267f, 0.25f};
-        m_Constants.InterferenceSamples[2]  = {0.100123f, 0.213556f, 0.785067f, 0.16f};
-        m_Constants.InterferenceSamples[3]  = {0.050277f, 0.533556f, 0.785067f, 0.00f};
-        m_Constants.InterferenceSamples[4]  = {0.000000f, 0.843297f, 0.619682f, 0.13f};
-        m_Constants.InterferenceSamples[5]  = {0.000000f, 0.927410f, 0.431834f, 0.38f};
-        m_Constants.InterferenceSamples[6]  = {0.000000f, 0.972325f, 0.270893f, 0.27f};
-        m_Constants.InterferenceSamples[7]  = {0.000000f, 0.978042f, 0.136858f, 0.19f};
-        m_Constants.InterferenceSamples[8]  = {0.324000f, 0.944560f, 0.029730f, 0.47f};
-        m_Constants.InterferenceSamples[9]  = {0.777600f, 0.871879f, 0.000000f, 0.64f};
-        m_Constants.InterferenceSamples[10] = {0.972000f, 0.762222f, 0.000000f, 0.77f};
-        m_Constants.InterferenceSamples[11] = {0.971835f, 0.482222f, 0.000000f, 0.62f};
-        m_Constants.InterferenceSamples[12] = {0.886744f, 0.202222f, 0.000000f, 0.73f};
-        m_Constants.InterferenceSamples[13] = {0.715967f, 0.000000f, 0.000000f, 0.68f};
-        m_Constants.InterferenceSamples[14] = {0.459920f, 0.000000f, 0.000000f, 0.91f};
-        m_Constants.InterferenceSamples[15] = {0.218000f, 0.000000f, 0.000000f, 0.99f};
-        m_Constants.InterferenceSampleCount = 4;
+        m_Constants.DispersionSamples[0]  = {0.140000f, 0.000000f, 0.266667f, 0.53f};
+        m_Constants.DispersionSamples[1]  = {0.130031f, 0.037556f, 0.612267f, 0.25f};
+        m_Constants.DispersionSamples[2]  = {0.100123f, 0.213556f, 0.785067f, 0.16f};
+        m_Constants.DispersionSamples[3]  = {0.050277f, 0.533556f, 0.785067f, 0.00f};
+        m_Constants.DispersionSamples[4]  = {0.000000f, 0.843297f, 0.619682f, 0.13f};
+        m_Constants.DispersionSamples[5]  = {0.000000f, 0.927410f, 0.431834f, 0.38f};
+        m_Constants.DispersionSamples[6]  = {0.000000f, 0.972325f, 0.270893f, 0.27f};
+        m_Constants.DispersionSamples[7]  = {0.000000f, 0.978042f, 0.136858f, 0.19f};
+        m_Constants.DispersionSamples[8]  = {0.324000f, 0.944560f, 0.029730f, 0.47f};
+        m_Constants.DispersionSamples[9]  = {0.777600f, 0.871879f, 0.000000f, 0.64f};
+        m_Constants.DispersionSamples[10] = {0.972000f, 0.762222f, 0.000000f, 0.77f};
+        m_Constants.DispersionSamples[11] = {0.971835f, 0.482222f, 0.000000f, 0.62f};
+        m_Constants.DispersionSamples[12] = {0.886744f, 0.202222f, 0.000000f, 0.73f};
+        m_Constants.DispersionSamples[13] = {0.715967f, 0.000000f, 0.000000f, 0.68f};
+        m_Constants.DispersionSamples[14] = {0.459920f, 0.000000f, 0.000000f, 0.91f};
+        m_Constants.DispersionSamples[15] = {0.218000f, 0.000000f, 0.000000f, 0.99f};
+        m_Constants.DispersionSampleCount = 4;
 
         m_Constants.AmbientColor  = float4(1.f, 1.f, 1.f, 0.f) * 0.015f;
         m_Constants.LightPos[0]   = {8.00f, -8.0f, +0.00f, 0.f};
@@ -964,7 +964,7 @@ void Tutorial21_RayTracing::WindowResize(Uint32 Width, Uint32 Height)
 
 void Tutorial21_RayTracing::UpdateUI()
 {
-    const float MaxIndexOfRefraction = 1.2f;
+    const float MaxIndexOfRefraction = 1.5f;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
@@ -982,21 +982,21 @@ void Tutorial21_RayTracing::UpdateUI()
 
         ImGui::Separator();
         ImGui::Text("Glass cube");
-        ImGui::Checkbox("Interference", &m_Constants.GlassEnableInterference);
-        if (m_Constants.GlassEnableInterference)
+        ImGui::Checkbox("Dispersion", &m_Constants.GlassEnableDispersion);
+        if (m_Constants.GlassEnableDispersion)
         {
             ImGui::SliderFloat("Index or refraction min", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
 
             m_Constants.GlassIndexOfRefraction.y = std::max(m_Constants.GlassIndexOfRefraction.x, m_Constants.GlassIndexOfRefraction.y);
             ImGui::SliderFloat("Index or refraction max", &m_Constants.GlassIndexOfRefraction.y, 1.0f, MaxIndexOfRefraction);
 
-            int rsamples = PlatformMisc::GetLSB(m_Constants.InterferenceSampleCount);
+            int rsamples = PlatformMisc::GetLSB(m_Constants.DispersionSampleCount);
             ImGui::SliderInt("Refraction samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_INTERF_SAMPLES}), std::to_string(1 << rsamples).c_str());
-            m_Constants.InterferenceSampleCount = 1u << rsamples;
+            m_Constants.DispersionSampleCount = 1u << rsamples;
         }
         else
         {
-            ImGui::SliderFloat("Index or refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
+            ImGui::SliderFloat("Index of refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
             m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + 0.02f;
         }
         ImGui::ColorEdit3("Reflection color", m_Constants.GlassReflectionColorMask.Data(), ImGuiColorEditFlags_NoAlpha);

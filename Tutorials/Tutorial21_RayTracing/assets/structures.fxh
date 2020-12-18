@@ -48,9 +48,9 @@ struct Constants
     float   GlassOpticalDepth;
     float4  GlassMaterialColor;
     float2  GlassIndexOfRefraction;  // min and max IOR
-    int     GlassEnableInterference;
-    uint    InterferenceSampleCount; // 1..16
-    float4  InterferenceSamples[MAX_INTERF_SAMPLES]; // [rgb color] [IOR scale]
+    int     GlassEnableDispersion;
+    uint    DispersionSampleCount; // 1..16
+    float4  DispersionSamples[MAX_INTERF_SAMPLES]; // [rgb color] [IOR scale]
 
     float4  DiscPoints[8]; // packed float2[16]
 
