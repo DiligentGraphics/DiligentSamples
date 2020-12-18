@@ -19,8 +19,8 @@ struct ShadowRayPayload
     uint   Recursion;
 };
 
-#define NUM_LIGHTS         2
-#define MAX_INTERF_SAMPLES 16
+#define NUM_LIGHTS          2
+#define MAX_DISPERS_SAMPLES 16
 
 struct Constants
 {
@@ -50,7 +50,7 @@ struct Constants
     float2  GlassIndexOfRefraction;  // min and max IOR
     int     GlassEnableDispersion;
     uint    DispersionSampleCount; // 1..16
-    float4  DispersionSamples[MAX_INTERF_SAMPLES]; // [rgb color] [IOR scale]
+    float4  DispersionSamples[MAX_DISPERS_SAMPLES]; // [rgb color] [IOR scale]
 
     float4  DiscPoints[8]; // packed float2[16]
 

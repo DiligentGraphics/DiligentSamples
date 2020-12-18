@@ -47,8 +47,8 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         ray.TMax = 100.0;
     
         // Cast multiple rays with different wavelengths.
-        const int step = MAX_INTERF_SAMPLES / g_ConstantsCB.DispersionSampleCount;
-        for (int i = 0; i < MAX_INTERF_SAMPLES; i += step)
+        const int step = MAX_DISPERS_SAMPLES / g_ConstantsCB.DispersionSampleCount;
+        for (int i = 0; i < MAX_DISPERS_SAMPLES; i += step)
         {
             float3 norm = normal;
             float3 color;

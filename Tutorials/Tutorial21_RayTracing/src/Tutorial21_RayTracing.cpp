@@ -991,7 +991,7 @@ void Tutorial21_RayTracing::UpdateUI()
             ImGui::SliderFloat("Index or refraction max", &m_Constants.GlassIndexOfRefraction.y, 1.0f, MaxIndexOfRefraction);
 
             int rsamples = PlatformMisc::GetLSB(m_Constants.DispersionSampleCount);
-            ImGui::SliderInt("Refraction samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_INTERF_SAMPLES}), std::to_string(1 << rsamples).c_str());
+            ImGui::SliderInt("Refraction samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_DISPERS_SAMPLES}), std::to_string(1 << rsamples).c_str());
             m_Constants.DispersionSampleCount = 1u << rsamples;
         }
         else
