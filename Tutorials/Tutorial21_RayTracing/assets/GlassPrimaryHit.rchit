@@ -6,15 +6,39 @@ ConstantBuffer<CubeAttribs>  g_CubeAttribsCB;
 
 
 // Simulate light absorption inside glass.
-float3 LightAbsoption(float3 color, float depth)
+float3 LightAbsorption(float3 color1, float depth)
 {
-    float factor = saturate(pow(depth * g_ConstantsCB.GlassOpticalDepth, 1.8) + 0.5);
-    return lerp(color, color * g_ConstantsCB.GlassMaterialColor.rgb, factor);
+    float  factor1 = depth * 0.25;
+    float  factor2 = pow(depth * g_ConstantsCB.GlassAbsorption, 2.2) * 0.25;
+    float  factor  = clamp(factor1 + factor2 + 0.05, 0.0, 1.0); 
+    float3 color2  = color1 * g_ConstantsCB.GlassMaterialColor.rgb;
+    return mix(color1, color2, factor);
 }
 
-float3 BlendWithReflection(float3 srcColor, float3 reflectionColor)
+float3 BlendWithReflection(float3 srcColor, float3 reflectionColor, float factor)
 {
-    return lerp(srcColor, reflectionColor * g_ConstantsCB.GlassReflectionColorMask.rgb, 0.3);
+    return lerp(srcColor, reflectionColor * g_ConstantsCB.GlassReflectionColorMask.rgb, factor);
+}
+
+float Fresnel(float eta, float cosThetaI)
+{
+    cosThetaI = clamp(cosThetaI, -1.0, 1.0);
+    if (cosThetaI < 0.0)
+    {
+        eta = 1.0 / eta;
+        cosThetaI = -cosThetaI;
+    }
+
+    float sinThetaTSq = eta * eta * (1.0 - cosThetaI * cosThetaI);
+    if (sinThetaTSq > 1.0)
+        return 1.0;
+
+    float cosThetaT = sqrt(1.0 - sinThetaTSq);
+
+    float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+    float Rp = (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI);
+
+    return 0.5 * (Rs * Rs + Rp * Rp);
 }
 
 [shader("closesthit")]
@@ -33,7 +57,8 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
     normal        = normalize(mul((float3x3) ObjectToWorld3x4(), normal));
     
     // Air index of refraction
-    const float  AirIOR = 1.0;
+    const float  AirIOR      = 1.0;
+    float3       resultColor = float3(0.0, 0.0, 0.0);
 
     // Enable dispersion - simulate rays with different wavelengths.
     // For optimization, disable dispersion after several reflections/refractions.
@@ -52,69 +77,67 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         {
             float3 norm = normal;
             float3 color;
+            float  relIOR;
 
             // Calculate index of refraction for specified wavelength.
-            float  GlassIOR = lerp(g_ConstantsCB.GlassIndexOfRefraction.x, g_ConstantsCB.GlassIndexOfRefraction.y, g_ConstantsCB.DispersionSamples[i].a);
+            float  glassIOR = lerp(g_ConstantsCB.GlassIndexOfRefraction.x, g_ConstantsCB.GlassIndexOfRefraction.y, g_ConstantsCB.DispersionSamples[i].a);
+            float3 colorMask = g_ConstantsCB.DispersionSamples[i].rgb; // RGB color for wavelength
+            float3 rayDir    = WorldRayDirection();
 
             // Refraction at the interface between air and glass.
             if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
             {
-                ray.Direction = refract(WorldRayDirection(), norm, AirIOR / GlassIOR);
+                relIOR = AirIOR / glassIOR;
+                rayDir = refract(rayDir, norm, relIOR);
             }
             // Refraction at the interface between glass and air.
             else if (HitKind() == HIT_KIND_TRIANGLE_BACK_FACE)
             {
-                norm = -norm;
-                ray.Direction = refract(WorldRayDirection(), norm, GlassIOR / AirIOR);
+                relIOR = glassIOR / AirIOR;
+                norm   = -norm;
+                rayDir = refract(rayDir, norm, relIOR);
             }
     
-            // Total internal reflection.
-            if (all(ray.Direction == float3(0,0,0)))
+            float  fresnel  = Fresnel(relIOR, dot(WorldRayDirection(), -norm));
+            float3 curColor = float3(0.0, 0.0, 0.0);
+            float3 reflColor;
+
+            // reflection
             {
                 ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + norm * SMALL_OFFSET;
                 ray.Direction = reflect(WorldRayDirection(), norm);
 
                 PrimaryRayPayload reflPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-                color = reflPayload.Color * g_ConstantsCB.DispersionSamples[i].rgb;
+                reflColor = reflPayload.Color;
 
                 if (HitKind() == HIT_KIND_TRIANGLE_BACK_FACE)
                 {
-                    color = LightAbsoption(color, reflPayload.Depth);
+                    reflColor = LightAbsorption(reflColor, reflPayload.Depth);
                 }
             }
-            else
+
+            // refraction
+            if (fresnel < 1.0)
             {
-                ray.Origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+                ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+                ray.Direction = rayDir;
 
                 PrimaryRayPayload nextPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-                color = nextPayload.Color * g_ConstantsCB.DispersionSamples[i].rgb;
+                curColor = nextPayload.Color;
                 
                 if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
                 {
-                    color = LightAbsoption(color, nextPayload.Depth);
+                    curColor = LightAbsorption(curColor, nextPayload.Depth);
                 }
             }
-
-            AccumColor += color;
-            AccumMask  += g_ConstantsCB.DispersionSamples[i].rgb;
+            
+            curColor    = BlendWithReflection(curColor, reflColor, fresnel);
+            AccumColor += curColor * colorMask;
+            AccumMask  += colorMask;
         }
     
         // Normalize accumulated color.
-        payload.Color = AccumColor / AccumMask;
-        payload.Depth = RayTCurrent();
-        
-        // Add a reflection part for the front face.
-        if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
-        {
-            if (payload.Recursion < 1)
-            {
-                ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + normal * SMALL_OFFSET;
-                ray.Direction = reflect(WorldRayDirection(), normal);
-
-                PrimaryRayPayload reflPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-                payload.Color = BlendWithReflection(payload.Color, reflPayload.Color);
-            }
-        }
+        resultColor = AccumColor / AccumMask;
     }
     else
     {
@@ -123,54 +146,58 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         ray.TMin      = SMALL_OFFSET;
         ray.TMax      = 100.0;
       
+        float3 rayDir = WorldRayDirection();
+        float  relIOR;
+
         // Refraction at the interface between air and glass.
         if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
         {
-            ray.Direction = refract(ray.Direction, normal, AirIOR / g_ConstantsCB.GlassIndexOfRefraction.x);
+            relIOR = AirIOR / g_ConstantsCB.GlassIndexOfRefraction.x;
+            rayDir = refract(rayDir, normal, relIOR);
         }
         // Refraction at the interface between glass and air.
         else if (HitKind() == HIT_KIND_TRIANGLE_BACK_FACE)
         {
+            relIOR = g_ConstantsCB.GlassIndexOfRefraction.x / AirIOR;
             normal = -normal;
-            ray.Direction = refract(ray.Direction, normal, g_ConstantsCB.GlassIndexOfRefraction.x / AirIOR);
+            rayDir = refract(rayDir, normal, relIOR);
         }
-
-        // Total internal reflection.
-        if (all(ray.Direction == float3(0,0,0)))
+        
+        float  fresnel = Fresnel(relIOR, dot(WorldRayDirection(), -normal));
+        float3 reflColor;
+        
+        // reflection
         {
             ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + normal * SMALL_OFFSET;
             ray.Direction = reflect(WorldRayDirection(), normal);
 
             PrimaryRayPayload reflPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-            payload.Color = reflPayload.Color;
-            payload.Depth = RayTCurrent();
+            reflColor = reflPayload.Color;
             
             if (HitKind() == HIT_KIND_TRIANGLE_BACK_FACE)
             {
-                payload.Color = LightAbsoption(payload.Color, reflPayload.Depth);
+                reflColor = LightAbsorption(reflColor, reflPayload.Depth);
             }
         }
-        else
+        
+        // refraction
+        if (fresnel < 1.0)
         {
-            ray.Origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+            ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+            ray.Direction = rayDir;
 
             PrimaryRayPayload nextPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-
-            payload.Color = nextPayload.Color;
-            payload.Depth = RayTCurrent();
-
+            resultColor = nextPayload.Color;
+            
             if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
             {
-                payload.Color = LightAbsoption(payload.Color, nextPayload.Depth);
-
-                // Add a reflection part for the front face.
-                if (payload.Recursion < 1)
-                {
-                    ray.Direction = reflect(WorldRayDirection(), normal);
-                    PrimaryRayPayload reflPayload = CastPrimaryRay(ray, payload.Recursion + 1);
-                    payload.Color = BlendWithReflection(payload.Color, reflPayload.Color);
-                }
+                resultColor = LightAbsorption(resultColor, nextPayload.Depth);
             }
         }
+        
+        resultColor = BlendWithReflection(resultColor, reflColor, fresnel);
     }
+
+    payload.Color = resultColor;
+    payload.Depth = RayTCurrent();
 }

@@ -45,7 +45,7 @@ struct Constants
 
     // refraction cube
     float3  GlassReflectionColorMask;
-    float   GlassOpticalDepth;
+    float   GlassAbsorption;
     float4  GlassMaterialColor;
     float2  GlassIndexOfRefraction;  // min and max IOR
     int     GlassEnableDispersion;

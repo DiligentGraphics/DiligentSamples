@@ -783,8 +783,8 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
         m_Constants.SphereReflectionBlur      = 1;
 
         // Glass cube constants.
-        m_Constants.GlassReflectionColorMask = {0.25f, 0.02f, 0.50f};
-        m_Constants.GlassOpticalDepth        = 0.5f;
+        m_Constants.GlassReflectionColorMask = {0.58f, 0.31f, 0.88f};
+        m_Constants.GlassAbsorption          = 0.5f;
         m_Constants.GlassMaterialColor       = {0.71f, 0.42f, 0.13f};
         m_Constants.GlassIndexOfRefraction   = {1.01f, 1.02f};
         m_Constants.GlassEnableDispersion    = 0;
@@ -964,7 +964,8 @@ void Tutorial21_RayTracing::WindowResize(Uint32 Width, Uint32 Height)
 
 void Tutorial21_RayTracing::UpdateUI()
 {
-    const float MaxIndexOfRefraction = 1.5f;
+    const float MaxIndexOfRefraction = 2.0f;
+    const float MaxDispersion        = 0.5f;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
@@ -983,25 +984,23 @@ void Tutorial21_RayTracing::UpdateUI()
         ImGui::Separator();
         ImGui::Text("Glass cube");
         ImGui::Checkbox("Dispersion", &m_Constants.GlassEnableDispersion);
+
+        float dispersion = std::max(0.0f, m_Constants.GlassIndexOfRefraction.y - m_Constants.GlassIndexOfRefraction.x);
+        ImGui::SliderFloat("Index or refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
+
         if (m_Constants.GlassEnableDispersion)
         {
-            ImGui::SliderFloat("Index or refraction min", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
-
-            m_Constants.GlassIndexOfRefraction.y = std::max(m_Constants.GlassIndexOfRefraction.x, m_Constants.GlassIndexOfRefraction.y);
-            ImGui::SliderFloat("Index or refraction max", &m_Constants.GlassIndexOfRefraction.y, 1.0f, MaxIndexOfRefraction);
+            ImGui::SliderFloat("Dispersion factor", &dispersion, 0.0f, MaxDispersion);
+            m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + dispersion;
 
             int rsamples = PlatformMisc::GetLSB(m_Constants.DispersionSampleCount);
             ImGui::SliderInt("Refraction samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_DISPERS_SAMPLES}), std::to_string(1 << rsamples).c_str());
             m_Constants.DispersionSampleCount = 1u << rsamples;
         }
-        else
-        {
-            ImGui::SliderFloat("Index of refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
-            m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + 0.02f;
-        }
+
         ImGui::ColorEdit3("Reflection color", m_Constants.GlassReflectionColorMask.Data(), ImGuiColorEditFlags_NoAlpha);
         ImGui::ColorEdit3("Material color", m_Constants.GlassMaterialColor.Data(), ImGuiColorEditFlags_NoAlpha);
-        ImGui::SliderFloat("Optical depth", &m_Constants.GlassOpticalDepth, 0.0f, 2.0f);
+        ImGui::SliderFloat("Absorption", &m_Constants.GlassAbsorption, 0.0f, 2.0f);
 
         ImGui::Separator();
         ImGui::Text("Sphere");
