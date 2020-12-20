@@ -12,7 +12,7 @@ float3 LightAbsorption(float3 color1, float depth)
     float  factor2 = pow(depth * g_ConstantsCB.GlassAbsorption, 2.2) * 0.25;
     float  factor  = clamp(factor1 + factor2 + 0.05, 0.0, 1.0); 
     float3 color2  = color1 * g_ConstantsCB.GlassMaterialColor.rgb;
-    return mix(color1, color2, factor);
+    return lerp(color1, color2, factor);
 }
 
 float3 BlendWithReflection(float3 srcColor, float3 reflectionColor, float factor)
