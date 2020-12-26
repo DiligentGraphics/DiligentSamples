@@ -4,8 +4,8 @@
 
 ConstantBuffer<CubeAttribs>  g_CubeAttribsCB;
 
-Texture2D     g_Texture[NUM_TEXTURES];
-SamplerState  g_Texture_sampler; // By convention, texture samplers must use the '_sampler' suffix
+Texture2D    g_CubeTextures[NUM_TEXTURES];
+SamplerState g_SamLinearWrap;
 
 [shader("closesthit")]
 void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
@@ -27,8 +27,8 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
                     g_CubeAttribsCB.Normals[primitive.z].xyz * barycentrics.z;
     normal        = normalize(mul((float3x3) ObjectToWorld3x4(), normal));
 
-    // Sample texture. Ray tracing shader doesn't support LOD calculation, so you must specify LOD and apply filtering.
-    payload.Color = g_Texture[InstanceID()].SampleLevel(g_Texture_sampler, uv, 0).rgb;
+    // Sample texturing. Ray tracing shaders don't support LOD calculation, so we must specify LOD and apply filtering.
+    payload.Color = g_CubeTextures[InstanceID()].SampleLevel(g_SamLinearWrap, uv, 0).rgb;
     payload.Depth = RayTCurrent();
     
     // Apply lighting.

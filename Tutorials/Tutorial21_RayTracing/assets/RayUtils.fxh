@@ -7,8 +7,8 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
 {
     PrimaryRayPayload payload = {float3(0, 0, 0), 0.0, Recursion};
 
-    // Check recursion depth, because the driver doesn't count the number of recursions.
-    if (Recursion > g_ConstantsCB.MaxRecursion)
+    // Manually terminate the recusrion as the driver doesn't check the recursion depth.
+    if (Recursion >= g_ConstantsCB.MaxRecursion)
     {
         // set pink color for debugging
         payload.Color = float3(0.95, 0.18, 0.95);
@@ -28,14 +28,15 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
 ShadowRayPayload CastShadow(RayDesc ray, uint Recursion)
 {
     // By default initialize Shading with 0.
-    // With RAY_FLAG_SKIP_CLOSEST_HIT_SHADER only intersection and any-hit shaders are executed.
-    // Any-hit shader is not used in this tutorial, intersection shader can not write to payload, so on intersection payload.Shading is always 0,
+    // With RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, only intersection and any-hit shaders are executed.
+    // Any-hit shader is not used in this tutorial, intersection shader can not write to payload, 
+    // so on intersection payload. Shading is always 0,
     // on miss shader payload.Shading will be initialized with 1.
     // With this flags shadow casting executed as fast as possible.
     ShadowRayPayload payload = {0.0, Recursion};
     
-    // Check recursion depth, because the driver doesn't count the number of recursions.
-    if (Recursion > g_ConstantsCB.MaxRecursion)
+    // Manually terminate the recusrion as the driver doesn't check the recursion depth.
+    if (Recursion >= g_ConstantsCB.MaxRecursion)
     {
         payload.Shading = 1.0;
         return payload;
@@ -62,7 +63,7 @@ void GetRayPerpendicular(float3 dir, out float3 outLeft, out float3 outUp)
     outUp   = normalize(cross(dir, outLeft));
 }
 
-// Returns random ray within a cone.
+// Returns a ray within a cone.
 float3 DirectionWithinCone(float3 dir, float2 offset)
 {
     float3 left, up;
@@ -88,20 +89,20 @@ void LightingPass(inout float3 Color, float3 Pos, float3 Norm, uint Recursion)
         float3 rayDir = normalize(g_ConstantsCB.LightPos[i].xyz - Pos);
         float  NdotL   = max(0.0, dot(Norm, rayDir));
 
-        // Optimization - don't trace rays if NdotL is zero
+        // Optimization - don't trace rays if NdotL is zero or negative
         if (NdotL > 0.0)
         {
             // Cast multiple rays that are distributed within a cone.
-            const int PCF     = Recursion > 1 ? min(1, g_ConstantsCB.ShadowPCF) : g_ConstantsCB.ShadowPCF;
-            float     shading = 0.0;
-            for (int j = 0; j < PCF; ++j)
+            int   PCFSamples = Recursion > 1 ? min(1, g_ConstantsCB.ShadowPCF) : g_ConstantsCB.ShadowPCF;
+            float shading    = 0.0;
+            for (int j = 0; j < PCFSamples; ++j)
             {
                 float2 offset = float2(g_ConstantsCB.DiscPoints[j / 2][(j % 2) * 2], g_ConstantsCB.DiscPoints[j / 2][(j % 2) * 2 + 1]);
                 ray.Direction = DirectionWithinCone(rayDir, offset * 0.005);
                 shading       += saturate(CastShadow(ray, Recursion).Shading);
             }
             
-            shading = PCF > 0 ? shading / float(PCF) : 1.0;
+            shading = PCFSamples > 0 ? shading / float(PCFSamples) : 1.0;
 
             col += Color * g_ConstantsCB.LightColor[i].rgb * NdotL * shading;
         }

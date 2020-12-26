@@ -15,8 +15,8 @@ struct PrimaryRayPayload
 
 struct ShadowRayPayload
 {
-    float  Shading;    // 0 - completely shaded, 1 - no shadow, 0..1 - for semi-transparent objects
-    uint   Recursion;
+    float  Shading;   // 0 - fully shadowed, 1 - fully in light, 0..1 - for semi-transparent objects
+    uint   Recursion; // Current recusrsion depth
 };
 
 #define NUM_LIGHTS          2
@@ -24,26 +24,31 @@ struct ShadowRayPayload
 
 struct Constants
 {
-    // camera
-    float4   Position;
+    // Camera world position
+    float4   CameraPos;
+
+    // Near and far clip plane distances
     float2   ClipPlanes;
-    float2   padding0;
+    float2   Padding0;
+
+    // Camera view frustum corner rays
     float4   FrustumRayLT;
     float4   FrustumRayLB;
     float4   FrustumRayRT;
     float4   FrustumRayRB;
 
-    // texturing
-    float   Padding1;
-    int     ShadowPCF;
-    int     MaxRecursion;
-    int     padding1;
 
-    // reflection sphere
+    // The number of shadow PCF samples
+    int      ShadowPCF; 
+    // Maximum ray recursion depth
+    int      MaxRecursion;
+    float2   Padding2;
+
+    // Reflection sphere properties
     float3  SphereReflectionColorMask;
     int     SphereReflectionBlur;
 
-    // refraction cube
+    // Refraction cube properties
     float3  GlassReflectionColorMask;
     float   GlassAbsorption;
     float4  GlassMaterialColor;
@@ -54,7 +59,7 @@ struct Constants
 
     float4  DiscPoints[8]; // packed float2[16]
 
-    // lights
+    // Light properties
     float4  AmbientColor;
     float4  LightPos[NUM_LIGHTS];
     float4  LightColor[NUM_LIGHTS];
@@ -86,7 +91,7 @@ struct ProceduralGeomIntersectionAttribs
 #ifndef __cplusplus
 
 // Small offset between ray intersection and new ray origin to avoid self-intersections.
-#    define SMALL_OFFSET 0.001
+#    define SMALL_OFFSET 0.0001
 
 // For procedural intersections you must add custom hit kind.
 #    define RAY_KIND_PROCEDURAL_FRONT_FACE 1

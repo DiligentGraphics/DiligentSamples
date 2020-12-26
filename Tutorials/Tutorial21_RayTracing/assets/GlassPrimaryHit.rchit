@@ -77,7 +77,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         {
             float3 norm = normal;
             float3 color;
-            float  relIOR;
+            float  relIOR = 1.0;
 
             // Calculate index of refraction for specified wavelength.
             float  glassIOR = lerp(g_ConstantsCB.GlassIndexOfRefraction.x, g_ConstantsCB.GlassIndexOfRefraction.y, g_ConstantsCB.DispersionSamples[i].a);
@@ -102,7 +102,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
             float3 curColor = float3(0.0, 0.0, 0.0);
             float3 reflColor;
 
-            // reflection
+            // Reflection
             {
                 ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + norm * SMALL_OFFSET;
                 ray.Direction = reflect(WorldRayDirection(), norm);
@@ -116,7 +116,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
                 }
             }
 
-            // refraction
+            // Refraction
             if (fresnel < 1.0)
             {
                 ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
@@ -125,7 +125,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
                 PrimaryRayPayload nextPayload = CastPrimaryRay(ray, payload.Recursion + 1);
                 curColor = nextPayload.Color;
                 
-                if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
+                if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE || payload.Recursion == 0)
                 {
                     curColor = LightAbsorption(curColor, nextPayload.Depth);
                 }
@@ -147,7 +147,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         ray.TMax      = 100.0;
       
         float3 rayDir = WorldRayDirection();
-        float  relIOR;
+        float  relIOR = 1.0;
 
         // Refraction at the interface between air and glass.
         if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
@@ -166,7 +166,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
         float  fresnel = Fresnel(relIOR, dot(WorldRayDirection(), -normal));
         float3 reflColor;
         
-        // reflection
+        // Reflection
         {
             ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent() + normal * SMALL_OFFSET;
             ray.Direction = reflect(WorldRayDirection(), normal);
@@ -180,7 +180,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
             }
         }
         
-        // refraction
+        // Refraction
         if (fresnel < 1.0)
         {
             ray.Origin    = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
@@ -189,7 +189,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
             PrimaryRayPayload nextPayload = CastPrimaryRay(ray, payload.Recursion + 1);
             resultColor = nextPayload.Color;
             
-            if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE)
+            if (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE || payload.Recursion == 0)
             {
                 resultColor = LightAbsorption(resultColor, nextPayload.Depth);
             }

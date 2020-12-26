@@ -7,7 +7,7 @@ StructuredBuffer<BoxAttribs>  g_BoxAttribs;
 void main()
 {
     // In the intersection shader we don't have any information about the intersection.
-    // We use same AABB which was used in BLAS build to calculate intersection.
+    // We use the same AABB which was used in BLAS build to calculate the intersection.
 
     // Get built-in variables.
     float3  instanceOffset = WorldToObject4x3()[3];

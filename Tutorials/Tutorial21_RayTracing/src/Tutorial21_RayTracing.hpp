@@ -33,8 +33,11 @@
 
 namespace Diligent
 {
-#include "../assets/structures.fxh"
 
+namespace HLSL
+{
+#include "../assets/structures.fxh"
+}
 
 class Tutorial21_RayTracing final : public SampleBase
 {
@@ -82,7 +85,7 @@ private:
     Uint32            m_MaxRecursionDepth     = 8;
     const double      m_MaxAnimationTimeDelta = 1.0 / 60.0;
     float             m_AnimationTime         = 0.0f;
-    Constants         m_Constants             = {};
+    HLSL::Constants   m_Constants             = {};
     bool              m_EnableCubes[NumCubes] = {true, true, true, true};
     FirstPersonCamera m_Camera;
 

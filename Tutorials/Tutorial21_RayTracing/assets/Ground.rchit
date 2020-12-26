@@ -5,7 +5,7 @@
 ConstantBuffer<CubeAttribs>  g_CubeAttribsCB;
 
 Texture2D     g_GroundTexture;
-SamplerState  g_GroundTexture_sampler; // By convention, texture samplers must use the '_sampler' suffix
+SamplerState  g_SamLinearWrap;
 
 [shader("closesthit")]
 void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
@@ -22,7 +22,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
                 g_CubeAttribsCB.UVs[primitive.z].xy * barycentrics.z;
     uv *= 32.0; // tiling
 
-    payload.Color = g_GroundTexture.SampleLevel(g_GroundTexture_sampler, uv, 0).rgb;
+    payload.Color = g_GroundTexture.SampleLevel(g_SamLinearWrap, uv, 0).rgb;
     payload.Depth = RayTCurrent();
 
     // Setup ray origing and direction for shadow casting.

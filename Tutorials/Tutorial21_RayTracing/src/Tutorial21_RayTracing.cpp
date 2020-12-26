@@ -112,25 +112,29 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
 {
     m_MaxRecursionDepth = std::min(m_MaxRecursionDepth, m_pDevice->GetDeviceProperties().MaxRayTracingRecursionDepth);
 
-    // Create ray tracing pipeline.
+    // Prepare ray tracing pipeline description.
     RayTracingPipelineStateCreateInfo PSOCreateInfo;
 
     PSOCreateInfo.PSODesc.Name         = "Ray tracing PSO";
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_RAY_TRACING;
 
-    // Add constants to shaders.
+    // Define shader macros
     ShaderMacroHelper Macros;
     Macros.AddShaderMacro("NUM_TEXTURES", NumTextures);
 
     ShaderCreateInfo ShaderCI;
-    ShaderCI.UseCombinedTextureSamplers = true;
-    ShaderCI.Macros                     = Macros;
+    // We will not be using combined texture samplers as they
+    // are only required for compatibility with OpenGL, and ray
+    // tracing is not supported in OpenGL backend.
+    ShaderCI.UseCombinedTextureSamplers = false;
 
-    // Only DXC compiler can compile HLSL ray tracing shaders.
+    ShaderCI.Macros = Macros;
+
+    // Only new DXC compiler can compile HLSL ray tracing shaders.
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
 
-    // Shader model 6.3 required for DXR 1.0, shader model 6.5 required for DXR 1.1 and adds additional features.
-    // So limit to 6.3 for compatibility with DXR 1.0 and VK_NV_ray_tracing.
+    // Shader model 6.3 is required for DXR 1.0, shader model 6.5 is required for DXR 1.1 and enables additional features.
+    // Use 6.3 for compatibility with DXR 1.0 and VK_NV_ray_tracing.
     ShaderCI.HLSLVersion    = {6, 3};
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
@@ -150,7 +154,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         VERIFY_EXPR(pRG != nullptr);
     }
 
-    // Create ray miss shaders.
+    // Create miss shaders.
     RefCntAutoPtr<IShader> pPrimaryMiss, pShadowMiss;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_RAY_MISS;
@@ -167,7 +171,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         VERIFY_EXPR(pShadowMiss != nullptr);
     }
 
-    // Create ray closest hit shaders.
+    // Create closest hit shaders.
     RefCntAutoPtr<IShader> pCubePrimaryHit, pGroundHit, pGlassPrimaryHit, pSpherePrimaryHit;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_RAY_CLOSEST_HIT;
@@ -196,7 +200,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         VERIFY_EXPR(pSpherePrimaryHit != nullptr);
     }
 
-    // Create ray intersection shader.
+    // Create intersection shader for a procedural sphere.
     RefCntAutoPtr<IShader> pSphereIntersection;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_RAY_INTERSECTION;
@@ -210,7 +214,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     // Setup shader groups
     const RayTracingGeneralShaderGroup GeneralShaders[] = //
         {
-            // Ray generation shader is an entry point for ray tracing pipeline.
+            // Ray generation shader is an entry point for a ray tracing pipeline.
             {"Main", pRG},
             // Primary ray miss shader.
             {"PrimaryMiss", pPrimaryMiss},
@@ -219,18 +223,18 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         };
     const RayTracingTriangleHitShaderGroup TriangleHitShaders[] = //
         {
-            // Primary ray hit group for cube.
+            // Primary ray hit group for the textured cube.
             {"CubePrimaryHit", pCubePrimaryHit},
-            // Primary ray hit group for ground.
+            // Primary ray hit group for the ground.
             {"GroundHit", pGroundHit},
-            // Primary ray hit group for glass cube.
+            // Primary ray hit group for the glass cube.
             {"GlassPrimaryHit", pGlassPrimaryHit} //
         };
     const RayTracingProceduralHitShaderGroup ProceduralHitShaders[] = //
         {
-            // Intersection and closest hit shaders for the sphere.
+            // Intersection and closest hit shaders for the procedural sphere.
             {"SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit},
-            // Only the intersection shader needed for shadows.
+            // Only intersection shader is needed for shadows.
             {"SphereShadowHit", pSphereIntersection} //
         };
 
@@ -241,16 +245,19 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     PSOCreateInfo.pProceduralHitShaders    = ProceduralHitShaders;
     PSOCreateInfo.ProceduralHitShaderCount = _countof(ProceduralHitShaders);
 
-    // Specify ray tracing recursion.
-    // 0 - only one TraceRay() call.
+    // Specify the maximum ray recursion depth.
+    // WARNING: the driver does not track the recursion depth and it is the
+    //          application's responsibility to not exceed the specified limit.
+    //          The value is used to reserve the necessary stack size and
+    //          exceeding it will likely result in driver crash.
     PSOCreateInfo.RayTracingPipeline.MaxRecursionDepth = static_cast<Uint8>(m_MaxRecursionDepth);
 
     // Per-shader data is not used.
     PSOCreateInfo.RayTracingPipeline.ShaderRecordSize = 0;
 
-    // DirectX 12 only: set attribute and payload size. Values should be as small as possible to minimize memory usage.
-    PSOCreateInfo.MaxAttributeSize = std::max<Uint32>(sizeof(/*BuiltInTriangleIntersectionAttributes*/ float2), sizeof(ProceduralGeomIntersectionAttribs));
-    PSOCreateInfo.MaxPayloadSize   = std::max<Uint32>(sizeof(PrimaryRayPayload), sizeof(ShadowRayPayload));
+    // DirectX 12 only: set attribute and payload size. Values should be as small as possible to minimize the memory usage.
+    PSOCreateInfo.MaxAttributeSize = std::max<Uint32>(sizeof(/*BuiltInTriangleIntersectionAttributes*/ float2), sizeof(HLSL::ProceduralGeomIntersectionAttribs));
+    PSOCreateInfo.MaxPayloadSize   = std::max<Uint32>(sizeof(HLSL::PrimaryRayPayload), sizeof(HLSL::ShadowRayPayload));
 
     // Define immutable sampler for g_Texture and g_GroundTexture. Immutable samplers should be used whenever possible
     SamplerDesc SamLinearWrapDesc{
@@ -259,16 +266,28 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     };
     ImmutableSamplerDesc ImmutableSamplers[] = //
         {
-            {SHADER_TYPE_RAY_CLOSEST_HIT, "g_Texture", SamLinearWrapDesc},
-            {SHADER_TYPE_RAY_CLOSEST_HIT, "g_GroundTexture", SamLinearWrapDesc} //
+            {SHADER_TYPE_RAY_CLOSEST_HIT, "g_SamLinearWrap", SamLinearWrapDesc} //
         };
 
+    ShaderResourceVariableDesc Variables[] = //
+        {
+            {SHADER_TYPE_RAY_GEN | SHADER_TYPE_RAY_MISS | SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB", SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
+            {SHADER_TYPE_RAY_GEN, "g_ColorBuffer", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
+            //
+        };
+
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables            = Variables;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables         = _countof(Variables);
     PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImmutableSamplers;
     PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImmutableSamplers);
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
     m_pDevice->CreateRayTracingPipelineState(PSOCreateInfo, &m_pRayTracingPSO);
     VERIFY_EXPR(m_pRayTracingPSO != nullptr);
+
+    m_pRayTracingPSO->GetStaticVariableByName(SHADER_TYPE_RAY_GEN, "g_ConstantsCB")->Set(m_ConstantsCB);
+    m_pRayTracingPSO->GetStaticVariableByName(SHADER_TYPE_RAY_MISS, "g_ConstantsCB")->Set(m_ConstantsCB);
+    m_pRayTracingPSO->GetStaticVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB")->Set(m_ConstantsCB);
 
     m_pRayTracingPSO->CreateShaderResourceBinding(&m_pRayTracingSRB, true);
     VERIFY_EXPR(m_pRayTracingSRB != nullptr);
@@ -276,7 +295,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
 
 void Tutorial21_RayTracing::LoadTextures()
 {
-    // Load a texture array
+    // Load textures
     IDeviceObject*          pTexSRVs[NumTextures] = {};
     RefCntAutoPtr<ITexture> pTex[NumTextures];
     StateTransitionDesc     Barriers[NumTextures];
@@ -298,7 +317,8 @@ void Tutorial21_RayTracing::LoadTextures()
     }
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_Texture")->SetArray(pTexSRVs, 0, NumTextures);
+
+    m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_CubeTextures")->SetArray(pTexSRVs, 0, NumTextures);
 
     // Load ground texture
     RefCntAutoPtr<ITexture> pGroundTex;
@@ -352,9 +372,9 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
     // clang-format on
 
     // Create a buffer with cube attributes.
-    // These attributes will be used in the hit shader to calculate UV and normal for intersection point.
+    // These attributes will be used in the hit shader to calculate UVs and normal for intersection point.
     {
-        CubeAttribs Attribs;
+        HLSL::CubeAttribs Attribs;
 
         static_assert(sizeof(Attribs.UVs) == sizeof(CubeUV), "size mismatch");
         std::memcpy(Attribs.UVs, CubeUV, sizeof(CubeUV));
@@ -474,20 +494,9 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
 
 void Tutorial21_RayTracing::CreateProceduralBLAS()
 {
-    struct AABB
-    {
-        float minX, minY, minZ;
-        float maxX, maxY, maxZ;
-        float padding0, padding1;
+    static_assert(sizeof(HLSL::BoxAttribs) % 16 == 0, "BoxAttribs must be aligned by 16 bytes");
 
-        AABB(float _minX, float _minY, float _minZ, float _maxX, float _maxY, float _maxZ) :
-            minX{_minX}, minY{_minY}, minZ{_minZ}, maxX{_maxX}, maxY{_maxY}, maxZ{_maxZ}
-        {}
-    };
-    static_assert(sizeof(AABB) % 16 == 0, "must be aligned by 16 bytes");
-    static_assert(sizeof(AABB) == sizeof(BoxAttribs), "size mismatch");
-
-    const AABB Boxes[] = {AABB{-1.5f, -1.5f, -1.5f, 1.5f, 1.5f, 1.5f}};
+    const HLSL::BoxAttribs Boxes[] = {HLSL::BoxAttribs{-1.5f, -1.5f, -1.5f, 1.5f, 1.5f, 1.5f}};
 
     // Create box buffer
     {
@@ -715,41 +724,33 @@ void Tutorial21_RayTracing::CreateSBT()
     m_pDevice->CreateSBT(SBTDesc, &m_pSBT);
     VERIFY_EXPR(m_pSBT != nullptr);
 
-    // clang-format off
     m_pSBT->BindRayGenShader("Main");
 
     m_pSBT->BindMissShader("PrimaryMiss", PRIMARY_RAY_INDEX);
-    m_pSBT->BindMissShader("ShadowMiss",  SHADOW_RAY_INDEX );
+    m_pSBT->BindMissShader("ShadowMiss", SHADOW_RAY_INDEX);
 
     // Hit groups for primary ray
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 2",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 3",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 4",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Ground Instance",  PRIMARY_RAY_INDEX, "GroundHit"       );
-    m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",   PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
-    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  PRIMARY_RAY_INDEX, "SpherePrimaryHit");
+    // clang-format off
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 2", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 3", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 4", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroups(m_pTLAS, "Ground Instance", PRIMARY_RAY_INDEX, "GroundHit"       );
+    m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",  PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
+    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance", PRIMARY_RAY_INDEX, "SpherePrimaryHit");
+    // clang-format on
 
     // Hit groups for shadow ray.
     // Empty name means no shaders are bound and hit shader invocation will be skipped.
     m_pSBT->BindHitGroupForAll(m_pTLAS, SHADOW_RAY_INDEX, "");
 
     // We must specify the intersection shader for procedural geometry.
-    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  SHADOW_RAY_INDEX,  "SphereShadowHit");
-    // clang-format on
+    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance", SHADOW_RAY_INDEX, "SphereShadowHit");
 }
 
 void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
-
-    CreateGraphicsPSO();
-    CreateRayTracingPSO();
-    LoadTextures();
-    CreateCubeBLAS();
-    CreateProceduralBLAS();
-    UpdateTLAS();
-    CreateSBT();
 
     // Create a buffer with shared constants.
     BufferDesc BuffDesc;
@@ -761,6 +762,14 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_ConstantsCB);
     VERIFY_EXPR(m_ConstantsCB != nullptr);
 
+    CreateGraphicsPSO();
+    CreateRayTracingPSO();
+    LoadTextures();
+    CreateCubeBLAS();
+    CreateProceduralBLAS();
+    UpdateTLAS();
+    CreateSBT();
+
     // Setup camera.
     m_Camera.SetPos(float3(-7.f, -0.5f, 16.5f));
     m_Camera.SetRotation(-2.67f, -0.145f);
@@ -768,15 +777,11 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
-    m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_GEN, "g_ConstantsCB")->Set(m_ConstantsCB);
-    m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_MISS, "g_ConstantsCB")->Set(m_ConstantsCB);
-    m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB")->Set(m_ConstantsCB);
-
     // Initialize constants.
     {
         m_Constants.ClipPlanes   = float2{0.1f, 100.0f};
         m_Constants.ShadowPCF    = 1;
-        m_Constants.MaxRecursion = m_MaxRecursionDepth / 2;
+        m_Constants.MaxRecursion = std::min(Uint32{5}, m_MaxRecursionDepth);
 
         // Sphere constants.
         m_Constants.SphereReflectionColorMask = {0.81f, 1.0f, 0.45f};
@@ -786,7 +791,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
         m_Constants.GlassReflectionColorMask = {0.58f, 0.31f, 0.88f};
         m_Constants.GlassAbsorption          = 0.5f;
         m_Constants.GlassMaterialColor       = {0.71f, 0.42f, 0.13f};
-        m_Constants.GlassIndexOfRefraction   = {1.01f, 1.02f};
+        m_Constants.GlassIndexOfRefraction   = {1.5f, 1.02f};
         m_Constants.GlassEnableDispersion    = 0;
 
         // Wavelength to RGB and index of refraction interpolation factor.
@@ -824,7 +829,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
         m_Constants.DiscPoints[6] = {-3.2f, -1.6f, +3.4f, +2.2f};
         m_Constants.DiscPoints[7] = {-1.8f, -3.2f, -1.1f, +3.6f};
     }
-    static_assert(sizeof(Constants) % 16 == 0, "must be aligned by 16 bytes");
+    static_assert(sizeof(HLSL::Constants) % 16 == 0, "must be aligned by 16 bytes");
 }
 
 void Tutorial21_RayTracing::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
@@ -876,7 +881,7 @@ void Tutorial21_RayTracing::Render()
         GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayRB);
         GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRT);
         // clang-format on
-        m_Constants.Position = -float4{CameraWorldPos, 1.0f};
+        m_Constants.CameraPos = -float4{CameraWorldPos, 1.0f};
 
         m_pImmediateContext->UpdateBuffer(m_ConstantsCB, 0, sizeof(m_Constants), &m_Constants, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -889,10 +894,9 @@ void Tutorial21_RayTracing::Render()
         m_pImmediateContext->CommitShaderResources(m_pRayTracingSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         TraceRaysAttribs Attribs;
-        Attribs.DimensionX        = m_pColorRT->GetDesc().Width;
-        Attribs.DimensionY        = m_pColorRT->GetDesc().Height;
-        Attribs.pSBT              = m_pSBT;
-        Attribs.SBTTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+        Attribs.DimensionX = m_pColorRT->GetDesc().Width;
+        Attribs.DimensionY = m_pColorRT->GetDesc().Height;
+        Attribs.pSBT       = m_pSBT;
 
         m_pImmediateContext->TraceRays(Attribs);
     }
@@ -986,7 +990,7 @@ void Tutorial21_RayTracing::UpdateUI()
         ImGui::Checkbox("Dispersion", &m_Constants.GlassEnableDispersion);
 
         float dispersion = std::max(0.0f, m_Constants.GlassIndexOfRefraction.y - m_Constants.GlassIndexOfRefraction.x);
-        ImGui::SliderFloat("Index or refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
+        ImGui::SliderFloat("Index of refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
 
         if (m_Constants.GlassEnableDispersion)
         {
@@ -994,7 +998,7 @@ void Tutorial21_RayTracing::UpdateUI()
             m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + dispersion;
 
             int rsamples = PlatformMisc::GetLSB(m_Constants.DispersionSampleCount);
-            ImGui::SliderInt("Refraction samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_DISPERS_SAMPLES}), std::to_string(1 << rsamples).c_str());
+            ImGui::SliderInt("Dispersion samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_DISPERS_SAMPLES}), std::to_string(1 << rsamples).c_str());
             m_Constants.DispersionSampleCount = 1u << rsamples;
         }
 
