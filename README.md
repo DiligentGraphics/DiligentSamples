@@ -208,6 +208,13 @@ view frustum culling and object LOD calculation on the GPU.
 ![](Tutorials/Tutorial20_MeshShader/Animation_Large.gif)
 
 
+## [Tutorial 21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial21_RayTracing)
+
+This tutorial demonstrates the basics of using ray tracing API in Diligent Engine.
+
+![](Tutorials/Tutorial21_RayTracing/Animation_Large.gif)
+
+
 # Samples
 
 ## [Atmospheric Light Scattering sample](Samples/Atmosphere)

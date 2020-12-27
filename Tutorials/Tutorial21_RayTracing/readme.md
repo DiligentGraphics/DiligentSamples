@@ -2,6 +2,8 @@
 
 This tutorial demonstrates the basics of using ray tracing API in Diligent Engine.
 
+![](Animation_Large.gif)
+
 In a traditional rendering pipeline triangles are processed by a number of programmable and
 fixed-function stages and eventually are projected and rasterized over the regular pixel grid.
 The final color is formed by a pixel shader and a number of optional blending operations.
