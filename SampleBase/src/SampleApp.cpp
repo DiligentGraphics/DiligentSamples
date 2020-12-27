@@ -985,7 +985,9 @@ void SampleApp::Present()
                 CompareGoldenImage(FileName, Capture);
             }
 
-            if (m_GoldenImgMode == GoldenImageMode::Capture || m_GoldenImgMode == GoldenImageMode::CompareUpdate)
+            if (m_GoldenImgMode == GoldenImageMode::None ||
+                m_GoldenImgMode == GoldenImageMode::Capture ||
+                m_GoldenImgMode == GoldenImageMode::CompareUpdate)
             {
                 SaveScreenCapture(FileName, Capture);
             }
