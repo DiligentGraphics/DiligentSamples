@@ -496,7 +496,7 @@ void Tutorial21_RayTracing::CreateProceduralBLAS()
 {
     static_assert(sizeof(HLSL::BoxAttribs) % 16 == 0, "BoxAttribs must be aligned by 16 bytes");
 
-    const HLSL::BoxAttribs Boxes[] = {HLSL::BoxAttribs{-1.5f, -1.5f, -1.5f, 1.5f, 1.5f, 1.5f}};
+    const HLSL::BoxAttribs Boxes[] = {HLSL::BoxAttribs{-2.5f, -2.5f, -2.5f, 2.5f, 2.5f, 2.5f}};
 
     // Create box buffer
     {
@@ -691,8 +691,8 @@ void Tutorial21_RayTracing::UpdateTLAS()
     Instances[6].InstanceName = "Glass Instance";
     Instances[6].pBLAS        = m_pCubeBLAS;
     Instances[6].Mask         = TRANSPARENT_GEOM_MASK;
-    Instances[6].Transform.SetRotation(float3x3::RotationY(m_AnimationTime * PI_F * 0.25f).Data());
-    Instances[6].Transform.SetTranslation(4.0f, 4.5f, -7.0f);
+    Instances[6].Transform.SetRotation((float3x3::Scale(1.5f, 1.5f, 1.5f) * float3x3::RotationY(m_AnimationTime * PI_F * 0.25f)).Data());
+    Instances[6].Transform.SetTranslation(3.0f, 4.0f, -5.0f);
 
 
     // Build or update TLAS
@@ -793,7 +793,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     {
         m_Constants.ClipPlanes   = float2{0.1f, 100.0f};
         m_Constants.ShadowPCF    = 1;
-        m_Constants.MaxRecursion = std::min(Uint32{5}, m_MaxRecursionDepth);
+        m_Constants.MaxRecursion = std::min(Uint32{6}, m_MaxRecursionDepth);
 
         // Sphere constants.
         m_Constants.SphereReflectionColorMask = {0.81f, 1.0f, 0.45f};
