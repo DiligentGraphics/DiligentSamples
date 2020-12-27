@@ -17,8 +17,8 @@ shader at the intersection point. Ray tracing unlocks a variety of algorithms th
 efficient implementation in rasterization-based pipeline.
 
 This tutorial demonstrates how ray tracing API in Diligent Engine can be used to simulate
-physically-correct light transport in a scene to render soft shadows, multiple-bounce reflections 
-and refractions.
+physically-correct light transport in a scene to render soft shadows, multiple-bounce reflections
+and refractions, and dispersion.
 
 Ray tracing is supported in D3D12 and Vulkan backends. Diligent Engine exposes common API for both
 backends and require no special handling for any of them. Shaders authored in HLSL will work in both

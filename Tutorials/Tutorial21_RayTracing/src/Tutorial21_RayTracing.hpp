@@ -82,11 +82,14 @@ private:
     RefCntAutoPtr<IBuffer>             m_ScratchBuffer;
     RefCntAutoPtr<IShaderBindingTable> m_pSBT;
 
-    Uint32            m_MaxRecursionDepth     = 8;
-    const double      m_MaxAnimationTimeDelta = 1.0 / 60.0;
-    float             m_AnimationTime         = 0.0f;
-    HLSL::Constants   m_Constants             = {};
-    bool              m_EnableCubes[NumCubes] = {true, true, true, true};
+    Uint32          m_MaxRecursionDepth     = 8;
+    const double    m_MaxAnimationTimeDelta = 1.0 / 60.0;
+    float           m_AnimationTime         = 0.0f;
+    HLSL::Constants m_Constants             = {};
+    bool            m_EnableCubes[NumCubes] = {true, true, true, true};
+    bool            m_Animate               = true;
+    float           m_DispersionFactor      = 0.1f;
+
     FirstPersonCamera m_Camera;
 
     TEXTURE_FORMAT          m_ColorBufferFormat = TEX_FORMAT_RGBA8_UNORM;

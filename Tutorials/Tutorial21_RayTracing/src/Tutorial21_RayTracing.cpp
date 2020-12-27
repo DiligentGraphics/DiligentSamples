@@ -639,7 +639,7 @@ void Tutorial21_RayTracing::UpdateTLAS()
     // clang-format on
     static_assert(_countof(CubeInstData) == NumCubes, "Cube instance data array size mismatch");
 
-    const auto AnimateTransform = [&](TLASBuildInstanceData& Dst) //
+    const auto AnimateOpaqueCube = [&](TLASBuildInstanceData& Dst) //
     {
         float  t     = sin(m_AnimationTime * PI_F * 0.5f) + CubeInstData[Dst.CustomId].TimeOffset;
         float3 Pos   = CubeInstData[Dst.CustomId].BasePos * 2.0f + float3(sin(t * 1.13f), sin(t * 0.77f), sin(t * 2.15f)) * 0.5f;
@@ -656,25 +656,25 @@ void Tutorial21_RayTracing::UpdateTLAS()
     Instances[0].CustomId     = 0; // texture index
     Instances[0].pBLAS        = m_pCubeBLAS;
     Instances[0].Mask         = OPAQUE_GEOM_MASK;
-    AnimateTransform(Instances[0]);
+    AnimateOpaqueCube(Instances[0]);
 
     Instances[1].InstanceName = "Cube Instance 2";
     Instances[1].CustomId     = 1; // texture index
     Instances[1].pBLAS        = m_pCubeBLAS;
     Instances[1].Mask         = OPAQUE_GEOM_MASK;
-    AnimateTransform(Instances[1]);
+    AnimateOpaqueCube(Instances[1]);
 
     Instances[2].InstanceName = "Cube Instance 3";
     Instances[2].CustomId     = 2; // texture index
     Instances[2].pBLAS        = m_pCubeBLAS;
     Instances[2].Mask         = OPAQUE_GEOM_MASK;
-    AnimateTransform(Instances[2]);
+    AnimateOpaqueCube(Instances[2]);
 
     Instances[3].InstanceName = "Cube Instance 4";
     Instances[3].CustomId     = 3; // texture index
     Instances[3].pBLAS        = m_pCubeBLAS;
     Instances[3].Mask         = OPAQUE_GEOM_MASK;
-    AnimateTransform(Instances[3]);
+    AnimateOpaqueCube(Instances[3]);
 
     Instances[4].InstanceName = "Ground Instance";
     Instances[4].pBLAS        = m_pCubeBLAS;
@@ -691,7 +691,9 @@ void Tutorial21_RayTracing::UpdateTLAS()
     Instances[6].InstanceName = "Glass Instance";
     Instances[6].pBLAS        = m_pCubeBLAS;
     Instances[6].Mask         = TRANSPARENT_GEOM_MASK;
+    Instances[6].Transform.SetRotation(float3x3::RotationY(m_AnimationTime * PI_F * 0.25f).Data());
     Instances[6].Transform.SetTranslation(4.0f, 4.5f, -7.0f);
+
 
     // Build or update TLAS
     BuildTLASAttribs Attribs;
@@ -798,9 +800,9 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
         m_Constants.SphereReflectionBlur      = 1;
 
         // Glass cube constants.
-        m_Constants.GlassReflectionColorMask = {0.58f, 0.31f, 0.88f};
+        m_Constants.GlassReflectionColorMask = {0.22f, 0.83f, 0.93f};
         m_Constants.GlassAbsorption          = 0.5f;
-        m_Constants.GlassMaterialColor       = {0.71f, 0.42f, 0.13f};
+        m_Constants.GlassMaterialColor       = {0.33f, 0.93f, 0.29f};
         m_Constants.GlassIndexOfRefraction   = {1.5f, 1.02f};
         m_Constants.GlassEnableDispersion    = 0;
 
@@ -932,7 +934,10 @@ void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    m_AnimationTime += static_cast<float>(std::min(m_MaxAnimationTimeDelta, ElapsedTime));
+    if (m_Animate)
+    {
+        m_AnimationTime += static_cast<float>(std::min(m_MaxAnimationTimeDelta, ElapsedTime));
+    }
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
 
@@ -984,6 +989,8 @@ void Tutorial21_RayTracing::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
+        ImGui::Checkbox("Animate", &m_Animate);
+
         ImGui::Text("Use WASD to move camera");
         ImGui::SliderInt("Shadow blur", &m_Constants.ShadowPCF, 0, 16);
         ImGui::SliderInt("Max recursion", &m_Constants.MaxRecursion, 0, m_MaxRecursionDepth);
@@ -999,13 +1006,12 @@ void Tutorial21_RayTracing::UpdateUI()
         ImGui::Text("Glass cube");
         ImGui::Checkbox("Dispersion", &m_Constants.GlassEnableDispersion);
 
-        float dispersion = std::max(0.0f, m_Constants.GlassIndexOfRefraction.y - m_Constants.GlassIndexOfRefraction.x);
         ImGui::SliderFloat("Index of refraction", &m_Constants.GlassIndexOfRefraction.x, 1.0f, MaxIndexOfRefraction);
 
         if (m_Constants.GlassEnableDispersion)
         {
-            ImGui::SliderFloat("Dispersion factor", &dispersion, 0.0f, MaxDispersion);
-            m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + dispersion;
+            ImGui::SliderFloat("Dispersion factor", &m_DispersionFactor, 0.0f, MaxDispersion);
+            m_Constants.GlassIndexOfRefraction.y = m_Constants.GlassIndexOfRefraction.x + m_DispersionFactor;
 
             int rsamples = PlatformMisc::GetLSB(m_Constants.DispersionSampleCount);
             ImGui::SliderInt("Dispersion samples", &rsamples, 1, PlatformMisc::GetLSB(Uint32{MAX_DISPERS_SAMPLES}), std::to_string(1 << rsamples).c_str());
