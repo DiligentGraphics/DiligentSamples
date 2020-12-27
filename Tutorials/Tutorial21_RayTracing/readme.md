@@ -1,23 +1,64 @@
 # Tutorial21 - Ray Tracing
 
-This tutorial demonstrates how to use ray tracing shaders and acceleration structures.
+This tutorial demonstrates the basics of using ray tracing API in Diligent Engine.
 
-Unlike the rasterization, ray tracing provides a physically correct way to simulate lighting.
-In ray tracing we trace light path through the scene, the light may be blocked by opaque objects that 
-create shadows, may pass through transparent objects or may reflect from one object to another.
-The final color is a combination of all of these interactions.
+In a traditional rendering pipeline triangles are processed by a number of programmable and
+fixed-function stages and eventually are projected and rasterized over the regular pixel grid.
+The final color is formed by a pixel shader and a number of optional blending operations.
+This is a very efficient and high-performance method, but performance comes for the price
+of a number of limitations. First, the pixel shader can only be invoked for the predefined
+sample locations (which enables GPUs to parallelize the execution very efficiently). Second,
+the GPU does not have a view of the whole scene and only triangles visible by the camera
+are processed.
 
+Ray tracing removes these limitiations. Unlike the rasterization, it allows application to
+query scene properties at any location by casting a ray in any directon and running a specified
+shader at the intersection point. Ray tracing unlocks a variety of algorithms that have no
+efficient implementation in rasterization-based pipeline.
 
-## Create bottom-level acceleration structures
+This tutorial demonstrates how ray tracing API in Diligent Engine can be used to simulate
+physically-correct light transport in a scene to render soft shadows, multiple-bounce reflections 
+and refractions.
 
-Acceleration structures used to efficiently compute intersections of rays with geometry. Bottom-level acceleration structures (BLAS) represent the scene geometry.
-Single BLAS may contain only triangle geometry or only axis-aligned bounding boxes (AABBs).</br>
-For textured cube we use the same data as used in previous tutorials, but data is divided into vertex positions (used for BLAS creation),
-UVs, normals, indices, and primitives that are passed to the closest hit shader in a uniform buffer.
+Ray tracing is supported in D3D12 and Vulkan backends. Diligent Engine exposes common API for both
+backends and require no special handling for any of them. Shaders authored in HLSL will work in both
+backends without any special tricks or hacks. Vulkan backend can also take ray tracing shaders authored
+in GLSL as well as compiled SPIRV bytecode.
 
-Here we specify a single triangle geometry with 24 vertices and 12 primitives. BLAS will allocate space that is enough for this geometry description.
-In this tutorial `GeometryName` is not used anywhere else except in BLAS build, but in other cases, the geometry name may be used to change geometry data using BLAS update operation.
-Geometry name may also be used in a shader binding table as described below (see [Shader binding table](#create-shader-binding-table)).
+## Acceleration Structures
+
+Unlike rasterization, where objects do not require any pre-processing and can be thrown into
+the pipeline rightaway, things are a bit more complicated in ray tracing. Since a ray can be
+cast in any direction, the GPU must have an efficient way of intersecting the ray with the entire
+scene. This way is provided by acceleration structures that internally encomass some sort of bounding
+volume hierarchies.
+
+There are two types of acceleration structures (AS) in ray tracing API: bottom-level AS, and
+top-level AS. Bottom-level acceleartion structure (BLAS) is where the actual geometry resides.
+Top-level acceleration structure is a set of references to the BLASes. On TLAS may reference
+multiple instances of the same BLAS with different transformations.
+BLASes are more expensive to build or update than TLASes.
+
+### Creating Bottom-level Acceleration Structures
+
+There are two types of geometries that a BLAS can contain: triangle geometry or procedural.
+Triangule geometry is represented by a conventional set of vertices and indices.
+Procedural geometry requires the application defining a special type of shader that determines
+how a ray intersects the object and can implement any custom algorithm.
+
+A single BLAS may contain only one type of geometry: either triangles or axis-aligned bounding boxes (AABBs) that
+define the basic object shape.
+
+In this tutorial we will be using two types of objects: a cube and a spehere. The cube will be defined by
+a triangle geometry, while the sphere will be defined as procedural geometry.
+The cube data will be the same as in previous tutorials, but we will access it through a uniform buffer,
+so that a closest hit shader can read triangle properties (position, normal, UVs) for any primitive.
+
+For our cube BLAS we specify a single triangle geometry with 24 vertices and 12 primitives. 
+BLAS will allocate space that is enough for this geometry description.
+In this tutorial `GeometryName` is not used anywhere else except in BLAS build, but in other cases, 
+the geometry name may be used to change geometry data using BLAS update operation.
+Geometry name may also be used in a shader binding table as described below (see [Shader binding table](#creating-shader-binding-table)).
 
 ```cpp
 BLASTriangleDesc Triangles;
@@ -37,11 +78,13 @@ ASDesc.TriangleCount = 1;
 m_pDevice->CreateBLAS(ASDesc, &m_pCubeBLAS);
 ```
 
-Vertex and index buffer creation is the same as in previous tutorials except we use `BIND_RAY_TRACING` to allow 
-access to buffers during the BLAS build.
+The cube BLAS is now created, but contains no data: we now need to build it. For that,
+we will need to create regular vertex and index buffers, with the only difference that
+we will need to use the `BIND_RAY_TRACING` flag to allow access to the buffers during the BLAS build.
 All buffers which are used in BLAS or TLAS build commands must be created with `BIND_RAY_TRACING` flag.
-We must create a scratch buffer that will store temporary data during the BLAS build,
-call `m_pCubeBLAS->GetScratchBufferSizes()` to get a minimal buffer size.
+The GPU will need some scratch space to perform the build operation and keep temporary data. The scratch
+buffer must be given to `BuildBLAS` command.
+Call `m_pCubeBLAS->GetScratchBufferSizes()` to get the minimal buffer size.
 
 ```cpp
 BLASBuildTriangleData TriangleData;
@@ -65,15 +108,17 @@ Attribs.pScratchBuffer    = pScratchBuffer;
 m_pImmediateContext->BuildBLAS(Attribs);
 ```
 
-BLAS creation and building for procedural geometry has similar code and will not be considered here.
+Creating BLAS for procedural sphere is performed in a similar fashion.
 
 
-## Create top-level acceleration structure
+### Creating Top-level Acceleration Structure
 
-Top-level acceleration structure (TLAS) represents the scene. TLAS contains multiple instances that refer to a single BLAS. 
-Instance is something like a single scene object. To create TLAS we must specify only a number of instances. Additionally we 
-specify `RAYTRACING_BUILD_AS_ALLOW_UPDATE` flag to update TLAS with different instance transformation,
-`RAYTRACING_BUILD_AS_PREFER_FAST_TRACE` flag to allow GPU to make some optimization for the expense of building performance.
+Top-level acceleration structure represents the entire scene and consists of a multiple BLAS instances. 
+To create a TLAS, we only need to specify the number of instances it will contain. Additional flags
+tell the system how the structure will be used by the application:
+`RAYTRACING_BUILD_AS_ALLOW_UPDATE` flag allows the TLAS to be updated after it has been created with different instance transformations;
+`RAYTRACING_BUILD_AS_PREFER_FAST_TRACE` flag allows GPU to make some optimization to improve ray tracing efficiency,
+for the price of extra build time.
 
 ```cpp
 TopLevelASDesc TLASDesc;
@@ -83,18 +128,16 @@ TLASDesc.Flags            = RAYTRACING_BUILD_AS_ALLOW_UPDATE | RAYTRACING_BUILD_
 m_pDevice->CreateTLAS(TLASDesc, &m_pTLAS);
 ```
 
-`InstanceName` is used in TLAS update operation to match the instance data to the previous instance state and is used in the shader
-binding table to bind hit groups to instances (see [Shader binding table](#create-shader-binding-table)).</br>
-Instance index in the array is passed to the hit shaders as a `InstanceIndex()` and has a very limited usage, `CustomId` 
-is specified by the user and passed to a hit shader as a `InstanceID()`,
-`CustomId` may be used to apply different materials to each instance with the same geometry.</br>
-`Mask` can be used to group instances and trace rays only on selected groups.
+Similar to BLAS, a new TLAS contains no data and needs to be built. To buils TLAS, we need to prepare an array
+of `TLASBuildInstanceData` structs:
 
 ```cpp
 Instances[0].InstanceName = "Cube Instance 1";
 Instances[0].CustomId     = 0; // texture index
 Instances[0].pBLAS        = m_pCubeBLAS;
 Instances[0].Mask         = OPAQUE_GEOM_MASK;
+
+...
 
 Instances[5].InstanceName = "Sphere Instance";
 Instances[5].CustomId     = 0; // box index
@@ -106,19 +149,24 @@ Instances[6].pBLAS        = m_pCubeBLAS;
 Instances[6].Mask         = TRANSPARENT_GEOM_MASK;
 ```
 
-For each instance, we specify a transformation matrix with rotation and translation.
-Updating instance transformation during the TLAS update operation is much faster than 
-updating BLAS with vertex transformation or with transform buffer.
+The `InstanceName` member is used in TLAS update operation to match the instance data to the previous instance state and
+is also used in the shader binding table to bind the shader hit groups to instances (see [Shader binding table](#creating-shader-binding-table)).
+
+Hit shader can query the instance index in the array via `InstanceIndex()` function, but has a limited usage. `CustomId` 
+member is specified by the user and is passed to the hit shader via `InstanceID()` function.
+`CustomId` may be used to apply different materials to each instance with the same geometry.
+
+`Mask` can be used to group instances and trace rays only against selected groups (e.g. shadow rays vs primary rays).
+
+For each instance, we specify the transformation matrix with the rotation and translation.
+Updating the instance transformation during the TLAS update operation is much faster than 
+updating BLAS with vertex transformation or with the transform buffer.
 
 ```cpp
 Instances[6].Transform.SetTranslation(4.0f, 4.5f, -7.0f);
 ```
 
-Here we build or update TLAS.</br>
-`HitGroupStride` is a number of different ray types, in this tutorial we use two ray types: primary and shadow,
-In other cases you may add a secondary ray type to use optimized hit shaders for reflected rays.</br>
-`BindingMode` is a hit group location calculation mode. `HIT_GROUP_BINDING_MODE_PER_INSTANCE` allows you to bind a single hit group
-for instance for different ray types, so it means each instance has offset as `HIT_GROUP_STRIDE * instance_index`.
+To build/update TLAS, we need to prepare an instance of `BuildTLASAttribs` struct:
 
 ```cpp
 BuildTLASAttribs Attribs;
@@ -126,8 +174,18 @@ Attribs.HitGroupStride  = HIT_GROUP_STRIDE;
 Attribs.BindingMode     = HIT_GROUP_BINDING_MODE_PER_INSTANCE;
 ```
 
-Instance buffer will store instance data during the TLAS build operation.
-Similar to BLAS build operation, the scratch buffer must be at least `m_pTLAS->GetScratchBufferSizes()` bytes for building and updating.
+`HitGroupStride` is the number of different ray types. In this tutorial we use two ray types: primary and shadow.
+You may add more ray types, e.g. a secondary ray that uses simplified hit shaders for reflected rays.
+
+`BindingMode` is the hit group location calculation mode. `HIT_GROUP_BINDING_MODE_PER_INSTANCE` allows binding a single hit group
+per instance for different ray types, i.e. each instance has the offset in the shader binding table that equals
+`HIT_GROUP_STRIDE * instance_index`.
+
+The actual TLAS instance data is stored in an instance buffer. The required size per one instance is fixed and
+is given by `TLAS_INSTANCE_DATA_SIZE` constant (64 bytes).
+
+Similar to BLAS build operation, the GPU requires a scratch buffer to keep temporary data.
+The required scratch buffer sizes for building and updating is given by `m_pTLAS->GetScratchBufferSizes()` method.
 
 ```cpp
 Attribs.pInstances      = Instances;
@@ -141,17 +199,15 @@ m_pImmediateContext->BuildTLAS(Attribs);
 
 ## Initializing the Pipeline State
 
-The initialization of a ray tracing pipeline is more complex than for other pipeline types.
-We start by defining the instance of `RayTracingPipelineStateCreateInfo` struct:
+Ray tracing pipeline state object is more complex that a graphics or a compute pipeline as
+there may be multiple shaders of the same type in one shader stage. This is required so that
+the GPU can run different shaders when hitting different objects.
 
-```cpp
-RayTracingPipelineStateCreateInfo PSOCreateInfo;
-PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_RAY_TRACING;
-```
-
-Diligent Engine allows using HLSL for both D3D12 and Vulkan backend. The minimum required HLSL shader model that
+Similar to other pipeline types, we start by creating all shaders that will be used by
+the ray tracing pipeline.
+Diligent Engine allows using HLSL for both D3D12 and Vulkan backend. The minimum HLSL shader model that
 supports ray tracing is 6.3.
-Only the new DXC compiler supports shader model 6.0+, and we need to explicitly specify:
+Only the new DirectX compiler (DXC) supports shader model 6.0+, and we need to explicitly specify it:
 
 ```cpp
 ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
@@ -159,10 +215,21 @@ ShaderCI.HLSLVersion    = {6, 3};
 ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 ```
 
-Next, we create shader groups that will be used by the shader binding table.</br>
-General shaders contain only one shader that must be ray generation, ray miss or callable.</br>
-Triangle hit group contains closest hit shader and optional any-hit shader.</br>
-Procedural hit group contains intersection shader and optional closest hit and any-hit shaders.
+To create a ray tracing PSO, we need to define an instance of `RayTracingPipelineStateCreateInfo` struct:
+
+```cpp
+RayTracingPipelineStateCreateInfo PSOCreateInfo;
+PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_RAY_TRACING;
+```
+
+The main component of a ray tracing pipeline is a set of shader hit groups.
+There are three group types:
+
+- *General hit group* that single ray generation, ray miss or callable shader.
+- *Triangle hit group* that contains a closest hit shader and and optional any-hit shader.
+- *Procedural hit group* that contains ans intersection shader and optional closest hit and any-hit shaders.
+
+Our ray-tracing pipeline will contain the following hit groups:
 
 ```cpp
 const RayTracingGeneralShaderGroup GeneralShaders[] =
@@ -182,15 +249,16 @@ const RayTracingProceduralHitShaderGroup ProceduralHitShaders[] =
     {"SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit},
     {"SphereShadowHit",  pSphereIntersection}
 };
+
+PSOCreateInfo.pGeneralShaders          = GeneralShaders;
+PSOCreateInfo.GeneralShaderCount       = _countof(GeneralShaders);
+PSOCreateInfo.pTriangleHitShaders      = TriangleHitShaders;
+PSOCreateInfo.TriangleHitShaderCount   = _countof(TriangleHitShaders);
+PSOCreateInfo.pProceduralHitShaders    = ProceduralHitShaders;
+PSOCreateInfo.ProceduralHitShaderCount = _countof(ProceduralHitShaders);
 ```
 
-`MaxRecursionDepth` specifies the number of recursive calls from hit or miss shaders, zero means that `TraceRay()`
-may be used only in ray generation shader, non-zero values allow you to trace rays from hit shaders and miss shader, 
-the maximum supported value is 32.</br>
-`ShaderRecordSize` can be used to specify constants for each shader or instance or geometry, the maximum supported 
-size is 4096 bytes minus shader handle size (32 bytes).</br>
-`MaxAttributeSize` and `MaxPayloadSize` are used only in DirectX 12 backend, these values should be as small as possible
-to minimize the memory usage.
+Besides the hit groups, we must define a number of additional fields:
 
 ```cpp
 PSOCreateInfo.RayTracingPipeline.MaxRecursionDepth = MaxRecursionDepth;
@@ -198,15 +266,39 @@ PSOCreateInfo.RayTracingPipeline.ShaderRecordSize  = 0;
 
 PSOCreateInfo.MaxAttributeSize = max(sizeof(/*BuiltInTriangleIntersectionAttributes*/float2), sizeof(ProceduralGeomIntersectionAttribs));
 PSOCreateInfo.MaxPayloadSize   = max(sizeof(PrimaryRayPayload), sizeof(ShadowRayPayload));
+```
 
+`MaxRecursionDepth` specifies the number of recursive calls that an application may make in ray tracing shaders.
+Zero means that only ray generation shader may be executed. 1 means that ray generation shader may
+spawn rays that will not be allowed to generate another rays. 2 means that closes hit shaders spawned
+by the ray generation shader will also be allowed to generated secondary rays, etc.
+
+`MaxRecursionDepth` field is used by the driver to allocate the required stack size. An application should manually
+control the recursion depth and must not exceed the specified limit to avoid driver crashes.
+The maximum allowed value for this field is 31.
+
+`ShaderRecordSize` can be used to specify constants for each shader or instance or geometry, the maximum supported 
+size is 4096 bytes minus the shader handle size (32 bytes).
+
+`MaxAttributeSize` and `MaxPayloadSize` are only used in DirectX 12 backend. These values should be as small as possible
+to minimize the memory usage.
+
+When everything is ready, we call `CreateRayTracingPipelineState` to create the PSO:
+
+```
 m_pDevice->CreateRayTracingPipelineState(PSOCreateInfo, &m_pRayTracingPSO);
 ```
 
 
 ## Creating Shader Binding Table
 
-Shader binding table (SBT) is used to specify the shaders which will be used in ray tracing.
+Another key component of the ray tracing setup is a Shader Binding Table (SBT) that is used to 
+connect the instances in the TLAS with the shaders in ray tracing PSO that will be executed
+when a ray hits a particular instance.
 SBT must be created with the same pipeline that will be used with the trace rays command.
+
+To create an SBT we define an instance of `ShaderBindingTableDesc` struct and call `CreateSBT()`
+device method:
 
 ```cpp
 ShaderBindingTableDesc SBTDesc;
@@ -215,23 +307,27 @@ SBTDesc.pPSO = m_pRayTracingPSO;
 m_pDevice->CreateSBT(SBTDesc, &m_pSBT);
 ```
 
-Ray generation shader is an entry point for ray tracing pipeline.
-The `TraceRays()` only dispatches ray-gen shader similar to a computer shader.
+After the SBT is created, we start making shader associations. 
+The first shader we need to bind is the ray generation shader,
+which is the entry point for the ray tracing pipeline, and is
+very similar to a compute shader.
 ```cpp
 m_pSBT->BindRayGenShader("Main");
 ```
 
-Miss shader will be executed if ray doesn't intersect with any object.
-We have different behaviour for primary and shadow rays.
+Notice that `"Main"` is the name of the general shader group that contains
+the ray generation shader that we used in our ray tracing PSO.
+
+
+Next, we bind miss shaders. A miss shader is executed if a ray doesn't hit any object.
+We use different behavior for primary and shadow rays and thus have two miss shaders:
+
 ```cpp
 m_pSBT->BindMissShader("PrimaryMiss", PRIMARY_RAY_INDEX);
 m_pSBT->BindMissShader("ShadowMiss",  SHADOW_RAY_INDEX );
 ```
 
-For primary ray, we specify a hit group which will be executed when ray intersects with geometry.</br>
-First argument is a TLAS object that is used to map the instance name to a precalculated location.</br>
-Second argument is an instance name for which the hit group will be bound.</br>
-The last argument is a hit group name that was defined in `TriangleHitShaders` array in pipeline initialization.
+Next, we define a set of hit shaders for different TLAS instances:
 
 ```cpp
 m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
@@ -243,9 +339,16 @@ m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",   PRIMARY_RAY_INDEX, "GlassPrim
 m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  PRIMARY_RAY_INDEX, "SpherePrimaryHit");
 ```
 
-For shadow ray we disable all hit shader invocation by using an empty shader name or nullptr.
-If hit shader invocation for procedural geometry will be skipped then we will see shadow from bounding box except sphere,
-so we need to bind the hit group only with the intersection shader.
+The first argument of `BindHitGroups()` method is the TLAS object that is used to map the instance name 
+to a precalculated location.</br>
+The second argument is the instance name for which the hit group will be bound.</br>
+The third argument is the ray offset in the shader binding table. The hit groups above are defined for the primary ray.</br>
+The last argument is a hit group name that was defined in `TriangleHitShaders` array during the pipeline initialization.
+
+
+For shadow rays we disable all hit shader invocation by using empty shader name or nullptr.
+If hit shader invocation for procedural geometry is skipped, we will see shadow from bounding box except sphere,
+so we need to bind the hit group only with the intersection shader:
 
 ```cpp
 m_pSBT->BindHitGroupForAll(m_pTLAS, SHADOW_RAY_INDEX, "");
@@ -256,82 +359,101 @@ Also we can create a TLAS with `BindingMode = HIT_GROUP_BINDING_MODE_PER_GEOMETR
 ```cpp
 m_pSBT->BindHitGroup(m_pTLAS, "Cube Instance 1", "Cube", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
 ```
-These may be useful to bind unique hit groups for each geometry.
 
-In resulting SBT contains the following table:
+This may be useful to bind unique hit groups for each geometry.
 
-| Instance | Geometry | Ray type | Location | Shader group | Shader constants |
-|---|---|---|---|---|---|
-| Cube Instance 1 | Cube | primary | 0 | CubePrimaryHit | - |
-| - | - | shadow | 1 | skip | - |
-| Cube Instance 2 | Cube | primary | 2 | CubePrimaryHit | - |
-| - | - | shadow | 3 | skip | - |
-| Cube Instance 3 | Cube | primary | 4 | CubePrimaryHit | - |
-| - | - | shadow | 5 | skip | - |
-| Cube Instance 4 | Cube | primary | 6 | CubePrimaryHit | - |
-| - | - | shadow | 7 | skip | - |
-| Ground Instance | Cube | primary | 8 | GroundHit | - |
-| - | - | shadow | 9 | skip | - |
-| Glass Instance | Cube | primary | 10 | GlassPrimaryHit | - |
-| - | - | shadow | 11 | skip | - |
-| Sphere Instance | Box | primary | 12 | SpherePrimaryHit | - |
-| - | - | shadow | 13 | SphereShadowHit | - |
+The resulting SBT will contain the following table:
+
+| Instance        | Geometry | Ray type | Location | Shader group     | Shader constants |
+|-----------------|----------|----------|----------|------------------|------------------|
+| Cube Instance 1 | Cube     | primary  |        0 | CubePrimaryHit   | -                |
+| -               | -        | shadow   |        1 | skip             | -                |
+| Cube Instance 2 | Cube     | primary  |        2 | CubePrimaryHit   | -                |
+| -               | -        | shadow   |        3 | skip             | -                |
+| Cube Instance 3 | Cube     | primary  |        4 | CubePrimaryHit   | -                |
+| -               | -        | shadow   |        5 | skip             | -                |
+| Cube Instance 4 | Cube     | primary  |        6 | CubePrimaryHit   | -                |
+| -               | -        | shadow   |        7 | skip             | -                |
+| Ground Instance | Cube     | primary  |        8 | GroundHit        | -                |
+| -               | -        | shadow   |        9 | skip             | -                |
+| Glass Instance  | Cube     | primary  |       10 | GlassPrimaryHit  | -                |
+| -               | -        | shadow   |       11 | skip             | -                |
+| Sphere Instance | Box      | primary  |       12 | SpherePrimaryHit | -                |
+| -               | -        | shadow   |       13 | SphereShadowHit  | -                |
 
 'Shader group' and 'Shader constants' is what is actually stored in SBT, other fields in the table are used to calculate the shader location.
 
-As alternative you can use `IShaderBindingTable::BindHitGroupByIndex()` to bind hit group to any location
+As an alternative, you can use `IShaderBindingTable::BindHitGroupByIndex()` to bind hit group to any location
 in range from `TLASBuildInfo::FirstContributionToHitGroupIndex` to `TLASBuildInfo::LastContributionToHitGroupIndex`,
-call `ITopLevelAS::GetBuildInfo()` to get actual build info.
+call `ITopLevelAS::GetBuildInfo()` to get the actual build info.
 
 
-## Resource binding
+## Resource Binding
 
 Unlike others pipelines, in the ray tracing pipeline we use multiple shaders with the same type.
-Resources with the same name in shaders with the same types will be merged and binding points will be remapped.
-In a code below constants bound to a single ray generation shader and for all closest hit shaders.
+Resources with the same name in shaders with the same types will be considered the same resource.
+They must be defined identically, e.g.:
+
+```hlsl
+// in closest_hit_shader1:
+ConstantBuffer<CubeAttribs>  g_CubeAttribsCB : register(b0); // OK - shader register is ignored and will be remapped
+
+// in closest_hit_shader2:
+ConstantBuffer<CubeAttribs>  g_CubeAttribsCB : register(b1); // OK - shader register is ignored and will be remapped
+```
+
+Note that shader registers assigned by the compiler or shader developer are ignored and will
+be remapped by the engine.
+
+It is an error to have different resource types with the same name in different shaders in
+the *same shader stage*, e.g.:
+
+```hlsl
+// in closest_hit_shader1:
+ConstantBuffer<CubeAttribs>    g_CubeAttribs;
+
+// in closest_hit_shader2:
+StructuredBuffer<CubeAttribs>  g_CubeAttribs; // ERROR - g_CubeAttribs is already defined as constant buffer 
+                                              //         in another closest hit shader
+```
+
+To fix the error above, rename one of the shader variables to have a distict name.
+
+It is OK to have different resource types with the same name in *different shader stages*:
+
+
+```hlsl
+// in closest_hit_shader:
+ConstantBuffer<CubeAttribs>    g_CubeAttribs;
+
+// in any_hit_shader:
+StructuredBuffer<CubeAttribs>  g_CubeAttribs; // OK - namespaces for different shader types
+                                              //      do not overlap
+```
+
+Other than the specifics above, creating an SRB and binding shader resources is done similar
+to other pipeline types:
 
 ```cpp
+m_pRayTracingPSO->CreateShaderResourceBinding(&m_pRayTracingSRB, true);
+
 m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_GEN, "g_ConstantsCB")->Set(m_ConstantsCB);
 m_pRayTracingSRB->GetVariableByName(SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB")->Set(m_ConstantsCB);
 ```
 
-Valid usage:
 
-```hlsl
-// in closest_hit_shader1:
-ConstantBuffer<CubeAttribs>  g_CubeAttribsCB : register(b0);
+## Tracing the Rays
 
-// in closest_hit_shader2:
-ConstantBuffer<CubeAttribs>  g_CubeAttribsCB : register(b1);
-```
+Before starting the ray tracing, we animate instances by updating their transformations in the TLAS.
+Updating acceleration structures is much faster and takes less memory than building them from scratch.
 
-Register indices will be ignored and buffers will be merged. 
-
-
-Invalid usage:
-
-```hlsl
-// in closest_hit_shader1:
-ConstantBuffer<CubeAttribs>     g_CubeAttribsCB : register(b0);
-RaytracingAccelerationStructure g_TLAS;
-
-// in closest_hit_shader2:
-ConstantBuffer<CubeAttribs>  g_CubeConstants : register(b0);
-RWByteAddressBuffer          g_TLAS;
-```
-Buffers with different names but with the same register index will not be merged.</br>
-Resources with the same name but different types can not be merged and will generate an error.
-
-
-## Ray tracing
-
-Before rendering, we update instance transformations by updating TLAS.
-Acceleration structure updating is much faster and takes less memory than building from scratch.
 ```cpp
 UpdateTLAS();
 ```
 
-Run ray generation shader with the dimension of the render target.
+Ray tracing is started by `TraceRays` device context method.
+The method takes the ray grid dimensions and the SBT as parameteres:
+
 ```cpp
 TraceRaysAttribs Attribs;
 Attribs.DimensionX        = m_pColorRT->GetDesc().Width;
@@ -341,14 +463,22 @@ Attribs.SBTTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 m_pImmediateContext->TraceRays(Attribs);
 ```
 
+In this tutorial we generate one ray per screen pixel, so `DimensionX` and `DimensionY` are the
+render target dimensions.
+
 Then the result of ray tracing is copied to the swapchain image using a simple graphics pipeline.
-In more complex renderer this pass will be replaced by tone mapping or other post processes.
+In a more complex renderer this pass will be replaced by tone mapping or other post processing effects.
 
+### Ray Generation Shader
 
-## Ray generation shader
+Ray generation shader is the entry point of the ray tracing pipeline. Its purpose is to
+generate the primary rays. To generate rays for every screen pixel, we will first calculate
+the four rays that bound the planes of the view frustum.
 
-We use `ExtractViewFrustumPlanesFromMatrix()` to calculate the view frustum planes from the view-projections matrix.
-We then normalize planes and calculate intersections between them. As a result we get 4 rays which represent the frustum and pass it to the shader.
+We start by extracting the view frustum planes from the view-projection matrix using
+`ExtractViewFrustumPlanesFromMatrix()` function.
+We then normalize the planes and calculate the intersections. We then pass the resulting four rays to the shader:
+
 ```cpp
 ViewFrustum Frustum;
 ExtractViewFrustumPlanesFromMatrix(CameraViewProj, Frustum, false);
@@ -379,7 +509,9 @@ GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::BOTTOM_PLANE_ID
 GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRT);
 ```
 
-In ray generation shader we calculate the normalized texture coordinates `uv` and use it to calculate ray direction from frustum rays.
+In the ray generation shader, we calculate the normalized texture coordinates `uv` and use them to calculate 
+the ray direction from frustum rays:
+
 ```hlsl
 struct Constants
 {
@@ -391,15 +523,16 @@ struct Constants
     ...
 };
 ConstantBuffer<Constants> g_ConstantsCB;
+
 ...
 
-float3  rayOrigin = g_ConstantsCB.Position.xyz;
+float3  rayOrigin = g_ConstantsCB.CameraPos.xyz;
 float2  uv        = (float2(DispatchRaysIndex().xy) + float2(0.5, 0.5)) / float2(DispatchRaysDimensions().xy);
 float3  rayDir    = normalize(lerp(lerp(g_ConstantsCB.FrustumRayLB, g_ConstantsCB.FrustumRayRB, uv.x),
                                    lerp(g_ConstantsCB.FrustumRayLT, g_ConstantsCB.FrustumRayRT, uv.x), uv.y)).xyz;
 ```
 
-Setup ray description and start ray tracing.
+Next, we prepare the RayDesc struct and call `CastPrimaryRay` helper function:
 
 ```hlsl
 RayDesc ray;
@@ -411,10 +544,8 @@ ray.TMax      = g_ConstantsCB.ClipPlanes.y;
 PrimaryRayPayload payload = CastPrimaryRay(ray, /*recursion number*/0);
 ```
 
-Primary ray is used to calculate the final color of a pixel on the screen and to generate secondary rays for reflection and refraction.
-Therefore the `TraceRay()` is wrapped in `CastPrimaryRay()` function for reusability.</br>
-Here we check the number of recursions, because GPU device does not automaticallt stop ray tracing when the maximum recursion depth is reached.
-If you don't check the recursion depth, the GPU driver will crash on shader stack overflow.
+`CastPrimaryRay()` ray function calculates the final color of a pixel on the screen and generates secondary rays for reflection and refraction.
+It wraps the `TraceRay()` HLSL intrinsic function for reusability. `CastPrimaryRay()` is defined as follows:
 
 ```hlsl
 RaytracingAccelerationStructure g_TLAS;
@@ -423,7 +554,7 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
 {
     PrimaryRayPayload payload = {float3(0, 0, 0), 0.0, Recursion};
 
-    if (Recursion > g_ConstantsCB.MaxRecursion)
+    if (Recursion >= g_ConstantsCB.MaxRecursion)
     {
         // set pink color for debugging
         payload.Color = float3(0.95, 0.18, 0.95);
@@ -441,41 +572,47 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
 }
 ```
 
-At the end of the ray generation shader, we write the payload color to the output UAV texture.
+Note that we check the ray recursion depth and terminate it if current depth exceeds the maximum depth.
+It is essntial to do this because GPU device does not automatically stop ray tracing when the maximum recursion 
+depth is reached and will crash if we exceed the limit specified during the PSO initialization.
+
+At the end of the ray generation shader, we write the payload color to the output UAV texture:
 
 ```hlsl
 g_ColorBuffer[DispatchRaysIndex().xy] = float4(payload.Color, 1.0);
 ```
 
 
-## Ray closest hit shader
+### Closest Hit Shader
 
-Closest hit shader executes when the ray intersects with triangle geometry or when a custom intersection shader reports hit
-(see [Intersection shader](#intersection-shader)).
-Shader call stack locks like:
+The closest hit shader is executed when a ray hits a triangle geometry or when a custom intersection shader reports the hit
+(see [Intersection Shader](#intersection-shader)).
+
+The following image shows the workflow for the primary ray closes hit shader:
 
 ![image](rt_callstack_1.png)
 
-The closest hit shader on input takes editable ray payload and geometry intersection information.
+The closest hit shader takes geometry intersection information and editable ray payload as inputs:
 
 ```hlsl
 [shader("closesthit")]
 void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 ```
 
-Convert 2-component barycentrics to 3-component triangle barycentrics.
+To compute the attributes of the hit point, we will nbeed 3-component barycentric coordinates:
 
 ```hlsl
 float3 barycentrics = float3(1.0 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
 ```
 
-Use the built-in function `PrimitiveIndex()` to get the index of the current primitive and then get 3 vertex indices of this primitive.
+The built-in `PrimitiveIndex()` function gives us the index of the current primitive. Using this index, we can read
+the 3 vertex indices from the cube constant data buffer:
 
 ```hlsl
 uint3  primitive = g_CubeAttribsCB.Primitives[PrimitiveIndex()].xyz;
 ```
 
-Then we use barycentric coordinates to calculate the texture coordinates for the intersection point.
+We then use the barycentric coordinates to calculate the texture coordinates at the intersection point:
 
 ```hlsl
 float2 uv = g_CubeAttribsCB.UVs[primitive.x].xy * barycentrics.x +
@@ -483,7 +620,8 @@ float2 uv = g_CubeAttribsCB.UVs[primitive.x].xy * barycentrics.x +
             g_CubeAttribsCB.UVs[primitive.z].xy * barycentrics.z;
 ```
 
-Same for the triangle normal, but we need to apply transformation to get the normal in world space.
+Similarly, we get the triangle normal. Note though that we need to apply the object-to-world transformation
+that is given by `ObjectToWorld3x4()` intrinsic function:
 
 ```hlsl
 float3 normal = g_CubeAttribsCB.Normals[primitive.x].xyz * barycentrics.x +
@@ -493,22 +631,22 @@ normal        = normalize(mul((float3x3) ObjectToWorld3x4(), normal));
 ```
 
 In ray tracing, `Texture2D::Sample()` method is not supported because GPU device can not implicitly calculate derivatives,
-so you should calculate the texture mipmap level manually and perform filtering yourself. In this tutorial we don't do that
-and just read finest mip level:
+so we have to calculate the texture mipmap level manually or provide explicit gradients for anisotropic filtering. In this tutorial 
+we don't do that and just sample the finest mip level:
 
 ```hlsl
-payload.Color = g_Texture[InstanceID()].SampleLevel(g_Texture_sampler, uv, 0).rgb;
+payload.Color = g_Texture[InstanceID()].SampleLevel(g_SamLinearWrap, uv, 0).rgb;
 ```
 
-The last step - calculate lighting.
-We use built-in functions to get ray parameters and calculate the intersection point.
+The last step is lighting calculation.
+We use built-in functions to get the ray parameters and calculate the intersection point.
 
 ```hlsl
 float3 pos = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
 LightingPass(payload.Color, pos, normal, payload.Recursion + 1);
 ```
 
-Calculate simple diffuse lighting and cast ray to test if the light is occluded or not:
+We then cast a ray to test if the light is occluded or not and apply a simple diffuse lighting:
 
 ```hlsl
 void LightingPass(inout float3 Color, float3 Pos, float3 Norm, uint Recursion)
@@ -538,20 +676,30 @@ void LightingPass(inout float3 Color, float3 Pos, float3 Norm, uint Recursion)
 }
 ```
 
-Here we use the new payload type `ShadowRayPayload` only with 2 components to minimize the memory usage.</br>
-For optimizations we use some flags:</br>
-`RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH` - stops ray processing if any geometry hit is encountered.</br>
-`RAY_FLAG_FORCE_OPAQUE` - skip any-hit shader invocation and has no effect because we are not using any-hit shaders here.</br>
-In SBT we bind null hit group for shadow ray for triangle geometry, for procedural geometry we use only intersection shader, so we don't have any closest hit shaders
-and `RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` flag may have no effect, but if you use the same shaders as for primary ray you may have significant performance improvement.</br>
-We use an instance mask `OPAQUE_GEOM_MASK` to skip transparent cube with refractions. Light calculation for objects with refractions is much more complex task and not considered here.</br>
-The initial `Shading` value is 0 that means the object is completely shadowed, it will keep if intersection was found or will be overwritten by 1 in miss shader that means no shadows.
+For shadow rays we use a new payload type `ShadowRayPayload` that only contains two components to minimize the memory usage.
+
+To improve ray tracing performance we use the following flags:
+
+- `RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH` - stop ray processing immediately if any geometry hit is encountered.
+- `RAY_FLAG_FORCE_OPAQUE` - skip any-hit shader invocation.
+
+In SBT, we bind null hit group for shadow ray for triangle geometry. For procedural geometry we use only the intersection shader,
+so we don't have any closest hit shaders, and `RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` flag may have no effect. However if you use the same 
+shaders as for the primary ray, you may see a significant performance improvement.
+
+We use an instance mask `OPAQUE_GEOM_MASK` to skip transparent cube with refractions.
+Light calculation for objects with refractions is much more complex and is ignored for shadows.
+
+The initial `Shading` value is set to 0 meaning that the object is completely shadowed.
+It will be preserved if an intersection was found, but will be overwritten by 1 in the miss shader representing no occluders.
+
+The `CastShadow()` function is defined as follows:
 
 ```hlsl
 ShadowRayPayload CastShadow(RayDesc ray, uint Recursion)
 {
     ShadowRayPayload payload = {0.0, Recursion};
-    if (Recursion > g_ConstantsCB.MaxRecursion)
+    if (Recursion >= g_ConstantsCB.MaxRecursion)
     {
         payload.Shading = 1.0;
         return payload;
@@ -568,23 +716,25 @@ ShadowRayPayload CastShadow(RayDesc ray, uint Recursion)
 }
 ```
 
-For some shading techniques this optimization can not be applied. For example: for ambient occlusion you may need correct distance to the nearest occluder
-instead of information about the presence or absence of intersection, so you need to allow closest hit shader invocation and write distance from `RayTCurrent()`.
+For some shading techniques this optimization can not be applied. For example: for ambient 
+occlusion you may need to know the precise distance to the nearest occluder instead of binary information about 
+the presence or absence of the intersection, so you will have to use the closest hit shader to write the distance 
+from `RayTCurrent()`.
 
-With shadows shader, the call stack looks like:
+The following diagram shows the workflow for shadow rays:
 
 ![image](rt_callstack_2.png)
 
-Some hardware does not support ray recursion, but you can use a loop in the ray generation shader instead.
+Note that some hardware does not support ray recursion, but you can use a loop in the ray generation shader instead.
 
 
-## Ray miss shader
+### Miss Shader
 
 Miss shader is executed if no intersections was found.
 
 ![image](rt_callstack_3.png)
 
-As an input, the miss shader takes only editable ray payload.
+As an input, the miss shader takes only editable ray payload:
 
 ```hlsl
 [shader("miss")]
@@ -592,27 +742,28 @@ void main(inout PrimaryRayPayload payload)
 ```
 
 Miss shader for primary ray generates sky color.</br>
-Miss shader for shadow ray just writes 1.0 into payload.
+Miss shader for shadow ray just writes 1.0 into the payload.
 
 
-## Intersection shader
+### Intersection Shader
 
-Intersection shader can be used with procedural geometry only, for a triangle geometry built-in hardware accelerated intersection test is used.
-Intersection shader is executed for each ray that intersects with AABB, depends on implementation intersection shader may be executed
-even if AABB is occluded by another geometry,
-so the intersection test should be as fast as possible.
+An intersection shader can be used with procedural geometry only. For a triangle geometry, built-in hardware accelerated intersection test is used.
+Intersection shader is executed for each ray that intersects with the AABB. Note that depending on the implementation, the intersection shader may 
+be executed even if AABB is occluded by another geometry, so the intersection test should be as fast as possible. You also need to be very
+careful if an intersection shader has any side effects such as writing data to an UAV.
 
 ![image](rt_callstack_4.png)
 
-Intersection shader does not take any input arguments.
+Intersection shader does not have any inputs or outputs.
+
 ```cpp
 [shader("intersection")]
 void main()
 ```
 
-We don't have any information about the intersection, so we need to get the same AABB which was used to build 
-BLAS and calculate intersection point in the shader.
-Then send the intersection information to the closest hit shader.
+We don't have any information about the intersection, so we need to use the same AABB which was specified when building
+the BLAS and calculate the intersection point in the shader.
+If there is an intersection, we report the hit to the system using the `ReportHit()` intrinsic function:
 
 ```cpp
 ProceduralGeomIntersectionAttribs attr;
@@ -628,8 +779,8 @@ With default settings, the execution time of the shaders for all rays is approxi
 ![image](rt_performance_1.jpg)
 
 
-When we increase the number of rays per pixel, then the performance for some pixels increases dramatically.
-So you should minimize multiple rays per pixel and use temporal techniques like a TAA or denoising.
+When we increase the number of rays per pixel, the performance for some pixels increases dramatically.
+You should minimize multiple rays per pixel and use temporal techniques like a TAA or denoising.
 
 ![image](rt_performance_2.jpg)
 

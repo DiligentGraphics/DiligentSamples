@@ -624,16 +624,26 @@ void Tutorial21_RayTracing::UpdateTLAS()
 
     // Setup instances
     TLASBuildInstanceData Instances[NumInstances] = {};
-    const float3          InstanceBasePos[]       = {float3{1, 1, 1}, float3{2, 0, -1}, float3{-1, 1, 2}, float3{-2, 0, -1}};
-    const float           InstanceTimeOffset[]    = {0.0f, 0.53f, 1.27f, 4.16f};
-    static_assert(_countof(InstanceBasePos) == NumCubes, "mismatch");
-    static_assert(_countof(InstanceTimeOffset) == NumCubes, "mismatch");
+
+    struct CubeInstanceData
+    {
+        float3 BasePos;
+        float  TimeOffset;
+    } CubeInstData[] = // clang-format off
+    {
+            {float3{ 1, 1,  1}, 0.00f},
+            {float3{ 2, 0, -1}, 0.53f},
+            {float3{-1, 1,  2}, 1.27f},
+            {float3{-2, 0, -1}, 4.16f}
+    };
+    // clang-format on
+    static_assert(_countof(CubeInstData) == NumCubes, "Cube instance data array size mismatch");
 
     const auto AnimateTransform = [&](TLASBuildInstanceData& Dst) //
     {
-        float  t     = sin(m_AnimationTime * PI_F * 0.5f) + InstanceTimeOffset[Dst.CustomId];
-        float3 Pos   = InstanceBasePos[Dst.CustomId] * 2.0f + float3(sin(t * 1.13f), sin(t * 0.77f), sin(t * 2.15f)) * 0.5f;
-        float  angle = 0.1f * PI_F * (m_AnimationTime + InstanceTimeOffset[Dst.CustomId] * 2.0f);
+        float  t     = sin(m_AnimationTime * PI_F * 0.5f) + CubeInstData[Dst.CustomId].TimeOffset;
+        float3 Pos   = CubeInstData[Dst.CustomId].BasePos * 2.0f + float3(sin(t * 1.13f), sin(t * 0.77f), sin(t * 2.15f)) * 0.5f;
+        float  angle = 0.1f * PI_F * (m_AnimationTime + CubeInstData[Dst.CustomId].TimeOffset * 2.0f);
 
         if (!m_EnableCubes[Dst.CustomId])
             Dst.Mask = 0;
