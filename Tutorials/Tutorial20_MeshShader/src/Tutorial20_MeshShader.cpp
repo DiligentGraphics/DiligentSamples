@@ -246,14 +246,11 @@ void Tutorial20_MeshShader::CreatePipelineState()
     // Define variable type that will be used by default.
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
-    // Currently, Vulkan driver crashes when using task shader compiled by DXC, so use GLSL version.
-    const bool IsVulkan = m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_VULKAN;
-
     ShaderCreateInfo ShaderCI;
-    ShaderCI.SourceLanguage = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM : SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
-    ShaderCI.ShaderCompiler = IsVulkan ? SHADER_COMPILER_GLSLANG : SHADER_COMPILER_DXC;
+    ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
 
     ShaderCI.UseCombinedTextureSamplers = true;
 
@@ -272,7 +269,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
         ShaderCI.Desc.ShaderType = SHADER_TYPE_AMPLIFICATION;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Mesh shader - AS";
-        ShaderCI.FilePath        = IsVulkan ? "vk_cube.ash" : "dx_cube.ash";
+        ShaderCI.FilePath        = "cube.ash";
 
         m_pDevice->CreateShader(ShaderCI, &pAS);
         VERIFY_EXPR(pAS != nullptr);
@@ -283,7 +280,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
         ShaderCI.Desc.ShaderType = SHADER_TYPE_MESH;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Mesh shader - MS";
-        ShaderCI.FilePath        = IsVulkan ? "vk_cube.msh" : "dx_cube.msh";
+        ShaderCI.FilePath        = "cube.msh";
 
         m_pDevice->CreateShader(ShaderCI, &pMS);
         VERIFY_EXPR(pMS != nullptr);
@@ -294,7 +291,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Mesh shader - PS";
-        ShaderCI.FilePath        = IsVulkan ? "vk_cube.psh" : "dx_cube.psh";
+        ShaderCI.FilePath        = "cube.psh";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);

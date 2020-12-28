@@ -20,6 +20,7 @@ float3 BlendWithReflection(float3 srcColor, float3 reflectionColor, float factor
     return lerp(srcColor, reflectionColor * g_ConstantsCB.GlassReflectionColorMask.rgb, factor);
 }
 
+// Optimized fresnel calculation.
 float Fresnel(float eta, float cosThetaI)
 {
     cosThetaI = clamp(cosThetaI, -1.0, 1.0);
