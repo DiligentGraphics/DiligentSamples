@@ -3,13 +3,6 @@
 #    define GROUP_SIZE 32
 #endif
 
-#ifdef VULKAN
-#    define float2   vec2
-#    define float4   vec4
-#    define uint4    uvec4
-#    define float4x4 mat4x4
-#endif
-
 struct DrawTask
 {
     float2 BasePos;

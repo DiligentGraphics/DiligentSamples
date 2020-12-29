@@ -557,8 +557,8 @@ ConstantBuffer<Constants> g_ConstantsCB;
 
 float3  rayOrigin = g_ConstantsCB.CameraPos.xyz;
 float2  uv        = (float2(DispatchRaysIndex().xy) + float2(0.5, 0.5)) / float2(DispatchRaysDimensions().xy);
-float3  rayDir    = normalize(lerp(lerp(g_ConstantsCB.FrustumRayLB, g_ConstantsCB.FrustumRayRB, uv.x),
-                                   lerp(g_ConstantsCB.FrustumRayLT, g_ConstantsCB.FrustumRayRT, uv.x), uv.y)).xyz;
+float3  rayDir    = normalize(lerp(lerp(g_ConstantsCB.FrustumRayLB.xyz, g_ConstantsCB.FrustumRayRB.xyz, uv.x),
+                                   lerp(g_ConstantsCB.FrustumRayLT.xyz, g_ConstantsCB.FrustumRayRT.xyz, uv.x), uv.y));
 ```
 
 Next, we prepare the RayDesc struct and call `CastPrimaryRay` helper function:
