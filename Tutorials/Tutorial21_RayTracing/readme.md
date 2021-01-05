@@ -10,21 +10,21 @@ The final color is formed by a pixel shader and a number of optional blending op
 This is a very efficient and high-performance method, but performance comes for the price
 of a number of limitations. First, the pixel shader can only be invoked for the predefined
 sample locations (which enables GPUs to parallelize the execution very efficiently). Second,
-the GPU do not have an access to the whole scene and only triangles visible by the camera
+the GPU does not have access to the whole scene and only triangles visible by the camera
 are processed.
 
-Ray tracing removes these limitiations. Unlike the rasterization, it allows application to
-query scene properties at any location by casting a ray in any directon and running a specified
+Ray tracing removes these limitations. Unlike the rasterization, it allows application to
+query scene properties at any location by casting a ray in any direction and running a specified
 shader at the intersection point. Ray tracing unlocks a variety of algorithms that have no
 efficient implementation in rasterization-based pipeline.
 
 This tutorial demonstrates how ray tracing API in Diligent Engine can be used to simulate
-physically-correct light transport in a scene to render soft shadows, multiple-bounce reflections
+physics-based light transport in a scene to render soft shadows, multiple-bounce reflections
 and refractions, and dispersion.
 
 Ray tracing is supported in D3D12 and Vulkan backends. Diligent Engine exposes common API for both
 backends and require no special handling for any of them. Shaders authored in HLSL will work in both
-backends without any special tricks or hacks. Vulkan backend can also take ray tracing shaders authored
+backends without any special tricks or hacks. Vulkan backend can also take ray tracing shaders written
 in GLSL as well as compiled SPIRV bytecode.
 
 ## Acceleration Structures
@@ -44,9 +44,10 @@ BLASes are more expensive to build or update than TLASes.
 ### Creating Bottom-level Acceleration Structures
 
 There are two types of geometries that a BLAS can contain: triangle geometry or procedural.
-Triangule geometry is represented by a conventional set of vertices and indices.
+Triangule geomtery is represented by a conventional set of vertices and indices.
 Procedural geometry requires an application to define a special type of shader that determines
-how a ray intersects the object. That shader can implement any custom algorithm.
+how a ray intersects the object. That shader can implement any custom algorithm, but is more 
+expensive than a built-in ray-triangle intersection test.
 
 A single BLAS may contain only one type of geometry: either triangles or axis-aligned bounding boxes (AABBs) that
 define the basic object shape.
@@ -113,14 +114,14 @@ m_pImmediateContext->BuildBLAS(Attribs);
 
 Note that `GeometryName` member of `BLASBuildTriangleData` struct instance must match
 the geomertry name used in `BLASTriangleDesc`. When BLAS contains multiple geometries, this
-is how the triangle data is mapped to the specific geomerty in the BLAS.
+is how the triangle data is mapped to the specific geometry in the BLAS.
 
 Creating BLAS for procedural sphere is performed in a similar fashion.
 
 
 ### Creating Top-level Acceleration Structure
 
-Top-level acceleration structure represents the entire scene and consists of a multiple BLAS instances. 
+Top-level acceleration structure represents the entire scene and consists of multiple BLAS instances. 
 To create a TLAS, we only need to specify the number of instances it will contain:
 
 ```cpp
@@ -220,7 +221,7 @@ the GPU can run different shaders when hitting different objects.
 
 Similar to other pipeline types, we start by creating all shaders that will be used by
 the ray tracing pipeline.
-Diligent Engine allows using HLSL for both D3D12 and Vulkan backend. The minimum HLSL shader model that
+Diligent Engine allows using HLSL for both D3D12 and Vulkan backends. The minimum HLSL shader model that
 supports ray tracing is 6.3.
 Only the new DirectX compiler (DXC) supports shader model 6.0+, and we need to explicitly specify it:
 
@@ -241,7 +242,7 @@ The main component of a ray tracing pipeline is a set of shader hit groups.
 There are three group types:
 
 - *General hit group* that contains a single ray generation, ray miss or callable shader.
-- *Triangle hit group* that contains a closest hit shader and and optional any-hit shader.
+- *Triangle hit group* that contains a closest hit shader and an optional any-hit shader.
 - *Procedural hit group* that contains an intersection shader and optional closest hit and any-hit shaders.
 
 Our ray-tracing pipeline will contain the following hit groups:
@@ -285,7 +286,7 @@ PSOCreateInfo.MaxPayloadSize   = max(sizeof(PrimaryRayPayload), sizeof(ShadowRay
 
 `MaxRecursionDepth` specifies the number of recursive calls that an application may make in ray tracing shaders.
 Zero means that only ray generation shader may be executed. 1 means that ray generation shader may
-spawn rays that will not be allowed to generate another rays. 2 means that closes hit shaders spawned
+spawn rays that will not be allowed to generate another rays. 2 means that closest hit shaders spawned
 by the ray generation shader will also be allowed to generated secondary rays, etc.
 
 `MaxRecursionDepth` field is used by the driver to allocate the required stack size. An application should manually
@@ -307,7 +308,7 @@ m_pDevice->CreateRayTracingPipelineState(PSOCreateInfo, &m_pRayTracingPSO);
 
 ## Creating Shader Binding Table
 
-Another key component of the ray tracing setup is a Shader Binding Table (SBT) that is used to 
+Another key component of the ray tracing setup is the Shader Binding Table (SBT) that is used to 
 connect the instances in the TLAS with the shaders in ray tracing PSO that will be executed
 when a ray hits a particular instance.
 SBT must be created with the same pipeline that will be used with the trace rays command.
@@ -375,14 +376,14 @@ m_pSBT->BindHitGroupForAll(m_pTLAS, SHADOW_RAY_INDEX, "");
 
 Procedural sphere, though, requires some special care: we need to provide the intersection shader so that
 the GPU knows how to intersect the rays with our procedural object. Closest hit shader is not needed, so
-we will use the `"SphereShadowHit"` hit group that only containst the intersection shader:
+we will use the `"SphereShadowHit"` hit group that only contains the intersection shader:
 
 ```cpp
 m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  SHADOW_RAY_INDEX,  "SphereShadowHit");
 ```
 
 When TLAS is created with `BindingMode = HIT_GROUP_BINDING_MODE_PER_GEOMETRY` flag, the hit groups are 
-individually specified for every geomerty in every instance:
+individually specified for every geometry in every instance:
 
 ```cpp
 m_pSBT->BindHitGroup(m_pTLAS, "Cube Instance 1", "Cube", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
@@ -410,7 +411,7 @@ The resulting SBT will contain the following data:
 | -               | -        | shadow   |       13 | SphereShadowHit  | -                |
 
 'Shader group' and 'Shader constants' is what is actually stored in the SBT, other fields in the table are used to calculate
-the data shader location.
+the data location.
 
 As an alternative, you can use `IShaderBindingTable::BindHitGroupByIndex()` to bind hit group directly to any location
 in the range from `TLASBuildInfo::FirstContributionToHitGroupIndex` to `TLASBuildInfo::LastContributionToHitGroupIndex`,
@@ -602,7 +603,7 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
 ```
 
 Note that we check the ray recursion depth and terminate it if current depth exceeds the maximum depth.
-It is essntial to do this because GPU device does not automatically stop ray tracing when the maximum recursion 
+It is essential to do this because GPU device does not automatically stop ray tracing when the maximum recursion 
 depth is reached and will crash if we exceed the limit specified during the PSO initialization.
 
 At the end of the ray generation shader, we write the payload color to the output UAV texture:
@@ -705,14 +706,14 @@ void LightingPass(inout float3 Color, float3 Pos, float3 Norm, uint Recursion)
 }
 ```
 
-For shadow rays we use a new payload type, `ShadowRayPayload`, that only contains two components to minimize the memory usage.
+For shadow rays we use a new payload type, `ShadowRayPayload` that only contains two components to minimize the memory usage.
 
 To improve ray tracing performance we use the following flags:
 
 - `RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH` - stop ray processing immediately if any geometry hit is encountered.
 - `RAY_FLAG_FORCE_OPAQUE` - skip any-hit shader invocation.
 
-In SBT, we bind null hit group for shadow ray for triangle geometry. For procedural geometry we use only the intersection shader,
+In SBT, we bind null hit group for shadow ray for triangle geometry. For procedural geometry we use the intersection shader only,
 so we don't have any closest hit shaders, and `RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` flag may have no effect. However if you use the same 
 shaders as for the primary ray, you may see a significant performance improvement.
 
@@ -720,7 +721,7 @@ We use an instance mask `OPAQUE_GEOM_MASK` to skip transparent cube with refract
 Light calculation for objects with refractions is much more complex and is ignored for shadows.
 
 The initial `Shading` value is set to 0 meaning that the object is completely shadowed.
-It will be preserved if an intersection was found, but will be overwritten by 1 in the miss shaderm, indicating no occlusion.
+It will be preserved if an intersection was found, but will be overwritten by 1 in the miss shader, indicating no occlusion.
 
 The `CastShadow()` function is defined as follows:
 
