@@ -743,21 +743,21 @@ void Tutorial21_RayTracing::CreateSBT()
 
     // Hit groups for primary ray
     // clang-format off
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 2", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 3", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 4", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-    m_pSBT->BindHitGroups(m_pTLAS, "Ground Instance", PRIMARY_RAY_INDEX, "GroundHit"       );
-    m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",  PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
-    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance", PRIMARY_RAY_INDEX, "SpherePrimaryHit");
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 1", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 2", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 3", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 4", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Ground Instance", PRIMARY_RAY_INDEX, "GroundHit"       );
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Glass Instance",  PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Sphere Instance", PRIMARY_RAY_INDEX, "SpherePrimaryHit");
     // clang-format on
 
     // Hit groups for shadow ray.
-    // Empty name means no shaders are bound and hit shader invocation will be skipped.
-    m_pSBT->BindHitGroupForAll(m_pTLAS, SHADOW_RAY_INDEX, "");
+    // null means no shaders are bound and hit shader invocation will be skipped.
+    m_pSBT->BindHitGroupForTLAS(m_pTLAS, SHADOW_RAY_INDEX, nullptr);
 
     // We must specify the intersection shader for procedural geometry.
-    m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance", SHADOW_RAY_INDEX, "SphereShadowHit");
+    m_pSBT->BindHitGroupForInstance(m_pTLAS, "Sphere Instance", SHADOW_RAY_INDEX, "SphereShadowHit");
 }
 
 void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)

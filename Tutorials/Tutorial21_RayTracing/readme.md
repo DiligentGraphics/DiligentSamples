@@ -350,17 +350,17 @@ is the miss shader index: 0 for primary rays, and 1 for shadow rays.
 Next, we define a set of hit shaders for different TLAS instances:
 
 ```cpp
-m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 1",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 2",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 3",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-m_pSBT->BindHitGroups(m_pTLAS, "Cube Instance 4",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
-m_pSBT->BindHitGroups(m_pTLAS, "Ground Instance",  PRIMARY_RAY_INDEX, "GroundHit"       );
-m_pSBT->BindHitGroups(m_pTLAS, "Glass Instance",   PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
-m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  PRIMARY_RAY_INDEX, "SpherePrimaryHit");
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 1",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 2",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 3",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Cube Instance 4",  PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Ground Instance",  PRIMARY_RAY_INDEX, "GroundHit"       );
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Glass Instance",   PRIMARY_RAY_INDEX, "GlassPrimaryHit" );
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Sphere Instance",  PRIMARY_RAY_INDEX, "SpherePrimaryHit");
 ```
 
-The first argument of `BindHitGroups()` method is the TLAS object that is used to map the instance name 
-to a precalculated location.</br>
+The first argument of `BindHitGroupForInstance()` method is the TLAS object that is used to map the instance name 
+to a precalculated location in the table.</br>
 The second argument is the instance name for which the hit group will be bound. These names must match the
 names we gave to the instances when created the TLAS.</br>
 The third argument is the ray offset in the shader binding table. The hit groups above are defined for the primary ray.</br>
@@ -368,10 +368,10 @@ The last argument is a hit group name that was defined in `TriangleHitShaders` a
 
 
 For shadow rays we disable all hit shader invocation by using empty shader name or `nullptr`.
-We use `BindHitGroupForAll` method to bind empty shader for all instances for shadow ray type at once:
+We use `BindHitGroupForTLAS` method to bind empty shader for all instances for shadow ray type at once:
 
 ```cpp
-m_pSBT->BindHitGroupForAll(m_pTLAS, SHADOW_RAY_INDEX, "");
+m_pSBT->BindHitGroupForTLAS(m_pTLAS, SHADOW_RAY_INDEX, nullptr);
 ```
 
 Procedural sphere, though, requires some special care: we need to provide the intersection shader so that
@@ -379,14 +379,14 @@ the GPU knows how to intersect the rays with our procedural object. Closest hit 
 we will use the `"SphereShadowHit"` hit group that only contains the intersection shader:
 
 ```cpp
-m_pSBT->BindHitGroups(m_pTLAS, "Sphere Instance",  SHADOW_RAY_INDEX,  "SphereShadowHit");
+m_pSBT->BindHitGroupForInstance(m_pTLAS, "Sphere Instance",  SHADOW_RAY_INDEX,  "SphereShadowHit");
 ```
 
-When TLAS is created with `BindingMode = HIT_GROUP_BINDING_MODE_PER_GEOMETRY` flag, the hit groups are 
-individually specified for every geometry in every instance:
+Note that a TLAS can be created with `BindingMode = HIT_GROUP_BINDING_MODE_PER_GEOMETRY` flag, 
+in which case hit groups can be individually specified for each geometry in every instance, for example:
 
 ```cpp
-m_pSBT->BindHitGroup(m_pTLAS, "Cube Instance 1", "Cube", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
+m_pSBT->BindHitGroupForGeometry(m_pTLAS, "Cube Instance 1", "Cube", PRIMARY_RAY_INDEX, "CubePrimaryHit"  );
 ```
 
 This may be useful to bind unique hit groups for each geometry.
