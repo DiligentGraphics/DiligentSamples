@@ -17,8 +17,9 @@ PrimaryRayPayload CastPrimaryRay(RayDesc ray, uint Recursion)
     TraceRay(g_TLAS,            // Acceleration structure
              RAY_FLAG_NONE,
              ~0,                // Instance inclusion mask - all instances are visible
-             PRIMARY_RAY_INDEX, // Ray contribution to hit group index
-             HIT_GROUP_STRIDE,  // Multiplier for geometry contribution to hit group index
+             PRIMARY_RAY_INDEX, // Ray contribution to hit group index (aka ray type)
+             HIT_GROUP_STRIDE,  // Multiplier for geometry contribution to hit
+                                // group index (aka the number of ray types)
              PRIMARY_RAY_INDEX, // Miss shader index
              ray,
              payload);
@@ -44,8 +45,9 @@ ShadowRayPayload CastShadow(RayDesc ray, uint Recursion)
     TraceRay(g_TLAS,            // Acceleration structure
              RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
              OPAQUE_GEOM_MASK,  // Instance inclusion mask - only opaque instances are visible
-             SHADOW_RAY_INDEX,  // Ray contribution to hit group index
-             HIT_GROUP_STRIDE,  // Multiplier for geometry contribution to hit group index
+             SHADOW_RAY_INDEX,  // Ray contribution to hit group index (aka ray type)
+             HIT_GROUP_STRIDE,  // Multiplier for geometry contribution to hit 
+                                // group index (aka the number of ray types)
              SHADOW_RAY_INDEX,  // Miss shader index
              ray,
              payload);

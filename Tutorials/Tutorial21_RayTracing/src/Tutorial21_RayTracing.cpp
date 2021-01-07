@@ -144,14 +144,14 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     // Create ray generation shader.
-    RefCntAutoPtr<IShader> pRG;
+    RefCntAutoPtr<IShader> pRayGen;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_RAY_GEN;
         ShaderCI.Desc.Name       = "Ray tracing RG";
         ShaderCI.FilePath        = "RayTrace.rgen";
         ShaderCI.EntryPoint      = "main";
-        m_pDevice->CreateShader(ShaderCI, &pRG);
-        VERIFY_EXPR(pRG != nullptr);
+        m_pDevice->CreateShader(ShaderCI, &pRayGen);
+        VERIFY_EXPR(pRayGen != nullptr);
     }
 
     // Create miss shaders.
@@ -215,7 +215,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     const RayTracingGeneralShaderGroup GeneralShaders[] = //
         {
             // Ray generation shader is an entry point for a ray tracing pipeline.
-            {"Main", pRG},
+            {"Main", pRayGen},
             // Primary ray miss shader.
             {"PrimaryMiss", pPrimaryMiss},
             // Shadow ray miss shader.
@@ -399,7 +399,7 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
     }
 
     // Create vertex buffer
-    RefCntAutoPtr<IBuffer> CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer> pCubeVertexBuffer;
     {
         BufferData BufData = {CubePos, sizeof(CubePos)};
         BufferDesc BuffDesc;
@@ -408,12 +408,12 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         BuffDesc.BindFlags     = BIND_RAY_TRACING;
         BuffDesc.uiSizeInBytes = sizeof(CubePos);
 
-        m_pDevice->CreateBuffer(BuffDesc, &BufData, &CubeVertexBuffer);
-        VERIFY_EXPR(CubeVertexBuffer != nullptr);
+        m_pDevice->CreateBuffer(BuffDesc, &BufData, &pCubeVertexBuffer);
+        VERIFY_EXPR(pCubeVertexBuffer != nullptr);
     }
 
     // Create index buffer
-    RefCntAutoPtr<IBuffer> CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer> pCubeIndexBuffer;
     {
         BufferData BufData = {Indices, sizeof(Indices)};
         BufferDesc BuffDesc;
@@ -422,8 +422,8 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         BuffDesc.BindFlags     = BIND_RAY_TRACING;
         BuffDesc.uiSizeInBytes = sizeof(Indices);
 
-        m_pDevice->CreateBuffer(BuffDesc, &BufData, &CubeIndexBuffer);
-        VERIFY_EXPR(CubeIndexBuffer != nullptr);
+        m_pDevice->CreateBuffer(BuffDesc, &BufData, &pCubeIndexBuffer);
+        VERIFY_EXPR(pCubeIndexBuffer != nullptr);
     }
 
     // Create & build bottom level acceleration structure
@@ -464,12 +464,12 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         // Build BLAS
         BLASBuildTriangleData TriangleData;
         TriangleData.GeometryName         = Triangles.GeometryName;
-        TriangleData.pVertexBuffer        = CubeVertexBuffer;
+        TriangleData.pVertexBuffer        = pCubeVertexBuffer;
         TriangleData.VertexStride         = sizeof(CubePos[0]);
         TriangleData.VertexCount          = Triangles.MaxVertexCount;
         TriangleData.VertexValueType      = Triangles.VertexValueType;
         TriangleData.VertexComponentCount = Triangles.VertexComponentCount;
-        TriangleData.pIndexBuffer         = CubeIndexBuffer;
+        TriangleData.pIndexBuffer         = pCubeIndexBuffer;
         TriangleData.PrimitiveCount       = Triangles.MaxPrimitiveCount;
         TriangleData.IndexType            = Triangles.IndexType;
         TriangleData.Flags                = RAYTRACING_GEOMETRY_FLAG_OPAQUE;
@@ -874,8 +874,8 @@ void Tutorial21_RayTracing::Render()
             plane.Distance *= invlen;
         }
 
-        // Calculate ray formed by the intersection of two planes.
-        const auto GetPlaneIntersection = [&Frustum](ViewFrustum::PLANE_IDX lhs, ViewFrustum::PLANE_IDX rhs, float4& result) {
+        // Calculate ray formed by the intersection two planes.
+        auto GetPlaneIntersection = [&Frustum](ViewFrustum::PLANE_IDX lhs, ViewFrustum::PLANE_IDX rhs, float4& result) {
             const Plane3D& lp = Frustum.GetPlane(lhs);
             const Plane3D& rp = Frustum.GetPlane(rhs);
 
