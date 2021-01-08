@@ -38,6 +38,7 @@
 #include "FileSystem.hpp"
 #include "imgui.h"
 #include "imGuIZMO.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {
@@ -109,6 +110,14 @@ void GLTFViewer::LoadModel(const char* Path)
         m_AnimationTimers.resize(m_Model->Animations.size());
         m_AnimationIndex = 0;
         m_PlayAnimation  = true;
+    }
+
+    m_CameraId = 0;
+    m_Cameras.clear();
+    for (const auto* node : m_Model->LinearNodes)
+    {
+        if (node->pCamera && node->pCamera->Type == GLTF::Camera::Projection::Perspective)
+            m_Cameras.push_back(node->pCamera.get());
     }
 }
 
@@ -270,17 +279,31 @@ void GLTFViewer::UpdateUI()
             }
         }
 #endif
-
-        ImGui::gizmo3D("Model Rotation", m_ModelRotation, ImGui::GetTextLineHeight() * 10);
-        ImGui::SameLine();
-        ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
-
-        if (ImGui::Button("Reset view"))
+        if (!m_Cameras.empty())
         {
-            ResetView();
+            std::vector<std::pair<Uint32, std::string>> CamList;
+            CamList.emplace_back(0, "default");
+            for (Uint32 i = 0; i < m_Cameras.size(); ++i)
+            {
+                const auto& Cam = m_Cameras[i];
+                CamList.emplace_back(i + 1, Cam->Name.empty() ? std::to_string(i) : Cam->Name);
+            }
+            ImGui::Combo("Camera", &m_CameraId, CamList.data(), static_cast<int>(CamList.size()));
         }
 
-        ImGui::SliderFloat("Camera distance", &m_CameraDist, 0.1f, 5.0f);
+        if (m_CameraId == 0)
+        {
+            ImGui::gizmo3D("Model Rotation", m_ModelRotation, ImGui::GetTextLineHeight() * 10);
+            ImGui::SameLine();
+            ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
+
+            if (ImGui::Button("Reset view"))
+            {
+                ResetView();
+            }
+
+            ImGui::SliderFloat("Camera distance", &m_CameraDist, 0.1f, 5.0f);
+        }
 
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Lighting"))
@@ -523,23 +546,51 @@ void GLTFViewer::Render()
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // Get pretransform matrix that rotates the scene according the surface orientation
-    auto     SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
-    float4x4 CameraView      = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist) * SrfPreTransform;
-    float4x4 CameraWorld     = CameraView.Inverse();
-    float3   CameraWorldPos  = float3::MakeVector(CameraWorld[3]);
+    float YFov  = PI_F / 4.0f;
+    float ZNear = 0.1f;
+    float ZFar  = 100.f;
+
+    float4x4 CameraView;
+    if (m_CameraId == 0)
+    {
+        CameraView = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
+
+        m_RenderParams.ModelTransform = m_ModelRotation.ToMatrix();
+    }
+    else
+    {
+        const auto* pCamera = m_Cameras[m_CameraId - 1];
+
+        // GLTF camera is defined such that the local +X axis is to the right,
+        // the lens looks towards the local -Z axis, and the top of the camera
+        // is aligned with the local +Y axis.
+        // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#cameras
+        // We need to inverse the Z axis as our camera looks towards +Z.
+        float4x4 InvZAxis = float4x4::Identity();
+        InvZAxis._33      = -1;
+
+        CameraView = pCamera->matrix.Inverse() * InvZAxis;
+        YFov       = pCamera->Perspective.YFov;
+        ZNear      = pCamera->Perspective.ZNear;
+        ZFar       = pCamera->Perspective.ZFar;
+
+        m_RenderParams.ModelTransform = float4x4::Identity();
+    }
+
+    // Apply pretransform matrix that rotates the scene according the surface orientation
+    CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    float4x4 CameraWorld = CameraView.Inverse();
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    const auto CameraProj     = GetAdjustedProjectionMatrix(YFov, ZNear, ZFar);
+    const auto CameraViewProj = CameraView * CameraProj;
 
-    // Compute world-view-projection matrix
-    auto CameraViewProj = CameraView * Proj;
-
-    m_RenderParams.ModelTransform = m_ModelRotation.ToMatrix();
+    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
 
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        CamAttribs->mProjT        = Proj.Transpose();
+        CamAttribs->mProjT        = CameraProj.Transpose();
         CamAttribs->mViewProjT    = CameraViewProj.Transpose();
         CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
         CamAttribs->f4Position    = float4(CameraWorldPos, 1);
@@ -560,7 +611,6 @@ void GLTFViewer::Render()
             {
                 UNEXPECTED("Unexpected bound box mode");
             }
-
 
             for (int row = 0; row < 4; ++row)
                 CamAttribs->f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
@@ -615,6 +665,7 @@ void GLTFViewer::Render()
 
 void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
+    if (m_CameraId == 0)
     {
         const auto& mouseState = m_InputController.GetMouseState();
 
@@ -661,10 +712,10 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
         m_CameraDist -= mouseState.WheelDelta * 0.25f;
         m_CameraDist = clamp(m_CameraDist, 0.1f, 5.f);
-    }
 
-    if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)
-        ResetView();
+        if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)
+            ResetView();
+    }
 
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();

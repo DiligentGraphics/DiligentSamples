@@ -114,6 +114,10 @@ private:
     MouseState m_LastMouseState;
     float      m_CameraYaw   = 0;
     float      m_CameraPitch = 0;
+
+    Uint32 m_CameraId = 0;
+
+    std::vector<const GLTF::Camera*> m_Cameras;
 };
 
 } // namespace Diligent
