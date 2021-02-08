@@ -75,13 +75,13 @@ private:
     ThreadingTools::Signal m_ExecuteCommandListsSignal;
     ThreadingTools::Signal m_GotoNextFrameSignal;
 
-    std::mutex      m_NumThreadsCompletedMtx;
     std::atomic_int m_NumThreadsCompleted;
     std::atomic_int m_NumThreadsReady;
 
     std::vector<std::thread> m_WorkerThreads;
 
     std::vector<RefCntAutoPtr<ICommandList>> m_CmdLists;
+    std::vector<ICommandList*>               m_CmdListPtrs;
 
     static constexpr const int    NumStates = 5;
     RefCntAutoPtr<IPipelineState> m_pPSO[2][NumStates];

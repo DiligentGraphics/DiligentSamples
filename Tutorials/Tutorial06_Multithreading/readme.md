@@ -115,7 +115,7 @@ Main thread coordinates the execution of worker threads and handles recorded com
 It starts by signaling all worker threads to start:
 
 ```cpp
-m_NumThreadsCompleted = 0;
+m_NumThreadsCompleted.store(0);
 m_RenderSubsetSignal.Trigger(true);
 ```
 
@@ -131,16 +131,17 @@ and executes them:
 ```cpp
 m_ExecuteCommandListsSignal.Wait(true, 1);
 
-for (auto& cmdList : m_CmdLists)
-{
-    m_pImmediateContext->ExecuteCommandList(cmdList);
-}
+m_CmdListPtrs.resize(m_CmdLists.size());
+for (Uint32 i = 0; i < m_CmdLists.size(); ++i)
+    m_CmdListPtrs[i] = m_CmdLists[i];
+
+m_pImmediateContext->ExecuteCommandLists(static_cast<Uint32>(m_CmdListPtrs.size()), m_CmdListPtrs.data());
 ```
 
 Finally, it tells the worker threads to proceed to the next frame:
 
 ```cpp
-m_NumThreadsReady = 0;
+m_NumThreadsReady.store(0);
 m_GotoNextFrameSignal.Trigger(true);
 ```
 

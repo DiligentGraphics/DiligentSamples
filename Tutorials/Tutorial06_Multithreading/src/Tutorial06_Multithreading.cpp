@@ -254,10 +254,9 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading* pThi
         pThis->m_CmdLists[ThreadNum] = pCmdList;
 
         {
-            std::lock_guard<std::mutex> Lock(pThis->m_NumThreadsCompletedMtx);
-            // Increment the number of completed threads
-            ++pThis->m_NumThreadsCompleted;
-            if (pThis->m_NumThreadsCompleted == NumWorkerThreads)
+            // Atomically increment the number of completed threads
+            const auto NumThreadsCompleted = pThis->m_NumThreadsCompleted.fetch_add(1) + 1;
+            if (NumThreadsCompleted == NumWorkerThreads)
                 pThis->m_ExecuteCommandListsSignal.Trigger();
         }
 
@@ -270,12 +269,12 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading* pThi
         //            thread that issued rendering commands.
         pDeferredCtx->FinishFrame();
 
-        ++pThis->m_NumThreadsReady;
+        pThis->m_NumThreadsReady.fetch_add(1);
         // We must wait until all threads reach this point, because
         // m_GotoNextFrameSignal must be unsignaled before we proceed to
         // RenderSubsetSignal to avoid one thread going through the loop twice in
         // a row.
-        while (pThis->m_NumThreadsReady < NumWorkerThreads)
+        while (pThis->m_NumThreadsReady.load() < NumWorkerThreads)
             std::this_thread::yield();
         VERIFY_EXPR(!pThis->m_GotoNextFrameSignal.IsTriggered());
     }
@@ -353,7 +352,7 @@ void Tutorial06_Multithreading::Render()
 
     if (!m_WorkerThreads.empty())
     {
-        m_NumThreadsCompleted = 0;
+        m_NumThreadsCompleted.store(0);
         m_RenderSubsetSignal.Trigger(true);
     }
 
@@ -363,16 +362,21 @@ void Tutorial06_Multithreading::Render()
     {
         m_ExecuteCommandListsSignal.Wait(true, 1);
 
+        m_CmdListPtrs.resize(m_CmdLists.size());
+        for (Uint32 i = 0; i < m_CmdLists.size(); ++i)
+            m_CmdListPtrs[i] = m_CmdLists[i];
+
+        m_pImmediateContext->ExecuteCommandLists(static_cast<Uint32>(m_CmdListPtrs.size()), m_CmdListPtrs.data());
+
         for (auto& cmdList : m_CmdLists)
         {
-            m_pImmediateContext->ExecuteCommandList(cmdList);
-            // Release command lists now to release all outstanding references
+            // Release command lists now to release all outstanding references.
             // In d3d11 mode, command lists hold references to the swap chain's back buffer
-            // that cause swap chain resize to fail
+            // that cause swap chain resize to fail.
             cmdList.Release();
         }
 
-        m_NumThreadsReady = 0;
+        m_NumThreadsReady.store(0);
         m_GotoNextFrameSignal.Trigger(true);
     }
 }
