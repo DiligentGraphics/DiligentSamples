@@ -355,10 +355,10 @@ void AtmosphereSample::UpdateUI()
                         ImGui::HelpMarker("Epipolar sampling refinement criterion.");
                     }
 
-                    if (ImGui::InputFloat("Aerosol Density", &m_PPAttribs.fAerosolDensityScale, 0.1f, 0.25f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputFloat("Aerosol Density", &m_PPAttribs.fAerosolDensityScale, 0.1f, 0.25f, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
                         m_PPAttribs.fAerosolDensityScale = clamp(m_PPAttribs.fAerosolDensityScale, 0.1f, 5.0f);
 
-                    if (ImGui::InputFloat("Aerosol Absorption", &m_PPAttribs.fAerosolAbsorbtionScale, 0.1f, 0.25f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputFloat("Aerosol Absorption", &m_PPAttribs.fAerosolAbsorbtionScale, 0.1f, 0.25f, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
                         m_PPAttribs.fAerosolAbsorbtionScale = clamp(m_PPAttribs.fAerosolAbsorbtionScale, 0.0f, 5.0f);
 
                     ImGui::Checkbox("Use custom scattering coeffs", &m_PPAttribs.bUseCustomSctrCoeffs);

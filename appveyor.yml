@@ -13,7 +13,7 @@ environment:
   # use 'capture' to generate golden images and upload them as build artifacts
   # use 'compare' to render and compare with the golden references
   # use 'compare_update' to first compare with the references and then update them
-  test_mode: compare_update
+  test_mode: capture
 
   matrix:
     - platform: x64

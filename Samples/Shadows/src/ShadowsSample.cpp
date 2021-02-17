@@ -188,7 +188,7 @@ void ShadowsSample::UpdateUI()
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Cascade allocation"))
         {
-            if (ImGui::InputFloat("Partitioning Factor", &m_ShadowSettings.PartitioningFactor, 0.001f, 0.01f, 3, ImGuiInputTextFlags_EnterReturnsTrue))
+            if (ImGui::InputFloat("Partitioning Factor", &m_ShadowSettings.PartitioningFactor, 0.001f, 0.01f, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
             {
                 m_ShadowSettings.PartitioningFactor = clamp(m_ShadowSettings.PartitioningFactor, 0.f, 1.f);
             }
