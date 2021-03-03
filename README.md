@@ -11,7 +11,7 @@ To build and run the applications in the module, please follow the [instructions
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
 [![Build Status](https://travis-ci.org/DiligentGraphics/DiligentSamples.svg?branch=master)](https://travis-ci.org/DiligentGraphics/DiligentSamples)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b5d56b2d448941c59f020518c1899ff7)](https://www.codacy.com/manual/DiligentGraphics/DiligentSamples?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DiligentGraphics/DiligentSamples&amp;utm_campaign=Badge_Grade)
-[![Lines of Code](https://tokei.rs/b1/github.com/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples).
+[![Lines of Code](https://tokei.rs/b1/github.com/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
 
 # Table of Contents
 
