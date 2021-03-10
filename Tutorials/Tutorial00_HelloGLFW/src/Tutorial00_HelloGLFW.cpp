@@ -480,15 +480,9 @@ private:
 
 std::unique_ptr<Tutorial00App> g_pTheApp;
 
-#if PLATFORM_WIN32
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
-{
-    const auto* cmdLine = GetCommandLineA();
-#else
 int main(int argc, const char** argv)
 {
     const char* cmdLine = argc >= 2 ? argv[1] : "";
-#endif
 
     g_pTheApp.reset(new Tutorial00App);
 
