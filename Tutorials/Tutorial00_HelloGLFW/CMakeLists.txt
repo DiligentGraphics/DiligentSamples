@@ -26,15 +26,11 @@ set_target_properties(Tutorial00_HelloGLFW PROPERTIES
 )
 
 target_compile_definitions(Tutorial00_HelloGLFW PRIVATE ENGINE_DLL=1)
-target_link_libraries(Tutorial00_HelloGLFW PRIVATE Diligent-BuildSettings)
-
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
-add_subdirectory("../../ThirdParty/glfw" ThirdParty.glfw)
-set_target_properties(glfw PROPERTIES FOLDER DiligentSamples/ThirdParty)
-target_link_libraries(Tutorial00_HelloGLFW PRIVATE glfw)
+target_link_libraries(Tutorial00_HelloGLFW
+PRIVATE
+	Diligent-BuildSettings
+	glfw
+)
 
 if(D3D11_SUPPORTED)
     target_link_libraries(Tutorial00_HelloGLFW PRIVATE Diligent-GraphicsEngineD3D11-shared)
@@ -56,6 +52,5 @@ if(MSVC)
     foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 		string(TOUPPER ${CONFIG} OUT_CONFIG)
         set_target_properties(Tutorial00_HelloGLFW PROPERTIES LINK_FLAGS_${OUT_CONFIG} "/SUBSYSTEM:CONSOLE")
-        message(STATUS "LINK_FLAGS_${OUT_CONFIG}")
     endforeach()
 endif()

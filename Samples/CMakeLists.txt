@@ -11,3 +11,4 @@ endif()
 
 add_subdirectory(ImguiDemo)
 add_subdirectory(NuklearDemo)
+add_subdirectory(GLFWDemo)

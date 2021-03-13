@@ -49,28 +49,37 @@
 #    define VULKAN_SUPPORTED 0
 #endif
 
+#include "Common/interface/RefCntAutoPtr.hpp"
+
+#if D3D11_SUPPORTED
+#    include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
+#endif
+#if D3D12_SUPPORTED
+#    include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
+#endif
+#if GL_SUPPORTED
+#    include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
+#endif
+#if VULKAN_SUPPORTED
+#    include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
+#endif
+
+#include "Graphics/GraphicsEngine/interface/RenderDevice.h"
+#include "Graphics/GraphicsEngine/interface/DeviceContext.h"
+#include "Graphics/GraphicsEngine/interface/SwapChain.h"
+
 #if PLATFORM_WIN32
 #    define GLFW_EXPOSE_NATIVE_WIN32 1
 #endif
 #if PLATFORM_LINUX
 #    define GLFW_EXPOSE_NATIVE_X11 1
+#    define _stricmp               strcasecmp
 #endif
 #if PLATFORM_MACOS
 #    define GLFW_EXPOSE_NATIVE_COCOA 1
 #endif
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
-
-#include "Common/interface/RefCntAutoPtr.hpp"
-
-#include "Graphics/GraphicsEngineD3D11/interface/EngineFactoryD3D11.h"
-#include "Graphics/GraphicsEngineD3D12/interface/EngineFactoryD3D12.h"
-#include "Graphics/GraphicsEngineOpenGL/interface/EngineFactoryOpenGL.h"
-#include "Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h"
-
-#include "Graphics/GraphicsEngine/interface/RenderDevice.h"
-#include "Graphics/GraphicsEngine/interface/DeviceContext.h"
-#include "Graphics/GraphicsEngine/interface/SwapChain.h"
 
 using namespace Diligent;
 
