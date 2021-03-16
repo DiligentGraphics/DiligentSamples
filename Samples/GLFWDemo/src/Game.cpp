@@ -34,7 +34,7 @@ namespace Diligent
 {
 namespace
 {
-#include "../assets/Structures.h"
+#include "../assets/Structures.fxh"
 
 static_assert(sizeof(MapConstants) % 16 == 0, "must be aligned to 16 bytes");
 static_assert(sizeof(PlayerConstants) % 16 == 0, "must be aligned to 16 bytes");
@@ -45,7 +45,7 @@ inline float fract(float x)
     return x - floor(x);
 }
 
-extern GLFWSample* CreateSample()
+GLFWSample* CreateSample()
 {
     return new Game{};
 }
@@ -115,6 +115,14 @@ void Game::Update(float dt)
 
             m_Player.Pos = Pos;
         }
+
+        // test intersection with teleport
+        float DistToTeleport = length(m_Map.TeleportPos - m_Player.Pos);
+        if (DistToTeleport < Constants.TeleportRadius)
+        {
+            // m_Player.Pos will be set to map center
+            LoadNewMap();
+        }
     }
     m_Player.PendingPos = {};
 
@@ -161,8 +169,10 @@ void Game::Draw()
 
         GetScreenTransform(Const.ScreenRectLR, Const.ScreenRectTB);
 
-        Const.UVToMap = Constants.MapTexDim.Recast<float>();
-        Const.MapToUV = float2(1.0f, 1.0f) / Const.UVToMap;
+        Const.UVToMap        = Constants.MapTexDim.Recast<float>();
+        Const.MapToUV        = float2(1.0f, 1.0f) / Const.UVToMap;
+        Const.TeleportRadius = Constants.TeleportRadius;
+        Const.TeleportPos    = m_Map.TeleportPos;
 
         pContext->UpdateBuffer(m_Map.pConstants, 0, sizeof(Const), &Const, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -258,18 +268,7 @@ void Game::KeyEvent(Key key, KeyState state)
 
     // generate new map
     if (state == KeyState::Release && key == Key::Tab)
-    {
-        try
-        {
-            GetDevice()->IdleGPU();
-            GenerateMap();
-            CreateSDFMap();
-            InitPlayer();
-            BindResources();
-        }
-        catch (...)
-        {}
-    }
+        LoadNewMap();
 }
 
 void Game::MouseEvent(float2 pos)
@@ -346,6 +345,66 @@ void Game::GenerateMap()
             MapData[x + y * TexDim.x] = false;
         }
     }
+
+    // find position for teleport
+    {
+        std::mt19937                          Gen{std::random_device{}()};
+        std::uniform_real_distribution<float> Seed{0.0f, 0.2f};
+
+        const auto TestTeleportPos = [&](int2 pos, int2& EmptyPixelPos, float& Suitability) //
+        {
+            const int FetchOffset = 2;
+            float     MinDist     = 1.0e+10f;
+            EmptyPixelPos         = pos;
+            Suitability           = Seed(Gen);
+            for (int y = pos.y - FetchOffset; y < pos.y + FetchOffset; ++y)
+            {
+                for (int x = pos.x - FetchOffset; x < pos.x + FetchOffset; ++x)
+                {
+                    if (x >= 0 && y >= 0 && x < static_cast<int>(TexDim.x) && y < static_cast<int>(TexDim.y))
+                    {
+                        float Dist    = length(int2(x, y).Recast<float>() - pos.Recast<float>());
+                        bool  IsEmpty = !MapData[x + y * TexDim.x];
+                        Suitability += (IsEmpty ? 1.f : 0.f) / std::max(1.0f, Dist * Dist);
+                        if (IsEmpty && Dist < MinDist)
+                        {
+                            MinDist       = Dist;
+                            EmptyPixelPos = int2(x, y);
+                        }
+                    }
+                }
+            }
+        };
+
+        const Uint32 Offset = 3;
+        const uint2  CandidatePos[] =
+            {
+                // clang-format off
+                uint2{           Offset,            Offset},
+                uint2{TexDim.x - Offset,            Offset},
+                uint2{           Offset, TexDim.y - Offset},
+                uint2{TexDim.x - Offset, TexDim.y - Offset},
+                uint2{TexDim.x / 2,                 Offset},
+                uint2{TexDim.x / 2,      TexDim.y - Offset},
+                uint2{           Offset, TexDim.y / 2     },
+                uint2{TexDim.x - Offset, TexDim.y / 2     }
+                // clang-format on
+            };
+
+        float MaxSuitability = 0.0f;
+        for (Uint32 i = 0; i < _countof(CandidatePos); ++i)
+        {
+            float Suitability;
+            int2  Pos;
+            TestTeleportPos(CandidatePos[i].Recast<int>(), Pos, Suitability);
+
+            if (Suitability > MaxSuitability)
+            {
+                MaxSuitability    = Suitability;
+                m_Map.TeleportPos = Pos.Recast<float>();
+            }
+        }
+    }
 }
 
 void Game::CreateSDFMap()
@@ -395,7 +454,6 @@ void Game::CreateSDFMap()
         ShaderCI.Desc.Name                  = "Generate SDF CS";
         ShaderCI.Macros                     = Macros;
         ShaderCI.UseCombinedTextureSamplers = true;
-        //ShaderCI.ShaderCompiler             = SHADER_COMPILER_DXC;
 
         RefCntAutoPtr<IShader> pCS;
         GetDevice()->CreateShader(ShaderCI, &pCS);
@@ -486,7 +544,6 @@ void Game::CreatePipelineState()
     ShaderCI.UseCombinedTextureSamplers = true;
     ShaderCI.pShaderSourceStreamFactory = m_pShaderSourceFactory;
     ShaderCI.FilePath                   = "DrawMap.hlsl";
-    //ShaderCI.ShaderCompiler             = SHADER_COMPILER_DXC;
 
     RefCntAutoPtr<IShader> pVS;
     {
@@ -563,6 +620,20 @@ void Game::BindResources()
     m_Map.pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "cbMapConstants")->Set(m_Map.pConstants);
     m_Map.pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SDFMap")->Set(m_Map.pMapTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_Map.pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "cbPlayerConstants")->Set(m_Player.pConstants);
+}
+
+void Game::LoadNewMap()
+{
+    try
+    {
+        GetDevice()->IdleGPU();
+        GenerateMap();
+        CreateSDFMap();
+        InitPlayer();
+        BindResources();
+    }
+    catch (...)
+    {}
 }
 
 } // namespace Diligent

@@ -1,4 +1,4 @@
-#include "Structures.h"
+#include "Structures.fxh"
 
 struct PSInput
 {
@@ -37,7 +37,8 @@ static const float3 WallColor         = float3(0.0, 0.0, 1.0);
 static const float3 PlayerColor       = float3(0.0, 2.0, 0.0);
 static const float3 AmbientLightColor = float3(0.3, 0.4, 0.5) * 0.7;
 static const float3 FlashLightColor   = float3(1.0, 1.0, 1.0) * 0.6;
-static const float3 AmbientLight      = float3(0.005, 0.005, 0.005);
+static const float3 AmbientLight      = float(0.001).xxx;
+static const float3 TeleportColor     = float3(0.2, 0.0, 0.0);
 
 float3 Blend(float3 src, float3 dst, float factor)
 {
@@ -47,7 +48,8 @@ float3 Blend(float3 src, float3 dst, float factor)
 // returns distance in pixels
 float ReadWallDist(float2 pos)
 {
-    return g_SDFMap.Sample(g_SDFMap_sampler, pos * g_MapConstants.MapToUV).r;
+    float SDFScale = 0.75; // calculated SDF may be a little bit inaccurate
+    return g_SDFMap.Sample(g_SDFMap_sampler, pos * g_MapConstants.MapToUV).r * SDFScale;
 }
 
 // returns 1 if light is visible
@@ -75,7 +77,7 @@ float TraceRay(float2 LightPos, float2 Origin, bool InsideWall)
         }
 
         // add small offset to skip border between wall and empty space
-        t += 0.25;
+        t += 0.2;
         Pos = Origin + Dir * t;
     }
 
@@ -108,6 +110,13 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
 
     // draw walls
     Color.rgb = Blend(Color.rgb, WallColor, (InsideWall ? 1.0 : 0.0));
+
+    // draw teleport
+    {
+        float DistToTeleport = distance(g_MapConstants.TeleportPos, PosOnMap);
+        float Factor         = saturate(1.0 - DistToTeleport / g_MapConstants.TeleportRadius);
+        Color.rgb            = Blend(Color.rgb, TeleportColor, Factor);
+    }
 
     // calc flash light color
     if (g_PlayerConstants.FlashLightPower > 0.0 &&

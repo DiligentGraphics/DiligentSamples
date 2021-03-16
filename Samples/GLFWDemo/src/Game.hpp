@@ -46,6 +46,7 @@ private:
     void CreatePipelineState();
     void InitPlayer();
     void BindResources();
+    void LoadNewMap();
 
     void Draw();
     void GetScreenTransform(float2& XRange, float2& YRange);
@@ -53,7 +54,7 @@ private:
 private:
     struct
     {
-        float2 Pos;
+        float2 Pos; // pixels
         float2 FlashLightDir   = {1.0f, 0.0f};
         float  FlashLightPower = 0.0f; // 0 - off, 1 - max brightness
 
@@ -67,7 +68,8 @@ private:
 
     struct
     {
-        std::vector<bool>                     MapData; // 0 - empty, 1 - wall
+        float2                                TeleportPos; // pixels, player must reach this point to finish game
+        std::vector<bool>                     MapData;     // 0 - empty, 1 - wall
         RefCntAutoPtr<ITexture>               pMapTex;
         RefCntAutoPtr<IPipelineState>         pPSO;
         RefCntAutoPtr<IShaderResourceBinding> pSRB;
@@ -76,13 +78,15 @@ private:
 
     struct
     {
-        const float PlayerRadius          = 0.25f; // pixels, must be less than 0.5
+        const float PlayerRadius          = 0.25f; // pixels, must be less than 0.5, because we use 1 bit SDF
         const float AmbientLightRadius    = 4.0f;  // pixels
         const float FlshLightMaxDist      = 25.0f; // pixels
         const float PlayerVelocity        = 4.0f;  // pixels / second
         const float FlashLightAttenuation = 4.0f;  // power / second
         const float MaxDT                 = 1.0f / 30.0f;
         const uint  MaxCollisionSteps     = 8;
+
+        const float TeleportRadius = 1.0f; // pixels
 
         const uint2  MapTexDim       = {64, 64};
         const Uint32 SDFTexScale     = 2;

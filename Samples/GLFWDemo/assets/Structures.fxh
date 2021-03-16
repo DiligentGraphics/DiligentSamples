@@ -16,4 +16,7 @@ struct MapConstants
     float2 ScreenRectTB; // top, bottom
     float2 UVToMap;
     float2 MapToUV;
+    float2 TeleportPos;
+    float  TeleportRadius;
+    float  padding;
 };

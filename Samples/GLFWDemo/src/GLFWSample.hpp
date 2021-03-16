@@ -30,8 +30,6 @@
 #include <chrono>
 #include <vector>
 
-#include "GLFW/glfw3.h"
-
 #include "Common/interface/RefCntAutoPtr.hpp"
 
 #include "Graphics/GraphicsEngine/interface/RenderDevice.h"
@@ -39,6 +37,8 @@
 #include "Graphics/GraphicsEngine/interface/SwapChain.h"
 
 #include "BasicMath.hpp"
+
+#include "GLFW/glfw3.h"
 
 namespace Diligent
 {
@@ -140,6 +140,6 @@ private:
     TClock::time_point m_LastUpdate = {};
 };
 
-extern GLFWSample* CreateSample();
+GLFWSample* CreateSample();
 
 } // namespace Diligent

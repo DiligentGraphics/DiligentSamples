@@ -51,7 +51,6 @@
 
 #if PLATFORM_LINUX
 #    define GLFW_EXPOSE_NATIVE_X11 1
-#    define _stricmp               strcasecmp
 #endif
 
 #if PLATFORM_MACOS
@@ -79,6 +78,10 @@
 #include "GLFWSample.hpp"
 
 #include "GLFW/glfw3native.h"
+
+#if PLATFORM_MACOS
+extern void* GetNSWindowView(GLFWwindow* wnd);
+#endif
 
 namespace Diligent
 {
@@ -131,10 +134,12 @@ bool GLFWSample::CreateEngine(RENDER_DEVICE_TYPE DevType)
     Win32NativeWindow Window{glfwGetWin32Window(m_Window)};
 #endif
 #if PLATFORM_LINUX
-    LinuxNativeWindow Window{glfwGetX11Window(m_Window), glfwGetX11Display()};
+    LinuxNativeWindow Window;
+    Window.WindowId = glfwGetX11Window(m_Window);
+    Window.pDisplay = glfwGetX11Display();
 #endif
 #if PLATFORM_MACOS
-    MacOSNativeWindow Window{glfwGetCocoaWindow(m_Window)};
+    MacOSNativeWindow Window{GetNSWindowView(m_Window)};
 #endif
 
     SwapChainDesc SCDesc;
@@ -317,6 +322,10 @@ void GLFWSample::Quit()
 
 bool GLFWSample::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType)
 {
+#if PLATFORM_LINUX || PLATFORM_MACOS
+#    define _stricmp strcasecmp
+#endif
+
     const auto* Key = "-mode ";
     const auto* pos = strstr(CmdLine, Key);
     if (pos != nullptr)
@@ -375,8 +384,6 @@ bool GLFWSample::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& Dev
 #elif GL_SUPPORTED
         DevType = RENDER_DEVICE_TYPE_GL;
 #endif
-
-        DevType = RENDER_DEVICE_TYPE_VULKAN;
     }
     return true;
 }

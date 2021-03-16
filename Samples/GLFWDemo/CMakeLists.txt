@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.6)
+cmake_minimum_required (VERSION 3.8)
 
 project(GLFWDemo CXX)
 
@@ -7,15 +7,28 @@ set(SOURCES
     src/GLFWSample.hpp
     src/Game.cpp
     src/Game.hpp
+    readme.md
 )
+if(PLATFORM_MACOS)
+    list(APPEND SOURCES src/SurfaceHelper.mm)
+endif()
+
 set(SHADERS
     assets/DrawMap.hlsl
     assets/GenerateSDF.hlsl
-    assets/Structures.h
+    assets/Structures.fxh
 )
 set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 
-add_executable(GLFWDemo WIN32 ${SOURCES} ${SHADERS})
+if(PLATFORM_MACOS)
+    add_executable(GLFWDemo MACOSX_BUNDLE ${SOURCES} ${SHADERS})
+else()
+    add_executable(GLFWDemo ${SOURCES} ${SHADERS})
+endif()
+
+set_target_properties(GLFWDemo PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
+target_compile_features(GLFWDemo PUBLIC cxx_std_11)
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${SHADERS})
 target_include_directories(GLFWDemo PRIVATE "../../../DiligentCore")
 
@@ -60,10 +73,6 @@ if(PLATFORM_WIN32)
 endif()
 
 if(MSVC)
-    foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
-        string(TOUPPER ${CONFIG} OUT_CONFIG)
-        set_target_properties(GLFWDemo PROPERTIES LINK_FLAGS_${OUT_CONFIG} "/SUBSYSTEM:CONSOLE")
-    endforeach()
     set_target_properties(GLFWDemo PROPERTIES 
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
     )
@@ -76,3 +85,15 @@ if(PLATFORM_WIN32 OR PLATFORM_LINUX)
             "${CMAKE_CURRENT_SOURCE_DIR}/assets"
             "\"$<TARGET_FILE_DIR:GLFWDemo>\"")
 endif()
+
+if(PLATFORM_MACOS AND VULKAN_LIB_PATH)
+    # Configure rpath so that executables can find vulkan library
+    set_target_properties(${APP_NAME} PROPERTIES
+        BUILD_RPATH "${VULKAN_LIB_PATH}"
+    )
+endif()
+
+set_source_files_properties(${SHADERS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "."
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
