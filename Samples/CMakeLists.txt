@@ -11,4 +11,7 @@ endif()
 
 add_subdirectory(ImguiDemo)
 add_subdirectory(NuklearDemo)
-add_subdirectory(GLFWDemo)
+
+if(NOT (PLATFORM_IOS OR PLATFORM_ANDROID))
+    add_subdirectory(GLFWDemo)
+endif()
