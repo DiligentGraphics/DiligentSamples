@@ -148,6 +148,8 @@ void Game::Update(float dt)
     // increase brightness if left mouse button pressed, decrease if not pressed
     m_Player.FlashLightPower = clamp(m_Player.FlashLightPower + Constants.FlashLightAttenuation * (m_Player.LMBPressed ? dt : -dt), 0.0f, 1.0f);
 
+    m_Map.TeleportWaveAnim = fract(m_Map.TeleportWaveAnim - dt * 0.5f);
+
     Draw();
 }
 
@@ -172,6 +174,7 @@ void Game::Draw()
         Const.UVToMap        = Constants.MapTexDim.Recast<float>();
         Const.MapToUV        = float2(1.0f, 1.0f) / Const.UVToMap;
         Const.TeleportRadius = Constants.TeleportRadius;
+        Const.TeleportWave   = m_Map.TeleportWaveAnim;
         Const.TeleportPos    = m_Map.TeleportPos;
 
         pContext->UpdateBuffer(m_Map.pConstants, 0, sizeof(Const), &Const, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -404,6 +407,7 @@ void Game::GenerateMap()
                 m_Map.TeleportPos = Pos.Recast<float>();
             }
         }
+        m_Map.TeleportWaveAnim = 0.0f;
     }
 }
 

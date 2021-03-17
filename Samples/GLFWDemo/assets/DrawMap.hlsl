@@ -38,11 +38,19 @@ static const float3 PlayerColor       = float3(0.0, 2.0, 0.0);
 static const float3 AmbientLightColor = float3(0.3, 0.4, 0.5) * 0.7;
 static const float3 FlashLightColor   = float3(1.0, 1.0, 1.0) * 0.6;
 static const float3 AmbientLight      = float(0.001).xxx;
-static const float3 TeleportColor     = float3(0.2, 0.0, 0.0);
+static const float3 TeleportColor     = float3(0.4, 0.0, 0.0);
+static const float3 TeleportWaveColor = float3(0.5, 0.2, 0.0);
 
 float3 Blend(float3 src, float3 dst, float factor)
 {
     return lerp(src, dst, factor);
+}
+
+// returns triangle wave /\/\ 
+float BumpStep(float x, float edge0, float edge1)
+{
+    x = saturate((x - edge0) / (edge1 - edge0));
+    return 1.0 - abs(x - 0.5) * 2.0;
 }
 
 // returns distance in pixels
@@ -100,22 +108,22 @@ float TraceRay(float2 LightPos, float2 Origin, bool InsideWall)
 
 float4 PSmain(in PSInput PSIn) : SV_TARGET
 {
-    const float2 PosOnMap     = PSIn.UV * g_MapConstants.UVToMap; // position on map in pixels
-    const float  DistToPlayer = distance(PosOnMap, g_PlayerConstants.PlayerPos);
-    const float2 DirToPlayer  = normalize(g_PlayerConstants.PlayerPos - PosOnMap);
-    float4       Color        = float4(0.2, 0.2, 0.2, 1.0);
-    float3       LightColor   = float3(0.0, 0.0, 0.0);
-    bool         TraceLight   = false;
-    const bool   InsideWall   = ReadWallDist(PosOnMap) < 0.0;
+    const float2 PosOnMap       = PSIn.UV * g_MapConstants.UVToMap; // position on map in pixels
+    const float  DistToPlayer   = distance(PosOnMap, g_PlayerConstants.PlayerPos);
+    const float2 DirToPlayer    = normalize(g_PlayerConstants.PlayerPos - PosOnMap);
+    const float  DistToTeleport = distance(g_MapConstants.TeleportPos, PosOnMap);
+    float4       Color          = float4(0.2, 0.2, 0.2, 1.0);
+    float3       LightColor     = float3(0.0, 0.0, 0.0);
+    bool         TraceLight     = false;
+    const bool   InsideWall     = ReadWallDist(PosOnMap) < 0.0;
 
     // draw walls
     Color.rgb = Blend(Color.rgb, WallColor, (InsideWall ? 1.0 : 0.0));
 
     // draw teleport
     {
-        float DistToTeleport = distance(g_MapConstants.TeleportPos, PosOnMap);
-        float Factor         = saturate(1.0 - DistToTeleport / g_MapConstants.TeleportRadius);
-        Color.rgb            = Blend(Color.rgb, TeleportColor, Factor);
+        float Factor = saturate(1.0 - DistToTeleport / g_MapConstants.TeleportRadius);
+        Color.rgb    = Blend(Color.rgb, TeleportColor, Factor);
     }
 
     // calc flash light color
@@ -149,7 +157,7 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
     // ray marching from current pixel to player (light source) position
     if (TraceLight)
     {
-        // 0 - totally occluded, 1 - totally illuminated, other - penumbra
+        // 0 - totally shaded, 1 - totally illuminated, other - penumbra
         float Shading = TraceRay(g_PlayerConstants.PlayerPos, PosOnMap, InsideWall);
 
         // for soft shadows
@@ -164,9 +172,16 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
         Color.rgb *= AmbientLight;
     }
 
+    // draw teleport wave
+    {
+        const float WaveWidth = 0.2;
+        float       Factor    = saturate(1.0 - DistToTeleport / g_MapConstants.TeleportRadius);
+        float       Wave      = BumpStep(Factor, g_MapConstants.TeleportWave, g_MapConstants.TeleportWave + WaveWidth);
+        Color.rgb             = Blend(Color.rgb, TeleportWaveColor, Wave);
+    }
+
     // draw player
     {
-        // dist in range [-r, +inf] to blend factor in range [1, 0]
         float Factor = saturate(1.0 - DistToPlayer / g_PlayerConstants.PlayerRadius);
         Color.rgb    = Blend(Color.rgb, PlayerColor, Factor);
     }

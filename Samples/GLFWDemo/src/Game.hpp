@@ -69,7 +69,8 @@ private:
     struct
     {
         float2                                TeleportPos; // pixels, player must reach this point to finish game
-        std::vector<bool>                     MapData;     // 0 - empty, 1 - wall
+        float                                 TeleportWaveAnim = 0.0f;
+        std::vector<bool>                     MapData; // 0 - empty, 1 - wall
         RefCntAutoPtr<ITexture>               pMapTex;
         RefCntAutoPtr<IPipelineState>         pPSO;
         RefCntAutoPtr<IShaderResourceBinding> pSRB;
