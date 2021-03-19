@@ -148,7 +148,7 @@ void Game::Update(float dt)
     // increase brightness if left mouse button pressed, decrease if not pressed
     m_Player.FlashLightPower = clamp(m_Player.FlashLightPower + Constants.FlashLightAttenuation * (m_Player.LMBPressed ? dt : -dt), 0.0f, 1.0f);
 
-    m_Map.TeleportWaveAnim = fract(m_Map.TeleportWaveAnim - dt * 0.5f);
+    m_Map.TeleportWaveAnim = fract(m_Map.TeleportWaveAnim + dt * 0.5f);
 
     Draw();
 }
@@ -171,11 +171,11 @@ void Game::Draw()
 
         GetScreenTransform(Const.ScreenRectLR, Const.ScreenRectTB);
 
-        Const.UVToMap        = Constants.MapTexDim.Recast<float>();
-        Const.MapToUV        = float2(1.0f, 1.0f) / Const.UVToMap;
-        Const.TeleportRadius = Constants.TeleportRadius;
-        Const.TeleportWave   = m_Map.TeleportWaveAnim;
-        Const.TeleportPos    = m_Map.TeleportPos;
+        Const.UVToMap            = Constants.MapTexDim.Recast<float>();
+        Const.MapToUV            = float2(1.0f, 1.0f) / Const.UVToMap;
+        Const.TeleportRadius     = Constants.TeleportRadius;
+        Const.TeleportWaveRadius = Constants.TeleportRadius * m_Map.TeleportWaveAnim;
+        Const.TeleportPos        = m_Map.TeleportPos;
 
         pContext->UpdateBuffer(m_Map.pConstants, 0, sizeof(Const), &Const, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -301,7 +301,7 @@ void Game::GenerateMap()
         MapData[(y + 1) * TexDim.x - 1] = true;
     }
 
-    // generate random walls
+    // generate random walls and write it to a 1-bit texture
     {
         std::mt19937                       Gen{std::random_device{}()};
         std::uniform_int_distribution<int> NumSegDistrib{0, 4};
@@ -491,7 +491,7 @@ void Game::CreateSDFMap()
         pGenSdfSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_DstTex")->Set(m_Map.pMapTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
     }
 
-    // Generate SDF
+    // Generate signed distance field (SDF)
     auto* pContext = GetContext();
 
     // upload map to pSrcTex
@@ -500,6 +500,7 @@ void Game::CreateSDFMap()
         MapData.resize(m_Map.MapData.size());
         VERIFY_EXPR(MapData.size() == (SrcTexDim.x * SrcTexDim.y));
 
+        // convert 1-bit to 8-bit texture
         for (size_t i = 0; i < MapData.size(); ++i)
             MapData[i] = m_Map.MapData[i] ? 0xFF : 0;
 
@@ -511,7 +512,7 @@ void Game::CreateSDFMap()
         pContext->UpdateTexture(pSrcTex, 0, 0, Box{0, SrcTexDim.x, 0, SrcTexDim.y}, SubresData, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
-    // compute SDF
+    // compute SDF - for each pixel find minimal distance from empty space to wall or from wall to empty space.
     {
         const uint2 LocalGroupSize = {8, 8};
 

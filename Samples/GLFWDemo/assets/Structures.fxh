@@ -18,5 +18,5 @@ struct MapConstants
     float2 MapToUV;
     float2 TeleportPos;
     float  TeleportRadius;
-    float  TeleportWave;
+    float  TeleportWaveRadius;
 };

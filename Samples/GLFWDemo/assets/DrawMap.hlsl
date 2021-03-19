@@ -53,8 +53,8 @@ float BumpStep(float x, float edge0, float edge1)
     return 1.0 - abs(x - 0.5) * 2.0;
 }
 
-// returns distance in pixels
-float ReadWallDist(float2 pos)
+// returns distance (sphere radius) in pixels
+float ReadSDF(float2 pos)
 {
     float SDFScale = 0.75; // calculated SDF may be a little bit inaccurate
     return g_SDFMap.Sample(g_SDFMap_sampler, pos * g_MapConstants.MapToUV).r * SDFScale;
@@ -63,22 +63,24 @@ float ReadWallDist(float2 pos)
 // returns 1 if light is visible
 float TraceRay(float2 LightPos, float2 Origin, bool InsideWall)
 {
-    const float  TMax    = max(distance(LightPos, Origin) - 0.001, 0.001);
-    const float  MinDist = 0.00625;
-    const int    MaxIter = 128;
-    const float2 Dir     = normalize(LightPos - Origin);
-    float2       Pos     = Origin; // ray marching position in pixels
+    const float  TMax    = max(distance(LightPos, Origin) - 0.001, 0.001); // distance from current pixel to light source.
+    const float  MinDist = 0.00625;                      // some minimal value.
+    const int    MaxIter = 128;                          // maximum number of loop cycles to prevent infinite loops.
+    const float2 Dir     = normalize(LightPos - Origin); // ray marching direction.
+    float2       Pos     = Origin;                       // ray marching start position.
+    float        t       = 0.0;                          // ray length
     int          i       = 0;
-    float        t       = 0.0; // distance in pixels
 
-    // trace ray inside wall to highligh nearest walls
+    // trace ray inside wall to highlight nearest walls
     if (InsideWall)
     {
         [loop] for (; i < MaxIter; ++i)
         {
-            float d = -ReadWallDist(Pos);
+            float d = -ReadSDF(Pos);
+
+            // stop ray marching on positive value, this means ray in the empty space
             if (d < MinDist)
-                break; // stop ray marching on positive value, this means ray in the empty space
+                break;
 
             t += d;
             Pos = Origin + Dir * t;
@@ -92,15 +94,20 @@ float TraceRay(float2 LightPos, float2 Origin, bool InsideWall)
     // trace ray through the empty space
     [loop] for (; i < MaxIter; ++i)
     {
-        float d = ReadWallDist(Pos);
-        if (d < MinDist)
-            break; // stop ray marching on negative or too small distance
+        // read the maximum radius of the sphere inside which there are no intersections
+        float d = ReadSDF(Pos);
 
+        // stop ray marching on negative or too small distance
+        if (d < MinDist)
+            break;
+        
+        // me can increase ray length to the sphere radius
         t += d;
         Pos = Origin + Dir * t;
 
+        // stop ray marching if ray distance is equal or greater than distance from current pixel to the light source
         if (t > TMax)
-            break; // stop ray marching if ray distance is equal or greater than distance from current pixel to light source
+            break;
     }
 
     return t > TMax ? 1.0 : 0.0;
@@ -115,8 +122,8 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
     float4       Color          = float4(0.2, 0.2, 0.2, 1.0);
     float3       LightColor     = float3(0.0, 0.0, 0.0);
     bool         TraceLight     = false;
-    const bool   InsideWall     = ReadWallDist(PosOnMap) < 0.0;
-
+    const bool   InsideWall     = ReadSDF(PosOnMap) < 0.0;
+    
     // draw walls
     Color.rgb = Blend(Color.rgb, WallColor, (InsideWall ? 1.0 : 0.0));
 
@@ -126,14 +133,14 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
         Color.rgb    = Blend(Color.rgb, TeleportColor, Factor);
     }
 
-    // calc flash light color
+    // calculate flash light color
     if (g_PlayerConstants.FlashLightPower > 0.0 &&
         dot(g_PlayerConstants.FlashLightDir, -DirToPlayer) > 0.0)
     {
         const float  TanOfAngle = 0.5; // tangent of flash light cone angle
         const float2 Dir        = g_PlayerConstants.FlashLightDir;
 
-        // calculate ditance to ray using line equation
+        // calculate distance to ray using line equation
         float2 Begin      = g_PlayerConstants.PlayerPos;
         float2 End        = Begin + Dir;
         float  DistToRay  = abs((-Dir.y * PosOnMap.x) + (Dir.x * PosOnMap.y) + (Begin.x * End.y - End.x * Begin.y));
@@ -146,7 +153,7 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
         TraceLight   = TraceLight || Factor > 0.0;
     }
 
-    // calc ambient light color
+    // calculate color for ambient light around of player
     {
         float Factor = DistToPlayer / g_PlayerConstants.AmbientLightRadius;
         Factor       = saturate(1.0 - sqrt(Factor));
@@ -158,14 +165,14 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
     if (TraceLight)
     {
         // 0 - totally shaded, 1 - totally illuminated, other - penumbra
-        float Shading = TraceRay(g_PlayerConstants.PlayerPos, PosOnMap, InsideWall);
+        float Shading = TraceRay(g_PlayerConstants.PlayerPos, PosOnMap, InsideWall) * 0.5;
 
         // for soft shadows
-        float2 Norm = float2(-DirToPlayer.y, DirToPlayer.x); // left normal
-        Shading += TraceRay(g_PlayerConstants.PlayerPos, PosOnMap + Norm * 0.25, InsideWall) * 0.25;
-        Shading += TraceRay(g_PlayerConstants.PlayerPos, PosOnMap - Norm * 0.25, InsideWall) * 0.25;
+        float2 Norm = float2(-DirToPlayer.y, DirToPlayer.x); // left normal to the line
+        Shading += TraceRay(g_PlayerConstants.PlayerPos, PosOnMap + Norm * 0.125, InsideWall) * 0.25;
+        Shading += TraceRay(g_PlayerConstants.PlayerPos, PosOnMap - Norm * 0.125, InsideWall) * 0.25;
 
-        Color.rgb = (Color.rgb * LightColor * saturate(Shading)) + (Color.rgb * AmbientLight);
+        Color.rgb = (Color.rgb * LightColor * Shading) + (Color.rgb * AmbientLight);
     }
     else
     {
@@ -175,9 +182,9 @@ float4 PSmain(in PSInput PSIn) : SV_TARGET
     // draw teleport wave
     {
         const float WaveWidth = 0.2;
-        float       Factor    = saturate(1.0 - DistToTeleport / g_MapConstants.TeleportRadius);
-        float       Wave      = BumpStep(Factor, g_MapConstants.TeleportWave, g_MapConstants.TeleportWave + WaveWidth);
-        Color.rgb             = Blend(Color.rgb, TeleportWaveColor, Wave);
+        float       Shading   = 1.0 - smoothstep(0.0, 0.0001, dot(Color.rgb, Color.rgb)); // hide wave if it is illuminated
+        float       Wave      = BumpStep(DistToTeleport, g_MapConstants.TeleportWaveRadius, g_MapConstants.TeleportWaveRadius + WaveWidth);
+        Color.rgb             = Blend(Color.rgb, TeleportWaveColor, Wave * Shading);
     }
 
     // draw player
