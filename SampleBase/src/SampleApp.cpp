@@ -387,15 +387,18 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
     switch (m_DeviceType)
     {
         // clang-format off
-        case RENDER_DEVICE_TYPE_D3D11:  m_AppTitle.append(" (D3D11)");    break;
-        case RENDER_DEVICE_TYPE_D3D12:  m_AppTitle.append(" (D3D12)");    break;
-        case RENDER_DEVICE_TYPE_GL:     m_AppTitle.append(" (OpenGL)");   break;
-        case RENDER_DEVICE_TYPE_GLES:   m_AppTitle.append(" (OpenGLES)"); break;
-        case RENDER_DEVICE_TYPE_VULKAN: m_AppTitle.append(" (Vulkan)");   break;
-        case RENDER_DEVICE_TYPE_METAL:  m_AppTitle.append(" (Metal)");    break;
+        case RENDER_DEVICE_TYPE_D3D11:  m_AppTitle.append(" (D3D11");    break;
+        case RENDER_DEVICE_TYPE_D3D12:  m_AppTitle.append(" (D3D12");    break;
+        case RENDER_DEVICE_TYPE_GL:     m_AppTitle.append(" (OpenGL");   break;
+        case RENDER_DEVICE_TYPE_GLES:   m_AppTitle.append(" (OpenGLES"); break;
+        case RENDER_DEVICE_TYPE_VULKAN: m_AppTitle.append(" (Vulkan");   break;
+        case RENDER_DEVICE_TYPE_METAL:  m_AppTitle.append(" (Metal");    break;
         default: UNEXPECTED("Unknown/unsupported device type");
             // clang-format on
     }
+    m_AppTitle.append(", API ");
+    m_AppTitle.append(std::to_string(DILIGENT_API_VERSION));
+    m_AppTitle.push_back(')');
 
     m_pImmediateContext.Attach(ppContexts[0]);
     auto NumDeferredCtx = ppContexts.size() - 1;
