@@ -42,6 +42,7 @@ class Tutorial09_Quads final : public SampleBase
 {
 public:
     ~Tutorial09_Quads() override;
+    virtual void ProcessCommandLine(const char* CmdLine) override final;
     virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
                                                 EngineCreateInfo&  Attribs,
                                                 SwapChainDesc&     SCDesc) override final;
@@ -89,6 +90,9 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_BatchSRB;
     RefCntAutoPtr<ITextureView>           m_TextureSRV[NumTextures];
     RefCntAutoPtr<ITextureView>           m_TexArraySRV;
+
+    static constexpr int MaxQuads     = 100000;
+    static constexpr int MaxBatchSize = 100;
 
     int m_NumQuads  = 1000;
     int m_BatchSize = 5;

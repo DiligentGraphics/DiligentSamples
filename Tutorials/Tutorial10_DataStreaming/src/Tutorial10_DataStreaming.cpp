@@ -30,6 +30,7 @@
 #include <math.h>
 #include <algorithm>
 #include <limits>
+#include <cstdlib>
 
 #include "Tutorial10_DataStreaming.hpp"
 #include "MapHelper.hpp"
@@ -129,6 +130,31 @@ SampleBase* CreateSample()
 Tutorial10_DataStreaming::~Tutorial10_DataStreaming()
 {
     StopWorkerThreads();
+}
+
+std::string GetArgument(const char*& pos, const char* ArgName);
+
+void Tutorial10_DataStreaming::ProcessCommandLine(const char* CmdLine)
+{
+    const auto* pos = strchr(CmdLine, '-');
+    while (pos != nullptr)
+    {
+        ++pos;
+        std::string Arg;
+        if (!(Arg = GetArgument(pos, "polygons")).empty())
+        {
+            m_NumPolygons = clamp(atoi(Arg.c_str()), 1, MaxPolygons);
+        }
+        else if (!(Arg = GetArgument(pos, "batch")).empty())
+        {
+            m_BatchSize = clamp(atoi(Arg.c_str()), 1, MaxBatchSize);
+        }
+        else if (!(Arg = GetArgument(pos, "threads")).empty())
+        {
+            m_NumWorkerThreads = clamp(atoi(Arg.c_str()), 0, 128);
+        }
+        pos = strchr(pos, '-');
+    }
 }
 
 void Tutorial10_DataStreaming::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
@@ -400,12 +426,12 @@ void Tutorial10_DataStreaming::UpdateUI()
     {
         if (ImGui::InputInt("Num Polygons", &m_NumPolygons, 100, 1000, ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            m_NumPolygons = std::min(std::max(m_NumPolygons, 1), 100000);
+            m_NumPolygons = clamp(m_NumPolygons, 1, MaxPolygons);
             InitializePolygons();
         }
         if (ImGui::InputInt("Batch Size", &m_BatchSize, 1, 5))
         {
-            m_BatchSize = std::min(std::max(m_BatchSize, 1), 100);
+            m_BatchSize = clamp(m_BatchSize, 1, MaxBatchSize);
             CreateInstanceBuffer();
         }
         {
@@ -431,7 +457,7 @@ void Tutorial10_DataStreaming::Initialize(const SampleInitInfo& InitInfo)
     SampleBase::Initialize(InitInfo);
 
     m_MaxThreads       = static_cast<int>(m_pDeferredContexts.size());
-    m_NumWorkerThreads = std::min(4, m_MaxThreads);
+    m_NumWorkerThreads = std::min(m_NumWorkerThreads, m_MaxThreads);
 
     std::vector<StateTransitionDesc> Barriers;
     CreatePipelineStates(Barriers);
