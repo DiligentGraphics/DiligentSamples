@@ -83,20 +83,12 @@ void Tutorial09_Quads::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceT
 {
     SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
     Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
-#if D3D12_SUPPORTED
-    if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
-    {
-        EngineD3D12CreateInfo& EngD3D12Attribs    = static_cast<EngineD3D12CreateInfo&>(Attribs);
-        EngD3D12Attribs.NumCommandsToFlushCmdList = UINT_MAX; // Never flush the context while recording commands
-    }
-#endif
 #if VULKAN_SUPPORTED
     if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& VkAttrs                       = static_cast<EngineVkCreateInfo&>(Attribs);
-        VkAttrs.DynamicHeapSize             = 128 << 20;
-        VkAttrs.DynamicHeapPageSize         = 2 << 20;
-        VkAttrs.NumCommandsToFlushCmdBuffer = UINT_MAX; // Never flush the context while recording commands
+        auto& VkAttrs               = static_cast<EngineVkCreateInfo&>(Attribs);
+        VkAttrs.DynamicHeapSize     = 128 << 20;
+        VkAttrs.DynamicHeapPageSize = 2 << 20;
     }
 #endif
 }
