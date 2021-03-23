@@ -306,6 +306,7 @@ See [Apache 2.0 license](License.txt).
 This project has some third-party dependencies, each of which may have independent licensing:
 
 * [nuklear](https://github.com/vurtun/nuklear): A single-header ANSI C gui library ([MIT or Public domain license](https://github.com/DiligentGraphics/nuklear/blob/master/Readme.md)).
+* [glfw](https://github.com/glfw/glfw): A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input ([zlib License](https://github.com/DiligentGraphics/glfw/blob/master/LICENSE.md)).
 
 
 <a name="contributing"></a>

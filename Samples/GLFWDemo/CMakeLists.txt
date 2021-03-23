@@ -3,8 +3,8 @@ cmake_minimum_required (VERSION 3.8)
 project(GLFWDemo CXX)
 
 set(SOURCES
-    src/GLFWSample.cpp
-    src/GLFWSample.hpp
+    src/GLFWDemo.cpp
+    src/GLFWDemo.hpp
     src/Game.cpp
     src/Game.hpp
     readme.md

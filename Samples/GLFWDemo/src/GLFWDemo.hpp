@@ -43,11 +43,11 @@
 namespace Diligent
 {
 
-class GLFWSample
+class GLFWDemo
 {
 public:
-    GLFWSample();
-    virtual ~GLFWSample();
+    GLFWDemo();
+    virtual ~GLFWDemo();
 
     //
     // Public API
@@ -108,7 +108,7 @@ public:
 
 private:
     bool CreateWindow(const char* Title, int Width, int Height);
-    bool CreateEngine(RENDER_DEVICE_TYPE DevType);
+    bool InitEngine(RENDER_DEVICE_TYPE DevType);
     bool ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType);
     void Loop();
     void OnKeyEvent(Key key, KeyState state);
@@ -119,7 +119,7 @@ private:
     static void GLFW_CursorPosCallback(GLFWwindow* wnd, double xpos, double ypos);
     static void GLFW_MouseWheelCallback(GLFWwindow* wnd, double dx, double dy);
 
-    friend int GLFWSampleMain(const char* cmdLine);
+    friend int GLFWDemoMain(const char* cmdLine);
 
 private:
     RefCntAutoPtr<IRenderDevice>  m_pDevice;
@@ -140,6 +140,6 @@ private:
     TClock::time_point m_LastUpdate = {};
 };
 
-GLFWSample* CreateSample();
+GLFWDemo* CreateGLFWApp();
 
 } // namespace Diligent

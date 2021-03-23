@@ -26,18 +26,22 @@
  */
 
 #include <random>
+#include <vector>
 
 #include "Game.hpp"
 #include "ShaderMacroHelper.hpp"
 
 namespace Diligent
 {
+
 namespace
 {
+
 #include "../assets/Structures.fxh"
 
 static_assert(sizeof(MapConstants) % 16 == 0, "must be aligned to 16 bytes");
 static_assert(sizeof(PlayerConstants) % 16 == 0, "must be aligned to 16 bytes");
+
 } // namespace
 
 inline float fract(float x)
@@ -45,7 +49,7 @@ inline float fract(float x)
     return x - floor(x);
 }
 
-GLFWSample* CreateSample()
+GLFWDemo* CreateGLFWApp()
 {
     return new Game{};
 }
@@ -133,8 +137,8 @@ void Game::Update(float dt)
 
         // convert player position to signed normalized screen coordinates
         float2 UNormPlayerPos = m_Player.Pos / Constants.MapTexDim.Recast<float>();
-        float2 SNormPlayerPos = float2(lerp(XRange.x, XRange.y, UNormPlayerPos.x),
-                                       lerp(YRange.x, YRange.y, UNormPlayerPos.y));
+        float2 SNormPlayerPos = float2{lerp(XRange.x, XRange.y, UNormPlayerPos.x),
+                                       lerp(YRange.x, YRange.y, UNormPlayerPos.y)};
 
         // convert mouse position to signed normalized screen coordinates
         const auto SCDesc        = GetSwapChain()->GetDesc();
@@ -208,7 +212,7 @@ void Game::Draw()
 
 void Game::GetScreenTransform(float2& XRange, float2& YRange)
 {
-    const auto  SCDesc       = GetSwapChain()->GetDesc();
+    const auto& SCDesc       = GetSwapChain()->GetDesc();
     const float ScreenAspect = static_cast<float>(SCDesc.Width) / SCDesc.Height;
     const float TexAspect    = static_cast<float>(Constants.MapTexDim.x) / Constants.MapTexDim.y;
 
@@ -287,21 +291,21 @@ void Game::GenerateMap()
     MapData.clear();
     MapData.resize(TexDim.x * TexDim.y, 0);
 
-    // set up and down borders
+    // Set top and bottom borders
     for (Uint32 x = 0, x2 = TexDim.x * (TexDim.y - 1); x < TexDim.x; ++x, ++x2)
     {
         MapData[x]  = true;
         MapData[x2] = true;
     }
 
-    // set bottom and top borders
+    // Set left and right borders
     for (Uint32 y = 0; y < TexDim.y; ++y)
     {
         MapData[y * TexDim.x]           = true;
         MapData[(y + 1) * TexDim.x - 1] = true;
     }
 
-    // generate random walls and write it to a 1-bit texture
+    // Generate random walls and write it to a 1-bit texture
     {
         std::mt19937                       Gen{std::random_device{}()};
         std::uniform_int_distribution<int> NumSegDistrib{0, 4};
@@ -340,7 +344,7 @@ void Game::GenerateMap()
         }
     }
 
-    // clear center to put player
+    // Clear center to put player
     for (Uint32 y = TexDim.y / 2 - 2; y < TexDim.y / 2 + 2; ++y)
     {
         for (Uint32 x = TexDim.x / 2 - 2; x < TexDim.x / 2 + 2; ++x)
@@ -349,7 +353,7 @@ void Game::GenerateMap()
         }
     }
 
-    // find position for teleport
+    // Find position for the teleport
     {
         std::mt19937                          Gen{std::random_device{}()};
         std::uniform_real_distribution<float> Seed{0.0f, 0.2f};
@@ -496,8 +500,7 @@ void Game::CreateSDFMap()
 
     // upload map to pSrcTex
     {
-        std::vector<Uint8> MapData;
-        MapData.resize(m_Map.MapData.size());
+        std::vector<Uint8> MapData(m_Map.MapData.size());
         VERIFY_EXPR(MapData.size() == (SrcTexDim.x * SrcTexDim.y));
 
         // convert 1-bit to 8-bit texture
@@ -512,7 +515,7 @@ void Game::CreateSDFMap()
         pContext->UpdateTexture(pSrcTex, 0, 0, Box{0, SrcTexDim.x, 0, SrcTexDim.y}, SubresData, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
-    // compute SDF - for each pixel find minimal distance from empty space to wall or from wall to empty space.
+    // Compute SDF - for each pixel find the minimal distance from empty space to a wall or from the wall to empty space.
     {
         const uint2 LocalGroupSize = {8, 8};
 

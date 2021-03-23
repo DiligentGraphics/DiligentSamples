@@ -27,12 +27,12 @@
 
 #pragma once
 
-#include "GLFWSample.hpp"
+#include "GLFWDemo.hpp"
 
 namespace Diligent
 {
 
-class Game final : public GLFWSample
+class Game final : public GLFWDemo
 {
 public:
     virtual bool Initialize() override;

@@ -75,7 +75,7 @@
 #    undef CreateWindow
 #endif
 
-#include "GLFWSample.hpp"
+#include "GLFWDemo.hpp"
 
 #include "GLFW/glfw3native.h"
 
@@ -86,11 +86,11 @@ extern void* GetNSWindowView(GLFWwindow* wnd);
 namespace Diligent
 {
 
-GLFWSample::GLFWSample()
+GLFWDemo::GLFWDemo()
 {
 }
 
-GLFWSample::~GLFWSample()
+GLFWDemo::~GLFWDemo()
 {
     if (m_pImmediateContext)
         m_pImmediateContext->Flush();
@@ -106,7 +106,7 @@ GLFWSample::~GLFWSample()
     }
 }
 
-bool GLFWSample::CreateWindow(const char* Title, int Width, int Height)
+bool GLFWDemo::CreateWindow(const char* Title, int Width, int Height)
 {
     if (glfwInit() != GLFW_TRUE)
         return false;
@@ -128,7 +128,7 @@ bool GLFWSample::CreateWindow(const char* Title, int Width, int Height)
     return true;
 }
 
-bool GLFWSample::CreateEngine(RENDER_DEVICE_TYPE DevType)
+bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 {
 #if PLATFORM_WIN32
     Win32NativeWindow Window{glfwGetWin32Window(m_Window)};
@@ -149,11 +149,6 @@ bool GLFWSample::CreateEngine(RENDER_DEVICE_TYPE DevType)
         case RENDER_DEVICE_TYPE_D3D11:
         {
             EngineD3D11CreateInfo EngineCI;
-#    ifdef DILIGENT_DEBUG
-            EngineCI.DebugFlags |=
-                D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
-                D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
-#    endif
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D11() function
             auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
@@ -236,36 +231,36 @@ bool GLFWSample::CreateEngine(RENDER_DEVICE_TYPE DevType)
     return true;
 }
 
-void GLFWSample::GLFW_ResizeCallback(GLFWwindow* wnd, int w, int h)
+void GLFWDemo::GLFW_ResizeCallback(GLFWwindow* wnd, int w, int h)
 {
-    auto* Self = static_cast<GLFWSample*>(glfwGetWindowUserPointer(wnd));
-    if (Self->m_pSwapChain != nullptr)
-        Self->m_pSwapChain->Resize(static_cast<Uint32>(w), static_cast<Uint32>(h));
+    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    if (pSelf->m_pSwapChain != nullptr)
+        pSelf->m_pSwapChain->Resize(static_cast<Uint32>(w), static_cast<Uint32>(h));
 }
 
-void GLFWSample::GLFW_KeyCallback(GLFWwindow* wnd, int key, int, int state, int)
+void GLFWDemo::GLFW_KeyCallback(GLFWwindow* wnd, int key, int, int state, int)
 {
-    auto* Self = static_cast<GLFWSample*>(glfwGetWindowUserPointer(wnd));
-    Self->OnKeyEvent(static_cast<Key>(key), static_cast<KeyState>(state));
+    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    pSelf->OnKeyEvent(static_cast<Key>(key), static_cast<KeyState>(state));
 }
 
-void GLFWSample::GLFW_MouseButtonCallback(GLFWwindow* wnd, int button, int state, int)
+void GLFWDemo::GLFW_MouseButtonCallback(GLFWwindow* wnd, int button, int state, int)
 {
-    auto* Self = static_cast<GLFWSample*>(glfwGetWindowUserPointer(wnd));
-    Self->OnKeyEvent(static_cast<Key>(button), static_cast<KeyState>(state));
+    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    pSelf->OnKeyEvent(static_cast<Key>(button), static_cast<KeyState>(state));
 }
 
-void GLFWSample::GLFW_CursorPosCallback(GLFWwindow* wnd, double xpos, double ypos)
+void GLFWDemo::GLFW_CursorPosCallback(GLFWwindow* wnd, double xpos, double ypos)
 {
-    auto* Self = static_cast<GLFWSample*>(glfwGetWindowUserPointer(wnd));
-    Self->MouseEvent(float2(static_cast<float>(xpos), static_cast<float>(ypos)));
+    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    pSelf->MouseEvent(float2(static_cast<float>(xpos), static_cast<float>(ypos)));
 }
 
-void GLFWSample::GLFW_MouseWheelCallback(GLFWwindow* wnd, double dx, double dy)
+void GLFWDemo::GLFW_MouseWheelCallback(GLFWwindow* wnd, double dx, double dy)
 {
 }
 
-void GLFWSample::Loop()
+void GLFWDemo::Loop()
 {
     m_LastUpdate = TClock::now();
     for (;;)
@@ -298,7 +293,7 @@ void GLFWSample::Loop()
     }
 }
 
-void GLFWSample::OnKeyEvent(Key key, KeyState newState)
+void GLFWDemo::OnKeyEvent(Key key, KeyState newState)
 {
     for (auto& active : m_ActiveKeys)
     {
@@ -314,13 +309,13 @@ void GLFWSample::OnKeyEvent(Key key, KeyState newState)
     m_ActiveKeys.push_back({key, newState});
 }
 
-void GLFWSample::Quit()
+void GLFWDemo::Quit()
 {
     VERIFY_EXPR(m_Window != nullptr);
     glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
 }
 
-bool GLFWSample::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType)
+bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType)
 {
 #if PLATFORM_LINUX || PLATFORM_MACOS
 #    define _stricmp strcasecmp
@@ -388,9 +383,9 @@ bool GLFWSample::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& Dev
     return true;
 }
 
-int GLFWSampleMain(const char* cmdLine)
+int GLFWDemoMain(const char* cmdLine)
 {
-    std::unique_ptr<GLFWSample> Samp{CreateSample()};
+    std::unique_ptr<GLFWDemo> Samp{CreateGLFWApp()};
 
     RENDER_DEVICE_TYPE DevType = RENDER_DEVICE_TYPE_UNDEFINED;
     if (!Samp->ProcessCommandLine(cmdLine, DevType))
@@ -399,16 +394,19 @@ int GLFWSampleMain(const char* cmdLine)
     String Title("GLFW Demo");
     switch (DevType)
     {
-        case RENDER_DEVICE_TYPE_D3D11: Title.append(" (D3D11)"); break;
-        case RENDER_DEVICE_TYPE_D3D12: Title.append(" (D3D12)"); break;
-        case RENDER_DEVICE_TYPE_GL: Title.append(" (GL)"); break;
-        case RENDER_DEVICE_TYPE_VULKAN: Title.append(" (VK)"); break;
+        case RENDER_DEVICE_TYPE_D3D11: Title.append(" (D3D11"); break;
+        case RENDER_DEVICE_TYPE_D3D12: Title.append(" (D3D12"); break;
+        case RENDER_DEVICE_TYPE_GL: Title.append(" (GL"); break;
+        case RENDER_DEVICE_TYPE_VULKAN: Title.append(" (VK"); break;
     }
+    Title.append(", API ");
+    Title.append(std::to_string(DILIGENT_API_VERSION));
+    Title.push_back(')');
 
     if (!Samp->CreateWindow(Title.c_str(), 1024, 768))
         return -1;
 
-    if (!Samp->CreateEngine(DevType))
+    if (!Samp->InitEngine(DevType))
         return -1;
 
     if (!Samp->Initialize())
@@ -423,5 +421,5 @@ int GLFWSampleMain(const char* cmdLine)
 
 int main(int argc, const char** argv)
 {
-    return Diligent::GLFWSampleMain(argc >= 2 ? argv[1] : "");
+    return Diligent::GLFWDemoMain(argc >= 2 ? argv[1] : "");
 }
