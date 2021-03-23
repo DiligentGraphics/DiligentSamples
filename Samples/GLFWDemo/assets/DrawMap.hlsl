@@ -57,7 +57,7 @@ float BumpStep(float x, float edge0, float edge1)
 float ReadSDF(float2 pos)
 {
     float SDFScale = 0.75; // calculated SDF may be a little bit inaccurate
-    return g_SDFMap.Sample(g_SDFMap_sampler, pos * g_MapConstants.MapToUV).r * SDFScale;
+    return g_SDFMap.SampleLevel(g_SDFMap_sampler, pos * g_MapConstants.MapToUV, 0).r * SDFScale;
 }
 
 // returns 1 if light is visible

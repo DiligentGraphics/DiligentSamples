@@ -37,5 +37,5 @@ void main(uint3 GlobalInvocationID : SV_DispatchThreadID)
     if (InsideWall)
         dist = -dist;
 
-    g_DstTex[center] = float4(dist, 0.0, 0.0, 0.0);
+    g_DstTex[center] = dist;
 }
