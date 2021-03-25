@@ -153,8 +153,6 @@ void Game::Update(float dt)
     m_Player.FlashLightPower = clamp(m_Player.FlashLightPower + Constants.FlashLightAttenuation * (m_Player.LMBPressed ? dt : -dt), 0.0f, 1.0f);
 
     m_Map.TeleportWaveAnim = fract(m_Map.TeleportWaveAnim + dt * 0.5f);
-
-    Draw();
 }
 
 void Game::Draw()

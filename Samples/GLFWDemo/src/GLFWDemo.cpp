@@ -125,6 +125,7 @@ bool GLFWDemo::CreateWindow(const char* Title, int Width, int Height)
     glfwSetCursorPosCallback(m_Window, &GLFW_CursorPosCallback);
     glfwSetScrollCallback(m_Window, &GLFW_MouseWheelCallback);
 
+    glfwSetWindowSizeLimits(m_Window, 320, 240, GLFW_DONT_CARE, GLFW_DONT_CARE);
     return true;
 }
 
@@ -290,6 +291,13 @@ void GLFWDemo::Loop()
         m_LastUpdate    = time;
 
         Update(dt);
+
+        int w, h;
+        glfwGetWindowSize(m_Window, &w, &h);
+
+        // Skip rendering if window is minimized or too small
+        if (w > 0 && h > 0)
+            Draw();
     }
 }
 

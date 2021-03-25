@@ -37,6 +37,7 @@ class Game final : public GLFWDemo
 public:
     virtual bool Initialize() override;
     virtual void Update(float dt) override;
+    virtual void Draw() override;
     virtual void KeyEvent(Key key, KeyState state) override;
     virtual void MouseEvent(float2 pos) override;
 
@@ -48,7 +49,6 @@ private:
     void BindResources();
     void LoadNewMap();
 
-    void Draw();
     void GetScreenTransform(float2& XRange, float2& YRange);
 
 private:
