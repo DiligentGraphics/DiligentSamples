@@ -88,7 +88,7 @@ endif()
 
 if(PLATFORM_MACOS AND VULKAN_LIB_PATH)
     # Configure rpath so that executables can find vulkan library
-    set_target_properties(${APP_NAME} PROPERTIES
+    set_target_properties(GLFWDemo PROPERTIES
         BUILD_RPATH "${VULKAN_LIB_PATH}"
     )
 endif()
