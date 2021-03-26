@@ -758,6 +758,9 @@ void Tutorial21_RayTracing::CreateSBT()
 
     // We must specify the intersection shader for procedural geometry.
     m_pSBT->BindHitGroupForInstance(m_pTLAS, "Sphere Instance", SHADOW_RAY_INDEX, "SphereShadowHit");
+
+    // Update SBT with the shader groups we bound
+    m_pImmediateContext->UpdateSBT(m_pSBT);
 }
 
 void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)

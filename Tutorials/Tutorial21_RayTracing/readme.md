@@ -388,6 +388,12 @@ we will use the `"SphereShadowHit"` hit group that only contains the intersectio
 m_pSBT->BindHitGroupForInstance(m_pTLAS, "Sphere Instance",  SHADOW_RAY_INDEX,  "SphereShadowHit");
 ```
 
+After all hit groups are bound, we need to update the internal SBT buffer:
+
+```cpp
+m_pImmediateContext->UpdateSBT(m_pSBT);
+```
+
 Note that a TLAS can be created with `BindingMode = HIT_GROUP_BINDING_MODE_PER_GEOMETRY` flag, 
 in which case hit groups can be individually specified for each geometry in every instance, for example:
 
