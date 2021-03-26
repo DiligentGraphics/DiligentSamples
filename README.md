@@ -40,6 +40,7 @@ To build and run the applications in the module, please follow the [instructions
   - [21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-21---ray-tracing)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
+  - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
   - [GLTF Viewer](https://github.com/DiligentGraphics/DiligentSamples#gltf-viewer)
   - [Shadows](https://github.com/DiligentGraphics/DiligentSamples#shadows)
   - [Dear ImGui Demo](https://github.com/DiligentGraphics/DiligentSamples#dear-imgui-demo)
@@ -226,6 +227,14 @@ This tutorial demonstrates the basics of using ray tracing API in Diligent Engin
 This sample demonstrates how to integrate
 [Epipolar Light Scattering](https://github.com/DiligentGraphics/DiligentFX/tree/master/PostProcess/EpipolarLightScattering)
 post-processing effect into an application to render physically-based atmosphere.
+
+
+## [GLFW Demo](Samples/GLFWDemo)
+
+![](Samples/GLFWDemo/Animation_Large.gif)
+
+This simple maze mini-game demonstrates how to use GLFW to create window and handle keyboard and mouse input.
+
 
 ## [GLTF Viewer](Samples/GLTFViewer)
 

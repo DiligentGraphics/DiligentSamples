@@ -1,11 +1,13 @@
 # GLFW Demo
 
+![](Animation_Large.gif)
+
 This simple maze mini-game demonstrates how to use [GLFW](https://www.glfw.org/) to create window and handle keyboard and mouse input.
 
-## Initialization
+## GLFW Initialization
 
-GLFW only supports OpenGL and Vulkan.
-To use all available backends, we should use `GLFW_NO_API` flag to create GLFW window only, and then initialize Diligent Engine in required mode.
+GLFW natively supports OpenGL and Vulkan only.
+To use all available backends, we need to use `GLFW_NO_API` flag to create GLFW window only:
 
 ```cpp
 glfwInit();
@@ -14,10 +16,10 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 m_Window = glfwCreateWindow(Width, Height, Title, nullptr, nullptr);
 ```
 
-Initialization of the render device and device context is performed similar to other examples (see Tutorial00 for instance).
+Initialization of the render device and device context is performed similar to other examples (take a look at Tutorial00 for instance).
 
-To create a swapchain, we need to initialize the `NativeWindow` structure. To
-get native handles, we will use the appropriate platform-specific GLFW function:
+To create a swapchain, we need to prepare the `NativeWindow` structure. To
+get native handles, we will use the appropriate platform-specific GLFW functions:
 
 ```cpp
 #if PLATFORM_WIN32
@@ -61,33 +63,32 @@ void* GetNSWindowView(GLFWwindow* wnd)
 The goal of this mini-game is to reach the target point in the maze using the flashlight to find the way in the dark.
 
 Controls:
-* To move player use `WASD` or arrows, or numpad arrows.<br/>
-* To generate new map press `Tab`.<br/>
-* To exit game press `Ecs`.<br/>
-* Press left mouse button to activate the flashlight.<br/>
+* `WASD`, arrows, or numpad arrows: move the player.<br/>
+* `Tab`: generate new map.<br/>
+* `Esc`: exit the game.<br/>
+* Left mouse button: activate the flashlight.<br/>
 
 There are no pre-drawn textures and meshes in this game, only procedural content.
 The maze is randomly generated, the target point is placed in the empty space near one of the map borders
 (note that there is no 100% guarantees that the target point can be reached).
-For rendering, the game uses signed-distance fields (SDF). These algorithms may have performance issues on old 
-GPUs because of relying on loops and dynamic branching.
+For rendering, the game uses signed-distance fields (SDF) and ray marching.
 
 The map is a 16-bit floating-point single-channel texture that contains:
-* When outside the wall, the distance from the nearest wall; this distance has a positive sign (red color).
-* When insdie the wall, the distance to the nearest empty space; this distance has a negative sign (green color).
+* When outside the wall, the distance from the nearest wall; this distance has positive sign (red color).
+* When insdie the wall, the distance to the nearest empty space; this distance has negative sign (green color).
 
 ![image](sdf_map.jpg)
 
 The player shape and light around the player are circles with the attenuation from the center to border.
-The circle function is a distance from the current pixel to the player position:
+The circle function is the distance from the current pixel to the player position:
 
 ```cpp
-float  DistToPlayer   = distance(PosOnMap, g_PlayerConstants.PlayerPos);
+float  DistToPlayer = distance(PosOnMap, g_PlayerConstants.PlayerPos);
 float Factor = saturate(1.0 - DistToPlayer / g_PlayerConstants.PlayerRadius);
 Color.rgb    = Blend(Color.rgb, PlayerColor, Factor);
 ```
 
-The target point (or the teleport to the next map) draws as a circle and additionally has wave animation:
+The target point (or the teleport to the next map) is rendered as a circle with wave animation:
 
 ```cpp
 const float DistToTeleport = distance(PosOnMap, g_MapConstants.TeleportPos);
@@ -96,15 +97,15 @@ float       Wave      = BumpStep(DistToTeleport, g_MapConstants.TeleportWaveRadi
 Color.rgb             = Blend(Color.rgb, TeleportWaveColor, Wave);
 ```
 
-`BumpStep()` in the snippet above converts distance in the range [0, inf] to the range [WaveRadius, WaveRadius + WaveWidth],
-then converts it to the triangle wave `/\/\` in range [0, 1]. It creates a circle outline.
+`BumpStep()` in the snippet above converts the distance in the range [0, inf] to the range [WaveRadius, WaveRadius + WaveWidth],
+then converts it to the triangle wave `/\/\` in the range [0, 1]. The result is a circle outline.
 
 `TeleportWaveRadius` is animated using the `WaveRadius = fract(WaveRadius + TimeDelta)` function, and produces another triangle wave 
-`/|/|`. It creates the repeating effect of a circle with increasing radius from 0 to 1.
+`/|/|`. It creates the repeating effect of a pulsing circle with increasing radius from 0 to 1.
 
 Flashlight uses a bit more complex function.
-At first we calculate the distance from the current pixel to the flashlight ray. 
-Calculate `A`, `B`, `C` coefficients of the line equation `Ax + By + C = 0` and get minimal distance from point to a ray:
+First, we calculate the distance from the current pixel to the flashlight ray. 
+Calculate `A`, `B`, `C` coefficients of the line equation `Ax + By + C = 0` and get minimal distance from the point to the ray:
 
 ```cpp
 float2 Dir       = g_PlayerConstants.FlashLightDir;
@@ -129,7 +130,7 @@ float  TanOfAngle = 0.5; // tan(45 degrees) * 0.5
 float  ConeRadius = DistToPlayer * TanOfAngle;
 ```
 
-The light is attenuated depending proportionally to the distance squared.
+The light attenuation is proportional to the distance squared:
 
 ```cpp
 float  Atten  = DistToPlayer / g_PlayerConstants.FlshLightMaxDist;
@@ -141,7 +142,7 @@ LightColor    = Blend(LightColor, FlashLightColor, Factor);
 To cast shadows, we use the sphere tracing algorithm on the signed distance field.
 We trace a ray from the current pixel position to the light source position. The function returns 1 if there
 are no intersections, which means the pixle is in light.
-All coordinates and distances in the snippet below are in SDF texture pixel space:
+All coordinates and distances in the snippet below are in SDF texture space:
 
 ```cpp
 float TraceRay(float2 LightPos, float2 Origin)
