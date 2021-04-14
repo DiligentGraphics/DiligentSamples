@@ -265,6 +265,9 @@ void Game::KeyEvent(Key key, KeyState state)
             case Key::Esc:
                 Quit();
                 break;
+
+            default:
+                break;
         }
     }
 
@@ -303,15 +306,16 @@ void Game::GenerateMap()
         MapData[(y + 1) * TexDim.x - 1] = true;
     }
 
-    // Generate random walls and write it to a 1-bit texture
+    // Generate random walls and write them to a 1-bit texture
     {
         std::mt19937                       Gen{std::random_device{}()};
         std::uniform_int_distribution<int> NumSegDistrib{0, 4};
         std::uniform_int_distribution<int> SegmentDistrib{-3, 4};
 
-        const auto SetPixel = [Dim = TexDim.Recast<int>(), &MapData](int2 pos) {
-            if (pos.x >= 0 && pos.y >= 0 && pos.x < Dim.x && pos.y < Dim.y)
-                MapData[pos.x + pos.y * Dim.x] = true;
+        const auto SetPixel = [&](int2 pos) {
+            if (pos.x >= 0 && pos.x < static_cast<int>(TexDim.x) &&
+                pos.y >= 0 && pos.y < static_cast<int>(TexDim.y))
+                MapData[pos.x + pos.y * TexDim.x] = true;
         };
 
         for (Uint32 y = 2; y < TexDim.y - 2; y += 4)
