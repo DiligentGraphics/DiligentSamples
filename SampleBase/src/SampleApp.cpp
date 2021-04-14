@@ -104,27 +104,11 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         case RENDER_DEVICE_TYPE_D3D11:
         {
             EngineD3D11CreateInfo EngineCI;
-
-#    ifdef DILIGENT_DEVELOPMENT
-            EngineCI.DebugFlags |=
-                D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
-                D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
-#    endif
 #    ifdef DILIGENT_DEBUG
-            EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
+            EngineCI.SetValidationLevel(VALIDATION_LEVEL_2);
 #    endif
-
-            if (m_ValidationLevel >= 1)
-            {
-                EngineCI.DebugFlags =
-                    D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
-                    D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES |
-                    D3D11_DEBUG_FLAG_VERIFY_COMMITTED_RESOURCE_RELEVANCE;
-            }
-            else if (m_ValidationLevel == 0)
-            {
-                EngineCI.DebugFlags = D3D11_DEBUG_FLAG_NONE;
-            }
+            if (m_ValidationLevel >= 0)
+                EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
 
@@ -187,20 +171,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         case RENDER_DEVICE_TYPE_D3D12:
         {
             EngineD3D12CreateInfo EngineCI;
-
-#    ifdef DILIGENT_DEVELOPMENT
-            EngineCI.EnableDebugLayer = true;
-#    endif
-            if (m_ValidationLevel >= 1)
-            {
-                EngineCI.EnableDebugLayer = true;
-                if (m_ValidationLevel >= 2)
-                    EngineCI.EnableGPUBasedValidation = true;
-            }
-            else if (m_ValidationLevel == 0)
-            {
-                EngineCI.EnableDebugLayer = false;
-            }
+            if (m_ValidationLevel >= 0)
+                EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
 
@@ -287,19 +259,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineGLCreateInfo EngineCI;
             EngineCI.Window = *pWindow;
 
-#    ifdef DILIGENT_DEVELOPMENT
-            EngineCI.CreateDebugContext = true;
-#    endif
-            EngineCI.ForceNonSeparablePrograms = m_bForceNonSeprblProgs;
+            if (m_ValidationLevel >= 0)
+                EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            if (m_ValidationLevel >= 1)
-            {
-                EngineCI.CreateDebugContext = true;
-            }
-            else if (m_ValidationLevel == 0)
-            {
-                EngineCI.CreateDebugContext = false;
-            }
+            EngineCI.ForceNonSeparablePrograms = m_bForceNonSeprblProgs;
 
             m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
             if (EngineCI.NumDeferredContexts != 0)
@@ -326,24 +289,15 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             // Load the dll and import GetEngineFactoryVk() function
             auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
-            EngineVkCreateInfo EngVkAttribs;
-#    ifdef DILIGENT_DEVELOPMENT
-            EngVkAttribs.EnableValidation = true;
-#    endif
-            if (m_ValidationLevel >= 1)
-            {
-                EngVkAttribs.EnableValidation = true;
-            }
-            else if (m_ValidationLevel == 0)
-            {
-                EngVkAttribs.EnableValidation = false;
-            }
+            EngineVkCreateInfo EngineCI;
+            if (m_ValidationLevel >= 0)
+                EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngVkAttribs, m_SwapChainInitDesc);
-            ppContexts.resize(1 + EngVkAttribs.NumDeferredContexts);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
+            ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             auto* pFactoryVk = GetEngineFactoryVk();
             m_pEngineFactory = pFactoryVk;
-            pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, ppContexts.data());
+            pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
                 LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in Vulkan mode. The API may not be available, "
@@ -360,13 +314,15 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #if METAL_SUPPORTED
         case RENDER_DEVICE_TYPE_METAL:
         {
-            EngineMtlCreateInfo MtlAttribs;
+            EngineMtlCreateInfo EngineCI;
+            if (m_ValidationLevel >= 0)
+                EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, MtlAttribs, m_SwapChainInitDesc);
-            ppContexts.resize(1 + MtlAttribs.NumDeferredContexts);
+            m_TheSample->GetEngineInitializationAttribs(m_DeviceType, EngineCI, m_SwapChainInitDesc);
+            ppContexts.resize(1 + EngineCI.NumDeferredContexts);
             auto* pFactoryMtl = GetEngineFactoryMtl();
             m_pEngineFactory  = pFactoryMtl;
-            pFactoryMtl->CreateDeviceAndContextsMtl(MtlAttribs, &m_pDevice, ppContexts.data());
+            pFactoryMtl->CreateDeviceAndContextsMtl(EngineCI, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
                 LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in Metal mode. The API may not be available, "

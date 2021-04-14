@@ -152,18 +152,14 @@ public:
 #if D3D11_SUPPORTED
             case RENDER_DEVICE_TYPE_D3D11:
             {
-                EngineD3D11CreateInfo DeviceAttribs;
-#    ifdef DILIGENT_DEBUG
-                DeviceAttribs.DebugFlags |=
-                    D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
-                    D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
-#    endif
+                EngineD3D11CreateInfo EngineCI;
+
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D11() function
                 auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
-                pFactoryD3D11->CreateDeviceAndContextsD3D11(DeviceAttribs, &m_pDevice, &m_pImmediateContext);
+                pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
                     Win32NativeWindow Window{WndInfo.hWnd};
@@ -182,13 +178,10 @@ public:
                 // Load the dll and import GetEngineFactoryD3D12() function
                 auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
-                EngineD3D12CreateInfo EngD3D12Attribs;
-#    ifdef DILIGENT_DEBUG
-                // There is currently a bug in D3D12 debug layer that causes memory leaks in this tutorial.
-                // EngD3D12Attribs.EnableDebugLayer = true;
-#    endif
+                EngineD3D12CreateInfo EngineCI;
+
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
-                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngD3D12Attribs, &m_pDevice, &m_pImmediateContext);
+                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
                     Win32NativeWindow Window{WndInfo.hWnd};
@@ -211,13 +204,12 @@ public:
                 MessageBox(NULL, L"OpenGL backend does not currently support multiple swap chains", L"Error", MB_OK | MB_ICONWARNING);
                 auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
-                EngineGLCreateInfo CreationAttribs;
+                EngineGLCreateInfo EngineCI;
 
                 auto& WndInfo = m_Windows[0];
 
-                CreationAttribs.Window.hWnd = WndInfo.hWnd;
-                pFactoryOpenGL->CreateDeviceAndSwapChainGL(
-                    CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &WndInfo.pSwapChain);
+                EngineCI.Window.hWnd = WndInfo.hWnd;
+                pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &WndInfo.pSwapChain);
             }
             break;
 #endif
@@ -230,12 +222,10 @@ public:
                 // Load the dll and import GetEngineFactoryVk() function
                 auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
-                EngineVkCreateInfo EngVkAttribs;
-#    ifdef DILIGENT_DEBUG
-                EngVkAttribs.EnableValidation = true;
-#    endif
+                EngineVkCreateInfo EngineCI;
+
                 auto* pFactoryVk = GetEngineFactoryVk();
-                pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
+                pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
                 for (auto& WndInfo : m_Windows)
                 {
                     Win32NativeWindow Window{WndInfo.hWnd};

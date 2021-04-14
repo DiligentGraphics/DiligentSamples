@@ -194,9 +194,7 @@ public:
         EngineGLCreateInfo CreationAttribs;
         CreationAttribs.Window.WindowId = NativeWindowHandle;
         CreationAttribs.Window.pDisplay = display;
-#    ifdef DILIGENT_DEBUG
-        CreationAttribs.CreateDebugContext = true;
-#    endif
+
         pFactoryOpenGL->CreateDeviceAndSwapChainGL(
             CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
 
@@ -208,9 +206,7 @@ public:
     bool InitVulkan(XCBInfo& xcbInfo)
     {
         EngineVkCreateInfo EngVkAttribs;
-#    ifdef _DEBUG
-        EngVkAttribs.EnableValidation = true;
-#    endif
+
         auto* pFactoryVk = GetEngineFactoryVk();
         pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
         SwapChainDesc     SCDesc;

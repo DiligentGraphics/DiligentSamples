@@ -145,14 +145,9 @@ public:
             case RENDER_DEVICE_TYPE_D3D11:
             {
                 EngineD3D11CreateInfo EngineCI;
-#    ifdef DILIGENT_DEBUG
-                EngineCI.DebugFlags |=
-                    D3D11_DEBUG_FLAG_CREATE_DEBUG_DEVICE |
-                    D3D11_DEBUG_FLAG_VERIFY_COMMITTED_SHADER_RESOURCES;
-#    endif
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D11() function
-                auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+                auto* GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -171,10 +166,7 @@ public:
                 auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngineCI;
-#    ifdef DILIGENT_DEBUG
-                // There is a bug in D3D12 debug layer that causes memory leaks in this tutorial
-                //EngineCI.EnableDebugLayer = true;
-#    endif
+
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
                 Win32NativeWindow Window{hWnd};
@@ -196,9 +188,7 @@ public:
 
                 EngineGLCreateInfo EngineCI;
                 EngineCI.Window.hWnd = hWnd;
-#    ifdef DILIGENT_DEBUG
-                EngineCI.CreateDebugContext = true;
-#    endif
+
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
             }
             break;
@@ -213,9 +203,7 @@ public:
                 auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngineCI;
-#    ifdef DILIGENT_DEBUG
-                EngineCI.EnableValidation = true;
-#    endif
+
                 auto* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
 
