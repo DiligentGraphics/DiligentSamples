@@ -176,6 +176,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     Vars[0].ShaderStages = SHADER_TYPE_PIXEL;
     Vars[0].Name         = "g_Texture";
     Vars[0].Type         = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    Vars[0].Flags        = SHADER_VARIABLE_FLAG_NONE;
 
     pPSODesc->ResourceLayout.Variables    = Vars;
     pPSODesc->ResourceLayout.NumVariables = 1;
