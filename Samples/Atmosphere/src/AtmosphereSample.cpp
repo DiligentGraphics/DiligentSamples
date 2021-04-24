@@ -123,7 +123,7 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
     }
 
     const Char *strTileTexPaths[EarthHemsiphere::NUM_TILE_TEXTURES], *strNormalMapPaths[EarthHemsiphere::NUM_TILE_TEXTURES];
-    for (int iTile = 0; iTile < _countof(strTileTexPaths); ++iTile)
+    for (size_t iTile = 0; iTile < _countof(strTileTexPaths); ++iTile)
     {
         strTileTexPaths[iTile]   = m_strTileTexPaths[iTile].c_str();
         strNormalMapPaths[iTile] = m_strNormalMapTexPaths[iTile].c_str();

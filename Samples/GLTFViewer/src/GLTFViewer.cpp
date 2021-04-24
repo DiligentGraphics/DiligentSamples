@@ -259,7 +259,7 @@ void GLTFViewer::UpdateUI()
     {
         {
             const char* Models[_countof(GLTFModels)];
-            for (int i = 0; i < _countof(GLTFModels); ++i)
+            for (size_t i = 0; i < _countof(GLTFModels); ++i)
                 Models[i] = GLTFModels[i].first;
             if (ImGui::Combo("Model", &m_SelectedModel, Models, _countof(GLTFModels)))
             {
