@@ -123,7 +123,7 @@ void HelloArApplication::OnSurfaceCreated()
     auto*              pFactory = GetEngineFactoryOpenGL();
     EngineGLCreateInfo EngineCI;
 #if DILIGENT_DEVELOPMENT
-    EngineCI.CreateDebugContext = true;
+    EngineCI.EnableValidation = true;
 #endif
     pFactory->AttachToActiveGLContext(EngineCI, &render_device_, &device_context_);
     // Init Android file system so that we can use shader source stream factory to load shaders.
