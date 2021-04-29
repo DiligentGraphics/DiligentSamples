@@ -70,11 +70,11 @@ jobs:
   build-win10-dev:
     strategy:
       matrix:
-        toolset: [Win32, x64]
-        config: [Debug, Release]
+        toolset: [x64]
+        config: [RelWithDebInfo]
 
     runs-on: windows-latest
-    name: Windows 10, ${{ matrix.config }}Dev ${{ matrix.toolset }}
+    name: Windows 10, ${{ matrix.config }}-DEV ${{ matrix.toolset }}
 
     steps:
     - name: Clone DiligentSamples
