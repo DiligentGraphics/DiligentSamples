@@ -43,7 +43,7 @@ public:
     AtmosphereSample();
     ~AtmosphereSample();
 
-    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc) override final;
+    virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
 
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
     virtual void Render() override final;

@@ -50,17 +50,15 @@ Tutorial06_Multithreading::~Tutorial06_Multithreading()
     StopWorkerThreads();
 }
 
-void Tutorial06_Multithreading::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                               EngineCreateInfo&  Attribs,
-                                                               SwapChainDesc&     SCDesc)
+void Tutorial06_Multithreading::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
-    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
+    SampleBase::ModifyEngineInitInfo(Attribs);
+    Attribs.EngineCI.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if VULKAN_SUPPORTED
-    if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& VkAttrs           = static_cast<EngineVkCreateInfo&>(Attribs);
-        VkAttrs.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
+        auto& EngineVkCI           = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
+        EngineVkCI.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
     }
 #endif
 }
@@ -244,6 +242,8 @@ void Tutorial06_Multithreading::WorkerThreadFunc(Tutorial06_Multithreading* pThi
         auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
+
+        pDeferredCtx->Begin(0);
 
         // Render current subset using the deferred context
         pThis->RenderSubset(pDeferredCtx, 1 + ThreadNum);

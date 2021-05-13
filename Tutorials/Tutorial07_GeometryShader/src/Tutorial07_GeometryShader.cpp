@@ -199,12 +199,12 @@ void Tutorial07_GeometryShader::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial07_GeometryShader::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void Tutorial07_GeometryShader::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_ENABLED;
-    EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
 }
 
 

@@ -48,21 +48,21 @@ SampleBase* CreateSample()
 AtmosphereSample::AtmosphereSample()
 {}
 
-void AtmosphereSample::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void AtmosphereSample::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
-    EngineCI.Features.DepthClamp     = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.DepthClamp     = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    const auto& deviceCaps = InitInfo.pDevice->GetDeviceCaps();
-    m_bIsGLDevice          = deviceCaps.IsGLDevice();
-    if (m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_GLES)
+    const auto& deviceInfo = InitInfo.pDevice->GetDeviceInfo();
+    m_bIsGLDevice          = deviceInfo.IsGLDevice();
+    if (deviceInfo.Type == RENDER_DEVICE_TYPE_GLES)
     {
         m_ShadowSettings.Resolution                        = 512;
         m_TerrainRenderParams.m_FilterAcrossShadowCascades = false;

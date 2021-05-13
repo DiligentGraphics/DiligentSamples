@@ -70,15 +70,15 @@ void Tutorial18_Queries::CreateCubePSO()
     m_pCubePSO->CreateShaderResourceBinding(&m_pCubeSRB, true);
 }
 
-void Tutorial18_Queries::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void Tutorial18_Queries::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.OcclusionQueries          = DEVICE_FEATURE_STATE_OPTIONAL;
-    EngineCI.Features.BinaryOcclusionQueries    = DEVICE_FEATURE_STATE_OPTIONAL;
-    EngineCI.Features.TimestampQueries          = DEVICE_FEATURE_STATE_OPTIONAL;
-    EngineCI.Features.PipelineStatisticsQueries = DEVICE_FEATURE_STATE_OPTIONAL;
-    EngineCI.Features.DurationQueries           = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.OcclusionQueries          = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.BinaryOcclusionQueries    = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.TimestampQueries          = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.PipelineStatisticsQueries = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.DurationQueries           = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
@@ -95,7 +95,7 @@ void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
     m_pCubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 
     // Check query support
-    const auto& Features = m_pDevice->GetDeviceCaps().Features;
+    const auto& Features = m_pDevice->GetDeviceInfo().Features;
     if (Features.PipelineStatisticsQueries)
     {
         QueryDesc queryDesc;

@@ -24,14 +24,14 @@ jobs:
         repository: 'DiligentGraphics/DiligentFX'
         path:       DiligentFX
         submodules: recursive
-        
+
     - name: Clone DiligentTools
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentTools'
         path:       DiligentTools
         submodules: recursive
-        
+
     - name: Clone DiligentCore
       uses: actions/checkout@v2
       with:
@@ -49,8 +49,7 @@ jobs:
     - name: Configure dependencies
       if: success()
       run: |
-        sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev \
-          libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
+        sudo apt-get install build-essential libx11-dev libgl1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 
     - name: Configure CMake
       if: success()
@@ -73,13 +72,13 @@ jobs:
       run: cmake --build . --config ${{ matrix.config }} --target install -j2
 
 
-  build-clang-9:
+  build-clang-10:
     strategy:
       matrix:
         config: [Debug, Release]
 
     runs-on: ubuntu-latest
-    name: Linux x64, Clang 9, ${{ matrix.config }}
+    name: Linux x64, Clang 10, ${{ matrix.config }}
 
     steps:
     - name: Clone DiligentSamples
@@ -94,14 +93,14 @@ jobs:
         repository: 'DiligentGraphics/DiligentFX'
         path:       DiligentFX
         submodules: recursive
-        
+
     - name: Clone DiligentTools
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentTools'
         path:       DiligentTools
         submodules: recursive
-        
+
     - name: Clone DiligentCore
       uses: actions/checkout@v2
       with:
@@ -119,14 +118,13 @@ jobs:
     - name: Configure dependencies
       if: success()
       run: |
-        sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev \
-          libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
+        sudo apt-get install build-essential libx11-dev libgl1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 
     - name: Configure CMake
       if: success()
       env:
-        CC: clang-9
-        CXX: clang++-9
+        CC: clang-10
+        CXX: clang++-10
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE/DiligentSamples/BuildTools/Scripts/github_actions

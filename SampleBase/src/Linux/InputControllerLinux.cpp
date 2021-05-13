@@ -174,6 +174,7 @@ int InputControllerLinux::HandleXEvent(void* xevent)
         {
             KeySym keysym;
             int    num_char = XLookupString((XKeyEvent*)event, nullptr, 0, &keysym, 0);
+            (void)num_char;
             return HandleKeyEvevnt(keysym, event->type == KeyPress);
         }
 

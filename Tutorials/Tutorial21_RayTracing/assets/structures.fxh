@@ -70,6 +70,17 @@ struct BoxAttribs
     float minX, minY, minZ;
     float maxX, maxY, maxZ;
     float padding0, padding1;
+
+#ifdef __cplusplus
+    BoxAttribs() {}
+
+    BoxAttribs(float _minX, float _minY, float _minZ,
+               float _maxX, float _maxY, float _maxZ) :
+        minX{_minX}, minY{_minY}, minZ{_minZ},
+        maxX{_maxX}, maxY{_maxY}, maxZ{_maxZ},
+        padding0{0.0f}, padding1{0.0f}
+    {}
+#endif
 };
 
 struct ProceduralGeomIntersectionAttribs

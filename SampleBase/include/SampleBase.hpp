@@ -44,12 +44,13 @@ class ImGuiImplDiligent;
 
 struct SampleInitInfo
 {
-    IEngineFactory*    pEngineFactory = nullptr;
-    IRenderDevice*     pDevice        = nullptr;
-    IDeviceContext**   ppContexts     = nullptr;
-    Uint32             NumDeferredCtx = 0;
-    ISwapChain*        pSwapChain     = nullptr;
-    ImGuiImplDiligent* pImGui         = nullptr;
+    IEngineFactory*    pEngineFactory  = nullptr;
+    IRenderDevice*     pDevice         = nullptr;
+    IDeviceContext**   ppContexts      = nullptr;
+    Uint32             NumImmediateCtx = 1;
+    Uint32             NumDeferredCtx  = 0;
+    ISwapChain*        pSwapChain      = nullptr;
+    ImGuiImplDiligent* pImGui          = nullptr;
 };
 
 class SampleBase
@@ -57,7 +58,15 @@ class SampleBase
 public:
     virtual ~SampleBase() {}
 
-    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc);
+    struct ModifyEngineInitInfoAttribs
+    {
+        IEngineFactory* const    pFactory;
+        const RENDER_DEVICE_TYPE DeviceType;
+
+        EngineCreateInfo& EngineCI;
+        SwapChainDesc&    SCDesc;
+    };
+    virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs);
 
     virtual void Initialize(const SampleInitInfo& InitInfo) = 0;
 
@@ -123,7 +132,7 @@ inline void SampleBase::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext = InitInfo.ppContexts[0];
     m_pDeferredContexts.resize(InitInfo.NumDeferredCtx);
     for (Uint32 ctx = 0; ctx < InitInfo.NumDeferredCtx; ++ctx)
-        m_pDeferredContexts[ctx] = InitInfo.ppContexts[1 + ctx];
+        m_pDeferredContexts[ctx] = InitInfo.ppContexts[InitInfo.NumImmediateCtx + ctx];
     m_pImGui = InitInfo.pImGui;
 }
 

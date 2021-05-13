@@ -46,8 +46,8 @@ public:
             // that issued rendering commands. On iOS, however, initialization
             // and rendering happen in different threads. To avoid issues with
             // autorelease pool, we have to pop it now by calling FinishFrame.
-            m_pImmediateContext->Flush();
-            m_pImmediateContext->FinishFrame();
+            GetImmediateContext()->Flush();
+            GetImmediateContext()->FinishFrame();
         }
     }
 

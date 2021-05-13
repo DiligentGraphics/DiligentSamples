@@ -78,7 +78,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
 
     PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].RenderTargetWriteMask = COLOR_MASK_ALL;
 
-    pPSODesc->CommandQueueMask                    = 1;
+    pPSODesc->ImmediateContextMask                = 1;
     PSOCreateInfo.GraphicsPipeline.SmplDesc.Count = 1;
     PSOCreateInfo.GraphicsPipeline.SampleMask     = 0xFFFFFFFF;
     PSOCreateInfo.GraphicsPipeline.NumViewports   = 1;
@@ -288,12 +288,13 @@ void CreateVertexBuffer(IRenderDevice* pDevice)
     memset(&VertBuffDesc, 0, sizeof(VertBuffDesc));
     VertBuffDesc._DeviceObjectAttribs.Name = "Cube vertex buffer";
 
-    VertBuffDesc.Usage            = USAGE_IMMUTABLE;
-    VertBuffDesc.BindFlags        = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes    = sizeof(CubeVerts);
-    VertBuffDesc.CommandQueueMask = 1;
+    VertBuffDesc.Usage                = USAGE_IMMUTABLE;
+    VertBuffDesc.BindFlags            = BIND_VERTEX_BUFFER;
+    VertBuffDesc.uiSizeInBytes        = sizeof(CubeVerts);
+    VertBuffDesc.ImmediateContextMask = 1;
 
     BufferData VBData;
+    VBData.pContext = NULL;
     VBData.pData    = CubeVerts;
     VBData.DataSize = sizeof(CubeVerts);
 
@@ -319,12 +320,13 @@ void CreateIndexBuffer(IRenderDevice* pDevice)
     memset(&IndBuffDesc, 0, sizeof(IndBuffDesc));
     IndBuffDesc._DeviceObjectAttribs.Name = "Index vertex buffer";
 
-    IndBuffDesc.Usage            = USAGE_IMMUTABLE;
-    IndBuffDesc.BindFlags        = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes    = sizeof(Indices);
-    IndBuffDesc.CommandQueueMask = 1;
+    IndBuffDesc.Usage                = USAGE_IMMUTABLE;
+    IndBuffDesc.BindFlags            = BIND_INDEX_BUFFER;
+    IndBuffDesc.uiSizeInBytes        = sizeof(Indices);
+    IndBuffDesc.ImmediateContextMask = 1;
 
     BufferData IBData;
+    IBData.pContext = NULL;
     IBData.pData    = Indices;
     IBData.DataSize = sizeof(Indices);
 

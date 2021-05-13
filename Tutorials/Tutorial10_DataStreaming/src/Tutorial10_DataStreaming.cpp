@@ -157,19 +157,17 @@ void Tutorial10_DataStreaming::ProcessCommandLine(const char* CmdLine)
     }
 }
 
-void Tutorial10_DataStreaming::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                              EngineCreateInfo&  Attribs,
-                                                              SwapChainDesc&     SCDesc)
+void Tutorial10_DataStreaming::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
-    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
+    SampleBase::ModifyEngineInitInfo(Attribs);
+    Attribs.EngineCI.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if VULKAN_SUPPORTED
-    if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& VkAttrs = static_cast<EngineVkCreateInfo&>(Attribs);
+        auto& EngineVkCI = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
 
-        VkAttrs.DynamicHeapSize     = 128 << 20;
-        VkAttrs.DynamicHeapPageSize = 2 << 20;
+        EngineVkCI.DynamicHeapSize     = 128 << 20;
+        EngineVkCI.DynamicHeapPageSize = 2 << 20;
     }
 #endif
 }
@@ -434,8 +432,8 @@ void Tutorial10_DataStreaming::UpdateUI()
                 StartWorkerThreads(m_NumWorkerThreads);
             }
         }
-        if (m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_D3D12 ||
-            m_pDevice->GetDeviceCaps().DevType == RENDER_DEVICE_TYPE_VULKAN)
+        if (m_pDevice->GetDeviceInfo().Type == RENDER_DEVICE_TYPE_D3D12 ||
+            m_pDevice->GetDeviceInfo().Type == RENDER_DEVICE_TYPE_VULKAN)
         {
             ImGui::Checkbox("Persistent map", &m_bAllowPersistentMap);
         }
@@ -606,6 +604,8 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming* pThis,
         auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
+
+        pDeferredCtx->Begin(0);
 
         // Render current subset using the deferred context
         if (pThis->m_BatchSize > 1)
