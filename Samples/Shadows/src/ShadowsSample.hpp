@@ -42,9 +42,7 @@ class ShadowsSample final : public SampleBase
 {
 public:
     ~ShadowsSample();
-    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&     SCDesc) override final;
+    virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
 
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
 

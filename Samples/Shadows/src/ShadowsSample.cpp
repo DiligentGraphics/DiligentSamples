@@ -50,18 +50,16 @@ ShadowsSample::~ShadowsSample()
 {
 }
 
-void ShadowsSample::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                   EngineCreateInfo&  EngineCI,
-                                                   SwapChainDesc&     SCDesc)
+void ShadowsSample::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.DepthClamp = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.DepthClamp = DEVICE_FEATURE_STATE_OPTIONAL;
 
 #if D3D12_SUPPORTED
-    if (DeviceType == RENDER_DEVICE_TYPE_D3D12)
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
-        auto& D3D12CI                           = static_cast<EngineD3D12CreateInfo&>(EngineCI);
+        auto& D3D12CI                           = static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI);
         D3D12CI.GPUDescriptorHeapSize[1]        = 1024; // Sampler descriptors
         D3D12CI.GPUDescriptorHeapDynamicSize[1] = 1024;
     }
@@ -548,7 +546,7 @@ void ShadowsSample::RenderShadowMap()
         m_pImmediateContext->ClearDepthStencil(pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         ViewFrustumExt Frutstum;
-        ExtractViewFrustumPlanesFromMatrix(WorldToLightProjSpaceMatr, Frutstum, m_pDevice->GetDeviceCaps().IsGLDevice());
+        ExtractViewFrustumPlanesFromMatrix(WorldToLightProjSpaceMatr, Frutstum, m_pDevice->GetDeviceInfo().IsGLDevice());
 
         //if (iCascade == 0)
         DrawMesh(m_pImmediateContext, true, Frutstum);
@@ -597,7 +595,7 @@ void ShadowsSample::Render()
     }
 
     ViewFrustumExt Frutstum;
-    ExtractViewFrustumPlanesFromMatrix(CameraViewProj, Frutstum, m_pDevice->GetDeviceCaps().IsGLDevice());
+    ExtractViewFrustumPlanesFromMatrix(CameraViewProj, Frutstum, m_pDevice->GetDeviceInfo().IsGLDevice());
     DrawMesh(m_pImmediateContext, false, Frutstum);
 }
 
@@ -690,7 +688,7 @@ void ShadowsSample::WindowResize(Uint32 Width, Uint32 Height)
     float FarPlane    = 250.f;
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
     m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f,
-                            m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceCaps().IsGLDevice());
+                            m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceInfo().IsGLDevice());
 }
 
 } // namespace Diligent

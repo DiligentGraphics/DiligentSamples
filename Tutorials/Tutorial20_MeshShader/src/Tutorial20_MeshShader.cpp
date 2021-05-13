@@ -345,11 +345,11 @@ void Tutorial20_MeshShader::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial20_MeshShader::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void Tutorial20_MeshShader::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.MeshShaders = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.MeshShaders = DEVICE_FEATURE_STATE_ENABLED;
 }
 
 void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
@@ -423,7 +423,7 @@ void Tutorial20_MeshShader::Render()
                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // We should use synchronizations to safely access to mapped memory.
-        m_pImmediateContext->SignalFence(m_pStatisticsAvailable, m_FrameId);
+        m_pImmediateContext->EnqueueSignal(m_pStatisticsAvailable, m_FrameId);
 
         // Read statistics from previous frame.
         Uint64 PrevFrameId = m_pStatisticsAvailable->GetCompletedValue();
@@ -434,7 +434,7 @@ void Tutorial20_MeshShader::Render()
             // In theory we should never get here as we wait for more than enough
             // frames.
             PrevFrameId = m_FrameId - m_StatisticsHistorySize / 2;
-            m_pImmediateContext->WaitForFence(m_pStatisticsAvailable, PrevFrameId, false);
+            m_pStatisticsAvailable->Wait(PrevFrameId);
         }
 
         Uint64 PrevId = PrevFrameId % m_StatisticsHistorySize;

@@ -41,14 +41,12 @@ SampleBase* CreateSample()
     return new Tutorial12_RenderTarget();
 }
 
-void Tutorial12_RenderTarget::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                             EngineCreateInfo&  Attribs,
-                                                             SwapChainDesc&     SCDesc)
+void Tutorial12_RenderTarget::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
     // In this tutorial we will be using off-screen depth-stencil buffer, so
     // we do not need the one in the swap chain.
-    SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+    Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 }
 
 void Tutorial12_RenderTarget::CreateCubePSO()
@@ -129,7 +127,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 
 #if PLATFORM_ANDROID
     // Vulkan on mobile platforms may require handling surface pre-transforms
-    const bool TransformUVCoords = m_pDevice->GetDeviceCaps().IsVulkanDevice();
+    const bool TransformUVCoords = m_pDevice->GetDeviceInfo().IsVulkanDevice();
 #else
     constexpr bool TransformUVCoords = false;
 #endif

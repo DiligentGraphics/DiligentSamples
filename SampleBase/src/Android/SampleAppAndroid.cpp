@@ -128,7 +128,7 @@ public:
                 m_pSwapChain.Release();
                 AndroidNativeWindow AndroidWindow;
                 AndroidWindow.pAWindow = window;
-                GetEngineFactoryVk()->CreateSwapChainVk(m_pDevice, m_pImmediateContext,
+                GetEngineFactoryVk()->CreateSwapChainVk(m_pDevice, GetImmediateContext(),
                                                         m_SwapChainInitDesc, AndroidWindow,
                                                         &m_pSwapChain);
                 m_TheSample->ResetSwapChain(m_pSwapChain);

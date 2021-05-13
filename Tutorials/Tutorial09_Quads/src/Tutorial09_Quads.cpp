@@ -77,18 +77,16 @@ void Tutorial09_Quads::ProcessCommandLine(const char* CmdLine)
     }
 }
 
-void Tutorial09_Quads::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                      EngineCreateInfo&  Attribs,
-                                                      SwapChainDesc&     SCDesc)
+void Tutorial09_Quads::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, Attribs, SCDesc);
-    Attribs.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
+    SampleBase::ModifyEngineInitInfo(Attribs);
+    Attribs.EngineCI.NumDeferredContexts = std::max(std::thread::hardware_concurrency() - 1, 2u);
 #if VULKAN_SUPPORTED
-    if (DeviceType == RENDER_DEVICE_TYPE_VULKAN)
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& VkAttrs               = static_cast<EngineVkCreateInfo&>(Attribs);
-        VkAttrs.DynamicHeapSize     = 128 << 20;
-        VkAttrs.DynamicHeapPageSize = 2 << 20;
+        auto& EngineVkCI{static_cast<EngineVkCreateInfo&>(Attribs.EngineCI)};
+        EngineVkCI.DynamicHeapSize     = 128 << 20;
+        EngineVkCI.DynamicHeapPageSize = 2 << 20;
     }
 #endif
 }
@@ -462,6 +460,8 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads* pThis, Uint32 ThreadNu
         auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
+
+        pDeferredCtx->Begin(0);
 
         // Render current subset using the deferred context
         if (pThis->m_BatchSize > 1)

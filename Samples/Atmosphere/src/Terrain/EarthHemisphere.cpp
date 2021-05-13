@@ -928,7 +928,7 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
 
 
     ViewFrustumExt ViewFrustum;
-    auto           DevType = m_pDevice->GetDeviceCaps().DevType;
+    auto           DevType = m_pDevice->GetDeviceInfo().Type;
     ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, DevType == RENDER_DEVICE_TYPE_D3D11 || DevType == RENDER_DEVICE_TYPE_D3D12);
 
     {

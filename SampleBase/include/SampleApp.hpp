@@ -77,7 +77,13 @@ public:
 
     virtual bool IsReady() const override final
     {
-        return m_pDevice && m_pSwapChain && m_pImmediateContext;
+        return m_pDevice && m_pSwapChain && m_NumImmediateContexts > 0;
+    }
+
+    IDeviceContext* GetImmediateContext(size_t Ind = 0)
+    {
+        VERIFY_EXPR(Ind < m_NumImmediateContexts);
+        return m_pDeviceContexts[Ind];
     }
 
 protected:
@@ -102,8 +108,8 @@ protected:
     RENDER_DEVICE_TYPE                         m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
     RefCntAutoPtr<IEngineFactory>              m_pEngineFactory;
     RefCntAutoPtr<IRenderDevice>               m_pDevice;
-    RefCntAutoPtr<IDeviceContext>              m_pImmediateContext;
-    std::vector<RefCntAutoPtr<IDeviceContext>> m_pDeferredContexts;
+    std::vector<RefCntAutoPtr<IDeviceContext>> m_pDeviceContexts;
+    Uint32                                     m_NumImmediateContexts = 0;
     RefCntAutoPtr<ISwapChain>                  m_pSwapChain;
     GraphicsAdapterInfo                        m_AdapterAttribs;
     std::vector<DisplayModeAttribs>            m_DisplayModes;

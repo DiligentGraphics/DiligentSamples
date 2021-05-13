@@ -187,16 +187,14 @@ public:
     bool OnGLContextCreated(Display* display, Window NativeWindowHandle)
     {
         SwapChainDesc SCDesc;
-        Uint32        NumDeferredCtx = 0;
         // Declare function pointer
         auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
-        EngineGLCreateInfo CreationAttribs;
+        EngineGLCreateInfo EngineCI;
         CreationAttribs.Window.WindowId = NativeWindowHandle;
         CreationAttribs.Window.pDisplay = display;
 
-        pFactoryOpenGL->CreateDeviceAndSwapChainGL(
-            CreationAttribs, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
+        pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
 
         return true;
     }
@@ -205,10 +203,10 @@ public:
 #if VULKAN_SUPPORTED
     bool InitVulkan(XCBInfo& xcbInfo)
     {
-        EngineVkCreateInfo EngVkAttribs;
+        EngineVkCreateInfo EngineCI;
 
         auto* pFactoryVk = GetEngineFactoryVk();
-        pFactoryVk->CreateDeviceAndContextsVk(EngVkAttribs, &m_pDevice, &m_pImmediateContext);
+        pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
         SwapChainDesc     SCDesc;
         LinuxNativeWindow XCBWindow;
         XCBWindow.WindowId       = xcbInfo.window;
@@ -613,7 +611,8 @@ int x_main()
                     KeySym keysym;
                     char   buffer[80];
                     int    num_char = XLookupString((XKeyEvent*)&xev, buffer, _countof(buffer), &keysym, 0);
-                    EscPressed      = (keysym == XK_Escape);
+                    (void)num_char;
+                    EscPressed = (keysym == XK_Escape);
                 }
 
                 case ConfigureNotify:

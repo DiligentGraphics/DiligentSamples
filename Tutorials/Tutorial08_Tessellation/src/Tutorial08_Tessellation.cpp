@@ -68,7 +68,7 @@ struct GlobalConstants
 
 void Tutorial08_Tessellation::CreatePipelineStates()
 {
-    const bool bWireframeSupported = m_pDevice->GetDeviceCaps().Features.GeometryShaders;
+    const bool bWireframeSupported = m_pDevice->GetDeviceInfo().Features.GeometryShaders;
 
     ShaderMacroHelper MacroHelper;
 
@@ -93,7 +93,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     // Primitive topology type defines what kind of primitives will be rendered by this pipeline state
     PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
     // Cull back faces. For some reason, in OpenGL the order is reversed
-    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = m_pDevice->GetDeviceCaps().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
+    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = m_pDevice->GetDeviceInfo().IsGLDevice() ? CULL_MODE_FRONT : CULL_MODE_BACK;
     // Enable depth testing
     PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
     // clang-format on
@@ -303,13 +303,13 @@ void Tutorial08_Tessellation::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial08_Tessellation::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void Tutorial08_Tessellation::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.Tessellation      = DEVICE_FEATURE_STATE_ENABLED;
-    EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
-    EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.Tessellation      = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial08_Tessellation::Initialize(const SampleInitInfo& InitInfo)
