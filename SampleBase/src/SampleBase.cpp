@@ -32,9 +32,9 @@
 namespace Diligent
 {
 
-void SampleBase::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& /*SCDesc*/)
+void SampleBase::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    switch (DeviceType)
+    switch (Attribs.DeviceType)
     {
 #if D3D11_SUPPORTED
         case RENDER_DEVICE_TYPE_D3D11:
@@ -47,7 +47,7 @@ void SampleBase::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, E
 #if D3D12_SUPPORTED
         case RENDER_DEVICE_TYPE_D3D12:
         {
-            EngineD3D12CreateInfo& EngineD3D12CI                  = static_cast<EngineD3D12CreateInfo&>(EngineCI);
+            EngineD3D12CreateInfo& EngineD3D12CI                  = static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI);
             EngineD3D12CI.GPUDescriptorHeapDynamicSize[0]         = 32768;
             EngineD3D12CI.GPUDescriptorHeapSize[1]                = 128;
             EngineD3D12CI.GPUDescriptorHeapDynamicSize[1]         = 2048 - 128;
@@ -120,7 +120,7 @@ float4x4 SampleBase::GetAdjustedProjectionMatrix(float FOV, float NearPlane, flo
     float4x4 Proj;
     Proj._11 = XScale;
     Proj._22 = YScale;
-    Proj.SetNearFarClipPlanes(NearPlane, FarPlane, m_pDevice->GetDeviceCaps().IsGLDevice());
+    Proj.SetNearFarClipPlanes(NearPlane, FarPlane, m_pDevice->GetDeviceInfo().IsGLDevice());
     return Proj;
 }
 

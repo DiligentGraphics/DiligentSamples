@@ -129,7 +129,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
 
     PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
-    if (m_pDevice->GetDeviceCaps().Features.DepthClamp)
+    if (m_pDevice->GetDeviceInfo().Features.DepthClamp)
     {
         // Disable depth clipping to render objects that are closer than near
         // clipping plane. This is not required for this tutorial, but real applications
@@ -142,11 +142,11 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     m_pCubeShadowPSO->CreateShaderResourceBinding(&m_CubeShadowSRB, true);
 }
 
-void Tutorial13_ShadowMap::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void Tutorial13_ShadowMap::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.DepthClamp = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.DepthClamp = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial13_ShadowMap::CreatePlanePSO()
@@ -508,8 +508,8 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     float3 f3MaxXYZ      = f3SceneCenter + float3(SceneRadius, SceneRadius, SceneRadius * 5);
     float3 f3SceneExtent = f3MaxXYZ - f3MinXYZ;
 
-    const auto& DevCaps = m_pDevice->GetDeviceCaps();
-    const bool  IsGL    = DevCaps.IsGLDevice();
+    const auto& DevInfo = m_pDevice->GetDeviceInfo();
+    const bool  IsGL    = DevInfo.IsGLDevice();
     float4      f4LightSpaceScale;
     f4LightSpaceScale.x = 2.f / f3SceneExtent.x;
     f4LightSpaceScale.y = 2.f / f3SceneExtent.y;
@@ -530,7 +530,7 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     // Adjust the world to light space transformation matrix
     float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
 
-    const auto& NDCAttribs    = DevCaps.GetNDCAttribs();
+    const auto& NDCAttribs    = DevInfo.GetNDCAttribs();
     float4x4    ProjToUVScale = float4x4::Scale(0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale);
     float4x4    ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
 

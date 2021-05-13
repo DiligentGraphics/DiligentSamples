@@ -228,7 +228,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
     GraphicsPipeline.InputLayout.LayoutElements = Elements;
 
     {
-        float4x4 proj = nk_get_projection_matrix(width, height, device->GetDeviceCaps().IsGLDevice());
+        float4x4 proj = nk_get_projection_matrix(width, height, device->GetDeviceInfo().IsGLDevice());
 
         BufferDesc CBDesc;
         CBDesc.BindFlags     = BIND_UNIFORM_BUFFER;
@@ -397,7 +397,7 @@ NK_API void nk_diligent_resize(nk_diligent_context* nk_dlg_ctx, IDeviceContext* 
     nk_dlg_ctx->viewport.Width  = (float)width;
     nk_dlg_ctx->viewport.Height = (float)height;
 
-    float4x4 proj = nk_get_projection_matrix(width, height, nk_dlg_ctx->device->GetDeviceCaps().IsGLDevice());
+    float4x4 proj = nk_get_projection_matrix(width, height, nk_dlg_ctx->device->GetDeviceInfo().IsGLDevice());
 
     device_ctx->UpdateBuffer(nk_dlg_ctx->const_buffer, 0, sizeof(proj), &proj, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }

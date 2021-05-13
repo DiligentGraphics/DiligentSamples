@@ -57,12 +57,10 @@ SampleBase* CreateSample()
     return new Tutorial19_RenderPasses();
 }
 
-void Tutorial19_RenderPasses::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                             EngineCreateInfo&  Attribs,
-                                                             SwapChainDesc&     SCDesc)
+void Tutorial19_RenderPasses::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
     // We do not need the depth buffer from the swap chain in this sample
-    SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+    Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 }
 
 
@@ -207,7 +205,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    const auto IsVulkan = m_pDevice->GetDeviceCaps().IsVulkanDevice();
+    const auto IsVulkan = m_pDevice->GetDeviceInfo().IsVulkanDevice();
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
@@ -288,7 +286,7 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    const auto IsVulkan = m_pDevice->GetDeviceCaps().IsVulkanDevice();
+    const auto IsVulkan = m_pDevice->GetDeviceInfo().IsVulkanDevice();
 
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
@@ -610,7 +608,7 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
 
 IFramebuffer* Tutorial19_RenderPasses::GetCurrentFramebuffer()
 {
-    auto* pCurrentBackBufferRTV = m_pDevice->GetDeviceCaps().IsGLDevice() ?
+    auto* pCurrentBackBufferRTV = m_pDevice->GetDeviceInfo().IsGLDevice() ?
         nullptr :
         m_pSwapChain->GetCurrentBackBufferRTV();
 
@@ -806,7 +804,7 @@ void Tutorial19_RenderPasses::Render()
 
     m_pImmediateContext->EndRenderPass();
 
-    if (m_pDevice->GetDeviceCaps().IsGLDevice())
+    if (m_pDevice->GetDeviceInfo().IsGLDevice())
     {
         // In OpenGL we now have to copy our off-screen buffer to the default framebuffer
         auto* pOffscreenRenderTarget = pFramebuffer->GetDesc().ppAttachments[3]->GetTexture();

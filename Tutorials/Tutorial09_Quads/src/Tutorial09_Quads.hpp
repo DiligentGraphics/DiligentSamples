@@ -43,9 +43,7 @@ class Tutorial09_Quads final : public SampleBase
 public:
     ~Tutorial09_Quads() override;
     virtual void ProcessCommandLine(const char* CmdLine) override final;
-    virtual void GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType,
-                                                EngineCreateInfo&  Attribs,
-                                                SwapChainDesc&     SCDesc) override final;
+    virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
 
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
 

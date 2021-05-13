@@ -121,7 +121,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         ShaderCI.FilePath        = "cube.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
 
-        if (m_pDevice->GetDeviceCaps().Features.BindlessResources)
+        if (m_pDevice->GetDeviceInfo().Features.BindlessResources)
         {
             ShaderMacroHelper Macros;
             Macros.AddShaderMacro("BINDLESS", 1);
@@ -460,11 +460,11 @@ void Tutorial16_BindlessResources::UpdateUI()
     ImGui::End();
 }
 
-void Tutorial16_BindlessResources::GetEngineInitializationAttribs(RENDER_DEVICE_TYPE DeviceType, EngineCreateInfo& EngineCI, SwapChainDesc& SCDesc)
+void Tutorial16_BindlessResources::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    SampleBase::GetEngineInitializationAttribs(DeviceType, EngineCI, SCDesc);
+    SampleBase::ModifyEngineInitInfo(Attribs);
 
-    EngineCI.Features.BindlessResources = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.BindlessResources = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial16_BindlessResources::Initialize(const SampleInitInfo& InitInfo)

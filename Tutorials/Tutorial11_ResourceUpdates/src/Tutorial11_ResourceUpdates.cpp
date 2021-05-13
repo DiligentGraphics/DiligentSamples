@@ -538,7 +538,7 @@ void Tutorial11_ResourceUpdates::Update(double CurrTime, double ElapsedTime)
     }
 
     static constexpr const double MapTexturePeriod = 0.05;
-    const auto&                   deviceType       = m_pDevice->GetDeviceCaps().DevType;
+    const auto&                   deviceType       = m_pDevice->GetDeviceInfo().Type;
     if (CurrTime - m_LastMapTime > MapTexturePeriod * (deviceType == RENDER_DEVICE_TYPE_D3D11 ? 10.f : 1.f))
     {
         m_LastMapTime = CurrTime;
