@@ -113,17 +113,25 @@ GLFWDemo::~GLFWDemo()
     }
 }
 
-bool GLFWDemo::CreateWindow(const char* Title, int Width, int Height)
+bool GLFWDemo::CreateWindow(const char* Title, int Width, int Height, int GlfwApiHint)
 {
     if (glfwInit() != GLFW_TRUE)
         return false;
 
-    // Use GLFW only to create window, skip additional work for graphics API initialization.
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_CLIENT_API, GlfwApiHint);
+    if (GlfwApiHint == GLFW_OPENGL_API)
+    {
+        // We need compute shaders, so request OpenGL 4.2 at least
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    }
 
     m_Window = glfwCreateWindow(Width, Height, Title, nullptr, nullptr);
     if (m_Window == nullptr)
+    {
+        LOG_ERROR_MESSAGE("Failed to create GLFW window");
         return false;
+    }
 
     glfwSetWindowUserPointer(m_Window, this);
     glfwSetFramebufferSizeCallback(m_Window, &GLFW_ResizeCallback);
@@ -145,9 +153,15 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
     LinuxNativeWindow Window;
     Window.WindowId = glfwGetX11Window(m_Window);
     Window.pDisplay = glfwGetX11Display();
+    if (DevType == RENDER_DEVICE_TYPE_GL)
+        glfwMakeContextCurrent(m_Window);
 #endif
 #if PLATFORM_MACOS
-    MacOSNativeWindow Window{GetNSWindowView(m_Window)};
+    MacOSNativeWindow Window;
+    if (DevType == RENDER_DEVICE_TYPE_GL)
+        glfwMakeContextCurrent(m_Window);
+    else
+        Window.pNSView = GetNSWindowView(m_Window);
 #endif
 
     SwapChainDesc SCDesc;
@@ -439,7 +453,17 @@ int GLFWDemoMain(const char* cmdLine)
     Title.append(std::to_string(DILIGENT_API_VERSION));
     Title.push_back(')');
 
-    if (!Samp->CreateWindow(Title.c_str(), 1024, 768))
+    int APIHint = GLFW_NO_API;
+#if !PLATFORM_WIN32
+    if (DevType == RENDER_DEVICE_TYPE_GL)
+    {
+        // On platforms other than Windows Diligent Engine
+        // attaches to existing OpenGL context
+        APIHint = GLFW_OPENGL_API;
+    }
+#endif
+
+    if (!Samp->CreateWindow(Title.c_str(), 1024, 768, APIHint))
         return -1;
 
     if (!Samp->InitEngine(DevType))
