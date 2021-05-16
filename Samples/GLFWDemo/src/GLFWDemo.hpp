@@ -108,7 +108,7 @@ public:
     virtual void MouseEvent(float2 pos) = 0;
 
 private:
-    bool CreateWindow(const char* Title, int Width, int Height);
+    bool CreateWindow(const char* Title, int Width, int Height, int GlfwApiHint);
     bool InitEngine(RENDER_DEVICE_TYPE DevType);
     bool ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType);
     void Loop();
