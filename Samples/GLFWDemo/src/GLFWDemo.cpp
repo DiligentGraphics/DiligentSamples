@@ -279,8 +279,11 @@ void GLFWDemo::GLFW_MouseButtonCallback(GLFWwindow* wnd, int button, int state, 
 
 void GLFWDemo::GLFW_CursorPosCallback(GLFWwindow* wnd, double xpos, double ypos)
 {
+    float xscale = 1;
+    float yscale = 1;
+    glfwGetWindowContentScale(wnd, &xscale, &yscale);
     auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
-    pSelf->MouseEvent(float2(static_cast<float>(xpos), static_cast<float>(ypos)));
+    pSelf->MouseEvent(float2(static_cast<float>(xpos * xscale), static_cast<float>(ypos * yscale)));
 }
 
 void GLFWDemo::GLFW_MouseWheelCallback(GLFWwindow* wnd, double dx, double dy)
