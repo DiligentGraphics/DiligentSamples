@@ -179,7 +179,6 @@ public:
 #if GL_SUPPORTED
             case RENDER_DEVICE_TYPE_GL:
             {
-
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
                 // Load the dll and import GetEngineFactoryOpenGL() function
                 auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();

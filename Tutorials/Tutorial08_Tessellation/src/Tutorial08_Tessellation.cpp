@@ -307,9 +307,8 @@ void Tutorial08_Tessellation::ModifyEngineInitInfo(const ModifyEngineInitInfoAtt
 {
     SampleBase::ModifyEngineInitInfo(Attribs);
 
-    Attribs.EngineCI.Features.Tessellation      = DEVICE_FEATURE_STATE_ENABLED;
-    Attribs.EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
-    Attribs.EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.Tessellation    = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.GeometryShaders = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
 void Tutorial08_Tessellation::Initialize(const SampleInitInfo& InitInfo)

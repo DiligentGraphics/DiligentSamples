@@ -203,8 +203,7 @@ void Tutorial07_GeometryShader::ModifyEngineInitInfo(const ModifyEngineInitInfoA
 {
     SampleBase::ModifyEngineInitInfo(Attribs);
 
-    Attribs.EngineCI.Features.GeometryShaders   = DEVICE_FEATURE_STATE_ENABLED;
-    Attribs.EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.GeometryShaders = DEVICE_FEATURE_STATE_ENABLED;
 }
 
 
