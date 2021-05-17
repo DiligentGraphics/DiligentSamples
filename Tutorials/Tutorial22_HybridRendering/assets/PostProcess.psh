@@ -1,0 +1,42 @@
+#include "structures.fxh"
+
+ConstantBuffer<GlobalConstants> g_Constants;
+
+Texture2D g_GBuffer_Color;
+Texture2D g_GBuffer_Normal;
+Texture2D g_GBuffer_Pos;
+Texture2D g_GBuffer_Depth;
+Texture2D g_RayTracedTex;
+
+struct PSInput 
+{ 
+    float4 Pos : SV_POSITION; 
+    float2 UV  : TEX_COORD; 
+};
+
+float4 main(in PSInput PSIn) : SV_Target
+{
+    float2 UV       = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+    int3   TexCoord = int3(UV * g_Constants.GBufferDimension - 0.5, 0);
+    float4 Color    = g_GBuffer_Color.Load(TexCoord);
+    float3 Norm     = g_GBuffer_Normal.Load(TexCoord).xyz;
+    float  Roug     = g_GBuffer_Normal.Load(TexCoord).w;
+    float3 WPos     = g_GBuffer_Pos.Load(TexCoord).xyz;
+    float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
+    float4 RTColor  = g_RayTracedTex.Load(TexCoord);
+
+    switch (g_Constants.DrawMode)
+    {
+        case 0: return lerp(Color * RTColor.a, RTColor, 0.5);
+        case 1: return float4(Norm * 0.5 + 0.5, 1.0);
+        case 2: return float4(WPos, 1.0);
+        //case 3: return WorldPos;
+        //case 4: return float4(abs(WorldPos.xyz - WPos) * 10.0, 1.0);
+        case 4: return Color;
+        case 5: return abs(WPos.z - Depth).xxxx * 10.0;
+        case 6: return RTColor; // * 0.5 + 0.5;
+        case 8: return Roug.xxxx;
+    }
+
+    return Color;
+}
