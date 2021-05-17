@@ -25,6 +25,8 @@
  *  of the possibility of such damages.
  */
 
+#include <array>
+
 #include "Tutorial20_MeshShader.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
@@ -34,6 +36,7 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
+#include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
 {
@@ -58,51 +61,34 @@ SampleBase* CreateSample()
 
 void Tutorial20_MeshShader::CreateCube()
 {
-    // clang-format off
-    const float4 CubePos[] =
-    {
-        float4(-1,-1,-1,0), float4(-1,+1,-1,0), float4(+1,+1,-1,0), float4(+1,-1,-1,0),
-        float4(-1,-1,-1,0), float4(-1,-1,+1,0), float4(+1,-1,+1,0), float4(+1,-1,-1,0),
-        float4(+1,-1,-1,0), float4(+1,-1,+1,0), float4(+1,+1,+1,0), float4(+1,+1,-1,0),
-        float4(+1,+1,-1,0), float4(+1,+1,+1,0), float4(-1,+1,+1,0), float4(-1,+1,-1,0),
-        float4(-1,+1,-1,0), float4(-1,+1,+1,0), float4(-1,-1,+1,0), float4(-1,-1,-1,0),
-        float4(-1,-1,+1,0), float4(+1,-1,+1,0), float4(+1,+1,+1,0), float4(-1,+1,+1,0)
-    };
+    // Pack float3 positions into float4 vectors
+    std::array<float4, TexturedCube::NumVertices> CubePos{};
+    for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
+        CubePos[v] = TexturedCube::Positions[v];
 
-    const float4 CubeUV[] = 
+    // Pack float2 texcoords into float4 vectors
+    std::array<float4, TexturedCube::NumVertices> CubeUV{};
+    for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
     {
-        float4(0,1,0,0), float4(0,0,0,0), float4(1,0,0,0), float4(1,1,0,0),
-        float4(0,1,0,0), float4(0,0,0,0), float4(1,0,0,0), float4(1,1,0,0),
-        float4(0,1,0,0), float4(1,1,0,0), float4(1,0,0,0), float4(0,0,0,0),
-        float4(0,1,0,0), float4(0,0,0,0), float4(1,0,0,0), float4(1,1,0,0),
-        float4(1,0,0,0), float4(0,0,0,0), float4(0,1,0,0), float4(1,1,0,0),
-        float4(1,1,0,0), float4(0,1,0,0), float4(0,0,0,0), float4(1,0,0,0)
-    };
+        const auto& UV{TexturedCube::Texcoords[v]};
+        CubeUV[v] = {UV.x, UV.y, 0, 0};
+    }
 
-    const uint4 Indices[] =
+    // Pack each triangle indices into uint4
+    std::array<uint4, TexturedCube::NumIndices / 3> Indices{};
+    for (Uint32 tri = 0; tri < Indices.size(); ++tri)
     {
-        uint4{2,0,1,0},    uint4{2,3,0,0},
-        uint4{4,6,5,0},    uint4{4,7,6,0},
-        uint4{8,10,9,0},   uint4{8,11,10,0},
-        uint4{12,14,13,0}, uint4{12,15,14,0},
-        uint4{16,18,17,0}, uint4{16,19,18,0},
-        uint4{20,21,22,0}, uint4{20,22,23,0}
-    };
-    // clang-format on
-
+        const auto* src_ind{&TexturedCube::Indices[tri * 3]};
+        Indices[tri] = {src_ind[0], src_ind[1], src_ind[2], 0};
+    }
     CubeData Data;
 
     // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
     Data.SphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
 
-    static_assert(sizeof(Data.Positions) == sizeof(CubePos), "size mismatch");
-    std::memcpy(Data.Positions, CubePos, sizeof(CubePos));
-
-    static_assert(sizeof(Data.UVs) == sizeof(CubeUV), "size mismatch");
-    std::memcpy(Data.UVs, CubeUV, sizeof(CubeUV));
-
-    static_assert(sizeof(Data.Indices) == sizeof(Indices), "size mismatch");
-    std::memcpy(Data.Indices, Indices, sizeof(Indices));
+    std::memcpy(Data.Positions, CubePos.data(), CubePos.size() * sizeof(CubePos[0]));
+    std::memcpy(Data.UVs, CubeUV.data(), CubeUV.size() * sizeof(CubeUV[0]));
+    std::memcpy(Data.Indices, Indices.data(), Indices.size() * sizeof(Indices[0]));
 
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Cube vertex & index buffer";
@@ -194,7 +180,6 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
     FenceDesc FDesc;
     FDesc.Name = "Statistics available";
     m_pDevice->CreateFence(FDesc, &m_pStatisticsAvailable);
-    m_FrameId = 0;
 }
 
 void Tutorial20_MeshShader::CreateConstantsBuffer()
@@ -422,28 +407,27 @@ void Tutorial20_MeshShader::Render()
                                         m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % m_StatisticsHistorySize) * sizeof(DrawStatistics), sizeof(DrawStatistics),
                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        // We should use synchronizations to safely access to mapped memory.
+        // We should use synchronizations to safely access the mapped memory.
         m_pImmediateContext->EnqueueSignal(m_pStatisticsAvailable, m_FrameId);
 
         // Read statistics from previous frame.
-        Uint64 PrevFrameId = m_pStatisticsAvailable->GetCompletedValue();
+        Uint64 AvailableFrameId = m_pStatisticsAvailable->GetCompletedValue();
 
         // Synchronize
-        if (m_FrameId - PrevFrameId > m_StatisticsHistorySize)
+        if (m_FrameId - AvailableFrameId > m_StatisticsHistorySize)
         {
             // In theory we should never get here as we wait for more than enough
             // frames.
-            PrevFrameId = m_FrameId - m_StatisticsHistorySize / 2;
-            m_pStatisticsAvailable->Wait(PrevFrameId);
+            AvailableFrameId = m_FrameId - m_StatisticsHistorySize;
+            m_pStatisticsAvailable->Wait(AvailableFrameId);
         }
 
-        Uint64 PrevId = PrevFrameId % m_StatisticsHistorySize;
-
         // Read the staging data
+        if (AvailableFrameId > 0)
         {
             MapHelper<DrawStatistics> StagingData(m_pImmediateContext, m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT);
             if (StagingData)
-                m_VisibleCubes = StagingData[PrevId].visibleCubes;
+                m_VisibleCubes = StagingData[AvailableFrameId % m_StatisticsHistorySize].visibleCubes;
         }
 
         ++m_FrameId;

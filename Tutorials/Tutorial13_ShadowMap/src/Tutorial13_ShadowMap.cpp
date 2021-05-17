@@ -50,27 +50,16 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    // clang-format off
-    // Define vertex shader input layout
-    LayoutElement LayoutElems[] =
-    {
-        // Attribute 0 - vertex position
-        LayoutElement{0, 0, 3, VT_FLOAT32, False},
-        // Attribute 1 - texture coordinates
-        LayoutElement{1, 0, 2, VT_FLOAT32, False},
-        // Attribute 2 - normal
-        LayoutElement{2, 0, 3, VT_FLOAT32, False},
-    };
-    // clang-format on
+    TexturedCube::CreatePSOInfo CubePsoCI;
+    CubePsoCI.pDevice              = m_pDevice;
+    CubePsoCI.RTVFormat            = m_pSwapChain->GetDesc().ColorBufferFormat;
+    CubePsoCI.DSVFormat            = m_pSwapChain->GetDesc().DepthBufferFormat;
+    CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
+    CubePsoCI.VSFilePath           = "cube.vsh";
+    CubePsoCI.PSFilePath           = "cube.psh";
+    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_NORM_UV;
 
-    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice,
-                                                   m_pSwapChain->GetDesc().ColorBufferFormat,
-                                                   m_pSwapChain->GetDesc().DepthBufferFormat,
-                                                   pShaderSourceFactory,
-                                                   "cube.vsh",
-                                                   "cube.psh",
-                                                   LayoutElems,
-                                                   _countof(LayoutElems));
+    m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI);
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -123,6 +112,19 @@ void Tutorial13_ShadowMap::CreateCubePSO()
 
     // We don't use pixel shader as we are only interested in populating the depth buffer
     PSOCreateInfo.pPS = nullptr;
+
+    // clang-format off
+    // Define vertex shader input layout
+    LayoutElement LayoutElems[] =
+    {
+        // Attribute 0 - vertex position
+        LayoutElement{0, 0, 3, VT_FLOAT32, False},
+        // Attribute 1 - normal
+        LayoutElement{2, 0, 3, VT_FLOAT32, False},
+        // Attribute 2 - texture coordinates
+        LayoutElement{1, 0, 2, VT_FLOAT32, False}
+    };
+    // clang-format on
 
     PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
     PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
@@ -326,79 +328,6 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pShadowMapVisPSO);
 }
 
-void Tutorial13_ShadowMap::CreateVertexBuffer()
-{
-    // Layout of this structure matches the one we defined in pipeline state
-    struct Vertex
-    {
-        float3 pos;
-        float2 uv;
-        float3 normal;
-    };
-
-    // Cube vertices
-
-    //      (-1,+1,+1)________________(+1,+1,+1)
-    //               /|              /|
-    //              / |             / |
-    //             /  |            /  |
-    //            /   |           /   |
-    //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____|
-    //           |   /(-1,+1,-1) |    /(+1,+1,-1)
-    //           |  /            |   /
-    //           | /             |  /
-    //           |/              | /
-    //           /_______________|/
-    //        (-1,-1,-1)       (+1,-1,-1)
-    //
-
-    // clang-format off
-    Vertex CubeVerts[] =
-    {
-        {float3(-1,-1,-1), float2(0,1), float3(0, 0, -1)},
-        {float3(-1,+1,-1), float2(0,0), float3(0, 0, -1)},
-        {float3(+1,+1,-1), float2(1,0), float3(0, 0, -1)},
-        {float3(+1,-1,-1), float2(1,1), float3(0, 0, -1)},
-        
-        {float3(-1,-1,-1), float2(0,1), float3(0, -1, 0)},
-        {float3(-1,-1,+1), float2(0,0), float3(0, -1, 0)},
-        {float3(+1,-1,+1), float2(1,0), float3(0, -1, 0)},
-        {float3(+1,-1,-1), float2(1,1), float3(0, -1, 0)},
-        
-        {float3(+1,-1,-1), float2(0,1), float3(+1, 0, 0)},
-        {float3(+1,-1,+1), float2(1,1), float3(+1, 0, 0)},
-        {float3(+1,+1,+1), float2(1,0), float3(+1, 0, 0)},
-        {float3(+1,+1,-1), float2(0,0), float3(+1, 0, 0)},
-        
-        {float3(+1,+1,-1), float2(0,1), float3(0, +1, 0)},
-        {float3(+1,+1,+1), float2(0,0), float3(0, +1, 0)},
-        {float3(-1,+1,+1), float2(1,0), float3(0, +1, 0)},
-        {float3(-1,+1,-1), float2(1,1), float3(0, +1, 0)},
-        
-        {float3(-1,+1,-1), float2(1,0), float3(-1, 0, 0)},
-        {float3(-1,+1,+1), float2(0,0), float3(-1, 0, 0)},
-        {float3(-1,-1,+1), float2(0,1), float3(-1, 0, 0)},
-        {float3(-1,-1,-1), float2(1,1), float3(-1, 0, 0)},
-        
-        {float3(-1,-1,+1), float2(1,1), float3(0, 0, +1)},
-        {float3(+1,-1,+1), float2(0,1), float3(0, 0, +1)},
-        {float3(+1,+1,+1), float2(0,0), float3(0, 0, +1)},
-        {float3(-1,+1,+1), float2(1,0), float3(0, 0, +1)}
-    };
-    // clang-format on
-
-    BufferDesc VertBuffDesc;
-    VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_IMMUTABLE;
-    VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
-    BufferData VBData;
-    VBData.pData    = CubeVerts;
-    VBData.DataSize = sizeof(CubeVerts);
-    m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_CubeVertexBuffer);
-}
-
 void Tutorial13_ShadowMap::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -438,7 +367,7 @@ void Tutorial13_ShadowMap::Initialize(const SampleInitInfo& InitInfo)
     // Load cube
 
     // In this tutorial we need vertices with normals
-    CreateVertexBuffer();
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_NORM_UV);
     // Load index buffer
     m_CubeIndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice);
     // Explicitly transition vertex and index buffers to required states

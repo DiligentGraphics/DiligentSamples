@@ -69,12 +69,16 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice,
-                                               m_pSwapChain->GetDesc().ColorBufferFormat,
-                                               m_pSwapChain->GetDesc().DepthBufferFormat,
-                                               pShaderSourceFactory,
-                                               "cube.vsh",
-                                               "cube.psh");
+    TexturedCube::CreatePSOInfo CubePsoCI;
+    CubePsoCI.pDevice              = m_pDevice;
+    CubePsoCI.RTVFormat            = m_pSwapChain->GetDesc().ColorBufferFormat;
+    CubePsoCI.DSVFormat            = m_pSwapChain->GetDesc().DepthBufferFormat;
+    CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
+    CubePsoCI.VSFilePath           = "cube.vsh";
+    CubePsoCI.PSFilePath           = "cube.psh";
+    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
+
+    m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI);
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
@@ -152,7 +156,7 @@ void Tutorial06_Multithreading::Initialize(const SampleInitInfo& InitInfo)
     CreatePipelineState(Barriers);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     // Explicitly transition vertex and index buffers to required states
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);

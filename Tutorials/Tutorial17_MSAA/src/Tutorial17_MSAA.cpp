@@ -49,14 +49,18 @@ void Tutorial17_MSAA::CreateCubePSO()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice,
-                                                   m_pSwapChain->GetDesc().ColorBufferFormat,
-                                                   DepthBufferFormat,
-                                                   pShaderSourceFactory,
-                                                   "cube.vsh",
-                                                   "cube.psh",
-                                                   nullptr, 0,
-                                                   m_SampleCount);
+    TexturedCube::CreatePSOInfo CubePsoCI;
+    CubePsoCI.pDevice              = m_pDevice;
+    CubePsoCI.RTVFormat            = m_pSwapChain->GetDesc().ColorBufferFormat;
+    CubePsoCI.DSVFormat            = DepthBufferFormat;
+    CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
+    CubePsoCI.VSFilePath           = "cube.vsh";
+    CubePsoCI.PSFilePath           = "cube.psh";
+    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
+    CubePsoCI.SampleCount          = m_SampleCount;
+
+    m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI);
+
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
@@ -120,7 +124,7 @@ void Tutorial17_MSAA::Initialize(const SampleInitInfo& InitInfo)
     CreateUniformBuffer(m_pDevice, sizeof(float4x4), "VS constants CB", &m_CubeVSConstants);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 

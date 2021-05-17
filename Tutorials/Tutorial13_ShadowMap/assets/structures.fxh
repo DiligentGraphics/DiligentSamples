@@ -4,8 +4,8 @@
 struct CubeVSInput
 {
     float3 Pos    : ATTRIB0;
-    float2 UV     : ATTRIB1;
-    float3 Normal : ATTRIB2;
+    float3 Normal : ATTRIB1;
+    float2 UV     : ATTRIB2;
 };
 
 struct CubePSInput

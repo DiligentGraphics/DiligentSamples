@@ -34,6 +34,7 @@
 #include "ImGuiUtils.hpp"
 #include "AdvancedMath.hpp"
 #include "PlatformMisc.hpp"
+#include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
 {
@@ -329,68 +330,32 @@ void Tutorial21_RayTracing::LoadTextures()
 
 void Tutorial21_RayTracing::CreateCubeBLAS()
 {
-    // clang-format off
-    const float3 CubePos[] =
-    {
-        float3(-1,-1,-1), float3(-1,+1,-1), float3(+1,+1,-1), float3(+1,-1,-1),
-        float3(-1,-1,-1), float3(-1,-1,+1), float3(+1,-1,+1), float3(+1,-1,-1),
-        float3(+1,-1,-1), float3(+1,-1,+1), float3(+1,+1,+1), float3(+1,+1,-1),
-        float3(+1,+1,-1), float3(+1,+1,+1), float3(-1,+1,+1), float3(-1,+1,-1),
-        float3(-1,+1,-1), float3(-1,+1,+1), float3(-1,-1,+1), float3(-1,-1,-1),
-        float3(-1,-1,+1), float3(+1,-1,+1), float3(+1,+1,+1), float3(-1,+1,+1)
-    };
-
-    const float4 CubeUV[] = 
-    {
-        float4(0,0,0,0), float4(0,1,0,0), float4(1,1,0,0), float4(1,0,0,0),
-        float4(0,0,0,0), float4(0,1,0,0), float4(1,1,0,0), float4(1,0,0,0),
-        float4(0,0,0,0), float4(1,0,0,0), float4(1,1,0,0), float4(0,1,0,0),
-        float4(0,0,0,0), float4(0,1,0,0), float4(1,1,0,0), float4(1,0,0,0),
-        float4(1,1,0,0), float4(0,1,0,0), float4(0,0,0,0), float4(1,0,0,0),
-        float4(1,0,0,0), float4(0,0,0,0), float4(0,1,0,0), float4(1,1,0,0)
-    };
-
-    const float4 CubeNormals[] = 
-    {
-        float4(0, 0, -1, 0), float4(0, 0, -1, 0), float4(0, 0, -1, 0), float4(0, 0, -1, 0),
-        float4(0, -1, 0, 0), float4(0, -1, 0, 0), float4(0, -1, 0, 0), float4(0, -1, 0, 0),
-        float4(+1, 0, 0, 0), float4(+1, 0, 0, 0), float4(+1, 0, 0, 0), float4(+1, 0, 0, 0),
-        float4(0, +1, 0, 0), float4(0, +1, 0, 0), float4(0, +1, 0, 0), float4(0, +1, 0, 0),
-        float4(-1, 0, 0, 0), float4(-1, 0, 0, 0), float4(-1, 0, 0, 0), float4(-1, 0, 0, 0),
-        float4(0, 0, +1, 0), float4(0, 0, +1, 0), float4(0, 0, +1, 0), float4(0, 0, +1, 0)
-    };
-
-    const uint Indices[] =
-    {
-        2,0,1,    2,3,0,
-        4,6,5,    4,7,6,
-        8,10,9,   8,11,10,
-        12,14,13, 12,15,14,
-        16,18,17, 16,19,18,
-        20,21,22, 20,22,23
-    };
-    // clang-format on
-
     // Create a buffer with cube attributes.
     // These attributes will be used in the hit shader to calculate UVs and normal for intersection point.
     {
         HLSL::CubeAttribs Attribs;
+        for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
+        {
+            const auto& UV{TexturedCube::Texcoords[v]};
+            Attribs.UVs[v] = {UV.x, UV.y, 0, 0};
+        }
 
-        static_assert(sizeof(Attribs.UVs) == sizeof(CubeUV), "size mismatch");
-        std::memcpy(Attribs.UVs, CubeUV, sizeof(CubeUV));
+        for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
+            Attribs.Normals[v] = TexturedCube::Normals[v];
 
-        static_assert(sizeof(Attribs.Normals) == sizeof(CubeNormals), "size mismatch");
-        std::memcpy(Attribs.Normals, CubeNormals, sizeof(CubeNormals));
+        for (Uint32 i = 0; i < TexturedCube::Indices.size(); i += 3)
+        {
+            const auto* TriIdx{&TexturedCube::Indices[i]};
+            Attribs.Primitives[i / 3] = uint4{TriIdx[0], TriIdx[1], TriIdx[2], 0};
+        }
 
-        for (Uint32 i = 0; i < _countof(Indices); i += 3)
-            Attribs.Primitives[i / 3] = uint4{Indices[i], Indices[i + 1], Indices[i + 2], 0};
-
-        BufferData BufData = {&Attribs, sizeof(Attribs)};
         BufferDesc BuffDesc;
         BuffDesc.Name          = "Cube Attribs";
         BuffDesc.Usage         = USAGE_IMMUTABLE;
         BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
         BuffDesc.uiSizeInBytes = sizeof(Attribs);
+
+        BufferData BufData = {&Attribs, BuffDesc.uiSizeInBytes};
 
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_CubeAttribsCB);
         VERIFY_EXPR(m_CubeAttribsCB != nullptr);
@@ -399,32 +364,12 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
     }
 
     // Create vertex buffer
-    RefCntAutoPtr<IBuffer> pCubeVertexBuffer;
-    {
-        BufferData BufData = {CubePos, sizeof(CubePos)};
-        BufferDesc BuffDesc;
-        BuffDesc.Name          = "Cube vertices";
-        BuffDesc.Usage         = USAGE_IMMUTABLE;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = sizeof(CubePos);
-
-        m_pDevice->CreateBuffer(BuffDesc, &BufData, &pCubeVertexBuffer);
-        VERIFY_EXPR(pCubeVertexBuffer != nullptr);
-    }
+    auto pCubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POSITION, BIND_RAY_TRACING);
+    VERIFY_EXPR(pCubeVertexBuffer != nullptr);
 
     // Create index buffer
-    RefCntAutoPtr<IBuffer> pCubeIndexBuffer;
-    {
-        BufferData BufData = {Indices, sizeof(Indices)};
-        BufferDesc BuffDesc;
-        BuffDesc.Name          = "Cube indices";
-        BuffDesc.Usage         = USAGE_IMMUTABLE;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = sizeof(Indices);
-
-        m_pDevice->CreateBuffer(BuffDesc, &BufData, &pCubeIndexBuffer);
-        VERIFY_EXPR(pCubeIndexBuffer != nullptr);
-    }
+    auto pCubeIndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice, BIND_RAY_TRACING);
+    VERIFY_EXPR(pCubeIndexBuffer != nullptr);
 
     // Create & build bottom level acceleration structure
     {
@@ -432,10 +377,10 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         BLASTriangleDesc Triangles;
         {
             Triangles.GeometryName         = "Cube";
-            Triangles.MaxVertexCount       = _countof(CubePos);
+            Triangles.MaxVertexCount       = TexturedCube::NumVertices;
             Triangles.VertexValueType      = VT_FLOAT32;
             Triangles.VertexComponentCount = 3;
-            Triangles.MaxPrimitiveCount    = _countof(Indices) / 3;
+            Triangles.MaxPrimitiveCount    = TexturedCube::NumIndices / 3;
             Triangles.IndexType            = VT_UINT32;
 
             BottomLevelASDesc ASDesc;
@@ -465,7 +410,7 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         BLASBuildTriangleData TriangleData;
         TriangleData.GeometryName         = Triangles.GeometryName;
         TriangleData.pVertexBuffer        = pCubeVertexBuffer;
-        TriangleData.VertexStride         = sizeof(CubePos[0]);
+        TriangleData.VertexStride         = sizeof(float3);
         TriangleData.VertexCount          = Triangles.MaxVertexCount;
         TriangleData.VertexValueType      = Triangles.VertexValueType;
         TriangleData.VertexComponentCount = Triangles.VertexComponentCount;

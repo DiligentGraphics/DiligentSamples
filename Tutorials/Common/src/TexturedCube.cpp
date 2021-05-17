@@ -25,6 +25,8 @@
  *  of the possibility of such damages.
  */
 
+#include <vector>
+
 #include "TexturedCube.hpp"
 #include "BasicMath.hpp"
 #include "TextureUtilities.h"
@@ -35,75 +37,114 @@ namespace Diligent
 namespace TexturedCube
 {
 
-RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice* pDevice)
+
+//      (-1,+1,+1)________________(+1,+1,+1)                  Z
+//               /|              /|                           |      Y
+//              / |             / |                           |     /
+//             /  |            /  |                           |    /
+//            /   |           /   |                           |   /
+//(-1,-1,+1) /____|__________/(+1,-1,+1)                      |  /
+//           |    |__________|____|                           | /
+//           |   /(-1,+1,-1) |    /(+1,+1,-1)                 |----------------> X
+//           |  /            |   /
+//           | /             |  /
+//           |/              | /
+//           /_______________|/
+//        (-1,-1,-1)       (+1,-1,-1)
+//
+
+const std::array<float3, NumVertices> Positions = {
+    float3{-1, -1, -1}, float3{-1, +1, -1}, float3{+1, +1, -1}, float3{+1, -1, -1}, // Bottom
+    float3{-1, -1, -1}, float3{-1, -1, +1}, float3{+1, -1, +1}, float3{+1, -1, -1}, // Front
+    float3{+1, -1, -1}, float3{+1, -1, +1}, float3{+1, +1, +1}, float3{+1, +1, -1}, // Right
+    float3{+1, +1, -1}, float3{+1, +1, +1}, float3{-1, +1, +1}, float3{-1, +1, -1}, // Back
+    float3{-1, +1, -1}, float3{-1, +1, +1}, float3{-1, -1, +1}, float3{-1, -1, -1}, // Left
+    float3{-1, -1, +1}, float3{+1, -1, +1}, float3{+1, +1, +1}, float3{-1, +1, +1}  // Top
+};
+
+const std::array<float2, NumVertices> Texcoords = {
+    float2{0, 1}, float2{0, 0}, float2{1, 0}, float2{1, 1}, // Bottom
+    float2{0, 1}, float2{0, 0}, float2{1, 0}, float2{1, 1}, // Front
+    float2{0, 1}, float2{1, 1}, float2{1, 0}, float2{0, 0}, // Right
+    float2{0, 1}, float2{0, 0}, float2{1, 0}, float2{1, 1}, // Back
+    float2{1, 0}, float2{0, 0}, float2{0, 1}, float2{1, 1}, // Left
+    float2{1, 1}, float2{0, 1}, float2{0, 0}, float2{1, 0}  // Top
+};
+
+const std::array<float3, NumVertices> Normals = {
+    float3{0, 0, -1}, float3{0, 0, -1}, float3{0, 0, -1}, float3{0, 0, -1}, // Bottom
+    float3{0, -1, 0}, float3{0, -1, 0}, float3{0, -1, 0}, float3{0, -1, 0}, // Front
+    float3{+1, 0, 0}, float3{+1, 0, 0}, float3{+1, 0, 0}, float3{+1, 0, 0}, // Right
+    float3{0, +1, 0}, float3{0, +1, 0}, float3{0, +1, 0}, float3{0, +1, 0}, // Back
+    float3{-1, 0, 0}, float3{-1, 0, 0}, float3{-1, 0, 0}, float3{-1, 0, 0}, // Left
+    float3{0, 0, +1}, float3{0, 0, +1}, float3{0, 0, +1}, float3{0, 0, +1}  // Top
+};
+
+// clang-format off
+const std::array<Uint32, NumIndices> Indices =
 {
-    // Layout of this structure matches the one we defined in the pipeline state
-    struct Vertex
+    2,0,1,    2,3,0,
+    4,6,5,    4,7,6,
+    8,10,9,   8,11,10,
+    12,14,13, 12,15,14,
+    16,18,17, 16,19,18,
+    20,21,22, 20,22,23
+};
+// clang-format on
+
+RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*         pDevice,
+                                          VERTEX_COMPONENT_FLAGS Components,
+                                          BIND_FLAGS             BindFlags,
+                                          BUFFER_MODE            Mode)
+{
+    VERIFY_EXPR(Components != VERTEX_COMPONENT_FLAG_NONE);
+    const Uint32 TotalVertexComponents =
+        ((Components & VERTEX_COMPONENT_FLAG_POSITION) ? 3 : 0) +
+        ((Components & VERTEX_COMPONENT_FLAG_NORMAL) ? 3 : 0) +
+        ((Components & VERTEX_COMPONENT_FLAG_TEXCOORD) ? 2 : 0);
+
+    std::vector<float> VertexData(TotalVertexComponents * NumVertices);
+
+    auto it = VertexData.begin();
+    for (Uint32 v = 0; v < NumVertices; ++v)
     {
-        float3 pos;
-        float2 uv;
-    };
-
-    // Cube vertices
-
-    //      (-1,+1,+1)________________(+1,+1,+1)
-    //               /|              /|
-    //              / |             / |
-    //             /  |            /  |
-    //            /   |           /   |
-    //(-1,-1,+1) /____|__________/(+1,-1,+1)
-    //           |    |__________|____|
-    //           |   /(-1,+1,-1) |    /(+1,+1,-1)
-    //           |  /            |   /
-    //           | /             |  /
-    //           |/              | /
-    //           /_______________|/
-    //        (-1,-1,-1)       (+1,-1,-1)
-    //
-
-    // clang-format off
-    Vertex CubeVerts[] =
-    {
-        {float3(-1,-1,-1), float2(0,1)},
-        {float3(-1,+1,-1), float2(0,0)},
-        {float3(+1,+1,-1), float2(1,0)},
-        {float3(+1,-1,-1), float2(1,1)},
-
-        {float3(-1,-1,-1), float2(0,1)},
-        {float3(-1,-1,+1), float2(0,0)},
-        {float3(+1,-1,+1), float2(1,0)},
-        {float3(+1,-1,-1), float2(1,1)},
-
-        {float3(+1,-1,-1), float2(0,1)},
-        {float3(+1,-1,+1), float2(1,1)},
-        {float3(+1,+1,+1), float2(1,0)},
-        {float3(+1,+1,-1), float2(0,0)},
-
-        {float3(+1,+1,-1), float2(0,1)},
-        {float3(+1,+1,+1), float2(0,0)},
-        {float3(-1,+1,+1), float2(1,0)},
-        {float3(-1,+1,-1), float2(1,1)},
-
-        {float3(-1,+1,-1), float2(1,0)},
-        {float3(-1,+1,+1), float2(0,0)},
-        {float3(-1,-1,+1), float2(0,1)},
-        {float3(-1,-1,-1), float2(1,1)},
-
-        {float3(-1,-1,+1), float2(1,1)},
-        {float3(+1,-1,+1), float2(0,1)},
-        {float3(+1,+1,+1), float2(0,0)},
-        {float3(-1,+1,+1), float2(1,0)}
-    };
-    // clang-format on
+        if (Components & VERTEX_COMPONENT_FLAG_POSITION)
+        {
+            const auto& Pos{Positions[v]};
+            *(it++) = Pos.x;
+            *(it++) = Pos.y;
+            *(it++) = Pos.z;
+        }
+        if (Components & VERTEX_COMPONENT_FLAG_NORMAL)
+        {
+            const auto& N{Normals[v]};
+            *(it++) = N.x;
+            *(it++) = N.y;
+            *(it++) = N.z;
+        }
+        if (Components & VERTEX_COMPONENT_FLAG_TEXCOORD)
+        {
+            const auto& UV{Texcoords[v]};
+            *(it++) = UV.x;
+            *(it++) = UV.y;
+        }
+    }
+    VERIFY_EXPR(it == VertexData.end());
 
     BufferDesc VertBuffDesc;
     VertBuffDesc.Name          = "Cube vertex buffer";
     VertBuffDesc.Usage         = USAGE_IMMUTABLE;
-    VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
+    VertBuffDesc.BindFlags     = BindFlags;
+    VertBuffDesc.uiSizeInBytes = static_cast<Uint32>(VertexData.size() * sizeof(VertexData[0]));
+    VertBuffDesc.Mode          = Mode;
+    if (Mode != BUFFER_MODE_UNDEFINED)
+    {
+        VertBuffDesc.ElementByteStride = TotalVertexComponents * sizeof(VertexData[0]);
+    }
+
     BufferData VBData;
-    VBData.pData    = CubeVerts;
-    VBData.DataSize = sizeof(CubeVerts);
+    VBData.pData    = VertexData.data();
+    VBData.DataSize = VertBuffDesc.uiSizeInBytes;
     RefCntAutoPtr<IBuffer> pCubeVertexBuffer;
 
     pDevice->CreateBuffer(VertBuffDesc, &VBData, &pCubeVertexBuffer);
@@ -111,28 +152,19 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice* pDevice)
     return pCubeVertexBuffer;
 }
 
-RefCntAutoPtr<IBuffer> CreateIndexBuffer(IRenderDevice* pDevice)
+RefCntAutoPtr<IBuffer> CreateIndexBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, BUFFER_MODE Mode)
 {
-    // clang-format off
-    Uint32 Indices[] =
-    {
-        2,0,1,    2,3,0,
-        4,6,5,    4,7,6,
-        8,10,9,   8,11,10,
-        12,14,13, 12,15,14,
-        16,18,17, 16,19,18,
-        20,21,22, 20,22,23
-    };
-    // clang-format on
-
     BufferDesc IndBuffDesc;
     IndBuffDesc.Name          = "Cube index buffer";
     IndBuffDesc.Usage         = USAGE_IMMUTABLE;
-    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
+    IndBuffDesc.BindFlags     = BindFlags;
     IndBuffDesc.uiSizeInBytes = sizeof(Indices);
+    IndBuffDesc.Mode          = Mode;
+    if (Mode != BUFFER_MODE_UNDEFINED)
+        IndBuffDesc.ElementByteStride = sizeof(Indices[0]);
     BufferData IBData;
-    IBData.pData    = Indices;
-    IBData.DataSize = sizeof(Indices);
+    IBData.pData    = Indices.data();
+    IBData.DataSize = NumIndices * sizeof(Indices[0]);
     RefCntAutoPtr<IBuffer> pBuffer;
     pDevice->CreateBuffer(IndBuffDesc, &IBData, &pBuffer);
     return pBuffer;
@@ -148,15 +180,7 @@ RefCntAutoPtr<ITexture> LoadTexture(IRenderDevice* pDevice, const char* Path)
 }
 
 
-RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                   pDevice,
-                                                  TEXTURE_FORMAT                   RTVFormat,
-                                                  TEXTURE_FORMAT                   DSVFormat,
-                                                  IShaderSourceInputStreamFactory* pShaderSourceFactory,
-                                                  const char*                      VSFilePath,
-                                                  const char*                      PSFilePath,
-                                                  LayoutElement*                   LayoutElements /*= nullptr*/,
-                                                  Uint32                           NumLayoutElements /*= 0*/,
-                                                  Uint8                            SampleCount /*= 1*/)
+RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInfo)
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
     PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
@@ -174,11 +198,11 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     // This tutorial will render to a single render target
     GraphicsPipeline.NumRenderTargets             = 1;
     // Set render target format which is the format of the swap chain's color buffer
-    GraphicsPipeline.RTVFormats[0]                = RTVFormat;
+    GraphicsPipeline.RTVFormats[0]                = CreateInfo.RTVFormat;
     // Set depth buffer format which is the format of the swap chain's back buffer
-    GraphicsPipeline.DSVFormat                    = DSVFormat;
+    GraphicsPipeline.DSVFormat                    = CreateInfo.DSVFormat;
     // Set the desired number of samples
-    GraphicsPipeline.SmplDesc.Count               = SampleCount;
+    GraphicsPipeline.SmplDesc.Count               = CreateInfo.SampleCount;
     // Primitive topology defines what kind of primitives will be rendered by this pipeline state
     GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Cull back faces
@@ -194,15 +218,15 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.UseCombinedTextureSamplers = true;
 
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    ShaderCI.pShaderSourceStreamFactory = CreateInfo.pShaderSourceFactory;
     // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube VS";
-        ShaderCI.FilePath        = VSFilePath;
-        pDevice->CreateShader(ShaderCI, &pVS);
+        ShaderCI.FilePath        = CreateInfo.VSFilePath;
+        CreateInfo.pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     // Create a pixel shader
@@ -211,28 +235,28 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube PS";
-        ShaderCI.FilePath        = PSFilePath;
-        pDevice->CreateShader(ShaderCI, &pPS);
+        ShaderCI.FilePath        = CreateInfo.PSFilePath;
+        CreateInfo.pDevice->CreateShader(ShaderCI, &pPS);
     }
 
-    // Define vertex shader input layout
-    // This tutorial uses two types of input: per-vertex data and per-instance data.
-    // clang-format off
-    const LayoutElement DefaultLayoutElems[] =
-    {
-        // Per-vertex data - first buffer slot
-        // Attribute 0 - vertex position
-        LayoutElement{0, 0, 3, VT_FLOAT32, False},
-        // Attribute 1 - texture coordinates
-        LayoutElement{1, 0, 2, VT_FLOAT32, False}
-    };
-    // clang-format on
+    std::vector<LayoutElement> LayoutElems;
+
+    Uint32 Attrib = 0;
+    if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_POSITION)
+        LayoutElems.emplace_back(Attrib++, 0, 3, VT_FLOAT32, False);
+    if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_NORMAL)
+        LayoutElems.emplace_back(Attrib++, 0, 3, VT_FLOAT32, False);
+    if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_TEXCOORD)
+        LayoutElems.emplace_back(Attrib++, 0, 2, VT_FLOAT32, False);
+
+    for (Uint32 i = 0; i < CreateInfo.NumExtraLayoutElements; ++i)
+        LayoutElems.push_back(CreateInfo.ExtraLayoutElements[i]);
+
+    GraphicsPipeline.InputLayout.LayoutElements = LayoutElems.data();
+    GraphicsPipeline.InputLayout.NumElements    = static_cast<Uint32>(LayoutElems.size());
 
     PSOCreateInfo.pVS = pVS;
     PSOCreateInfo.pPS = pPS;
-
-    GraphicsPipeline.InputLayout.LayoutElements = LayoutElements != nullptr ? LayoutElements : DefaultLayoutElems;
-    GraphicsPipeline.InputLayout.NumElements    = LayoutElements != nullptr ? NumLayoutElements : _countof(DefaultLayoutElems);
 
     // Define variable type that will be used by default
     ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
@@ -264,7 +288,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(IRenderDevice*                
     ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
     RefCntAutoPtr<IPipelineState> pPSO;
-    pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pPSO);
+    CreateInfo.pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pPSO);
     return pPSO;
 }
 

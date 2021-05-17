@@ -4,10 +4,12 @@ project(Tutorial21_RayTracing CXX)
 
 set(SOURCE
     src/Tutorial21_RayTracing.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial21_RayTracing.hpp
+    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS
