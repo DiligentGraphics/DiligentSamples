@@ -70,7 +70,7 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
     }
 
     // Create cube vertex and index buffers
-    m_pCubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice);
+    m_pCubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
     VERIFY(m_pCubeVertexBuffer, "Failed to create cube vertex buffer");
 
     m_pCubeIndexBuffer = TexturedCube::CreateIndexBuffer(pDevice);

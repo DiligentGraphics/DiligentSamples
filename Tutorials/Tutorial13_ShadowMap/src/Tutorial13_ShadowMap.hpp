@@ -49,7 +49,6 @@ private:
     void CreateCubePSO();
     void CreatePlanePSO();
     void CreateShadowMapVisPSO();
-    void CreateVertexBuffer();
     void UpdateUI();
     void CreateShadowMap();
     void RenderShadowMap();

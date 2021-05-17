@@ -4,10 +4,12 @@ project(Tutorial20_MeshShader CXX)
 
 set(SOURCE
     src/Tutorial20_MeshShader.cpp
+    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial20_MeshShader.hpp
+    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS

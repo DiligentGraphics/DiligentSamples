@@ -55,12 +55,17 @@ void Tutorial12_RenderTarget::CreateCubePSO()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pCubePSO = TexturedCube::CreatePipelineState(m_pDevice,
-                                                   RenderTargetFormat,
-                                                   DepthBufferFormat,
-                                                   pShaderSourceFactory,
-                                                   "cube.vsh",
-                                                   "cube.psh");
+    TexturedCube::CreatePSOInfo CubePsoCI;
+    CubePsoCI.pDevice              = m_pDevice;
+    CubePsoCI.RTVFormat            = RenderTargetFormat;
+    CubePsoCI.DSVFormat            = DepthBufferFormat;
+    CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
+    CubePsoCI.VSFilePath           = "cube.vsh";
+    CubePsoCI.PSFilePath           = "cube.psh";
+    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
+
+    m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI);
+
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
@@ -200,7 +205,7 @@ void Tutorial12_RenderTarget::Initialize(const SampleInitInfo& InitInfo)
     CreateRenderTargetPSO();
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     // Set cube texture SRV in the SRB

@@ -86,14 +86,17 @@ void Tutorial05_TextureArray::CreatePipelineState()
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    m_pPSO = TexturedCube::CreatePipelineState(m_pDevice,
-                                               m_pSwapChain->GetDesc().ColorBufferFormat,
-                                               m_pSwapChain->GetDesc().DepthBufferFormat,
-                                               pShaderSourceFactory,
-                                               "cube_inst.vsh",
-                                               "cube_inst.psh",
-                                               LayoutElems,
-                                               _countof(LayoutElems));
+    TexturedCube::CreatePSOInfo CubePsoCI;
+    CubePsoCI.pDevice                = m_pDevice;
+    CubePsoCI.RTVFormat              = m_pSwapChain->GetDesc().ColorBufferFormat;
+    CubePsoCI.DSVFormat              = m_pSwapChain->GetDesc().DepthBufferFormat;
+    CubePsoCI.pShaderSourceFactory   = pShaderSourceFactory;
+    CubePsoCI.VSFilePath             = "cube_inst.vsh";
+    CubePsoCI.PSFilePath             = "cube_inst.psh";
+    CubePsoCI.ExtraLayoutElements    = LayoutElems;
+    CubePsoCI.NumExtraLayoutElements = _countof(LayoutElems);
+
+    m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI);
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
@@ -182,7 +185,7 @@ void Tutorial05_TextureArray::Initialize(const SampleInitInfo& InitInfo)
     CreatePipelineState();
 
     // Load cube vertex and index buffers
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
 
     CreateInstanceBuffer();
