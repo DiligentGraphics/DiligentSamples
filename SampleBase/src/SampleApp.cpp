@@ -276,7 +276,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 
             m_TheSample->ModifyEngineInitInfo({pFactoryOpenGL, m_DeviceType, EngineCI, m_SwapChainInitDesc});
 
-            EngineCI.ForceNonSeparablePrograms = m_bForceNonSeprblProgs;
+            if (m_bForceNonSeprblProgs)
+                EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_DISABLED;
             if (EngineCI.NumDeferredContexts != 0)
             {
                 LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");

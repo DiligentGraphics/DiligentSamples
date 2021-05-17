@@ -34,6 +34,8 @@ namespace Diligent
 
 void SampleBase::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
+    Attribs.EngineCI.Features = DeviceFeatures{DEVICE_FEATURE_STATE_OPTIONAL};
+
     switch (Attribs.DeviceType)
     {
 #if D3D11_SUPPORTED
