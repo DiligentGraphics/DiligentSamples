@@ -77,9 +77,16 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     if (DTid.x >= Dim.x || DTid.y >= Dim.y)
         return;
 
-    float  Depth   = TextureLoad(g_GBuffer_Depth, DTid).x;
     float3 WNormal = TextureLoad(g_GBuffer_Normal, DTid).xyz;
 
+    // Early exit for background objects
+    if (dot(WNormal, WNormal) < 0.01)
+    {
+        TextureStore(g_RayTracedTex, DTid, float4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    float  Depth = TextureLoad(g_GBuffer_Depth, DTid).x;
     float4 PosClipSpace;
     PosClipSpace.xy = (float2(DTid) + float2(0.5, 0.5)) / float2(Dim) * float2(2.0, -2.0) + float2(-1.0, 1.0);
     PosClipSpace.z = Depth;
@@ -93,13 +100,6 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     ViewRayDir        /= DisToCamera;
     float4 Color       = float4(0.0, 0.0, 0.0, 1.0);
     float  NdotL       = max(0.0, dot(LightDir, WNormal));
-
-
-    if (dot(WNormal, WNormal) < 0.01)
-    {
-        TextureStore(g_RayTracedTex, DTid, Color);
-        return;
-    }
 
     // Cast shadow
     if (NdotL > 0.0)

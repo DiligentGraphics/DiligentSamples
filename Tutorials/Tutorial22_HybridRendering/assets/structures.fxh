@@ -23,7 +23,7 @@ struct GlobalConstants
 
 struct ObjectConstants
 {
-    uint ObjectDataOffset;
+    uint ObjectAttribsOffset; // offset in g_ObjectAttribs
     uint padding0;
     uint padding1;
     uint padding2;

@@ -53,7 +53,9 @@ struct float4x3
     float m23 = 0.f; // Unused
 
     float4x3() {}
-    float4x3(const float3x3& Other) :
+
+    template <typename MatType>
+    float4x3(const MatType& Other) :
         m00{Other.m00}, m01{Other.m01}, m02{Other.m02}, m10{Other.m10}, m11{Other.m11}, m12{Other.m12}, m20{Other.m20}, m21{Other.m21}, m22{Other.m22}
     {}
 };
@@ -79,6 +81,10 @@ public:
 private:
     void UpdateUI();
     void CreateScene();
+    void CreateSceneMaterials(uint2& CubeMaterialRange, Uint32& GroundMaterial, std::vector<MaterialAttribs>& Materials);
+    void CreateSceneObjects(uint2 CubeMaterialRange, Uint32 GroundMaterial);
+    void CreateSceneAccelStructs();
+    void UpdateTLAS();
     void CreateRasterizationPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void CreateRayTracingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
@@ -109,32 +115,30 @@ private:
 
     struct InstancedObjects
     {
-        Uint32 MeshInd          = 0; // index in m_Scene.Meshes
-        Uint32 ObjectDataOffset = 0; // offset in m_Scene.ObjectAttribsBuffer
-        Uint32 NumObjects       = 0; // number of instances for draw call
+        Uint32 MeshInd             = 0; // index in m_Scene.Meshes
+        Uint32 ObjectAttribsOffset = 0; // offset in m_Scene.ObjectAttribsBuffer
+        Uint32 NumObjects          = 0; // number of instances for draw call
     };
 
-    struct SceneTempData
+    struct DynamicObject
     {
-        uint2                        CubeMaterialRange;
-        Uint32                       GroundMaterial = 0;
-        std::vector<ObjectAttribs>   Objects;
-        std::vector<MaterialAttribs> Materials;
+        Uint32 ObjectAttribsIndex = 0; // index in m_Scene.ObjectAttribsBuffer
     };
 
     struct Scene
     {
-        std::vector<InstancedObjects>        Objects;
+        std::vector<InstancedObjects>        ObjectInstances;
+        std::vector<DynamicObject>           DynamicObjects;
         std::vector<Mesh>                    Meshes;
         RefCntAutoPtr<IBuffer>               MaterialAttribsBuffer;
-        RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer;
+        std::vector<ObjectAttribs>           Objects;
+        RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer; // GPU visible array of ObjectAttribs
         std::vector<RefCntAutoPtr<ITexture>> Textures;
         std::vector<RefCntAutoPtr<ISampler>> Samplers;
         RefCntAutoPtr<ITopLevelAS>           TLAS;
+        RefCntAutoPtr<IBuffer>               TLASInstancesBuffer;
+        RefCntAutoPtr<IBuffer>               TLASScratchBuffer;
     };
-    static void CreateSceneMaterials(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp);
-    static void CreateSceneObjects(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp);
-    static void CreateSceneAccelStructs(IRenderDevice* pDevice, IDeviceContext* pContext, Scene& scene, SceneTempData& temp);
     static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
 
     Scene                  m_Scene;

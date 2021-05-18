@@ -46,7 +46,7 @@ SampleBase* CreateSample()
     return new Tutorial22_HybridRendering();
 }
 
-void Tutorial22_HybridRendering::CreateSceneMaterials(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp)
+void Tutorial22_HybridRendering::CreateSceneMaterials(uint2& CubeMaterialRange, Uint32& GroundMaterial, std::vector<MaterialAttribs>& Materials)
 {
     Uint32 AnisotropicClampSampInd = 0;
     Uint32 AnisotropicWrapSampInd  = 0;
@@ -63,14 +63,14 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(IRenderDevice* pDevice, Sc
         };
 
         RefCntAutoPtr<ISampler> pSampler;
-        pDevice->CreateSampler(AnisotropicClampSampler, &pSampler);
-        AnisotropicClampSampInd = static_cast<Uint32>(scene.Samplers.size());
-        scene.Samplers.push_back(std::move(pSampler));
+        m_pDevice->CreateSampler(AnisotropicClampSampler, &pSampler);
+        AnisotropicClampSampInd = static_cast<Uint32>(m_Scene.Samplers.size());
+        m_Scene.Samplers.push_back(std::move(pSampler));
 
         pSampler = nullptr;
-        pDevice->CreateSampler(AnisotropicWrapSampler, &pSampler);
-        AnisotropicWrapSampInd = static_cast<Uint32>(scene.Samplers.size());
-        scene.Samplers.push_back(std::move(pSampler));
+        m_pDevice->CreateSampler(AnisotropicWrapSampler, &pSampler);
+        AnisotropicWrapSampInd = static_cast<Uint32>(m_Scene.Samplers.size());
+        m_Scene.Samplers.push_back(std::move(pSampler));
     }
 
     const auto LoadMaterial = [&](const char* ColorMapName, const float4& baseColor, Uint32 SamplerInd) //
@@ -84,24 +84,24 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(IRenderDevice* pDevice, Sc
 
         mtr.SampInd = SamplerInd;
 
-        CreateTextureFromFile(ColorMapName, loadInfo, pDevice, &Tex);
+        CreateTextureFromFile(ColorMapName, loadInfo, m_pDevice, &Tex);
         VERIFY_EXPR(Tex);
         mtr.BaseColorMask   = baseColor;
-        mtr.BaseColorTexInd = static_cast<Uint32>(scene.Textures.size());
-        scene.Textures.push_back(std::move(Tex));
-        temp.Materials.push_back(mtr);
+        mtr.BaseColorTexInd = static_cast<Uint32>(m_Scene.Textures.size());
+        m_Scene.Textures.push_back(std::move(Tex));
+        Materials.push_back(mtr);
     };
 
     // Cube materials
-    temp.CubeMaterialRange.x = static_cast<Uint32>(temp.Materials.size());
+    CubeMaterialRange.x = static_cast<Uint32>(Materials.size());
     LoadMaterial("DGLogo0.png", float4{1.f}, AnisotropicClampSampInd);
     LoadMaterial("DGLogo1.png", float4{1.f}, AnisotropicClampSampInd);
     LoadMaterial("DGLogo2.png", float4{1.f}, AnisotropicClampSampInd);
     LoadMaterial("DGLogo3.png", float4{1.f}, AnisotropicClampSampInd);
-    temp.CubeMaterialRange.y = static_cast<Uint32>(temp.Materials.size());
+    CubeMaterialRange.y = static_cast<Uint32>(Materials.size());
 
     // Ground materials
-    temp.GroundMaterial = static_cast<Uint32>(temp.Materials.size());
+    GroundMaterial = static_cast<Uint32>(Materials.size());
     LoadMaterial("Marble.jpg", float4{1.f, 1.f, 1.f, 1.f}, AnisotropicWrapSampInd);
 }
 
@@ -169,7 +169,7 @@ Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlane
     return PlaneMesh;
 }
 
-void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp)
+void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRange, const Uint32 GroundMaterial)
 {
     Uint32 CubeMeshId  = 0;
     Uint32 PlaneMeshId = 0;
@@ -179,85 +179,89 @@ void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scen
         Mesh CubeMesh;
         CubeMesh.Name         = "Cube";
         CubeMesh.VertexBuffer = TexturedCube::CreateVertexBuffer(
-            pDevice,
+            m_pDevice,
             TexturedCube::VERTEX_COMPONENT_FLAG_POS_NORM_UV,
             BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING,
             BUFFER_MODE_STRUCTURED);
-        CubeMesh.IndexBuffer = TexturedCube::CreateIndexBuffer(pDevice, BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING, BUFFER_MODE_STRUCTURED);
+        CubeMesh.IndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice, BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING, BUFFER_MODE_STRUCTURED);
         CubeMesh.NumVertices = 12;
         CubeMesh.NumIndices  = 36;
-        CubeMeshId           = static_cast<Uint32>(scene.Meshes.size());
-        scene.Meshes.push_back(CubeMesh);
+        CubeMeshId           = static_cast<Uint32>(m_Scene.Meshes.size());
+        m_Scene.Meshes.push_back(CubeMesh);
 
-        auto PlaneMesh = CreateTexturedPlaneMesh(pDevice, float2{25.f, 25.f});
-        PlaneMeshId    = static_cast<Uint32>(scene.Meshes.size());
-        scene.Meshes.push_back(PlaneMesh);
+        auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25.f, 25.f});
+        PlaneMeshId    = static_cast<Uint32>(m_Scene.Meshes.size());
+        m_Scene.Meshes.push_back(PlaneMesh);
     }
 
-    const auto AddCubeObject = [&](float Angle, float X, float Y, float Z, float Scale, Uint32 MatId) //
+    const auto AddCubeObject = [&](float Angle, float X, float Y, float Z, float Scale, bool IsDynamic = false) //
     {
-        const auto ModelMat  = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
-        const auto NormalMat = float3x3{ModelMat.m00, ModelMat.m01, ModelMat.m02,
-                                        ModelMat.m10, ModelMat.m11, ModelMat.m12,
-                                        ModelMat.m20, ModelMat.m21, ModelMat.m22};
+        const auto ModelMat = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
 
         ObjectAttribs obj;
         obj.ModelMat   = ModelMat.Transpose();
-        obj.NormalMat  = NormalMat.Transpose();
-        obj.MaterialId = (MatId % (temp.CubeMaterialRange.y - temp.CubeMaterialRange.x)) + temp.CubeMaterialRange.x;
+        obj.NormalMat  = obj.ModelMat;
+        obj.MaterialId = (m_Scene.Objects.size() % (CubeMaterialRange.y - CubeMaterialRange.x)) + CubeMaterialRange.x;
         obj.MeshId     = CubeMeshId;
-        obj.FirstIndex = scene.Meshes[obj.MeshId].FirstIndex;
-        temp.Objects.push_back(obj);
+        obj.FirstIndex = m_Scene.Meshes[obj.MeshId].FirstIndex;
+        m_Scene.Objects.push_back(obj);
+
+        if (IsDynamic)
+        {
+            DynamicObject DynObj;
+            DynObj.ObjectAttribsIndex = static_cast<Uint32>(m_Scene.Objects.size() - 1);
+            m_Scene.DynamicObjects.push_back(DynObj);
+        }
     };
     // clang-format off
-    AddCubeObject(0.25f,  0.0f, 1.00f,  1.5f, 0.9f, 4);
-    AddCubeObject(0.00f, -1.9f, 1.00f, -0.5f, 0.5f, 4);
-    AddCubeObject(0.00f, -1.0f, 1.00f,  0.0f, 1.0f, 0);
-    AddCubeObject(0.30f, -0.2f, 1.00f, -1.0f, 0.7f, 1);
-    AddCubeObject(0.25f, -1.7f, 1.00f, -1.6f, 1.1f, 3);
-    AddCubeObject(0.28f,  0.7f, 1.00f,  3.0f, 1.3f, 0);
-    AddCubeObject(0.10f,  1.5f, 1.00f,  1.0f, 1.1f, 1);
-    AddCubeObject(0.21f, -3.2f, 1.00f,  0.2f, 1.2f, 3);
-    AddCubeObject(0.05f, -2.1f, 1.00f,  1.6f, 1.1f, 0);
+    AddCubeObject(0.25f,  0.0f, 1.00f,  1.5f, 0.9f);
+    AddCubeObject(0.00f, -1.9f, 1.00f, -0.5f, 0.5f);
+    AddCubeObject(0.00f, -1.0f, 1.00f,  0.0f, 1.0f);
+    AddCubeObject(0.30f, -0.2f, 1.00f, -1.0f, 0.7f);
+    AddCubeObject(0.25f, -1.7f, 1.00f, -1.6f, 1.1f);
+    AddCubeObject(0.28f,  0.7f, 1.00f,  3.0f, 1.3f);
+    AddCubeObject(0.10f,  1.5f, 1.00f,  1.0f, 1.1f);
+    AddCubeObject(0.21f, -3.2f, 1.00f,  0.2f, 1.2f);
+    AddCubeObject(0.05f, -2.1f, 1.00f,  1.6f, 1.1f);
     
-    AddCubeObject(0.04f, -1.4f, 2.18f, -1.4f, 0.6f, 3);
-    AddCubeObject(0.24f, -1.0f, 2.10f,  0.5f, 1.1f, 0);
-    AddCubeObject(0.02f, -0.5f, 2.00f, -0.9f, 0.9f, 1);
-    AddCubeObject(0.08f, -2.7f, 1.96f, -0.7f, 0.7f, 3);
-    AddCubeObject(0.17f,  1.5f, 2.00f,  1.1f, 0.9f, 0);
+    AddCubeObject(0.04f, -1.4f, 2.18f, -1.4f, 0.6f);
+    AddCubeObject(0.24f, -1.0f, 2.10f,  0.5f, 1.1f);
+    AddCubeObject(0.02f, -0.5f, 2.00f, -0.9f, 0.9f);
+    AddCubeObject(0.08f, -2.7f, 1.96f, -0.7f, 0.7f);
+    AddCubeObject(0.17f,  1.5f, 2.00f,  1.1f, 0.9f, true);
     
-    AddCubeObject(1.9f, -1.0f, 3.25f, -0.2f, 1.2f, 2);
+    AddCubeObject(1.9f, -1.0f, 3.25f, -0.2f, 1.2f, true);
     // clang-format on
 
     InstancedObjects InstObj;
-    InstObj.MeshInd          = CubeMeshId;
-    InstObj.NumObjects       = static_cast<Uint32>(temp.Objects.size());
-    InstObj.ObjectDataOffset = 0;
-    scene.Objects.push_back(InstObj);
+    InstObj.MeshInd             = CubeMeshId;
+    InstObj.NumObjects          = static_cast<Uint32>(m_Scene.Objects.size());
+    InstObj.ObjectAttribsOffset = 0;
+    m_Scene.ObjectInstances.push_back(InstObj);
 
     // Create ground plane object
-    InstObj.ObjectDataOffset = static_cast<Uint32>(temp.Objects.size());
-    InstObj.MeshInd          = PlaneMeshId;
+    InstObj.ObjectAttribsOffset = static_cast<Uint32>(m_Scene.Objects.size());
+    InstObj.MeshInd             = PlaneMeshId;
     {
         ObjectAttribs obj;
-        obj.ModelMat   = float4x4::Scale(50.f, 1.f, 50.f).Transpose();
+        obj.ModelMat   = (float4x4::Scale(50.f, 1.f, 50.f) * float4x4::Translation(0.f, -0.2f, 0.f)).Transpose();
         obj.NormalMat  = float3x3::Identity();
-        obj.MaterialId = temp.GroundMaterial;
+        obj.MaterialId = GroundMaterial;
         obj.MeshId     = PlaneMeshId;
-        obj.FirstIndex = scene.Meshes[obj.MeshId].FirstIndex;
-        temp.Objects.push_back(obj);
+        obj.FirstIndex = m_Scene.Meshes[obj.MeshId].FirstIndex;
+        m_Scene.Objects.push_back(obj);
     }
-    InstObj.NumObjects = static_cast<Uint32>(temp.Objects.size()) - InstObj.ObjectDataOffset;
-    scene.Objects.push_back(InstObj);
+    InstObj.NumObjects = static_cast<Uint32>(m_Scene.Objects.size()) - InstObj.ObjectAttribsOffset;
+    m_Scene.ObjectInstances.push_back(InstObj);
 }
 
-void Tutorial22_HybridRendering::CreateSceneAccelStructs(IRenderDevice* pDevice, IDeviceContext* pContext, Scene& scene, SceneTempData& temp)
+void Tutorial22_HybridRendering::CreateSceneAccelStructs()
 {
     // Create & build bottom level acceleration structure
     {
         RefCntAutoPtr<IBuffer> pScratchBuffer;
 
-        for (auto& Mesh : scene.Meshes)
+        for (auto& Mesh : m_Scene.Meshes)
         {
             // Create BLAS
             BLASTriangleDesc Triangles;
@@ -275,7 +279,7 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs(IRenderDevice* pDevice,
                 ASDesc.Flags         = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
                 ASDesc.pTriangles    = &Triangles;
                 ASDesc.TriangleCount = 1;
-                pDevice->CreateBLAS(ASDesc, &Mesh.BLAS);
+                m_pDevice->CreateBLAS(ASDesc, &Mesh.BLAS);
             }
 
             if (!pScratchBuffer || pScratchBuffer->GetDesc().uiSizeInBytes < Mesh.BLAS->GetScratchBufferSizes().Build)
@@ -287,7 +291,7 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs(IRenderDevice* pDevice,
                 BuffDesc.uiSizeInBytes = Mesh.BLAS->GetScratchBufferSizes().Build;
 
                 pScratchBuffer = nullptr;
-                pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
+                m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
             }
 
             // Build BLAS
@@ -317,116 +321,120 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs(IRenderDevice* pDevice,
             Attribs.GeometryTransitionMode      = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
             Attribs.ScratchBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
-            pContext->BuildBLAS(Attribs);
+            m_pImmediateContext->BuildBLAS(Attribs);
         }
     }
 
-    // Create & build top-level acceleration structure
+    // Create TLAS
     {
-        const Uint32 NumInstances = static_cast<Uint32>(temp.Objects.size());
-
-        // Create TLAS
-        {
-            TopLevelASDesc TLASDesc;
-            TLASDesc.Name             = "Scene TLAS";
-            TLASDesc.MaxInstanceCount = NumInstances;
-            TLASDesc.Flags            = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
-            pDevice->CreateTLAS(TLASDesc, &scene.TLAS);
-        }
-
-        // Create scratch buffer
-        RefCntAutoPtr<IBuffer> pScratchBuffer;
-        {
-            BufferDesc BuffDesc;
-            BuffDesc.Name          = "TLAS Scratch Buffer";
-            BuffDesc.Usage         = USAGE_DEFAULT;
-            BuffDesc.BindFlags     = BIND_RAY_TRACING;
-            BuffDesc.uiSizeInBytes = scene.TLAS->GetScratchBufferSizes().Build;
-            pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
-        }
-
-        // Create instance buffer
-        RefCntAutoPtr<IBuffer> pInstanceBuffer;
-        {
-            BufferDesc BuffDesc;
-            BuffDesc.Name          = "TLAS Instance Buffer";
-            BuffDesc.Usage         = USAGE_DEFAULT;
-            BuffDesc.BindFlags     = BIND_RAY_TRACING;
-            BuffDesc.uiSizeInBytes = TLAS_INSTANCE_DATA_SIZE * NumInstances;
-            pDevice->CreateBuffer(BuffDesc, nullptr, &pInstanceBuffer);
-        }
-
-        // Setup instances
-        std::vector<TLASBuildInstanceData> Instances{NumInstances};
-        std::vector<String>                InstanceNames{NumInstances};
-
-        for (Uint32 i = 0; i < NumInstances; ++i)
-        {
-            const auto& Obj      = temp.Objects[i];
-            auto&       Inst     = Instances[i];
-            auto&       Name     = InstanceNames[i];
-            const auto& Mesh     = scene.Meshes[Obj.MeshId];
-            const auto  ModelMat = Obj.ModelMat.Transpose();
-
-            Name = Mesh.Name + " Instance (" + std::to_string(i) + ")";
-
-            Inst.InstanceName = Name.c_str();
-            Inst.pBLAS        = Mesh.BLAS.RawPtr<IBottomLevelAS>();
-            Inst.Mask         = 0xFF;
-            Inst.CustomId     = i; // CommittedInstanceID()
-
-            Inst.Transform.SetRotation(ModelMat.Data(), 4);
-            Inst.Transform.SetTranslation(ModelMat.m30, ModelMat.m31, ModelMat.m32);
-        }
-
-        // Build  TLAS
-        BuildTLASAttribs Attribs;
-        Attribs.pTLAS = scene.TLAS;
-
-        // Scratch buffer will be used to store temporary data during TLAS build or update.
-        // Previous content in the scratch buffer will be discarded.
-        Attribs.pScratchBuffer = pScratchBuffer;
-
-        // Instance buffer will store instance data during TLAS build or update.
-        // Previous content in the instance buffer will be discarded.
-        Attribs.pInstanceBuffer = pInstanceBuffer;
-
-        // Instances will be converted to the format that is required by the graphics driver and copied to the instance buffer.
-        Attribs.pInstances    = Instances.data();
-        Attribs.InstanceCount = static_cast<Uint32>(Instances.size());
-
-        // Allow engine to change resource states.
-        Attribs.TLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-        Attribs.BLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-        Attribs.InstanceBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-        Attribs.ScratchBufferTransitionMode  = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
-
-        pContext->BuildTLAS(Attribs);
+        TopLevelASDesc TLASDesc;
+        TLASDesc.Name             = "Scene TLAS";
+        TLASDesc.MaxInstanceCount = static_cast<Uint32>(m_Scene.Objects.size());
+        TLASDesc.Flags            = RAYTRACING_BUILD_AS_ALLOW_UPDATE | RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
+        m_pDevice->CreateTLAS(TLASDesc, &m_Scene.TLAS);
     }
+}
+
+void Tutorial22_HybridRendering::UpdateTLAS()
+{
+    const Uint32 NumInstances = static_cast<Uint32>(m_Scene.Objects.size());
+    bool         Update       = true;
+
+    // Create scratch buffer
+    if (!m_Scene.TLASScratchBuffer)
+    {
+        BufferDesc BuffDesc;
+        BuffDesc.Name          = "TLAS Scratch Buffer";
+        BuffDesc.Usage         = USAGE_DEFAULT;
+        BuffDesc.BindFlags     = BIND_RAY_TRACING;
+        BuffDesc.uiSizeInBytes = std::max(m_Scene.TLAS->GetScratchBufferSizes().Build, m_Scene.TLAS->GetScratchBufferSizes().Update);
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.TLASScratchBuffer);
+        Update = false; // this is first build
+    }
+
+    // Create instance buffer
+    if (!m_Scene.TLASInstancesBuffer)
+    {
+        BufferDesc BuffDesc;
+        BuffDesc.Name          = "TLAS Instance Buffer";
+        BuffDesc.Usage         = USAGE_DEFAULT;
+        BuffDesc.BindFlags     = BIND_RAY_TRACING;
+        BuffDesc.uiSizeInBytes = TLAS_INSTANCE_DATA_SIZE * NumInstances;
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.TLASInstancesBuffer);
+    }
+
+    // Setup instances
+    std::vector<TLASBuildInstanceData> Instances{NumInstances};
+    std::vector<String>                InstanceNames{NumInstances};
+
+    for (Uint32 i = 0; i < NumInstances; ++i)
+    {
+        const auto& Obj      = m_Scene.Objects[i];
+        auto&       Inst     = Instances[i];
+        auto&       Name     = InstanceNames[i];
+        const auto& Mesh     = m_Scene.Meshes[Obj.MeshId];
+        const auto  ModelMat = Obj.ModelMat.Transpose();
+
+        Name = Mesh.Name + " Instance (" + std::to_string(i) + ")";
+
+        Inst.InstanceName = Name.c_str();
+        Inst.pBLAS        = Mesh.BLAS.RawPtr<IBottomLevelAS>();
+        Inst.Mask         = 0xFF;
+        Inst.CustomId     = i; // CommittedInstanceID()
+
+        Inst.Transform.SetRotation(ModelMat.Data(), 4);
+        Inst.Transform.SetTranslation(ModelMat.m30, ModelMat.m31, ModelMat.m32);
+    }
+
+    // Build  TLAS
+    BuildTLASAttribs Attribs;
+    Attribs.pTLAS  = m_Scene.TLAS;
+    Attribs.Update = Update;
+
+    // Scratch buffer will be used to store temporary data during TLAS build or update.
+    // Previous content in the scratch buffer will be discarded.
+    Attribs.pScratchBuffer = m_Scene.TLASScratchBuffer;
+
+    // Instance buffer will store instance data during TLAS build or update.
+    // Previous content in the instance buffer will be discarded.
+    Attribs.pInstanceBuffer = m_Scene.TLASInstancesBuffer;
+
+    // Instances will be converted to the format that is required by the graphics driver and copied to the instance buffer.
+    Attribs.pInstances    = Instances.data();
+    Attribs.InstanceCount = NumInstances;
+
+    // Allow engine to change resource states.
+    Attribs.TLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+    Attribs.BLASTransitionMode           = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+    Attribs.InstanceBufferTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+    Attribs.ScratchBufferTransitionMode  = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+
+    m_pImmediateContext->BuildTLAS(Attribs);
 }
 
 void Tutorial22_HybridRendering::CreateScene()
 {
-    SceneTempData temp;
-    CreateSceneMaterials(m_pDevice, m_Scene, temp);
-    CreateSceneObjects(m_pDevice, m_Scene, temp);
-    CreateSceneAccelStructs(m_pDevice, m_pImmediateContext, m_Scene, temp);
+    uint2                        CubeMaterialRange;
+    Uint32                       GroundMaterial;
+    std::vector<MaterialAttribs> Materials;
+    CreateSceneMaterials(CubeMaterialRange, GroundMaterial, Materials);
+    CreateSceneObjects(CubeMaterialRange, GroundMaterial);
+    CreateSceneAccelStructs();
 
     // Create buffer for object and material attribs
     {
         BufferDesc BuffDesc;
         BuffDesc.Name              = "Object attribs buffer";
         BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(temp.Objects[0]) * temp.Objects.size());
+        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(m_Scene.Objects[0]) * m_Scene.Objects.size());
         BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
-        BuffDesc.ElementByteStride = sizeof(temp.Objects[0]);
-        BufferData BuffData{temp.Objects.data(), BuffDesc.uiSizeInBytes};
-        m_pDevice->CreateBuffer(BuffDesc, &BuffData, &m_Scene.ObjectAttribsBuffer);
+        BuffDesc.ElementByteStride = sizeof(m_Scene.Objects[0]);
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.ObjectAttribsBuffer);
 
         BuffDesc.Name              = "Material attribs buffer";
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(temp.Materials[0]) * temp.Materials.size());
-        BuffDesc.ElementByteStride = sizeof(temp.Materials[0]);
-        BuffData                   = BufferData{temp.Materials.data(), BuffDesc.uiSizeInBytes};
+        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(Materials[0]) * Materials.size());
+        BuffDesc.ElementByteStride = sizeof(Materials[0]);
+        BufferData BuffData        = BufferData{Materials.data(), BuffDesc.uiSizeInBytes};
         m_pDevice->CreateBuffer(BuffDesc, &BuffData, &m_Scene.MaterialAttribsBuffer);
     }
 }
@@ -755,7 +763,12 @@ void Tutorial22_HybridRendering::Render()
         GConst.MaxRayLength = 100.f;
         GConst.AmbientLight = 0.1f;
         m_pImmediateContext->UpdateBuffer(m_Constants, 0, static_cast<Uint32>(sizeof(GConst)), &GConst, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        // Update transformation for some objects
+        m_pImmediateContext->UpdateBuffer(m_Scene.ObjectAttribsBuffer, 0, static_cast<Uint32>(sizeof(ObjectAttribs) * m_Scene.Objects.size()), m_Scene.Objects.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
+
+    UpdateTLAS();
 
     // Rasterization pass
     {
@@ -767,17 +780,17 @@ void Tutorial22_HybridRendering::Render()
         ITextureView* pDSV = m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         m_pImmediateContext->SetRenderTargets(_countof(RTVs), RTVs, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        m_pImmediateContext->ClearRenderTarget(RTVs[0], m_SkyColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         const float ClearNormal[4] = {};
+        m_pImmediateContext->ClearRenderTarget(RTVs[0], m_SkyColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearNormal, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_RasterizationPSO);
         m_pImmediateContext->CommitShaderResources(m_RasterizationSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        for (auto& Obj : m_Scene.Objects)
+        for (auto& ObjInst : m_Scene.ObjectInstances)
         {
-            auto&    Mesh      = m_Scene.Meshes[Obj.MeshInd];
+            auto&    Mesh      = m_Scene.Meshes[ObjInst.MeshInd];
             IBuffer* VBs[]     = {Mesh.VertexBuffer};
             Uint32   Offsets[] = {0};
 
@@ -786,12 +799,12 @@ void Tutorial22_HybridRendering::Render()
 
             {
                 MapHelper<ObjectConstants> ObjConstants(m_pImmediateContext, m_ObjectConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-                ObjConstants->ObjectDataOffset = Obj.ObjectDataOffset;
+                ObjConstants->ObjectAttribsOffset = ObjInst.ObjectAttribsOffset;
             }
 
             DrawIndexedAttribs drawAttribs;
             drawAttribs.NumIndices         = Mesh.NumIndices;
-            drawAttribs.NumInstances       = Obj.NumObjects;
+            drawAttribs.NumInstances       = ObjInst.NumObjects;
             drawAttribs.FirstIndexLocation = Mesh.FirstIndex;
             drawAttribs.IndexType          = VT_UINT32;
             drawAttribs.Flags              = DRAW_FLAG_VERIFY_ALL;
@@ -838,7 +851,9 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
+    const float dt = static_cast<float>(ElapsedTime);
+
+    m_Camera.Update(m_InputController, dt);
 
     // Do not go underground,
     float3 oldPos = m_Camera.GetPos();
@@ -847,6 +862,16 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
         oldPos.y = 0.1f;
         m_Camera.SetPos(oldPos);
         m_Camera.Update(m_InputController, 0);
+    }
+
+    // Update dynamic objects
+    for (auto& DynObj : m_Scene.DynamicObjects)
+    {
+        auto& Obj      = m_Scene.Objects[DynObj.ObjectAttribsIndex];
+        auto  ModelMat = Obj.ModelMat.Transpose();
+        ModelMat       = float4x4::RotationY(PI_F * dt * 0.025f) * ModelMat;
+        Obj.ModelMat   = ModelMat.Transpose();
+        Obj.NormalMat  = float4x3{Obj.ModelMat};
     }
 }
 

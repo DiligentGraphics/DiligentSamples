@@ -24,7 +24,7 @@ void main(in VSInput  VSIn,
           in uint     InstanceId : SV_InstanceID,
           out PSInput PSIn)
 {
-    ObjectAttribs Obj = g_ObjectAttribs[g_ObjectConst.ObjectDataOffset + InstanceId];
+    ObjectAttribs Obj = g_ObjectAttribs[g_ObjectConst.ObjectAttribsOffset + InstanceId];
 
     PSIn.WPos  = mul(float4(VSIn.Pos, 1.0), Obj.ModelMat);
     PSIn.Pos   = mul(PSIn.WPos, g_Constants.ViewProj);
