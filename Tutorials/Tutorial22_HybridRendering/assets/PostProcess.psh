@@ -4,7 +4,6 @@ ConstantBuffer<GlobalConstants> g_Constants;
 
 Texture2D g_GBuffer_Color;
 Texture2D g_GBuffer_Normal;
-Texture2D g_GBuffer_Pos;
 Texture2D g_GBuffer_Depth;
 Texture2D g_RayTracedTex;
 
@@ -21,15 +20,24 @@ float4 main(in PSInput PSIn) : SV_Target
     float4 Color    = g_GBuffer_Color.Load(TexCoord);
     float3 Norm     = g_GBuffer_Normal.Load(TexCoord).xyz;
     float  Roug     = g_GBuffer_Normal.Load(TexCoord).w;
-    float3 WPos     = g_GBuffer_Pos.Load(TexCoord).xyz;
     float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
+        
+    float2 Dim;
+    g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
+    float4 PosClipSpace;
+    PosClipSpace.xy = PSIn.Pos.xy / Dim * float2(2.0, -2.0) + float2(-1.0, 1.0);
+    PosClipSpace.z = Depth;
+    PosClipSpace.w = 1.0;
+    float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
+    WPos /= WPos.w;
+
     float4 RTColor  = g_RayTracedTex.Load(TexCoord);
 
     switch (g_Constants.DrawMode)
     {
         case 0: return lerp(Color * RTColor.a, RTColor, 0.5);
         case 1: return float4(Norm * 0.5 + 0.5, 1.0);
-        case 2: return float4(WPos, 1.0);
+        case 2: return WPos / float4(20.0, 20.0, 20.0, 1.0);
         //case 3: return WorldPos;
         //case 4: return float4(abs(WorldPos.xyz - WPos) * 10.0, 1.0);
         case 4: return Color;

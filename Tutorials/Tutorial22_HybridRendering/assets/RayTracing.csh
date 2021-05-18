@@ -24,7 +24,7 @@
 kernel
 void CSMain(uint2                                       DTid              [[thread_position_in_grid]],
             texture2d<float, access::write>             g_RayTracedTex    [[texture(0)]],
-            texture2d<float>                            g_GBuffer_Pos     [[texture(1)]],
+            texture2d<float>                            g_GBuffer_Depth   [[texture(1)]],
             texture2d<float>                            g_GBuffer_Normal  [[texture(2)]],
             const array<texture2d<float>, NUM_TEXTURES> g_Textures        [[texture(3)]],
             const array<sampler, NUM_SAMPLERS>          g_Samplers        [[sampler(0)]],
@@ -59,7 +59,7 @@ RaytracingAccelerationStructure   g_TLAS;
 Texture2D                         g_Textures[NUM_TEXTURES];
 SamplerState                      g_Samplers[NUM_SAMPLERS];
 RWTexture2D<float4>               g_RayTracedTex;
-Texture2D<float4>                 g_GBuffer_Pos;
+Texture2D<float>                  g_GBuffer_Depth;
 Texture2D<float4>                 g_GBuffer_Normal;
 ConstantBuffer<GlobalConstants>   g_Constants;
 StructuredBuffer<MaterialAttribs> g_MaterialAttribs;
@@ -76,15 +76,24 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
 
     if (DTid.x >= Dim.x || DTid.y >= Dim.y)
         return;
-    
-    float3 WPos        = TextureLoad(g_GBuffer_Pos, DTid).xyz;    // world space position
+
+    float  Depth       = TextureLoad(g_GBuffer_Depth, DTid).x;
     float4 NormAndRoug = TextureLoad(g_GBuffer_Normal, DTid);
-    float3 WNormal     = NormAndRoug.xyz;                         // world space normal
-    float  Roughness   = NormAndRoug.w;
-    float3 LightDir    = normalize(g_Constants.LightPos.xyz - WPos);
-    float3 ViewRayDir  = normalize(WPos - g_Constants.CameraPos.xyz);
-    float4 Color       = float4(0., 0., 0., 1.);
-    float  NdotL       = max(0.0, dot(LightDir, WNormal));
+
+    float4 PosClipSpace;
+    PosClipSpace.xy = (float2(DTid) + float2(0.5, 0.5)) / float2(Dim) * float2(2.0, -2.0) + float2(-1.0, 1.0);
+    PosClipSpace.z = Depth;
+    PosClipSpace.w = 1.0;
+    float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
+    WPos.xyz /= WPos.w;
+
+    float3 WNormal    = NormAndRoug.xyz;                         // world space normal
+    float  Roughness  = NormAndRoug.w;
+    float3 LightDir   = normalize(g_Constants.LightPos.xyz - WPos.xyz);
+    float3 ViewRayDir = normalize(WPos.xyz - g_Constants.CameraPos.xyz);
+    float4 Color      = float4(0., 0., 0., 1.);
+    float  NdotL      = max(0.0, dot(LightDir, WNormal));
+
 
     if (dot(WNormal, WNormal) < 0.01)
     {
@@ -96,10 +105,10 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     if (NdotL > 0.0)
     {
         RayDesc ShadowRay;
-        ShadowRay.Origin    = WPos + WNormal * SMALL_OFFSET;
+        ShadowRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET;
         ShadowRay.Direction = LightDir;
         ShadowRay.TMin      = 0.0;
-        ShadowRay.TMax      = length(g_Constants.LightPos.xyz - WPos);
+        ShadowRay.TMax      = length(g_Constants.LightPos.xyz - WPos.xyz);
 
         RayQuery<RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> ShadowQuery;
 
@@ -117,7 +126,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     if (Roughness < 1.0)
     {
         RayDesc ReflRay;
-        ReflRay.Origin    = WPos + WNormal * SMALL_OFFSET;
+        ReflRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET;
         ReflRay.Direction = reflect(ViewRayDir, WNormal);
         ReflRay.TMin      = 0.0;
         ReflRay.TMax      = g_Constants.MaxReflectionRayLength;

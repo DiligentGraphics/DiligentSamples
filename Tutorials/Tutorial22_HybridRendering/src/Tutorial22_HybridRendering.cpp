@@ -36,9 +36,9 @@
 
 namespace Diligent
 {
+
 static_assert(sizeof(GlobalConstants) % 16 == 0, "Structure must be 16-byte aligned");
 static_assert(sizeof(ObjectConstants) % 16 == 0, "Structure must be 16-byte aligned");
-
 
 SampleBase* CreateSample()
 {
@@ -54,11 +54,11 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(IRenderDevice* pDevice, Sc
     {
         const SamplerDesc AnisotropicClampSampler{
             FILTER_TYPE_ANISOTROPIC, FILTER_TYPE_ANISOTROPIC, FILTER_TYPE_ANISOTROPIC,
-            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, 0.f, 16 //
+            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, 0.f, 8 //
         };
         const SamplerDesc AnisotropicWrapSampler{
             FILTER_TYPE_ANISOTROPIC, FILTER_TYPE_ANISOTROPIC, FILTER_TYPE_ANISOTROPIC,
-            TEXTURE_ADDRESS_MIRROR, TEXTURE_ADDRESS_MIRROR, TEXTURE_ADDRESS_MIRROR, 0.f, 16 //
+            TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP, 0.f, 8 //
         };
 
         RefCntAutoPtr<ISampler> pSampler;
@@ -104,8 +104,11 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(IRenderDevice* pDevice, Sc
     LoadMaterial("DGLogo0.png", float4(1.f, 1.f, 1.f, 1.f), AnisotropicWrapSampInd);
 }
 
-void Tutorial22_HybridRendering::CreateTexturedPlane(IRenderDevice* pDevice, Mesh& mesh, float2 UVScale)
+Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale)
 {
+    Mesh PlaneMesh;
+    PlaneMesh.Name = "Ground";
+
     struct Vertex
     {
         float3 pos;
@@ -123,7 +126,7 @@ void Tutorial22_HybridRendering::CreateTexturedPlane(IRenderDevice* pDevice, Mes
         for (Uint32 x = 0; x < GridSize; ++x)
         {
             Vertex vert;
-            float2 uv = float2{float(x), float(y)} * Scale;
+            float2 uv = float2{static_cast<float>(x), static_cast<float>(y)} * Scale;
             vert.norm = float3{0, 1, 0};
             vert.uv   = uv * UVScale;
             vert.pos  = float3{uv.x * 2.f - 1.f, 0.f, uv.y * 2.f - 1.f};
@@ -150,7 +153,7 @@ void Tutorial22_HybridRendering::CreateTexturedPlane(IRenderDevice* pDevice, Mes
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(Vertices[0]);
     BufferData VBData{Vertices.data(), BuffDesc.uiSizeInBytes};
-    pDevice->CreateBuffer(BuffDesc, &VBData, &mesh.VertexBuffer);
+    pDevice->CreateBuffer(BuffDesc, &VBData, &PlaneMesh.VertexBuffer);
 
     BuffDesc.Name              = "Plane index buffer";
     BuffDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
@@ -158,16 +161,17 @@ void Tutorial22_HybridRendering::CreateTexturedPlane(IRenderDevice* pDevice, Mes
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(Indices[0]);
     BufferData IBData{Indices.data(), BuffDesc.uiSizeInBytes};
-    pDevice->CreateBuffer(BuffDesc, &IBData, &mesh.IndexBuffer);
+    pDevice->CreateBuffer(BuffDesc, &IBData, &PlaneMesh.IndexBuffer);
 
-    mesh.NumVertices = static_cast<Uint32>(Vertices.size());
-    mesh.NumIndices  = static_cast<Uint32>(Indices.size());
+    PlaneMesh.NumVertices = static_cast<Uint32>(Vertices.size());
+    PlaneMesh.NumIndices  = static_cast<Uint32>(Indices.size());
+    return PlaneMesh;
 }
 
 void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp)
 {
-    Uint32 CubeMeshId;
-    Uint32 PlaneMeshId;
+    Uint32 CubeMeshId  = 0;
+    Uint32 PlaneMeshId = 0;
 
     // Create meshes
     {
@@ -184,23 +188,21 @@ void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scen
         CubeMeshId           = static_cast<Uint32>(scene.Meshes.size());
         scene.Meshes.push_back(CubeMesh);
 
-        Mesh PlaneMesh;
-        PlaneMesh.Name = "Ground";
-        CreateTexturedPlane(pDevice, PlaneMesh, float2{10.f, 10.f});
-        PlaneMeshId = static_cast<Uint32>(scene.Meshes.size());
+        auto PlaneMesh = CreateTexturedPlaneMesh(pDevice, float2{10.f, 10.f});
+        PlaneMeshId    = static_cast<Uint32>(scene.Meshes.size());
         scene.Meshes.push_back(PlaneMesh);
     }
 
     const auto AddCubeObject = [&](float Angle, float X, float Y, float Z, float Scale, Uint32 MatId) //
     {
-        ObjectAttribs obj;
-        const auto    ModelMat = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
+        const auto ModelMat  = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
+        const auto NormalMat = float3x3{ModelMat.m00, ModelMat.m01, ModelMat.m02,
+                                        ModelMat.m10, ModelMat.m11, ModelMat.m12,
+                                        ModelMat.m20, ModelMat.m21, ModelMat.m22};
 
-        obj.ModelMat  = ModelMat.Transpose();
-        obj.NormalMat = float3x3{ModelMat.m00, ModelMat.m01, ModelMat.m02,
-                                 ModelMat.m10, ModelMat.m11, ModelMat.m12,
-                                 ModelMat.m20, ModelMat.m21, ModelMat.m22}
-                            .Transpose();
+        ObjectAttribs obj;
+        obj.ModelMat   = ModelMat.Transpose();
+        obj.NormalMat  = NormalMat.Transpose();
         obj.MaterialId = (MatId % (temp.CubeMaterialRange.y - temp.CubeMaterialRange.x)) + temp.CubeMaterialRange.x;
         obj.MeshId     = CubeMeshId;
         obj.FirstIndex = scene.Meshes[obj.MeshId].FirstIndex;
@@ -223,7 +225,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scen
     AddCubeObject(0.08f, -2.7f, 1.96f, -0.7f, 0.7f, 3);
     AddCubeObject(0.17f,  1.5f, 2.00f,  1.1f, 0.9f, 0);
     
-    AddCubeObject(0.32f, -1.2f, 3.10f, -0.7f, 1.2f, 2);
+    AddCubeObject(1.9f, -1.0f, 3.25f, -0.2f, 1.2f, 2);
     // clang-format on
 
     InstancedObjects InstObj;
@@ -232,8 +234,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scen
     InstObj.ObjectDataOffset = 0;
     scene.Objects.push_back(InstObj);
 
-
-    // Create ground object
+    // Create ground plane object
     InstObj.ObjectDataOffset = static_cast<Uint32>(temp.Objects.size());
     InstObj.MeshInd          = PlaneMeshId;
     {
@@ -319,7 +320,7 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs(IRenderDevice* pDevice,
         }
     }
 
-    // Create & build top level acceleration structure
+    // Create & build top-level acceleration structure
     {
         const Uint32 NumInstances = static_cast<Uint32>(temp.Objects.size());
 
@@ -440,10 +441,9 @@ void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStream
     PSOCreateInfo.PSODesc.Name         = "Rasterization PSO";
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
 
-    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 3;
+    PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 2;
     PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                = m_ColorTargetFormat;
     PSOCreateInfo.GraphicsPipeline.RTVFormats[1]                = m_NormalTargetFormat;
-    PSOCreateInfo.GraphicsPipeline.RTVFormats[2]                = m_PosTargetFormat;
     PSOCreateInfo.GraphicsPipeline.DSVFormat                    = m_DepthTargetFormat;
     PSOCreateInfo.GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_BACK;
@@ -567,18 +567,15 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     if (m_pDevice->GetDeviceInfo().IsMetalDevice())
     {
-        Macros.AddShaderMacro("METAL", 1);
         Macros.AddShaderMacro("float4x3", "float3x3");
     }
 
     ComputePipelineStateCreateInfo PSOCreateInfo;
-    RefCntAutoPtr<IShader>         pCS;
 
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
 
     const ShaderResourceVariableDesc Veriables[] = {
         {SHADER_TYPE_COMPUTE, "g_RayTracedTex", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-        {SHADER_TYPE_COMPUTE, "g_GBuffer_Pos", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
         {SHADER_TYPE_COMPUTE, "g_GBuffer_Normal", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC} //
     };
     PSOCreateInfo.PSODesc.ResourceLayout.NumVariables        = _countof(Veriables);
@@ -605,7 +602,7 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     ShaderCI.Desc.Name = "Ray traced shadow CS";
     ShaderCI.FilePath  = "RayTracing.csh";
-    pCS                = nullptr;
+    RefCntAutoPtr<IShader> pCS;
     m_pDevice->CreateShader(ShaderCI, &pCS);
     PSOCreateInfo.pCS = pCS;
 
@@ -695,6 +692,7 @@ void Tutorial22_HybridRendering::Render()
 
         GlobalConstants GConst;
         GConst.ViewProj               = ViewProj.Transpose();
+        GConst.ViewProjInv            = ViewProj.Inverse().Transpose();
         GConst.LightPos               = m_LightPos;
         GConst.SkyColor               = m_SkyColor;
         GConst.CameraPos              = float4(m_Camera.GetPos(), 0.f);
@@ -710,17 +708,15 @@ void Tutorial22_HybridRendering::Render()
         ITextureView* RTVs[] = //
             {
                 m_GBuffer.Color->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
-                m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
-                m_GBuffer.Pos->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) //
+                m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) //
             };
         ITextureView* pDSV = m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         m_pImmediateContext->SetRenderTargets(_countof(RTVs), RTVs, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        m_pImmediateContext->ClearRenderTarget(RTVs[0], m_SkyColor.Data(), RESOURCE_STATE_TRANSITION_MODE_NONE); // transition is not needed here
+        m_pImmediateContext->ClearRenderTarget(RTVs[0], m_SkyColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         const float ClearNormal[4] = {};
-        m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearNormal, RESOURCE_STATE_TRANSITION_MODE_NONE);
-        m_pImmediateContext->ClearRenderTarget(RTVs[2], ClearNormal, RESOURCE_STATE_TRANSITION_MODE_NONE);
-        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
+        m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearNormal, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_RasterizationPSO);
         m_pImmediateContext->CommitShaderResources(m_RasterizationSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -761,7 +757,7 @@ void Tutorial22_HybridRendering::Render()
         dispatchAttribs.ThreadGroupCountY = (TexDesc.Height / m_BlockSize.y);
 
         m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_RayTracedTex")->Set(m_RayTracedTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
-        m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Pos")->Set(m_GBuffer.Pos->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Depth")->Set(m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Normal")->Set(m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
         m_pImmediateContext->SetPipelineState(m_RayTracingPSO);
@@ -773,7 +769,6 @@ void Tutorial22_HybridRendering::Render()
     {
         m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Color")->Set(m_GBuffer.Color->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Normal")->Set(m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Pos")->Set(m_GBuffer.Pos->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Depth")->Set(m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_RayTracedTex")->Set(m_RayTracedTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
@@ -831,7 +826,6 @@ void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
     m_GBuffer.Color  = nullptr;
     m_GBuffer.Normal = nullptr;
     m_GBuffer.Depth  = nullptr;
-    m_GBuffer.Pos    = nullptr;
     m_RayTracedTex   = nullptr;
 
     // Create window-size color image.
@@ -850,12 +844,6 @@ void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
     RTDesc.Format    = m_NormalTargetFormat;
 
     m_pDevice->CreateTexture(RTDesc, nullptr, &m_GBuffer.Normal);
-
-    RTDesc.Name      = "GBuffer Pos target";
-    RTDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
-    RTDesc.Format    = m_PosTargetFormat;
-
-    m_pDevice->CreateTexture(RTDesc, nullptr, &m_GBuffer.Pos);
 
     RTDesc.Name      = "GBuffer Depth target";
     RTDesc.BindFlags = BIND_DEPTH_STENCIL | BIND_SHADER_RESOURCE;
@@ -884,12 +872,12 @@ void Tutorial22_HybridRendering::UpdateUI()
             m_pImmediateContext->Flush();
             m_pImmediateContext->WaitForIdle();
 
-            m_RasterizationPSO = nullptr;
-            m_RasterizationSRB = nullptr;
-            m_PostProcessPSO   = nullptr;
-            m_PostProcessSRB   = nullptr;
-            m_RayTracingPSO    = nullptr;
-            m_RayTracingSRB    = nullptr;
+            m_RasterizationPSO.Release();
+            m_RasterizationSRB.Release();
+            m_PostProcessPSO.Release();
+            m_PostProcessSRB.Release();
+            m_RayTracingPSO.Release();
+            m_RayTracingSRB.Release();
 
             RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
             m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);

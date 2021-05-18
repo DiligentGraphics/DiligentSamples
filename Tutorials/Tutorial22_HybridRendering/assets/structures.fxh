@@ -2,6 +2,7 @@
 struct GlobalConstants
 {
     float4x4 ViewProj;
+    float4x4 ViewProjInv;
 
     float4 LightPos;
     float4 SkyColor;
@@ -53,4 +54,4 @@ struct MaterialAttribs
 };
 
 // Small offset between ray intersection and new ray origin to avoid self-intersections.
-#define SMALL_OFFSET 0.0001
+#define SMALL_OFFSET 0.0005
