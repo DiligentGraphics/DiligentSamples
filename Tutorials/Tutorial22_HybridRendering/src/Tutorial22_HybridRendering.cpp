@@ -698,7 +698,7 @@ void Tutorial22_HybridRendering::Render()
         GConst.CameraPos              = float4(m_Camera.GetPos(), 0.f);
         GConst.DrawMode               = m_DrawMode;
         GConst.GBufferDimension       = uint2{TexDesc.Width, TexDesc.Height};
-        GConst.MaxReflectionRayLength = 10.f;
+        GConst.MaxReflectionRayLength = 100.f;
         GConst.AmbientLight           = 0.1f;
         m_pImmediateContext->UpdateBuffer(m_Constants, 0, static_cast<Uint32>(sizeof(GConst)), &GConst, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -800,6 +800,7 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
     {
         oldPos.y = 0.1f;
         m_Camera.SetPos(oldPos);
+        m_Camera.Update(m_InputController, 0);
     }
 }
 
