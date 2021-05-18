@@ -77,8 +77,8 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     if (DTid.x >= Dim.x || DTid.y >= Dim.y)
         return;
 
-    float  Depth       = TextureLoad(g_GBuffer_Depth, DTid).x;
-    float4 NormAndRoug = TextureLoad(g_GBuffer_Normal, DTid);
+    float  Depth   = TextureLoad(g_GBuffer_Depth, DTid).x;
+    float3 WNormal = TextureLoad(g_GBuffer_Normal, DTid).xyz;
 
     float4 PosClipSpace;
     PosClipSpace.xy = (float2(DTid) + float2(0.5, 0.5)) / float2(Dim) * float2(2.0, -2.0) + float2(-1.0, 1.0);
@@ -87,12 +87,12 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
     WPos.xyz /= WPos.w;
 
-    float3 WNormal    = NormAndRoug.xyz;                         // world space normal
-    float  Roughness  = NormAndRoug.w;
-    float3 LightDir   = normalize(g_Constants.LightPos.xyz - WPos.xyz);
-    float3 ViewRayDir = normalize(WPos.xyz - g_Constants.CameraPos.xyz);
-    float4 Color      = float4(0., 0., 0., 1.);
-    float  NdotL      = max(0.0, dot(LightDir, WNormal));
+    float3 LightDir    = normalize(g_Constants.LightPos.xyz - WPos.xyz);
+    float3 ViewRayDir  = WPos.xyz - g_Constants.CameraPos.xyz;
+    float  DisToCamera = length(ViewRayDir);
+    ViewRayDir        /= DisToCamera;
+    float4 Color       = float4(0.0, 0.0, 0.0, 1.0);
+    float  NdotL       = max(0.0, dot(LightDir, WNormal));
 
 
     if (dot(WNormal, WNormal) < 0.01)
@@ -105,7 +105,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     if (NdotL > 0.0)
     {
         RayDesc ShadowRay;
-        ShadowRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET;
+        ShadowRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera;
         ShadowRay.Direction = LightDir;
         ShadowRay.TMin      = 0.0;
         ShadowRay.TMax      = length(g_Constants.LightPos.xyz - WPos.xyz);
@@ -123,10 +123,9 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     }
 
     // Reflection
-    if (Roughness < 1.0)
     {
         RayDesc ReflRay;
-        ReflRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET;
+        ReflRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera;
         ReflRay.Direction = reflect(ViewRayDir, WNormal);
         ReflRay.TMin      = 0.0;
         ReflRay.TMax      = g_Constants.MaxReflectionRayLength;
@@ -176,7 +175,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
             if (NdotL2 > 0.0)
             {
                 RayDesc ShadowRay;
-                ShadowRay.Origin    = WPos2 + Norm * SMALL_OFFSET;
+                ShadowRay.Origin    = WPos2 + Norm * SMALL_OFFSET * length(WPos2 - g_Constants.CameraPos.xyz);
                 ShadowRay.Direction = LightDir2;
                 ShadowRay.TMin      = 0.0;
                 ShadowRay.TMax      = length(g_Constants.LightPos.xyz - WPos2);
@@ -197,8 +196,6 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
         }
         else
             Color = g_Constants.SkyColor;
-
-        Color.rgb *= clamp(1.0 - Roughness, 0.0, 0.125); // AZ TODO: remove ?
     }
 
     Color.a = max(g_Constants.AmbientLight, NdotL);

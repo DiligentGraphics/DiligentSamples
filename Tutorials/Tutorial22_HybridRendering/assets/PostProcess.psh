@@ -19,7 +19,6 @@ float4 main(in PSInput PSIn) : SV_Target
     int3   TexCoord = int3(UV * g_Constants.GBufferDimension - 0.5, 0);
     float4 Color    = g_GBuffer_Color.Load(TexCoord);
     float3 Norm     = g_GBuffer_Normal.Load(TexCoord).xyz;
-    float  Roug     = g_GBuffer_Normal.Load(TexCoord).w;
     float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
         
     float2 Dim;
@@ -31,19 +30,29 @@ float4 main(in PSInput PSIn) : SV_Target
     float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
     WPos /= WPos.w;
 
+    float R = 0.0;
+    if (Depth < 1.0)
+    {
+        // Schlick's approximation for Fresnel term
+        float3 WPosToCamera = normalize(g_Constants.CameraPos.xyz - WPos.xyz);
+        float NdotV = dot(Norm, WPosToCamera);
+        float R0 = 0.04;
+        R = lerp(R0, 1.0, pow(1 - NdotV, 5.0));
+    }
+
     float4 RTColor  = g_RayTracedTex.Load(TexCoord);
 
     switch (g_Constants.DrawMode)
     {
-        case 0: return lerp(Color * RTColor.a, RTColor, 0.5);
+        case 0: return lerp(Color * RTColor.a, RTColor, R);
         case 1: return float4(Norm * 0.5 + 0.5, 1.0);
         case 2: return WPos / float4(20.0, 20.0, 20.0, 1.0);
-        //case 3: return WorldPos;
+        case 3: return float4(R, R, R, 1.0);
         //case 4: return float4(abs(WorldPos.xyz - WPos) * 10.0, 1.0);
         case 4: return Color;
-        case 5: return abs(WPos.z - Depth).xxxx * 10.0;
+        case 5: return RTColor.a;
         case 6: return RTColor; // * 0.5 + 0.5;
-        case 8: return Roug.xxxx;
+        //case 8: return Roug.xxxx;
     }
 
     return Color;
