@@ -521,10 +521,7 @@ void Tutorial22_HybridRendering::CreatePostProcessPSO(IShaderSourceInputStreamFa
     PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable      = false;
     PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = false;
 
-    const ShaderResourceVariableDesc Veriables[]             = {{SHADER_TYPE_PIXEL, "g_Constants", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}};
-    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables        = _countof(Veriables);
-    PSOCreateInfo.PSODesc.ResourceLayout.Variables           = Veriables;
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -553,9 +550,6 @@ void Tutorial22_HybridRendering::CreatePostProcessPSO(IShaderSourceInputStreamFa
     PSOCreateInfo.pPS = pPS;
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_PostProcessPSO);
-    m_PostProcessPSO->CreateShaderResourceBinding(&m_PostProcessSRB);
-
-    m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Constants")->Set(m_Constants);
 }
 
 void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
@@ -574,13 +568,64 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
 
-    const ShaderResourceVariableDesc Veriables[] = {
-        {SHADER_TYPE_COMPUTE, "g_RayTracedTex", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-        {SHADER_TYPE_COMPUTE, "g_GBuffer_Normal", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC} //
-    };
-    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables        = _countof(Veriables);
-    PSOCreateInfo.PSODesc.ResourceLayout.Variables           = Veriables;
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    const auto NumMeshes   = static_cast<Uint32>(m_Scene.Meshes.size());
+    const auto NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
+    const auto NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
+
+    // Split the resources of a ray tracing PSO into two groups.
+    // The first group will contain scene resources. These resources
+    // may be bound only once.
+    // The second group will contain screen-dependent resources.
+    // These resources will need to be bound every time the screen is resized.
+
+    // Resource signature for scene resources
+    {
+        PipelineResourceSignatureDesc PRSDesc;
+        PRSDesc.Name = "Ray tracing scene resources";
+
+        // clang-format off
+        const PipelineResourceDesc Resources[] =
+        {
+            {SHADER_TYPE_COMPUTE, "g_TLAS",            1,           SHADER_RESOURCE_TYPE_ACCEL_STRUCT},
+            {SHADER_TYPE_COMPUTE, "g_Constants",       1,           SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
+            {SHADER_TYPE_COMPUTE, "g_ObjectAttribs",   1,           SHADER_RESOURCE_TYPE_BUFFER_SRV},
+            {SHADER_TYPE_COMPUTE, "g_MaterialAttribs", 1,           SHADER_RESOURCE_TYPE_BUFFER_SRV},
+            {SHADER_TYPE_COMPUTE, "g_VertexBuffers",   NumMeshes,   SHADER_RESOURCE_TYPE_BUFFER_SRV},
+            {SHADER_TYPE_COMPUTE, "g_IndexBuffers",    NumMeshes,   SHADER_RESOURCE_TYPE_BUFFER_SRV},
+            {SHADER_TYPE_COMPUTE, "g_Textures",        NumTextures, SHADER_RESOURCE_TYPE_TEXTURE_SRV},
+            {SHADER_TYPE_COMPUTE, "g_Samplers",        NumSamplers, SHADER_RESOURCE_TYPE_SAMPLER}
+        };
+        // clang-format on
+        PRSDesc.BindingIndex = 0;
+        PRSDesc.Resources    = Resources;
+        PRSDesc.NumResources = _countof(Resources);
+        m_pDevice->CreatePipelineResourceSignature(PRSDesc, &m_pRayTracingSceneResourcesSign);
+        VERIFY_EXPR(m_pRayTracingSceneResourcesSign);
+    }
+
+    // Resource signature for screen resources
+    {
+        PipelineResourceSignatureDesc PRSDesc;
+        PRSDesc.Name = "Ray tracing screen resources";
+
+        // clang-format off
+        const PipelineResourceDesc Resources[] =
+        {
+            {SHADER_TYPE_COMPUTE, "g_RayTracedTex",   1, SHADER_RESOURCE_TYPE_TEXTURE_UAV},
+            {SHADER_TYPE_COMPUTE, "g_GBuffer_Normal", 1, SHADER_RESOURCE_TYPE_TEXTURE_SRV},
+            {SHADER_TYPE_COMPUTE, "g_GBuffer_Depth",  1, SHADER_RESOURCE_TYPE_TEXTURE_SRV}
+        };
+        // clang-format on
+        PRSDesc.BindingIndex = 1;
+        PRSDesc.Resources    = Resources;
+        PRSDesc.NumResources = _countof(Resources);
+        m_pDevice->CreatePipelineResourceSignature(PRSDesc, &m_pRayTracingScreenResourcesSign);
+        VERIFY_EXPR(m_pRayTracingScreenResourcesSign);
+    }
+
+    IPipelineResourceSignature* ppSignatures[]{m_pRayTracingSceneResourcesSign, m_pRayTracingScreenResourcesSign};
+    PSOCreateInfo.ppResourceSignatures    = ppSignatures;
+    PSOCreateInfo.ResourceSignaturesCount = _countof(ppSignatures);
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.Desc.ShaderType            = SHADER_TYPE_COMPUTE;
@@ -600,41 +645,50 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
         ShaderCI.HLSLVersion    = {6, 5};
     }
 
-    ShaderCI.Desc.Name = "Ray traced shadow CS";
+    ShaderCI.Desc.Name = "Ray tracing CS";
     ShaderCI.FilePath  = "RayTracing.csh";
     RefCntAutoPtr<IShader> pCS;
     m_pDevice->CreateShader(ShaderCI, &pCS);
     PSOCreateInfo.pCS = pCS;
 
-    PSOCreateInfo.PSODesc.Name = "Ray traced shadow PSO";
+    PSOCreateInfo.PSODesc.Name = "Ray tracing PSO";
     m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_RayTracingPSO);
-    m_RayTracingPSO->CreateShaderResourceBinding(&m_RayTracingSRB);
+    VERIFY_EXPR(m_RayTracingPSO);
 
-    m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_TLAS")->Set(m_Scene.TLAS);
-    m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Constants")->Set(m_Constants);
-    m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ObjectAttribs")->Set(m_Scene.ObjectAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
-    m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_MaterialAttribs")->Set(m_Scene.MaterialAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+    m_pRayTracingSceneResourcesSign->CreateShaderResourceBinding(&m_RayTracingSceneSRB);
+    m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_TLAS")->Set(m_Scene.TLAS);
+    m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Constants")->Set(m_Constants);
+    m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ObjectAttribs")->Set(m_Scene.ObjectAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+    m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_MaterialAttribs")->Set(m_Scene.MaterialAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
 
-    auto* pVBVar = m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_VertexBuffers");
-    auto* pIBVar = m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_IndexBuffers");
-    for (Uint32 i = 0; i < m_Scene.Meshes.size(); ++i)
+    // Bind mesh geometry buffers
     {
-        IDeviceObject* pVBView = m_Scene.Meshes[i].VertexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
-        pVBVar->SetArray(&pVBView, i, 1);
-        IDeviceObject* pIBView = m_Scene.Meshes[i].IndexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
-        pIBVar->SetArray(&pIBView, i, 1);
+        std::vector<IDeviceObject*> ppVBViews(NumMeshes);
+        std::vector<IDeviceObject*> ppIBViews(NumMeshes);
+        for (Uint32 i = 0; i < NumMeshes; ++i)
+        {
+            ppVBViews[i] = m_Scene.Meshes[i].VertexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
+            ppIBViews[i] = m_Scene.Meshes[i].IndexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
+        }
+        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_VertexBuffers")->SetArray(ppVBViews.data(), 0, NumMeshes);
+        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_IndexBuffers")->SetArray(ppIBViews.data(), 0, NumMeshes);
     }
 
-    auto* pTexVar = m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Textures");
-    for (Uint32 i = 0; i < m_Scene.Textures.size(); ++i)
+    // Bind material textures
     {
-        IDeviceObject* pTexView = m_Scene.Textures[i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        pTexVar->SetArray(&pTexView, i, 1);
+        std::vector<IDeviceObject*> ppTextures(NumTextures);
+        for (Uint32 i = 0; i < m_Scene.Textures.size(); ++i)
+            ppTextures[i] = m_Scene.Textures[i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Textures")->SetArray(ppTextures.data(), 0, NumTextures);
     }
 
-    auto* pSampVar = m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Samplers");
-    for (Uint32 i = 0; i < m_Scene.Samplers.size(); ++i)
-        pSampVar->SetArray(m_Scene.Samplers[i].RawDblPtr<IDeviceObject>(), i, 1);
+    // Bind samplers
+    {
+        std::vector<IDeviceObject*> ppSamplers(NumSamplers);
+        for (Uint32 i = 0; i < m_Scene.Samplers.size(); ++i)
+            ppSamplers[i] = m_Scene.Samplers[i];
+        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Samplers")->SetArray(ppSamplers.data(), 0, NumSamplers);
+    }
 }
 
 void Tutorial22_HybridRendering::Initialize(const SampleInitInfo& InitInfo)
@@ -756,29 +810,21 @@ void Tutorial22_HybridRendering::Render()
         dispatchAttribs.ThreadGroupCountX = (TexDesc.Width / m_BlockSize.x);
         dispatchAttribs.ThreadGroupCountY = (TexDesc.Height / m_BlockSize.y);
 
-        m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_RayTracedTex")->Set(m_RayTracedTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
-        m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Depth")->Set(m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_RayTracingSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Normal")->Set(m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-
         m_pImmediateContext->SetPipelineState(m_RayTracingPSO);
-        m_pImmediateContext->CommitShaderResources(m_RayTracingSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->CommitShaderResources(m_RayTracingSceneSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->CommitShaderResources(m_RayTracingScreenSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->DispatchCompute(dispatchAttribs);
     }
 
     // Post process pass
     {
-        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Color")->Set(m_GBuffer.Color->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Normal")->Set(m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Depth")->Set(m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_RayTracedTex")->Set(m_RayTracedTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-
-        m_pImmediateContext->SetPipelineState(m_PostProcessPSO);
-        m_pImmediateContext->CommitShaderResources(m_PostProcessSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
         auto*       pRTV          = m_pSwapChain->GetCurrentBackBufferRTV();
         const float ClearColor[4] = {};
         m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        m_pImmediateContext->SetPipelineState(m_PostProcessPSO);
+        m_pImmediateContext->CommitShaderResources(m_PostProcessSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetVertexBuffers(0, 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE, SET_VERTEX_BUFFERS_FLAG_RESET);
         m_pImmediateContext->SetIndexBuffer(nullptr, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
@@ -824,10 +870,10 @@ void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
     if (Width == 0 || Height == 0)
         return;
 
-    m_GBuffer.Color  = nullptr;
-    m_GBuffer.Normal = nullptr;
-    m_GBuffer.Depth  = nullptr;
-    m_RayTracedTex   = nullptr;
+    m_GBuffer.Color.Release();
+    m_GBuffer.Normal.Release();
+    m_GBuffer.Depth.Release();
+    m_RayTracedTex.Release();
 
     // Create window-size color image.
     TextureDesc RTDesc;
@@ -837,26 +883,43 @@ void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
     RTDesc.Height    = Height;
     RTDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
     RTDesc.Format    = m_ColorTargetFormat;
-
     m_pDevice->CreateTexture(RTDesc, nullptr, &m_GBuffer.Color);
 
     RTDesc.Name      = "GBuffer Normal target";
     RTDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
     RTDesc.Format    = m_NormalTargetFormat;
-
     m_pDevice->CreateTexture(RTDesc, nullptr, &m_GBuffer.Normal);
 
     RTDesc.Name      = "GBuffer Depth target";
     RTDesc.BindFlags = BIND_DEPTH_STENCIL | BIND_SHADER_RESOURCE;
     RTDesc.Format    = m_DepthTargetFormat;
-
     m_pDevice->CreateTexture(RTDesc, nullptr, &m_GBuffer.Depth);
 
     RTDesc.Name      = "Ray traced shadow & reflection target";
     RTDesc.BindFlags = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     RTDesc.Format    = m_RayTracedTexFormat;
-
     m_pDevice->CreateTexture(RTDesc, nullptr, &m_RayTracedTex);
+
+
+    // Create post-processing SRB
+    {
+        m_PostProcessSRB.Release();
+        m_PostProcessPSO->CreateShaderResourceBinding(&m_PostProcessSRB);
+        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Constants")->Set(m_Constants);
+        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Color")->Set(m_GBuffer.Color->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Normal")->Set(m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Depth")->Set(m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_PostProcessSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_RayTracedTex")->Set(m_RayTracedTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
+
+    // Create ray-tracing screen SRB
+    {
+        m_RayTracingScreenSRB.Release();
+        m_pRayTracingScreenResourcesSign->CreateShaderResourceBinding(&m_RayTracingScreenSRB);
+        m_RayTracingScreenSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_RayTracedTex")->Set(m_RayTracedTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+        m_RayTracingScreenSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Depth")->Set(m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_RayTracingScreenSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_GBuffer_Normal")->Set(m_GBuffer.Normal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
 }
 
 void Tutorial22_HybridRendering::UpdateUI()
@@ -867,26 +930,6 @@ void Tutorial22_HybridRendering::UpdateUI()
         ImGui::SliderFloat3("LightPos", &m_LightPos.x, -100.f, 100.f);
 
         ImGui::SliderInt("Mode", &m_DrawMode, 0, 8);
-
-        if (ImGui::Button("Reload"))
-        {
-            m_pImmediateContext->Flush();
-            m_pImmediateContext->WaitForIdle();
-
-            m_RasterizationPSO.Release();
-            m_RasterizationSRB.Release();
-            m_PostProcessPSO.Release();
-            m_PostProcessSRB.Release();
-            m_RayTracingPSO.Release();
-            m_RayTracingSRB.Release();
-
-            RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-            m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-
-            CreateRasterizationPSO(pShaderSourceFactory);
-            CreatePostProcessPSO(pShaderSourceFactory);
-            CreateRayTracingPSO(pShaderSourceFactory);
-        }
     }
     ImGui::End();
 }

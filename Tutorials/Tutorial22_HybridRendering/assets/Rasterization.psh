@@ -23,7 +23,6 @@ struct PSOutput
 {
     float4 Color : SV_Target0; // RGBA8 unorm
     float4 Norm  : SV_Target1; // RGBA16 float
-    float4 WPos  : SV_Target2; // RGBA32 float
 };
 
 
@@ -34,5 +33,4 @@ void main(in  PSInput  PSIn,
 
     PSOut.Color = Mtr.BaseColorMask * g_Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)].Sample(g_Samplers[NonUniformResourceIndex(Mtr.SampInd)], PSIn.UV);
     PSOut.Norm  = float4(normalize(PSIn.Norm), 0.0);
-    PSOut.WPos  = PSIn.WPos;
 }
