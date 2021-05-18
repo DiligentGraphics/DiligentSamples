@@ -27,6 +27,7 @@ set(ASSETS
     assets/DGLogo1.png
     assets/DGLogo2.png
     assets/DGLogo3.png
+    assets/Marble.jpg
 )
 
 add_sample_app("Tutorial22_HybridRendering" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

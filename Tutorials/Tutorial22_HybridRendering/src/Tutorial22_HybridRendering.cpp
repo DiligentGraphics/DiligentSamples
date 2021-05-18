@@ -101,7 +101,7 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(IRenderDevice* pDevice, Sc
 
     // Ground materials
     temp.GroundMaterial = static_cast<Uint32>(temp.Materials.size());
-    LoadMaterial("DGLogo0.png", float4(1.f, 1.f, 1.f, 1.f), AnisotropicWrapSampInd);
+    LoadMaterial("Marble.jpg", float4{1.f, 1.f, 1.f, 1.f}, AnisotropicWrapSampInd);
 }
 
 Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale)
@@ -188,7 +188,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(IRenderDevice* pDevice, Scen
         CubeMeshId           = static_cast<Uint32>(scene.Meshes.size());
         scene.Meshes.push_back(CubeMesh);
 
-        auto PlaneMesh = CreateTexturedPlaneMesh(pDevice, float2{10.f, 10.f});
+        auto PlaneMesh = CreateTexturedPlaneMesh(pDevice, float2{25.f, 25.f});
         PlaneMeshId    = static_cast<Uint32>(scene.Meshes.size());
         scene.Meshes.push_back(PlaneMesh);
     }
