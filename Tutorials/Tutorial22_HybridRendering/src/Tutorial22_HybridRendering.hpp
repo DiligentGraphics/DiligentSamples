@@ -129,7 +129,7 @@ private:
     static void CreateSceneMaterials(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp);
     static void CreateSceneObjects(IRenderDevice* pDevice, Scene& scene, SceneTempData& temp);
     static void CreateSceneAccelStructs(IRenderDevice* pDevice, IDeviceContext* pContext, Scene& scene, SceneTempData& temp);
-    static void CreateTexturedPlane(IRenderDevice* pDevice, Mesh& mesh, float2 UVScale);
+    static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
 
     Scene                  m_Scene;
     RefCntAutoPtr<IBuffer> m_Constants;
@@ -141,14 +141,12 @@ private:
     {
         RefCntAutoPtr<ITexture> Color;
         RefCntAutoPtr<ITexture> Normal;
-        RefCntAutoPtr<ITexture> Pos; // AZ TODO: remove
         RefCntAutoPtr<ITexture> Depth;
     };
 
     const uint2    m_BlockSize          = {8, 8};
     TEXTURE_FORMAT m_ColorTargetFormat  = TEX_FORMAT_RGBA8_UNORM;
     TEXTURE_FORMAT m_NormalTargetFormat = TEX_FORMAT_RGBA16_FLOAT;
-    TEXTURE_FORMAT m_PosTargetFormat    = TEX_FORMAT_RGBA32_FLOAT;
     TEXTURE_FORMAT m_DepthTargetFormat  = TEX_FORMAT_D32_FLOAT;
     TEXTURE_FORMAT m_RayTracedTexFormat = TEX_FORMAT_RGBA16_FLOAT;
 
