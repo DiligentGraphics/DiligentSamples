@@ -757,7 +757,6 @@ void Tutorial22_HybridRendering::Render()
         GConst.ViewProj     = ViewProj.Transpose();
         GConst.ViewProjInv  = ViewProj.Inverse().Transpose();
         GConst.LightDir     = normalize(-m_LightDir);
-        GConst.SkyColor     = m_SkyColor;
         GConst.CameraPos    = float4(m_Camera.GetPos(), 0.f);
         GConst.DrawMode     = m_DrawMode;
         GConst.MaxRayLength = 100.f;
@@ -780,9 +779,9 @@ void Tutorial22_HybridRendering::Render()
         ITextureView* pDSV = m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         m_pImmediateContext->SetRenderTargets(_countof(RTVs), RTVs, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        const float ClearNormal[4] = {};
-        m_pImmediateContext->ClearRenderTarget(RTVs[0], m_SkyColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearNormal, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        const float ClearColor[4] = {};
+        m_pImmediateContext->ClearRenderTarget(RTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_RasterizationPSO);
@@ -869,14 +868,16 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
     {
         auto& Obj      = m_Scene.Objects[DynObj.ObjectAttribsIndex];
         auto  ModelMat = Obj.ModelMat.Transpose();
-        ModelMat       = float4x4::RotationY(PI_F * dt * 0.025f) * ModelMat;
-        Obj.ModelMat   = ModelMat.Transpose();
+        Obj.ModelMat   = (float4x4::RotationY(PI_F * dt * 0.025f) * ModelMat).Transpose();
         Obj.NormalMat  = float4x3{Obj.ModelMat};
     }
 }
 
 void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
 {
+    if (Width == 0 || Height == 0)
+        return;
+
     // Round to multiple of m_BlockSize
     Width  = AlignUp(Width, m_BlockSize.x);
     Height = AlignUp(Height, m_BlockSize.y);
@@ -890,9 +891,6 @@ void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
     if (m_GBuffer.Color != nullptr &&
         m_GBuffer.Color->GetDesc().Width == Width &&
         m_GBuffer.Color->GetDesc().Height == Height)
-        return;
-
-    if (Width == 0 || Height == 0)
         return;
 
     m_GBuffer.Color.Release();

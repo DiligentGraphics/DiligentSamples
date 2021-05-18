@@ -1,4 +1,5 @@
 #include "structures.fxh"
+#include "Utils.fxh"
 
 ConstantBuffer<GlobalConstants> g_Constants;
 
@@ -30,15 +31,20 @@ float4 main(in PSInput PSIn) : SV_Target
     PosClipSpace.w = 1.0;
     float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
     WPos /= WPos.w;
+    
+    float3 WPosToCamera = normalize(g_Constants.CameraPos.xyz - WPos.xyz);
+    float  R = 0.0;
 
-    float R = 0.0;
     if (Depth < 1.0)
     {
         // Schlick's approximation for Fresnel term
-        float3 WPosToCamera = normalize(g_Constants.CameraPos.xyz - WPos.xyz);
         float NdotV = dot(Normal, WPosToCamera);
         float R0 = 0.04;
         R = lerp(R0, 1.0, pow(1 - NdotV, 5.0));
+    }
+    else
+    {
+        Color = SkyColor(-WPosToCamera);
     }
 
     float4 RTColor  = g_RayTracedTex.Load(TexCoord);

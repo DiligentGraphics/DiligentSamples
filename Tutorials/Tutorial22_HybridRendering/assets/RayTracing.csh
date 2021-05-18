@@ -3,6 +3,7 @@
 #    include "RayQuery.fxh"
 #endif
 #include "structures.fxh"
+#include "Utils.fxh"
 
 #ifndef DXCOMPILER
 #    define NonUniformResourceIndex(x) x
@@ -194,7 +195,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
             Color = BaseColor * max(g_Constants.AmbientLight, NdotL2);
         }
         else
-            Color = g_Constants.SkyColor;
+            Color = SkyColor(ReflRay.Direction);
     }
 
     Color.a = max(g_Constants.AmbientLight, NdotL);
