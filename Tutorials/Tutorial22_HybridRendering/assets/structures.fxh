@@ -49,9 +49,9 @@ struct MaterialAttribs
     float4 BaseColorMask;
     uint   SampInd;           // index in g_Samplers[];
     uint   BaseColorTexInd;   // index in g_Textures[];
-    uint   RoughnessTexInd;   // index in g_Textures[];
     uint   padding0;
+    uint   padding1;
 };
 
 // Small offset between ray intersection and new ray origin to avoid self-intersections.
-#define SMALL_OFFSET 0.0005
+#define SMALL_OFFSET 0.0001

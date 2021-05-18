@@ -811,7 +811,7 @@ void Tutorial22_HybridRendering::WindowResize(Uint32 Width, Uint32 Height)
 
     // Update projection matrix.
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
-    m_Camera.SetProjAttribs(1.f, 100.f, AspectRatio, PI_F / 4.f,
+    m_Camera.SetProjAttribs(0.1f, 100.f, AspectRatio, PI_F / 4.f,
                             m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceInfo().IsGLDevice());
 
     // Check if the image needs to be recreated.

@@ -31,9 +31,8 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
     MaterialAttribs Mtr = g_MaterialAttribs[NonUniformResourceIndex(PSIn.MatId)];
-    float Roughness = 0.5; //g_Textures[NonUniformResourceIndex(Mtr.RoughnessTexInd)].Sample(g_Samplers[NonUniformResourceIndex(Mtr.SampInd)], PSIn.UV).r;
 
     PSOut.Color = Mtr.BaseColorMask * g_Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)].Sample(g_Samplers[NonUniformResourceIndex(Mtr.SampInd)], PSIn.UV);
-    PSOut.Norm  = float4(normalize(PSIn.Norm), Roughness);
+    PSOut.Norm  = float4(normalize(PSIn.Norm), 0.0);
     PSOut.WPos  = PSIn.WPos;
 }
