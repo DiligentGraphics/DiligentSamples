@@ -195,7 +195,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
             Color = BaseColor * max(g_Constants.AmbientLight, NdotL2);
         }
         else
-            Color = SkyColor(ReflRay.Direction);
+            Color = SkyColor(ReflRay.Direction, g_Constants.LightDir.xyz);
     }
 
     Color.a = max(g_Constants.AmbientLight, NdotL);
