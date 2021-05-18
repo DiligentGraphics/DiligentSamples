@@ -31,6 +31,7 @@
 #include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
+#include "imGuIZMO.h"
 #include "Align.hpp"
 #include "../../Common/src/TexturedCube.hpp"
 
@@ -655,6 +656,7 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
     m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_RayTracingPSO);
     VERIFY_EXPR(m_RayTracingPSO);
 
+    // Initialize SRB containing scene resources
     m_pRayTracingSceneResourcesSign->CreateShaderResourceBinding(&m_RayTracingSceneSRB);
     m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_TLAS")->Set(m_Scene.TLAS);
     m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Constants")->Set(m_Constants);
@@ -741,19 +743,17 @@ void Tutorial22_HybridRendering::Render()
 {
     // Update constants
     {
-        const auto& TexDesc  = m_GBuffer.Color->GetDesc();
-        const auto  ViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
+        const auto ViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
 
         GlobalConstants GConst;
-        GConst.ViewProj               = ViewProj.Transpose();
-        GConst.ViewProjInv            = ViewProj.Inverse().Transpose();
-        GConst.LightPos               = m_LightPos;
-        GConst.SkyColor               = m_SkyColor;
-        GConst.CameraPos              = float4(m_Camera.GetPos(), 0.f);
-        GConst.DrawMode               = m_DrawMode;
-        GConst.GBufferDimension       = uint2{TexDesc.Width, TexDesc.Height};
-        GConst.MaxReflectionRayLength = 100.f;
-        GConst.AmbientLight           = 0.1f;
+        GConst.ViewProj     = ViewProj.Transpose();
+        GConst.ViewProjInv  = ViewProj.Inverse().Transpose();
+        GConst.LightDir     = normalize(-m_LightDir);
+        GConst.SkyColor     = m_SkyColor;
+        GConst.CameraPos    = float4(m_Camera.GetPos(), 0.f);
+        GConst.DrawMode     = m_DrawMode;
+        GConst.MaxRayLength = 100.f;
+        GConst.AmbientLight = 0.1f;
         m_pImmediateContext->UpdateBuffer(m_Constants, 0, static_cast<Uint32>(sizeof(GConst)), &GConst, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
@@ -927,9 +927,15 @@ void Tutorial22_HybridRendering::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::SliderFloat3("LightPos", &m_LightPos.x, -100.f, 100.f);
+        ImGui::Combo("Render mode", &m_DrawMode,
+                     "Shaded\0"
+                     "G-buffer color\0"
+                     "G-buffer normal\0"
+                     "Diffuse lighting\0"
+                     "Reflections\0"
+                     "Fresnel term\0\0");
 
-        ImGui::SliderInt("Mode", &m_DrawMode, 0, 8);
+        ImGui::gizmo3D("##LightDirection", m_LightDir);
     }
     ImGui::End();
 }
