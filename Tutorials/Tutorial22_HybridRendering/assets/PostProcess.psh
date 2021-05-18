@@ -24,7 +24,8 @@ float4 main(in PSInput PSIn) : SV_Target
     float4 Color    = g_GBuffer_Color.Load(TexCoord);
     float3 Normal   = g_GBuffer_Normal.Load(TexCoord).xyz;
     float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
-        
+    float4 RTColor  = g_RayTracedTex.Load(TexCoord);
+
     float4 PosClipSpace;
     PosClipSpace.xy = PSIn.Pos.xy / Dim * float2(2.0, -2.0) + float2(-1.0, 1.0);
     PosClipSpace.z = Depth;
@@ -44,10 +45,8 @@ float4 main(in PSInput PSIn) : SV_Target
     }
     else
     {
-        Color = SkyColor(-WPosToCamera);
+        Color = SkyColor(-WPosToCamera, g_Constants.LightDir.xyz);
     }
-
-    float4 RTColor  = g_RayTracedTex.Load(TexCoord);
 
     switch (g_Constants.DrawMode)
     {

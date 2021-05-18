@@ -218,19 +218,19 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
     AddCubeObject(0.00f, -1.9f, 1.00f, -0.5f, 0.5f);
     AddCubeObject(0.00f, -1.0f, 1.00f,  0.0f, 1.0f);
     AddCubeObject(0.30f, -0.2f, 1.00f, -1.0f, 0.7f);
-    AddCubeObject(0.25f, -1.7f, 1.00f, -1.6f, 1.1f);
+    AddCubeObject(0.25f, -1.7f, 1.00f, -1.6f, 1.1f, true);
     AddCubeObject(0.28f,  0.7f, 1.00f,  3.0f, 1.3f);
     AddCubeObject(0.10f,  1.5f, 1.00f,  1.0f, 1.1f);
     AddCubeObject(0.21f, -3.2f, 1.00f,  0.2f, 1.2f);
     AddCubeObject(0.05f, -2.1f, 1.00f,  1.6f, 1.1f);
     
     AddCubeObject(0.04f, -1.4f, 2.18f, -1.4f, 0.6f);
-    AddCubeObject(0.24f, -1.0f, 2.10f,  0.5f, 1.1f);
+    AddCubeObject(0.24f, -1.0f, 2.10f,  0.5f, 1.1f, true);
     AddCubeObject(0.02f, -0.5f, 2.00f, -0.9f, 0.9f);
-    AddCubeObject(0.08f, -2.7f, 1.96f, -0.7f, 0.7f);
-    AddCubeObject(0.17f,  1.5f, 2.00f,  1.1f, 0.9f, true);
+    AddCubeObject(0.08f, -1.7f, 1.96f,  1.7f, 0.7f);
+    AddCubeObject(0.17f,  1.5f, 2.00f,  1.1f, 0.9f);
     
-    AddCubeObject(1.9f, -1.0f, 3.25f, -0.2f, 1.2f, true);
+    AddCubeObject(0.6f, -1.0f, 3.25f, -0.2f, 1.2f);
     // clang-format on
 
     InstancedObjects InstObj;
@@ -712,8 +712,8 @@ void Tutorial22_HybridRendering::Initialize(const SampleInitInfo& InitInfo)
     }
 
     // Setup camera.
-    m_Camera.SetPos(float3(-10.1f, 7.5f, 14.f));
-    m_Camera.SetRotation(16.3f, -0.39f);
+    m_Camera.SetPos(float3{-14.f, 3.5f, -5.f});
+    m_Camera.SetRotation(17.7f, -0.1f);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
@@ -854,22 +854,28 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
 
     m_Camera.Update(m_InputController, dt);
 
-    // Do not go underground,
-    float3 oldPos = m_Camera.GetPos();
-    if (oldPos.y < 0.1f)
+    // Limit camera movement
+    float3       Pos = m_Camera.GetPos();
+    const float3 MinXYZ{-20.f, 0.1f, -20.f};
+    const float3 MaxXYZ{+20.f, +20.f, 20.f};
+    if (Pos.x < MinXYZ.x || Pos.y < MinXYZ.y || Pos.z < MinXYZ.z ||
+        Pos.x > MaxXYZ.x || Pos.y > MaxXYZ.y || Pos.z > MaxXYZ.z)
     {
-        oldPos.y = 0.1f;
-        m_Camera.SetPos(oldPos);
+        Pos = clamp(Pos, MinXYZ, MaxXYZ);
+        m_Camera.SetPos(Pos);
         m_Camera.Update(m_InputController, 0);
     }
 
     // Update dynamic objects
+    float RotationSpeed = 0.15f;
     for (auto& DynObj : m_Scene.DynamicObjects)
     {
         auto& Obj      = m_Scene.Objects[DynObj.ObjectAttribsIndex];
         auto  ModelMat = Obj.ModelMat.Transpose();
-        Obj.ModelMat   = (float4x4::RotationY(PI_F * dt * 0.025f) * ModelMat).Transpose();
+        Obj.ModelMat   = (float4x4::RotationY(PI_F * dt * RotationSpeed) * ModelMat).Transpose();
         Obj.NormalMat  = float4x3{Obj.ModelMat};
+
+        RotationSpeed *= 1.5f;
     }
 }
 
@@ -958,7 +964,14 @@ void Tutorial22_HybridRendering::UpdateUI()
                      "Reflections\0"
                      "Fresnel term\0\0");
 
-        ImGui::gizmo3D("##LightDirection", m_LightDir);
+        if (ImGui::gizmo3D("##LightDirection", m_LightDir))
+        {
+            if (m_LightDir.y > -0.06f)
+            {
+                m_LightDir.y = -0.06f;
+                m_LightDir   = normalize(m_LightDir);
+            }
+        }
     }
     ImGui::End();
 }
