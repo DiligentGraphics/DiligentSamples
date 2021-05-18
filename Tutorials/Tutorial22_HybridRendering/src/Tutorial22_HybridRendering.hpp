@@ -83,8 +83,14 @@ private:
     void CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void CreateRayTracingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
 
+    // Pipeline resource signature for scene resources used by the ray-tracing PSO
+    RefCntAutoPtr<IPipelineResourceSignature> m_pRayTracingSceneResourcesSign;
+    // Pipeline resource signature for screen resources used by the ray-tracing PSO
+    RefCntAutoPtr<IPipelineResourceSignature> m_pRayTracingScreenResourcesSign;
+
     RefCntAutoPtr<IPipelineState>         m_RayTracingPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_RayTracingSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_RayTracingSceneSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_RayTracingScreenSRB;
     RefCntAutoPtr<IPipelineState>         m_RasterizationPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_RasterizationSRB;
     RefCntAutoPtr<IPipelineState>         m_PostProcessPSO;
