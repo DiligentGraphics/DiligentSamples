@@ -12,7 +12,6 @@ struct GlobalConstants
     float4x4 ViewProjInv;
 
     float4 LightDir;
-    float4 SkyColor;
     float4 CameraPos;
 
     int   DrawMode;

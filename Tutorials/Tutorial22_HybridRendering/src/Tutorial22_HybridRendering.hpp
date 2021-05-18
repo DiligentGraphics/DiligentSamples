@@ -163,9 +163,8 @@ private:
     GBuffer                 m_GBuffer;
     RefCntAutoPtr<ITexture> m_RayTracedTex;
 
-    const float4 m_SkyColor = {0.412f, 0.796f, 1.0f, 1.0f};
-    float3       m_LightDir = normalize(float3{-0.49f, -0.60f, 0.64f});
-    int          m_DrawMode = 0;
+    float3 m_LightDir = normalize(float3{-0.49f, -0.60f, 0.64f});
+    int    m_DrawMode = 0;
 
 #if PLATFORM_MACOS || PLATFORM_IOS
     const SHADER_COMPILER m_ShaderCompiler = SHADER_COMPILER_DEFAULT;
