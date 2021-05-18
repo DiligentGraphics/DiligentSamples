@@ -712,6 +712,12 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    if ((m_pDevice->GetAdapterInfo().RayTracing.CapFlags & RAY_TRACING_CAP_FLAG_STANDALONE_SHADERS) == 0)
+    {
+        UNSUPPORTED("Ray tracing shaders are not supported by device");
+        return;
+    }
+
     // Create a buffer with shared constants.
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Constant buffer";
