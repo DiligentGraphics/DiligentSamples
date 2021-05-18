@@ -87,7 +87,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
     WPos.xyz /= WPos.w;
 
-    float3 LightDir    = normalize(g_Constants.LightPos.xyz - WPos.xyz);
+    float3 LightDir    = g_Constants.LightDir.xyz;
     float3 ViewRayDir  = WPos.xyz - g_Constants.CameraPos.xyz;
     float  DisToCamera = length(ViewRayDir);
     ViewRayDir        /= DisToCamera;
@@ -108,7 +108,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
         ShadowRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera;
         ShadowRay.Direction = LightDir;
         ShadowRay.TMin      = 0.0;
-        ShadowRay.TMax      = length(g_Constants.LightPos.xyz - WPos.xyz);
+        ShadowRay.TMax      = g_Constants.MaxRayLength;
 
         RayQuery<RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> ShadowQuery;
 
@@ -128,7 +128,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
         ReflRay.Origin    = WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera;
         ReflRay.Direction = reflect(ViewRayDir, WNormal);
         ReflRay.TMin      = 0.0;
-        ReflRay.TMax      = g_Constants.MaxReflectionRayLength;
+        ReflRay.TMax      = g_Constants.MaxRayLength;
         
         RayQuery<RAY_FLAG_CULL_BACK_FACING_TRIANGLES> ReflQuery;
 
@@ -167,18 +167,17 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
 
             float4 BaseColor = Mtr.BaseColorMask * TextureSample(g_Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)], g_Samplers[NonUniformResourceIndex(Mtr.SampInd)], UV, DefaultLOD);
             
-            float3 WPos2     = ReflRay.Origin + ReflRay.Direction * ReflQuery.CommittedRayT();
-            float3 LightDir2 = normalize(g_Constants.LightPos.xyz - WPos2);
-            float  NdotL2    = max(0.0, dot(LightDir2, Norm));
+            float3 WPos2  = ReflRay.Origin + ReflRay.Direction * ReflQuery.CommittedRayT();
+            float  NdotL2 = max(0.0, dot(LightDir, Norm));
             
             // Cast shadow
             if (NdotL2 > 0.0)
             {
                 RayDesc ShadowRay;
                 ShadowRay.Origin    = WPos2 + Norm * SMALL_OFFSET * length(WPos2 - g_Constants.CameraPos.xyz);
-                ShadowRay.Direction = LightDir2;
+                ShadowRay.Direction = LightDir;
                 ShadowRay.TMin      = 0.0;
-                ShadowRay.TMax      = length(g_Constants.LightPos.xyz - WPos2);
+                ShadowRay.TMax      = g_Constants.MaxRayLength;
 
                 RayQuery<RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> ShadowQuery;
 

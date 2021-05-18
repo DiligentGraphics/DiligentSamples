@@ -1,22 +1,24 @@
 
+#define RENDER_MODE_SHADED 0
+#define RENDER_MODE_G_BUFFER_COLOR 1
+#define RENDER_MODE_G_BUFFER_NORMAL 2
+#define RENDER_MODE_DIFFUSE_LIGHTING 3
+#define RENDER_MODE_REFLECTIONS 4
+#define RENDER_MODE_FRESNEL_TERM 5
+
 struct GlobalConstants
 {
     float4x4 ViewProj;
     float4x4 ViewProjInv;
 
-    float4 LightPos;
+    float4 LightDir;
     float4 SkyColor;
     float4 CameraPos;
 
-    int  DrawMode; // AZ TODO: remove
-    int  padding0;
-    int  padding1;
-    int  padding2;
-
-    uint2 GBufferDimension;
-
-    float MaxReflectionRayLength;
+    int   DrawMode;
+    float MaxRayLength;
     float AmbientLight;
+    int   padding0;
 };
 
 struct ObjectConstants

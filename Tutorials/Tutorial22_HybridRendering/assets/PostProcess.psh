@@ -15,14 +15,15 @@ struct PSInput
 
 float4 main(in PSInput PSIn) : SV_Target
 {
-    float2 UV       = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
-    int3   TexCoord = int3(UV * g_Constants.GBufferDimension - 0.5, 0);
-    float4 Color    = g_GBuffer_Color.Load(TexCoord);
-    float3 Norm     = g_GBuffer_Normal.Load(TexCoord).xyz;
-    float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
-        
     float2 Dim;
     g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
+
+    float2 UV       = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+    int3   TexCoord = int3(UV * Dim, 0);
+    float4 Color    = g_GBuffer_Color.Load(TexCoord);
+    float3 Normal   = g_GBuffer_Normal.Load(TexCoord).xyz;
+    float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
+        
     float4 PosClipSpace;
     PosClipSpace.xy = PSIn.Pos.xy / Dim * float2(2.0, -2.0) + float2(-1.0, 1.0);
     PosClipSpace.z = Depth;
@@ -35,7 +36,7 @@ float4 main(in PSInput PSIn) : SV_Target
     {
         // Schlick's approximation for Fresnel term
         float3 WPosToCamera = normalize(g_Constants.CameraPos.xyz - WPos.xyz);
-        float NdotV = dot(Norm, WPosToCamera);
+        float NdotV = dot(Normal, WPosToCamera);
         float R0 = 0.04;
         R = lerp(R0, 1.0, pow(1 - NdotV, 5.0));
     }
@@ -44,15 +45,12 @@ float4 main(in PSInput PSIn) : SV_Target
 
     switch (g_Constants.DrawMode)
     {
-        case 0: return lerp(Color * RTColor.a, RTColor, R);
-        case 1: return float4(Norm * 0.5 + 0.5, 1.0);
-        case 2: return WPos / float4(20.0, 20.0, 20.0, 1.0);
-        case 3: return float4(R, R, R, 1.0);
-        //case 4: return float4(abs(WorldPos.xyz - WPos) * 10.0, 1.0);
-        case 4: return Color;
-        case 5: return RTColor.a;
-        case 6: return RTColor; // * 0.5 + 0.5;
-        //case 8: return Roug.xxxx;
+        case RENDER_MODE_SHADED:           return lerp(Color * RTColor.a, RTColor, R);
+        case RENDER_MODE_G_BUFFER_COLOR:   return Color;
+        case RENDER_MODE_G_BUFFER_NORMAL:  return float4(abs(Normal.xyz), 1.0);
+        case RENDER_MODE_DIFFUSE_LIGHTING: return Color * RTColor.a;
+        case RENDER_MODE_REFLECTIONS:      return RTColor;
+        case RENDER_MODE_FRESNEL_TERM:     return float4(R, R, R, 1.0);
     }
 
     return Color;
