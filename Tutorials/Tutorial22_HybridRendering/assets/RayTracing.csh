@@ -87,6 +87,8 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
         return;
     }
 
+    WNormal = normalize(WNormal);
+
     float  Depth = TextureLoad(g_GBuffer_Depth, DTid).x;
     float3 WPos  = ScreenPosToWorldPos((float2(DTid) + float2(0.5, 0.5)) / float2(Dim), Depth, g_Constants.ViewProjInv);
 

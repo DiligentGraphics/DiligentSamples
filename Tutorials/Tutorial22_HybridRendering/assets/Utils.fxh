@@ -1,6 +1,9 @@
 
 float4 GetSkyColor(float3 Dir, float3 LightDir)
 {
+	Dir.y += 0.075;
+	Dir = normalize(Dir);
+
 	float CosTheta        = dot(Dir, LightDir);
     float ScatteringScale = pow(saturate(0.5 * (1.0 - CosTheta)), 0.2);	
 
@@ -10,7 +13,7 @@ float4 GetSkyColor(float3 Dir, float3 LightDir)
 		float3(0.07, 0.11, 0.23) *
 		lerp(max(ScatteringScale, 0.1), 1.0, saturate(Dir.y)) / max(Dir.y, 0.01);
 		
-	SkyDome *= 11.0 / max(length(SkyDome), 11.0);
+	SkyDome *= 13.0 / max(length(SkyDome), 13.0);
 	float3 Horizon = pow(SkyDome, float3(1.0, 1.0, 1.0) - SkyDome);
 	SkyColor += lerp(Horizon, SkyDome / (SkyDome + 0.5), saturate(Dir.y * 2.0));
 	
