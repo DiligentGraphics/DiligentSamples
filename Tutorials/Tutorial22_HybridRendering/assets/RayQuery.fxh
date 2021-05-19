@@ -1,4 +1,3 @@
-
 #include <metal_stdlib>
 #include <simd/simd.h>
 #include <metal_raytracing>
@@ -28,12 +27,6 @@ enum COMMITTED_STATUS : uint
     COMMITTED_PROCEDURAL_PRIMITIVE_HIT
 };
 
-enum CANDIDATE_TYPE : uint
-{
-    CANDIDATE_NON_OPAQUE_TRIANGLE,
-    CANDIDATE_PROCEDURAL_PRIMITIVE
-};
-
 struct RayDesc
 {
     float3  Origin;
@@ -43,6 +36,7 @@ struct RayDesc
 };
 
 
+// Wrapper for Metal ray tracing api which is emulates the HLSL RayQuery class (inline ray tracing).
 template <uint TRayFlag>
 struct RayQuery
 {
