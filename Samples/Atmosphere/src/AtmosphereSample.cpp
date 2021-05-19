@@ -62,7 +62,8 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 
     const auto& deviceInfo = InitInfo.pDevice->GetDeviceInfo();
     m_bIsGLDevice          = deviceInfo.IsGLDevice();
-    if (deviceInfo.Type == RENDER_DEVICE_TYPE_GLES)
+    const auto AdatperType = InitInfo.pDevice->GetAdapterInfo().Type;
+    if (AdatperType == ADAPTER_TYPE_SOFTWARE || AdatperType == ADAPTER_TYPE_INTEGRATED)
     {
         m_ShadowSettings.Resolution                        = 512;
         m_TerrainRenderParams.m_FilterAcrossShadowCascades = false;
@@ -302,18 +303,20 @@ void AtmosphereSample::UpdateUI()
                                   SINGLE_SCTR_MODE_INTEGRATION  == 1 &&
                                   SINGLE_SCTR_MODE_LUT          == 2, "Unexpected value");
                     // clang-format on
-                    ImGui::Combo("Single scattering mode", &m_PPAttribs.iSingleScatteringMode, "None\0"
-                                                                                               "Integration\0"
-                                                                                               "Look-up table\0\0");
+                    ImGui::Combo("Single scattering mode", &m_PPAttribs.iSingleScatteringMode,
+                                 "None\0"
+                                 "Integration\0"
+                                 "Look-up table\0\0");
 
                     // clang-format off
                     static_assert(MULTIPLE_SCTR_MODE_NONE        == 0 &&
                                   MULTIPLE_SCTR_MODE_UNOCCLUDED  == 1 &&
                                   MULTIPLE_SCTR_MODE_OCCLUDED    == 2, "Unexpected value");
                     // clang-format on
-                    ImGui::Combo("Higher-order scattering mode", &m_PPAttribs.iMultipleScatteringMode, "None\0"
-                                                                                                       "Unoccluded\0"
-                                                                                                       "Occluded\0\0");
+                    ImGui::Combo("Higher-order scattering mode", &m_PPAttribs.iMultipleScatteringMode,
+                                 "None\0"
+                                 "Unoccluded\0"
+                                 "Occluded\0\0");
 
                     // clang-format off
                     static_assert(CASCADE_PROCESSING_MODE_SINGLE_PASS     == 0 &&
