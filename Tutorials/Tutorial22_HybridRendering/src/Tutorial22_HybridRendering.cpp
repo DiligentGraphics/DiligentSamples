@@ -25,6 +25,7 @@
  */
 
 #include "Tutorial22_HybridRendering.hpp"
+
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
@@ -73,20 +74,18 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(uint2& CubeMaterialRange, 
         m_Scene.Samplers.push_back(std::move(pSampler));
     }
 
-    const auto LoadMaterial = [&](const char* ColorMapName, const float4& baseColor, Uint32 SamplerInd) //
+    const auto LoadMaterial = [&](const char* ColorMapName, const float4& BaseColor, Uint32 SamplerInd) //
     {
-        MaterialAttribs         mtr;
-        TextureLoadInfo         loadInfo;
-        RefCntAutoPtr<ITexture> Tex;
-
+        TextureLoadInfo loadInfo;
         loadInfo.IsSRGB       = true;
         loadInfo.GenerateMips = true;
-
-        mtr.SampInd = SamplerInd;
-
+        RefCntAutoPtr<ITexture> Tex;
         CreateTextureFromFile(ColorMapName, loadInfo, m_pDevice, &Tex);
         VERIFY_EXPR(Tex);
-        mtr.BaseColorMask   = baseColor;
+
+        MaterialAttribs mtr;
+        mtr.SampInd         = SamplerInd;
+        mtr.BaseColorMask   = BaseColor;
         mtr.BaseColorTexInd = static_cast<Uint32>(m_Scene.Textures.size());
         m_Scene.Textures.push_back(std::move(Tex));
         Materials.push_back(mtr);
@@ -364,9 +363,8 @@ void Tutorial22_HybridRendering::UpdateTLAS()
     }
 
     // Setup instances
-    std::vector<TLASBuildInstanceData> Instances{NumInstances};
-    std::vector<String>                InstanceNames{NumInstances};
-
+    std::vector<TLASBuildInstanceData> Instances(NumInstances);
+    std::vector<String>                InstanceNames(NumInstances);
     for (Uint32 i = 0; i < NumInstances; ++i)
     {
         const auto& Obj      = m_Scene.Objects[i];
@@ -505,16 +503,23 @@ void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStream
     m_RasterizationSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_ObjectAttribs")->Set(m_Scene.ObjectAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
     m_RasterizationSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_MaterialAttribs")->Set(m_Scene.MaterialAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
 
-    auto* pTexVar = m_RasterizationSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Textures");
-    for (Uint32 i = 0; i < m_Scene.Textures.size(); ++i)
+    // Bind textures
     {
-        IDeviceObject* pTexView = m_Scene.Textures[i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        pTexVar->SetArray(&pTexView, i, 1);
+        const auto                  NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
+        std::vector<IDeviceObject*> ppTextures(m_Scene.Textures.size());
+        for (Uint32 i = 0; i < m_Scene.Textures.size(); ++i)
+            ppTextures[i] = m_Scene.Textures[i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        m_RasterizationSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Textures")->SetArray(ppTextures.data(), 0, NumTextures);
     }
 
-    auto* pSampVar = m_RasterizationSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Samplers");
-    for (Uint32 i = 0; i < m_Scene.Samplers.size(); ++i)
-        pSampVar->SetArray(m_Scene.Samplers[i].RawDblPtr<IDeviceObject>(), i, 1);
+    // Bind samplers
+    {
+        const auto                  NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
+        std::vector<IDeviceObject*> ppSamplers(NumSamplers);
+        for (Uint32 i = 0; i < NumSamplers; ++i)
+            ppSamplers[i] = m_Scene.Samplers[i];
+        m_RasterizationSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Samplers")->SetArray(ppSamplers.data(), 0, NumSamplers);
+    }
 }
 
 void Tutorial22_HybridRendering::CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
@@ -581,7 +586,7 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
     const auto NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
     const auto NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
 
-    // Split the resources of a ray tracing PSO into two groups.
+    // Split the resources of the ray tracing PSO into two groups.
     // The first group will contain scene resources. These resources
     // may be bound only once.
     // The second group will contain screen-dependent resources.
@@ -712,7 +717,7 @@ void Tutorial22_HybridRendering::Initialize(const SampleInitInfo& InitInfo)
     }
 
     // Setup camera.
-    m_Camera.SetPos(float3{-14.f, 3.5f, -5.f});
+    m_Camera.SetPos(float3{-15.7f, 3.7f, -5.8f});
     m_Camera.SetRotation(17.7f, -0.1f);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
@@ -818,7 +823,7 @@ void Tutorial22_HybridRendering::Render()
         dispatchAttribs.MtlThreadGroupSizeY = m_BlockSize.y;
         dispatchAttribs.MtlThreadGroupSizeZ = 1;
 
-        const auto TexDesc                = m_GBuffer.Color->GetDesc();
+        const auto& TexDesc               = m_GBuffer.Color->GetDesc();
         dispatchAttribs.ThreadGroupCountX = (TexDesc.Width / m_BlockSize.x);
         dispatchAttribs.ThreadGroupCountY = (TexDesc.Height / m_BlockSize.y);
 
@@ -854,7 +859,7 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
 
     m_Camera.Update(m_InputController, dt);
 
-    // Limit camera movement
+    // Restrict camera movement
     float3       Pos = m_Camera.GetPos();
     const float3 MinXYZ{-20.f, 0.1f, -20.f};
     const float3 MaxXYZ{+20.f, +20.f, 20.f};

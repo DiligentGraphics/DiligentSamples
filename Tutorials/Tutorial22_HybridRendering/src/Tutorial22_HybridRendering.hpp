@@ -32,6 +32,7 @@
 
 namespace Diligent
 {
+
 namespace
 {
 
@@ -94,54 +95,66 @@ private:
     // Pipeline resource signature for screen resources used by the ray-tracing PSO
     RefCntAutoPtr<IPipelineResourceSignature> m_pRayTracingScreenResourcesSign;
 
-    RefCntAutoPtr<IPipelineState>         m_RayTracingPSO;
+    // Ray-tracing PSO
+    RefCntAutoPtr<IPipelineState> m_RayTracingPSO;
+    // Scene resources for ray-tracing PSO
     RefCntAutoPtr<IShaderResourceBinding> m_RayTracingSceneSRB;
+    // Screen resources for ray-tracing PSO
     RefCntAutoPtr<IShaderResourceBinding> m_RayTracingScreenSRB;
+
+    // G-buffer rendering PSO and SRB
     RefCntAutoPtr<IPipelineState>         m_RasterizationPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_RasterizationSRB;
+
+    // Post-processing PSO and SRB
     RefCntAutoPtr<IPipelineState>         m_PostProcessPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_PostProcessSRB;
 
     struct Mesh
     {
-        String                        Name;
+        String Name;
+
         RefCntAutoPtr<IBottomLevelAS> BLAS;
         RefCntAutoPtr<IBuffer>        VertexBuffer;
         RefCntAutoPtr<IBuffer>        IndexBuffer;
-        Uint32                        NumVertices = 0;
-        Uint32                        NumIndices  = 0;
-        Uint32                        FirstIndex  = 0; // offset in index buffer if IB and VB are shared between multiple meshes
+
+        Uint32 NumVertices = 0;
+        Uint32 NumIndices  = 0;
+        Uint32 FirstIndex  = 0; // Offset in the index buffer if IB and VB are shared between multiple meshes
     };
 
     struct InstancedObjects
     {
-        Uint32 MeshInd             = 0; // index in m_Scene.Meshes
-        Uint32 ObjectAttribsOffset = 0; // offset in m_Scene.ObjectAttribsBuffer
-        Uint32 NumObjects          = 0; // number of instances for draw call
+        Uint32 MeshInd             = 0; // Index in m_Scene.Meshes
+        Uint32 ObjectAttribsOffset = 0; // Offset in m_Scene.ObjectAttribsBuffer
+        Uint32 NumObjects          = 0; // Number of instances for a draw call
     };
 
     struct DynamicObject
     {
-        Uint32 ObjectAttribsIndex = 0; // index in m_Scene.ObjectAttribsBuffer
+        Uint32 ObjectAttribsIndex = 0; // Index in m_Scene.ObjectAttribsBuffer
     };
 
     struct Scene
     {
-        std::vector<InstancedObjects>        ObjectInstances;
-        std::vector<DynamicObject>           DynamicObjects;
-        std::vector<Mesh>                    Meshes;
-        RefCntAutoPtr<IBuffer>               MaterialAttribsBuffer;
-        std::vector<ObjectAttribs>           Objects;
-        RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer; // GPU visible array of ObjectAttribs
+        std::vector<InstancedObjects> ObjectInstances;
+        std::vector<DynamicObject>    DynamicObjects;
+        std::vector<Mesh>             Meshes;
+        RefCntAutoPtr<IBuffer>        MaterialAttribsBuffer;
+        std::vector<ObjectAttribs>    Objects;
+        RefCntAutoPtr<IBuffer>        ObjectAttribsBuffer; // GPU-visible array of ObjectAttribs
+
         std::vector<RefCntAutoPtr<ITexture>> Textures;
         std::vector<RefCntAutoPtr<ISampler>> Samplers;
-        RefCntAutoPtr<ITopLevelAS>           TLAS;
-        RefCntAutoPtr<IBuffer>               TLASInstancesBuffer;
-        RefCntAutoPtr<IBuffer>               TLASScratchBuffer;
+
+        RefCntAutoPtr<ITopLevelAS> TLAS;
+        RefCntAutoPtr<IBuffer>     TLASInstancesBuffer;
+        RefCntAutoPtr<IBuffer>     TLASScratchBuffer;
     };
     static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
 
-    Scene                  m_Scene;
+    Scene m_Scene;
+
     RefCntAutoPtr<IBuffer> m_Constants;
     RefCntAutoPtr<IBuffer> m_ObjectConstants;
 

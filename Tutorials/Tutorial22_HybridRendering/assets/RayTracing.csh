@@ -88,12 +88,7 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     }
 
     float  Depth = TextureLoad(g_GBuffer_Depth, DTid).x;
-    float4 PosClipSpace;
-    PosClipSpace.xy = (float2(DTid) + float2(0.5, 0.5)) / float2(Dim) * float2(2.0, -2.0) + float2(-1.0, 1.0);
-    PosClipSpace.z = Depth;
-    PosClipSpace.w = 1.0;
-    float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
-    WPos.xyz /= WPos.w;
+    float3 WPos  = ScreenPosToWorldPos((float2(DTid) + float2(0.5, 0.5)) / float2(Dim), Depth, g_Constants.ViewProjInv);
 
     float3 LightDir    = g_Constants.LightDir.xyz;
     float3 ViewRayDir  = WPos.xyz - g_Constants.CameraPos.xyz;
@@ -146,8 +141,6 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
             ObjectAttribs   Obj    = g_ObjectAttribs[InstId];
             MaterialAttribs Mtr    = g_MaterialAttribs[Obj.MaterialId];
 
-            float2 Barycentrics2 = ReflQuery.CommittedTriangleBarycentrics();
-            float3 Barycentrics  = float3(1.0 - Barycentrics2.x - Barycentrics2.y, Barycentrics2.x, Barycentrics2.y);
             uint   PrimInd       = ReflQuery.CommittedPrimitiveIndex();
             uint3  TriangleInd   = uint3(g_IndexBuffers[Obj.MeshId][Obj.FirstIndex + PrimInd * 3 + 0],
                                          g_IndexBuffers[Obj.MeshId][Obj.FirstIndex + PrimInd * 3 + 1],
@@ -155,6 +148,10 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
             Vertex Vert0 = g_VertexBuffers[Obj.MeshId][TriangleInd.x];
             Vertex Vert1 = g_VertexBuffers[Obj.MeshId][TriangleInd.y];
             Vertex Vert2 = g_VertexBuffers[Obj.MeshId][TriangleInd.z];
+
+            float3 Barycentrics;
+            Barycentrics.yz = ReflQuery.CommittedTriangleBarycentrics();
+            Barycentrics.x  = 1.0 - Barycentrics.y - Barycentrics.z;
 
             float2 UV   = float2(Vert0.U, Vert0.V) * Barycentrics.x +
                           float2(Vert1.U, Vert1.V) * Barycentrics.y +
@@ -168,14 +165,14 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
 
             float4 BaseColor = Mtr.BaseColorMask * TextureSample(g_Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)], g_Samplers[NonUniformResourceIndex(Mtr.SampInd)], UV, DefaultLOD);
             
-            float3 WPos2  = ReflRay.Origin + ReflRay.Direction * ReflQuery.CommittedRayT();
-            float  NdotL2 = max(0.0, dot(LightDir, Norm));
+            float3 ReflWPos  = ReflRay.Origin + ReflRay.Direction * ReflQuery.CommittedRayT();
+            float  ReflNdotL = max(0.0, dot(LightDir, Norm));
             
             // Cast shadow
-            if (NdotL2 > 0.0)
+            if (ReflNdotL > 0.0)
             {
                 RayDesc ShadowRay;
-                ShadowRay.Origin    = WPos2 + Norm * SMALL_OFFSET * length(WPos2 - g_Constants.CameraPos.xyz);
+                ShadowRay.Origin    = ReflWPos + Norm * SMALL_OFFSET * length(ReflWPos - g_Constants.CameraPos.xyz);
                 ShadowRay.Direction = LightDir;
                 ShadowRay.TMin      = 0.0;
                 ShadowRay.TMax      = g_Constants.MaxRayLength;
@@ -189,13 +186,13 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
                 ShadowQuery.Proceed();
         
                 if (ShadowQuery.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
-                    NdotL2 = 0.0; // found intersection
+                    ReflNdotL = 0.0; // found intersection
             }
 
-            Color = BaseColor * max(g_Constants.AmbientLight, NdotL2);
+            Color = BaseColor * max(g_Constants.AmbientLight, ReflNdotL);
         }
         else
-            Color = SkyColor(ReflRay.Direction, g_Constants.LightDir.xyz);
+            Color = GetSkyColor(ReflRay.Direction, g_Constants.LightDir.xyz);
     }
 
     Color.a = max(g_Constants.AmbientLight, NdotL);

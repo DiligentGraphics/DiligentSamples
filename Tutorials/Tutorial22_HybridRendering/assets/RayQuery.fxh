@@ -101,10 +101,6 @@ public:
     uint   RayFlags()           { return m_RayFlags; }
     float  RayTMin()            { return m_CurrentRay.min_distance; }
 
-
-//---------------------------------------------------------------------
-// Commited //
-
     COMMITTED_STATUS CommittedStatus()
     {
         switch (m_LastIntersection.type)
@@ -116,10 +112,10 @@ public:
         return COMMITTED_NOTHING;
     }
 
-    float2   CommittedTriangleBarycentrics()  { return m_LastIntersection.triangle_barycentric_coord; } // requires 'triangle_data' flag
-    bool     CommittedTriangleFrontFace()     { return m_LastIntersection.triangle_front_facing; }      // requires 'triangle_data' flag
-    float    CommittedRayT()                  { return m_LastIntersection.distance; }
-    uint     CommittedInstanceID()            { return m_LastIntersection.instance_id; }
-    uint     CommittedGeometryIndex()         { return m_LastIntersection.geometry_id; }
-    uint     CommittedPrimitiveIndex()        { return m_LastIntersection.primitive_id; }
+    float2 CommittedTriangleBarycentrics() { return m_LastIntersection.triangle_barycentric_coord; } // requires 'triangle_data' flag
+    bool   CommittedTriangleFrontFace()    { return m_LastIntersection.triangle_front_facing; }      // requires 'triangle_data' flag
+    float  CommittedRayT()                 { return m_LastIntersection.distance; }
+    uint   CommittedInstanceID()           { return m_LastIntersection.instance_id; }
+    uint   CommittedGeometryIndex()        { return m_LastIntersection.geometry_id; }
+    uint   CommittedPrimitiveIndex()       { return m_LastIntersection.primitive_id; }
 };

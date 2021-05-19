@@ -19,33 +19,32 @@ float4 main(in PSInput PSIn) : SV_Target
     float2 Dim;
     g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
 
-    float2 UV       = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
-    int3   TexCoord = int3(UV * Dim, 0);
-    float4 Color    = g_GBuffer_Color.Load(TexCoord);
-    float3 Normal   = g_GBuffer_Normal.Load(TexCoord).xyz;
-    float  Depth    = g_GBuffer_Depth.Load(TexCoord).x;
-    float4 RTColor  = g_RayTracedTex.Load(TexCoord);
+    float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
 
-    float4 PosClipSpace;
-    PosClipSpace.xy = PSIn.Pos.xy / Dim * float2(2.0, -2.0) + float2(-1.0, 1.0);
-    PosClipSpace.z = Depth;
-    PosClipSpace.w = 1.0;
-    float4 WPos = mul(PosClipSpace, g_Constants.ViewProjInv);
-    WPos /= WPos.w;
+    // Read G-Buffer and ray-tracing data
+    int3   TexelPos = int3(ScreenUV * Dim, 0);
+    float4 Color    = g_GBuffer_Color.Load(TexelPos);
+    float3 Normal   = g_GBuffer_Normal.Load(TexelPos).xyz;
+    float  Depth    = g_GBuffer_Depth.Load(TexelPos).x;
+    float4 RTColor  = g_RayTracedTex.Load(TexelPos);
     
-    float3 WPosToCamera = normalize(g_Constants.CameraPos.xyz - WPos.xyz);
+    // Reconstruct world position
+    float3 WPos = ScreenPosToWorldPos(PSIn.Pos.xy / Dim, Depth, g_Constants.ViewProjInv);
+    
+    // Compute Fresnel term
+    float3 ViewRayDir = normalize(WPos.xyz - g_Constants.CameraPos.xyz);
     float  R = 0.0;
-
     if (Depth < 1.0)
     {
         // Schlick's approximation for Fresnel term
-        float NdotV = dot(Normal, WPosToCamera);
+        float NdotV = dot(Normal, -ViewRayDir);
         float R0 = 0.04;
         R = lerp(R0, 1.0, pow(1 - NdotV, 5.0));
     }
     else
     {
-        Color = SkyColor(-WPosToCamera, g_Constants.LightDir.xyz);
+        // Background
+        Color = GetSkyColor(ViewRayDir, g_Constants.LightDir.xyz);
     }
 
     switch (g_Constants.DrawMode)
