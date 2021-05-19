@@ -1,5 +1,5 @@
 
-float4 SkyColor(float3 Dir, float3 LightDir)
+float4 GetSkyColor(float3 Dir, float3 LightDir)
 {
 	float CosTheta        = dot(Dir, LightDir);
     float ScatteringScale = pow(saturate(0.5 * (1.0 - CosTheta)), 0.2);	
@@ -18,4 +18,14 @@ float4 SkyColor(float3 Dir, float3 LightDir)
 	SkyColor *= 1.0 - abs(1.0 - Dir.y) * 0.5;
 	
 	return float4(SkyColor, 1.0);	
+}
+
+float3 ScreenPosToWorldPos(float2 ScreenSpaceUV, float Depth, float4x4 ViewProjInv)
+{
+	float4 PosClipSpace;
+    PosClipSpace.xy = ScreenSpaceUV * float2(2.0, -2.0) + float2(-1.0, 1.0);
+    PosClipSpace.z = Depth;
+    PosClipSpace.w = 1.0;
+    float4 WorldPos = mul(PosClipSpace, ViewProjInv);
+    return WorldPos.xyz / WorldPos.w;
 }
