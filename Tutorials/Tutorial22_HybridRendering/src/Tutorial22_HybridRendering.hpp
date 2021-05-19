@@ -32,10 +32,13 @@
 
 namespace Diligent
 {
-
 namespace
 {
 
+// We only need a 3x3 matrix, but in Vulkan and Metal, the rows of a float3x3 matrix are aligned to 16 bytes,
+// which is effectively a float4x3 matrix.
+// In DirectX, the rows of a float3x3 matrix are not aligned.
+// We will use a float4x3 for compatibility between all APIs.
 struct float4x3
 {
     float m00 = 0.f;
@@ -110,6 +113,7 @@ private:
     RefCntAutoPtr<IPipelineState>         m_PostProcessPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_PostProcessSRB;
 
+    // Simple implementation of mesh class for hybrid rendering.
     struct Mesh
     {
         String Name;
@@ -122,7 +126,9 @@ private:
         Uint32 NumIndices  = 0;
         Uint32 FirstIndex  = 0; // Offset in the index buffer if IB and VB are shared between multiple meshes
     };
+    static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
 
+    // Objects with the same mesh are grouped for instanced draw call.
     struct InstancedObjects
     {
         Uint32 MeshInd             = 0; // Index in m_Scene.Meshes
@@ -146,17 +152,17 @@ private:
 
         std::vector<RefCntAutoPtr<ITexture>> Textures;
         std::vector<RefCntAutoPtr<ISampler>> Samplers;
+        RefCntAutoPtr<IBuffer>               ObjectConstants;
 
+        // Resources for ray tracing
         RefCntAutoPtr<ITopLevelAS> TLAS;
         RefCntAutoPtr<IBuffer>     TLASInstancesBuffer;
         RefCntAutoPtr<IBuffer>     TLASScratchBuffer;
     };
-    static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
-
     Scene m_Scene;
 
+    // Constants shared between all PSOs
     RefCntAutoPtr<IBuffer> m_Constants;
-    RefCntAutoPtr<IBuffer> m_ObjectConstants;
 
     FirstPersonCamera m_Camera;
 
@@ -179,6 +185,8 @@ private:
     float3 m_LightDir = normalize(float3{-0.49f, -0.60f, 0.64f});
     int    m_DrawMode = 0;
 
+    // Vulkan and DirectX require DXC shader compiler.
+    // Metal uses the builtin glslang compiler.
 #if PLATFORM_MACOS || PLATFORM_IOS
     const SHADER_COMPILER m_ShaderCompiler = SHADER_COMPILER_DEFAULT;
 #else

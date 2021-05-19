@@ -101,7 +101,7 @@ void Tutorial22_HybridRendering::CreateSceneMaterials(uint2& CubeMaterialRange, 
 
     // Ground materials
     GroundMaterial = static_cast<Uint32>(Materials.size());
-    LoadMaterial("Marble.jpg", float4{1.f, 1.f, 1.f, 1.f}, AnisotropicWrapSampInd);
+    LoadMaterial("Marble.jpg", float4{1.f}, AnisotropicWrapSampInd);
 }
 
 Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale)
@@ -115,56 +115,37 @@ Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlane
         float3 norm;
         float2 uv;
     };
-    std::vector<Vertex> Vertices;
-    std::vector<Uint32> Indices;
-
-    const Uint32 GridSize = 2;
-    const float  Scale    = 1.0f / float(GridSize - 1);
-
-    for (Uint32 y = 0; y < GridSize; ++y)
+    // clang-format off
+    const Vertex Vertices[] = 
     {
-        for (Uint32 x = 0; x < GridSize; ++x)
-        {
-            Vertex vert;
-            float2 uv = float2{static_cast<float>(x), static_cast<float>(y)} * Scale;
-            vert.norm = float3{0, 1, 0};
-            vert.uv   = uv * UVScale;
-            vert.pos  = float3{uv.x * 2.f - 1.f, 0.f, uv.y * 2.f - 1.f};
-            Vertices.push_back(vert);
-
-            if (x > 0 && y > 0)
-            {
-                Indices.push_back((y - 1) * GridSize + x - 1);
-                Indices.push_back(y * GridSize + x - 1);
-                Indices.push_back(y * GridSize + x);
-
-                Indices.push_back(y * GridSize + x);
-                Indices.push_back((y - 1) * GridSize + x);
-                Indices.push_back((y - 1) * GridSize + x - 1);
-            }
-        }
-    }
+        Vertex{float3{-1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       0.f      }},
+        Vertex{float3{ 1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, 0.f      }},
+        Vertex{float3{-1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       UVScale.y}},
+        Vertex{float3{ 1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, UVScale.y}}
+    };
+    // clang-format on
+    const Uint32 Indices[] = {0, 2, 3, 3, 1, 0};
 
     BufferDesc BuffDesc;
     BuffDesc.Name              = "Plane vertex buffer";
     BuffDesc.Usage             = USAGE_IMMUTABLE;
     BuffDesc.BindFlags         = BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-    BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(Vertices[0]) * Vertices.size());
+    BuffDesc.uiSizeInBytes     = sizeof(Vertices);
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(Vertices[0]);
-    BufferData VBData{Vertices.data(), BuffDesc.uiSizeInBytes};
+    BufferData VBData{Vertices, BuffDesc.uiSizeInBytes};
     pDevice->CreateBuffer(BuffDesc, &VBData, &PlaneMesh.VertexBuffer);
 
     BuffDesc.Name              = "Plane index buffer";
     BuffDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-    BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(Indices[0]) * Indices.size());
+    BuffDesc.uiSizeInBytes     = sizeof(Indices);
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(Indices[0]);
-    BufferData IBData{Indices.data(), BuffDesc.uiSizeInBytes};
+    BufferData IBData{Indices, BuffDesc.uiSizeInBytes};
     pDevice->CreateBuffer(BuffDesc, &IBData, &PlaneMesh.IndexBuffer);
 
-    PlaneMesh.NumVertices = static_cast<Uint32>(Vertices.size());
-    PlaneMesh.NumIndices  = static_cast<Uint32>(Indices.size());
+    PlaneMesh.NumVertices = _countof(Vertices);
+    PlaneMesh.NumIndices  = _countof(Indices);
     return PlaneMesh;
 }
 
@@ -281,6 +262,7 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
                 m_pDevice->CreateBLAS(ASDesc, &Mesh.BLAS);
             }
 
+            // Create or reuse scratch buffer, this will insert the barrier between BuildBLAS invocations which may be suboptimal.
             if (!pScratchBuffer || pScratchBuffer->GetDesc().uiSizeInBytes < Mesh.BLAS->GetScratchBufferSizes().Build)
             {
                 BufferDesc BuffDesc;
@@ -378,7 +360,9 @@ void Tutorial22_HybridRendering::UpdateTLAS()
         Inst.InstanceName = Name.c_str();
         Inst.pBLAS        = Mesh.BLAS.RawPtr<IBottomLevelAS>();
         Inst.Mask         = 0xFF;
-        Inst.CustomId     = i; // CommittedInstanceID()
+
+        // CustomId will be read in shader by RayQuery::CommittedInstanceID()
+        Inst.CustomId = i;
 
         Inst.Transform.SetRotation(ModelMat.Data(), 4);
         Inst.Transform.SetTranslation(ModelMat.m30, ModelMat.m31, ModelMat.m32);
@@ -419,26 +403,37 @@ void Tutorial22_HybridRendering::CreateScene()
     CreateSceneObjects(CubeMaterialRange, GroundMaterial);
     CreateSceneAccelStructs();
 
-    // Create buffer for object and material attribs
-    {
-        BufferDesc BuffDesc;
-        BuffDesc.Name              = "Object attribs buffer";
-        BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(m_Scene.Objects[0]) * m_Scene.Objects.size());
-        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
-        BuffDesc.ElementByteStride = sizeof(m_Scene.Objects[0]);
-        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.ObjectAttribsBuffer);
+    // Create buffer for object attribs
+    BufferDesc BuffDesc;
+    BuffDesc.Name              = "Object attribs buffer";
+    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
+    BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(m_Scene.Objects[0]) * m_Scene.Objects.size());
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(m_Scene.Objects[0]);
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.ObjectAttribsBuffer);
 
-        BuffDesc.Name              = "Material attribs buffer";
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(Materials[0]) * Materials.size());
-        BuffDesc.ElementByteStride = sizeof(Materials[0]);
-        BufferData BuffData        = BufferData{Materials.data(), BuffDesc.uiSizeInBytes};
-        m_pDevice->CreateBuffer(BuffDesc, &BuffData, &m_Scene.MaterialAttribsBuffer);
-    }
+    // Create and initialize buffer for material attribs
+    BuffDesc.Name              = "Material attribs buffer";
+    BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(Materials[0]) * Materials.size());
+    BuffDesc.ElementByteStride = sizeof(Materials[0]);
+    BufferData BuffData        = BufferData{Materials.data(), BuffDesc.uiSizeInBytes};
+    m_pDevice->CreateBuffer(BuffDesc, &BuffData, &m_Scene.MaterialAttribsBuffer);
+
+    // Create dynamic buffer for scene object constants (unique for each draw call)
+    BuffDesc.Name              = "Global constants buffer";
+    BuffDesc.BindFlags         = BIND_UNIFORM_BUFFER;
+    BuffDesc.uiSizeInBytes     = sizeof(ObjectConstants);
+    BuffDesc.Usage             = USAGE_DYNAMIC;
+    BuffDesc.CPUAccessFlags    = CPU_ACCESS_WRITE;
+    BuffDesc.Mode              = BUFFER_MODE_UNDEFINED;
+    BuffDesc.ElementByteStride = 0;
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.ObjectConstants);
 }
 
 void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
+    // Create PSO for rendering to GBuffer
+
     ShaderMacroHelper Macros;
     Macros.AddShaderMacro("NUM_TEXTURES", static_cast<Uint32>(m_Scene.Textures.size()));
     Macros.AddShaderMacro("NUM_SAMPLERS", static_cast<Uint32>(m_Scene.Samplers.size()));
@@ -499,7 +494,7 @@ void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStream
 
     m_RasterizationPSO->CreateShaderResourceBinding(&m_RasterizationSRB);
     m_RasterizationSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_Constants")->Set(m_Constants);
-    m_RasterizationSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_ObjectConst")->Set(m_ObjectConstants);
+    m_RasterizationSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_ObjectConst")->Set(m_Scene.ObjectConstants);
     m_RasterizationSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_ObjectAttribs")->Set(m_Scene.ObjectAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
     m_RasterizationSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_MaterialAttribs")->Set(m_Scene.MaterialAttribsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
 
@@ -524,6 +519,8 @@ void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStream
 
 void Tutorial22_HybridRendering::CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
+    // Create PSO for post process pass
+
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     PSOCreateInfo.PSODesc.Name         = "Post process PSO";
@@ -568,6 +565,8 @@ void Tutorial22_HybridRendering::CreatePostProcessPSO(IShaderSourceInputStreamFa
 
 void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
+    // Create compute shader that performs inline ray tracing
+
     ShaderMacroHelper Macros;
     Macros.AddShaderMacro("NUM_TEXTURES", static_cast<Uint32>(m_Scene.Textures.size()));
     Macros.AddShaderMacro("NUM_SAMPLERS", static_cast<Uint32>(m_Scene.Samplers.size()));
@@ -575,6 +574,8 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     if (m_pDevice->GetDeviceInfo().IsMetalDevice())
     {
+        // There is no float4x3 type in Metal, but the rows of a float3x3 are aligned
+        // to 16 bytes which effectively gives us float4x3.
         Macros.AddShaderMacro("float4x3", "float3x3");
     }
 
@@ -649,11 +650,14 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     if (m_pDevice->GetDeviceInfo().IsMetalDevice())
     {
+        // HLSL and MSL are very similar, so we can use the same code for all platforms.
         ShaderCI.ShaderCompiler = SHADER_COMPILER_DEFAULT;
         ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_MSL;
     }
     else
     {
+        // Inline ray tracing requires shader model 6.5
+        // Only DXC can compile HLSL for ray tracing.
         ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
         ShaderCI.HLSLVersion    = {6, 5};
@@ -710,6 +714,9 @@ void Tutorial22_HybridRendering::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    // RayTracing feature indicates that some of ray tracing functionality is supported.
+    // Acceleration structures are always supported if RayTracing feature is enabled.
+    // Inline ray tracing may be unsupported in old DirectX 12 drivers or if this feature is not supported by Vulkan.
     if ((m_pDevice->GetAdapterInfo().RayTracing.CapFlags & RAY_TRACING_CAP_FLAG_INLINE_RAY_TRACING) == 0)
     {
         UNSUPPORTED("Inline ray tracing is not supported by device");
@@ -725,16 +732,12 @@ void Tutorial22_HybridRendering::Initialize(const SampleInitInfo& InitInfo)
 
     CreateScene();
 
+    // Create buffer for constants that is shared between all PSOs
     BufferDesc BuffDesc;
     BuffDesc.Name          = "Global constants buffer";
     BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
     BuffDesc.uiSizeInBytes = sizeof(GlobalConstants);
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
-
-    BuffDesc.uiSizeInBytes  = sizeof(ObjectConstants);
-    BuffDesc.Usage          = USAGE_DYNAMIC;
-    BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_ObjectConstants);
 
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
@@ -768,7 +771,7 @@ void Tutorial22_HybridRendering::Render()
         GConst.AmbientLight = 0.1f;
         m_pImmediateContext->UpdateBuffer(m_Constants, 0, static_cast<Uint32>(sizeof(GConst)), &GConst, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        // Update transformation for some objects
+        // Update transformation for scene objects
         m_pImmediateContext->UpdateBuffer(m_Scene.ObjectAttribsBuffer, 0, static_cast<Uint32>(sizeof(ObjectAttribs) * m_Scene.Objects.size()), m_Scene.Objects.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
@@ -784,10 +787,11 @@ void Tutorial22_HybridRendering::Render()
         ITextureView* pDSV = m_GBuffer.Depth->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         m_pImmediateContext->SetRenderTargets(_countof(RTVs), RTVs, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+        // All transitions for render targets happened in SetRenderTargets()
         const float ClearColor[4] = {};
-        m_pImmediateContext->ClearRenderTarget(RTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearRenderTarget(RTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_NONE);
+        m_pImmediateContext->ClearRenderTarget(RTVs[1], ClearColor, RESOURCE_STATE_TRANSITION_MODE_NONE);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
 
         m_pImmediateContext->SetPipelineState(m_RasterizationPSO);
         m_pImmediateContext->CommitShaderResources(m_RasterizationSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -802,7 +806,7 @@ void Tutorial22_HybridRendering::Render()
             m_pImmediateContext->SetIndexBuffer(Mesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
             {
-                MapHelper<ObjectConstants> ObjConstants(m_pImmediateContext, m_ObjectConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+                MapHelper<ObjectConstants> ObjConstants(m_pImmediateContext, m_Scene.ObjectConstants, MAP_WRITE, MAP_FLAG_DISCARD);
                 ObjConstants->ObjectAttribsOffset = ObjInst.ObjectAttribsOffset;
             }
 
