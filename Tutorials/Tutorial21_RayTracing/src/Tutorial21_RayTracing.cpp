@@ -60,9 +60,8 @@ void Tutorial21_RayTracing::CreateGraphicsPSO()
     PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
     ShaderCreateInfo ShaderCI;
-    ShaderCI.UseCombinedTextureSamplers = true;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.ShaderCompiler             = SHADER_COMPILER_DXC;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -92,15 +91,7 @@ void Tutorial21_RayTracing::CreateGraphicsPSO()
     PSOCreateInfo.pVS = pVS;
     PSOCreateInfo.pPS = pPS;
 
-    SamplerDesc SamLinearClampDesc{
-        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP};
-
-    ImmutableSamplerDesc ImmutableSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
-
-    PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImmutableSamplers;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImmutableSamplers);
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC;
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC;
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pImageBlitPSO);
     VERIFY_EXPR(m_pImageBlitPSO != nullptr);
@@ -593,7 +584,7 @@ void Tutorial21_RayTracing::UpdateTLAS()
         if (!m_EnableCubes[Dst.CustomId])
             Dst.Mask = 0;
 
-        Dst.Transform.SetTranslation(Pos.x, Pos.y, Pos.z);
+        Dst.Transform.SetTranslation(Pos.x, -Pos.y, Pos.z);
         Dst.Transform.SetRotation(float3x3::RotationY(angle).Data());
     };
 
@@ -625,19 +616,19 @@ void Tutorial21_RayTracing::UpdateTLAS()
     Instances[4].pBLAS        = m_pCubeBLAS;
     Instances[4].Mask         = OPAQUE_GEOM_MASK;
     Instances[4].Transform.SetRotation(float3x3::Scale(100.0f, 0.1f, 100.0f).Data());
-    Instances[4].Transform.SetTranslation(0.0f, 6.0f, 0.0f);
+    Instances[4].Transform.SetTranslation(0.0f, -6.0f, 0.0f);
 
     Instances[5].InstanceName = "Sphere Instance";
     Instances[5].CustomId     = 0; // box index
     Instances[5].pBLAS        = m_pProceduralBLAS;
     Instances[5].Mask         = OPAQUE_GEOM_MASK;
-    Instances[5].Transform.SetTranslation(-3.0f, 3.0f, -5.f);
+    Instances[5].Transform.SetTranslation(-3.0f, -3.0f, -5.f);
 
     Instances[6].InstanceName = "Glass Instance";
     Instances[6].pBLAS        = m_pCubeBLAS;
     Instances[6].Mask         = TRANSPARENT_GEOM_MASK;
     Instances[6].Transform.SetRotation((float3x3::Scale(1.5f, 1.5f, 1.5f) * float3x3::RotationY(m_AnimationTime * PI_F * 0.25f)).Data());
-    Instances[6].Transform.SetTranslation(3.0f, 4.0f, -5.0f);
+    Instances[6].Transform.SetTranslation(3.0f, -4.0f, -5.0f);
 
 
     // Build or update TLAS
@@ -737,8 +728,8 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     CreateSBT();
 
     // Setup camera.
-    m_Camera.SetPos(float3(-7.f, -0.5f, 16.5f));
-    m_Camera.SetRotation(-2.67f, -0.145f);
+    m_Camera.SetPos(float3(-7.f, 0.5f, 16.5f));
+    m_Camera.SetRotation(0.48f, -0.145f);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
@@ -780,9 +771,9 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
         m_Constants.DispersionSampleCount = 4;
 
         m_Constants.AmbientColor  = float4(1.f, 1.f, 1.f, 0.f) * 0.015f;
-        m_Constants.LightPos[0]   = {8.00f, -8.0f, +0.00f, 0.f};
+        m_Constants.LightPos[0]   = {8.00f, +8.0f, +0.00f, 0.f};
         m_Constants.LightColor[0] = {1.00f, +0.8f, +0.80f, 0.f};
-        m_Constants.LightPos[1]   = {0.00f, -4.0f, -5.00f, 0.f};
+        m_Constants.LightPos[1]   = {0.00f, +4.0f, -5.00f, 0.f};
         m_Constants.LightColor[1] = {0.85f, +1.0f, +0.85f, 0.f};
 
         // Random points on disc.
@@ -842,10 +833,10 @@ void Tutorial21_RayTracing::Render()
         };
 
         // clang-format off
-        GetPlaneIntersection(ViewFrustum::BOTTOM_PLANE_IDX, ViewFrustum::LEFT_PLANE_IDX,   m_Constants.FrustumRayLB);
-        GetPlaneIntersection(ViewFrustum::LEFT_PLANE_IDX,   ViewFrustum::TOP_PLANE_IDX,    m_Constants.FrustumRayLT);
-        GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayRB);
-        GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRT);
+        GetPlaneIntersection(ViewFrustum::LEFT_PLANE_IDX,   ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayLB);
+        GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::LEFT_PLANE_IDX,   m_Constants.FrustumRayLT);
+        GetPlaneIntersection(ViewFrustum::BOTTOM_PLANE_IDX, ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRB);
+        GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::TOP_PLANE_IDX,    m_Constants.FrustumRayRT);
         // clang-format on
         m_Constants.CameraPos = -float4{CameraWorldPos, 1.0f};
 
@@ -877,9 +868,7 @@ void Tutorial21_RayTracing::Render()
         m_pImmediateContext->SetPipelineState(m_pImageBlitPSO);
         m_pImmediateContext->CommitShaderResources(m_pImageBlitSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        DrawAttribs Attribs;
-        Attribs.NumVertices = 4;
-        m_pImmediateContext->Draw(Attribs);
+        m_pImmediateContext->Draw(DrawAttribs{3, DRAW_FLAG_VERIFY_ALL});
     }
 }
 
@@ -897,15 +886,19 @@ void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime)
 
     // Do not go underground,
     float3 oldPos = m_Camera.GetPos();
-    if (oldPos.y < -5.7f)
+    if (oldPos.y > 5.7f)
     {
-        oldPos.y = -5.7f;
+        oldPos.y = 5.7f;
         m_Camera.SetPos(oldPos);
+        m_Camera.Update(m_InputController, 0.f);
     }
 }
 
 void Tutorial21_RayTracing::WindowResize(Uint32 Width, Uint32 Height)
 {
+    if (Width == 0 || Height == 0)
+        return;
+
     // Update projection matrix.
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
     m_Camera.SetProjAttribs(m_Constants.ClipPlanes.x, m_Constants.ClipPlanes.y, AspectRatio, PI_F / 4.f,
@@ -915,9 +908,6 @@ void Tutorial21_RayTracing::WindowResize(Uint32 Width, Uint32 Height)
     if (m_pColorRT != nullptr &&
         m_pColorRT->GetDesc().Width == Width &&
         m_pColorRT->GetDesc().Height == Height)
-        return;
-
-    if (Width == 0 || Height == 0)
         return;
 
     m_pColorRT = nullptr;

@@ -7,6 +7,7 @@ struct PSInput
 void main(in uint vid : SV_VertexID,
           out PSInput PSIn) 
 {
-    PSIn.UV  = float2(vid & 1, vid >> 1);
+    // fullscreen triangle
+    PSIn.UV  = float2(vid >> 1, vid & 1) * 2.0;
     PSIn.Pos = float4(PSIn.UV * 2.0 - 1.0, 0.0, 1.0);
 }
