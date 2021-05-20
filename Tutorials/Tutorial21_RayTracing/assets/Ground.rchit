@@ -27,7 +27,7 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
 
     // Setup ray origing and direction for shadow casting.
     float3  origin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
-    float3  normal = float3(0.0, -1.0, 0.0);
+    float3  normal = float3(0.0, 1.0, 0.0);
 
     LightingPass(payload.Color, origin, normal, payload.Recursion + 1);
 }

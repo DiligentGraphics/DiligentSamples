@@ -16,7 +16,7 @@ void main(inout PrimaryRayPayload payload)
     };
 
     // Generate sky color.
-    float factor  = clamp((-WorldRayDirection().y + 0.5) / 1.5 * 4.0, 0.0, 4.0);
+    float factor  = clamp((WorldRayDirection().y + 0.5) / 1.5 * 4.0, 0.0, 4.0);
     int   idx     = floor(factor);
           factor -= float(idx);
     float3 color  = lerp(Pallete[idx], Pallete[idx+1], factor);

@@ -543,10 +543,10 @@ const auto GetPlaneIntersection = [&Frustum](ViewFrustum::PLANE_IDX lhs, ViewFru
     result = dir * (1.0f / sqrt(len));
 };
 
-GetPlaneIntersection(ViewFrustum::BOTTOM_PLANE_IDX, ViewFrustum::LEFT_PLANE_IDX,   m_Constants.FrustumRayLB);
-GetPlaneIntersection(ViewFrustum::LEFT_PLANE_IDX,   ViewFrustum::TOP_PLANE_IDX,    m_Constants.FrustumRayLT);
-GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayRB);
-GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRT);
+GetPlaneIntersection(ViewFrustum::LEFT_PLANE_IDX,   ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayLB);
+GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::LEFT_PLANE_IDX,   m_Constants.FrustumRayLT);
+GetPlaneIntersection(ViewFrustum::BOTTOM_PLANE_IDX, ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRB);
+GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::TOP_PLANE_IDX,    m_Constants.FrustumRayRT);
 ```
 
 In the ray generation shader, we calculate the normalized texture coordinates `uv` and use them to calculate 
