@@ -125,6 +125,7 @@ private:
         Uint32 NumVertices = 0;
         Uint32 NumIndices  = 0;
         Uint32 FirstIndex  = 0; // Offset in the index buffer if IB and VB are shared between multiple meshes
+        Uint32 FirstVertex = 0; // Offset in the vertex buffer
     };
     static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
 
