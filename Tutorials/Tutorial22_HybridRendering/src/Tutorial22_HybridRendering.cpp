@@ -109,19 +109,21 @@ Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlane
     Mesh PlaneMesh;
     PlaneMesh.Name = "Ground";
 
-    struct Vertex
+    struct PlaneVertex
     {
         float3 pos;
         float3 norm;
         float2 uv;
     };
+    static_assert(sizeof(PlaneVertex) == sizeof(Vertex), "Vertex size mismatch");
+
     // clang-format off
-    const Vertex Vertices[] = 
+    const PlaneVertex Vertices[] = 
     {
-        Vertex{float3{-1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       0.f      }},
-        Vertex{float3{ 1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, 0.f      }},
-        Vertex{float3{-1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       UVScale.y}},
-        Vertex{float3{ 1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, UVScale.y}}
+        {float3{-1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       0.f      }},
+        {float3{ 1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, 0.f      }},
+        {float3{-1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       UVScale.y}},
+        {float3{ 1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, UVScale.y}}
     };
     // clang-format on
     const Uint32 Indices[] = {0, 2, 3, 3, 1, 0};
@@ -164,13 +166,56 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
             BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING,
             BUFFER_MODE_STRUCTURED);
         CubeMesh.IndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice, BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING, BUFFER_MODE_STRUCTURED);
-        CubeMesh.NumVertices = 12;
-        CubeMesh.NumIndices  = 36;
-        CubeMeshId           = static_cast<Uint32>(m_Scene.Meshes.size());
-        m_Scene.Meshes.push_back(CubeMesh);
+        CubeMesh.NumVertices = CubeMesh.VertexBuffer->GetDesc().uiSizeInBytes / sizeof(Vertex);
+        CubeMesh.NumIndices  = CubeMesh.IndexBuffer->GetDesc().uiSizeInBytes / sizeof(uint);
 
         auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25.f, 25.f});
-        PlaneMeshId    = static_cast<Uint32>(m_Scene.Meshes.size());
+
+        // Merge buffers
+        BufferDesc BuffDesc;
+        BuffDesc.Name              = "Shared vertex buffer";
+        BuffDesc.BindFlags         = BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
+        BuffDesc.uiSizeInBytes     = (CubeMesh.NumVertices + PlaneMesh.NumVertices) * sizeof(Vertex);
+        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+        BuffDesc.ElementByteStride = sizeof(Vertex);
+
+        RefCntAutoPtr<IBuffer> pSharedVB;
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &pSharedVB);
+        m_pImmediateContext->CopyBuffer(CubeMesh.VertexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                        pSharedVB, 0, CubeMesh.NumVertices * sizeof(Vertex), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        CubeMesh.VertexBuffer = pSharedVB;
+        CubeMesh.FirstVertex  = 0;
+
+        PlaneMesh.FirstVertex = CubeMesh.NumVertices;
+        m_pImmediateContext->CopyBuffer(PlaneMesh.VertexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                        pSharedVB, PlaneMesh.FirstVertex * sizeof(Vertex), PlaneMesh.NumVertices * sizeof(Vertex), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        PlaneMesh.VertexBuffer = pSharedVB;
+
+        // Metal requires
+        const Uint32 IndexBufferAlign = 32;
+
+        BuffDesc.Name              = "Shared index buffer";
+        BuffDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
+        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(AlignUp(CubeMesh.NumIndices * sizeof(Uint32), IndexBufferAlign)) + PlaneMesh.NumIndices * sizeof(Uint32);
+        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+        BuffDesc.ElementByteStride = sizeof(Uint32);
+
+        RefCntAutoPtr<IBuffer> pSharedIB;
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &pSharedIB);
+
+        m_pImmediateContext->CopyBuffer(CubeMesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                        pSharedIB, 0, CubeMesh.NumIndices * sizeof(Uint32), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        CubeMesh.IndexBuffer = pSharedIB;
+        CubeMesh.FirstIndex  = 0;
+
+        PlaneMesh.FirstIndex = static_cast<Uint32>(AlignUp(CubeMesh.NumIndices * sizeof(Uint32), IndexBufferAlign) / sizeof(Uint32));
+        m_pImmediateContext->CopyBuffer(PlaneMesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                        pSharedIB, PlaneMesh.FirstIndex * sizeof(Uint32), PlaneMesh.NumIndices * sizeof(Uint32), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        PlaneMesh.IndexBuffer = pSharedIB;
+
+        CubeMeshId = static_cast<Uint32>(m_Scene.Meshes.size());
+        m_Scene.Meshes.push_back(CubeMesh);
+        PlaneMeshId = static_cast<Uint32>(m_Scene.Meshes.size());
         m_Scene.Meshes.push_back(PlaneMesh);
     }
 
@@ -179,11 +224,12 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
         const auto ModelMat = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
 
         ObjectAttribs obj;
-        obj.ModelMat   = ModelMat.Transpose();
-        obj.NormalMat  = obj.ModelMat;
-        obj.MaterialId = (m_Scene.Objects.size() % (CubeMaterialRange.y - CubeMaterialRange.x)) + CubeMaterialRange.x;
-        obj.MeshId     = CubeMeshId;
-        obj.FirstIndex = m_Scene.Meshes[obj.MeshId].FirstIndex;
+        obj.ModelMat    = ModelMat.Transpose();
+        obj.NormalMat   = obj.ModelMat;
+        obj.MaterialId  = (m_Scene.Objects.size() % (CubeMaterialRange.y - CubeMaterialRange.x)) + CubeMaterialRange.x;
+        obj.MeshId      = CubeMeshId;
+        obj.FirstIndex  = m_Scene.Meshes[obj.MeshId].FirstIndex;
+        obj.FirstVertex = m_Scene.Meshes[obj.MeshId].FirstVertex;
         m_Scene.Objects.push_back(obj);
 
         if (IsDynamic)
@@ -224,11 +270,12 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
     InstObj.MeshInd             = PlaneMeshId;
     {
         ObjectAttribs obj;
-        obj.ModelMat   = (float4x4::Scale(50.f, 1.f, 50.f) * float4x4::Translation(0.f, -0.2f, 0.f)).Transpose();
-        obj.NormalMat  = float3x3::Identity();
-        obj.MaterialId = GroundMaterial;
-        obj.MeshId     = PlaneMeshId;
-        obj.FirstIndex = m_Scene.Meshes[obj.MeshId].FirstIndex;
+        obj.ModelMat    = (float4x4::Scale(50.f, 1.f, 50.f) * float4x4::Translation(0.f, -0.2f, 0.f)).Transpose();
+        obj.NormalMat   = float3x3::Identity();
+        obj.MaterialId  = GroundMaterial;
+        obj.MeshId      = PlaneMeshId;
+        obj.FirstIndex  = m_Scene.Meshes[obj.MeshId].FirstIndex;
+        obj.FirstVertex = m_Scene.Meshes[obj.MeshId].FirstVertex;
         m_Scene.Objects.push_back(obj);
     }
     InstObj.NumObjects = static_cast<Uint32>(m_Scene.Objects.size()) - InstObj.ObjectAttribsOffset;
@@ -280,10 +327,12 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
             TriangleData.GeometryName         = Triangles.GeometryName;
             TriangleData.pVertexBuffer        = Mesh.VertexBuffer;
             TriangleData.VertexStride         = Mesh.VertexBuffer->GetDesc().ElementByteStride;
-            TriangleData.VertexCount          = Triangles.MaxVertexCount;
+            TriangleData.VertexOffset         = Mesh.FirstVertex * TriangleData.VertexStride;
+            TriangleData.VertexCount          = Mesh.NumVertices;
             TriangleData.VertexValueType      = Triangles.VertexValueType;
             TriangleData.VertexComponentCount = Triangles.VertexComponentCount;
             TriangleData.pIndexBuffer         = Mesh.IndexBuffer;
+            TriangleData.IndexOffset          = Mesh.FirstIndex * Mesh.IndexBuffer->GetDesc().ElementByteStride;
             TriangleData.PrimitiveCount       = Triangles.MaxPrimitiveCount;
             TriangleData.IndexType            = Triangles.IndexType;
             TriangleData.Flags                = RAYTRACING_GEOMETRY_FLAG_OPAQUE;
@@ -570,7 +619,6 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
     ShaderMacroHelper Macros;
     Macros.AddShaderMacro("NUM_TEXTURES", static_cast<Uint32>(m_Scene.Textures.size()));
     Macros.AddShaderMacro("NUM_SAMPLERS", static_cast<Uint32>(m_Scene.Samplers.size()));
-    Macros.AddShaderMacro("NUM_MESHES", static_cast<Uint32>(m_Scene.Meshes.size()));
 
     if (m_pDevice->GetDeviceInfo().IsMetalDevice())
     {
@@ -583,7 +631,6 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
 
-    const auto NumMeshes   = static_cast<Uint32>(m_Scene.Meshes.size());
     const auto NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
     const auto NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
 
@@ -605,8 +652,8 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
             {SHADER_TYPE_COMPUTE, "g_Constants",       1,           SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
             {SHADER_TYPE_COMPUTE, "g_ObjectAttribs",   1,           SHADER_RESOURCE_TYPE_BUFFER_SRV},
             {SHADER_TYPE_COMPUTE, "g_MaterialAttribs", 1,           SHADER_RESOURCE_TYPE_BUFFER_SRV},
-            {SHADER_TYPE_COMPUTE, "g_VertexBuffers",   NumMeshes,   SHADER_RESOURCE_TYPE_BUFFER_SRV},
-            {SHADER_TYPE_COMPUTE, "g_IndexBuffers",    NumMeshes,   SHADER_RESOURCE_TYPE_BUFFER_SRV},
+            {SHADER_TYPE_COMPUTE, "g_VertexBuffer",    1,           SHADER_RESOURCE_TYPE_BUFFER_SRV},
+            {SHADER_TYPE_COMPUTE, "g_IndexBuffer",     1,           SHADER_RESOURCE_TYPE_BUFFER_SRV},
             {SHADER_TYPE_COMPUTE, "g_Textures",        NumTextures, SHADER_RESOURCE_TYPE_TEXTURE_SRV},
             {SHADER_TYPE_COMPUTE, "g_Samplers",        NumSamplers, SHADER_RESOURCE_TYPE_SAMPLER}
         };
@@ -682,15 +729,9 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     // Bind mesh geometry buffers
     {
-        std::vector<IDeviceObject*> ppVBViews(NumMeshes);
-        std::vector<IDeviceObject*> ppIBViews(NumMeshes);
-        for (Uint32 i = 0; i < NumMeshes; ++i)
-        {
-            ppVBViews[i] = m_Scene.Meshes[i].VertexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
-            ppIBViews[i] = m_Scene.Meshes[i].IndexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
-        }
-        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_VertexBuffers")->SetArray(ppVBViews.data(), 0, NumMeshes);
-        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_IndexBuffers")->SetArray(ppIBViews.data(), 0, NumMeshes);
+        // All meshes use shared vertex and index buffer
+        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_VertexBuffer")->Set(m_Scene.Meshes[0].VertexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+        m_RayTracingSceneSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_IndexBuffer")->Set(m_Scene.Meshes[0].IndexBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
     }
 
     // Bind material textures
@@ -800,7 +841,7 @@ void Tutorial22_HybridRendering::Render()
         {
             auto&    Mesh      = m_Scene.Meshes[ObjInst.MeshInd];
             IBuffer* VBs[]     = {Mesh.VertexBuffer};
-            Uint32   Offsets[] = {0};
+            Uint32   Offsets[] = {static_cast<Uint32>(Mesh.FirstVertex * sizeof(Vertex))};
 
             m_pImmediateContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
             m_pImmediateContext->SetIndexBuffer(Mesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
