@@ -63,7 +63,7 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
     const auto& deviceInfo = InitInfo.pDevice->GetDeviceInfo();
     m_bIsGLDevice          = deviceInfo.IsGLDevice();
     const auto AdatperType = InitInfo.pDevice->GetAdapterInfo().Type;
-    if (AdatperType == ADAPTER_TYPE_SOFTWARE || AdatperType == ADAPTER_TYPE_INTEGRATED)
+    if (AdatperType == ADAPTER_TYPE_INTEGRATED)
     {
         m_ShadowSettings.Resolution                        = 512;
         m_TerrainRenderParams.m_FilterAcrossShadowCascades = false;
