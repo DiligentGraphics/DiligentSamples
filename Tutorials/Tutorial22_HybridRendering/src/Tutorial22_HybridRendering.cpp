@@ -171,6 +171,8 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
 
         auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25.f, 25.f});
 
+        const auto RTProps = m_pDevice->GetAdapterInfo().RayTracing;
+
         // Merge buffers
         BufferDesc BuffDesc;
         BuffDesc.Name              = "Shared vertex buffer";
@@ -186,17 +188,14 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
         CubeMesh.VertexBuffer = pSharedVB;
         CubeMesh.FirstVertex  = 0;
 
-        PlaneMesh.FirstVertex = CubeMesh.NumVertices;
+        PlaneMesh.FirstVertex = static_cast<Uint32>(AlignUp(CubeMesh.NumVertices * sizeof(Vertex), RTProps.VertexBufferAlignmnent) / sizeof(Vertex));
         m_pImmediateContext->CopyBuffer(PlaneMesh.VertexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
                                         pSharedVB, PlaneMesh.FirstVertex * sizeof(Vertex), PlaneMesh.NumVertices * sizeof(Vertex), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         PlaneMesh.VertexBuffer = pSharedVB;
 
-        // Metal requires
-        const Uint32 IndexBufferAlign = 32;
-
         BuffDesc.Name              = "Shared index buffer";
         BuffDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(AlignUp(CubeMesh.NumIndices * sizeof(Uint32), IndexBufferAlign)) + PlaneMesh.NumIndices * sizeof(Uint32);
+        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(AlignUp(CubeMesh.NumIndices * sizeof(Uint32), RTProps.IndexBufferAlignment)) + PlaneMesh.NumIndices * sizeof(Uint32);
         BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
         BuffDesc.ElementByteStride = sizeof(Uint32);
 
@@ -208,7 +207,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
         CubeMesh.IndexBuffer = pSharedIB;
         CubeMesh.FirstIndex  = 0;
 
-        PlaneMesh.FirstIndex = static_cast<Uint32>(AlignUp(CubeMesh.NumIndices * sizeof(Uint32), IndexBufferAlign) / sizeof(Uint32));
+        PlaneMesh.FirstIndex = static_cast<Uint32>(AlignUp(CubeMesh.NumIndices * sizeof(Uint32), RTProps.IndexBufferAlignment) / sizeof(Uint32));
         m_pImmediateContext->CopyBuffer(PlaneMesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
                                         pSharedIB, PlaneMesh.FirstIndex * sizeof(Uint32), PlaneMesh.NumIndices * sizeof(Uint32), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         PlaneMesh.IndexBuffer = pSharedIB;

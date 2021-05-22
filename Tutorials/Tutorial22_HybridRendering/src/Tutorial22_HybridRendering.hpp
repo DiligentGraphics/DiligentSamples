@@ -146,19 +146,20 @@ private:
     {
         std::vector<InstancedObjects> ObjectInstances;
         std::vector<DynamicObject>    DynamicObjects;
-        std::vector<Mesh>             Meshes;
-        RefCntAutoPtr<IBuffer>        MaterialAttribsBuffer;
-        std::vector<ObjectAttribs>    Objects;
-        RefCntAutoPtr<IBuffer>        ObjectAttribsBuffer; // GPU-visible array of ObjectAttribs
+        std::vector<ObjectAttribs>    Objects; // CPU-visible array of ObjectAttribs
 
+        // Resources which used in shader
+        std::vector<Mesh>                    Meshes;
+        RefCntAutoPtr<IBuffer>               MaterialAttribsBuffer;
+        RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer; // GPU-visible array of ObjectAttribs
         std::vector<RefCntAutoPtr<ITexture>> Textures;
         std::vector<RefCntAutoPtr<ISampler>> Samplers;
         RefCntAutoPtr<IBuffer>               ObjectConstants;
 
         // Resources for ray tracing
         RefCntAutoPtr<ITopLevelAS> TLAS;
-        RefCntAutoPtr<IBuffer>     TLASInstancesBuffer;
-        RefCntAutoPtr<IBuffer>     TLASScratchBuffer;
+        RefCntAutoPtr<IBuffer>     TLASInstancesBuffer; // Used to update TLAS
+        RefCntAutoPtr<IBuffer>     TLASScratchBuffer;   // Used to update TLAS
     };
     Scene m_Scene;
 
