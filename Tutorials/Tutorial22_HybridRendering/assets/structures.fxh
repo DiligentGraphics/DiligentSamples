@@ -1,10 +1,10 @@
 
-#define RENDER_MODE_SHADED 0
-#define RENDER_MODE_G_BUFFER_COLOR 1
-#define RENDER_MODE_G_BUFFER_NORMAL 2
+#define RENDER_MODE_SHADED           0
+#define RENDER_MODE_G_BUFFER_COLOR   1
+#define RENDER_MODE_G_BUFFER_NORMAL  2
 #define RENDER_MODE_DIFFUSE_LIGHTING 3
-#define RENDER_MODE_REFLECTIONS 4
-#define RENDER_MODE_FRESNEL_TERM 5
+#define RENDER_MODE_REFLECTIONS      4
+#define RENDER_MODE_FRESNEL_TERM     5
 
 struct GlobalConstants
 {
@@ -48,8 +48,8 @@ struct ObjectAttribs
 struct MaterialAttribs
 {
     float4 BaseColorMask;
-    uint   SampInd;           // index in g_Samplers[];
-    uint   BaseColorTexInd;   // index in g_Textures[];
+    uint   SampInd;         // index in g_Samplers[];
+    uint   BaseColorTexInd; // index in g_Textures[];
     uint   padding0;
     uint   padding1;
 };
