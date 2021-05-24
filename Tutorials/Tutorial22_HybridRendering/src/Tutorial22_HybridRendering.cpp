@@ -619,13 +619,6 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
     Macros.AddShaderMacro("NUM_TEXTURES", static_cast<Uint32>(m_Scene.Textures.size()));
     Macros.AddShaderMacro("NUM_SAMPLERS", static_cast<Uint32>(m_Scene.Samplers.size()));
 
-    if (m_pDevice->GetDeviceInfo().IsMetalDevice())
-    {
-        // There is no float4x3 type in Metal, but the rows of a float3x3 are aligned
-        // to 16 bytes which effectively gives us float4x3.
-        Macros.AddShaderMacro("float4x3", "float3x3");
-    }
-
     ComputePipelineStateCreateInfo PSOCreateInfo;
 
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
