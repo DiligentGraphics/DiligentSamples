@@ -728,7 +728,7 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
     CreateSBT();
 
     // Setup camera.
-    m_Camera.SetPos(float3(-7.f, 0.5f, 16.5f));
+    m_Camera.SetPos(float3(7.f, -0.5f, -16.5f));
     m_Camera.SetRotation(0.48f, -0.145f);
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
@@ -807,38 +807,8 @@ void Tutorial21_RayTracing::Render()
         float3 CameraWorldPos = float3::MakeVector(m_Camera.GetWorldMatrix()[3]);
         auto   CameraViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
 
-        ViewFrustum Frustum;
-        ExtractViewFrustumPlanesFromMatrix(CameraViewProj, Frustum, false);
-
-        // Normalize frustum planes.
-        for (uint i = 0; i < ViewFrustum::NUM_PLANES; ++i)
-        {
-            Plane3D& plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
-            float    invlen = 1.0f / length(plane.Normal);
-            plane.Normal *= invlen;
-            plane.Distance *= invlen;
-        }
-
-        // Calculate ray formed by the intersection two planes.
-        auto GetPlaneIntersection = [&Frustum](ViewFrustum::PLANE_IDX lhs, ViewFrustum::PLANE_IDX rhs, float4& result) {
-            const Plane3D& lp = Frustum.GetPlane(lhs);
-            const Plane3D& rp = Frustum.GetPlane(rhs);
-
-            const float3 dir = cross(lp.Normal, rp.Normal);
-            const float  len = dot(dir, dir);
-
-            VERIFY_EXPR(len > 1.0e-5);
-
-            result = dir * (1.0f / sqrt(len));
-        };
-
-        // clang-format off
-        GetPlaneIntersection(ViewFrustum::LEFT_PLANE_IDX,   ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayLB);
-        GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::LEFT_PLANE_IDX,   m_Constants.FrustumRayLT);
-        GetPlaneIntersection(ViewFrustum::BOTTOM_PLANE_IDX, ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRB);
-        GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::TOP_PLANE_IDX,    m_Constants.FrustumRayRT);
-        // clang-format on
-        m_Constants.CameraPos = -float4{CameraWorldPos, 1.0f};
+        m_Constants.CameraPos   = float4{CameraWorldPos, 1.0f};
+        m_Constants.InvViewProj = CameraViewProj.Inverse().Transpose();
 
         m_pImmediateContext->UpdateBuffer(m_ConstantsCB, 0, sizeof(m_Constants), &m_Constants, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }

@@ -512,71 +512,30 @@ In a more complex renderer this pass will be replaced by tone mapping or other p
 ### Ray Generation Shader
 
 Ray generation shader is the entry point of the ray tracing pipeline. Its purpose is to
-generate the primary rays. To generate rays for every screen pixel, we will first calculate
-the four rays that bound the planes of the view frustum.
-
-We start by extracting the view frustum planes from the view-projection matrix using
-`ExtractViewFrustumPlanesFromMatrix()` function.
-We then normalize the planes and calculate the intersections. We then pass the resulting four rays to the shader:
-
-```cpp
-ViewFrustum Frustum;
-ExtractViewFrustumPlanesFromMatrix(CameraViewProj, Frustum, false);
-
-// Normalize frustum planes.
-for (uint i = 0; i < ViewFrustum::NUM_PLANES; ++i)
-{
-    Plane3D& plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
-    float    invlen = 1.0f / length(plane.Normal);
-    plane.Normal   *= invlen;
-    plane.Distance *= invlen;
-}
-
-// Calculate the ray formed by the intersection of the two planes.
-const auto GetPlaneIntersection = [&Frustum](ViewFrustum::PLANE_IDX lhs, ViewFrustum::PLANE_IDX rhs, float4& result) {
-    const Plane3D& lp = Frustum.GetPlane(lhs);
-    const Plane3D& rp = Frustum.GetPlane(rhs);
-
-    const float3 dir = cross(lp.Normal, rp.Normal);
-    const float  len = dot(dir, dir);
-
-    result = dir * (1.0f / sqrt(len));
-};
-
-GetPlaneIntersection(ViewFrustum::LEFT_PLANE_IDX,   ViewFrustum::BOTTOM_PLANE_IDX, m_Constants.FrustumRayLB);
-GetPlaneIntersection(ViewFrustum::TOP_PLANE_IDX,    ViewFrustum::LEFT_PLANE_IDX,   m_Constants.FrustumRayLT);
-GetPlaneIntersection(ViewFrustum::BOTTOM_PLANE_IDX, ViewFrustum::RIGHT_PLANE_IDX,  m_Constants.FrustumRayRB);
-GetPlaneIntersection(ViewFrustum::RIGHT_PLANE_IDX,  ViewFrustum::TOP_PLANE_IDX,    m_Constants.FrustumRayRT);
-```
-
+generate the primary rays.
 In the ray generation shader, we calculate the normalized texture coordinates `uv` and use them to calculate 
-the ray direction from frustum rays:
+the ray direction from the inverse view-projection matrix:
 
 ```hlsl
 struct Constants
 {
-    float4   Position;
-    float4   FrustumRayLT;
-    float4   FrustumRayLB;
-    float4   FrustumRayRT;
-    float4   FrustumRayRB;
+    float4   CameraPos;
+    float4x4 InvViewProj;
     ...
 };
 ConstantBuffer<Constants> g_ConstantsCB;
 
 ...
-
-float3  rayOrigin = g_ConstantsCB.CameraPos.xyz;
-float2  uv        = (float2(DispatchRaysIndex().xy) + float2(0.5, 0.5)) / float2(DispatchRaysDimensions().xy);
-float3  rayDir    = normalize(lerp(lerp(g_ConstantsCB.FrustumRayLB.xyz, g_ConstantsCB.FrustumRayRB.xyz, uv.x),
-                                   lerp(g_ConstantsCB.FrustumRayLT.xyz, g_ConstantsCB.FrustumRayRT.xyz, uv.x), uv.y));
+float2 uv       = (float2(DispatchRaysIndex().xy) + float2(0.5, 0.5)) / float2(DispatchRaysDimensions().xy);
+float4 worldPos = mul(float4(uv * 2.0 - 1.0, 1.0, 1.0), g_ConstantsCB.InvViewProj);
+float3 rayDir   = normalize(worldPos.xyz/worldPos.w - g_ConstantsCB.CameraPos.xyz);
 ```
 
 Next, we prepare the RayDesc struct and call `CastPrimaryRay` helper function:
 
 ```hlsl
 RayDesc ray;
-ray.Origin    = rayOrigin;
+ray.Origin    = g_ConstantsCB.CameraPos.xyz;
 ray.Direction = rayDir;
 ray.TMin      = g_ConstantsCB.ClipPlanes.x;
 ray.TMax      = g_ConstantsCB.ClipPlanes.y;
