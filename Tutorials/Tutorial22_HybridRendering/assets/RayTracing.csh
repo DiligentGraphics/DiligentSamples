@@ -44,7 +44,8 @@ float CastShadow(float3 Origin, float3 RayDir, float MaxRayLength, RaytracingAcc
     ShadowRay.TMax      = MaxRayLength;
 
     // Cull front faces to avaid self-intersections.
-    RayQuery<RAY_FLAG_CULL_FRONT_FACING_TRIANGLES> ShadowQuery;
+    // We don't use distance to occluder, so ray query can find any intersection and end search.
+    RayQuery<RAY_FLAG_CULL_FRONT_FACING_TRIANGLES | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> ShadowQuery;
 
     // Setup ray tracing query
     ShadowQuery.TraceRayInline(TLAS,            // Acceleration Structure
@@ -149,7 +150,7 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
         if (Result.NdotL > 0.0)
         {
             // Calculate world-space position for intersection point which will be used as ray origin for ray traced shadow
-            float3 ReflWPos  = ReflRay.Origin + ReflRay.Direction * ReflQuery.CommittedRayT();
+            float3 ReflWPos = ReflRay.Origin + ReflRay.Direction * ReflQuery.CommittedRayT();
 
             Result.NdotL *= CastShadow(ReflWPos + Norm * SMALL_OFFSET * length(ReflWPos - In.CameraPos),
                                        In.LightDir,

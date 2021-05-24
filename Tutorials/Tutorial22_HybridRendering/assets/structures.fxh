@@ -38,11 +38,15 @@ struct Vertex
 struct ObjectAttribs
 {
     float4x4 ModelMat;    // object space position to world space
-    float4x3 NormalMat;   // object space normal to world space, float4x3 used because float3x3 has different size in D3D12 (36 bytes) and Vulkan (42 bytes)
+#ifdef METAL
+    float3x3 NormalMat;   // In Metal float4x3 type has 64 bytes size, but size of float3x3 is 48 bytes as float4x3 in HLSL.
+#else
+    float4x3 NormalMat;   // object space normal to world space, float4x3 used because float3x3 has different size in D3D12 (36 bytes) and Vulkan (48 bytes)
+#endif
     uint     MaterialId;  // index in g_MaterialAttribs
     uint     FirstIndex;  // first index in index buffer
     uint     FirstVertex; // first vertex in vertex buffer
-    uint     MeshId;      // index of vertex buffer in g_VertexBuffers and index of index buffer in g_IndexBuffers
+    uint     MeshId;      // Unused. Can be used to select index and vertex buffer in buffer array.
 };
 
 struct MaterialAttribs
