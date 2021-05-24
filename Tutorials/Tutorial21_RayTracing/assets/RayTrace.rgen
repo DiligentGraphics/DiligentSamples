@@ -7,14 +7,13 @@ RWTexture2D<float4> g_ColorBuffer;
 [shader("raygeneration")]
 void main()
 {
-    // Calculate ray direction by interpolating frustum corner rays.
-    float3  rayOrigin = g_ConstantsCB.CameraPos.xyz;
-    float2  uv        = (float2(DispatchRaysIndex().xy) + float2(0.5, 0.5)) / float2(DispatchRaysDimensions().xy);
-    float3  rayDir    = normalize(lerp(lerp(g_ConstantsCB.FrustumRayLB.xyz, g_ConstantsCB.FrustumRayRB.xyz, uv.x),
-                                       lerp(g_ConstantsCB.FrustumRayLT.xyz, g_ConstantsCB.FrustumRayRT.xyz, uv.x), uv.y));
+    // Calculate view ray direction from the inverse view-projection matrix
+    float2 uv       = (float2(DispatchRaysIndex().xy) + float2(0.5, 0.5)) / float2(DispatchRaysDimensions().xy);
+    float4 worldPos = mul(float4(uv * 2.0 - 1.0, 1.0, 1.0), g_ConstantsCB.InvViewProj);
+    float3 rayDir   = normalize(worldPos.xyz/worldPos.w - g_ConstantsCB.CameraPos.xyz);
 
     RayDesc ray;
-    ray.Origin    = rayOrigin;
+    ray.Origin    = g_ConstantsCB.CameraPos.xyz;
     ray.Direction = rayDir;
     ray.TMin      = g_ConstantsCB.ClipPlanes.x;
     ray.TMax      = g_ConstantsCB.ClipPlanes.y;

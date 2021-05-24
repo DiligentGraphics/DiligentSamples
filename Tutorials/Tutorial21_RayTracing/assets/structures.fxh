@@ -26,17 +26,11 @@ struct Constants
 {
     // Camera world position
     float4   CameraPos;
+    float4x4 InvViewProj;
 
     // Near and far clip plane distances
     float2   ClipPlanes;
     float2   Padding0;
-
-    // Camera view frustum corner rays
-    float4   FrustumRayLT;
-    float4   FrustumRayLB;
-    float4   FrustumRayRT;
-    float4   FrustumRayRB;
-
 
     // The number of shadow PCF samples
     int      ShadowPCF; 
