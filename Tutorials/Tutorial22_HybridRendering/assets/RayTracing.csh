@@ -1,8 +1,10 @@
 
 #ifdef METAL
-#    include "RayQuery.fxh"
+#    include "RayQueryMtl.fxh"
 #endif
-#include "structures.fxh"
+
+#include "Structures.fxh"
+#include "Utils.fxh"
 
 // Vulkan and DirectX:
 //   Resource indices are not allowed to vary within the wave by default.
@@ -17,9 +19,6 @@
 #    define TextureSample(Texture, Sampler, f2Coord, fLevel) Texture.sample(Sampler, f2Coord, level(fLevel))
 #    define TextureLoad(Texture, u2Coord)                    Texture.read(u2Coord)
 #    define TextureStore(Texture, u2Coord, f4Value)          Texture.write(f4Value, u2Coord)
-#    define mul(lhs, rhs)                                    ((lhs) * (rhs))
-#    define lerp(x, y, factor)                               mix((x), (y), (factor))
-#    define RaytracingAccelerationStructure                  instance_acceleration_structure
 #    define TEXTURE_ARRAY(Name, Size)                        const array<texture2d<float>, Size> Name
 #    define SAMPLER_ARRAY(Name, Size)                        const array<sampler, Size> Name
 #    define BUFFER(Name, Type)                               const device Type* Name
@@ -31,10 +30,8 @@
 #    define SAMPLER_ARRAY(Name, Size)                        SamplerState Name[Size]
 #    define BUFFER(Name, Type)                               StructuredBuffer<Type> Name
 #endif
-#include "Utils.fxh"
 
-
-// Return 0 when found occluder or 1 otherwise
+// Return 0 when occluder is found, and 1 otherwise
 float CastShadow(float3 Origin, float3 RayDir, float MaxRayLength, RaytracingAccelerationStructure TLAS)
 {
     RayDesc ShadowRay;
@@ -54,11 +51,11 @@ float CastShadow(float3 Origin, float3 RayDir, float MaxRayLength, RaytracingAcc
                                 ShadowRay);
 
     // Find the first intersection.
-    // If a scene contains non-opaque objects then Proceed() may return TRUE until all intersections are processed or Abort() will be called.
+    // If a scene contains non-opaque objects then Proceed() may return TRUE until all intersections are processed or Abort() is called.
     // This behaviour is not supported by Metal RayQuery emulation, so Proceed() already returns FALSE.
     ShadowQuery.Proceed();
         
-    // Scene contains only triangle BLAS so we don't need to check COMMITTED_PROCEDURAL_PRIMITIVE_HIT
+    // The scene contains only triangles, so we don't need to check COMMITTED_PROCEDURAL_PRIMITIVE_HIT
     return ShadowQuery.CommittedStatus() == COMMITTED_TRIANGLE_HIT ? 0.0 : 1.0;
 }
 
@@ -92,7 +89,7 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
     ReflRay.TMin      = 0.0;
     ReflRay.TMax      = In.MaxReflectionRayLength;
         
-    // Rasterization PSO use back face culling so we use same culling for ray traced reflections.
+    // Rasterization PSO uses back face culling, so we use the same culling for ray traced reflections.
     RayQuery<RAY_FLAG_CULL_BACK_FACING_TRIANGLES> ReflQuery;
 
     ReflQuery.TraceRayInline(TLAS,           // Acceleration Structure
@@ -102,11 +99,11 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
     ReflQuery.Proceed();
         
     ReflectionResult Result;
-    Result.BaseColor = float4(0., 0., 0., 0.);
-    Result.NdotL     = 0.;
+    Result.BaseColor = float4(0.0, 0.0, 0.0, 0.0);
+    Result.NdotL     = 0.0;
     Result.Found     = false;
 
-    // Sample texture in intersection point
+    // Sample texture at the intersection point
     if (ReflQuery.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
     {
         // Read object and material attribs by InstanceID
@@ -123,12 +120,12 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
         Vertex Vert1 = VertexBuffer[TriangleInd.y + Obj.FirstVertex];
         Vertex Vert2 = VertexBuffer[TriangleInd.z + Obj.FirstVertex];
 
-        // Calculate triangle baricetric coordinates.
+        // Calculate triangle barycetric coordinates
         float3 Barycentrics;
         Barycentrics.yz = ReflQuery.CommittedTriangleBarycentrics();
         Barycentrics.x  = 1.0 - Barycentrics.y - Barycentrics.z;
 
-        // Calculate UV and normal for intersection point.
+        // Calculate UV and normal for the intersection point.
         float2 UV   = float2(Vert0.U, Vert0.V) * Barycentrics.x +
                       float2(Vert1.U, Vert1.V) * Barycentrics.y +
                       float2(Vert2.U, Vert2.V) * Barycentrics.z;
@@ -136,12 +133,16 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
                       float3(Vert1.NormX, Vert1.NormY, Vert1.NormZ) * Barycentrics.y +
                       float3(Vert2.NormX, Vert2.NormY, Vert2.NormZ) * Barycentrics.z;
 
-        // Transform normal to world space.
+        // Transform normal to world space
         Norm = normalize(mul(Norm, (float3x3)Obj.NormalMat));
 
-        // Ray tracing shaders don't support LOD calculation, so we must specify LOD and apply filtering.
-        const float DefaultLOD = 1.0;
-        Result.BaseColor = Mtr.BaseColorMask * TextureSample(Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)], Samplers[NonUniformResourceIndex(Mtr.SampInd)], UV, DefaultLOD);
+        // Ray tracing shaders don't support LOD calculation, so we explicitly specify LOD and apply filtering
+        const float DefaultLOD = 0.0;
+        Result.BaseColor = Mtr.BaseColorMask *
+            TextureSample(Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)],
+                          Samplers[NonUniformResourceIndex(Mtr.SampInd)],
+                          UV,
+                          DefaultLOD);
        
         Result.NdotL = max(0.0, dot(In.LightDir, Norm));
         Result.Found = true;

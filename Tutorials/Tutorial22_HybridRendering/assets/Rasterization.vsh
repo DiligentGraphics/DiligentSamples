@@ -1,4 +1,4 @@
-#include "structures.fxh"
+#include "Structures.fxh"
 
 #ifndef DXCOMPILER
 #    define NonUniformResourceIndex(x) x

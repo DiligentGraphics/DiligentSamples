@@ -1,12 +1,12 @@
 /*
  *  Copyright 2019-2021 Diligent Graphics LLC
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -120,10 +120,10 @@ Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlane
     // clang-format off
     const PlaneVertex Vertices[] = 
     {
-        {float3{-1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       0.f      }},
-        {float3{ 1.f, 0.f,-1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, 0.f      }},
-        {float3{-1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{0.f,       UVScale.y}},
-        {float3{ 1.f, 0.f, 1.f}, float3{0.f, 1.f, 0.f}, float2{UVScale.x, UVScale.y}}
+        {float3{-1, 0, -1}, float3{0, 1, 0}, float2{0,         0        }},
+        {float3{ 1, 0, -1}, float3{0, 1, 0}, float2{UVScale.x, 0        }},
+        {float3{-1, 0,  1}, float3{0, 1, 0}, float2{0,         UVScale.y}},
+        {float3{ 1, 0,  1}, float3{0, 1, 0}, float2{UVScale.x, UVScale.y}}
     };
     // clang-format on
     const Uint32 Indices[] = {0, 2, 3, 3, 1, 0};
@@ -169,7 +169,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
         CubeMesh.NumVertices = CubeMesh.VertexBuffer->GetDesc().uiSizeInBytes / sizeof(Vertex);
         CubeMesh.NumIndices  = CubeMesh.IndexBuffer->GetDesc().uiSizeInBytes / sizeof(uint);
 
-        auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25.f, 25.f});
+        auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25});
 
         const auto RTProps = m_pDevice->GetAdapterInfo().RayTracing;
 
@@ -283,7 +283,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
 
 void Tutorial22_HybridRendering::CreateSceneAccelStructs()
 {
-    // Create & build bottom level acceleration structure
+    // Create & build bottom-level acceleration structure
     {
         RefCntAutoPtr<IBuffer> pScratchBuffer;
 
@@ -308,7 +308,7 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
                 m_pDevice->CreateBLAS(ASDesc, &Mesh.BLAS);
             }
 
-            // Create or reuse scratch buffer, this will insert the barrier between BuildBLAS invocations which may be suboptimal.
+            // Create or reuse scratch buffer; this will insert the barrier between BuildBLAS invocations, which may be suboptimal.
             if (!pScratchBuffer || pScratchBuffer->GetDesc().uiSizeInBytes < Mesh.BLAS->GetScratchBufferSizes().Build)
             {
                 BufferDesc BuffDesc;
@@ -341,7 +341,7 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
             Attribs.pTriangleData     = &TriangleData;
             Attribs.TriangleDataCount = 1;
 
-            // Scratch buffer will be used to store temporary data during BLAS build.
+            // Scratch buffer will be used to store temporary data during the BLAS build.
             // Previous content in the scratch buffer will be discarded.
             Attribs.pScratchBuffer = pScratchBuffer;
 

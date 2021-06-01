@@ -113,3 +113,7 @@ public:
     uint   CommittedGeometryIndex()        { return m_LastIntersection.geometry_id; }
     uint   CommittedPrimitiveIndex()       { return m_LastIntersection.primitive_id; }
 };
+
+#define mul(lhs, rhs)                    ((lhs) * (rhs))
+#define lerp(x, y, factor)               mix((x), (y), (factor))
+#define RaytracingAccelerationStructure  instance_acceleration_structure
