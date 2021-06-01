@@ -1,0 +1,31 @@
+struct PSInput 
+{ 
+    float4 Pos   : SV_POSITION; 
+    float3 Normal : NORMAL; 
+    float4 Color : COLOR0; 
+};
+
+struct PSOutput
+{ 
+    float4 Color : SV_TARGET; 
+};
+
+float4 GetAmbient(float3 WorldNormal)
+{
+    float3 Normal = normalize(WorldNormal);
+    float3 Alpha = (Normal + 1.0) * 0.5;
+    float2 Bt = lerp(float2(0.3, 0.7), float2(0.4, 0.8), Alpha.xz);
+    float3 Ambine = lerp(float3(Bt.x, 0.3, Bt.x), float3(Bt.y, 0.8, Bt.y), Alpha.y);
+
+    return float4(Ambine, 1.0);
+}
+
+// Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex
+// shader output variable name must match exactly the name of the pixel shader input variable.
+// If the variable has structure type (like in this example), the structure declarations must also be indentical.
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float4 Ambine = GetAmbient(PSIn.Normal);
+    PSOut.Color   = Ambine * PSIn.Color;
+}

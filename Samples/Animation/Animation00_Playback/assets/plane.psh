@@ -1,0 +1,32 @@
+struct PlanePSInput
+{
+    float4 Pos : SV_POSITION;
+    float2 TexCoord : TEXCOORD;
+};
+
+struct PlanePSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+void main(in  PlanePSInput  PSIn,
+          out PlanePSOutput PSOut)
+{
+    float tol = 0.001000000;
+    float res = 0.05;
+    float4 backgroundColor = float4(0.5, 0.75, 0.85, 1.0f); // blue
+    float4 lineColor       = float4(0.25, 0.25, 0.25, 1.0); // grey
+    float4 originColor     = float4(0.0, 0.0, 0.0, 1.0);   // black
+    if (((abs(((PSIn.TexCoord).x - 0.5)) <= tol) && (abs(((PSIn.TexCoord).y - 0.5)) <= tol)))
+    {
+        PSOut.Color = originColor;
+    }
+    else if (((((fmod((PSIn.TexCoord).x, res) >= (res - tol)) || (fmod((PSIn.TexCoord).x, res) < tol)) || (fmod((PSIn.TexCoord).y, res) >= (res - tol))) || (fmod((PSIn.TexCoord).y, res) < tol)))
+    {
+        PSOut.Color = lineColor;
+    }
+    else
+    {
+        PSOut.Color = backgroundColor;
+    }
+}

@@ -4,3 +4,6 @@
 [submodule "ThirdParty/glfw"]
 	path = ThirdParty/glfw
 	url = https://github.com/DiligentGraphics/glfw.git
+[submodule "ThirdParty/ozz-animation"]
+	path = ThirdParty/ozz-animation
+	url = https://github.com/guillaumeblanc/ozz-animation.git

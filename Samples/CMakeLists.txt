@@ -15,3 +15,7 @@ add_subdirectory(NuklearDemo)
 if(TARGET glfw)
     add_subdirectory(GLFWDemo)
 endif()
+
+if(TARGET ozz_animation)
+    add_subdirectory(Animation)
+endif()
