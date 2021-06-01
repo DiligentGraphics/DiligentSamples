@@ -64,7 +64,7 @@ struct float4x3
     {}
 };
 
-#include "../assets/structures.fxh"
+#include "../assets/Structures.fxh"
 
 } // namespace
 
@@ -148,7 +148,7 @@ private:
         std::vector<DynamicObject>    DynamicObjects;
         std::vector<ObjectAttribs>    Objects; // CPU-visible array of ObjectAttribs
 
-        // Resources which used in shader
+        // Resources used by shaders
         std::vector<Mesh>                    Meshes;
         RefCntAutoPtr<IBuffer>               MaterialAttribsBuffer;
         RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer; // GPU-visible array of ObjectAttribs

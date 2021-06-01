@@ -13,9 +13,9 @@ set(INCLUDE
 )
 
 set(SHADERS
-    assets/structures.fxh
+    assets/Structures.fxh
     assets/Utils.fxh
-    assets/RayQuery.fxh
+    assets/RayQueryMtl.fxh
     assets/Rasterization.vsh
     assets/Rasterization.psh
     assets/PostProcess.vsh

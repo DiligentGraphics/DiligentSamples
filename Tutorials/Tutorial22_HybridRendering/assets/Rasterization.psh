@@ -1,5 +1,10 @@
-#include "structures.fxh"
+#include "Structures.fxh"
 
+// Vulkan and DirectX:
+//   Resource indices are not allowed to vary within the wave by default.
+//   When dynamic indexing is required, we have to use NonUniformResourceIndex() qualifier to avoid undefined behavior.
+// Metal:
+//   NonUniformResourceIndex() qualifier is not needed.
 #ifndef DXCOMPILER
 #    define NonUniformResourceIndex(x) x
 #endif
