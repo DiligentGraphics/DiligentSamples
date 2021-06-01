@@ -92,6 +92,15 @@ private:
     RefCntAutoPtr<IPipelineState>         m_pAmbientLightPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pAmbientLightSRB;
 
+    struct GBuffer
+    {
+        RefCntAutoPtr<ITexture> pColorBuffer;
+        RefCntAutoPtr<ITexture> pOpenGLOffsreenColorBuffer;
+        RefCntAutoPtr<ITexture> pDepthZBuffer;
+        RefCntAutoPtr<ITexture> pDepthBuffer;
+    };
+    GBuffer m_GBuffer;
+
     RefCntAutoPtr<IRenderPass> m_pRenderPass;
 
     float4x4 m_CameraViewProjMatrix;

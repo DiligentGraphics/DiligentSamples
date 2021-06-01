@@ -490,6 +490,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
 
 void Tutorial19_RenderPasses::ReleaseWindowResources()
 {
+    m_GBuffer = {};
     m_FramebufferCache.clear();
     m_pLightVolumeSRB.Release();
     m_pAmbientLightSRB.Release();
@@ -514,6 +515,8 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
 {
     const auto& RPDesc = m_pRenderPass->GetDesc();
     const auto& SCDesc = m_pSwapChain->GetDesc();
+
+    const auto MemorylessTexBindFlags = m_pDevice->GetAdapterInfo().Memory.MemorylessTextureBindFlags;
     // Create window-size offscreen render target
     TextureDesc TexDesc;
     TexDesc.Name      = "Color G-buffer";
@@ -523,6 +526,10 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     TexDesc.Width     = SCDesc.Width;
     TexDesc.Height    = SCDesc.Height;
     TexDesc.MipLevels = 1;
+    TexDesc.MiscFlags =
+        ((MemorylessTexBindFlags & TexDesc.BindFlags) == TexDesc.BindFlags) ?
+        MISC_TEXTURE_FLAG_MEMORYLESS :
+        MISC_TEXTURE_FLAG_NONE;
 
     // Define optimal clear value
     TexDesc.ClearValue.Format   = TexDesc.Format;
@@ -530,49 +537,70 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     TexDesc.ClearValue.Color[1] = 0.f;
     TexDesc.ClearValue.Color[2] = 0.f;
     TexDesc.ClearValue.Color[3] = 1.f;
-    RefCntAutoPtr<ITexture> pColorBuffer;
-    m_pDevice->CreateTexture(TexDesc, nullptr, &pColorBuffer);
+
+    if (!m_GBuffer.pColorBuffer)
+        m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pColorBuffer);
 
     // OpenGL does not allow combining swap chain render target with any
     // other render target, so we have to create an auxiliary texture.
-    RefCntAutoPtr<ITexture> pOpenGLOffsreenColorBuffer;
     if (pDstRenderTarget == nullptr)
     {
-        TexDesc.Name   = "OpenGL Offscreen Render Target";
-        TexDesc.Format = SCDesc.ColorBufferFormat;
-        m_pDevice->CreateTexture(TexDesc, nullptr, &pOpenGLOffsreenColorBuffer);
-        pDstRenderTarget = pOpenGLOffsreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+        TexDesc.Name      = "OpenGL Offscreen Render Target";
+        TexDesc.Format    = SCDesc.ColorBufferFormat;
+        TexDesc.MiscFlags = MISC_TEXTURE_FLAG_NONE;
+        m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pOpenGLOffsreenColorBuffer);
+        pDstRenderTarget = m_GBuffer.pOpenGLOffsreenColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
     }
 
 
     TexDesc.Name   = "Depth Z G-buffer";
     TexDesc.Format = RPDesc.pAttachments[1].Format;
+    TexDesc.MiscFlags =
+        ((MemorylessTexBindFlags & TexDesc.BindFlags) == TexDesc.BindFlags) ?
+        MISC_TEXTURE_FLAG_MEMORYLESS :
+        MISC_TEXTURE_FLAG_NONE;
 
     TexDesc.ClearValue.Format   = TexDesc.Format;
     TexDesc.ClearValue.Color[0] = 1.f;
     TexDesc.ClearValue.Color[1] = 1.f;
     TexDesc.ClearValue.Color[2] = 1.f;
     TexDesc.ClearValue.Color[3] = 1.f;
-    RefCntAutoPtr<ITexture> pDepthZBuffer;
-    m_pDevice->CreateTexture(TexDesc, nullptr, &pDepthZBuffer);
+
+    if (!m_GBuffer.pDepthZBuffer)
+        m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pDepthZBuffer);
 
 
     TexDesc.Name      = "Depth buffer";
     TexDesc.Format    = RPDesc.pAttachments[2].Format;
     TexDesc.BindFlags = BIND_DEPTH_STENCIL;
+    if (m_pDevice->GetDeviceInfo().IsMetalDevice())
+    {
+        // In Metal, there are no native subpasses, and the
+        // depth buffer needs to be save to global memory between
+        // subpasses. Thus it can't be memoryless.
+        TexDesc.MiscFlags = MISC_TEXTURE_FLAG_NONE;
+    }
+    else
+    {
+        TexDesc.MiscFlags =
+            ((MemorylessTexBindFlags & TexDesc.BindFlags) == TexDesc.BindFlags) ?
+            MISC_TEXTURE_FLAG_MEMORYLESS :
+            MISC_TEXTURE_FLAG_NONE;
+    }
 
     TexDesc.ClearValue.Format               = TexDesc.Format;
     TexDesc.ClearValue.DepthStencil.Depth   = 1.f;
     TexDesc.ClearValue.DepthStencil.Stencil = 0;
-    RefCntAutoPtr<ITexture> pDepthBuffer;
-    m_pDevice->CreateTexture(TexDesc, nullptr, &pDepthBuffer);
+
+    if (!m_GBuffer.pDepthBuffer)
+        m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pDepthBuffer);
 
 
     ITextureView* pAttachments[] = //
         {
-            pColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
-            pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
-            pDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL),
+            m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+            m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+            m_GBuffer.pDepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL),
             pDstRenderTarget //
         };
 
@@ -592,15 +620,15 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     if (!m_pLightVolumeSRB)
     {
         m_pLightVolumePSO->CreateShaderResourceBinding(&m_pLightVolumeSRB, true);
-        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     if (!m_pAmbientLightSRB)
     {
         m_pAmbientLightPSO->CreateShaderResourceBinding(&m_pAmbientLightSRB, true);
-        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     return pFramebuffer;
