@@ -19,16 +19,24 @@
 #    define TextureSample(Texture, Sampler, f2Coord, fLevel) Texture.sample(Sampler, f2Coord, level(fLevel))
 #    define TextureLoad(Texture, u2Coord)                    Texture.read(u2Coord)
 #    define TextureStore(Texture, u2Coord, f4Value)          Texture.write(f4Value, u2Coord)
-#    define TEXTURE_ARRAY(Name, Size)                        const array<texture2d<float>, Size> Name
-#    define SAMPLER_ARRAY(Name, Size)                        const array<sampler, Size> Name
-#    define BUFFER(Name, Type)                               const device Type* Name
+
+#    define TEXTURE(Name)                const texture2d<float>              Name
+#    define TEXTURE_ARRAY(Name, Size)    const array<texture2d<float>, Size> Name
+#    define WTEXTURE(Name)               texture2d<float, access::write>     Name
+#    define SAMPLER_ARRAY(Name, Size)    const array<sampler, Size>          Name
+#    define BUFFER(Name, Type)           const device Type*                  Name
+#    define CONSTANT_BUFFER(Name, Type)  constant GlobalConstants&           Name
 #else
 #    define TextureSample(Texture, Sampler, f2Coord, fLevel) Texture.SampleLevel(Sampler, f2Coord, fLevel)
 #    define TextureLoad(Texture, u2Coord)                    Texture.Load(int3(u2Coord, 0))
 #    define TextureStore(Texture, u2Coord, f4Value)          Texture[u2Coord] = f4Value
-#    define TEXTURE_ARRAY(Name, Size)                        Texture2D<float4> Name[Size]
-#    define SAMPLER_ARRAY(Name, Size)                        SamplerState Name[Size]
-#    define BUFFER(Name, Type)                               StructuredBuffer<Type> Name
+
+#    define TEXTURE(Name)                Texture2D<float4>      Name
+#    define TEXTURE_ARRAY(Name, Size)    Texture2D<float4>      Name[Size]
+#    define WTEXTURE(Name)               RWTexture2D<float4>    Name
+#    define SAMPLER_ARRAY(Name, Size)    SamplerState           Name[Size]
+#    define BUFFER(Name, Type)           StructuredBuffer<Type> Name
+#    define CONSTANT_BUFFER(Name, Type)  ConstantBuffer<Type>   Name
 #endif
 
 // Return 0 when occluder is found, and 1 otherwise
@@ -163,39 +171,113 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
     return Result;
 }
 
+void RayTrace(uint2                           DTid,
+              uint2                           Dim,
+              RaytracingAccelerationStructure TLAS,
+              GlobalConstants                 Constants,
+
+              BUFFER(       Objects,      ObjectAttribs  ),
+              BUFFER(       Materials,    MaterialAttribs),
+              BUFFER(       VertexBuffer, Vertex         ),
+              BUFFER(       IndexBuffer,  uint           ),
+              TEXTURE_ARRAY(Textures, NUM_TEXTURES       ),
+              SAMPLER_ARRAY(Samplers, NUM_SAMPLERS       ),
+              WTEXTURE(     RayTracedTex                 ),
+              TEXTURE(      GBuffer_Normal               ),
+              TEXTURE(      GBuffer_Depth                )
+              )
+{
+    if (DTid.x >= Dim.x || DTid.y >= Dim.y)
+        return;
+
+    // Early exit for background objects
+    float  Depth = TextureLoad(GBuffer_Depth, DTid).x;
+    if (Depth == 1.0)
+    {
+        TextureStore(RayTracedTex, DTid, float4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    float3 WPos        = ScreenPosToWorldPos((float2(DTid) + float2(0.5, 0.5)) / float2(Dim), Depth, Constants.ViewProjInv);
+    float3 LightDir    = Constants.LightDir.xyz;
+    float3 ViewRayDir  = WPos.xyz - Constants.CameraPos.xyz;
+    float  DisToCamera = length(ViewRayDir);
+    ViewRayDir        /= DisToCamera;
+    float4 Color       = float4(0.0, 0.0, 0.0, 1.0);
+    float3 WNormal     = normalize(TextureLoad(GBuffer_Normal, DTid).xyz);
+    float  NdotL       = max(0.0, dot(LightDir, WNormal));
+
+    // Cast shadow
+    if (NdotL > 0.0)
+    {
+        NdotL *= CastShadow(WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera,
+                            LightDir,
+                            Constants.MaxRayLength,
+                            TLAS);
+    }
+
+    // Reflection
+    {
+        ReflectionInputAttribs Attribs;
+        Attribs.Origin                 = WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera;
+        Attribs.ReflectionRayDir       = reflect(ViewRayDir, WNormal);
+        Attribs.MaxReflectionRayLength = Constants.MaxRayLength;
+        Attribs.MaxShadowRayLength     = Constants.MaxRayLength;
+        Attribs.CameraPos              = Constants.CameraPos.xyz;
+        Attribs.LightDir               = LightDir;
+
+        ReflectionResult Refl = Reflection(Textures,
+                                           Samplers,
+                                           VertexBuffer,
+                                           IndexBuffer,
+                                           Objects,
+                                           Materials,
+                                           TLAS,
+                                           Attribs);
+
+        if (Refl.Found)
+            Color = Refl.BaseColor * max(Constants.AmbientLight, Refl.NdotL);
+        else
+            Color = GetSkyColor(Attribs.ReflectionRayDir, Constants.LightDir.xyz);
+    }
+
+    Color.a = max(Constants.AmbientLight, NdotL);
+
+    TextureStore(RayTracedTex, DTid, Color);
+}
 
 #ifdef METAL
 kernel
-void CSMain(uint2                                       DTid              [[thread_position_in_grid]],
+void CSMain(uint2                                       DTid                                [[thread_position_in_grid]],
             // m_pRayTracingSceneResourcesSign
-            instance_acceleration_structure             g_TLAS            [[buffer(0)]],
-            constant GlobalConstants&                   g_Constants       [[buffer(1)]],
-            const device ObjectAttribs *                g_ObjectAttribs   [[buffer(2)]],
-            const device MaterialAttribs *              g_MaterialAttribs [[buffer(3)]],
-            const device Vertex *                       g_VertexBuffer    [[buffer(4)]],
-            const device uint *                         g_IndexBuffer     [[buffer(5)]],
-            const array<texture2d<float>, NUM_TEXTURES> g_Textures        [[texture(0)]],
-            const array<sampler, NUM_SAMPLERS>          g_Samplers        [[sampler(0)]],
+            RaytracingAccelerationStructure             g_TLAS                              [[buffer(0)]],
+            CONSTANT_BUFFER(                            g_Constants, GlobalConstants)       [[buffer(1)]],
+            BUFFER(                                     g_ObjectAttribs, ObjectAttribs)     [[buffer(2)]],
+            BUFFER(                                     g_MaterialAttribs, MaterialAttribs) [[buffer(3)]],
+            BUFFER(                                     g_VertexBuffer, Vertex)             [[buffer(4)]],
+            BUFFER(                                     g_IndexBuffer, uint)                [[buffer(5)]],
+            TEXTURE_ARRAY(                              g_Textures, NUM_TEXTURES)           [[texture(0)]],
+            SAMPLER_ARRAY(                              g_Samplers, NUM_SAMPLERS)           [[sampler(0)]],
             // m_pRayTracingScreenResourcesSign
-            texture2d<float, access::write>             g_RayTracedTex    [[texture(5)]],
-            texture2d<float>                            g_GBuffer_Normal  [[texture(6)]],
-            texture2d<float>                            g_GBuffer_Depth   [[texture(7)]]
+            WTEXTURE(                                   g_RayTracedTex)                     [[texture(5)]],
+            TEXTURE(                                    g_GBuffer_Normal)                   [[texture(6)]],
+            TEXTURE(                                    g_GBuffer_Depth)                    [[texture(7)]]
             )
 {
     uint2 Dim = uint2(g_RayTracedTex.get_width(), g_RayTracedTex.get_height());
 #else
 
-RaytracingAccelerationStructure   g_TLAS;
-Texture2D<float4>                 g_Textures[NUM_TEXTURES];
-SamplerState                      g_Samplers[NUM_SAMPLERS];
-RWTexture2D<float4>               g_RayTracedTex;
-Texture2D<float>                  g_GBuffer_Depth;
-Texture2D<float4>                 g_GBuffer_Normal;
-ConstantBuffer<GlobalConstants>   g_Constants;
-StructuredBuffer<MaterialAttribs> g_MaterialAttribs;
-StructuredBuffer<ObjectAttribs>   g_ObjectAttribs;
-StructuredBuffer<Vertex>          g_VertexBuffer;
-StructuredBuffer<uint>            g_IndexBuffer;
+RaytracingAccelerationStructure g_TLAS;
+TEXTURE_ARRAY(                  g_Textures, NUM_TEXTURES);
+SAMPLER_ARRAY(                  g_Samplers, NUM_SAMPLERS);
+WTEXTURE(                       g_RayTracedTex);
+TEXTURE(                        g_GBuffer_Depth);
+TEXTURE(                        g_GBuffer_Normal);
+CONSTANT_BUFFER(                g_Constants, GlobalConstants);
+BUFFER(                         g_MaterialAttribs, MaterialAttribs);
+BUFFER(                         g_ObjectAttribs, ObjectAttribs);
+BUFFER(                         g_VertexBuffer, Vertex);
+BUFFER(                         g_IndexBuffer, uint);
 
 [numthreads(8, 8, 1)]
 void CSMain(uint2 DTid : SV_DispatchThreadID)
@@ -204,63 +286,17 @@ void CSMain(uint2 DTid : SV_DispatchThreadID)
     g_RayTracedTex.GetDimensions(Dim.x, Dim.y);
 
 #endif // METAL
-
-
-    if (DTid.x >= Dim.x || DTid.y >= Dim.y)
-        return;
-
-    // Early exit for background objects
-    float  Depth = TextureLoad(g_GBuffer_Depth, DTid).x;
-    if (Depth == 1.0)
-    {
-        TextureStore(g_RayTracedTex, DTid, float4(0.0, 0.0, 0.0, 1.0));
-        return;
-    }
-
-    float3 WPos        = ScreenPosToWorldPos((float2(DTid) + float2(0.5, 0.5)) / float2(Dim), Depth, g_Constants.ViewProjInv);
-    float3 LightDir    = g_Constants.LightDir.xyz;
-    float3 ViewRayDir  = WPos.xyz - g_Constants.CameraPos.xyz;
-    float  DisToCamera = length(ViewRayDir);
-    ViewRayDir        /= DisToCamera;
-    float4 Color       = float4(0.0, 0.0, 0.0, 1.0);
-    float3 WNormal     = normalize(TextureLoad(g_GBuffer_Normal, DTid).xyz);
-    float  NdotL       = max(0.0, dot(LightDir, WNormal));
-
-    // Cast shadow
-    if (NdotL > 0.0)
-    {
-        NdotL *= CastShadow(WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera,
-                            LightDir,
-                            g_Constants.MaxRayLength,
-                            g_TLAS);
-    }
-
-    // Reflection
-    {
-        ReflectionInputAttribs Attribs;
-        Attribs.Origin                 = WPos.xyz + WNormal.xyz * SMALL_OFFSET * DisToCamera;
-        Attribs.ReflectionRayDir       = reflect(ViewRayDir, WNormal);
-        Attribs.MaxReflectionRayLength = g_Constants.MaxRayLength;
-        Attribs.MaxShadowRayLength     = g_Constants.MaxRayLength;
-        Attribs.CameraPos              = g_Constants.CameraPos.xyz;
-        Attribs.LightDir               = LightDir;
-
-        ReflectionResult Refl = Reflection(g_Textures,
-                                           g_Samplers,
-                                           g_VertexBuffer,
-                                           g_IndexBuffer,
-                                           g_ObjectAttribs,
-                                           g_MaterialAttribs,
-                                           g_TLAS,
-                                           Attribs);
-
-        if (Refl.Found)
-            Color = Refl.BaseColor * max(g_Constants.AmbientLight, Refl.NdotL);
-        else
-            Color = GetSkyColor(Attribs.ReflectionRayDir, g_Constants.LightDir.xyz);
-    }
-
-    Color.a = max(g_Constants.AmbientLight, NdotL);
-
-    TextureStore(g_RayTracedTex, DTid, Color);
+    RayTrace(DTid,
+             Dim,
+             g_TLAS,
+             g_Constants,
+             g_ObjectAttribs,
+             g_MaterialAttribs,
+             g_VertexBuffer,
+             g_IndexBuffer,
+             g_Textures,   
+             g_Samplers,
+             g_RayTracedTex,
+             g_GBuffer_Normal,
+             g_GBuffer_Depth);
 }
