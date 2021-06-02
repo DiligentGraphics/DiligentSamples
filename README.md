@@ -46,6 +46,7 @@ To build and run the applications in the module, please follow the [instructions
   - [19 - Render Passes](https://github.com/DiligentGraphics/DiligentSamples#tutorial-19---render-passes)
   - [20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-20---mesh-shader)
   - [21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-21---ray-tracing)
+  - [22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples#tutorial-22---hybird-rendering)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
@@ -224,6 +225,13 @@ view frustum culling and object LOD calculation on the GPU.
 This tutorial demonstrates the basics of using ray tracing API in Diligent Engine.
 
 ![](Tutorials/Tutorial21_RayTracing/Animation_Large.gif)
+
+
+## [Tutorial 22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial22_HybridRendering)
+
+This tutorial demonstrates how to implement a simple hybrid renderer that combines rasterization with ray tracing.
+
+![](Tutorials/Tutorial22_HybridRendering/Animation_Large.gif)
 
 
 # Samples
