@@ -2,7 +2,7 @@
 
 This tutorial demonstrates how to implement a simple hybrid renderer that combines rasterization with ray tracing.
 
-
+![](Animation_Large.gif)
 
 Ray tacing is very useful for creating high-quality effects that are difficult to do with rasterization (e.g. reflections),
 but its performance is generally much lower. This tutorial demonstrates a simple hybrid rendering approach,
