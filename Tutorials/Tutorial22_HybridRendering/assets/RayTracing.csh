@@ -199,8 +199,8 @@ BEGIN_SHADER_DECLARATION(CSMain)
 
     // m_pRayTracingScreenResourcesSign
     WTEXTURE(                       g_RayTracedTex)                     MTL_BINDING(texture, 5)  END_ARG
-    TEXTURE(                        g_GBuffer_Depth)                    MTL_BINDING(texture, 6)  END_ARG
-    TEXTURE(                        g_GBuffer_Normal)                   MTL_BINDING(texture, 7)  END_ARG
+    TEXTURE(                        g_GBuffer_Normal)                   MTL_BINDING(texture, 6)  END_ARG
+    TEXTURE(                        g_GBuffer_Depth)                    MTL_BINDING(texture, 7)  END_ARG
    
 END_SHADER_DECLARATION(CSMain, 8, 8)
 {
