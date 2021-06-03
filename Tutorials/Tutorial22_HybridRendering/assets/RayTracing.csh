@@ -41,7 +41,7 @@
 #    define CONSTANT_BUFFER(Name, Type)  ConstantBuffer<Type>   Name
 #endif
 
-// Return 0 when occluder is found, and 1 otherwise
+// Returns 0 when occluder is found, and 1 otherwise
 float CastShadow(float3 Origin, float3 RayDir, float MaxRayLength, RaytracingAccelerationStructure TLAS)
 {
     RayDesc ShadowRay;
@@ -99,7 +99,7 @@ ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
     ReflRay.TMin      = 0.0;
     ReflRay.TMax      = In.MaxReflectionRayLength;
         
-    // Rasterization PSO uses back face culling, so we use the same culling for ray traced reflections.
+    // Rasterization PSO uses back-face culling, so we use the same culling for ray traced reflections.
     RayQuery<RAY_FLAG_CULL_BACK_FACING_TRIANGLES> ReflQuery;
 
     ReflQuery.TraceRayInline(TLAS,           // Acceleration Structure

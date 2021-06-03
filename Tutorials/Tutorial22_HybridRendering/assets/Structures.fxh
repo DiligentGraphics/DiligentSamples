@@ -44,10 +44,10 @@ struct ObjectAttribs
     float4x3 NormalMat;   // object space normal to world space, float4x3 used because float3x3 has different size in D3D12 (36 bytes) and Vulkan (48 bytes)
 #endif
 
-    uint     MaterialId;  // index in g_MaterialAttribs
-    uint     FirstIndex;  // first index in index buffer
-    uint     FirstVertex; // first vertex in vertex buffer
-    uint     MeshId;      // Unused. Can be used to select index and vertex buffer in the buffer array.
+    uint MaterialId;  // index in g_MaterialAttribs
+    uint FirstIndex;  // first index in index buffer
+    uint FirstVertex; // first vertex in vertex buffer
+    uint MeshId;      // Unused. Can be used to select index and vertex buffer in the buffer array.
 };
 
 struct MaterialAttribs

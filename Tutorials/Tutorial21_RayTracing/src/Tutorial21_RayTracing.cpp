@@ -854,11 +854,11 @@ void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime)
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
 
-    // Do not go underground,
-    float3 oldPos = m_Camera.GetPos();
-    if (oldPos.y > 5.7f)
+    // Do not allow going underground
+    auto oldPos = m_Camera.GetPos();
+    if (oldPos.y < -5.7f)
     {
-        oldPos.y = 5.7f;
+        oldPos.y = -5.7f;
         m_Camera.SetPos(oldPos);
         m_Camera.Update(m_InputController, 0.f);
     }

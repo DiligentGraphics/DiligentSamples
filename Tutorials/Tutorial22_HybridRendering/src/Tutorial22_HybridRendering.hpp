@@ -32,6 +32,7 @@
 
 namespace Diligent
 {
+
 namespace
 {
 
@@ -60,11 +61,18 @@ struct float4x3
 
     template <typename MatType>
     float4x3(const MatType& Other) :
-        m00{Other.m00}, m01{Other.m01}, m02{Other.m02}, m10{Other.m10}, m11{Other.m11}, m12{Other.m12}, m20{Other.m20}, m21{Other.m21}, m22{Other.m22}
+        // clang-format off
+        m00{Other.m00}, m01{Other.m01}, m02{Other.m02}, 
+        m10{Other.m10}, m11{Other.m11}, m12{Other.m12}, 
+        m20{Other.m20}, m21{Other.m21}, m22{Other.m22}
+    // clang-format on
     {}
 };
 
+namespace HLSL
+{
 #include "../assets/Structures.fxh"
+}
 
 } // namespace
 
@@ -85,7 +93,7 @@ public:
 private:
     void UpdateUI();
     void CreateScene();
-    void CreateSceneMaterials(uint2& CubeMaterialRange, Uint32& GroundMaterial, std::vector<MaterialAttribs>& Materials);
+    void CreateSceneMaterials(uint2& CubeMaterialRange, Uint32& GroundMaterial, std::vector<HLSL::MaterialAttribs>& Materials);
     void CreateSceneObjects(uint2 CubeMaterialRange, Uint32 GroundMaterial);
     void CreateSceneAccelStructs();
     void UpdateTLAS();
@@ -113,7 +121,7 @@ private:
     RefCntAutoPtr<IPipelineState>         m_PostProcessPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_PostProcessSRB;
 
-    // Simple implementation of mesh class for hybrid rendering.
+    // Simple implementation of a mesh
     struct Mesh
     {
         String Name;
@@ -129,7 +137,7 @@ private:
     };
     static Mesh CreateTexturedPlaneMesh(IRenderDevice* pDevice, float2 UVScale);
 
-    // Objects with the same mesh are grouped for instanced draw call.
+    // Objects with the same mesh are grouped for instanced draw call
     struct InstancedObjects
     {
         Uint32 MeshInd             = 0; // Index in m_Scene.Meshes
@@ -144,14 +152,14 @@ private:
 
     struct Scene
     {
-        std::vector<InstancedObjects> ObjectInstances;
-        std::vector<DynamicObject>    DynamicObjects;
-        std::vector<ObjectAttribs>    Objects; // CPU-visible array of ObjectAttribs
+        std::vector<InstancedObjects>    ObjectInstances;
+        std::vector<DynamicObject>       DynamicObjects;
+        std::vector<HLSL::ObjectAttribs> Objects; // CPU-visible array of HLSL::ObjectAttribs
 
         // Resources used by shaders
         std::vector<Mesh>                    Meshes;
         RefCntAutoPtr<IBuffer>               MaterialAttribsBuffer;
-        RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer; // GPU-visible array of ObjectAttribs
+        RefCntAutoPtr<IBuffer>               ObjectAttribsBuffer; // GPU-visible array of HLSL::ObjectAttribs
         std::vector<RefCntAutoPtr<ITexture>> Textures;
         std::vector<RefCntAutoPtr<ISampler>> Samplers;
         RefCntAutoPtr<IBuffer>               ObjectConstants;
