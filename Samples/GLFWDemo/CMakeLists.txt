@@ -35,18 +35,7 @@ if(METAL_SUPPORTED)
     target_include_directories(GLFWDemo PRIVATE "../../../DiligentCorePro")
 endif()
 
-target_compile_definitions(GLFWDemo 
-PRIVATE 
-    UNICODE
-    D3D11_SUPPORTED=$<BOOL:${D3D11_SUPPORTED}>
-    D3D12_SUPPORTED=$<BOOL:${D3D12_SUPPORTED}>
-    GL_SUPPORTED=$<BOOL:${GL_SUPPORTED}>
-    VULKAN_SUPPORTED=$<BOOL:${VULKAN_SUPPORTED}>
-    METAL_SUPPORTED=$<BOOL:${METAL_SUPPORTED}>
-    PLATFORM_WIN32=$<BOOL:${PLATFORM_WIN32}>
-    PLATFORM_LINUX=$<BOOL:${PLATFORM_LINUX}>
-    PLATFORM_MACOS=$<BOOL:${PLATFORM_MACOS}>
-)
+target_compile_definitions(GLFWDemo PRIVATE UNICODE)
 
 set_target_properties(GLFWDemo PROPERTIES
     FOLDER DiligentSamples/Samples
@@ -83,12 +72,7 @@ if(MSVC)
     set_target_properties(GLFWDemo PROPERTIES 
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
     )
-    set(DEBUG_MACROS DILIGENT_DEVELOPMENT DILIGENT_DEBUG)
-else()
-    set(DEBUG_MACROS _DEBUG DEBUG DILIGENT_DEVELOPMENT DILIGENT_DEBUG)
 endif()
-
-target_compile_definitions(GLFWDemo PRIVATE "$<$<CONFIG:DEBUG>:${DEBUG_MACROS}>")
 
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     # Copy assets to target folder

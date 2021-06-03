@@ -79,7 +79,7 @@ void UnityGraphicsD3D12Impl::CreateDeviceAndCommandQueue()
         if(FAILED(hr)) LOG_ERROR_AND_THROW("Failed to create warp device");
     }
 
-#if _DEBUG
+#ifdef DILIGENT_DEBUG
     {
 	    CComPtr<ID3D12InfoQueue> pInfoQueue;
         hr = m_D3D12Device->QueryInterface(__uuidof(pInfoQueue), reinterpret_cast<void**>(static_cast<ID3D12InfoQueue**>(&pInfoQueue)));

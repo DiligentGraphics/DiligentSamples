@@ -9,14 +9,7 @@ set(SOURCE
 add_executable(Tutorial00_HelloWin32 WIN32 ${SOURCE})
 target_include_directories(Tutorial00_HelloWin32 PRIVATE "../../../DiligentCore")
 
-target_compile_definitions(Tutorial00_HelloWin32 
-PRIVATE 
-    UNICODE
-    D3D11_SUPPORTED=$<BOOL:${D3D11_SUPPORTED}>
-    D3D12_SUPPORTED=$<BOOL:${D3D12_SUPPORTED}>
-    GL_SUPPORTED=$<BOOL:${GL_SUPPORTED}>
-    VULKAN_SUPPORTED=$<BOOL:${VULKAN_SUPPORTED}>
-)
+target_compile_definitions(Tutorial00_HelloWin32 PRIVATE UNICODE)
 
 set_target_properties(Tutorial00_HelloWin32 PROPERTIES
     FOLDER DiligentSamples/Tutorials
