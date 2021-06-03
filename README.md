@@ -55,6 +55,7 @@ To build and run the applications in the module, please follow the [instructions
   - [Dear ImGui Demo](https://github.com/DiligentGraphics/DiligentSamples#dear-imgui-demo)
   - [Nuklear Demo](https://github.com/DiligentGraphics/DiligentSamples#nuklear-demo)
   - [Hello AR](https://github.com/DiligentGraphics/DiligentSamples#hello-ar)
+  - [Asteroids](https://github.com/DiligentGraphics/DiligentSamples#asteroids)
 - [Build and Run Instructions](https://github.com/DiligentGraphics/DiligentSamples#build-and-run-instructions)
 - [License](https://github.com/DiligentGraphics/DiligentSamples#license)
 - [Contributing](https://github.com/DiligentGraphics/DiligentSamples#contributing)
@@ -290,6 +291,17 @@ This sample demonstrates the integration of the engine with [nuklear](https://gi
 ![](Android/HelloAR/Screenshot.png)
 
 This sample demonstrates how to use Diligent Engine in a basic Android AR application.
+
+
+## [Asteroids](Samples/Asteroids)
+
+![](Samples/Asteroids/Screenshot.png)
+
+This sample is designed to be a performance benchmark and is based on
+[this demo](https://software.intel.com/en-us/articles/asteroids-and-directx-12-performance-and-power-savings)
+developed by Intel. It renders 50,000 unique textured asteroids. Every asteroid is a combination of one of 1000
+unique meshes and one of 10 unique textures. The sample uses original D3D11 and D3D12 native implementations,
+and adds implementations using Diligent Engine API to allow comparing performance of different rendering modes.
 
 
 # Build and Run Instructions

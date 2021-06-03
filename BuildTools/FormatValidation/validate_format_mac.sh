@@ -3,4 +3,5 @@ python ../../../DiligentCore/BuildTools/FormatValidation/clang-format-validate.p
 --clang-format-executable ../../../DiligentCore/BuildTools/FormatValidation/clang-format_mac_10.0.0 \
 -r ../../SampleBase ../../Tutorials ../../Samples \
 --exclude ../../SampleBase/src/UWP \
---exclude ../../SampleBase/src/Win32/resources
+--exclude ../../SampleBase/src/Win32/resources \
+--exclude ../../Samples/Asteroids
