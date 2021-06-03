@@ -56,6 +56,7 @@ To build and run the applications in the module, please follow the [instructions
   - [Nuklear Demo](https://github.com/DiligentGraphics/DiligentSamples#nuklear-demo)
   - [Hello AR](https://github.com/DiligentGraphics/DiligentSamples#hello-ar)
   - [Asteroids](https://github.com/DiligentGraphics/DiligentSamples#asteroids)
+  - [Unity Plugin](https://github.com/DiligentGraphics/DiligentSamples#unity-plugin)
 - [Build and Run Instructions](https://github.com/DiligentGraphics/DiligentSamples#build-and-run-instructions)
 - [License](https://github.com/DiligentGraphics/DiligentSamples#license)
 - [Contributing](https://github.com/DiligentGraphics/DiligentSamples#contributing)
@@ -303,6 +304,11 @@ developed by Intel. It renders 50,000 unique textured asteroids. Every asteroid 
 unique meshes and one of 10 unique textures. The sample uses original D3D11 and D3D12 native implementations,
 and adds implementations using Diligent Engine API to allow comparing performance of different rendering modes.
 
+## [Unity Plugin](UnityPlugin)
+
+![](UnityPlugin/GhostCubePlugin/Screenshot.png)
+
+This project demonstrates integration of Diligent Engine with Unity.
 
 # Build and Run Instructions
 
