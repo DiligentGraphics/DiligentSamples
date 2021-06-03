@@ -30,10 +30,10 @@ struct ObjectAttribs
     float4x4 ModelMat;
     float4x3 NormalMat;
 
-    uint     MaterialId;
-    uint     FirstIndex;
-    uint     FirstVertex;
-    uint     MeshId; 
+    uint MaterialId;
+    uint FirstIndex;
+    uint FirstVertex;
+    uint MeshId; 
 };
 ```
 
@@ -54,7 +54,8 @@ struct Mesh
 };
 ```
 
-BLAS and TLAS construction is done similar to previous tutorial.
+BLAS and TLAS construction is performed
+[similar to previous tutorial](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial21_RayTracing#acceleration-structures).
 
 To decrease the number of draw calls, objects with the same mesh are drawn using instancing.
 
@@ -86,7 +87,7 @@ void main(in  PSInput  PSIn,
 
 ## Metal ray tracing
 
-All shaders are written in HLSL that can be used by DirectX12 and Vulkan backends directly. For compatibility with Metal and MSL, we 
+All shaders are written in HLSL and can be used by DirectX12 and Vulkan backends directly. For compatibility with Metal and MSL, we 
 use [a wrapper](assets/RayQueryMtl.fxh) on top of Metal `raytracing::intersector<...>` that emulates the `RayQuery` functionality.
 The wrapper supports a minimal set of functions that are needed in this tutorial. In particular, there is no support for non-opaque objects
 that require iterating through multiple intersections. Note that instead of using a builtin `RayQuery::CommittedObjectToWorld4x3()`, as in the previous

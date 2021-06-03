@@ -1,4 +1,5 @@
 
+// Simple procedural sky and sun
 float4 GetSkyColor(float3 Dir, float3 LightDir)
 {
 	Dir.y += 0.075;

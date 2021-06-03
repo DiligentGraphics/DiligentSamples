@@ -46,7 +46,7 @@ To build and run the applications in the module, please follow the [instructions
   - [19 - Render Passes](https://github.com/DiligentGraphics/DiligentSamples#tutorial-19---render-passes)
   - [20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-20---mesh-shader)
   - [21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-21---ray-tracing)
-  - [22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples#tutorial-22---hybird-rendering)
+  - [22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples#tutorial-22---hybrid-rendering)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
