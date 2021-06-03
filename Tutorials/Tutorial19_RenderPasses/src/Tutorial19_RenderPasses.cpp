@@ -516,7 +516,15 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     const auto& RPDesc = m_pRenderPass->GetDesc();
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
+#if PLATFORM_MACOS || PLATFORM_IOS
+    // In Metal and Vulkan on top of Metal, there are no native subpasses, and
+    // attachments can't be preserved between subpasses without saving them to global memory.
+    // Thus they can't be memoryless in this usage scenario.
+    constexpr auto MemorylessTexBindFlags = BIND_NONE;
+#else
     const auto MemorylessTexBindFlags = m_pDevice->GetAdapterInfo().Memory.MemorylessTextureBindFlags;
+#endif
+
     // Create window-size offscreen render target
     TextureDesc TexDesc;
     TexDesc.Name      = "Color G-buffer";
@@ -573,20 +581,10 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     TexDesc.Name      = "Depth buffer";
     TexDesc.Format    = RPDesc.pAttachments[2].Format;
     TexDesc.BindFlags = BIND_DEPTH_STENCIL;
-    if (m_pDevice->GetDeviceInfo().IsMetalDevice())
-    {
-        // In Metal, there are no native subpasses, and the
-        // depth buffer needs to be save to global memory between
-        // subpasses. Thus it can't be memoryless.
-        TexDesc.MiscFlags = MISC_TEXTURE_FLAG_NONE;
-    }
-    else
-    {
-        TexDesc.MiscFlags =
-            ((MemorylessTexBindFlags & TexDesc.BindFlags) == TexDesc.BindFlags) ?
-            MISC_TEXTURE_FLAG_MEMORYLESS :
-            MISC_TEXTURE_FLAG_NONE;
-    }
+    TexDesc.MiscFlags =
+        ((MemorylessTexBindFlags & TexDesc.BindFlags) == TexDesc.BindFlags) ?
+        MISC_TEXTURE_FLAG_MEMORYLESS :
+        MISC_TEXTURE_FLAG_NONE;
 
     TexDesc.ClearValue.Format               = TexDesc.Format;
     TexDesc.ClearValue.DepthStencil.Depth   = 1.f;
