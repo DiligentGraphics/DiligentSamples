@@ -71,7 +71,7 @@ bool UnityAppBase::LoadPlugin()
     LibName += "_32";
 #endif
 
-#ifdef _DEBUG
+#ifdef DILIGENT_DEBUG
     LibName += "d";
 #else
     LibName += "r";
