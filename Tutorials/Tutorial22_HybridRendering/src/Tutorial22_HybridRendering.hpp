@@ -33,9 +33,6 @@
 namespace Diligent
 {
 
-namespace
-{
-
 // We only need a 3x3 matrix, but in Vulkan and Metal, the rows of a float3x3 matrix are aligned to 16 bytes,
 // which is effectively a float4x3 matrix.
 // In DirectX, the rows of a float3x3 matrix are not aligned.
@@ -73,9 +70,6 @@ namespace HLSL
 {
 #include "../assets/Structures.fxh"
 }
-
-} // namespace
-
 
 class Tutorial22_HybridRendering final : public SampleBase
 {
