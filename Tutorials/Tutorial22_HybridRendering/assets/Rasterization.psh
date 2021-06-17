@@ -34,7 +34,7 @@ struct PSOutput
 void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
-    MaterialAttribs Mtr = g_MaterialAttribs[NonUniformResourceIndex(PSIn.MatId)];
+    MaterialAttribs Mtr = g_MaterialAttribs[PSIn.MatId];
 
     PSOut.Color =
         Mtr.BaseColorMask * g_Textures[NonUniformResourceIndex(Mtr.BaseColorTexInd)].

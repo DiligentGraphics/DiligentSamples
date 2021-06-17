@@ -28,9 +28,9 @@ void main(inout PrimaryRayPayload payload, in BuiltInTriangleIntersectionAttribu
     normal        = normalize(mul((float3x3) ObjectToWorld3x4(), normal));
 
     // Sample texturing. Ray tracing shaders don't support LOD calculation, so we must specify LOD and apply filtering.
-    payload.Color = g_CubeTextures[InstanceID()].SampleLevel(g_SamLinearWrap, uv, 0).rgb;
+    payload.Color = g_CubeTextures[NonUniformResourceIndex(InstanceID())].SampleLevel(g_SamLinearWrap, uv, 0).rgb;
     payload.Depth = RayTCurrent();
-    
+
     // Apply lighting.
     float3 rayOrigin = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
     LightingPass(payload.Color, rayOrigin, normal, payload.Recursion + 1);
