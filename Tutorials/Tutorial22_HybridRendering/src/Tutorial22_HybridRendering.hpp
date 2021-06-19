@@ -191,7 +191,7 @@ private:
 
     // Vulkan and DirectX require DXC shader compiler.
     // Metal uses the builtin glslang compiler.
-#if PLATFORM_MACOS || PLATFORM_IOS
+#if PLATFORM_MACOS || PLATFORM_IOS || PLATFORM_TVOS
     const SHADER_COMPILER m_ShaderCompiler = SHADER_COMPILER_DEFAULT;
 #else
     const SHADER_COMPILER m_ShaderCompiler = SHADER_COMPILER_DXC;

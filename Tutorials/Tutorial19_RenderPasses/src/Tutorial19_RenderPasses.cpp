@@ -516,7 +516,7 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     const auto& RPDesc = m_pRenderPass->GetDesc();
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
-#if PLATFORM_MACOS || PLATFORM_IOS
+#if PLATFORM_MACOS || PLATFORM_IOS || PLATFORM_TVOS
     // In Metal and Vulkan on top of Metal, there are no native subpasses, and
     // attachments can't be preserved between subpasses without saving them to global memory.
     // Thus they can't be memoryless in this usage scenario.

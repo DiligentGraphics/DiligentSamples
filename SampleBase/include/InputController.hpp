@@ -164,6 +164,10 @@ protected:
 
             INPUT_KEY_STATE_FLAGS GetKeyState(InputKeys Key)const{return INPUT_KEY_STATE_FLAG_KEY_NONE;}
 
+            bool IsKeyDown(InputKeys Key)const{return false;}
+
+            void ClearState(){}
+
         private:
             MouseState m_MouseState;
         };

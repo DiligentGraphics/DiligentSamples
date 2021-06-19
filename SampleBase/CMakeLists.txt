@@ -104,6 +104,17 @@ elseif(PLATFORM_IOS)
         include/SampleApp.hpp
     )
 
+elseif(PLATFORM_TVOS)
+    set(SOURCE
+        src/TVOS/SampleAppTVOS.cpp
+        src/SampleApp.cpp
+    )
+    set(INCLUDE
+        include/SampleApp.hpp
+    )
+
+else()
+    message(FATAL_ERROR "Unknown platform")
 endif()
 
 list(APPEND SOURCE
