@@ -38,14 +38,16 @@ namespace Diligent
 class SampleAppAndroid final : public SampleApp
 {
 public:
+    std::atomic_bool paused;
     SampleAppAndroid()
     {
+        paused = true;
         m_DeviceType = RENDER_DEVICE_TYPE_GLES;
     }
 
     virtual void DrawFrame() override final
     {
-        if (!m_pSwapChain)
+        if (paused || !m_pSwapChain)
             return;
 
         // It is amazingly frustrating, but there is no robust way to detect orientation change:
@@ -117,6 +119,7 @@ public:
         }
 
         InitializeSample();
+        paused = false;
     }
 
     virtual int Resume(ANativeWindow* window) override final
@@ -137,12 +140,16 @@ public:
                                                         m_SwapChainInitDesc, AndroidWindow,
                                                         &m_pSwapChain);
                 m_TheSample->ResetSwapChain(m_pSwapChain);
-                return m_pSwapChain ? EGL_SUCCESS : EGL_NOT_INITIALIZED;
+                paused = m_pSwapChain;
+                return paused ? EGL_SUCCESS : EGL_NOT_INITIALIZED;
             }
 #endif
 
-            case RENDER_DEVICE_TYPE_GLES:
-                return m_RenderDeviceGLES->Resume(window);
+            case RENDER_DEVICE_TYPE_GLES: {
+                auto ret = m_RenderDeviceGLES->Resume(window);
+                paused = ret == EGL_SUCCESS ? true : false;
+                return ret;
+            }
 
             default:
                 UNEXPECTED("Unexpected device type");
@@ -153,6 +160,7 @@ public:
 
     virtual void TermDisplay() override final
     {
+        paused = true;
         switch (m_DeviceType)
         {
 #if VULKAN_SUPPORTED
