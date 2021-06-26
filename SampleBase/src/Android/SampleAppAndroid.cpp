@@ -140,14 +140,14 @@ public:
                                                         m_SwapChainInitDesc, AndroidWindow,
                                                         &m_pSwapChain);
                 m_TheSample->ResetSwapChain(m_pSwapChain);
-                paused = m_pSwapChain;
-                return paused ? EGL_SUCCESS : EGL_NOT_INITIALIZED;
+                paused = m_pSwapChain ? false : true;
+                return (!paused) ? EGL_SUCCESS : EGL_NOT_INITIALIZED;
             }
 #endif
 
             case RENDER_DEVICE_TYPE_GLES: {
                 auto ret = m_RenderDeviceGLES->Resume(window);
-                paused = ret == EGL_SUCCESS ? true : false;
+                paused = ret == EGL_SUCCESS ? false : true;
                 return ret;
             }
 
