@@ -58,8 +58,6 @@ private:
     void DownSample();
     void PostProcess();
 
-    void ReloadShaders(); // AZ TODO: remove
-
     void ComputePass();
     void TransferPass();
     void GraphicsPass1();

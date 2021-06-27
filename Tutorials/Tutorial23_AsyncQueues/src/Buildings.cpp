@@ -757,10 +757,6 @@ void Buildings::CreatePSO(const ScenepSOCreateAttribs& Attr)
 
     m_DrawOpaqueSRB->GetVariableByName(SHADER_TYPE_VERTEX, "DrawConstantsCB")->Set(m_DrawConstants);
     m_DrawOpaqueSRB->GetVariableByName(SHADER_TYPE_PIXEL, "DrawConstantsCB")->Set(m_DrawConstants);
-
-    // AZ TODO: remove
-    if (m_OpaqueTexAtlas)
-        m_DrawOpaqueSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OpaqueTexAtlas")->Set(m_OpaqueTexAtlas->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
 void Buildings::DrawOpaque(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
@@ -1219,12 +1215,6 @@ void Buildings::GenerateOpaqueTexture()
             SrcOffset = DstOffset;
         }
     }
-}
-
-void Buildings::ReloadShaders()
-{
-    m_DrawOpaquePSO = nullptr;
-    m_DrawOpaqueSRB = nullptr;
 }
 
 } // namespace Diligent

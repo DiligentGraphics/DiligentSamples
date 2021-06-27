@@ -54,8 +54,6 @@ public:
 
     void UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRateMb, Uint32& ActualTransferRateMb);
 
-    void ReloadShaders(); // AZ TODO: remove
-
     Uint32 GetOpaqueTexAtlasDataSize() const
     {
         const auto& TexDesc = m_OpaqueTexAtlas->GetDesc();

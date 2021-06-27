@@ -405,17 +405,4 @@ void Terrain::Recreate(IDeviceContext* pContext)
     m_Device->IdleGPU();
 }
 
-void Terrain::ReloadShaders()
-{
-    m_DrawPSO = nullptr;
-    m_GenPSO  = nullptr;
-    m_GenSRB  = nullptr;
-    m_DrawSRB = nullptr;
-
-    m_VB        = nullptr;
-    m_IB        = nullptr;
-    m_HeightMap = nullptr;
-    m_NormalMap = nullptr;
-}
-
 } // namespace Diligent
