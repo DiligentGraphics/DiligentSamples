@@ -247,13 +247,10 @@ void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
             m_DepthTargetFormat = TEX_FORMAT_D24_UNORM_S8_UINT;
     }
 
-    // On Android we use RGBA8 format to enable delta color compression.
-    // On other platforms we use HDR format if supported.
-#if !PLATFORM_ANDROID
+    // Use HDR format if supported.
     constexpr auto RTFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
     if ((m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RGBA16_FLOAT).BindFlags & RTFlags) == RTFlags)
         m_ColorTargetFormat = TEX_FORMAT_RGBA16_FLOAT;
-#endif
 
 #if PLATFORM_ANDROID
     // Set settings for slow mobile devices
@@ -546,6 +543,9 @@ void Tutorial23_AsyncQueues::GraphicsPass2()
 
 void Tutorial23_AsyncQueues::Render()
 {
+    if (!m_ComputeCtx)
+        return; // Sample is not initialized
+
     m_Profiler.Begin(nullptr, Profiler::FRAME);
 
     ComputePass();
@@ -580,6 +580,9 @@ void Tutorial23_AsyncQueues::WindowResize(Uint32 Width, Uint32 Height)
 {
     if (Width == 0 || Height == 0)
         return;
+
+    if (!m_ComputeCtx)
+        return; // Sample is not initialized
 
     // Scale surface
     Width  = ScaleSurface(Width);
@@ -658,10 +661,6 @@ void Tutorial23_AsyncQueues::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        // AZ TODO: remove
-        if (ImGui::Button("Reload"))
-            ReloadShaders();
-
         if (m_TransferCtx)
         {
             const auto TexSize    = m_Buildings.GetOpaqueTexAtlasDataSize();
@@ -708,59 +707,10 @@ void Tutorial23_AsyncQueues::UpdateUI()
             m_pDevice->IdleGPU();
 
         ImGui::Checkbox("Glow", &m_Glow);
-
-        /*
-            ImGui::ColorEdit3("Fog color", m_FogColor.Data(), ImGuiColorEditFlags_NoAlpha);
-            ImGui::ColorEdit3("Sky color", m_SkyColor.Data(), ImGuiColorEditFlags_NoAlpha);
-
-            if (ImGui::gizmo3D("##LightDirection", m_LightDir))
-            {
-                if (m_LightDir.y > -0.2f)
-                {
-                    m_LightDir.y = -0.2f;
-                    m_LightDir   = normalize(m_LightDir);
-                }
-            }*/
     }
     ImGui::End();
 
     m_Profiler.UpdateUI();
-}
-
-void Tutorial23_AsyncQueues::ReloadShaders()
-{
-    m_PostProcessPSO[0] = nullptr;
-    m_PostProcessPSO[1] = nullptr;
-    m_PostProcessSRB    = nullptr;
-    m_DownSamplePSO     = nullptr;
-    for (auto& SRB : m_DownSampleSRB)
-        SRB.Release();
-
-    m_Buildings.ReloadShaders();
-    m_Terrain.ReloadShaders();
-
-    m_pDevice->IdleGPU();
-
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-
-    ScenepSOCreateAttribs PSOAttribs;
-    PSOAttribs.pShaderSourceFactory = pShaderSourceFactory;
-    PSOAttribs.ColorTargetFormat    = m_ColorTargetFormat;
-    PSOAttribs.DepthTargetFormat    = m_DepthTargetFormat;
-    m_Terrain.CreatePSO(PSOAttribs);
-    m_Buildings.CreatePSO(PSOAttribs);
-
-    CreatePostProcessPSO(pShaderSourceFactory);
-
-    m_Terrain.CreateResources(m_pImmediateContext);
-
-    m_GBuffer          = {};
-    const auto& SCDesc = m_pSwapChain->GetDesc();
-    WindowResize(SCDesc.Width, SCDesc.Height);
-
-    m_pImmediateContext->Flush();
-    m_pDevice->IdleGPU();
 }
 
 } // namespace Diligent

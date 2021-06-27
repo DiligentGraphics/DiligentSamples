@@ -31,7 +31,7 @@ namespace Diligent
 {
 
 static const float GraphWidth  = 400.f;
-static const float GraphHeight = 80.f;
+static const float GraphHeight = 100.f;
 
 
 void Profiler::Initialize(IRenderDevice* pDevice)
@@ -312,7 +312,7 @@ void Profiler::UpdateUI()
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 2.0f);
         ImGui::BeginChild("##PassOverlapping", ImVec2{GraphWidth, GraphHeight}, false, ImGuiWindowFlags_None);
         {
-            const float  BtnH        = GraphHeight / 4.f;
+            const float  BtnH        = GraphHeight / 5.f;
             const ImVec4 Gfx1Color   = {1.0f, 0.f, 0.f, 1.0f};
             const ImVec4 Gfx2Color   = {1.0f, 0.5f, 0.f, 1.0f};
             const ImVec4 CompColor   = {0.0f, 0.8f, 0.f, 1.0f};
@@ -353,14 +353,14 @@ void Profiler::UpdateUI()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, CompColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, CompColor);
             ImGui::SameLine(m_Graph1.CompX);
-            ImGui::Button("Comp##CF1", ImVec2(m_Graph1.CompW, BtnH));
+            ImGui::Button("Compute##CF1", ImVec2(m_Graph1.CompW, BtnH));
             ImGui::PopStyleColor(3);
 
             ImGui::PushStyleColor(ImGuiCol_Button, CompColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, CompColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, CompColor);
             ImGui::SameLine(m_Graph2.CompX);
-            ImGui::Button("Comp##CF2", ImVec2(m_Graph2.CompW, BtnH));
+            ImGui::Button("Compute##CF2", ImVec2(m_Graph2.CompW, BtnH));
             ImGui::PopStyleColor(3);
 
             ImGui::NewLine();

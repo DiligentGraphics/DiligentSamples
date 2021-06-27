@@ -60,7 +60,6 @@ public:
     void AfterDraw(IDeviceContext* pContext);
 
     void Recreate(IDeviceContext* pContext);
-    void ReloadShaders(); // AZ TODO: remove
 
 private:
     RefCntAutoPtr<IRenderDevice> m_Device;

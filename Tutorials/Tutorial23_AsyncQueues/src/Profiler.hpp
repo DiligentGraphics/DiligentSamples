@@ -60,7 +60,9 @@ private:
 
     RefCntAutoPtr<IRenderDevice> m_Device;
 
-    Uint32 m_FrameId : 2;
+    static constexpr Uint32 NumFramesPOT = 3;
+
+    Uint32 m_FrameId : NumFramesPOT;
     Uint32 m_TempCpuToGpuTransferRateMb     = 0;
     bool   m_SupportsTransferQueueProfiling = false;
 
@@ -88,7 +90,7 @@ private:
         PassCounters Compute;
         PassCounters Transfer;
     };
-    std::array<Frame, 4> m_FrameHistory = {};
+    std::array<Frame, (1 << NumFramesPOT)> m_FrameHistory = {};
 
     struct Graph
     {
