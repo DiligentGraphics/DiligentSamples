@@ -22,5 +22,6 @@ include 'Common',
         ':Tutorial16_BindlessResources',
         ':Tutorial17_MSAA',
         ':Tutorial18_Queries',
-        ':Tutorial19_RenderPasses'
+        ':Tutorial19_RenderPasses',
+        ':Tutorial23_AsyncQueues'
 project(':Common').projectDir = new File(settingsDir, '../../DiligentTools/NativeApp/Android')
