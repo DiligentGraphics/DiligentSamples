@@ -250,6 +250,7 @@ void Tutorial08_Tessellation::LoadTextures()
     {
         // Load texture
         TextureLoadInfo loadInfo;
+        loadInfo.Format = TEX_FORMAT_R16_SINT;
         loadInfo.IsSRGB = false;
         loadInfo.Name   = "Terrain height map";
         RefCntAutoPtr<ITexture> HeightMap;
