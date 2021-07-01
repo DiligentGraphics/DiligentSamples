@@ -18,7 +18,6 @@
 #include <limits>
 #include <random>
 #include <locale>
-#include <codecvt>
 
 #include "asteroids_DE.h"
 
@@ -801,11 +800,11 @@ void Asteroids::CreateGUIResources()
     for (int i = -1; i < (int)mGUI->size(); ++i)
     {
         auto control = i >= 0 ? (*mGUI)[i] : mSprite.get();
-        if (control->TextureFile().length() > 0 && mSpriteTextures.find(control->TextureFile()) == mSpriteTextures.end())
+        auto path    = control->TextureFile();
+        if (path.length() > 0 && mSpriteTextures.find(path) == mSpriteTextures.end())
         {
-            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-            auto                                                   path = NarrowString(converter.from_bytes(control->TextureFile()).c_str());
-            TextureLoadInfo                                        loadInfo;
+
+            TextureLoadInfo loadInfo;
             loadInfo.IsSRGB = true;
             RefCntAutoPtr<ITexture> spriteTexture;
             CreateTextureFromFile(path.c_str(), loadInfo, mDevice, &spriteTexture);
