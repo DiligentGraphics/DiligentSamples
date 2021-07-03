@@ -35,9 +35,9 @@ float4 main(in PSInput PSIn) : SV_Target
 
     float4 Blur = float4(0., 0., 0., 0.);
 
-    for (int y = 0; y < 5; ++y)
+    [unroll] for (int y = 0; y < 5; ++y)
     {
-        for (int x = 0; x < 5; ++x)
+        [unroll] for (int x = 0; x < 5; ++x)
         {
             int3 Pos = (TexelPos + int3(x - 2, y - 2, 0)) * 2;
 

@@ -30,7 +30,7 @@
 namespace Diligent
 {
 
-static const float GraphWidth  = 400.f;
+static const float GraphWidth  = 500.f;
 static const float GraphHeight = 100.f;
 
 
@@ -231,7 +231,9 @@ void Profiler::Update(double ElapsedTime)
 
         const auto TimeToStr = [](std::stringstream& stream, double dt) //
         {
-            if (dt > 1.0e-1)
+            if (dt <= 0.0)
+                stream << "-";
+            else if (dt > 1.0e-1)
                 stream << (dt) << " s";
             else if (dt > 1.0e-4)
                 stream << (dt * 1.0e+3) << " ms"; // milliseconds
@@ -244,7 +246,7 @@ void Profiler::Update(double ElapsedTime)
         const auto ByteSizeToStr = [](std::stringstream& stream, double SizeInMb) //
         {
             if (SizeInMb <= 0.0)
-            {}
+                stream << "-";
             else if (SizeInMb < 0.1)
                 stream << (SizeInMb * 1024.0) << " Kb/s";
             else if (SizeInMb < 1024.0)
@@ -264,6 +266,7 @@ void Profiler::Update(double ElapsedTime)
         values1_ss.flags(std::ios_base::fixed);
         values1_ss << "GPU" << std::endl;
         TimeToStr(values1_ss, CurrFrameEnd - CurrFrameBegin);
+        TimeToStr(values1_ss, Curr.Graphics1.GpuTimeBegin - Prev.Graphics1.GpuTimeBegin);
         TimeToStr(values1_ss, Gfx1Time + Gfx2Time);
         TimeToStr(values1_ss, CompTime);
         TimeToStr(values1_ss, TransfTime);
@@ -281,6 +284,7 @@ void Profiler::Update(double ElapsedTime)
         values2_ss.flags(std::ios_base::fixed);
         values2_ss << "CPU" << std::endl;
         TimeToStr(values2_ss, CpuFrameTime);
+        values2_ss << "-" << std::endl;
         TimeToStr(values2_ss, CpuGfx1Time + CpuGfx2Time);
         TimeToStr(values2_ss, CpuCompTime);
         TimeToStr(values2_ss, CpuTransfTime);
@@ -312,7 +316,7 @@ void Profiler::UpdateUI()
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 2.0f);
         ImGui::BeginChild("##PassOverlapping", ImVec2{GraphWidth, GraphHeight}, false, ImGuiWindowFlags_None);
         {
-            const float  BtnH        = GraphHeight / 5.f;
+            const float  BtnH        = GraphHeight / 4.f;
             const ImVec4 Gfx1Color   = {1.0f, 0.f, 0.f, 1.0f};
             const ImVec4 Gfx2Color   = {1.0f, 0.5f, 0.f, 1.0f};
             const ImVec4 CompColor   = {0.0f, 0.8f, 0.f, 1.0f};
@@ -369,14 +373,14 @@ void Profiler::UpdateUI()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, TransfColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, TransfColor);
             ImGui::SameLine(m_Graph1.TransfX);
-            ImGui::Button("Copy##TF1", ImVec2(m_Graph1.TransfW, BtnH));
+            ImGui::Button("Upload##TF1", ImVec2(m_Graph1.TransfW, BtnH));
             ImGui::PopStyleColor(3);
 
             ImGui::PushStyleColor(ImGuiCol_Button, TransfColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, TransfColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, TransfColor);
             ImGui::SameLine(m_Graph2.TransfX);
-            ImGui::Button("Copy##TF2", ImVec2(m_Graph2.TransfW, BtnH));
+            ImGui::Button("Upload##TF2", ImVec2(m_Graph2.TransfW, BtnH));
             ImGui::PopStyleColor(3);
         }
         ImGui::EndChild();
@@ -386,9 +390,10 @@ void Profiler::UpdateUI()
             std::stringstream params_ss;
             params_ss << std::endl;
             params_ss << "Frame:" << std::endl;
+            params_ss << "Between frames:" << std::endl;
             params_ss << "Graphics pass:" << std::endl;
             params_ss << "Compute pass:" << std::endl;
-            params_ss << "Transfer pass:" << std::endl;
+            params_ss << "Upload pass:" << std::endl;
             params_ss << "Transfer rate:" << std::endl;
 
             ImGui::TextDisabled("%s", params_ss.str().c_str());

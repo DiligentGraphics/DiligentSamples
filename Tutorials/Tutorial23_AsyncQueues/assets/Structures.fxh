@@ -13,10 +13,10 @@ struct TerrainConstants
     float3 Scale;
     float  UVScale;
 
-    uint  GroupSize; // group size without border
     float XOffset;
     float Animation;
     float NoiseScale;
+    float padding0;
 };
 
 struct PostProcessConstants

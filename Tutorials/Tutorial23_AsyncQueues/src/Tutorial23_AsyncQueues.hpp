@@ -59,7 +59,7 @@ private:
     void PostProcess();
 
     void ComputePass();
-    void TransferPass();
+    void UploadPass();
     void GraphicsPass1();
     void GraphicsPass2();
 
@@ -108,7 +108,7 @@ private:
     GBuffer m_GBuffer;
 
     TEXTURE_FORMAT m_ColorTargetFormat = TEX_FORMAT_RGBA8_UNORM;
-    TEXTURE_FORMAT m_DepthTargetFormat = TEX_FORMAT_D32_FLOAT;
+    TEXTURE_FORMAT m_DepthTargetFormat = TEX_FORMAT_UNKNOWN;
 
     int          m_TransferRateMbPOT = 2; // power of 2
     bool         m_UseAsyncCompute   = false;

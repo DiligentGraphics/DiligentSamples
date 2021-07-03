@@ -39,7 +39,11 @@ namespace Diligent
 namespace HLSL
 {
 #include "../assets/Structures.fxh"
-}
+
+static_assert(sizeof(DrawConstants) % 16 == 0, "must be aligned to 16 bytes");
+static_assert(sizeof(PostProcessConstants) % 16 == 0, "must be aligned to 16 bytes");
+static_assert(sizeof(TerrainConstants) % 16 == 0, "must be aligned to 16 bytes");
+} // namespace HLSL
 
 SampleBase* CreateSample()
 {
@@ -157,22 +161,25 @@ void Tutorial23_AsyncQueues::DownSample()
 {
     m_pImmediateContext->BeginDebugGroup("Down sample pass");
 
+    m_pImmediateContext->SetPipelineState(m_DownSamplePSO);
+    m_pImmediateContext->SetVertexBuffers(0, 0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(nullptr, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
+
     StateTransitionDesc Barrier{m_GBuffer.Color, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE, 0u, 1u};
 
-    m_pImmediateContext->SetPipelineState(m_DownSamplePSO);
     for (Uint32 Mip = 1; Mip < DownSampleFactor; ++Mip)
     {
         Barrier.FirstMipLevel = Mip - 1;
         m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 
-        m_pImmediateContext->SetRenderTargets(1, &m_GBuffer.ColorRTVs[Mip], nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
+        m_pImmediateContext->SetRenderTargets(1, &m_GBuffer.ColorRTVs[Mip], nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
         m_pImmediateContext->CommitShaderResources(m_DownSampleSRB[Mip - 1], RESOURCE_STATE_TRANSITION_MODE_NONE);
-        m_pImmediateContext->Draw(DrawAttribs{3, DRAW_FLAG_NONE});
+        m_pImmediateContext->Draw(DrawAttribs{3, DRAW_FLAG_VERIFY_DRAW_ATTRIBS | DRAW_FLAG_VERIFY_STATES});
     }
 
-    // Transit last mipmap level to SRB state.
-    // Now all mipmaps in m_GBuffer.Color are in SRB state, so update resource state.
+    // Transit last mipmap level to SRV state.
+    // Now all mipmaps in m_GBuffer.Color are in SRV state, so update resource state.
     Barrier.FirstMipLevel       = DownSampleFactor - 1;
     Barrier.UpdateResourceState = true;
     m_pImmediateContext->TransitionResourceStates(1, &Barrier);
@@ -235,7 +242,9 @@ void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
         return;
     }
 
+    // Find supported depth target format.
 #if PLATFORM_ANDROID
+    // For Android try Depth16 first.
     if (m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_D16_UNORM).BindFlags & BIND_DEPTH_STENCIL)
         m_DepthTargetFormat = TEX_FORMAT_D16_UNORM;
     else
@@ -253,7 +262,7 @@ void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
         m_ColorTargetFormat = TEX_FORMAT_RGBA16_FLOAT;
 
 #if PLATFORM_ANDROID
-    // Set settings for slow mobile devices
+    // Set settings for low-performance devices
     m_SurfaceScalePOT     = -1;
     m_Terrain.TerrainSize = 7;
     m_Glow                = false;
@@ -271,20 +280,20 @@ void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
         FenceDesc FenceCI;
         FenceCI.Type = FENCE_TYPE_GENERAL;
 
-        FenceCI.Name = "Graphics fence";
+        FenceCI.Name = "Graphics context fence";
         m_pDevice->CreateFence(FenceCI, &m_GraphicsCtxFence);
 
-        FenceCI.Name = "Compute fence";
+        FenceCI.Name = "Compute context fence";
         m_pDevice->CreateFence(FenceCI, &m_ComputeCtxFence);
 
         if (m_TransferCtx)
         {
-            FenceCI.Name = "Transfer fence";
+            FenceCI.Name = "Transfer context fence";
             m_pDevice->CreateFence(FenceCI, &m_TransferCtxFence);
         }
     }
 
-    // Create constant buffer
+    // Create constant buffers
     BufferDesc BuffDesc;
     BuffDesc.BindFlags            = BIND_UNIFORM_BUFFER;
     BuffDesc.Usage                = USAGE_DEFAULT;
@@ -307,7 +316,7 @@ void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    ScenepSOCreateAttribs PSOAttribs;
+    ScenePSOCreateAttribs PSOAttribs;
     PSOAttribs.pShaderSourceFactory = pShaderSourceFactory;
     PSOAttribs.ColorTargetFormat    = m_ColorTargetFormat;
     PSOAttribs.DepthTargetFormat    = m_DepthTargetFormat;
@@ -387,7 +396,7 @@ void Tutorial23_AsyncQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAttr
     AddContext(COMMAND_QUEUE_TYPE_GRAPHICS, "Graphics", Attribs.EngineCI.AdapterId);
     AddContext(COMMAND_QUEUE_TYPE_TRANSFER, "Transfer", Attribs.EngineCI.AdapterId);
 
-    // On Metal and mobile platforms we have only graphics queues.
+    // On Metal and Vulkan mobile platforms we have only graphics queues.
     if (!AddContext(COMMAND_QUEUE_TYPE_COMPUTE, "Compute", Attribs.EngineCI.AdapterId))
         AddContext(COMMAND_QUEUE_TYPE_GRAPHICS, "Graphics 2", Attribs.EngineCI.AdapterId);
 
@@ -413,7 +422,7 @@ void Tutorial23_AsyncQueues::ComputePass()
 
     if (m_UseAsyncCompute)
     {
-        // Wait until graphics pass complete using m_TerrainHeightMap and m_TerrainNormalMap.
+        // Wait until graphics pass complete using terrain height and normal maps
         ComputeCtx->DeviceWaitForFence(m_GraphicsCtxFence, m_GraphicsCtxFenceValue);
     }
 
@@ -428,14 +437,24 @@ void Tutorial23_AsyncQueues::ComputePass()
         ComputeCtx->EnqueueSignal(m_ComputeCtxFence, ++m_ComputeCtxFenceValue);
         ComputeCtx->Flush();
 
-        // Wait for compute queue.
-        m_pImmediateContext->DeviceWaitForFence(m_ComputeCtxFence, m_ComputeCtxFenceValue);
+        if (m_Terrain.DoubleBuffering)
+        {
+            // Wait for compute queue previous pass.
+            m_pImmediateContext->DeviceWaitForFence(m_ComputeCtxFence, m_ComputeCtxFenceValue - 1);
+        }
+        else
+        {
+            // Wait for compute queue current pass.
+            m_pImmediateContext->DeviceWaitForFence(m_ComputeCtxFence, m_ComputeCtxFenceValue);
+        }
     }
 }
 
-void Tutorial23_AsyncQueues::TransferPass()
+void Tutorial23_AsyncQueues::UploadPass()
 {
-    if (m_TransferCtx == nullptr)
+    const Uint32 TransferRate = GetCpuToGpuTransferRateMb();
+
+    if (m_TransferCtx == nullptr || TransferRate == 0)
         return;
 
     auto TransferCtx = m_UseAsyncTransfer ? m_TransferCtx : m_pImmediateContext;
@@ -452,7 +471,7 @@ void Tutorial23_AsyncQueues::TransferPass()
     }
 
     Uint32 CpuToGpuTransferRateMb = 0;
-    m_Buildings.UpdateAtlas(TransferCtx, GetCpuToGpuTransferRateMb(), CpuToGpuTransferRateMb);
+    m_Buildings.UpdateAtlas(TransferCtx, TransferRate, CpuToGpuTransferRateMb);
     m_Profiler.SetCpuToGpuTransferRate(CpuToGpuTransferRateMb);
 
     m_Profiler.End(TransferCtx, Profiler::TRANSFER);
@@ -474,7 +493,7 @@ void Tutorial23_AsyncQueues::GraphicsPass1()
     // Make all resource transitions before and after drawing.
     // Transitions and copy operations will break render pass which is slow in tile-based renderer.
     m_Terrain.BeforeDraw(m_pImmediateContext);
-    m_Buildings.BeforeDrawOpaque(m_pImmediateContext);
+    m_Buildings.BeforeDraw(m_pImmediateContext);
 
     {
         const float DebugColor[] = {1.f, 0.f, 0.f, 1.f};
@@ -488,16 +507,16 @@ void Tutorial23_AsyncQueues::GraphicsPass1()
 
         // Clear the back buffer, transitions is not needed
         const float ClearColor[] = {m_SkyColor.x, m_SkyColor.y, m_SkyColor.z, 0.0f};
-        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_NONE);
-        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
+        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
         SceneDrawAttribs Attribs;
         Attribs.ViewProj     = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
         Attribs.LightDir     = -m_LightDir;
         Attribs.AmbientLight = m_AmbientLight;
 
-        m_Buildings.DrawOpaque(m_pImmediateContext, Attribs);
         m_Terrain.Draw(m_pImmediateContext, Attribs);
+        m_Buildings.Draw(m_pImmediateContext, Attribs);
 
         m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
 
@@ -507,14 +526,17 @@ void Tutorial23_AsyncQueues::GraphicsPass1()
     }
 
     m_Terrain.AfterDraw(m_pImmediateContext);
-    m_Buildings.AfterDrawOpaque(m_pImmediateContext);
+    m_Buildings.AfterDraw(m_pImmediateContext);
 
     if (m_UseAsyncCompute || m_UseAsyncTransfer)
     {
-        // Notify compute context that graphics context complete using m_TerrainHeightMap and m_TerrainNormalMap.
-        // Notify transfer context that graphics context complete using m_BuildingsTexAtlas.
+        // Notify compute context that graphics context complete using terrain height and normal maps.
+        // Notify transfer context that graphics context complete using buildings texture atlas.
         m_pImmediateContext->EnqueueSignal(m_GraphicsCtxFence, ++m_GraphicsCtxFenceValue);
-        m_pImmediateContext->Flush();
+
+        // When used double buffering compute pass may overlap with whole frame.
+        if (!m_Terrain.DoubleBuffering || m_UseAsyncTransfer)
+            m_pImmediateContext->Flush();
     }
 }
 
@@ -549,7 +571,7 @@ void Tutorial23_AsyncQueues::Render()
     m_Profiler.Begin(nullptr, Profiler::FRAME);
 
     ComputePass();
-    TransferPass();
+    UploadPass();
 
     GraphicsPass1();
     GraphicsPass2();
@@ -661,6 +683,8 @@ void Tutorial23_AsyncQueues::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
+        // Transfer workload
+        const auto PrevUseAsyncTransfer = m_UseAsyncTransfer;
         if (m_TransferCtx)
         {
             const auto TexSize    = m_Buildings.GetOpaqueTexAtlasDataSize();
@@ -674,39 +698,46 @@ void Tutorial23_AsyncQueues::UpdateUI()
             const String TransferRateStr = std::to_string(GetCpuToGpuTransferRateMb());
             ImGui::TextDisabled("Transfer rate per frame (Mb)");
             ImGui::SliderInt("##TransferRate", &m_TransferRateMbPOT, 0, TexSizePOT, TransferRateStr.c_str());
-        }
 
-        const auto TerrainSizeStr = std::to_string(1u << m_Terrain.TerrainSize);
-        const auto OldTerrainSize = m_Terrain.TerrainSize;
-        ImGui::TextDisabled("Terrain dimension");
-        ImGui::SliderInt("##TerrainSize", &m_Terrain.TerrainSize, 7, 14, TerrainSizeStr.c_str());
-        if (OldTerrainSize != m_Terrain.TerrainSize)
-            m_Terrain.Recreate(m_pImmediateContext);
-
-        const char* SurfaceScaleStr[] = {"1/4", "1/2", "1", "2", "4"};
-        const int   OldSurfaceScale   = m_SurfaceScalePOT;
-        ImGui::TextDisabled("Super sampling");
-        ImGui::SliderInt("##SurfaceScale", &m_SurfaceScalePOT, -2, 2, SurfaceScaleStr[m_SurfaceScalePOT + 2]);
-
-        // Recreate render targets
-        if (OldSurfaceScale != m_SurfaceScalePOT)
-        {
-            const auto& SCDesc = m_pSwapChain->GetDesc();
-            WindowResize(SCDesc.Width, SCDesc.Height);
-        }
-
-        const auto PrevUseAsyncCompute = m_UseAsyncCompute;
-        ImGui::Checkbox("Use async compute", &m_UseAsyncCompute);
-
-        const auto PrevUseAsyncTransfer = m_UseAsyncTransfer;
-        if (m_TransferCtx)
             ImGui::Checkbox("Use async transfer", &m_UseAsyncTransfer);
+            ImGui::Separator();
+        }
+
+        // Compute workload
+        const auto PrevUseAsyncCompute = m_UseAsyncCompute;
+        {
+            const auto TerrainSizeStr = std::to_string(1u << m_Terrain.TerrainSize);
+            const auto OldTerrainSize = m_Terrain.TerrainSize;
+            ImGui::TextDisabled("Terrain dimension");
+            ImGui::SliderInt("##TerrainSize", &m_Terrain.TerrainSize, 7, 13, TerrainSizeStr.c_str());
+            if (OldTerrainSize != m_Terrain.TerrainSize)
+                m_Terrain.Recreate(m_pImmediateContext);
+
+            ImGui::Checkbox("Use async compute", &m_UseAsyncCompute);
+            ImGui::Checkbox("Double buffering##TerrainDB", &m_Terrain.DoubleBuffering);
+            ImGui::Separator();
+        }
+
+        // Graphics workload
+        {
+            const char* SurfaceScaleStr[] = {"1/4", "1/2", "1", "2", "4"};
+            const int   OldSurfaceScale   = m_SurfaceScalePOT;
+            ImGui::TextDisabled("Surface scale");
+            ImGui::SliderInt("##SurfaceScale", &m_SurfaceScalePOT, -2, 2, SurfaceScaleStr[m_SurfaceScalePOT + 2]);
+
+            // Recreate render targets
+            if (OldSurfaceScale != m_SurfaceScalePOT)
+            {
+                const auto& SCDesc = m_pSwapChain->GetDesc();
+                WindowResize(SCDesc.Width, SCDesc.Height);
+            }
+
+            ImGui::Checkbox("Glow", &m_Glow);
+        }
 
         // Idle GPU to avoid validation errors.
         if (PrevUseAsyncCompute != m_UseAsyncCompute || PrevUseAsyncTransfer != m_UseAsyncTransfer)
             m_pDevice->IdleGPU();
-
-        ImGui::Checkbox("Glow", &m_Glow);
     }
     ImGui::End();
 

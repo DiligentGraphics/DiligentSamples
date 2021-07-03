@@ -38,7 +38,7 @@ struct SceneDrawAttribs
     float    AmbientLight;
 };
 
-struct ScenepSOCreateAttribs
+struct ScenePSOCreateAttribs
 {
     IShaderSourceInputStreamFactory* pShaderSourceFactory;
     TEXTURE_FORMAT                   ColorTargetFormat;
@@ -51,7 +51,7 @@ class Terrain
 public:
     void Initialize(IRenderDevice* pDevice, IBuffer* pDrawConstants, Uint64 ImmediateContextMask);
     void CreateResources(IDeviceContext* pContext);
-    void CreatePSO(const ScenepSOCreateAttribs& Attr);
+    void CreatePSO(const ScenePSOCreateAttribs& Attr);
 
     void Update(IDeviceContext* pContext);
 
@@ -66,33 +66,37 @@ private:
     Uint64                       m_ImmediateContextMask = 0;
 
     RefCntAutoPtr<IBuffer> m_DrawConstants;
-    RefCntAutoPtr<IBuffer> m_TerrainConstants;
+    RefCntAutoPtr<IBuffer> m_TerrainConstants[2]; // 0 - compute pass, 1 - graphics pass
 
     // Terrain drawing
     RefCntAutoPtr<IPipelineState>         m_DrawPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_DrawSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_DrawSRB[2];
     RefCntAutoPtr<ITexture>               m_DiffuseMap;
     RefCntAutoPtr<IBuffer>                m_VB;
     RefCntAutoPtr<IBuffer>                m_IB;
 
     // Terrain height and normal map generator
     RefCntAutoPtr<IPipelineState>         m_GenPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_GenSRB;
-    RefCntAutoPtr<ITexture>               m_HeightMap;
-    RefCntAutoPtr<ITexture>               m_NormalMap;
+    RefCntAutoPtr<IShaderResourceBinding> m_GenSRB[2];
+    RefCntAutoPtr<ITexture>               m_HeightMap[2];
+    RefCntAutoPtr<ITexture>               m_NormalMap[2];
 
     // Terrain parameters
     const float m_XZScale            = 400.0f;
     const float m_UVScale            = m_XZScale * 0.1f;
     float       m_NoiseScale         = 0.f;
     Uint32      m_ComputeGroupSize   = 0; // local group size without border
-    const int   m_GroupBorderSize    = 2; // added 1 pixel border for each side to calculate normals using only groupshared memory
-    float       m_TerrainHeightScale = 3.0f;
+    const int   m_GroupBorderSize    = 1; // added 1 pixel border for left-top sides to calculate normals using only groupshared memory
+    const float m_TerrainHeightScale = 3.0f;
+
+    Uint32 m_FrameId : 1;
 
 public:
     int   TerrainSize = 10; // size of mesh as power of 2
     float XOffset     = 0.f;
     float Animation   = 0.f;
+
+    bool DoubleBuffering = false;
 };
 
 } // namespace Diligent

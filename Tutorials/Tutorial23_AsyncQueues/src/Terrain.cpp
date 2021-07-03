@@ -28,6 +28,7 @@
 #include "TextureUtilities.h"
 #include "ShaderMacroHelper.hpp"
 #include "MapHelper.hpp"
+#include "PlatformMisc.hpp"
 
 namespace Diligent
 {
@@ -40,6 +41,7 @@ using IndexType = Uint32;
 
 void Terrain::Initialize(IRenderDevice* pDevice, IBuffer* pDrawConstants, Uint64 ImmediateContextMask)
 {
+    m_FrameId              = 0;
     m_Device               = pDevice;
     m_DrawConstants        = pDrawConstants;
     m_ImmediateContextMask = ImmediateContextMask;
@@ -47,12 +49,17 @@ void Terrain::Initialize(IRenderDevice* pDevice, IBuffer* pDrawConstants, Uint64
 
 void Terrain::CreateResources(IDeviceContext* pContext)
 {
-    m_NoiseScale = TerrainSize <= 10 ? 10.0f : 20.0f;
+    if (TerrainSize > 10)
+        m_NoiseScale = 20.0f;
+    else if (TerrainSize > 8)
+        m_NoiseScale = 10.0f;
+    else
+        m_NoiseScale = 4.0f;
 
     std::vector<float2>    Vertices;
     std::vector<IndexType> Indices;
 
-    const auto  GridSize  = ((1u << TerrainSize) / m_ComputeGroupSize) * m_ComputeGroupSize;
+    const auto  GridSize  = std::max(1u, (1u << TerrainSize) / m_ComputeGroupSize) * m_ComputeGroupSize;
     const float GridScale = 1.0f / float(GridSize - 1);
 
     Vertices.resize(GridSize * GridSize);
@@ -104,6 +111,7 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         BuffData               = BufferData{Indices.data(), BuffDesc.uiSizeInBytes, pContext};
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_IB);
 
+        // Buffers are used in multiple contexts, but after this transition resources state will never changes.
         const StateTransitionDesc Barriers[] = {
             {m_VB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_VERTEX_BUFFER, true},
             {m_IB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_INDEX_BUFFER, true} //
@@ -121,22 +129,27 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         TexDesc.Height               = GridSize;
         TexDesc.BindFlags            = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
         TexDesc.ImmediateContextMask = m_ImmediateContextMask;
-        m_Device->CreateTexture(TexDesc, nullptr, &m_HeightMap);
+        m_Device->CreateTexture(TexDesc, nullptr, &m_HeightMap[0]);
+        m_Device->CreateTexture(TexDesc, nullptr, &m_HeightMap[1]);
 
         TexDesc.Name   = "Terrain normal map";
-        TexDesc.Format = TEX_FORMAT_RGBA16_FLOAT;
-        //TexDesc.Format = TEX_FORMAT_RGBA8_UNORM;
-        m_Device->CreateTexture(TexDesc, nullptr, &m_NormalMap);
+        TexDesc.Format = TEX_FORMAT_RGBA16_FLOAT; //TEX_FORMAT_RGBA8_UNORM;
+        m_Device->CreateTexture(TexDesc, nullptr, &m_NormalMap[0]);
+        m_Device->CreateTexture(TexDesc, nullptr, &m_NormalMap[1]);
 
         const StateTransitionDesc Barriers[] = {
-            {m_HeightMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS},
-            {m_NormalMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS} //
+            {m_HeightMap[0], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS},
+            {m_HeightMap[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS},
+            {m_NormalMap[0], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS},
+            {m_NormalMap[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS} //
         };
         pContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
         // Resources are used in multiple contexts, so disable automatic resource transitions.
-        m_HeightMap->SetState(RESOURCE_STATE_UNKNOWN);
-        m_NormalMap->SetState(RESOURCE_STATE_UNKNOWN);
+        m_HeightMap[0]->SetState(RESOURCE_STATE_UNKNOWN);
+        m_HeightMap[1]->SetState(RESOURCE_STATE_UNKNOWN);
+        m_NormalMap[0]->SetState(RESOURCE_STATE_UNKNOWN);
+        m_NormalMap[1]->SetState(RESOURCE_STATE_UNKNOWN);
     }
 
     if (m_DiffuseMap == nullptr)
@@ -147,57 +160,74 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         RefCntAutoPtr<ITexture> Tex;
         CreateTextureFromFile("Sand.jpg", loadInfo, m_Device, &m_DiffuseMap);
 
-        const StateTransitionDesc Barriers[] = {
-            {m_DiffuseMap, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_SHADER_RESOURCE} //
-        };
-        pContext->TransitionResourceStates(_countof(Barriers), Barriers);
+        const StateTransitionDesc Barrier = {m_DiffuseMap, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_SHADER_RESOURCE, true};
+        pContext->TransitionResourceStates(1, &Barrier);
     }
 
-    if (m_TerrainConstants == nullptr)
+    if (m_TerrainConstants[0] == nullptr || m_TerrainConstants[1] == nullptr)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name                 = "Terrain constants";
-        BuffDesc.BindFlags            = BIND_UNIFORM_BUFFER;
-        BuffDesc.Usage                = USAGE_DEFAULT;
-        BuffDesc.uiSizeInBytes        = sizeof(HLSL::TerrainConstants);
-        BuffDesc.ImmediateContextMask = m_ImmediateContextMask;
-        m_Device->CreateBuffer(BuffDesc, nullptr, &m_TerrainConstants);
+        BuffDesc.Name          = "Terrain constants";
+        BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
+        BuffDesc.Usage         = USAGE_DEFAULT;
+        BuffDesc.uiSizeInBytes = sizeof(HLSL::TerrainConstants);
+
+        BuffDesc.ImmediateContextMask = m_ImmediateContextMask & ~1; // compute context
+        m_Device->CreateBuffer(BuffDesc, nullptr, &m_TerrainConstants[0]);
+
+        BuffDesc.ImmediateContextMask = 1; // graphics context
+        m_Device->CreateBuffer(BuffDesc, nullptr, &m_TerrainConstants[1]);
     }
 
     // Set terrain generator shader resources
+    for (Uint32 i = 0; i < _countof(m_GenSRB); ++i)
     {
-        m_GenPSO->CreateShaderResourceBinding(&m_GenSRB);
-        m_GenSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "TerrainConstantsCB")->Set(m_TerrainConstants);
-        m_GenSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_HeightMapUAV")->Set(m_HeightMap->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
-        m_GenSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_NormalMapUAV")->Set(m_NormalMap->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+        auto& SRB = m_GenSRB[i];
+        m_GenPSO->CreateShaderResourceBinding(&SRB);
+        SRB->GetVariableByName(SHADER_TYPE_COMPUTE, "TerrainConstantsCB")->Set(m_TerrainConstants[0]);
+        SRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_HeightMapUAV")->Set(m_HeightMap[i]->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+        SRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_NormalMapUAV")->Set(m_NormalMap[i]->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
     }
 
     // Set draw terrain shader resources
+    for (Uint32 i = 0; i < _countof(m_DrawSRB); ++i)
     {
-        m_DrawPSO->CreateShaderResourceBinding(&m_DrawSRB);
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_VERTEX, "DrawConstantsCB")->Set(m_DrawConstants);
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_VERTEX, "TerrainConstantsCB")->Set(m_TerrainConstants);
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_TerrainHeightMap")->Set(m_HeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_PIXEL, "DrawConstantsCB")->Set(m_DrawConstants);
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_PIXEL, "TerrainConstantsCB")->Set(m_TerrainConstants);
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_TerrainNormalMap")->Set(m_NormalMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_DrawSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_TerrainDiffuseMap")->Set(m_DiffuseMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        auto& SRB = m_DrawSRB[i];
+        m_DrawPSO->CreateShaderResourceBinding(&SRB);
+        SRB->GetVariableByName(SHADER_TYPE_VERTEX, "DrawConstantsCB")->Set(m_DrawConstants);
+        SRB->GetVariableByName(SHADER_TYPE_VERTEX, "TerrainConstantsCB")->Set(m_TerrainConstants[1]);
+        SRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_TerrainHeightMap")->Set(m_HeightMap[1 - i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        SRB->GetVariableByName(SHADER_TYPE_PIXEL, "DrawConstantsCB")->Set(m_DrawConstants);
+        SRB->GetVariableByName(SHADER_TYPE_PIXEL, "TerrainConstantsCB")->Set(m_TerrainConstants[1]);
+        SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_TerrainNormalMap")->Set(m_NormalMap[1 - i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_TerrainDiffuseMap")->Set(m_DiffuseMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 }
 
-void Terrain::CreatePSO(const ScenepSOCreateAttribs& Attr)
+void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
 {
     // Terrain generation PSO
     {
         const auto& CSInfo    = m_Device->GetAdapterInfo().ComputeShader;
-        const auto  GroupSize = static_cast<int>(sqrt(static_cast<float>(CSInfo.MaxThreadGroupInvocations)) + 0.5f);
-        m_ComputeGroupSize    = GroupSize - m_GroupBorderSize;
+        Uint32      GroupSize = static_cast<Uint32>(sqrt(static_cast<float>(CSInfo.MaxThreadGroupInvocations)));
+        GroupSize             = 2u << PlatformMisc::GetMSB(GroupSize);
+        GroupSize             = (GroupSize * GroupSize <= CSInfo.MaxThreadGroupInvocations) ? GroupSize : (GroupSize >> 1);
+
+#if PLATFORM_ANDROID
+        // 64 threads per threadgroup is much faster
+        GroupSize = std::min(GroupSize, 8u);
+#else
+        GroupSize = std::min(GroupSize, 16u);
+#endif
+
+        m_ComputeGroupSize = GroupSize - m_GroupBorderSize;
 
         VERIFY_EXPR(GroupSize > 0);
-        VERIFY_EXPR(m_ComputeGroupSize * m_ComputeGroupSize <= CSInfo.MaxThreadGroupInvocations);
+        VERIFY_EXPR(GroupSize * GroupSize <= CSInfo.MaxThreadGroupInvocations);
 
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro("GROUP_SIZE_WITH_BORDER", GroupSize);
+        Macros.AddShaderMacro("GROUP_SIZE", m_ComputeGroupSize);
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.UseCombinedTextureSamplers = true;
@@ -296,25 +326,25 @@ void Terrain::Update(IDeviceContext* pContext)
 {
     pContext->BeginDebugGroup("Update terrain");
 
-    const auto& TexDesc = m_HeightMap->GetDesc();
+    const auto& TexDesc = m_HeightMap[0]->GetDesc();
 
     // Update constants
     {
         HLSL::TerrainConstants ConstData;
         ConstData.Scale      = float3(m_XZScale, m_TerrainHeightScale, m_XZScale);
         ConstData.UVScale    = m_UVScale;
-        ConstData.GroupSize  = m_ComputeGroupSize;
         ConstData.Animation  = Animation;
         ConstData.XOffset    = XOffset;
         ConstData.NoiseScale = m_NoiseScale;
 
-        pContext->UpdateBuffer(m_TerrainConstants, 0, sizeof(ConstData), &ConstData, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        pContext->UpdateBuffer(m_TerrainConstants[0], 0, sizeof(ConstData), &ConstData, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
     pContext->SetPipelineState(m_GenPSO);
 
-    // m_TerrainHeightMap and m_TerrainNormalMap can not be transitioned here because has UNKNOWN state.
-    pContext->CommitShaderResources(m_GenSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    // Terrain height and normal maps can not be transitioned here because has UNKNOWN state.
+    const auto Id = DoubleBuffering ? m_FrameId : 0;
+    pContext->CommitShaderResources(m_GenSRB[Id], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DispatchComputeAttribs dispatchAttrs;
     dispatchAttrs.ThreadGroupCountX = TexDesc.Width / m_ComputeGroupSize;
@@ -344,16 +374,17 @@ void Terrain::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 
     pContext->SetPipelineState(m_DrawPSO);
 
-    // m_TerrainHeightMap and m_TerrainNormalMap can not be transitioned here because has UNKNOWN state.
+    // Terrain height and normal maps can not be transitioned here because has UNKNOWN state.
     // Other resources has constant state and does not require transitions.
-    pContext->CommitShaderResources(m_DrawSRB, RESOURCE_STATE_TRANSITION_MODE_NONE);
+    const auto Id = DoubleBuffering ? m_FrameId : 1;
+    pContext->CommitShaderResources(m_DrawSRB[Id], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Vertex and index buffers are immutable and does not require transitions.
     IBuffer*     VBs[]     = {m_VB};
     const Uint32 Offsets[] = {0};
 
-    pContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_NONE, SET_VERTEX_BUFFERS_FLAG_RESET);
-    pContext->SetIndexBuffer(m_IB, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
+    pContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pContext->SetIndexBuffer(m_IB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs drawAttribs;
     drawAttribs.NumIndices = m_IB->GetDesc().uiSizeInBytes / sizeof(IndexType);
@@ -366,13 +397,27 @@ void Terrain::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 
 void Terrain::BeforeDraw(IDeviceContext* pContext)
 {
+    // Update constants
+    {
+        HLSL::TerrainConstants ConstData;
+        ConstData.Scale      = float3(m_XZScale, m_TerrainHeightScale, m_XZScale);
+        ConstData.UVScale    = m_UVScale;
+        ConstData.Animation  = Animation;
+        ConstData.XOffset    = XOffset;
+        ConstData.NoiseScale = m_NoiseScale;
+
+        pContext->UpdateBuffer(m_TerrainConstants[1], 0, sizeof(ConstData), &ConstData, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }
+
     // Resources must be manualy transitioned to required state.
     // Vulkan:     the correct pipeline barrier must contains vertex and pixel shader stages which is not supported in compute context.
     // DirectX 12: height map used as non-pixel shader resource and can be transitioned in compute context,
     //             but normal map used as pixel shader resource and must be transitioned in graphics context.
+    const Uint32              Id         = DoubleBuffering ? 1 - m_FrameId : 0;
     const StateTransitionDesc Barriers[] = {
-        {m_HeightMap, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE, false},
-        {m_NormalMap, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE, false} //
+        {m_HeightMap[Id], RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE},
+        {m_NormalMap[Id], RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE},
+        {m_TerrainConstants[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true} //
     };
     pContext->TransitionResourceStates(_countof(Barriers), Barriers);
 }
@@ -380,22 +425,29 @@ void Terrain::BeforeDraw(IDeviceContext* pContext)
 void Terrain::AfterDraw(IDeviceContext* pContext)
 {
     // Resources must be manualy transitioned to required state.
+    const Uint32              Id         = DoubleBuffering ? 1 - m_FrameId : 0;
     const StateTransitionDesc Barriers[] = {
-        {m_HeightMap, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS},
-        {m_NormalMap, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS} //
+        {m_HeightMap[Id], RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS},
+        {m_NormalMap[Id], RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS} //
     };
     pContext->TransitionResourceStates(_countof(Barriers), Barriers);
+
+    ++m_FrameId;
 }
 
 void Terrain::Recreate(IDeviceContext* pContext)
 {
     // Recreate terrain buffers
-    m_VB        = nullptr;
-    m_IB        = nullptr;
-    m_HeightMap = nullptr;
-    m_NormalMap = nullptr;
-    m_GenSRB    = nullptr;
-    m_DrawSRB   = nullptr;
+    m_VB           = nullptr;
+    m_IB           = nullptr;
+    m_HeightMap[0] = nullptr;
+    m_HeightMap[1] = nullptr;
+    m_NormalMap[0] = nullptr;
+    m_NormalMap[1] = nullptr;
+    m_GenSRB[0]    = nullptr;
+    m_GenSRB[1]    = nullptr;
+    m_DrawSRB[0]   = nullptr;
+    m_DrawSRB[1]   = nullptr;
 
     m_Device->IdleGPU();
 
