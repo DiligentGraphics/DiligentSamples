@@ -46,11 +46,11 @@ public:
 
     void Initialize(IRenderDevice* pDevice, IBuffer* pDrawConstants, Uint64 ImmediateContextMask);
     void CreateResources(IDeviceContext* pContext);
-    void CreatePSO(const ScenepSOCreateAttribs& Attr);
+    void CreatePSO(const ScenePSOCreateAttribs& Attr);
 
-    void BeforeDrawOpaque(IDeviceContext* pContext);
-    void DrawOpaque(IDeviceContext* pContext, const SceneDrawAttribs& Attr);
-    void AfterDrawOpaque(IDeviceContext* pContext);
+    void BeforeDraw(IDeviceContext* pContext);
+    void Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr);
+    void AfterDraw(IDeviceContext* pContext);
 
     void UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRateMb, Uint32& ActualTransferRateMb);
 
@@ -77,8 +77,9 @@ private:
     RefCntAutoPtr<IBuffer>                m_OpaqueIB;
 
     // Buildings parameters
-    const float m_DistributionScale    = 8.f;
-    const int   m_DistributionGridSize = 20;
+    const float m_DistributionScale      = 8.f;
+    const int   m_DistributionGridSize   = 20;
+    Uint32      m_m_OpaqueTexAtlasOffset = 0;
 
 
     std::vector<Uint32> m_OpaqueTexAtlasPixels;

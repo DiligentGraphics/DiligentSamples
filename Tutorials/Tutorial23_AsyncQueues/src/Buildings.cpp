@@ -681,7 +681,7 @@ void Buildings::Initialize(IRenderDevice* pDevice, IBuffer* pDrawConstants, Uint
 #endif
 }
 
-void Buildings::CreatePSO(const ScenepSOCreateAttribs& Attr)
+void Buildings::CreatePSO(const ScenePSOCreateAttribs& Attr)
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
@@ -759,7 +759,7 @@ void Buildings::CreatePSO(const ScenepSOCreateAttribs& Attr)
     m_DrawOpaqueSRB->GetVariableByName(SHADER_TYPE_PIXEL, "DrawConstantsCB")->Set(m_DrawConstants);
 }
 
-void Buildings::DrawOpaque(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
+void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 {
     pContext->BeginDebugGroup("Draw buildings");
 
@@ -777,14 +777,14 @@ void Buildings::DrawOpaque(IDeviceContext* pContext, const SceneDrawAttribs& Att
 
     // m_OpaqueTexAtlas can not be transitioned here because has UNKNOWN state.
     // Other resources has constant state and does not require transitions.
-    pContext->CommitShaderResources(m_DrawOpaqueSRB, RESOURCE_STATE_TRANSITION_MODE_NONE);
+    pContext->CommitShaderResources(m_DrawOpaqueSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Vertex and index buffers are immutable and does not require transitions.
     IBuffer*     VBs[]     = {m_OpaqueVB};
     const Uint32 Offsets[] = {0};
 
-    pContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_NONE, SET_VERTEX_BUFFERS_FLAG_RESET);
-    pContext->SetIndexBuffer(m_OpaqueIB, 0, RESOURCE_STATE_TRANSITION_MODE_NONE);
+    pContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pContext->SetIndexBuffer(m_OpaqueIB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs drawAttribs;
     drawAttribs.NumIndices = m_OpaqueIB->GetDesc().uiSizeInBytes / sizeof(IndexType);
@@ -795,7 +795,7 @@ void Buildings::DrawOpaque(IDeviceContext* pContext, const SceneDrawAttribs& Att
     pContext->EndDebugGroup(); // Draw buildings
 }
 
-void Buildings::BeforeDrawOpaque(IDeviceContext* pContext)
+void Buildings::BeforeDraw(IDeviceContext* pContext)
 {
     // Resources must be manualy transitioned to required state.
     // Vulkan:     the correct pipeline barrier must contains pixel shader stages which is not supported in transfer context.
@@ -804,7 +804,7 @@ void Buildings::BeforeDrawOpaque(IDeviceContext* pContext)
     pContext->TransitionResourceStates(1, &Barrier);
 }
 
-void Buildings::AfterDrawOpaque(IDeviceContext* pContext)
+void Buildings::AfterDraw(IDeviceContext* pContext)
 {
     // Resources must be manualy transitioned to required state.
     const StateTransitionDesc Barrier{m_OpaqueTexAtlas, RESOURCE_STATE_SHADER_RESOURCE, m_OpaqueTexAtlasDefaultState};
@@ -1078,11 +1078,13 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
         pContext->TransitionResourceStates(1, &Barrier);
     }
 
-    Uint32 CopiedCpuToGpu = 0;
+    Uint32       CopiedCpuToGpu = 0;
+    const Uint32 FirstSlice     = m_m_OpaqueTexAtlasOffset;
 
     // Each frame we copy pixels from CPU side to GPU side.
-    for (Uint32 Slice = 0; Slice < TexDesc.ArraySize; ++Slice)
+    for (Uint32 SliceInd = 0; SliceInd < TexDesc.ArraySize; ++SliceInd)
     {
+        Uint32 Slice  = (FirstSlice + SliceInd) % TexDesc.ArraySize;
         Uint32 Offset = (m_OpaqueTexAtlasSliceSize / 4) * Slice;
         for (Uint32 Mipmap = 0; Mipmap < TexDesc.MipLevels; ++Mipmap)
         {
@@ -1113,6 +1115,8 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
             CopiedCpuToGpu += W * H * 4;
             Offset += W * H;
         }
+
+        m_m_OpaqueTexAtlasOffset = Slice;
 
         ActualTransferRateMb = (CopiedCpuToGpu >> 20) + (CopiedCpuToGpu >> 21); // round bytes to Mb
         if (ActualTransferRateMb >= RequiredTransferRateMb)
