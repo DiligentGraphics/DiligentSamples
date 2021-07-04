@@ -164,7 +164,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
         // Dynamic buffers can be frequently updated by the CPU
         CreateUniformBuffer(m_pDevice, sizeof(float4x4), "Instance constants CB", &m_QuadAttribsCB);
         // Explicitly transition the buffer to RESOURCE_STATE_CONSTANT_BUFFER state
-        Barriers.emplace_back(m_QuadAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+        Barriers.emplace_back(m_QuadAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // Create pixel shaders
@@ -300,12 +300,12 @@ void Tutorial09_Quads::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
             m_pImmediateContext->CopyTexture(CopyAttribs);
         }
         // Transition textures to shader resource state
-        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     // Transition all textures to shader resource state
-    Barriers.emplace_back(pTexArray, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+    Barriers.emplace_back(pTexArray, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
 
     // Set texture SRV in the SRB
     for (int tex = 0; tex < NumTextures; ++tex)
@@ -657,7 +657,7 @@ void Tutorial09_Quads::CreateInstanceBuffer()
     InstBuffDesc.uiSizeInBytes  = sizeof(InstanceData) * m_BatchSize;
     m_BatchDataBuffer.Release();
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_BatchDataBuffer);
-    StateTransitionDesc Barrier(m_BatchDataBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+    StateTransitionDesc Barrier(m_BatchDataBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 }
 

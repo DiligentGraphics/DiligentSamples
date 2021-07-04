@@ -108,7 +108,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         // Create dynamic uniform buffer that will store our transformation matrix
         // Dynamic buffers can be frequently updated by the CPU
         CreateUniformBuffer(m_pDevice, sizeof(float4x4) * 2, "VS constants CB", &m_VSConstants);
-        StateTransitionDesc Barrier{m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true};
+        StateTransitionDesc Barrier{m_VSConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE};
         m_pImmediateContext->TransitionResourceStates(1, &Barrier);
     }
 
@@ -142,7 +142,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
         LayoutElement{0, 0, 3, VT_FLOAT32, False},
         // Attribute 1 - texture coordinates
         LayoutElement{1, 0, 2, VT_FLOAT32, False},
-            
+
         // Per-instance data - second buffer slot
         // We will use four attributes to encode instance-specific 4x4 transformation matrix
         // Attribute 2 - first row
@@ -392,8 +392,8 @@ void Tutorial16_BindlessResources::CreateGeometryBuffers()
     // clang-format off
     StateTransitionDesc Barriers[2] =
     {
-        {m_VertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
-        {m_IndexBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER,  true}
+        {m_VertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        {m_IndexBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER,  STATE_TRANSITION_FLAG_UPDATE_STATE}
     };
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
@@ -433,7 +433,7 @@ void Tutorial16_BindlessResources::LoadTextures()
         auto* pTextureSRV = pTex[tex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         m_SRB[tex]->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pTextureSRV);
         pTexSRVs[tex] = pTextureSRV;
-        Barriers[tex] = StateTransitionDesc{pTex[tex], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true};
+        Barriers[tex] = StateTransitionDesc{pTex[tex], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
     }
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
@@ -524,7 +524,7 @@ void Tutorial16_BindlessResources::PopulateInstanceBuffer()
     // Update instance data buffer
     Uint32 DataSize = static_cast<Uint32>(sizeof(InstanceData) * m_InstanceData.size());
     m_pImmediateContext->UpdateBuffer(m_InstanceBuffer, 0, DataSize, m_InstanceData.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    StateTransitionDesc Barrier(m_InstanceBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+    StateTransitionDesc Barrier(m_InstanceBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 }
 

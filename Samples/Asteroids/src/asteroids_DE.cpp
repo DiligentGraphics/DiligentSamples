@@ -251,7 +251,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         desc.uiSizeInBytes = static_cast<Uint32>((m_BindingMode == BindingMode::Bindless) ? sizeof(DirectX::XMFLOAT4X4) : sizeof(DrawConstantBuffer));
         mDevice->CreateBuffer(desc, nullptr, &mDrawConstantBuffer);
         if (m_BindingMode != BindingMode::Bindless)
-            Barriers.emplace_back(mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+            Barriers.emplace_back(mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     if (m_BindingMode == BindingMode::Bindless)
@@ -270,7 +270,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
                 Ids[i] = i;
             BufferData Data(Ids.data(), desc.uiSizeInBytes);
             mDevice->CreateBuffer(desc, &Data, &mInstanceIDBuffer);
-            Barriers.emplace_back(mInstanceIDBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+            Barriers.emplace_back(mInstanceIDBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
         }
 
         {
@@ -438,7 +438,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         desc.BindFlags      = BIND_UNIFORM_BUFFER;
         desc.CPUAccessFlags = CPU_ACCESS_WRITE;
         mDevice->CreateBuffer(desc, nullptr, &mSkyboxConstantBuffer);
-        Barriers.emplace_back(mSkyboxConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+        Barriers.emplace_back(mSkyboxConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // create skybox pipeline state
@@ -683,7 +683,7 @@ void Asteroids::CreateMeshes()
         data.DataSize = desc.uiSizeInBytes;
 
         mDevice->CreateBuffer(desc, &data, &mVertexBuffer);
-        Barriers.emplace_back(mVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+        Barriers.emplace_back(mVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // create index buffer
@@ -699,7 +699,7 @@ void Asteroids::CreateMeshes()
         data.DataSize = desc.uiSizeInBytes;
 
         mDevice->CreateBuffer(desc, &data, &mIndexBuffer);
-        Barriers.emplace_back(mIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
+        Barriers.emplace_back(mIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     std::vector<SkyboxVertex> skyboxVertices;
@@ -719,7 +719,7 @@ void Asteroids::CreateMeshes()
         data.DataSize = desc.uiSizeInBytes;
 
         mDevice->CreateBuffer(desc, &data, &mSkyboxVertexBuffer);
-        Barriers.emplace_back(mSkyboxVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+        Barriers.emplace_back(mSkyboxVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // create sprite vertex buffer (dynamic)
@@ -732,7 +732,7 @@ void Asteroids::CreateMeshes()
         desc.CPUAccessFlags = CPU_ACCESS_WRITE;
 
         mDevice->CreateBuffer(desc, nullptr, &mSpriteVertexBuffer);
-        Barriers.emplace_back(mSpriteVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+        Barriers.emplace_back(mSpriteVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
     mDeviceCtxt->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 }
@@ -895,7 +895,7 @@ void Asteroids::RenderSubset(Uint32             SubsetNum,
             }
         }
 
-        StateTransitionDesc Barrier{mAsteroidsDataBuffers[SubsetNum], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true};
+        StateTransitionDesc Barrier{mAsteroidsDataBuffers[SubsetNum], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
         pCtx->TransitionResourceStates(1, &Barrier);
 
         // Commit and verify resources
@@ -975,7 +975,7 @@ void Asteroids::Render(float frameTime, const OrbitCamera& camera, const Setting
         const auto& viewProjection = camera.ViewProjection();
         mDeviceCtxt->UpdateBuffer(mDrawConstantBuffer, 0, sizeof(DirectX::XMFLOAT4X4), (void*)&viewProjection, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         // Explicitly transition the buffer to CONSTANT_BUFFER state
-        StateTransitionDesc Barrier{mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true};
+        StateTransitionDesc Barrier{mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE};
         mDeviceCtxt->TransitionResourceStates(1, &Barrier);
     }
 
