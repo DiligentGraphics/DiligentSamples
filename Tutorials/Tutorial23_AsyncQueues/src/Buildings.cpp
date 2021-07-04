@@ -591,8 +591,8 @@ void Buildings::CreateResources(IDeviceContext* pContext)
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_OpaqueIB);
 
         const StateTransitionDesc Barriers[] = {
-            {m_OpaqueVB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true},
-            {m_OpaqueIB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true} //
+            {m_OpaqueVB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE},
+            {m_OpaqueIB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE} //
         };
         pContext->TransitionResourceStates(_countof(Barriers), Barriers);
     }

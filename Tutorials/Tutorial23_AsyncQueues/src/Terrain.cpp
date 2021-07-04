@@ -113,8 +113,8 @@ void Terrain::CreateResources(IDeviceContext* pContext)
 
         // Buffers are used in multiple contexts, but after this transition resources state will never changes.
         const StateTransitionDesc Barriers[] = {
-            {m_VB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_VERTEX_BUFFER, true},
-            {m_IB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_INDEX_BUFFER, true} //
+            {m_VB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE},
+            {m_IB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE} //
         };
         pContext->TransitionResourceStates(_countof(Barriers), Barriers);
     }
@@ -160,7 +160,7 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         RefCntAutoPtr<ITexture> Tex;
         CreateTextureFromFile("Sand.jpg", loadInfo, m_Device, &m_DiffuseMap);
 
-        const StateTransitionDesc Barrier = {m_DiffuseMap, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_SHADER_RESOURCE, true};
+        const StateTransitionDesc Barrier = {m_DiffuseMap, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_FLAG_UPDATE_STATE};
         pContext->TransitionResourceStates(1, &Barrier);
     }
 
@@ -417,7 +417,7 @@ void Terrain::BeforeDraw(IDeviceContext* pContext)
     const StateTransitionDesc Barriers[] = {
         {m_HeightMap[Id], RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE},
         {m_NormalMap[Id], RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE},
-        {m_TerrainConstants[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true} //
+        {m_TerrainConstants[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE} //
     };
     pContext->TransitionResourceStates(_countof(Barriers), Barriers);
 }

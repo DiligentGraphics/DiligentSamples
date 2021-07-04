@@ -180,8 +180,8 @@ void Tutorial23_AsyncQueues::DownSample()
 
     // Transit last mipmap level to SRV state.
     // Now all mipmaps in m_GBuffer.Color are in SRV state, so update resource state.
-    Barrier.FirstMipLevel       = DownSampleFactor - 1;
-    Barrier.UpdateResourceState = true;
+    Barrier.FirstMipLevel = DownSampleFactor - 1;
+    Barrier.Flags         = RESOURCE_STATE_FLAG_UPDATE_STATE;
     m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 
     m_pImmediateContext->EndDebugGroup(); // Down sample pass
