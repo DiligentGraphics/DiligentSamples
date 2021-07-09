@@ -59,6 +59,8 @@ SampleBase* CreateSample()
 
 void Tutorial19_RenderPasses::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
+    SampleBase::ModifyEngineInitInfo(Attribs);
+
     // We do not need the depth buffer from the swap chain in this sample
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 }
