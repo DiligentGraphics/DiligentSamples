@@ -75,7 +75,10 @@ void HelloArApplication::OnResume(void* env, void* context, void* activity)
 
     if (ar_session_ == nullptr)
     {
-        ArInstallStatus install_status;
+        // variable 'install_status' must be initialized before it can be used in switch statement
+        // this will be over-written by ArCoreApk_requestInstall
+        ArInstallStatus install_status = AR_INSTALL_STATUS_INSTALLED;
+
         // If install was not yet requested, that means that we are resuming the
         // activity first time because of explicit user interaction (such as
         // launching the application)
