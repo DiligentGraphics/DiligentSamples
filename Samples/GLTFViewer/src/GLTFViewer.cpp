@@ -221,7 +221,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     RendererCI.AllowDebugView  = true;
     RendererCI.UseIBL          = true;
     RendererCI.FrontCCW        = true;
-    RendererCI.UseTextureAtals = m_bUseResourceCache;
+    RendererCI.UseTextureAtlas = m_bUseResourceCache;
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
