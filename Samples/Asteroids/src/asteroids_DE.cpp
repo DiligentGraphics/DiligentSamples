@@ -423,10 +423,11 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
     {
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
+        loadInfo.Name   = "Skybox";
         RefCntAutoPtr<ITexture> skybox;
         CreateTextureFromFile("starbox_1024.dds", loadInfo, mDevice, &skybox);
         mSkyboxSRV = skybox->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        Barriers.emplace_back(skybox, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+        Barriers.emplace_back(skybox, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // Create skybox constant buffer
@@ -767,7 +768,7 @@ void Asteroids::InitializeTextureData()
         mDevice->CreateTexture(textureDesc, &initData, &mTextures[t]);
         mTextureSRVs[t] = mTextures[t]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         mTextureSRVs[t]->SetSampler(mSamplerState);
-        Barriers.emplace_back(mTextures[t], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+        Barriers.emplace_back(mTextures[t], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
     mDeviceCtxt->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 }
@@ -806,6 +807,7 @@ void Asteroids::CreateGUIResources()
 
             TextureLoadInfo loadInfo;
             loadInfo.IsSRGB = true;
+            loadInfo.Name   = "Sprite texture";
             RefCntAutoPtr<ITexture> spriteTexture;
             CreateTextureFromFile(path.c_str(), loadInfo, mDevice, &spriteTexture);
             auto* pSRV = spriteTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
