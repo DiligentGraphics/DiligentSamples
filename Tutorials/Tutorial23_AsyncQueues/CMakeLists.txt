@@ -33,3 +33,7 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial23_AsyncQueues" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+
+if(PLATFORM_LINUX)
+    target_link_libraries(Tutorial23_AsyncQueues PRIVATE pthread)
+endif()
