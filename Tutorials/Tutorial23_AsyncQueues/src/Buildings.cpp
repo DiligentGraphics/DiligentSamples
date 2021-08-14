@@ -1,6 +1,6 @@
 /*
  *  Copyright 2019-2021 Diligent Graphics LLC
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
@@ -162,7 +162,7 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                 float  Radius     = AngleAndRadius[e].y;
                 float  NextRadius = AngleAndRadius[e + 1 == NumEdges ? 0 : e + 1].y;
                 float  Angle      = AngleAndRadius[e].x;
-                float2 Pos        = float2{cos(Angle), sin(Angle)} * Radius;
+                float2 Pos        = float2{std::cos(Angle), std::sin(Angle)} * Radius;
 
                 if (Radius > PrevRadius - 0.1 &&
                     Radius > NextRadius - 0.1 &&
@@ -170,8 +170,8 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                 {
                     float  Angle1 = Angle - (0.3f / NumEdges);
                     float  Angle2 = Angle + (0.3f / NumEdges);
-                    float2 Pos1   = float2{cos(Angle1), sin(Angle1)} * lerp(Radius, PrevRadius, 0.2f);
-                    float2 Pos2   = float2{cos(Angle2), sin(Angle2)} * lerp(Radius, NextRadius, 0.2f);
+                    float2 Pos1   = float2{std::cos(Angle1), std::sin(Angle1)} * lerp(Radius, PrevRadius, 0.2f);
+                    float2 Pos2   = float2{std::cos(Angle2), std::sin(Angle2)} * lerp(Radius, NextRadius, 0.2f);
 
                     Corners.push_back({Pos1.x, Pos1.y, ANY_WINDOWS});
                     Corners.push_back({Pos.x, Pos.y, ANY_WINDOWS | NEON_RIGHT});
@@ -312,7 +312,7 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                 {
                     Section sc;
                     float   a = RndAngle(RndDev) * 4.f;
-                    CenterOffset += float2{cos(a), sin(a)} * 0.5f;
+                    CenterOffset += float2{std::cos(a), std::sin(a)} * 0.5f;
                     sc.TexIndex = BaseTexIndex + RndTexIndex(RndDev);
 
                     sc.Scale1       = 0.f;
@@ -439,11 +439,11 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                 // calculate normals
                 {
                     float3 n = normalize(cross(RB.Pos - LB.Pos, LT.Pos - LB.Pos));
-                    if (isnan(n.x))
+                    if (std::isnan(n.x))
                         n = normalize(cross(RB.Pos - RT.Pos, LT.Pos - RT.Pos));
                     n.y = -n.y;
 
-                    VERIFY_EXPR(!isnan(n.x));
+                    VERIFY_EXPR(!std::isnan(n.x));
                     LB.Norm = LT.Norm = RB.Norm = RT.Norm = n;
                 }
 
@@ -591,8 +591,8 @@ void Buildings::CreateResources(IDeviceContext* pContext)
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_OpaqueIB);
 
         const StateTransitionDesc Barriers[] = {
-            {m_OpaqueVB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE},
-            {m_OpaqueIB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_FLAG_UPDATE_STATE} //
+            {m_OpaqueVB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {m_OpaqueIB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE} //
         };
         pContext->TransitionResourceStates(_countof(Barriers), Barriers);
     }
