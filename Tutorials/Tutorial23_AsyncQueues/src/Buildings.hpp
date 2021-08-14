@@ -31,8 +31,8 @@
 
 #include "Terrain.hpp"
 
-// Single staging texture allocate less memory but spend more time
-// than when used UpdateTexture() with implicit staging buffer.
+// Single staging texture allocates less memory, but spends more time
+// than when UpdateTexture() is used with implicit staging buffer.
 #define USE_STAGING_TEXTURE 0
 
 namespace Diligent

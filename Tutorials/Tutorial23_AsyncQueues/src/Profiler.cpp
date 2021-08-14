@@ -30,9 +30,8 @@
 namespace Diligent
 {
 
-static const float GraphWidth  = 500.f;
-static const float GraphHeight = 100.f;
-
+static constexpr float GraphWidth  = 500.f;
+static constexpr float GraphHeight = 100.f;
 
 void Profiler::Initialize(IRenderDevice* pDevice)
 {

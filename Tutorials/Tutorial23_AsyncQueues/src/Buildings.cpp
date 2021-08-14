@@ -39,16 +39,12 @@ namespace HLSL
 
 namespace
 {
-float fract(float x)
-{
-    return x - floor(x);
-}
 
 float2 Hash22(const float2 p)
 {
-    float3 p3 = float3(fract(p.x * 0.1031f), fract(p.y * 0.1030f), fract(p.x * 0.0973f));
-    p3        = p3 + float3{dot(p3, float3{p3.y, p3.z, p3.x} + float3{19.19f})};
-    return float2{fract((p3.x + p3.y) * p3.z), fract((p3.x * p3.z) * p3.y)};
+    auto p3 = float3{Frac(p.x * 0.1031f), Frac(p.y * 0.1030f), Frac(p.x * 0.0973f)};
+    p3 -= float3{dot(p3, float3{p3.y, p3.z, p3.x} + float3{19.19f})};
+    return float2{Frac((p3.x + p3.y) * p3.z), Frac((p3.x * p3.z) * p3.y)};
 }
 
 struct Vertex
@@ -75,8 +71,6 @@ enum class TexLayerType
     Count                   = 5, // ignore 'Wall'
 };
 
-} // namespace
-
 
 struct Building
 {
@@ -97,7 +91,13 @@ struct Building
     }
 };
 
-static void CreateBuilding(const float2 Center, const float MaxRadius, float MaxHeight, const Uint32 BaseTexIndex, const Uint32 TexArraySize, std::vector<Vertex>& Vertices, std::vector<IndexType>& Indices)
+void CreateBuilding(const float2            Center,
+                    const float             MaxRadius,
+                    float                   MaxHeight,
+                    const Uint32            BaseTexIndex,
+                    const Uint32            TexArraySize,
+                    std::vector<Vertex>&    Vertices,
+                    std::vector<IndexType>& Indices)
 {
     enum class BuildingShape
     {
@@ -173,13 +173,13 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                     float2 Pos1   = float2{std::cos(Angle1), std::sin(Angle1)} * lerp(Radius, PrevRadius, 0.2f);
                     float2 Pos2   = float2{std::cos(Angle2), std::sin(Angle2)} * lerp(Radius, NextRadius, 0.2f);
 
-                    Corners.push_back({Pos1.x, Pos1.y, ANY_WINDOWS});
-                    Corners.push_back({Pos.x, Pos.y, ANY_WINDOWS | NEON_RIGHT});
-                    Corners.push_back({Pos2.x, Pos2.y, ANY_WINDOWS | NEON_LEFT});
+                    Corners.emplace_back(Pos1.x, Pos1.y, ANY_WINDOWS);
+                    Corners.emplace_back(Pos.x, Pos.y, ANY_WINDOWS | NEON_RIGHT);
+                    Corners.emplace_back(Pos2.x, Pos2.y, ANY_WINDOWS | NEON_LEFT);
                 }
                 else
                 {
-                    Corners.push_back({Pos.x, Pos.y, ANY_WINDOWS});
+                    Corners.emplace_back(Pos.x, Pos.y, ANY_WINDOWS);
                 }
             }
 
@@ -193,35 +193,35 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
             if (Type < 0.25f && !(ShapeId == BuildingShape::PRISM_SECTIONS_OFFSET || ShapeId == BuildingShape::PRISM_ROTATED_SECTIONS))
             {
                 // cross
-                Corners.push_back({+0.5f, +2.0f, ANY_WINDOWS | NEON_RIGHT});
-                Corners.push_back({-0.5f, +2.0f, ANY_WINDOWS | NEON_TOP});
-                Corners.push_back({-0.5f, +0.5f, ANY_WINDOWS | NEON_LEFT});
-                Corners.push_back({-2.0f, +0.5f, ANY_WINDOWS | NEON_RIGHT});
-                Corners.push_back({-2.0f, -0.5f, ANY_WINDOWS | NEON_TOP});
-                Corners.push_back({-0.5f, -0.5f, ANY_WINDOWS | NEON_LEFT});
-                Corners.push_back({-0.5f, -2.0f, ANY_WINDOWS | NEON_RIGHT});
-                Corners.push_back({+0.5f, -2.0f, ANY_WINDOWS | NEON_TOP});
-                Corners.push_back({+0.5f, -0.5f, ANY_WINDOWS | NEON_LEFT});
-                Corners.push_back({+2.0f, -0.5f, ANY_WINDOWS | NEON_RIGHT});
-                Corners.push_back({+2.0f, +0.5f, ANY_WINDOWS | NEON_TOP});
-                Corners.push_back({+0.5f, +0.5f, ANY_WINDOWS | NEON_LEFT});
+                Corners.emplace_back(+0.5f, +2.0f, ANY_WINDOWS | NEON_RIGHT);
+                Corners.emplace_back(-0.5f, +2.0f, ANY_WINDOWS | NEON_TOP);
+                Corners.emplace_back(-0.5f, +0.5f, ANY_WINDOWS | NEON_LEFT);
+                Corners.emplace_back(-2.0f, +0.5f, ANY_WINDOWS | NEON_RIGHT);
+                Corners.emplace_back(-2.0f, -0.5f, ANY_WINDOWS | NEON_TOP);
+                Corners.emplace_back(-0.5f, -0.5f, ANY_WINDOWS | NEON_LEFT);
+                Corners.emplace_back(-0.5f, -2.0f, ANY_WINDOWS | NEON_RIGHT);
+                Corners.emplace_back(+0.5f, -2.0f, ANY_WINDOWS | NEON_TOP);
+                Corners.emplace_back(+0.5f, -0.5f, ANY_WINDOWS | NEON_LEFT);
+                Corners.emplace_back(+2.0f, -0.5f, ANY_WINDOWS | NEON_RIGHT);
+                Corners.emplace_back(+2.0f, +0.5f, ANY_WINDOWS | NEON_TOP);
+                Corners.emplace_back(+0.5f, +0.5f, ANY_WINDOWS | NEON_LEFT);
             }
             else if (Type < 0.85f)
             {
                 // quad
-                Corners.push_back({-1.f, -1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({+1.f, -1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({+1.f, +1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({-1.f, +1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
+                Corners.emplace_back(-1.f, -1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(+1.f, -1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(+1.f, +1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(-1.f, +1.f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
             }
             else
             {
                 // pentagon
-                Corners.push_back({+0.0f, +1.0f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({-1.0f, +0.2f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({-0.7f, -1.0f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({+0.7f, -1.0f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
-                Corners.push_back({+1.0f, +0.2f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP});
+                Corners.emplace_back(+0.0f, +1.0f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(-1.0f, +0.2f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(-0.7f, -1.0f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(+0.7f, -1.0f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
+                Corners.emplace_back(+1.0f, +0.2f, ANY_WINDOWS | NEON_RIGHT | NEON_TOP);
             }
         }
     }
@@ -408,7 +408,7 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
             v.Pos.x  = p.x + Center.x + CenterOffset.x;
             v.Pos.z  = p.y + Center.y + CenterOffset.y;
 
-            // same position but different normal and uv
+            // Same position, but different normal and uv
             Vertices.push_back(v);
             Vertices.push_back(v);
         }
@@ -417,7 +417,7 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
         {
             for (Uint32 e = 0; e < NumCornerPoints; e += 2)
             {
-                // first and last vertex produce the last quad
+                // First and last vertice produce the last quad
                 const auto Left   = e + 1;
                 const auto Right  = e + 2 == NumCornerPoints ? 0 : e + 2;
                 const auto Top    = static_cast<Uint32>(Vertices.size() - NumCornerPoints);
@@ -436,7 +436,7 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                 auto& RB = Vertices[Bottom + Right];
                 auto& RT = Vertices[Top + Right];
 
-                // calculate normals
+                // Calculate normals
                 {
                     float3 n = normalize(cross(RB.Pos - LB.Pos, LT.Pos - LB.Pos));
                     if (std::isnan(n.x))
@@ -447,7 +447,7 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
                     LB.Norm = LT.Norm = RB.Norm = RT.Norm = n;
                 }
 
-                // calculate UV
+                // Calculate UV
                 {
                     const Uint32 TexType    = Corners[Right / 2].TexType & TexMask;
                     const float  UVScale    = 0.5f / MaxRadius;
@@ -508,6 +508,8 @@ static void CreateBuilding(const float2 Center, const float MaxRadius, float Max
         AddFloor(BuildingHeight, sc.Scale2, sc.CenterOffset, sc.Angle2, sc.SupportedTex, sc.TexIndex, true);
     }
 }
+
+} // namespace
 
 void Buildings::CreateResources(IDeviceContext* pContext)
 {
@@ -775,11 +777,11 @@ void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 
     pContext->SetPipelineState(m_DrawOpaquePSO);
 
-    // m_OpaqueTexAtlas can not be transitioned here because has UNKNOWN state.
-    // Other resources has constant state and does not require transitions.
+    // m_OpaqueTexAtlas can not be transitioned here because it is in UNKNOWN state.
+    // Other resources are in constant state and do not require transitions.
     pContext->CommitShaderResources(m_DrawOpaqueSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-    // Vertex and index buffers are immutable and does not require transitions.
+    // Vertex and index buffers are immutable and do not require transitions.
     IBuffer*     VBs[]     = {m_OpaqueVB};
     const Uint32 Offsets[] = {0};
 
@@ -798,8 +800,8 @@ void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 void Buildings::BeforeDraw(IDeviceContext* pContext)
 {
     // Resources must be manualy transitioned to required state.
-    // Vulkan:     the correct pipeline barrier must contains pixel shader stages which is not supported in transfer context.
-    // DirectX 12: texture used as pixel shader resource and must be transitioned in graphics context.
+    // Vulkan:     correct pipeline barrier must contain pixel shader stages, which are not supported in transfer context.
+    // DirectX 12: the texture is used as a pixel shader resource and must be transitioned in graphics context.
     const StateTransitionDesc Barrier{m_OpaqueTexAtlas, m_OpaqueTexAtlasDefaultState, RESOURCE_STATE_SHADER_RESOURCE};
     pContext->TransitionResourceStates(1, &Barrier);
 }
@@ -811,54 +813,33 @@ void Buildings::AfterDraw(IDeviceContext* pContext)
     pContext->TransitionResourceStates(1, &Barrier);
 }
 
-
-inline constexpr Uint32 ConvertColor(float R, float G, float B, float A)
-{
-    Uint32 Result = 0;
-    Result |= (static_cast<Uint32>(R * 255.f + 0.5f) & 0xFF) << 0;
-    Result |= (static_cast<Uint32>(G * 255.f + 0.5f) & 0xFF) << 8;
-    Result |= (static_cast<Uint32>(B * 255.f + 0.5f) & 0xFF) << 16;
-    Result |= (static_cast<Uint32>(A * 255.f + 0.5f) & 0xFF) << 24;
-    return Result;
-}
-
-inline float4 ReadColor(const Uint32 Src)
-{
-    const float Scale = 1.0f / 255.f;
-    return float4{
-        static_cast<float>((Src >> 0) & 0xFF) * Scale,
-        static_cast<float>((Src >> 8) & 0xFF) * Scale,
-        static_cast<float>((Src >> 16) & 0xFF) * Scale,
-        static_cast<float>((Src >> 24) & 0xFF) * Scale};
-}
-
 // Alpha component - brightness of self-emission
-static constexpr Uint32 WallColor = ConvertColor(0.225f, 0.125f, 0.025f, 0.0f);
+static constexpr Uint32 WallColor = F4Color_To_RGBA8Unorm({0.225f, 0.125f, 0.025f, 0.0f});
 
 static constexpr float WindowEmission = 0.04f;
 static constexpr float NeonEmission   = 0.16f;
 
 static constexpr Uint32 WindowColors[] = {
-    ConvertColor(0.98f, 0.92f, 0.51f, WindowEmission),
+    F4Color_To_RGBA8Unorm({0.98f, 0.92f, 0.51f, WindowEmission}),
     WallColor,
     WallColor,
-    ConvertColor(0.77f, 1.00f, 0.97f, WindowEmission),
-    ConvertColor(1.00f, 0.87f, 0.66f, WindowEmission),
+    F4Color_To_RGBA8Unorm({0.77f, 1.00f, 0.97f, WindowEmission}),
+    F4Color_To_RGBA8Unorm({1.00f, 0.87f, 0.66f, WindowEmission}),
     WallColor,
-    ConvertColor(1.00f, 0.64f, 0.99f, WindowEmission),
+    F4Color_To_RGBA8Unorm({1.00f, 0.64f, 0.99f, WindowEmission}),
     WallColor,
-    ConvertColor(0.95f, 0.95f, 0.95f, WindowEmission),
-    ConvertColor(0.87f, 0.99f, 0.61f, WindowEmission),
+    F4Color_To_RGBA8Unorm({0.95f, 0.95f, 0.95f, WindowEmission}),
+    F4Color_To_RGBA8Unorm({0.87f, 0.99f, 0.61f, WindowEmission}),
     WallColor,
     WallColor //
 };
 
 static constexpr Uint32 NeonColors[] = {
-    ConvertColor(0.900f, 0.376f, 0.940f, NeonEmission),
-    ConvertColor(1.000f, 0.200f, 0.200f, NeonEmission),
-    ConvertColor(0.250f, 0.930f, 0.950f, NeonEmission),
-    ConvertColor(0.970f, 0.470f, 0.168f, NeonEmission),
-    ConvertColor(0.208f, 0.953f, 0.188f, NeonEmission) //
+    F4Color_To_RGBA8Unorm({0.900f, 0.376f, 0.940f, NeonEmission}),
+    F4Color_To_RGBA8Unorm({1.000f, 0.200f, 0.200f, NeonEmission}),
+    F4Color_To_RGBA8Unorm({0.250f, 0.930f, 0.950f, NeonEmission}),
+    F4Color_To_RGBA8Unorm({0.970f, 0.470f, 0.168f, NeonEmission}),
+    F4Color_To_RGBA8Unorm({0.208f, 0.953f, 0.188f, NeonEmission}) //
 };
 
 static constexpr Uint32 WindowSizePxX          = 8;
@@ -996,10 +977,10 @@ static void GenMipmap(const Uint32* SrcPixels, const Uint32 SrcW, const Uint32 S
     {
         for (Uint32 x = 0; x < DstW; ++x)
         {
-            float4 c0  = ReadColor(SrcPixels[(x * 2 + 0) + (y * 2 + 0) * SrcW]);
-            float4 c1  = ReadColor(SrcPixels[(x * 2 + 1) + (y * 2 + 0) * SrcW]);
-            float4 c2  = ReadColor(SrcPixels[(x * 2 + 0) + (y * 2 + 1) * SrcW]);
-            float4 c3  = ReadColor(SrcPixels[(x * 2 + 1) + (y * 2 + 1) * SrcW]);
+            float4 c0  = RGBA8Unorm_To_F4Color(SrcPixels[(x * 2 + 0) + (y * 2 + 0) * SrcW]);
+            float4 c1  = RGBA8Unorm_To_F4Color(SrcPixels[(x * 2 + 1) + (y * 2 + 0) * SrcW]);
+            float4 c2  = RGBA8Unorm_To_F4Color(SrcPixels[(x * 2 + 0) + (y * 2 + 1) * SrcW]);
+            float4 c3  = RGBA8Unorm_To_F4Color(SrcPixels[(x * 2 + 1) + (y * 2 + 1) * SrcW]);
             float4 col = (c0 + c1 + c2 + c3) * 0.25f;
 
             // disable self-emission
@@ -1007,7 +988,7 @@ static void GenMipmap(const Uint32* SrcPixels, const Uint32 SrcW, const Uint32 S
             if (NumEmissionPix <= 2)
                 col.a = 0.f;
 
-            DstPixels[x + y * DstW] = ConvertColor(col.r, col.g, col.b, col.a);
+            DstPixels[x + y * DstW] = F4Color_To_RGBA8Unorm(col);
         }
     }
 }
@@ -1044,7 +1025,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
 
     const auto& TexDesc = m_OpaqueTexAtlas->GetDesc();
 
-    // Try to read new texture
+    // Try to read a new texture
     for (Uint32 i = 0; i < 100; ++i)
     {
         TaskStatus Expected = TaskStatus::TexReady;
@@ -1123,8 +1104,8 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
             break;
     }
 
-    // Resources must be manualy transitioned to required state.
-    // Vulkan:     allowed any state which is supported by transfer queue.
+    // Resources must be manualy transitioned to required states.
+    // Vulkan:     any state supported by transfer queue is allowed.
     // DirectX 12: resource transition from graphics/compute to copy queue requires resource to be in COMMON state.
     if (m_OpaqueTexAtlasDefaultState != RESOURCE_STATE_COPY_DEST)
     {
@@ -1142,10 +1123,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
 Buildings::Buildings()
 {
     m_GenTexThreadLooping.store(true);
-    m_GenTexThread = std::thread{[this]() //
-                                 {
-                                     ThreadProc();
-                                 }};
+    m_GenTexThread = std::thread{&Buildings::ThreadProc, this};
 }
 
 Buildings::~Buildings()
@@ -1160,7 +1138,7 @@ void Buildings::ThreadProc()
     {
         for (Uint32 i = 0; i < 100; ++i)
         {
-            // Check task status.
+            // Check the task status.
             // If task status is 'NewTask' then change status to GenTex,
             // invalidate CPU cache to make changes from another thread visible to current thread.
             TaskStatus Expected = TaskStatus::NewTask;
