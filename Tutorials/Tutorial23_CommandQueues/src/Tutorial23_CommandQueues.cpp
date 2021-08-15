@@ -262,7 +262,7 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
 
 #if PLATFORM_ANDROID
     // Set settings for low-performance devices
-    m_SurfaceScalePOT     = -1;
+    m_SurfaceScaleExp2    = -1;
     m_Terrain.TerrainSize = 7;
     m_Glow                = false;
 #endif
@@ -412,6 +412,19 @@ void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAt
     // Time queries for profiling.
     Attribs.EngineCI.Features.TimestampQueries              = DEVICE_FEATURE_STATE_OPTIONAL;
     Attribs.EngineCI.Features.TransferQueueTimestampQueries = DEVICE_FEATURE_STATE_OPTIONAL;
+
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
+    {
+        auto& CreateInfoVk{static_cast<EngineVkCreateInfo&>(Attribs.EngineCI)};
+        CreateInfoVk.UploadHeapPageSize = 32 << 20;
+        // Increase reserve size to avoid pages being constantly destroyed and created.
+        CreateInfoVk.HostVisibleMemoryReserveSize = 1536 << 20;
+    }
+    else if (Attribs.DeviceType == RENDER_DEVICE_TYPE_D3D12)
+    {
+        auto& CreateInfoD3D12{static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI)};
+        CreateInfoD3D12.DynamicHeapPageSize = 32 << 20;
+    }
 }
 
 void Tutorial23_CommandQueues::ComputePass()
@@ -700,7 +713,7 @@ void Tutorial23_CommandQueues::UpdateUI()
 
             const String TransferRateStr = std::to_string(GetCpuToGpuTransferRateMb());
             ImGui::TextDisabled("Transfer rate per frame (Mb)");
-            ImGui::SliderInt("##TransferRate", &m_TransferRateMbPOT, 0, TexSizePOT, TransferRateStr.c_str());
+            ImGui::SliderInt("##TransferRate", &m_TransferRateMbExp2, 0, TexSizePOT, TransferRateStr.c_str());
 
             ImGui::Checkbox("Use async transfer", &m_UseAsyncTransfer);
             ImGui::Separator();
@@ -724,12 +737,12 @@ void Tutorial23_CommandQueues::UpdateUI()
         // Graphics workload
         {
             const char* SurfaceScaleStr[] = {"1/4", "1/2", "1", "2", "4"};
-            const int   OldSurfaceScale   = m_SurfaceScalePOT;
+            const int   OldSurfaceScale   = m_SurfaceScaleExp2;
             ImGui::TextDisabled("Surface scale");
-            ImGui::SliderInt("##SurfaceScale", &m_SurfaceScalePOT, -2, 2, SurfaceScaleStr[m_SurfaceScalePOT + 2]);
+            ImGui::SliderInt("##SurfaceScale", &m_SurfaceScaleExp2, -2, 2, SurfaceScaleStr[m_SurfaceScaleExp2 + 2]);
 
             // Recreate render targets
-            if (OldSurfaceScale != m_SurfaceScalePOT)
+            if (OldSurfaceScale != m_SurfaceScaleExp2)
             {
                 const auto& SCDesc = m_pSwapChain->GetDesc();
                 WindowResize(SCDesc.Width, SCDesc.Height);

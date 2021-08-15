@@ -60,7 +60,8 @@ private:
 
     RefCntAutoPtr<IRenderDevice> m_Device;
 
-    static constexpr Uint32 NumFramesPOT = 3;
+    static constexpr Uint32 NumFramesPOT   = 3;
+    static constexpr float  UpdateInterval = 1.f / 5.f;
 
     Uint32 m_FrameId : NumFramesPOT;
     Uint32 m_TempCpuToGpuTransferRateMb     = 0;

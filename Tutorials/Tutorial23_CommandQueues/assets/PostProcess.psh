@@ -61,7 +61,7 @@ float4 main(in PSInput PSIn) : SV_Target
     {
         float4 Color0 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 0);
         Color0.rgb *= (Color0.a * 0.2);
-        EmissionGlow = Color0;
+        EmissionGlow = Color0.rgb;
     }
 #endif
 

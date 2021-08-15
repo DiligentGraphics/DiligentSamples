@@ -179,7 +179,7 @@ void Profiler::Update(double ElapsedTime)
 
     // Update UI
     m_AccumTime += ElapsedTime;
-    if (m_AccumTime > 1.0)
+    if (m_AccumTime > UpdateInterval)
     {
         m_AccumTime = 0.0;
 

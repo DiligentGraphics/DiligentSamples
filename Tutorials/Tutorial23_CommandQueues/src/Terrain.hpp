@@ -92,7 +92,7 @@ private:
     Uint32 m_FrameId : 1;
 
 public:
-    int   TerrainSize = 10; // size of mesh as power of 2
+    int   TerrainSize = 11; // size of mesh as power of 2
     float XOffset     = 0.f;
     float Animation   = 0.f;
 

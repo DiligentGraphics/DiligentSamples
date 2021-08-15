@@ -63,11 +63,11 @@ private:
     void GraphicsPass1();
     void GraphicsPass2();
 
-    Uint32 GetCpuToGpuTransferRateMb() const { return m_TransferRateMbPOT ? 1u << m_TransferRateMbPOT : 0u; }
+    Uint32 GetCpuToGpuTransferRateMb() const { return m_TransferRateMbExp2 ? 1u << m_TransferRateMbExp2 : 0u; }
 
     Uint32 ScaleSurface(Uint32 Dim) const
     {
-        float Scale = m_SurfaceScalePOT >= 0 ? static_cast<float>(1u << m_SurfaceScalePOT) : 1.f / static_cast<float>(1u << -m_SurfaceScalePOT);
+        float Scale = m_SurfaceScaleExp2 >= 0 ? static_cast<float>(1u << m_SurfaceScaleExp2) : 1.f / static_cast<float>(1u << -m_SurfaceScaleExp2);
         return static_cast<Uint32>(Dim * Scale + 0.5f);
     }
 
@@ -110,15 +110,15 @@ private:
     TEXTURE_FORMAT m_ColorTargetFormat = TEX_FORMAT_RGBA8_UNORM;
     TEXTURE_FORMAT m_DepthTargetFormat = TEX_FORMAT_UNKNOWN;
 
-    int          m_TransferRateMbPOT = 2; // power of 2
-    bool         m_UseAsyncCompute   = false;
-    bool         m_UseAsyncTransfer  = false;
-    bool         m_Glow              = true;
-    float3       m_LightDir          = normalize(float3{-0.49f, -0.60f, 0.64f});
-    const float  m_AmbientLight      = 0.1f;
-    const float3 m_FogColor          = {0.73f, 0.65f, 0.59f};
-    const float3 m_SkyColor          = {0.7f, 0.5f, 0.2f};
-    int          m_SurfaceScalePOT   = 0;
+    int          m_TransferRateMbExp2 = 5; // two to the power of
+    bool         m_UseAsyncCompute    = true;
+    bool         m_UseAsyncTransfer   = true;
+    bool         m_Glow               = true;
+    float3       m_LightDir           = normalize(float3{-0.49f, -0.60f, 0.64f});
+    const float  m_AmbientLight       = 0.1f;
+    const float3 m_FogColor           = {0.73f, 0.65f, 0.59f};
+    const float3 m_SkyColor           = {0.7f, 0.5f, 0.2f};
+    int          m_SurfaceScaleExp2   = 1; // two to the power of
 
     std::vector<ImmediateContextCreateInfo> m_ContextCI;
 
