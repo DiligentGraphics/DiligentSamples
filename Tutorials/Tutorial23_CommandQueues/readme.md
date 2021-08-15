@@ -1,6 +1,6 @@
-# Tutorial23 - Async Queues
+# Tutorial23 - Command Queues
 
-This tutorial demonstrates how to optimize rendering using multiple queues, also known as async compute.
+This tutorial demonstrates how to optimize rendering using multiple command queues, also known as async compute.
 
 ## Queues in desktop GPUs
 

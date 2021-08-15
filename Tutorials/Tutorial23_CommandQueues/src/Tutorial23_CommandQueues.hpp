@@ -37,10 +37,10 @@
 namespace Diligent
 {
 
-class Tutorial23_AsyncQueues final : public SampleBase
+class Tutorial23_CommandQueues final : public SampleBase
 {
 public:
-    ~Tutorial23_AsyncQueues() override;
+    ~Tutorial23_CommandQueues() override;
 
     virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
@@ -48,7 +48,7 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial23: Async queues"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial23: Command queues"; }
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 

@@ -24,7 +24,7 @@
  *  of the possibility of such damages.
  */
 
-#include "Tutorial23_AsyncQueues.hpp"
+#include "Tutorial23_CommandQueues.hpp"
 
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
@@ -47,10 +47,10 @@ static_assert(sizeof(TerrainConstants) % 16 == 0, "must be aligned to 16 bytes")
 
 SampleBase* CreateSample()
 {
-    return new Tutorial23_AsyncQueues();
+    return new Tutorial23_CommandQueues();
 }
 
-Tutorial23_AsyncQueues::~Tutorial23_AsyncQueues()
+Tutorial23_CommandQueues::~Tutorial23_CommandQueues()
 {
     if (m_GraphicsCtxFence)
         m_GraphicsCtxFence->Wait(m_GraphicsCtxFenceValue);
@@ -60,7 +60,7 @@ Tutorial23_AsyncQueues::~Tutorial23_AsyncQueues()
         m_TransferCtxFence->Wait(m_TransferCtxFenceValue);
 }
 
-void Tutorial23_AsyncQueues::CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
+void Tutorial23_CommandQueues::CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
     // Create PSO for post process pass
 
@@ -157,7 +157,7 @@ void Tutorial23_AsyncQueues::CreatePostProcessPSO(IShaderSourceInputStreamFactor
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_DownSamplePSO);
 }
 
-void Tutorial23_AsyncQueues::DownSample()
+void Tutorial23_CommandQueues::DownSample()
 {
     m_pImmediateContext->BeginDebugGroup("Down sample pass");
 
@@ -187,7 +187,7 @@ void Tutorial23_AsyncQueues::DownSample()
     m_pImmediateContext->EndDebugGroup(); // Down sample pass
 }
 
-void Tutorial23_AsyncQueues::PostProcess()
+void Tutorial23_CommandQueues::PostProcess()
 {
     m_pImmediateContext->BeginDebugGroup("Post process");
 
@@ -213,7 +213,7 @@ void Tutorial23_AsyncQueues::PostProcess()
     m_pImmediateContext->EndDebugGroup(); // Post process
 }
 
-void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
+void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
@@ -339,7 +339,7 @@ void Tutorial23_AsyncQueues::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext->Flush();
 }
 
-void Tutorial23_AsyncQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
+void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
     SampleBase::ModifyEngineInitInfo(Attribs);
 
@@ -411,7 +411,7 @@ void Tutorial23_AsyncQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAttr
     Attribs.EngineCI.Features.TransferQueueTimestampQueries = DEVICE_FEATURE_STATE_OPTIONAL;
 }
 
-void Tutorial23_AsyncQueues::ComputePass()
+void Tutorial23_CommandQueues::ComputePass()
 {
     auto ComputeCtx = m_UseAsyncCompute ? m_ComputeCtx : m_pImmediateContext;
 
@@ -450,7 +450,7 @@ void Tutorial23_AsyncQueues::ComputePass()
     }
 }
 
-void Tutorial23_AsyncQueues::UploadPass()
+void Tutorial23_CommandQueues::UploadPass()
 {
     const Uint32 TransferRate = GetCpuToGpuTransferRateMb();
 
@@ -488,7 +488,7 @@ void Tutorial23_AsyncQueues::UploadPass()
     }
 }
 
-void Tutorial23_AsyncQueues::GraphicsPass1()
+void Tutorial23_CommandQueues::GraphicsPass1()
 {
     // Make all resource transitions before and after drawing.
     // Transitions and copy operations will break render pass which is slow in tile-based renderer.
@@ -540,7 +540,7 @@ void Tutorial23_AsyncQueues::GraphicsPass1()
     }
 }
 
-void Tutorial23_AsyncQueues::GraphicsPass2()
+void Tutorial23_CommandQueues::GraphicsPass2()
 {
     const float DebugColor[] = {1.f, 0.5f, 0.f, 1.f};
     m_pImmediateContext->BeginDebugGroup("Graphics pass 2", DebugColor);
@@ -563,7 +563,7 @@ void Tutorial23_AsyncQueues::GraphicsPass2()
     m_pImmediateContext->EndDebugGroup(); // Graphics pass 2
 }
 
-void Tutorial23_AsyncQueues::Render()
+void Tutorial23_CommandQueues::Render()
 {
     if (!m_ComputeCtx)
         return; // Sample is not initialized
@@ -583,7 +583,7 @@ void Tutorial23_AsyncQueues::Render()
     m_Profiler.End(nullptr, Profiler::FRAME);
 }
 
-void Tutorial23_AsyncQueues::Update(double CurrTime, double ElapsedTime)
+void Tutorial23_CommandQueues::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
     m_Profiler.Update(ElapsedTime);
@@ -598,7 +598,7 @@ void Tutorial23_AsyncQueues::Update(double CurrTime, double ElapsedTime)
     m_Buildings.CurrentTime = static_cast<Uint32>(CurrTime + 0.5);
 }
 
-void Tutorial23_AsyncQueues::WindowResize(Uint32 Width, Uint32 Height)
+void Tutorial23_CommandQueues::WindowResize(Uint32 Width, Uint32 Height)
 {
     if (Width == 0 || Height == 0)
         return;
@@ -678,7 +678,7 @@ void Tutorial23_AsyncQueues::WindowResize(Uint32 Width, Uint32 Height)
     }
 }
 
-void Tutorial23_AsyncQueues::UpdateUI()
+void Tutorial23_CommandQueues::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
