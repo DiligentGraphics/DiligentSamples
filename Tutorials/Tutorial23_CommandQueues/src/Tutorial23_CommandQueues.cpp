@@ -29,7 +29,6 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "imgui.h"
-#include "imGuIZMO.h"
 #include "ImGuiUtils.hpp"
 #include "PlatformMisc.hpp"
 #include "ShaderMacroHelper.hpp"
@@ -298,19 +297,19 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     BuffDesc.BindFlags            = BIND_UNIFORM_BUFFER;
     BuffDesc.Usage                = USAGE_DEFAULT;
     BuffDesc.uiSizeInBytes        = sizeof(HLSL::PostProcessConstants);
-    BuffDesc.ImmediateContextMask = (1ull << m_pImmediateContext->GetDesc().ContextId);
+    BuffDesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId);
     BuffDesc.Name                 = "Post process constants";
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_PostProcessConstants);
 
     BuffDesc.Usage                = USAGE_DYNAMIC;
     BuffDesc.CPUAccessFlags       = CPU_ACCESS_WRITE;
     BuffDesc.uiSizeInBytes        = sizeof(HLSL::DrawConstants);
-    BuffDesc.ImmediateContextMask = (1ull << m_pImmediateContext->GetDesc().ContextId);
+    BuffDesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId);
     BuffDesc.Name                 = "Draw constants";
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_DrawConstants);
 
-    m_Buildings.Initialize(m_pDevice, m_DrawConstants, (1ull << m_pImmediateContext->GetDesc().ContextId) | (m_TransferCtx ? 1ull << m_TransferCtx->GetDesc().ContextId : 0ull));
-    m_Terrain.Initialize(m_pDevice, m_DrawConstants, (1ull << m_pImmediateContext->GetDesc().ContextId) | (1ull << m_ComputeCtx->GetDesc().ContextId));
+    m_Buildings.Initialize(m_pDevice, m_DrawConstants, (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (m_TransferCtx ? Uint64{1} << m_TransferCtx->GetDesc().ContextId : 0));
+    m_Terrain.Initialize(m_pDevice, m_DrawConstants, (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (Uint64{1} << m_ComputeCtx->GetDesc().ContextId));
 
 
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -422,7 +421,7 @@ void Tutorial23_CommandQueues::ComputePass()
 
     if (m_UseAsyncCompute)
     {
-        // Wait until graphics pass complete using terrain height and normal maps
+        // Wait until graphics pass finishes working with terrain height and normal maps
         ComputeCtx->DeviceWaitForFence(m_GraphicsCtxFence, m_GraphicsCtxFenceValue);
     }
 
@@ -466,7 +465,7 @@ void Tutorial23_CommandQueues::UploadPass()
 
     if (m_UseAsyncTransfer)
     {
-        // Wait until graphics pass complete using m_BuildingsTexAtlas.
+        // Wait until graphics pass finishes with m_BuildingsTexAtlas.
         TransferCtx->DeviceWaitForFence(m_GraphicsCtxFence, m_GraphicsCtxFenceValue);
     }
 
@@ -530,8 +529,8 @@ void Tutorial23_CommandQueues::GraphicsPass1()
 
     if (m_UseAsyncCompute || m_UseAsyncTransfer)
     {
-        // Notify compute context that graphics context complete using terrain height and normal maps.
-        // Notify transfer context that graphics context complete using buildings texture atlas.
+        // Notify compute context that graphics context finished working with terrain height and normal maps.
+        // Notify transfer context that graphics context finished working with buildings texture atlas.
         m_pImmediateContext->EnqueueSignal(m_GraphicsCtxFence, ++m_GraphicsCtxFenceValue);
 
         // When used double buffering compute pass may overlap with whole frame.

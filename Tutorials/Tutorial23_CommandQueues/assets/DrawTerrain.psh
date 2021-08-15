@@ -40,5 +40,5 @@ void main(in  PSInput  PSIn,
     TexUV *= g_TerrainConstants.UVScale;
     TexUV.x += g_TerrainConstants.XOffset;
     PSOut.Color = NdotL * g_TerrainDiffuseMap.Sample(g_TerrainDiffuseMap_sampler, TexUV);
-    PSOut.Color.a = 0.0; // alpha channel used for self-emission
+    PSOut.Color.a = 0.0; // Alpha channel is used for self-emission
 }

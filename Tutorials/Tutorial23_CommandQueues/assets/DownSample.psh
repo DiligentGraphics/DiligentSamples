@@ -18,8 +18,8 @@ struct PSInput
 float4 Mix(float4 Lhs, float4 Rhs)
 {
     if (abs(Lhs.a - Rhs.a) < 0.05)
-        return lerp(Lhs, Rhs, 0.5);
-    if (Lhs.a > Rhs.a)
+        return (Lhs + Rhs) * 0.5;
+    else if (Lhs.a > Rhs.a)
         return Lhs;
     else
         return Rhs;
@@ -33,7 +33,7 @@ float4 main(in PSInput PSIn) : SV_Target
     float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
     int3   TexelPos = int3(ScreenUV * Dim * 0.5, 0);
 
-    float4 Blur = float4(0., 0., 0., 0.);
+    float4 Blur = float4(0.0, 0.0, 0.0, 0.0);
 
     [unroll] for (int y = 0; y < 5; ++y)
     {

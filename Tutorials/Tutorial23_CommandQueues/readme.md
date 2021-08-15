@@ -1,32 +1,37 @@
 # Tutorial23 - Command Queues
 
-This tutorial demonstrates how to optimize rendering using multiple command queues, also known as async compute.
+This tutorial demonstrates how to use multiple command queues to perform rendering in parallel with copy and compute operations.
 
-## Queues in desktop GPUs
+## Command Queues in Desktop GPUs
 
-All GPU commands are recorded to the command buffers, then they are submitted to one of the queues (VkQueue, ID3D12CommandQueue, MTLCommandQueue), which is just an API for the driver, and then these commands are executed on the GPU.
-But what is the path of GPU commands before they start executing on compute units?
+When CPU issues a command (render, compute, copy, etc.), it is not executed immediately by the GPU. Instead,
+it is recorded into a command buffer. When the buffer contains enough commands, it is submitted to the command queue
+(VkQueue, ID3D12CommandQueue, MTLCommandQueue), which is then passed to the driver, that schedules them to be executed on the GPU.
+But what is the path of GPU commands before they get executed on compute units?
 
-We have only a software queue, which is controlled by the driver, there can be a lot of them.
-Each application which uses GPU, like a game, browser, video player and even a desktop, has their own software queue or multiple queues.
+An application can only access *software* command queues provided by the driver.
+Each application that uses GPU, like a game, browser, video player and even the desktop, sees their own software queues.
 
 ![](img/img1.png)
 
-The GPU driver receives multiple commands from multiple queues, but then all commands processed by a single command processor, which is distributed workload on compute units.
-Command processor can execute in parallel only a small number of commands which have no dependencies between them, for example: some compute and copy commands or single render pass with multiple draw calls.
-The large workload from one application will cause a slow down of other applications which are using GPU. But GPU driver and hardware may divide commands from a single application to small blocks and alternately execute blocks from different applications.
-This allows applications with low workload like a browser or video player to render in 60FPS when a game with high workload executes just in 10 FPS.
+The GPU driver receives multiple command lists from multiple queues, but then all commands are processed by the single command processor,
+that distributes workload across compute units. The command processor can execute in parallel only a small number of commands that have no
+dependencies between them, for example: some compute and copy commands or a single render pass with multiple draw calls.
+A large workload from one application will cause a slow down of other applications that are using the GPU. But the GPU driver and hardware may
+divide command buffers from a single application into small chunks and alternately execute chunks from different applications.
+This allows applications with low workload like a browser or a video player to render at 60 FPS when a game with high workload runs at just 10 FPS.
 Current hardware has limitations that do not allow it to run render pass in parallel with compute, copy or another render pass.
 But a separate command processor can execute any command in parallel with the main command processor.
-Current hardware has a single graphics processor, multiple compute command processors and some transfer command processors.
+Current hardware typically has a single graphics processor, multiple compute command processors and some transfer command processors.
 
 ![](img/img2.png)
 
-As opposed to CPU, the GPU will always use as many compute units as possible, so when you use an async compute queue you don't unlock any secret power of GPU. Then what is the point of parallelization?
-In an ideal renderer each command occupies all compute units or runs in parallel with further commands and together occupies all compute units.
-But in real renderer this is newer happens for many reasons:
-* GPU waits for new commands from CPU side or waits for fence signal
-* Loading from VRAM to cache, cache misses
+As opposed to CPU, the GPU always uses as many compute units as possible, so when you use an async compute queue, you don't unlock any
+secret power of GPU. Then what is the point of parallelization?
+In an ideal renderer each command occupies all compute units or runs in parallel with further commands and together uses GPU by 100%.
+But in real renderer this never happens for many reasons:
+* GPU waits for new commands from CPU side or waits for fence signal and has no work to do
+* Loading from VRAM to cache, cache misses stalls execution units
 * Loading from cache to VRAM, cache flushes
 * Uncached access to memory (UAV resources), atomic operations
 * Memory bandwidth
@@ -40,93 +45,121 @@ But in real renderer this is newer happens for many reasons:
 ![](img/gpu_trace.png)
 *Image from NSight GPUTrace. Light gray areas - idle cores, dark gray - unused warps (because of culled and one-pixel triangles).*
 
-Modern GPUs have a very good workload distribution which can hide latency of some operations.
-Also, you can optimize your application to minimize GPU stalls, but you will not be able to get rid of GPU stalls completely, so some part of GPU power will not be used in a single queue and will be available for other queues.
+Modern GPUs have very good workload distribution which can hide latency of some operations.
+Also, you can optimize your application to minimize GPU stalls, but you will not be able to get rid of GPU stalls completely,
+so some part of GPU power will not be used in a single queue and will be available for other queues.
 
 
-## Queues in mobile GPUs
+## Command Queues in Mobile GPUs
 
 Initially mobile devices were designed to execute render commands from a single application.
-Mobile devices use a tile based deferred renderer (TBDR): at first processed all geometry in render pass, then it divides to tiles, then each triangle in a tile will be rasterized and fragment shader will be executed.
+Mobile devices use a tile based deferred renderer (TBDR): all geometry in a render pass is first processed and triangles are assigned to
+screen-space tiles (also called binsa). Each tile is the processed independently and fragment shaders are only executed for triangles in the tile.
 
-Modern ARM GPUs have a two or three hardware queues:
+Modern ARM GPUs have two or three hardware queues:
 1. Vertex shader and binning on tiles.
 2. Triangle rasterization and fragment shader execution.
-3. Compute shader execution, on two queue configuration compute shaders executed in the same queue as vertex shaders.
+3. Compute shader execution. In a two-queue configuration, compute shaders are executed in the same queue as vertex shaders.
 
 Each hardware queue may run in parallel with others but they share the same compute units.
 
 ![](img/img5.png)
 
-Low-end devices have just 1-4 GPU cores with 32 threads each, because of this, commands are most often executed sequentially and the cores are rarely idle, so there are no advantages from parallelization.
-The high-end devices may have 8-16 GPU cores which add the ability to parallelise some workload if there is no dependency between them.
+Low-end devices have just 1-4 GPU cores with 32 threads each. Because of this, commands are most often executed sequentially and
+the cores are rarely idle, so there are no advantages from parallelization.
+High-end devices may have 8-16 GPU cores that add the ability to parallelise some workload if there is no dependency between them.
 
-Graphics API (Vulkan and Metal) may have some software queues, this allows to use async compute techniques on mobile devices, but because all software queues use the same hardware queues, performance of these techniques depends on driver efficiency.
+Graphics API (Vulkan and Metal) expose multiple software queues, that allows using async compute techniques on mobile devices,
+but because all software queues use the same hardware queues, performance of these techniques depends on driver efficiency.
 
 
 ## Tutorial overview
 
-In tutorial we have 4 passes:
-1. Terrain generation in compute shader. Noise generation will loads the arithmetic units, there is no texture or buffer loads, so compute units will not stall and occupation is very high.
-In real application this may be a water simulation, physics simulations, occlusion culling and other.
-This pass can be executed in an async compute queue.
-2. Texture atlas uploading. Textures for buildings updated on the CPU side and uploaded to GPU.
-In real applications this may be a resource streaming for an open world game, virtual texture update, high mipmap streaming and other.
-This pass can be executed in an async transfer queue and enabled only if the transfer queue is supported by device.
-3. Scene rendering. Here we draw terrain and buildings, using the same resources as in passes 1 and 2.
-4. Post processing. Here we render mipmaps from color render target to make a glow effect, apply fog and make a final pass to swapchain image.
-Resources from passes 1 and 2 are not used, so these passes can run in parallel.
+This tutorial implements a simple asynchronous renderer that consists of 4 passes:
+
+1. *Terrain generation in compute shader*.
+    This is a compute-heave pass that keeps compute units busy with lots of noise generation operations. There are no texture
+    or buffer loads, so compute units do not stall on memory access and occupation is very high. In a real application a compute
+    pass may perform water simulation, physics simulations, occlusion culling and other. This pass can be executed in an async
+    compute queue.
+
+2. *Texture atlas uploading*.
+    Textures for buildings are updated on the CPU and are uploaded to GPU. A real applications may be doing a resource streaming
+    for an open world game, virtual texture update, high mipmap streaming and other. This pass can be executed in an async transfer
+    queue and is only enabled if the transfer queue is supported by device.
+
+3. *Scene rendering*.
+    In this pass we draw the terrain and buildings, using the resources prepared in passes 1 and 2.
+
+4. *Post processing*.
+    In this pass we generate mipmaps from color render targets generated in pass 3 to make glow effect, apply fog and generate the
+    final image that is presented on the screen. Resources from passes 1 and 2 are not used, so these operations can run in parallel.
 
 ![](img/img6.png)
 
-For runtime profiling we use timestamp queries. Accuracy of timestamp queries is hardware dependent, also it may prevent commands for overlapping.
+For the runtime profiling, we use timestamp queries. Note that accuracy of timestamp queries is hardware-dependent and, more importantly, that
+using queries may prevent commands for overlapping.
 For precise profiling you should use specialized tools from hardware vendors.
 
-In the profiler we have two important intervals: frame time and time between two graphics passes.
+In the profiler we have two important intervals: the frame time and the time between two graphics passes.
 
-1. Frame time. When using multiple queues, compute and upload passes may overlap with post process pass in the previous frame, so frame time will increase, but frame rate increased too.
-Instead of a single queue renderer we cannot use frame time to measure performance, but frame time shows a frame latency - time between command submission on CPU side and submitting final image to present engine.
-Action games and VR applications require a low frame latency and overlapping with previous frame is not a good solution for this kind of applications.
+1. *The frame time.*
+   When using multiple queues, compute and upload passes may overlap with the post process pass in the previous frame,
+   so single frame time increases. However, since two frames are in flight, the frame rate increased too.
+   As opposed to a single-queue renderer, we cannot use the frame time to measure performance, but the frame time shows frame latency,
+   e.g. the time between command submission on CPU and the time when the final image is handled by the presentantion engine.
+   Action games and VR applications require low frame latency and overlapping with previous frame may add extra latency, which may be
+   undesirable.
 
 ![](img/frame_time.png)
 
-2. Time between two graphics passes. Graphics passes are not overlapped, so this is the correct way to measure frame rate on the GPU, but vertical synchronization may add GPU idle time to this interval.
+2. *The time between two graphics passes.*
+   Graphics passes do not overlap, so this is the correct way to measure the frame rate on GPU. Note that vertical synchronization may add
+   GPU idle time to this interval.
 
 ![](img/between_frames.png)
 
-Sliders and flags used to change workload on different passes:
-* Transfer rate per frame - how much texture array slices will be updated in a single frame. This affects the upload pass time, additionally we calculate the transfer rate - how much data will be sent through a PCI-E bus per second.
-* Use async transfer - execute upload pass in the transfer queue.
-* Terrain dimension - size of the height and normal map for terrain, this slider affects the compute pass time and partially the graphics pass time, because the number of triangles and memory loads will increase.
-* Use async compute - execute compute pass in the compute queue.
-* Double buffering - changes the compute to graphics synchronization method, compute pass will overlap with all graphics commands in previous pass which increases the frame latency.
+Sliders and flags are used to control the workload in different passes:
+
+* *Transfer rate per frame* - controls how many texture array slices will be updated in a single frame.
+  This affects the upload pass time. Additionally, we calculate the transfer rate, i.e. how much data will be sent through the PCI-E bus per second.
+* *Use async transfer* - controls whether to execute upload pass in the transfer queue.
+* *Terrain dimension* - the size of the height and normal maps for terrain. This slider affects the
+  compute pass time and partially the graphics pass time since the number of triangles and memory loads depends on the terrain resolution.
+* *Use async compute* - controls whether to execute compute pass in a separate compute queue.
+* *Double buffering* - changes the compute to graphics synchronization method. The compute pass will overlap with all graphics commands
+   in the previous pass, which increases the frame latency.
 
 ![](img/img7.png)
 
-* Surface scale - changes the render target size, it allows you to manage how much fragment shader invocations will be in graphics pass, but geometry processing will be the same. For post process pass it has much more effect - pass time will increase exponentially.
-* Glow - enable glow effect, it requires downsampling which is very memory bound, but it allows other queues to overlap.
+* *Surface scale* - changes the render target size. It controls how many fragment shader invocations will be in the graphics pass,
+  but geometry processing will always be the same. This has a major effect on the performance of the post process pass - the pass
+  time increases exponentially.
+* *Glow* - whether to enable glow effect. The effect requires downsampling, a severely memory-bound process, but it allows other queues to overlap.
 
 
-Desktop GPUs have performance improvements of overlapping compute and upload passes with post process pass of the previous frame.
-The double buffered mode is faster but with the cost of increased frame latency. In some uncommon cases we may have 2 times performance improvements.
+Desktop GPUs allow better overlapping of compute and upload passes with post process pass of the previous frame.
+The double buffered mode is faster but for the price of increased frame latency. As much as 2x performance improvement may be achieved.
 
-On low-end mobile GPUs with a small number of cores we have no advantages of using async compute.
-On high-end mobile GPUs we don't have any improvements of overlapping post process pass with compute pass, but in double buffering mode overlapping of scene drawing pass with compute pass has performance improvements to 1.5 times.
-This happens because scene rendering is not efficient and many compute units are not used because geometry is not frustum culled and LODs are not used.
+On low-end mobile GPUs with a small number of cores, using async compute gives no advantage.
+On high-end mobile GPUs overlapping post-process pass with compute pass does not give any improvement, but double-buffering mode allows overlapping the
+scene drawing pass with the compute pass that results in up to 1.5x performance improvement.
+Note that in this we don't perform frustum culling and don't use LODs. This uses many compute units and simulates a complex geometry processing.
 
 
-## Engine initialization
+## Engine Initialization
 
-Multiple queues are supported in DirectX 12, Vulkan and Metal backends.
-To enable multiple queues we should rewrite engine initialization code.
+Diligent Engine supports multiple command queues in DirectX 12, Vulkan and Metal backends.
+To enable multiple queues, we should first find the suitable adapter.
+After creating the engine factory, we use the `EnumerateAdapters()` method to get the list of adapters.
 
-After creating the engine factory we use `EnumerateAdapters()` to find an adapter which supports multiple queues.
 ```cpp
+std::vector<GraphicsAdapterInfo> Adapters;
+
 Uint32 NumAdapters = 0;
 pEngineFactory->EnumerateAdapters(EngineCI.GraphicsAPIVersion, NumAdapters, 0);
 if (NumAdapters > 0)
 {
-    std::vector<GraphicsAdapterInfo> Adapters;
     Adapters.resize(NumAdapters);
     pEngineFactory->EnumerateAdapters(EngineCI.GraphicsAPIVersion, NumAdapters, Adapters.data());
 
@@ -144,7 +177,11 @@ if (NumAdapters > 0)
 }
 ```
 
-Then we use the helper function `AddContext ()` to find the required queue and add it to context create info.
+In Diligent Engine command queues are exposed through immediate context. An immediate context allows recording commands
+directly, or executing command lists recorded by the deferred contexts.
+
+We use a helper function `AddContext()` to find the required queue and add it to the context create info.
+
 ```cpp
 std::vector<ImmediateContextCreateInfo> ContextCI;
 
@@ -182,10 +219,12 @@ if (!AddContext(COMMAND_QUEUE_TYPE_COMPUTE, "Compute", EngineCI.AdapterId))
 EngineCI.pImmediateContextInfo = ContextCI.data();
 EngineCI.NumImmediateContexts  = static_cast<Uint32>(ContextCI.size());
 ```
-Default queue priority is `MEDIUM`, highest priorities may require additional system privileges.
+
+Default queue priority is `MEDIUM`. Note that higher priorities may require additional system privileges.
 
 
-To synchronize between queues we need to create a fence with `GENERAL` type.
+To synchronize between queues, we need to create a fence with `GENERAL` type.
+
 ```cpp
 FenceDesc FenceCI;
 FenceCI.Type = FENCE_TYPE_GENERAL;
@@ -198,24 +237,27 @@ m_pDevice->CreateFence(FenceCI, &m_ComputeCtxFence);
 ```
 
 
-## Use async compute queue
+## Using the Async Compute Queue
 
-In the async compute queue we use terrain height and normal map.
-Texture creation has a small update, now we need to set up `ImmediateContextMask`, it indicates for which immediate contexts we can use resource.
-We will use textures in graphics and compute contexts.
+In the async compute queue, we execute the terrain height and normal map generation shader.
+
+When creating a texture, we need to set up `ImmediateContextMask`. This member indicates in which immediate contexts we can use this resource.
+We will use the textures in the graphics and compute contexts.
 
 ```cpp
 TextureDesc TexDesc;
 TexDesc.Name                 = "Terrain height map";
 ...
-TexDesc.ImmediateContextMask = (1ull << m_pImmediateContext->GetDesc().ContextId) | (1ull << m_ComputeCtx->GetDesc().ContextId);
+TexDesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (Uint64{1} << m_ComputeCtx->GetDesc().ContextId);
 m_Device->CreateTexture(TexDesc, nullptr, &m_HeightMap);
 
 TexDesc.Name = "Terrain normal map";
 m_Device->CreateTexture(TexDesc, nullptr, &m_NormalMap);
 ```
 
-For multiple queues automatic state transition is not supported, so transit state to UAV and disable automatic transitions by setting UNKNOWN state.
+For multiple queues, automatic state transition is not supported, so we manually transition the texture state to UAV and
+disable automatic transitions by setting the state to UNKNOWN:
+
 ```cpp
 const StateTransitionDesc Barriers[] = {
     {m_HeightMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_UNORDERED_ACCESS},
@@ -227,12 +269,13 @@ m_HeightMap->SetState(RESOURCE_STATE_UNKNOWN);
 m_NormalMap->SetState(RESOURCE_STATE_UNKNOWN);
 ```
 
-Compute pass will use resources in UAV state, but for drawing we need to transit texture state into SRV.
-If we make it in the compute context then graphics stages will be unaffected which may cause undefined behaviour.
+Compute pass will use resources in the UAV state, but for rendering we need to transit the texture state into SRV.
+If we make it in the compute context, then graphics stages will be unaffected which may cause undefined behaviour.
 
 <details>
 <summary>Detailed explanation</summary>
-In Vulkan UAV to SRV barrier in the compute queue will looks like:
+
+In Vulkan, a UAV to SRV barrier in the compute queue looks like this:
 
 ```cpp
 VkImageMemoryBarrier Barrier;
@@ -243,9 +286,10 @@ Barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 vkCmdPipelineBarrier(..., VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, ..., &Barrier, ...);
 ```
 
-But correct barrier must include graphics stages (`VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT`) which is allowed only in graphics queue.
+But correct barrier must include graphics stages (`VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT`),
+which is only allowed in graphics queue.
 
-In DirectX 12 UAV to SRV barrier in the compute queue will looks like:
+In DirectX 12, a UAV to SRV barrier in the compute queue looks like this:
 
 ```cpp
 D3D12_RESOURCE_BARRIER Barrier;
@@ -254,12 +298,13 @@ Barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 Barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 ```
 
-But the correct state must include `D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE` which is allowed only in graphics queue.
+But the correct state must include `D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE`, which is only allowed in graphics queue.
 
 </details>
 
-State transition inside render pass will split it on two passes which is slow on mobile devices.
-For optimization we make all transitions before and after scene rendering.
+State transition inside the render pass splits the pass into two passes, which is suboptimal on mobile devices.
+To avoid this, we make all transitions before and after the scene rendering:
+
 ```cpp
 void Terrain::BeforeDraw(IDeviceContext* pContext)
 {
@@ -280,7 +325,8 @@ void Terrain::AfterDraw(IDeviceContext* pContext)
 }
 ```
 
-Read and write access to the textures must be synchronized via fence.
+Read and write access to the textures must be explicitly synchronized via fences.
+
 ```cpp
 // Compute context waits for previous graphics pass
 m_ComputeCtx->DeviceWaitForFence(m_GraphicsCtxFence, m_GraphicsCtxFenceValue);
@@ -293,33 +339,43 @@ m_ComputeCtx->EnqueueSignal(m_ComputeCtxFence, ++m_ComputeCtxFenceValue);
 // Submit commands to the GPU
 m_ComputeCtx->Flush();
 
-// Graphics pass will wait for compute pass
+// Graphics pass will wait for the compute pass
 m_pImmediateContext->DeviceWaitForFence(m_ComputeCtxFence, m_ComputeCtxFenceValue);
 ```
 
 Compute pipeline state may be used in graphics and compute context depending on whether the async compute is active.
-`ImmediateContextMask` must be initialized to be compatible with graphics and compute contexts.
+`ImmediateContextMask` must be initialized to be compatible with the graphics and compute contexts.
+
 ```cpp
 ComputePipelineStateCreateInfo PSOCreateInfo;
-PSOCreateInfo.PSODesc.ImmediateContextMask = (1ull << m_pImmediateContext->GetDesc().ContextId) | (1ull << m_ComputeCtx->GetDesc().ContextId);
+PSOCreateInfo.PSODesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (Uint64{1} << m_ComputeCtx->GetDesc().ContextId);
 m_Device->CreateComputePipelineState(PSOCreateInfo, &m_GenPSO);
 ```
 
 
-## Use async transfer queue
+## Using Async Transfer Queue
 
-In the async transfer queue we use texture atlas for buildings.
-Initialization is the same as for terrain textures, we just set up `ImmediateContextMask` for graphics and transfer immediate contexts.
+In the async transfer queue, we update the texture atlas for buildings.
+The texture initialization is the same as for terrain textures, we only need to set up the `ImmediateContextMask`
+for graphics and transfer immediate contexts:
+
 ```cpp
 TextureDesc TexDesc;
 TexDesc.Name                 = "Buildings texture atlas";
-TexDesc.ImmediateContextMask = (1ull << m_pImmediateContext->GetDesc().ContextId) | (1ull << m_TransferCtx->GetDesc().ContextId);
+TexDesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (Uint64{1} << m_TransferCtx->GetDesc().ContextId);
 m_Device->CreateTexture(TexDesc, nullptr, &m_OpaqueTexAtlas);
 ```
 
-Vulkan and DirectX 12 have different requirements for state transition.<br/>
-In Vulkan we use state transition: in graphics queue initial state is `COPY_DEST` we thansit it to `SHADER_RESOURCE` and back to `COPY_DEST` at the end of drawing, in transfer queue state is always `COPY_DEST`.<br/>
-In DirectX 12 when a resource transitioned from graphics or compute queue to transfer queue resource must be in `COMMON` state, so we use a bit complex transitions: in transfer queue initial state is `COMMON`, then we transit it to `COPY_DEST` and back to `COMMON` at the end of upload pass, in graphics queue initial state is `COMMON` too, then we transit it to `SHADER_RESOURCE` and back to `COMMON`.
+Note that there state transition requirements vary between Vulkan and DirectX 12 .
+
+In Vulkan, the initial resource state in the graphics queue is `COPY_DEST`. We thansition it to `SHADER_RESOURCE`,
+and then back to `COPY_DEST` at the end of rendering, so in the transfer queue the resource state is always in `COPY_DEST` state.
+
+In DirectX 12 when a resource is transferred from graphics or compute queue to the transfer queue, it must
+be in the `COMMON` state. So we have to perform a bit complex transitions: in the transfer queue, the initial state is `COMMON`,
+then we transition it to `COPY_DEST` and back to `COMMON` at the end of the upload pass. In the graphics queue, the initial state
+is `COMMON` as well, so we transition it to `SHADER_RESOURCE` and then back to `COMMON`.
+
 ```cpp
 m_OpaqueTexAtlasDefaultState = RESOURCE_STATE_COPY_DEST;
         
@@ -332,7 +388,8 @@ pContext->TransitionResourceStates(1, &Barrier);
 m_OpaqueTexAtlas->SetState(RESOURCE_STATE_UNKNOWN);
 ```
 
-Same as for the compute queue, we must transit to `SHADER_RESOURCE` in the graphics queue to avoid undefined behaviour.
+Same as with the compute queue, we must transit to `SHADER_RESOURCE` in the graphics queue to avoid undefined behaviour.
+
 ```cpp
 void Buildings::BeforeDraw(IDeviceContext* pContext)
 {
@@ -347,7 +404,8 @@ void Buildings::AfterDraw(IDeviceContext* pContext)
 }
 ```
 
-For the DirectX backend we add transitions from `COMMON` state.
+For the DirectX 12 backend, we need to add transitions from `COMMON` state.
+
 ```cpp
 void Buildings::UpdateAtlas(IDeviceContext* pContext)
 {
@@ -367,7 +425,8 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext)
 }
 ```
 
-Read and write access to the texture must be synchronized via fence.
+Read and write access to the texture must be synchronized via the fence.
+
 ```cpp
 // Transfer context waits for previous graphics pass
 m_TransferCtx->DeviceWaitForFence(m_GraphicsCtxFence, m_GraphicsCtxFenceValue);
@@ -385,9 +444,10 @@ m_pImmediateContext->DeviceWaitForFence(m_TransferCtxFence, m_TransferCtxFenceVa
 ```
 
 
-## Graphics queue
+## Graphics Queue
 
-For graphics context we just add fence wait and signal commands to synchronize with other queues.
+For graphics context we just add the fence wait and signal commands to synchronize with other queues.
+
 ```cpp
 // Graphics pass will wait for upload pass
 m_pImmediateContext->DeviceWaitForFence(m_TransferCtxFence, m_TransferCtxFenceValue);

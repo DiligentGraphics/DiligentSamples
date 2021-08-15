@@ -28,7 +28,7 @@ void main(in  PSInput  PSIn,
     float4 Color    = g_OpaqueTexAtlas.Sample(g_OpaqueTexAtlas_sampler, PSIn.UVW);
     float  Emission = Color.a * 100.0;
 
-    // disable shading for self-emission material
+    // Disable shading for self-emission material
     if (Emission > 0.01)
         NdotL = 1.0;
 
