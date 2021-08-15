@@ -336,6 +336,10 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     // Compute and transfer contexts will wait for this fence.
     m_pImmediateContext->EnqueueSignal(m_GraphicsCtxFence, ++m_GraphicsCtxFenceValue);
     m_pImmediateContext->Flush();
+
+    m_ComputeCtx->Flush();
+    if (m_TransferCtx)
+        m_TransferCtx->Flush();
 }
 
 void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
