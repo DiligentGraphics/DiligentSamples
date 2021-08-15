@@ -2,6 +2,8 @@
 
 This tutorial demonstrates how to use multiple command queues to perform rendering in parallel with copy and compute operations.
 
+![](Animation_Large.gif)
+
 ## Command Queues in Desktop GPUs
 
 When CPU issues a command (render, compute, copy, etc.), it is not executed immediately by the GPU. Instead,
