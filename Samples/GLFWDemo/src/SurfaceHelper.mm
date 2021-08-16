@@ -5,7 +5,7 @@
 
 // MoltenVk implement Vulkan API on top of Metal.
 // We must add CAMetalLayer to use Metal to render into view.
-// Same code implemented into glfwCreateWindowSurface, but DiligentEngine create vulkan surface inside a ISwapChain implementaion and can not use the GLFW function.
+// Same code implemented into glfwCreateWindowSurface, but DiligentEngine create vulkan surface inside a ISwapChain implementation and can not use the GLFW function.
 void* GetNSWindowView(GLFWwindow* wnd)
 {
     id Window = glfwGetCocoaWindow(wnd);

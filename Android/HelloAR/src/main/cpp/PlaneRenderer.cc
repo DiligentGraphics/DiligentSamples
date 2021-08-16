@@ -277,7 +277,7 @@ void PlaneRenderer::UpdateForPlane(const ArSession& ar_session,
     ArPlane_getPolygon(&ar_session, &ar_plane, raw_vertices.front().Data());
 
     // Fill vertex 0 to 3. Note that the vertex.xy are used for x and z
-    // position. vertex.z is used for alpha. The outter polygon's alpha
+    // position. vertex.z is used for alpha. The outer polygon's alpha
     // is 0.
     for (int32_t i = 0; i < vertices_size; ++i)
     {

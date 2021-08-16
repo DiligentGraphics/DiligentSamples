@@ -1,6 +1,6 @@
 # Tutorial09 - Quads
 
-This tutorial shows how to render multiple 2D quads, frequently swithcing textures and blend modes.
+This tutorial shows how to render multiple 2D quads, frequently switching textures and blend modes.
 
 ![](Animation_Large.gif)
 
@@ -171,7 +171,7 @@ Note that we create one SRB per texture for non-batched mode and just one SRB fo
 
 The tutorial largely uses the same rendering scheme as [Tutorial06 - Multithreading](../Tutorial06_Multithreading). 
 If multithreading is enabled, command lists are recorded in parallel by multiple threads and are then executed by the
-immediate context. An important thing to notice is that resources are transitioned to correct states once after the intialization:
+immediate context. An important thing to notice is that resources are transitioned to correct states once after the initialization:
 
 ```cpp
 m_pImmediateContext->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());

@@ -114,7 +114,7 @@ Immutable samplers are preferred from performance point of view and should be us
 ## Loading a texture
 
 Diligent Engine provides cross-platform texture loading library that supports jpg, png, tiff and dds formats.
-Loading a texture with this library requries just few lines of code:
+Loading a texture with this library requires just a few lines of code:
 
 ```cpp
 TextureLoadInfo loadInfo;
@@ -150,7 +150,7 @@ m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 
 A mutable resource can only be bound once to an SRB object. If multiple variations are required,
 a number of SRB objects should be created. For a very frequently changning resources, dynamic
-variables can be used. Dynamic resoruces can be bound multiple times to the same SRB object,
+variables can be used. Dynamic resources can be bound multiple times to the same SRB object,
 but are less efficient from performance point of view. Refer to 
 [this post](http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/)
 for more details.

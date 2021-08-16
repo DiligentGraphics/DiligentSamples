@@ -37,7 +37,7 @@ struct ObjectAttribs
 };
 ```
 
-`ModelMat` and `NormalMat` are local-to-world transformations for object positions and normals. `MaterialId` indicates the bject material.
+`ModelMat` and `NormalMat` are local-to-world transformations for object positions and normals. `MaterialId` indicates the object material.
 `FirstIndex` and `FirstVertex` specify the position of the first index and first vertex in the index and vertex buffers correspondingly.
 `MeshId` is currently unused, but may inidicate e.g. an index in the vertex buffer array.
 

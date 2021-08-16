@@ -97,7 +97,7 @@ void Tutorial17_MSAA::UpdateUI()
             CreateMSAARenderTarget();
         }
 
-        ImGui::Checkbox("Rotate gird", &m_bRotateGrid);
+        ImGui::Checkbox("Rotate grid", &m_bRotateGrid);
     }
     ImGui::End();
 }
@@ -254,7 +254,7 @@ void Tutorial17_MSAA::Render()
 
     if (m_SampleCount > 1)
     {
-        // Resolve multi-sampled render taget into the current swap chain back buffer.
+        // Resolve multi-sampled render target into the current swap chain back buffer.
         auto pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
 
         ResolveTextureSubresourceAttribs ResolveAttribs;

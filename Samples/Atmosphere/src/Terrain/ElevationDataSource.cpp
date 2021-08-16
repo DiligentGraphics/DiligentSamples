@@ -137,7 +137,7 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
 #endif
     m_MinMaxElevation.Resize(m_iNumLevels);
 
-    // Calcualte min/max elevations
+    // Calculate min/max elevations
     CalculateMinMaxElevations();
 }
 

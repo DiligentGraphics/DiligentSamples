@@ -25,7 +25,7 @@ By convention, **vertex shader inputs should be labeled as ATTRIBn, where n is t
 attributes must match the input layout defined in the pipeline state object.
 Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex 
 shader output variable name must match exactly the name of the pixel shader input variable. If the variable has 
-structure type (like in this example), the structure declarations must also be indentical.
+structure type (like in this example), the structure declarations must also be identical.
 The shader also uses a world-view-projection matrix defined in a constant (uniform) buffer called `Constants` to
 transform vertex positions:
 
@@ -203,7 +203,7 @@ Vertex CubeVerts[8] =
 };
 ```
 
-Similar to unifrom buffer, to create a vertex buffer, we populate `BufferDesc` structure. Since
+Similar to uniform buffer, to create a vertex buffer, we populate `BufferDesc` structure. Since
 the data in the buffer will never change, we create the buffer with immutable usage (`USAGE_IMMUTABLE`)
 and provide initial data to `CreateBuffer()`:
 
@@ -224,7 +224,7 @@ Index buffer is initialized in a very similar fashion.
 ## Creating Shader Resource Binding Object
 
 Since our fragment shader uses shader resources (constant buffer), we need to create
-a shader resource binding object that will manage all requried resource bindings:
+a shader resource binding object that will manage all required resource bindings:
 
 ```cpp
 m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);

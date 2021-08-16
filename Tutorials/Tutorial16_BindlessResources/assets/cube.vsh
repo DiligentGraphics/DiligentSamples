@@ -28,7 +28,7 @@ struct PSInput
 // By convention, Diligent Engine expects vertex shader inputs to be labeled as ATTRIBn, where n is the attribute number.
 // Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex
 // shader output variable name must match exactly the name of the pixel shader input variable.
-// If the variable has structure type (like in this example), the structure declarations must also be indentical.
+// If the variable has structure type (like in this example), the structure declarations must also be identical.
 void main(in  VSInput VSIn,
           out PSInput PSIn) 
 {

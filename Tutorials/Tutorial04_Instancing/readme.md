@@ -10,7 +10,7 @@ in a forest or characters in a crowd), using just single draw call.
 
 ## Shaders
 
-To allow instancing, vertex shader attibutes are split into two categories: per-vertex attributes
+To allow instancing, vertex shader attributes are split into two categories: per-vertex attributes
 and per-instance attributes. Per-vertex attributes are regular vertex attributes, while per-instance
 attributes are the same for all vertices in one object instance. In this example, we use
 four attributes to encode rows of an instance-specific transform matrix:
