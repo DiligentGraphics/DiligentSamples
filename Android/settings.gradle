@@ -23,5 +23,6 @@ include 'Common',
         ':Tutorial17_MSAA',
         ':Tutorial18_Queries',
         ':Tutorial19_RenderPasses',
-        ':Tutorial23_CommandQueues'
+        ':Tutorial23_CommandQueues',
+        ':Tutorial24_VRS'
 project(':Common').projectDir = new File(settingsDir, '../../DiligentTools/NativeApp/Android')

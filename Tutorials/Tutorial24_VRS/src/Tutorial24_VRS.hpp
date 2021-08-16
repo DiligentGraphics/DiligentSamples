@@ -50,8 +50,8 @@ private:
     void UpdateUI();
     void UpdateVRSTexture(float MPosX, float MPosY);
     void LoadTexture();
-    void CreateVRSPipelineState(); // only for desktop D3D12 and Vulkan
-    //void CreateDensityMapPipelineState(); // only for mobile Vulkan
+    void CreateVRSPipelineState();        // only for desktop D3D12 and Vulkan
+    void CreateDensityMapPipelineState(); // only for mobile Vulkan
     void CreateBlitPipelineState();
 
     Uint32 ScaleSurface(Uint32 Dim) const

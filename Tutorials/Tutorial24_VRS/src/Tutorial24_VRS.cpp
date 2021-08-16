@@ -123,6 +123,78 @@ void Tutorial24_VRS::CreateVRSPipelineState()
     m_VRS.PSO[0]->CreateShaderResourceBinding(&m_VRS.SRB);
 }
 
+void Tutorial24_VRS::CreateDensityMapPipelineState()
+{
+    GraphicsPipelineStateCreateInfo PSOCreateInfo;
+
+    auto& PSODesc          = PSOCreateInfo.PSODesc;
+    auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
+
+    GraphicsPipeline.NumRenderTargets                     = 1;
+    GraphicsPipeline.RTVFormats[0]                        = ColorFormat;
+    GraphicsPipeline.DSVFormat                            = DepthFormat;
+    GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
+    GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+    GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
+    GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
+
+    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM;
+    ShaderCI.UseCombinedTextureSamplers = true;
+
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+
+    RefCntAutoPtr<IShader> pVS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "VRS - VS";
+        ShaderCI.FilePath        = "CubeFDM_vs.glsl";
+
+        m_pDevice->CreateShader(ShaderCI, &pVS);
+    }
+
+    RefCntAutoPtr<IShader> pPS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "VRS - PS";
+        ShaderCI.FilePath        = "CubeFDM_fs.glsl";
+
+        m_pDevice->CreateShader(ShaderCI, &pPS);
+    }
+
+    const LayoutElement LayoutElems[] = {
+        {0, 0, 3, VT_FLOAT32, False},
+        {1, 0, 2, VT_FLOAT32, False} //
+    };
+    GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+    GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
+
+    const SamplerDesc SamLinearClampDesc{
+        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP //
+    };
+    const ImmutableSamplerDesc ImtblSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
+
+    PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+
+    PSOCreateInfo.pVS = pVS;
+    PSOCreateInfo.pPS = pPS;
+
+    PSODesc.Name                      = "Texture based shading rate";
+    GraphicsPipeline.ShadingRateFlags = PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED;
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_VRS.PSO[2]);
+
+    m_VRS.PSO[2]->CreateShaderResourceBinding(&m_VRS.SRB);
+}
+
 void Tutorial24_VRS::CreateBlitPipelineState()
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
@@ -193,7 +265,11 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+#if PLATFORM_ANDROID
+    CreateDensityMapPipelineState();
+#else
     CreateVRSPipelineState();
+#endif
     CreateBlitPipelineState();
 
     {
@@ -415,6 +491,7 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     switch (SRProps.Format)
     {
         case SHADING_RATE_FORMAT_PALETTE: TexDesc.Format = TEX_FORMAT_R8_UINT; break;
+        case SHADING_RATE_FORMAT_UNORM8: TexDesc.Format = TEX_FORMAT_RG8_UNORM; break;
         default: UNEXPECTED("Unexpected shading rate texture format");
     }
 
@@ -486,27 +563,54 @@ void Tutorial24_VRS::UpdateVRSTexture(float MPosX, float MPosY)
     }
 
     std::vector<Uint8> SRData;
-    SRData.resize(Desc.Width * Desc.Height);
-    for (Uint32 y = 0; y < Desc.Height; ++y)
+    switch (SRProps.Format)
     {
-        for (Uint32 x = 0; x < Desc.Width; ++x)
+        case SHADING_RATE_FORMAT_PALETTE:
         {
-            auto XDist = std::abs(static_cast<float>(x) / Desc.Width - MPos.x) * 1.5f;
-            auto YDist = std::abs(static_cast<float>(y) / Desc.Height - MPos.y) * 1.5f;
+            SRData.resize(Desc.Width * Desc.Height);
+            for (Uint32 y = 0; y < Desc.Height; ++y)
+            {
+                for (Uint32 x = 0; x < Desc.Width; ++x)
+                {
+                    auto XDist = std::abs(static_cast<float>(x) / Desc.Width - MPos.x) * 1.5f;
+                    auto YDist = std::abs(static_cast<float>(y) / Desc.Height - MPos.y) * 1.5f;
 
-            auto XRate = clamp(static_cast<Uint32>(XDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
-            auto YRate = clamp(static_cast<Uint32>(YDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
-            VERIFY_EXPR(XRate <= AXIS_SHADING_RATE_MAX);
-            VERIFY_EXPR(YRate <= AXIS_SHADING_RATE_MAX);
+                    auto XRate = clamp(static_cast<Uint32>(XDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
+                    auto YRate = clamp(static_cast<Uint32>(YDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
+                    VERIFY_EXPR(XRate <= AXIS_SHADING_RATE_MAX);
+                    VERIFY_EXPR(YRate <= AXIS_SHADING_RATE_MAX);
 
-            SRData[x + y * Desc.Width] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
+                    SRData[x + y * Desc.Width] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
+                }
+            }
+            break;
         }
+        case SHADING_RATE_FORMAT_UNORM8:
+        {
+            SRData.resize(Desc.Width * Desc.Height * 2);
+            for (Uint32 y = 0; y < Desc.Height; ++y)
+            {
+                for (Uint32 x = 0; x < Desc.Width; ++x)
+                {
+                    auto XDist = clamp(std::abs(static_cast<float>(x) / Desc.Width - MPos.x), 0.f, 1.0f);
+                    auto YDist = clamp(std::abs(static_cast<float>(y) / Desc.Height - MPos.y), 0.f, 1.0f);
+                    auto Idx   = (x + y * Desc.Width) * 2;
+
+                    SRData[Idx + 0] = static_cast<Uint8>(XDist * 255.f);
+                    SRData[Idx + 1] = static_cast<Uint8>(YDist * 255.f);
+                }
+            }
+            break;
+        }
+        default:
+            UNEXPECTED("Unexpected shading rate texture format");
     }
+
 
     const Box         TexBox{0, Desc.Width, 0, Desc.Height};
     TextureSubResData SubResData;
     SubResData.pData  = SRData.data();
-    SubResData.Stride = Desc.Width;
+    SubResData.Stride = static_cast<Uint32>(SRData.size() / Desc.Height);
 
     m_pImmediateContext->UpdateTexture(pVRSTex, 0, 0, TexBox, SubResData, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }

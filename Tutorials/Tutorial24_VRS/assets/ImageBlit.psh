@@ -18,7 +18,7 @@ void main(in  PSInput  PSIn,
     g_Texture.GetDimensions(Dim.x, Dim.y);
 
     float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
-    int3   TexelPos = int3(ScreenUV * Dim + 0.5, 0);
+    int3   TexelPos = int3(ScreenUV * Dim, 0);
 
     PSOut.Color = g_Texture.Load(TexelPos); 
 }

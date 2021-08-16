@@ -14,6 +14,8 @@ set(INCLUDE
 
 set(SHADERS
     assets/Structures.fxh
+    assets/CubeFDM_vs.glsl
+    assets/CubeFDM_fs.glsl
     assets/CubeVRS.psh
     assets/CubeVRS.vsh
     assets/ImageBlit.psh
