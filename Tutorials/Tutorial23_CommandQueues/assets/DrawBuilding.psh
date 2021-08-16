@@ -1,0 +1,37 @@
+#include "Structures.fxh"
+
+cbuffer DrawConstantsCB
+{
+    DrawConstants g_Constants;
+};
+
+Texture2DArray g_OpaqueTexAtlas;
+SamplerState   g_OpaqueTexAtlas_sampler;
+
+struct PSInput
+{
+    float4 Pos  : SV_POSITION;
+    float3 Norm : NORMAL;    // world-space normal
+    float3 UVW  : TEX_COORD;
+};
+
+struct PSOutput
+{
+    float4 Color : SV_Target0; // RGBA16F
+};
+
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float  NdotL    = max(g_Constants.AmbientLight, dot(PSIn.Norm, g_Constants.LightDir));
+    float4 Color    = g_OpaqueTexAtlas.Sample(g_OpaqueTexAtlas_sampler, PSIn.UVW);
+    float  Emission = Color.a * 100.0;
+
+    // Disable shading for self-emission material
+    if (Emission > 0.01)
+        NdotL = 1.0;
+
+    PSOut.Color.rgb = Color.rgb * NdotL;
+    PSOut.Color.a   = Emission;
+}

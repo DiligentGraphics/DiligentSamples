@@ -1,0 +1,55 @@
+Texture2D g_GBuffer_Color;
+
+static const float GaussianBlurKernel[5][5] =
+{
+    {0.00390625, 0.01562500, 0.02343750, 0.01562500, 0.00390625},
+    {0.01562500, 0.06250000, 0.09375000, 0.06250000, 0.01562500},
+    {0.02343750, 0.09375000, 0.14062500, 0.09375000, 0.02343750},
+    {0.01562500, 0.06250000, 0.09375000, 0.06250000, 0.01562500},
+    {0.00390625, 0.01562500, 0.02343750, 0.01562500, 0.00390625}
+};
+
+struct PSInput
+{
+    float4 Pos : SV_POSITION;
+    float2 UV  : TEX_COORD;
+};
+
+float4 Mix(float4 Lhs, float4 Rhs)
+{
+    if (abs(Lhs.a - Rhs.a) < 0.05)
+        return (Lhs + Rhs) * 0.5;
+    else if (Lhs.a > Rhs.a)
+        return Lhs;
+    else
+        return Rhs;
+}
+
+float4 main(in PSInput PSIn) : SV_Target
+{
+    float2 Dim;
+    g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
+
+    float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+    int3   TexelPos = int3(ScreenUV * Dim * 0.5, 0);
+
+    float4 Blur = float4(0.0, 0.0, 0.0, 0.0);
+
+    [unroll] for (int y = 0; y < 5; ++y)
+    {
+        [unroll] for (int x = 0; x < 5; ++x)
+        {
+            int3 Pos = (TexelPos + int3(x - 2, y - 2, 0)) * 2;
+
+            // RGB - color, A - emission
+            float4 Color0 = g_GBuffer_Color.Load(Pos + int3(0, 0, 0));
+            float4 Color1 = g_GBuffer_Color.Load(Pos + int3(1, 0, 0));
+            float4 Color2 = g_GBuffer_Color.Load(Pos + int3(0, 1, 0));
+            float4 Color3 = g_GBuffer_Color.Load(Pos + int3(1, 1, 0));
+
+            Blur += Mix(Mix(Color0, Color1), Mix(Color2, Color3)) * GaussianBlurKernel[x][y];
+        }
+    }
+
+    return Blur;
+}

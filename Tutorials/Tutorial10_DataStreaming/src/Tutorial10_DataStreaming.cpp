@@ -246,7 +246,7 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
         // Dynamic buffers can be frequently updated by the CPU
         CreateUniformBuffer(m_pDevice, sizeof(float4x4), "Instance constants CB", &m_PolygonAttribsCB);
         // Transition the buffer to RESOURCE_STATE_CONSTANT_BUFFER state
-        Barriers.emplace_back(m_PolygonAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+        Barriers.emplace_back(m_PolygonAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // Create a pixel shader
@@ -389,12 +389,12 @@ void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Ba
             m_pImmediateContext->CopyTexture(CopyAttribs);
         }
 
-        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     // Transition texture array to shader resource state
-    Barriers.emplace_back(pTexArray, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+    Barriers.emplace_back(pTexArray, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
 
     // Set texture SRV in the SRB
     for (int tex = 0; tex < NumTextures; ++tex)
@@ -457,8 +457,8 @@ void Tutorial10_DataStreaming::Initialize(const SampleInitInfo& InitInfo)
     m_StreamingIB.reset(new StreamingBuffer(m_pDevice, BIND_INDEX_BUFFER, MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1 + InitInfo.NumDeferredCtx, "Streaming index buffer"));
 
     // Transition the buffers to required state
-    Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
-    Barriers.emplace_back(m_StreamingIB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
+    Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
+    Barriers.emplace_back(m_StreamingIB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
 
     InitializePolygonGeometry();
     InitializePolygons();

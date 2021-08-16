@@ -36,6 +36,8 @@ void SampleBase::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs
 {
     Attribs.EngineCI.Features = DeviceFeatures{DEVICE_FEATURE_STATE_OPTIONAL};
 
+    Attribs.EngineCI.Features.TransferQueueTimestampQueries = DEVICE_FEATURE_STATE_DISABLED;
+
     switch (Attribs.DeviceType)
     {
 #if D3D11_SUPPORTED

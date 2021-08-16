@@ -1,0 +1,81 @@
+#include "Structures.fxh"
+
+cbuffer PostProcessConstantsCB
+{
+    PostProcessConstants g_Constants;
+};
+
+Texture2D    g_GBuffer_Color;
+SamplerState g_GBuffer_Color_sampler;
+Texture2D    g_GBuffer_Depth;
+
+struct PSInput 
+{ 
+    float4 Pos : SV_POSITION; 
+    float2 UV  : TEX_COORD; 
+};
+
+float3 ScreenPosToWorldPos(float2 ScreenSpaceUV, float Depth, float4x4 ViewProjInv)
+{
+    float4 PosClipSpace;
+    PosClipSpace.xy = ScreenSpaceUV * float2(2.0, -2.0) + float2(-1.0, 1.0);
+    PosClipSpace.z = Depth;
+    PosClipSpace.w = 1.0;
+    float4 WorldPos = mul(PosClipSpace, ViewProjInv);
+    return WorldPos.xyz / WorldPos.w;
+}
+
+float Exp2Fog(float dist, float density)
+{
+    float d = density * dist;
+    return 1.0 - saturate(exp2(d * d * -1.442695));
+}
+
+float4 main(in PSInput PSIn) : SV_Target
+{
+    float2 Dim;
+    g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
+
+    float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+    int3   TexelPos = int3(ScreenUV * Dim, 0);
+    float3 Color    = g_GBuffer_Color.Load(TexelPos).rgb;
+    float  Depth    = g_GBuffer_Depth.Load(TexelPos).x;
+
+    float3 EmissionGlow;
+#if GLOW
+    {
+        // RGB - color, A - emission
+        float4 Color0 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 0);
+        float4 Color1 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 1);
+        float4 Color2 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 2);
+        float4 Color3 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 3);
+        float4 Color4 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 4);
+        Color0.rgb *= Color0.a;
+        Color1.rgb *= Color1.a;
+        Color2.rgb *= Color2.a;
+        Color3.rgb *= Color3.a;
+        Color4.rgb *= Color4.a;
+        EmissionGlow = (Color0 + Color1 + Color2 + Color3 + Color4).rgb / 5.0;
+    }
+#else
+    {
+        float4 Color0 = g_GBuffer_Color.SampleLevel(g_GBuffer_Color_sampler, ScreenUV, 0);
+        Color0.rgb *= (Color0.a * 0.2);
+        EmissionGlow = Color0.rgb;
+    }
+#endif
+
+    // Apply fog
+    {
+        float3 WPos        = ScreenPosToWorldPos(PSIn.UV, Depth, g_Constants.ViewProjInv);
+        float  LinearDepth = length(WPos - g_Constants.CameraPos);
+        float  FogFactor   = saturate(Exp2Fog(LinearDepth, 0.01));
+        
+        if (Depth < 1.0)
+            Color = lerp(Color, g_Constants.FogColor, FogFactor);
+
+        Color += EmissionGlow * (1.0 - FogFactor * 0.5);
+    }
+
+    return float4(Color, 1.0);
+}

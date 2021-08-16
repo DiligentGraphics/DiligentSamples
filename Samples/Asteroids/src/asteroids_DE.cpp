@@ -18,7 +18,6 @@
 #include <limits>
 #include <random>
 #include <locale>
-#include <codecvt>
 
 #include "asteroids_DE.h"
 
@@ -252,7 +251,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         desc.uiSizeInBytes = static_cast<Uint32>((m_BindingMode == BindingMode::Bindless) ? sizeof(DirectX::XMFLOAT4X4) : sizeof(DrawConstantBuffer));
         mDevice->CreateBuffer(desc, nullptr, &mDrawConstantBuffer);
         if (m_BindingMode != BindingMode::Bindless)
-            Barriers.emplace_back(mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+            Barriers.emplace_back(mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     if (m_BindingMode == BindingMode::Bindless)
@@ -271,7 +270,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
                 Ids[i] = i;
             BufferData Data(Ids.data(), desc.uiSizeInBytes);
             mDevice->CreateBuffer(desc, &Data, &mInstanceIDBuffer);
-            Barriers.emplace_back(mInstanceIDBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+            Barriers.emplace_back(mInstanceIDBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
         }
 
         {
@@ -424,10 +423,11 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
     {
         TextureLoadInfo loadInfo;
         loadInfo.IsSRGB = true;
+        loadInfo.Name   = "Skybox";
         RefCntAutoPtr<ITexture> skybox;
         CreateTextureFromFile("starbox_1024.dds", loadInfo, mDevice, &skybox);
         mSkyboxSRV = skybox->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        Barriers.emplace_back(skybox, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+        Barriers.emplace_back(skybox, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // Create skybox constant buffer
@@ -439,7 +439,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         desc.BindFlags      = BIND_UNIFORM_BUFFER;
         desc.CPUAccessFlags = CPU_ACCESS_WRITE;
         mDevice->CreateBuffer(desc, nullptr, &mSkyboxConstantBuffer);
-        Barriers.emplace_back(mSkyboxConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true);
+        Barriers.emplace_back(mSkyboxConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // create skybox pipeline state
@@ -684,7 +684,7 @@ void Asteroids::CreateMeshes()
         data.DataSize = desc.uiSizeInBytes;
 
         mDevice->CreateBuffer(desc, &data, &mVertexBuffer);
-        Barriers.emplace_back(mVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+        Barriers.emplace_back(mVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // create index buffer
@@ -700,7 +700,7 @@ void Asteroids::CreateMeshes()
         data.DataSize = desc.uiSizeInBytes;
 
         mDevice->CreateBuffer(desc, &data, &mIndexBuffer);
-        Barriers.emplace_back(mIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, true);
+        Barriers.emplace_back(mIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     std::vector<SkyboxVertex> skyboxVertices;
@@ -720,7 +720,7 @@ void Asteroids::CreateMeshes()
         data.DataSize = desc.uiSizeInBytes;
 
         mDevice->CreateBuffer(desc, &data, &mSkyboxVertexBuffer);
-        Barriers.emplace_back(mSkyboxVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+        Barriers.emplace_back(mSkyboxVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
     // create sprite vertex buffer (dynamic)
@@ -733,7 +733,7 @@ void Asteroids::CreateMeshes()
         desc.CPUAccessFlags = CPU_ACCESS_WRITE;
 
         mDevice->CreateBuffer(desc, nullptr, &mSpriteVertexBuffer);
-        Barriers.emplace_back(mSpriteVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, true);
+        Barriers.emplace_back(mSpriteVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
     mDeviceCtxt->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 }
@@ -768,7 +768,7 @@ void Asteroids::InitializeTextureData()
         mDevice->CreateTexture(textureDesc, &initData, &mTextures[t]);
         mTextureSRVs[t] = mTextures[t]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         mTextureSRVs[t]->SetSampler(mSamplerState);
-        Barriers.emplace_back(mTextures[t], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true);
+        Barriers.emplace_back(mTextures[t], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
     mDeviceCtxt->TransitionResourceStates(static_cast<Uint32>(Barriers.size()), Barriers.data());
 }
@@ -801,12 +801,13 @@ void Asteroids::CreateGUIResources()
     for (int i = -1; i < (int)mGUI->size(); ++i)
     {
         auto control = i >= 0 ? (*mGUI)[i] : mSprite.get();
-        if (control->TextureFile().length() > 0 && mSpriteTextures.find(control->TextureFile()) == mSpriteTextures.end())
+        auto path    = control->TextureFile();
+        if (path.length() > 0 && mSpriteTextures.find(path) == mSpriteTextures.end())
         {
-            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-            auto                                                   path = NarrowString(converter.from_bytes(control->TextureFile()).c_str());
-            TextureLoadInfo                                        loadInfo;
+
+            TextureLoadInfo loadInfo;
             loadInfo.IsSRGB = true;
+            loadInfo.Name   = "Sprite texture";
             RefCntAutoPtr<ITexture> spriteTexture;
             CreateTextureFromFile(path.c_str(), loadInfo, mDevice, &spriteTexture);
             auto* pSRV = spriteTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -896,7 +897,7 @@ void Asteroids::RenderSubset(Uint32             SubsetNum,
             }
         }
 
-        StateTransitionDesc Barrier{mAsteroidsDataBuffers[SubsetNum], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true};
+        StateTransitionDesc Barrier{mAsteroidsDataBuffers[SubsetNum], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
         pCtx->TransitionResourceStates(1, &Barrier);
 
         // Commit and verify resources
@@ -976,7 +977,7 @@ void Asteroids::Render(float frameTime, const OrbitCamera& camera, const Setting
         const auto& viewProjection = camera.ViewProjection();
         mDeviceCtxt->UpdateBuffer(mDrawConstantBuffer, 0, sizeof(DirectX::XMFLOAT4X4), (void*)&viewProjection, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         // Explicitly transition the buffer to CONSTANT_BUFFER state
-        StateTransitionDesc Barrier{mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true};
+        StateTransitionDesc Barrier{mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE};
         mDeviceCtxt->TransitionResourceStates(1, &Barrier);
     }
 

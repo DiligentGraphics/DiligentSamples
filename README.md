@@ -47,6 +47,7 @@ To build and run the applications in the module, please follow the [instructions
   - [20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples#tutorial-20---mesh-shader)
   - [21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-21---ray-tracing)
   - [22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples#tutorial-22---hybrid-rendering)
+  - [23 - Command Queues](https://github.com/DiligentGraphics/DiligentSamples#tutorial-23---command-queues)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
@@ -234,6 +235,13 @@ This tutorial demonstrates the basics of using ray tracing API in Diligent Engin
 This tutorial demonstrates how to implement a simple hybrid renderer that combines rasterization with ray tracing.
 
 ![](Tutorials/Tutorial22_HybridRendering/Animation_Large.gif)
+
+
+## [Tutorial 23 - Command Queues](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues)
+
+This tutorial demonstrates how to use multiple command queues to perform rendering in parallel with copy and compute operations.
+
+![](Tutorials/Tutorial23_CommandQueues/Animation_Large.gif)
 
 
 # Samples
