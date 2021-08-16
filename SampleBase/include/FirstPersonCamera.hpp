@@ -45,7 +45,7 @@ public:
     void SetPos(const float3& Pos) { m_Pos = Pos; }
 
     // AspectRatio = width / height accounting for surface pretransform
-    // (i.e. logical widht / logical height)
+    // (i.e. logical width / logical height)
     void SetProjAttribs(Float32           NearClipPlane,
                         Float32           FarClipPlane,
                         Float32           AspectRatio,

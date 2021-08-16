@@ -471,7 +471,7 @@ m_pImmediateContext->DeviceWaitForFence(m_ComputeCtxFence, m_ComputeCtxFenceValu
 // Graphics pass
 ...
 
-// Singal that the graphics pass is complete
+// Signal that the graphics pass is complete
 m_pImmediateContext->EnqueueSignal(m_GraphicsCtxFence, ++m_GraphicsCtxFenceValue);
 ```
 

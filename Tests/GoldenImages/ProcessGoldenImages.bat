@@ -165,7 +165,7 @@ EXIT /B %ERROR%
 
         if !ERRORLEVEL! NEQ 0 (
             if !ERRORLEVEL! GEQ 0 (
-                echo Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: !ERRORLEVEL! incosistent pixels found
+                echo Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: !ERRORLEVEL! inconsistent pixels found
                 if "%golden_img_mode%" == "compare_update" echo Golden image updated
             ) else (
                 if "%golden_img_mode%" == "compare" echo Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: unknown error
