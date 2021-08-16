@@ -24,7 +24,7 @@
  *  of the possibility of such damages.
  */
 
-package com.diligentengine.tutorial23_asyncqueues;
+package com.diligentengine.tutorial23_commandqueues;
 import com.diligentengine.android.common.NativeActivityBase;
 
 public class Tutorial23NativeActivity extends NativeActivityBase {

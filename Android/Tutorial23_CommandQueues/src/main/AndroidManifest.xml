@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-package="com.diligentengine.tutorial23_asyncqueues"
+package="com.diligentengine.tutorial23_commandqueues"
 android:versionCode="1"
 android:versionName="1.0" >
 
@@ -11,7 +11,7 @@ android:versionName="1.0" >
     android:icon="@mipmap/ic_launcher"
     android:label="@string/app_name"
     android:theme="@style/AppTheme"
-    android:name="com.diligentengine.tutorial23_asyncqueues.Tutorial23Application"
+    android:name="com.diligentengine.tutorial23_commandqueues.Tutorial23Application"
     >
 
   <!-- Our activity is the built-in NativeActivity framework class.
@@ -20,12 +20,12 @@ android:versionName="1.0" >
   <!-- By default, Android calls onDestroy when the screen is rotated. To disable this behavior
        and handle rotations in the app, we must add the orientation (for API level 13 and lower)
        and screenSize attributes to the activity's configChanges in the Android manifest -->
-  <activity android:name="com.diligentengine.tutorial23_asyncqueues.Tutorial23NativeActivity"
+  <activity android:name="com.diligentengine.tutorial23_commandqueues.Tutorial23NativeActivity"
       android:label="@string/app_name"
       android:configChanges="orientation|screenSize|keyboardHidden">
     <!-- Tell NativeActivity the name of our .so -->
     <meta-data android:name="android.app.lib_name"
-        android:value="Tutorial23_AsyncQueues" />
+        android:value="Tutorial23_CommandQueues" />
     <intent-filter>
       <action android:name="android.intent.action.MAIN" />
       <category android:name="android.intent.category.LAUNCHER" />

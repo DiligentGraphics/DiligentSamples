@@ -3,7 +3,7 @@ apply from: "../../../DiligentTools/NativeApp/Android/android_common.gradle"
 
 android {
     defaultConfig {
-        applicationId = 'com.diligentengine.tutorial23_asyncqueues.Tutorial23Application'
+        applicationId = 'com.diligentengine.tutorial23_commandqueues.Tutorial23Application'
     }
     buildTypes {
             release {
@@ -14,7 +14,7 @@ android {
     }
     sourceSets {
         main {
-            assets.srcDirs = ['../../Tutorials/Tutorial23_AsyncQueues/assets']
+            assets.srcDirs = ['../../Tutorials/Tutorial23_CommandQueues/assets']
         }
     }
     packagingOptions {
