@@ -110,7 +110,7 @@ private:
     TEXTURE_FORMAT m_ColorTargetFormat = TEX_FORMAT_RGBA8_UNORM;
     TEXTURE_FORMAT m_DepthTargetFormat = TEX_FORMAT_UNKNOWN;
 
-    int          m_TransferRateMbExp2 = 5; // two to the power of
+    int          m_TransferRateMbExp2 = 2; // two to the power of
     bool         m_UseAsyncCompute    = true;
     bool         m_UseAsyncTransfer   = true;
     bool         m_Glow               = true;
@@ -118,7 +118,7 @@ private:
     const float  m_AmbientLight       = 0.1f;
     const float3 m_FogColor           = {0.73f, 0.65f, 0.59f};
     const float3 m_SkyColor           = {0.7f, 0.5f, 0.2f};
-    int          m_SurfaceScaleExp2   = 1; // two to the power of
+    int          m_SurfaceScaleExp2   = 0; // two to the power of
 
     std::vector<ImmediateContextCreateInfo> m_ContextCI;
 

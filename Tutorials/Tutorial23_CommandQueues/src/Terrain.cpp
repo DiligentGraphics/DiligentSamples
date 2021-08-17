@@ -228,6 +228,8 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro("GROUP_SIZE_WITH_BORDER", GroupSize);
         Macros.AddShaderMacro("GROUP_SIZE", m_ComputeGroupSize);
+        Macros.AddShaderMacro("TERRAIN_OCTAVES", Attr.TurbulenceOctaves);
+        Macros.AddShaderMacro("NOISE_OCTAVES", Attr.NoiseOctaves);
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.UseCombinedTextureSamplers = true;

@@ -83,20 +83,18 @@ void CSMain(uint2 GroupId : SV_GroupID,
 
     float3 Pos = float3(UV, g_Constants.Animation);
     {
-        const int   octave      = 6;
         const float persistence = 1.0;
         const float lacunarity  = 0.314 * 0.0001;
 
-        Pos = Turbulence(Pos, 1.0, lacunarity, persistence, octave);
+        Pos = Turbulence(Pos, 1.0, lacunarity, persistence, TERRAIN_OCTAVES);
     }
 
     float Height = 0.0;
     {
-        const int   octave      = 3;
         const float persistence = 0.286;
         const float lacunarity  = 3.3;
 
-        Height = max(0.0, FBM(Pos, lacunarity, persistence, octave));
+        Height = max(0.0, FBM(Pos, lacunarity, persistence, NOISE_OCTAVES));
     }
 
     s_Height[LocalId.x + LocalId.y * GROUP_SIZE_WITH_BORDER] = Height;

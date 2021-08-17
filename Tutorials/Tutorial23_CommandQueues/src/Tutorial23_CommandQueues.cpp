@@ -260,13 +260,6 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     if ((m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RGBA16_FLOAT).BindFlags & RTFlags) == RTFlags)
         m_ColorTargetFormat = TEX_FORMAT_RGBA16_FLOAT;
 
-#if PLATFORM_ANDROID
-    // Set settings for low-performance devices
-    m_SurfaceScaleExp2    = -1;
-    m_Terrain.TerrainSize = 7;
-    m_Glow                = false;
-#endif
-
     // Setup camera.
     m_Camera.SetPos(float3{-73.f, 21.f, 47.f});
     m_Camera.SetRotation(17.f, -0.27f);
@@ -292,6 +285,27 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
         }
     }
 
+    ScenePSOCreateAttribs PSOAttribs;
+    PSOAttribs.ColorTargetFormat = m_ColorTargetFormat;
+    PSOAttribs.DepthTargetFormat = m_DepthTargetFormat;
+
+    // Settings for high-performance discrete GPUs
+    if (m_pDevice->GetAdapterInfo().Type == ADAPTER_TYPE_DISCRETE)
+    {
+        m_SurfaceScaleExp2           = 1;
+        m_TransferRateMbExp2         = 5;
+        m_Terrain.TerrainSize        = 11;
+        PSOAttribs.TurbulenceOctaves = 6;
+        PSOAttribs.NoiseOctaves      = 3;
+    }
+
+#if PLATFORM_ANDROID
+    // Set settings for low-performance mobile devices
+    m_SurfaceScaleExp2    = -1;
+    m_Terrain.TerrainSize = 7;
+    m_Glow                = false;
+#endif
+
     // Create constant buffers
     BufferDesc BuffDesc;
     BuffDesc.BindFlags            = BIND_UNIFORM_BUFFER;
@@ -314,11 +328,8 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
 
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-
-    ScenePSOCreateAttribs PSOAttribs;
     PSOAttribs.pShaderSourceFactory = pShaderSourceFactory;
-    PSOAttribs.ColorTargetFormat    = m_ColorTargetFormat;
-    PSOAttribs.DepthTargetFormat    = m_DepthTargetFormat;
+
     m_Terrain.CreatePSO(PSOAttribs);
     m_Buildings.CreatePSO(PSOAttribs);
 
