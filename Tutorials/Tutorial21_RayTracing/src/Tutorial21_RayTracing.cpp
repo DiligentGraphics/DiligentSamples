@@ -305,7 +305,7 @@ void Tutorial21_RayTracing::LoadTextures()
         // Get shader resource view from the texture
         auto* pTextureSRV = pTex[tex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         pTexSRVs[tex]     = pTextureSRV;
-        Barriers[tex]     = StateTransitionDesc{pTex[tex], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true};
+        Barriers[tex]     = StateTransitionDesc{pTex[tex], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
     }
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
