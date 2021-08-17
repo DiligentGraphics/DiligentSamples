@@ -12,7 +12,7 @@ on full primitives.
 ## Shaders
 
 Vertex shader in this tutorial is mostly identical to that of Tutorial03. The only difference is that
-the shader uses `#include` directive to include `structures.h` containing the definitons of common structures.
+the shader uses `#include` directive to include `structures.h` containing the definitions of common structures.
 
 Geometry shader processes entire triangles. It fist computes the triangle area which it then uses to
 determine the distance from every vertex to the opposite edge. The distances are then
@@ -85,7 +85,7 @@ void main(in  GSOutput PSIn,
 ## Initializing the Pipeline State and Rendering
 
 Pipeline state initialization is the same as in Tutorial03, with the only difference being
-initialzation of the geometry shader:
+initialization of the geometry shader:
 
 ```cpp
 // Create a geometry shader

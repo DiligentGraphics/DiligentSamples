@@ -52,7 +52,7 @@ void TerrainVS(in  TerrainVSIn  VSIn,
 }
 ```
 
-Note that the vertex shader includes `structures.fxh` file that contains definitons of structures
+Note that the vertex shader includes `structures.fxh` file that contains definitions of structures
 used by the shaders.
 
 ### Hull shader
@@ -142,7 +142,7 @@ for more details.
 
 ### Pixel shader
 
-Pixel shader simpy samples the color texture and is quite straightforward:
+Pixel shader simply samples the color texture and is quite straightforward:
 
 ```hlsl
 #include "structures.fxh"

@@ -799,7 +799,7 @@ void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 
 void Buildings::BeforeDraw(IDeviceContext* pContext)
 {
-    // Resources must be manualy transitioned to required state.
+    // Resources must be manually transitioned to required state.
     // Vulkan:     correct pipeline barrier must contain pixel shader stages, which are not supported in transfer context.
     // DirectX 12: the texture is used as a pixel shader resource and must be transitioned in graphics context.
     const StateTransitionDesc Barrier{m_OpaqueTexAtlas, m_OpaqueTexAtlasDefaultState, RESOURCE_STATE_SHADER_RESOURCE};
@@ -808,7 +808,7 @@ void Buildings::BeforeDraw(IDeviceContext* pContext)
 
 void Buildings::AfterDraw(IDeviceContext* pContext)
 {
-    // Resources must be manualy transitioned to required state.
+    // Resources must be manually transitioned to required state.
     const StateTransitionDesc Barrier{m_OpaqueTexAtlas, RESOURCE_STATE_SHADER_RESOURCE, m_OpaqueTexAtlasDefaultState};
     pContext->TransitionResourceStates(1, &Barrier);
 }
@@ -1050,7 +1050,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
 
     pContext->BeginDebugGroup("Update textures");
 
-    // Resources must be manualy transitioned to required state.
+    // Resources must be manually transitioned to required state.
     // Vulkan:     allowed any state which is supported by transfer queue.
     // DirectX 12: resource transition from copy to graphics/compute queue requires resource to be in COMMON state.
     if (m_OpaqueTexAtlasDefaultState != RESOURCE_STATE_COPY_DEST)
@@ -1104,7 +1104,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
             break;
     }
 
-    // Resources must be manualy transitioned to required states.
+    // Resources must be manually transitioned to required states.
     // Vulkan:     any state supported by transfer queue is allowed.
     // DirectX 12: resource transition from graphics/compute to copy queue requires resource to be in COMMON state.
     if (m_OpaqueTexAtlasDefaultState != RESOURCE_STATE_COPY_DEST)

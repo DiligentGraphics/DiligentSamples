@@ -116,7 +116,7 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
         GraphicsPipelineStateCreateInfo PSOCreateInfo;
         PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
 		
-        PSODesc.Name = "Backround PSO";
+        PSODesc.Name = "Background PSO";
 
         PSODesc.PipelineType                                        = PIPELINE_TYPE_GRAPHICS;
         PSOCreateInfo.GraphicsPipeline.NumRenderTargets             = 1;

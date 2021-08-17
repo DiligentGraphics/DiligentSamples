@@ -95,7 +95,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 
 #if PLATFORM_MACOS
     // We need at least 3 buffers in Metal to avoid massive
-    // peformance degradation in full screen mode.
+    // performance degradation in full screen mode.
     // https://github.com/KhronosGroup/MoltenVK/issues/808
     m_SwapChainInitDesc.BufferCount = 3;
 #endif

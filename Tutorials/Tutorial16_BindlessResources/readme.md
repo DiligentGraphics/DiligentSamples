@@ -25,7 +25,7 @@ access required resources using the draw call information.
 ## Shaders
 
 This tutorial is based on [Tutorial 5](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial05_TextureArray).
-However, while original tutorial used a texture array object that requried all array slices to be identical (same size, format,
+However, while original tutorial used a texture array object that required all array slices to be identical (same size, format,
 number of mip levels, etc.), this tutorial binds textures as an array of shader resources. Unlike texture array object, all resources
 in an array of resources may have completely different parameters. The pixel shader is able to dynamically select the texture to sample
 using the texture index it receives from the vertex shader (that reads it from the instance data buffer):

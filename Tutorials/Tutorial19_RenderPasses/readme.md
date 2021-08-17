@@ -20,7 +20,7 @@ next tile.
 A render pass is defined by the following key components:
 
 - *Render pass attachments*, which are the set of texture views used within the render pass.
-  Every attachment defines how its contents shoud be treated at the beginning of the render pass (load operations)
+  Every attachment defines how its contents should be treated at the beginning of the render pass (load operations)
   as well as at the end of the render pass (store operation). The attachments can be used as outputs (render target or depth-stencil) 
   in one subpass as well as inputs to other subpasses. A render pass can also perform multisample resolve operations at the end of the subpass.
 

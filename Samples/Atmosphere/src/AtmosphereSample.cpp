@@ -195,7 +195,7 @@ void AtmosphereSample::UpdateUI()
                 {
                     ImGui::Checkbox("Enable light shafts", &m_PPAttribs.bEnableLightShafts);
 
-                    static_assert(LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING == 0 && LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE == 1, "Unexpcted value");
+                    static_assert(LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING == 0 && LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE == 1, "Unexpected value");
                     ImGui::Combo("Light scattering tech", &m_PPAttribs.iLightSctrTechnique, "Epipolar\0"
                                                                                             "Brute force\0\0");
 
@@ -234,7 +234,7 @@ void AtmosphereSample::UpdateUI()
                         {
                             static constexpr Uint32 MinInitialStep = 4;
                             int                     SelectedItem   = PlatformMisc::GetLSB(m_PPAttribs.uiInitialSampleStepInSlice / MinInitialStep);
-                            if (ImGui::Combo("Intial Step", &SelectedItem,
+                            if (ImGui::Combo("Initial Step", &SelectedItem,
                                              "4\0"
                                              "8\0"
                                              "16\0"

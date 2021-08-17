@@ -10,14 +10,14 @@ the GPU operation, such as the number of primitives rendered, command processing
 Queries operate by enclosing a sequence of commands in interest in `BeginQuery()`/`EndQuery()` block.
 Queries are intrinsically asynchronous, which means that the query result can't be accessed immediately,
 but rather becomes available later after the commands are executed by the GPU. The queries provide tools
-to check the data availability and retrieve it, see the desription of
+to check the data availability and retrieve it, see the description of
 [IQuery](https://github.com/DiligentGraphics/DiligentCore/blob/master/Graphics/GraphicsEngine/interface/Query.h)
 interface for details.
 
 ## Checking Query Support
 
 Not all devices support all types of queries. The support of a specific query type is indicated
-by the corresponding memeber of `DeviceFeatures` struct that can be obtained using `IRenderDevice::GetDeviceCaps` method.
+by the corresponding member of `DeviceFeatures` struct that can be obtained using `IRenderDevice::GetDeviceCaps` method.
 
 ## Query Helpers
 

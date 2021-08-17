@@ -409,7 +409,7 @@ void Terrain::BeforeDraw(IDeviceContext* pContext)
         pContext->UpdateBuffer(m_TerrainConstants[1], 0, sizeof(ConstData), &ConstData, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
-    // Resources must be manualy transitioned to required state.
+    // Resources must be manually transitioned to required state.
     // Vulkan:     the correct pipeline barrier must contains vertex and pixel shader stages which is not supported in compute context.
     // DirectX 12: height map used as non-pixel shader resource and can be transitioned in compute context,
     //             but normal map used as pixel shader resource and must be transitioned in graphics context.
@@ -424,7 +424,7 @@ void Terrain::BeforeDraw(IDeviceContext* pContext)
 
 void Terrain::AfterDraw(IDeviceContext* pContext)
 {
-    // Resources must be manualy transitioned to required state.
+    // Resources must be manually transitioned to required state.
     const Uint32              Id         = DoubleBuffering ? 1 - m_FrameId : 0;
     const StateTransitionDesc Barriers[] = {
         {m_HeightMap[Id], RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS},
