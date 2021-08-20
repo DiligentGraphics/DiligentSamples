@@ -357,12 +357,8 @@ void Tutorial24_VRS::Render()
 
     // Draw to scaled surface
     {
-        ITextureView* pRTVs[] = {m_pRTV};
-        m_pImmediateContext->SetRenderTargets(1, pRTVs, m_pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        const float ClearColor[] = {0.4f, 0.4f, 0.4f, 1.f};
-        m_pImmediateContext->ClearRenderTarget(pRTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
-        m_pImmediateContext->ClearDepthStencil(m_pDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+        ITextureView*           pRTVs[] = {m_pRTV};
+        SetRenderTargetsAttribs SetRTAttribs{1, pRTVs, m_pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION};
 
         const auto Mode = m_VRSModeList[m_VRSMode];
         switch (Mode)
@@ -375,9 +371,15 @@ void Tutorial24_VRS::Render()
                 break;
             case VRS_MODE_TEXTURE_BASED:
                 m_pImmediateContext->SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_OVERRIDE);
-                m_pImmediateContext->SetShadingRateTexture(m_VRS.ShadingRateView, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+                SetRTAttribs.pShadingRateMap = m_VRS.ShadingRateView;
                 break;
         }
+
+        m_pImmediateContext->SetRenderTargetsExt(SetRTAttribs);
+
+        const float ClearColor[] = {0.4f, 0.4f, 0.4f, 1.f};
+        m_pImmediateContext->ClearRenderTarget(pRTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+        m_pImmediateContext->ClearDepthStencil(m_pDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
         m_pImmediateContext->SetPipelineState(m_VRS.PSO[Mode]);
         m_pImmediateContext->CommitShaderResources(m_VRS.SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
