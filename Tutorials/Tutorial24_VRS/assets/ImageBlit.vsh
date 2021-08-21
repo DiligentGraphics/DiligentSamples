@@ -4,8 +4,8 @@ struct PSInput
     float2 UV  : TEX_COORD; 
 };
 
-void main(in uint vid : SV_VertexID,
-          out PSInput PSIn) 
+void VSmain(in uint vid : SV_VertexID,
+            out PSInput PSIn) 
 {
     // fullscreen triangle
     PSIn.UV  = float2(vid >> 1, vid & 1) * 2.0;

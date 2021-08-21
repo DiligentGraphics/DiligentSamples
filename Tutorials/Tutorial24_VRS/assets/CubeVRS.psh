@@ -9,8 +9,10 @@ struct PSInput
 {
     float4 Pos : SV_POSITION; 
     float2 UV  : TEX_COORD;
-
+    
+#ifndef METAL
     nointerpolation uint Rate : SV_ShadingRate;
+#endif
 };
 
 struct PSOutput
@@ -29,9 +31,13 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
     float4 Col = g_Texture.Sample(g_Texture_sampler, PSIn.UV);
+#ifdef METAL
+    PSOut.Color = Col;
+#else
     switch (g_Constants.DrawMode)
     {
         case 0: PSOut.Color = Col; break;
         case 1: PSOut.Color = (Col + ShadingRateToColor(PSIn.Rate)) * 0.5; break;
     }
+#endif
 }

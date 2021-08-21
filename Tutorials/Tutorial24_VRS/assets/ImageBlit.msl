@@ -1,0 +1,60 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+#include "Structures.fxh"
+
+struct VSOut
+{
+    float4 Pos [[position]];
+};
+
+vertex
+VSOut VSmain(uint VertexId [[vertex_id]])
+{
+    // generate fullscreen triangle
+    float2 uv = float2(VertexId >> 1, VertexId & 1) * 2.0;
+    VSOut  out;
+    out.Pos = float4(uv * 2.0 - 1.0, 0.0, 1.0);
+    return out;
+}
+
+float4 ShadingRateToColor(float Factor)
+{
+    float  h   = Factor / 1.35;
+    float3 col = float3(abs(h * 6.0 - 3.0) - 1.0, 2.0 - abs(h * 6.0 - 2.0), 2.0 - abs(h * 6.0 - 4.0));
+    return float4(clamp(col, float3(0.0, 0.0, 0.0), float3(1.0, 1.0, 1.0)), 1.0);
+}
+
+fragment
+float4 PSmain(         VSOut                        in          [[stage_in]],
+              constant Constants&                   g_Constants [[buffer(1)]],
+              constant rasterization_rate_map_data& g_RRMData   [[buffer(0)]],
+                       texture2d<float>             g_Texture   [[texture(0)]] )
+{
+    constexpr sampler readSampler(coord::pixel, address::clamp_to_edge, filter::linear);
+
+    rasterization_rate_map_decoder Decoder(g_RRMData);
+
+    float2 uv = in.Pos.xy * g_Constants.SurfaceScale;
+
+    float2 ScreenPos = Decoder.map_screen_to_physical_coordinates(uv);
+    float4 RTCol     = float4(g_Texture.sample(readSampler, ScreenPos));
+
+    float4 Col;
+    switch (g_Constants.DrawMode)
+    {
+        case 0: Col = RTCol; break;
+        case 1:
+        {
+            float  dx    = Decoder.map_screen_to_physical_coordinates(uv - float2(2,0)).x - Decoder.map_screen_to_physical_coordinates(uv + float2(2,0)).x;
+            float  dy    = Decoder.map_screen_to_physical_coordinates(uv - float2(0,2)).y - Decoder.map_screen_to_physical_coordinates(uv + float2(0,2)).y;
+            float4 SRCol = ShadingRateToColor(clamp(1.0 / (dx * dy), 0.0, 1.0));
+            Col = (RTCol + SRCol) * 0.5;
+            break;
+        }
+        default: Col = float4(0.0);
+    }
+    return Col;
+}

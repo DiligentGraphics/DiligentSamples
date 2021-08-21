@@ -14,16 +14,24 @@ set(INCLUDE
 
 set(SHADERS
     assets/Structures.fxh
-    assets/CubeFDM_vs.glsl
-    assets/CubeFDM_fs.glsl
     assets/CubeVRS.psh
     assets/CubeVRS.vsh
     assets/ImageBlit.psh
     assets/ImageBlit.vsh
+    # mobile vulkan
+    assets/CubeFDM_vs.glsl
+    assets/CubeFDM_fs.glsl
 )
 
 set(ASSETS
     assets/DGLogo.png
 )
+
+if(METAL_SUPPORTED)
+    list(APPEND SOURCE
+        src/Tutorial24_VRS.mm)
+    list(APPEND SHADERS
+        assets/ImageBlit.msl)
+endif()
 
 add_sample_app("Tutorial24_VRS" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

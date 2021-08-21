@@ -11,8 +11,8 @@ struct PSOutput
     float4 Color : SV_TARGET;
 };
 
-void main(in  PSInput  PSIn,
-          out PSOutput PSOut)
+void PSmain(in  PSInput  PSIn,
+            out PSOutput PSOut)
 {
     float2 Dim;
     g_Texture.GetDimensions(Dim.x, Dim.y);

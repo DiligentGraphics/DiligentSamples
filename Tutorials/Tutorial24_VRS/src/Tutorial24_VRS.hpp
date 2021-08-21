@@ -48,16 +48,20 @@ public:
 
 private:
     void UpdateUI();
-    void UpdateVRSTexture(float MPosX, float MPosY);
     void LoadTexture();
-    void CreateVRSPipelineState();        // only for desktop D3D12 and Vulkan
-    void CreateDensityMapPipelineState(); // only for mobile Vulkan
-    void CreateBlitPipelineState();
+    void CreateVRSPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);        // for desktop D3D12 and Vulkan and Metal
+    void CreateDensityMapPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory); // only for mobile Vulkan
+    void CreateBlitPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);
+    void UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Uint32 Height);
+
+    float GetSurfaceScale() const
+    {
+        return m_SurfaceScalePOT >= 0 ? static_cast<float>(1u << m_SurfaceScalePOT) : 1.f / static_cast<float>(1u << -m_SurfaceScalePOT);
+    }
 
     Uint32 ScaleSurface(Uint32 Dim) const
     {
-        float Scale = m_SurfaceScalePOT >= 0 ? static_cast<float>(1u << m_SurfaceScalePOT) : 1.f / static_cast<float>(1u << -m_SurfaceScalePOT);
-        return static_cast<Uint32>(Dim * Scale + 0.5f);
+        return static_cast<Uint32>(Dim * GetSurfaceScale() + 0.5f);
     }
 
     static constexpr int        VRSModes        = 3;
@@ -76,20 +80,25 @@ private:
     {
         RefCntAutoPtr<IShaderResourceBinding> SRB;
         RefCntAutoPtr<IPipelineState>         PSO[VRSModes];
-        RefCntAutoPtr<ITextureView>           ShadingRateView;
     } m_VRS;
-
-    RefCntAutoPtr<ITextureView> m_pRTV;
-    RefCntAutoPtr<ITextureView> m_pDSV;
-
-    RefCntAutoPtr<IShaderResourceBinding> m_BlitSRB;
-    RefCntAutoPtr<IPipelineState>         m_BlitPSO;
 
     // Cube resources
     RefCntAutoPtr<IBuffer>      m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>      m_CubeIndexBuffer;
     RefCntAutoPtr<IBuffer>      m_Constants;
     RefCntAutoPtr<ITextureView> m_TextureSRV;
+
+#if METAL_SUPPORTED
+    RefCntAutoPtr<IDeviceObject> m_pShadingRateMap;
+    RefCntAutoPtr<IBuffer>       m_pShadingRateParamBuffer;
+#else
+    RefCntAutoPtr<ITextureView> m_pShadingRateMap;
+#endif
+    RefCntAutoPtr<ITextureView>           m_pRTV;
+    RefCntAutoPtr<ITextureView>           m_pDSV;
+    float2                                m_PrevMPos;
+    RefCntAutoPtr<IShaderResourceBinding> m_BlitSRB;
+    RefCntAutoPtr<IPipelineState>         m_BlitPSO;
 
     int  m_SurfaceScalePOT = 0;
     int  m_VRSMode         = 0;

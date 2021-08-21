@@ -37,15 +37,18 @@ namespace Diligent
 namespace HLSL
 {
 #include "../assets/Structures.fxh"
-}
+static_assert(sizeof(Constants) % 16 == 0, "must be aligned to 16 bytes");
+} // namespace HLSL
 
 SampleBase* CreateSample()
 {
     return new Tutorial24_VRS();
 }
 
-void Tutorial24_VRS::CreateVRSPipelineState()
+void Tutorial24_VRS::CreateVRSPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
+    const bool IsMetal = m_pDevice->GetDeviceInfo().Type == RENDER_DEVICE_TYPE_METAL;
+
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     auto& PSODesc          = PSOCreateInfo.PSODesc;
@@ -64,11 +67,8 @@ void Tutorial24_VRS::CreateVRSPipelineState()
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.ShaderCompiler             = SHADER_COMPILER_DXC;
+    ShaderCI.ShaderCompiler             = IsMetal ? SHADER_COMPILER_DEFAULT : SHADER_COMPILER_DXC;
     ShaderCI.UseCombinedTextureSamplers = true;
-
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
@@ -118,12 +118,12 @@ void Tutorial24_VRS::CreateVRSPipelineState()
 
     PSODesc.Name                      = "Texture based shading rate";
     GraphicsPipeline.ShadingRateFlags = PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED;
-    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_VRS.PSO[2]);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_VRS.PSO[VRS_MODE_TEXTURE_BASED]);
 
-    m_VRS.PSO[0]->CreateShaderResourceBinding(&m_VRS.SRB);
+    m_VRS.PSO[VRS_MODE_PER_DRAW]->CreateShaderResourceBinding(&m_VRS.SRB);
 }
 
-void Tutorial24_VRS::CreateDensityMapPipelineState()
+void Tutorial24_VRS::CreateDensityMapPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
@@ -144,9 +144,6 @@ void Tutorial24_VRS::CreateDensityMapPipelineState()
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM;
     ShaderCI.UseCombinedTextureSamplers = true;
-
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
@@ -190,19 +187,21 @@ void Tutorial24_VRS::CreateDensityMapPipelineState()
 
     PSODesc.Name                      = "Texture based shading rate";
     GraphicsPipeline.ShadingRateFlags = PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED;
-    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_VRS.PSO[2]);
+    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_VRS.PSO[VRS_MODE_TEXTURE_BASED]);
 
-    m_VRS.PSO[2]->CreateShaderResourceBinding(&m_VRS.SRB);
+    m_VRS.PSO[VRS_MODE_TEXTURE_BASED]->CreateShaderResourceBinding(&m_VRS.SRB);
 }
 
-void Tutorial24_VRS::CreateBlitPipelineState()
+void Tutorial24_VRS::CreateBlitPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory)
 {
+    const bool IsMetal = m_pDevice->GetDeviceInfo().Type == RENDER_DEVICE_TYPE_METAL;
+
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
     auto& PSODesc          = PSOCreateInfo.PSODesc;
     auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
-    PSODesc.Name = "Per primitive shading rate";
+    PSODesc.Name = "Blit to swapchain image";
 
     GraphicsPipeline.NumRenderTargets                     = 1;
     GraphicsPipeline.RTVFormats[0]                        = m_pSwapChain->GetDesc().ColorBufferFormat;
@@ -215,19 +214,16 @@ void Tutorial24_VRS::CreateBlitPipelineState()
     PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
     ShaderCreateInfo ShaderCI;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage             = IsMetal ? SHADER_SOURCE_LANGUAGE_MSL : SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.UseCombinedTextureSamplers = true;
-
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
+        ShaderCI.EntryPoint      = "VSmain";
         ShaderCI.Desc.Name       = "Blit - VS";
-        ShaderCI.FilePath        = "ImageBlit.vsh";
+        ShaderCI.FilePath        = IsMetal ? "ImageBlit.msl" : "ImageBlit.vsh";
 
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
@@ -235,9 +231,9 @@ void Tutorial24_VRS::CreateBlitPipelineState()
     RefCntAutoPtr<IShader> pPS;
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
+        ShaderCI.EntryPoint      = "PSmain";
         ShaderCI.Desc.Name       = "Blit - PS";
-        ShaderCI.FilePath        = "ImageBlit.psh";
+        ShaderCI.FilePath        = IsMetal ? "ImageBlit.msl" : "ImageBlit.psh";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
@@ -265,12 +261,15 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+
 #if PLATFORM_ANDROID
-    CreateDensityMapPipelineState();
+    CreateDensityMapPipelineState(pShaderSourceFactory);
 #else
-    CreateVRSPipelineState();
+    CreateVRSPipelineState(pShaderSourceFactory);
 #endif
-    CreateBlitPipelineState();
+    CreateBlitPipelineState(pShaderSourceFactory);
 
     {
         BufferDesc BuffDesc;
@@ -283,7 +282,8 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
 
         m_VRS.SRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_Constants")->Set(m_Constants);
-        m_VRS.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Constants")->Set(m_Constants);
+        if (auto* pVar = m_VRS.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Constants"))
+            pVar->Set(m_Constants);
     }
 
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
@@ -353,12 +353,19 @@ void Tutorial24_VRS::Render()
         CBConstants->WorldViewProj        = m_WorldViewProjMatrix.Transpose();
         CBConstants->PrimitiveShadingRate = m_ShadingRates[m_ShadingRateIndex];
         CBConstants->DrawMode             = m_ShowShadingRate ? 1 : 0;
+        CBConstants->SurfaceScale         = GetSurfaceScale();
     }
 
     // Draw to scaled surface
     {
-        ITextureView*           pRTVs[] = {m_pRTV};
-        SetRenderTargetsAttribs SetRTAttribs{1, pRTVs, m_pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION};
+        ITextureView* pRTVs[] = {m_pRTV};
+        m_pImmediateContext->SetRenderTargets(1, pRTVs, m_pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        SetRenderTargetsAttribs RTAttrs;
+        RTAttrs.NumRenderTargets    = 1;
+        RTAttrs.ppRenderTargets     = pRTVs;
+        RTAttrs.pDepthStencil       = m_pDSV;
+        RTAttrs.StateTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
         const auto Mode = m_VRSModeList[m_VRSMode];
         switch (Mode)
@@ -371,11 +378,11 @@ void Tutorial24_VRS::Render()
                 break;
             case VRS_MODE_TEXTURE_BASED:
                 m_pImmediateContext->SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_OVERRIDE);
-                SetRTAttribs.pShadingRateMap = m_VRS.ShadingRateView;
+                RTAttrs.pShadingRateMap = m_pShadingRateMap;
                 break;
         }
 
-        m_pImmediateContext->SetRenderTargetsExt(SetRTAttribs);
+        m_pImmediateContext->SetRenderTargetsExt(RTAttrs);
 
         const float ClearColor[] = {0.4f, 0.4f, 0.4f, 1.f};
         m_pImmediateContext->ClearRenderTarget(pRTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
@@ -396,7 +403,7 @@ void Tutorial24_VRS::Render()
         m_pImmediateContext->DrawIndexed(DrawAttrs);
     }
 
-    // Blit to swapchain
+    // Blit or resolve to swapchain
     {
         ITextureView* pRTVs[] = {m_pSwapChain->GetCurrentBackBufferRTV()};
         m_pImmediateContext->SetRenderTargets(1, pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -417,7 +424,8 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     const auto& MState = m_InputController.GetMouseState();
     if (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
     {
-        UpdateVRSTexture(MState.PosX, MState.PosY);
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        UpdateVRSPattern(MState.PosX, MState.PosY, SCDesc.Width, SCDesc.Height);
     }
 
     if (m_Animation)
@@ -439,6 +447,38 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     }
 }
 
+void Tutorial24_VRS::UpdateUI()
+{
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (m_NumVRSModes > 0)
+            ImGui::Combo("VRS mode", &m_VRSMode, m_VRSModeNames, m_NumVRSModes);
+
+        if (m_NumShadingRates > 0 && m_VRSModeList[m_VRSMode] != VRS_MODE_TEXTURE_BASED)
+            ImGui::Combo("Default shading rate", &m_ShadingRateIndex, m_ShadingRateNames, m_NumShadingRates);
+        else
+            ImGui::Text("Click to any point at screen to change shading rate");
+
+        ImGui::Checkbox("Show shading rate", &m_ShowShadingRate);
+        ImGui::Checkbox("Animation", &m_Animation);
+
+        const char* SurfaceScaleStr[] = {"1/4", "1/2", "1", "2", "4"};
+        const int   OldSurfaceScale   = m_SurfaceScalePOT;
+        ImGui::TextDisabled("Surface scale");
+        ImGui::SliderInt("##SurfaceScale", &m_SurfaceScalePOT, -2, 2, SurfaceScaleStr[m_SurfaceScalePOT + 2]);
+
+        // Recreate render targets
+        if (OldSurfaceScale != m_SurfaceScalePOT)
+        {
+            const auto& SCDesc = m_pSwapChain->GetDesc();
+            WindowResize(SCDesc.Width, SCDesc.Height);
+        }
+    }
+    ImGui::End();
+}
+
+#if !METAL_SUPPORTED
 void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 {
     if (Width == 0 || Height == 0)
@@ -458,12 +498,13 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
         m_pRTV->GetTexture()->GetDesc().Height == Height)
         return;
 
-    m_VRS.ShadingRateView = nullptr;
-    m_pRTV                = nullptr;
-    m_pDSV                = nullptr;
+    m_pShadingRateMap = nullptr;
+    m_pRTV            = nullptr;
+    m_pDSV            = nullptr;
+    m_PrevMPos        = float2{-1.f};
 
     TextureDesc TexDesc;
-    TexDesc.Name      = "Render target";
+    TexDesc.Name      = "Temporary render target";
     TexDesc.Type      = RESOURCE_DIM_TEX_2D;
     TexDesc.Width     = Width;
     TexDesc.Height    = Height;
@@ -499,76 +540,48 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 
     RefCntAutoPtr<ITexture> pSRTex;
     m_pDevice->CreateTexture(TexDesc, nullptr, &pSRTex);
-    m_VRS.ShadingRateView = pSRTex->GetDefaultView(TEXTURE_VIEW_SHADING_RATE);
+    m_pShadingRateMap = pSRTex->GetDefaultView(TEXTURE_VIEW_SHADING_RATE);
 
-    UpdateVRSTexture(OriginW * 0.5f, OriginH * 0.5f);
+    UpdateVRSPattern(OriginW * 0.5f, OriginH * 0.5f, Width, Height);
 
     m_BlitSRB = nullptr;
     m_BlitPSO->CreateShaderResourceBinding(&m_BlitSRB);
     m_BlitSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRT->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
-void Tutorial24_VRS::UpdateUI()
+void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Uint32 Height)
 {
-    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        if (m_NumVRSModes > 0)
-            ImGui::Combo("VRS mode", &m_VRSMode, m_VRSModeNames, m_NumVRSModes);
-
-        if (m_NumShadingRates > 0 && m_VRSModeList[m_VRSMode] != VRS_MODE_TEXTURE_BASED)
-            ImGui::Combo("Default shading rate", &m_ShadingRateIndex, m_ShadingRateNames, m_NumShadingRates);
-        else
-            ImGui::Text("Click to any point at screen to change shading rate");
-
-        ImGui::Checkbox("Show shading rate", &m_ShowShadingRate);
-        ImGui::Checkbox("Animation", &m_Animation);
-
-        const char* SurfaceScaleStr[] = {"1/4", "1/2", "1", "2", "4"};
-        const int   OldSurfaceScale   = m_SurfaceScalePOT;
-        ImGui::TextDisabled("Surface scale");
-        ImGui::SliderInt("##SurfaceScale", &m_SurfaceScalePOT, -2, 2, SurfaceScaleStr[m_SurfaceScalePOT + 2]);
-
-        // Recreate render targets
-        if (OldSurfaceScale != m_SurfaceScalePOT)
-        {
-            const auto& SCDesc = m_pSwapChain->GetDesc();
-            WindowResize(SCDesc.Width, SCDesc.Height);
-        }
-    }
-    ImGui::End();
-}
-
-void Tutorial24_VRS::UpdateVRSTexture(float MPosX, float MPosY)
-{
-    if (m_VRS.ShadingRateView == nullptr)
+    if (m_pShadingRateMap == nullptr)
         return;
 
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
-    auto*       pVRSTex = m_VRS.ShadingRateView->GetTexture();
-    const auto& Desc    = pVRSTex->GetDesc();
-    const auto& SCDesc  = m_pSwapChain->GetDesc();
-    const auto  MPos    = float2{MPosX / SCDesc.Width, MPosY / SCDesc.Height};
+    if (m_PrevMPos.x == FastFloor(MPosX) && m_PrevMPos.y == FastFloor(MPosY))
+        return;
 
-    SHADING_RATE RemapShadingRate[SHADING_RATE_MAX + 1] = {};
-    for (Uint32 i = 0; i < _countof(RemapShadingRate); ++i)
-    {
-        // ShadingRates is sorted from higher to lower rate.
-        for (Uint32 j = 0; j < SRProps.NumShadingRates; ++j)
-        {
-            if (static_cast<SHADING_RATE>(i) >= SRProps.ShadingRates[j].Rate)
-            {
-                RemapShadingRate[i] = SRProps.ShadingRates[j].Rate;
-                break;
-            }
-        }
-    }
+    m_PrevMPos = FastFloor(float2{MPosX, MPosY});
+
+    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    auto*       pVRSTex = m_pShadingRateMap->GetTexture();
+    const auto& Desc    = pVRSTex->GetDesc();
+    const auto  MPos    = float2{MPosX / Width, MPosY / Height};
 
     std::vector<Uint8> SRData;
     switch (SRProps.Format)
     {
         case SHADING_RATE_FORMAT_PALETTE:
         {
+            SHADING_RATE RemapShadingRate[SHADING_RATE_MAX + 1] = {};
+            for (Uint32 i = 0; i < _countof(RemapShadingRate); ++i)
+            {
+                // ShadingRates is sorted from higher to lower rate.
+                for (Uint32 j = 0; j < SRProps.NumShadingRates; ++j)
+                {
+                    if (static_cast<SHADING_RATE>(i) >= SRProps.ShadingRates[j].Rate)
+                    {
+                        RemapShadingRate[i] = SRProps.ShadingRates[j].Rate;
+                        break;
+                    }
+                }
+            }
             SRData.resize(Desc.Width * Desc.Height);
             for (Uint32 y = 0; y < Desc.Height; ++y)
             {
@@ -616,5 +629,6 @@ void Tutorial24_VRS::UpdateVRSTexture(float MPosX, float MPosY)
 
     m_pImmediateContext->UpdateTexture(pVRSTex, 0, 0, TexBox, SubResData, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
+#endif
 
 } // namespace Diligent
