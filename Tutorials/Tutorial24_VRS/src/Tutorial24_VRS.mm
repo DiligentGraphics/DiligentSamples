@@ -60,18 +60,18 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
     RasterRateMapCI.Desc.ScreenWidth  = Width;
     RasterRateMapCI.Desc.ScreenHeight = Height;
     RasterRateMapCI.Desc.LayerCount   = 1;
-
-    const Uint32       TileSize = 4;
+    
+    const Uint32       TileSize = 16;
     std::vector<float> Horizontal(Width / TileSize);
     std::vector<float> Vertical(Height / TileSize);
 
     for (size_t i = 0; i < Horizontal.size(); ++i)
     {
-        Horizontal[i] = 1.0 - clamp(std::abs(static_cast<float>(i) / Horizontal.size() - MPos.x), 0.f, 1.0f);
+        Horizontal[i] = clamp(1.f - std::abs(static_cast<float>(i) / Horizontal.size() - MPos.x) * 2.f, 0.f, 1.f);
     }
     for (size_t i = 0; i < Vertical.size(); ++i)
     {
-        Vertical[i] = 1.0 - clamp(std::abs(static_cast<float>(i) / Vertical.size() - MPos.y), 0.f, 1.0f);
+        Vertical[i] = clamp(1.f - std::abs(static_cast<float>(i) / Vertical.size() - MPos.y) * 2.f, 0.f, 1.f);
     }
 
     RasterizationRateLayerDesc Layer;

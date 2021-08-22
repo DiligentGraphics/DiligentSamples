@@ -358,9 +358,7 @@ void Tutorial24_VRS::Render()
 
     // Draw to scaled surface
     {
-        ITextureView* pRTVs[] = {m_pRTV};
-        m_pImmediateContext->SetRenderTargets(1, pRTVs, m_pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
+        ITextureView*           pRTVs[] = {m_pRTV};
         SetRenderTargetsAttribs RTAttrs;
         RTAttrs.NumRenderTargets    = 1;
         RTAttrs.ppRenderTargets     = pRTVs;
