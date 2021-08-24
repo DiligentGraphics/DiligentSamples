@@ -81,16 +81,16 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
     Layer.pVertical         = Vertical.data();
     RasterRateMapCI.pLayers = &Layer;
 
-    RefCntAutoPtr<IRenderDeviceMtl> pDeviceMtl{m_pDevice, IID_RenderDeviceMtl};
-    RefCntAutoPtr<IRasterizationRateMapMtl> pShadingRateMap;
-    pDeviceMtl->CreateRasterizationRateMap(RasterRateMapCI, &pShadingRateMap);
-    m_pShadingRateMap = pShadingRateMap;
+    RefCntAutoPtr<IRenderDeviceMtl>         pDeviceMtl{m_pDevice, IID_RenderDeviceMtl};
+    RefCntAutoPtr<IRasterizationRateMapMtl> pRasterRateMap;
+    pDeviceMtl->CreateRasterizationRateMap(RasterRateMapCI, &pRasterRateMap);
+    m_pShadingRateMap = pRasterRateMap->GetViewAdapter();
 
     if (!m_pShadingRateMap)
         return;
 
     Uint32 BufferSize, BufferAlign;
-    pShadingRateMap->GetParameterBufferSizeAndAlign(BufferSize, BufferAlign);
+    pRasterRateMap->GetParameterBufferSizeAndAlign(BufferSize, BufferAlign);
 
     if (m_pShadingRateParamBuffer == nullptr ||
         BufferSize > m_pShadingRateParamBuffer->GetDesc().uiSizeInBytes)
@@ -106,9 +106,9 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
 
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pShadingRateParamBuffer);
     }
-    pShadingRateMap->CopyParameterDataToBuffer(m_pShadingRateParamBuffer, 0);
+    pRasterRateMap->CopyParameterDataToBuffer(m_pShadingRateParamBuffer, 0);
 
-    pShadingRateMap->GetPhysicalSizeForLayer(0, Width, Height);
+    pRasterRateMap->GetPhysicalSizeForLayer(0, Width, Height);
 
     // Check if the image needs to be recreated.
     if (m_pRTV != nullptr &&

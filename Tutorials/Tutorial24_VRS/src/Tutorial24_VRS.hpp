@@ -89,11 +89,9 @@ private:
     RefCntAutoPtr<ITextureView> m_TextureSRV;
 
 #if METAL_SUPPORTED
-    RefCntAutoPtr<IDeviceObject> m_pShadingRateMap;
-    RefCntAutoPtr<IBuffer>       m_pShadingRateParamBuffer;
-#else
-    RefCntAutoPtr<ITextureView> m_pShadingRateMap;
+    RefCntAutoPtr<IBuffer> m_pShadingRateParamBuffer;
 #endif
+    RefCntAutoPtr<ITextureView>           m_pShadingRateMap;
     RefCntAutoPtr<ITextureView>           m_pRTV;
     RefCntAutoPtr<ITextureView>           m_pDSV;
     float2                                m_PrevMPos;
