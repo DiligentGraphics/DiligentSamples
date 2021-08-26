@@ -9,6 +9,9 @@ set(SOURCE
 add_executable(Tutorial00_HelloLinux ${SOURCE})
 target_compile_options(Tutorial00_HelloLinux PRIVATE -DENGINE_DLL)
 
+set_target_properties(Tutorial00_HelloLinux PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
+target_compile_features(Tutorial00_HelloLinux PRIVATE cxx_std_14)
+
 target_include_directories(Tutorial00_HelloLinux PRIVATE "../../../DiligentCore")
 
 set_target_properties(Tutorial00_HelloLinux PROPERTIES
