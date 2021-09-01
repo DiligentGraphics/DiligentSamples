@@ -180,9 +180,8 @@ void ObjRenderer::Draw(IDeviceContext* pContext,
     }
 
     // Bind vertex and index buffers
-    Uint32   offsets[] = {0};
-    IBuffer* pBuffs[]  = {m_pCubeVertexBuffer};
-    pContext->SetVertexBuffers(0, 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    IBuffer* pBuffs[] = {m_pCubeVertexBuffer};
+    pContext->SetVertexBuffers(0, 1, pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     pContext->SetIndexBuffer(m_pCubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the pipeline state

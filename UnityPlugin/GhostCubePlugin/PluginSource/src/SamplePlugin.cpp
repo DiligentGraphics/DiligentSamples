@@ -162,9 +162,8 @@ void SamplePlugin::Render(Diligent::IDeviceContext *pContext, const float4x4 &Vi
         *CBConstants = ViewProjMatrix.Transpose();
     }
 
-    Uint32 offset = 0;
-    IBuffer *pBuffs[] = {m_CubeVertexBuffer};
-    pContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    IBuffer* pBuffs[] = {m_CubeVertexBuffer};
+    pContext->SetVertexBuffers(0, 1, pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     pContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     pContext->SetPipelineState(m_PSO);

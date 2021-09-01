@@ -656,10 +656,9 @@ IFramebuffer* Tutorial19_RenderPasses::GetCurrentFramebuffer()
 void Tutorial19_RenderPasses::DrawScene()
 {
     // Bind vertex and index buffers
-    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     // Note that RESOURCE_STATE_TRANSITION_MODE_TRANSITION are not allowed inside render pass!
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Set the cube's pipeline state
@@ -700,10 +699,9 @@ void Tutorial19_RenderPasses::ApplyLighting()
     }
 
     // Bind vertex and index buffers
-    Uint32   Offsets[2] = {};
-    IBuffer* pBuffs[2]  = {m_CubeVertexBuffer, m_pLightsBuffer};
+    IBuffer* pBuffs[2] = {m_CubeVertexBuffer, m_pLightsBuffer};
     // Note that RESOURCE_STATE_TRANSITION_MODE_TRANSITION are not allowed inside render pass!
-    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Set the lighting PSO

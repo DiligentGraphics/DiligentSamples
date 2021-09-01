@@ -847,7 +847,7 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     MappedTextureSubresource TexData;
     pCtx->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
     auto CapturedPixels = Image::ConvertImageData(TexDesc.Width, TexDesc.Height,
-                                                  reinterpret_cast<const Uint8*>(TexData.pData), TexData.Stride,
+                                                  reinterpret_cast<const Uint8*>(TexData.pData), static_cast<Uint32>(TexData.Stride),
                                                   TexDesc.Format, TEX_FORMAT_RGBA8_UNORM, false /*Keep alpha*/);
     pCtx->UnmapTextureSubresource(Capture.pTexture, 0, 0);
 
@@ -882,7 +882,7 @@ void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::Ca
     Info.TexFormat   = TexDesc.Format;
     Info.KeepAlpha   = m_ScreenCaptureInfo.KeepAlpha;
     Info.pData       = TexData.pData;
-    Info.Stride      = TexData.Stride;
+    Info.Stride      = static_cast<Uint32>(TexData.Stride);
     Info.FileFormat  = m_ScreenCaptureInfo.FileFormat;
     Info.JpegQuality = m_ScreenCaptureInfo.JpegQuality;
 

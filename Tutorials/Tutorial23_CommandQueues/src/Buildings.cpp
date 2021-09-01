@@ -782,14 +782,12 @@ void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
     pContext->CommitShaderResources(m_DrawOpaqueSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Vertex and index buffers are immutable and do not require transitions.
-    IBuffer*     VBs[]     = {m_OpaqueVB};
-    const Uint32 Offsets[] = {0};
-
-    pContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    IBuffer* VBs[] = {m_OpaqueVB};
+    pContext->SetVertexBuffers(0, _countof(VBs), VBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     pContext->SetIndexBuffer(m_OpaqueIB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs drawAttribs;
-    drawAttribs.NumIndices = m_OpaqueIB->GetDesc().uiSizeInBytes / sizeof(IndexType);
+    drawAttribs.NumIndices = static_cast<Uint32>(m_OpaqueIB->GetDesc().uiSizeInBytes / sizeof(IndexType));
     drawAttribs.IndexType  = VT_UINT32;
     drawAttribs.Flags      = DRAW_FLAG_VERIFY_ALL;
     pContext->DrawIndexed(drawAttribs);

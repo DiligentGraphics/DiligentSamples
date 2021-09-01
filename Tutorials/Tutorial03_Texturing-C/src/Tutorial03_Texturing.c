@@ -433,8 +433,8 @@ void Render(IDeviceContext* pContext)
     }
 
     // Bind vertex and index buffers
-    Uint32   offset = 0;
-    IBuffer* pBuffs[1];
+    const Uint64 offset = 0;
+    IBuffer*     pBuffs[1];
     pBuffs[0] = g_pCubeVertexBuffer;
     IDeviceContext_SetVertexBuffers(pContext, 0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     IDeviceContext_SetIndexBuffer(pContext, g_pCubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

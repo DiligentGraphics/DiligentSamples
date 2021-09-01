@@ -210,9 +210,8 @@ void Tutorial18_Queries::Render()
     }
 
     // Bind vertex and index buffers
-    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the cube's pipeline state

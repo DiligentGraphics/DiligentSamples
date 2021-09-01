@@ -79,7 +79,7 @@ Uint32 StreamingBuffer::Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNu
         // Unmap the buffer
         Flush(CtxNum);
     }
-        
+
     if (MapInfo.m_MappedData == nullptr)
     {
         // If current offset is zero, we are mapping the buffer for the first time after it has been flushed. Use MAP_FLAG_DISCARD flag.
@@ -108,8 +108,8 @@ m_StreamingVB->Release(CtxNum);
 After the data has been written, the last thing to do is to bind the buffers at the specified offsets:
 
 ```cpp
-Uint32 offsets[] = { VBOffset };
-IBuffer* pBuffs[] = { m_StreamingVB->GetBuffer() };
+Uint64   offsets[] = {VBOffset};
+IBuffer* pBuffs[]  = {m_StreamingVB->GetBuffer()};
 pCtx->SetVertexBuffers(0, 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), IBOffsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 ```

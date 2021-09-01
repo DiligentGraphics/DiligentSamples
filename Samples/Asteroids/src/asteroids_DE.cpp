@@ -872,10 +872,9 @@ void Asteroids::RenderSubset(Uint32             SubsetNum,
     pCtx->SetPipelineState(mAsteroidsPSO);
 
     {
-        IBuffer* ia_buffers[]                     = {mVertexBuffer, mInstanceIDBuffer};
-        Uint32   ia_offsets[_countof(ia_buffers)] = {};
+        IBuffer* ia_buffers[] = {mVertexBuffer, mInstanceIDBuffer};
         // Bind instance data buffer in bindless mode
-        pCtx->SetVertexBuffers(0, (m_BindingMode == BindingMode::Bindless) ? 2 : 1, ia_buffers, ia_offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_NONE);
+        pCtx->SetVertexBuffers(0, (m_BindingMode == BindingMode::Bindless) ? 2 : 1, ia_buffers, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_NONE);
         pCtx->SetIndexBuffer(mIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
     }
 
@@ -1057,8 +1056,7 @@ void Asteroids::Render(float frameTime, const OrbitCamera& camera, const Setting
         }
 
         IBuffer* ia_buffers[] = {mSkyboxVertexBuffer};
-        UINT     ia_offsets[] = {0};
-        mDeviceCtxt->SetVertexBuffers(0, 1, ia_buffers, ia_offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_NONE);
+        mDeviceCtxt->SetVertexBuffers(0, 1, ia_buffers, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_NONE);
 
         mDeviceCtxt->SetPipelineState(mSkyboxPSO);
         mDeviceCtxt->CommitShaderResources(mSkyboxSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -1086,8 +1084,7 @@ void Asteroids::Render(float frameTime, const OrbitCamera& camera, const Setting
         }
 
         IBuffer* ia_buffers[] = {mSpriteVertexBuffer};
-        Uint32   ia_offsets[] = {0};
-        mDeviceCtxt->SetVertexBuffers(0, 1, ia_buffers, ia_offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_NONE);
+        mDeviceCtxt->SetVertexBuffers(0, 1, ia_buffers, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_NONE);
 
         // Draw
         UINT vertexStart = 0;

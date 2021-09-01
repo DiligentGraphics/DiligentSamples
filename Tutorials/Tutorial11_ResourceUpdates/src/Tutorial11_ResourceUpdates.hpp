@@ -51,8 +51,8 @@ private:
     void CreateIndexBuffer();
     void LoadTextures();
 
-    void WriteStripPattern(Uint8*, Uint32 Width, Uint32 Height, Uint32 Stride);
-    void WriteDiamondPattern(Uint8*, Uint32 Width, Uint32 Height, Uint32 Stride);
+    void WriteStripPattern(Uint8*, Uint32 Width, Uint32 Height, Uint64 Stride);
+    void WriteDiamondPattern(Uint8*, Uint32 Width, Uint32 Height, Uint64 Stride);
 
     void UpdateTexture(Uint32 TexIndex);
     void MapTexture(Uint32 TexIndex, bool MapEntireTexture);

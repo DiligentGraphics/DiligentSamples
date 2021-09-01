@@ -489,10 +489,9 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
     }
 
     // Bind vertex buffer
-    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {m_CubeVertexBuffer};
     // Note that since resources have been explicitly transitioned to required states, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY flag
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Set pipeline state and commit resources

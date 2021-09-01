@@ -958,9 +958,8 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
 	pd3dImmediateContext->PSSetSamplers(0, _countof(pSamplers), pSamplers);
 #endif
 
-    Uint32   offset[1]    = {0};
     IBuffer* ppBuffers[1] = {m_pVertBuff};
-    pContext->SetVertexBuffers(0, 1, ppBuffers, offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pContext->SetVertexBuffers(0, 1, ppBuffers, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
     if (bZOnlyPass)
     {

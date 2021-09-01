@@ -311,9 +311,8 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
                    enum nk_anti_aliasing       AA)
 {
     const float blend_factors[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    Uint32      offsets[]        = {0};
     IBuffer*    pVBs[]           = {nk_dlg_ctx->vertex_buffer};
-    device_ctx->SetVertexBuffers(0, 1, pVBs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    device_ctx->SetVertexBuffers(0, 1, pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     device_ctx->SetIndexBuffer(nk_dlg_ctx->index_buffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     device_ctx->SetPipelineState(nk_dlg_ctx->pso);
     device_ctx->CommitShaderResources(nk_dlg_ctx->srb, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

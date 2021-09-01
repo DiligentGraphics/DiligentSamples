@@ -672,10 +672,10 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
         auto StateInd = m_Polygons[StartInst].StateInd;
         pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0][StateInd]);
 
-        const auto& PolygonGeo = m_PolygonGeo[m_Polygons[StartInst].NumVerts];
-        auto        Offsets    = WritePolygon(PolygonGeo, pCtx, Subset);
-        Uint32      offsets[]  = {Offsets.first, 0};
-        IBuffer*    pBuffs[]   = {m_StreamingVB->GetBuffer(), m_BatchDataBuffer};
+        const auto&  PolygonGeo = m_PolygonGeo[m_Polygons[StartInst].NumVerts];
+        auto         Offsets    = WritePolygon(PolygonGeo, pCtx, Subset);
+        const Uint64 offsets[]  = {Offsets.first, 0};
+        IBuffer*     pBuffs[]   = {m_StreamingVB->GetBuffer(), m_BatchDataBuffer};
         pCtx->SetVertexBuffers(0, UseBatch ? 2 : 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), Offsets.second, RESOURCE_STATE_TRANSITION_MODE_VERIFY);

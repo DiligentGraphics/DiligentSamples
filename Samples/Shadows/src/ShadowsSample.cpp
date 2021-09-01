@@ -615,9 +615,8 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
         if (GetBoxVisibility(Frustum, BB, bIsShadowPass ? FRUSTUM_PLANE_FLAG_OPEN_NEAR : FRUSTUM_PLANE_FLAG_FULL_FRUSTUM) == BoxVisibility::Invisible)
             continue;
 
-        IBuffer* pVBs[]    = {m_Mesh.GetMeshVertexBuffer(meshIdx, 0)};
-        Uint32   Offsets[] = {0};
-        pCtx->SetVertexBuffers(0, 1, pVBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+        IBuffer* pVBs[] = {m_Mesh.GetMeshVertexBuffer(meshIdx, 0)};
+        pCtx->SetVertexBuffers(0, 1, pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         auto* pIB      = m_Mesh.GetMeshIndexBuffer(meshIdx);
         auto  IBFormat = m_Mesh.GetIBFormat(meshIdx);

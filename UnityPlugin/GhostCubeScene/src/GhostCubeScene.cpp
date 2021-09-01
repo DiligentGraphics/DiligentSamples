@@ -195,12 +195,13 @@ void GhostCubeScene::Render(UnityRenderingEvent RenderEventFunc)
                            wvp.m20, fReverseZ * wvp.m21, wvp.m22, wvp.m23,
                            wvp.m30, fReverseZ * wvp.m31, wvp.m32, wvp.m33);
 
-        SetTexturesFromUnity(m_pRenderTarget->GetNativeHandle(), m_pDepthBuffer->GetNativeHandle());
+        // TODO: in 32bit system cast to void* may lost data
+        SetTexturesFromUnity(reinterpret_cast<void*>(m_pRenderTarget->GetNativeHandle()), reinterpret_cast<void*>(m_pDepthBuffer->GetNativeHandle()));
 
         // Call the plugin
         RenderEventFunc(0);
     }
-    
+
     // We need to invalidate the context state since the plugin has used d3d11 context
     pCtx->InvalidateState();
     pRTV = pSwapChain->GetCurrentBackBufferRTV();

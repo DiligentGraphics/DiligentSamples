@@ -382,14 +382,12 @@ void Terrain::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
     pContext->CommitShaderResources(m_DrawSRB[Id], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Vertex and index buffers are immutable and does not require transitions.
-    IBuffer*     VBs[]     = {m_VB};
-    const Uint32 Offsets[] = {0};
-
-    pContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
+    IBuffer* VBs[] = {m_VB};
+    pContext->SetVertexBuffers(0, _countof(VBs), VBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
     pContext->SetIndexBuffer(m_IB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs drawAttribs;
-    drawAttribs.NumIndices = m_IB->GetDesc().uiSizeInBytes / sizeof(IndexType);
+    drawAttribs.NumIndices = static_cast<Uint32>(m_IB->GetDesc().uiSizeInBytes / sizeof(IndexType));
     drawAttribs.IndexType  = VT_UINT32;
     drawAttribs.Flags      = DRAW_FLAG_VERIFY_ALL;
     pContext->DrawIndexed(drawAttribs);

@@ -115,7 +115,7 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
     {
         GraphicsPipelineStateCreateInfo PSOCreateInfo;
         PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
-		
+
         PSODesc.Name = "Background PSO";
 
         PSODesc.PipelineType                                        = PIPELINE_TYPE_GRAPHICS;
@@ -220,9 +220,8 @@ void BackgroundRenderer::Draw(const ArSession* session, const ArFrame* frame, Di
 
     ctx->SetPipelineState(m_pRenderBackgroundPSO);
     ctx->CommitShaderResources(m_pRenderBackgroundSRB, RESOURCE_STATE_TRANSITION_MODE_NONE);
-    IBuffer* pVBs[]    = {m_pVertexBuffer};
-    Uint32   Offsets[] = {0};
-    ctx->SetVertexBuffers(0, 1, pVBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    IBuffer* pVBs[] = {m_pVertexBuffer};
+    ctx->SetVertexBuffers(0, 1, pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     DrawAttribs Attribs{4, DRAW_FLAG_NONE};
     ctx->Draw(Attribs);
 }

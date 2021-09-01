@@ -871,9 +871,9 @@ void Tutorial22_HybridRendering::Render()
 
         for (auto& ObjInst : m_Scene.ObjectInstances)
         {
-            auto&    Mesh      = m_Scene.Meshes[ObjInst.MeshInd];
-            IBuffer* VBs[]     = {Mesh.VertexBuffer};
-            Uint32   Offsets[] = {Mesh.FirstVertex * Uint32{sizeof(HLSL::Vertex)}};
+            auto&        Mesh      = m_Scene.Meshes[ObjInst.MeshInd];
+            IBuffer*     VBs[]     = {Mesh.VertexBuffer};
+            const Uint64 Offsets[] = {Mesh.FirstVertex * sizeof(HLSL::Vertex)};
 
             m_pImmediateContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
             m_pImmediateContext->SetIndexBuffer(Mesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

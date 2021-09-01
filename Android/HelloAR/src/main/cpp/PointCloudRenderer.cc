@@ -217,9 +217,8 @@ void PointCloudRenderer::Draw(IDeviceContext*           pContext,
 
     pContext->SetPipelineState(m_pPointCloudPSO);
     pContext->CommitShaderResources(m_pPointCloudSRB, RESOURCE_STATE_TRANSITION_MODE_NONE);
-    IBuffer* pVBs[]    = {m_pPointCloudBuffer};
-    Uint32   Offsets[] = {0};
-    pContext->SetVertexBuffers(0, 1, pVBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    IBuffer* pVBs[] = {m_pPointCloudBuffer};
+    pContext->SetVertexBuffers(0, 1, pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     DrawAttribs Attribs{static_cast<Uint32>(number_of_points), DRAW_FLAG_NONE};
     pContext->Draw(Attribs);
 }

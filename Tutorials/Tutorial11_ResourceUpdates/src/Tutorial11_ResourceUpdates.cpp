@@ -339,9 +339,8 @@ void Tutorial11_ResourceUpdates::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial11_ResourceUpdates::DrawCube(const float4x4& WVPMatrix, Diligent::IBuffer* pVertexBuffer, Diligent::IShaderResourceBinding* pSRB)
 {
     // Bind vertex buffer
-    Uint32   offset   = 0;
     IBuffer* pBuffs[] = {pVertexBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, &offset, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
@@ -394,7 +393,7 @@ void Tutorial11_ResourceUpdates::Render()
     DrawCube(CubeRotation * float4x4::Translation(+4.f, +2.f, 0.f) * ViewProj, m_CubeVertexBuffer[2], m_SRBs[1]);
 }
 
-void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint32 Stride)
+void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint64 Stride)
 {
     auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
     auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
@@ -409,7 +408,7 @@ void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, U
     }
 }
 
-void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint32 Stride)
+void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint64 Stride)
 {
     auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
     auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
