@@ -235,12 +235,6 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
         }
     }
 
-    if (!m_ComputeCtx)
-    {
-        UNSUPPORTED("Can not find second graphics/compute context!");
-        return;
-    }
-
     // Find supported depth target format.
 #if PLATFORM_ANDROID
     // For Android try Depth16 first.
@@ -268,6 +262,8 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
     // Create fence for each context
+    const auto DevType = m_pDevice->GetDeviceInfo().Type;
+    if (DevType == RENDER_DEVICE_TYPE_D3D12 || DevType == RENDER_DEVICE_TYPE_VULKAN || DevType == RENDER_DEVICE_TYPE_METAL)
     {
         FenceDesc FenceCI;
         FenceCI.Type = FENCE_TYPE_GENERAL;
@@ -284,6 +280,9 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
             m_pDevice->CreateFence(FenceCI, &m_TransferCtxFence);
         }
     }
+
+    if (DevType == RENDER_DEVICE_TYPE_D3D11)
+        m_Glow = false; // not supported
 
     ScenePSOCreateAttribs PSOAttribs;
     PSOAttribs.ColorTargetFormat = m_ColorTargetFormat;
@@ -323,7 +322,7 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_DrawConstants);
 
     m_Buildings.Initialize(m_pDevice, m_DrawConstants, (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (m_TransferCtx ? Uint64{1} << m_TransferCtx->GetDesc().ContextId : 0));
-    m_Terrain.Initialize(m_pDevice, m_DrawConstants, (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (Uint64{1} << m_ComputeCtx->GetDesc().ContextId));
+    m_Terrain.Initialize(m_pDevice, m_DrawConstants, (Uint64{1} << m_pImmediateContext->GetDesc().ContextId) | (m_ComputeCtx ? Uint64{1} << m_ComputeCtx->GetDesc().ContextId : 0));
 
 
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -345,12 +344,20 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
 
     // Signal first value to graphics fence.
     // Compute and transfer contexts will wait for this fence.
-    m_pImmediateContext->EnqueueSignal(m_GraphicsCtxFence, ++m_GraphicsCtxFenceValue);
+    if (m_GraphicsCtxFence)
+        m_pImmediateContext->EnqueueSignal(m_GraphicsCtxFence, ++m_GraphicsCtxFenceValue);
     m_pImmediateContext->Flush();
 
-    m_ComputeCtx->Flush();
+    if (m_ComputeCtx)
+    {
+        m_UseAsyncCompute = true;
+        m_ComputeCtx->Flush();
+    }
     if (m_TransferCtx)
+    {
+        m_UseAsyncTransfer = true;
         m_TransferCtx->Flush();
+    }
 }
 
 void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
@@ -592,9 +599,6 @@ void Tutorial23_CommandQueues::GraphicsPass2()
 
 void Tutorial23_CommandQueues::Render()
 {
-    if (!m_ComputeCtx)
-        return; // Sample is not initialized
-
     m_Profiler.Begin(nullptr, Profiler::FRAME);
 
     ComputePass();
@@ -603,7 +607,8 @@ void Tutorial23_CommandQueues::Render()
     GraphicsPass1();
     GraphicsPass2();
 
-    m_ComputeCtx->FinishFrame();
+    if (m_ComputeCtx)
+        m_ComputeCtx->FinishFrame();
     if (m_TransferCtx)
         m_TransferCtx->FinishFrame();
 
@@ -629,9 +634,6 @@ void Tutorial23_CommandQueues::WindowResize(Uint32 Width, Uint32 Height)
 {
     if (Width == 0 || Height == 0)
         return;
-
-    if (!m_ComputeCtx)
-        return; // Sample is not initialized
 
     // Scale surface
     Width  = ScaleSurface(Width);
@@ -740,7 +742,9 @@ void Tutorial23_CommandQueues::UpdateUI()
             if (OldTerrainSize != m_Terrain.TerrainSize)
                 m_Terrain.Recreate(m_pImmediateContext);
 
-            ImGui::Checkbox("Use async compute", &m_UseAsyncCompute);
+            if (m_ComputeCtx)
+                ImGui::Checkbox("Use async compute", &m_UseAsyncCompute);
+
             ImGui::Checkbox("Double buffering##TerrainDB", &m_Terrain.DoubleBuffering);
             ImGui::Separator();
         }
@@ -759,7 +763,8 @@ void Tutorial23_CommandQueues::UpdateUI()
                 WindowResize(SCDesc.Width, SCDesc.Height);
             }
 
-            ImGui::Checkbox("Glow", &m_Glow);
+            if (m_pDevice->GetDeviceInfo().Type != RENDER_DEVICE_TYPE_D3D11)
+                ImGui::Checkbox("Glow", &m_Glow);
         }
 
         // Idle GPU to avoid validation errors.

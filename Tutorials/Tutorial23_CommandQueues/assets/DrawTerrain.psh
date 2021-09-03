@@ -27,13 +27,18 @@ struct PSOutput
     float4 Color : SV_Target0;
 };
 
+#ifdef DESKTOP_GL
+#   define float3x3Cast(x) float3x3(x)
+#else
+#   define float3x3Cast(x) (float3x3)x
+#endif
 
 void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
     // Sample smooth normals
     float3 Norm = g_TerrainNormalMap.Sample(g_TerrainNormalMap_sampler, PSIn.UV).xyz;
-    Norm = normalize(mul(Norm, (float3x3)(g_Constants.NormalMat)));
+    Norm = normalize(mul(Norm, float3x3Cast(g_Constants.NormalMat)));
     float NdotL = max(g_Constants.AmbientLight, dot(Norm, g_Constants.LightDir));
 
     float2 TexUV = PSIn.UV;

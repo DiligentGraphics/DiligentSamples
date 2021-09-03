@@ -29,8 +29,12 @@ float4 main(in PSInput PSIn) : SV_Target
 {
     float2 Dim;
     g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
-
+    
+#if defined(DESKTOP_GL) || defined(GL_ES)
+    float2 ScreenUV = float2(PSIn.UV.x, PSIn.UV.y);
+#else
     float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+#endif
     int3   TexelPos = int3(ScreenUV * Dim * 0.5, 0);
 
     float4 Blur = float4(0.0, 0.0, 0.0, 0.0);

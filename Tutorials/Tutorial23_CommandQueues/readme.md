@@ -180,7 +180,7 @@ if (NumAdapters > 0)
 ```
 
 In Diligent Engine, command queues are exposed through immediate contexts. An immediate context allows recording commands
-directly, or executing command lists recorded by the deferred contexts. Every immediate context encomasses a single software queue.
+directly, or executing command lists recorded by the deferred contexts. Every immediate context encompasses a single software queue.
 
 We use a helper function `AddContext()` to find the required queue and add it to the context create info.
 
@@ -459,7 +459,7 @@ m_pImmediateContext->DeviceWaitForFence(m_TransferCtxFence, m_TransferCtxFenceVa
 
 ## Graphics Queue
 
-For the graphics contextm, we add the commands to synchronize with other queues.
+For the graphics context, we add the commands to synchronize with other queues.
 
 ```cpp
 // Make graphics pass wait for the upload pass

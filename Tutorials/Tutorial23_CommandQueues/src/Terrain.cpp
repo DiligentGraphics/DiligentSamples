@@ -172,10 +172,10 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         BuffDesc.Usage         = USAGE_DEFAULT;
         BuffDesc.uiSizeInBytes = sizeof(HLSL::TerrainConstants);
 
-        BuffDesc.ImmediateContextMask = m_ImmediateContextMask & ~Uint64{1}; // compute context
+        BuffDesc.ImmediateContextMask = m_ImmediateContextMask; // compute context
         m_Device->CreateBuffer(BuffDesc, nullptr, &m_TerrainConstants[0]);
 
-        BuffDesc.ImmediateContextMask = 1; // graphics context
+        BuffDesc.ImmediateContextMask = m_ImmediateContextMask; // graphics context
         m_Device->CreateBuffer(BuffDesc, nullptr, &m_TerrainConstants[1]);
     }
 

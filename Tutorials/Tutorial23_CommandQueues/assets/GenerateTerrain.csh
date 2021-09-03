@@ -1,7 +1,7 @@
 #include "Structures.fxh"
 
-RWTexture2D<float4> g_HeightMapUAV;
-RWTexture2D<float4> g_NormalMapUAV;
+RWTexture2D<float4/* format=r16f */>    g_HeightMapUAV;
+RWTexture2D<float4/* format=rgba16f */> g_NormalMapUAV;
 
 cbuffer TerrainConstantsCB
 {

@@ -35,8 +35,12 @@ float4 main(in PSInput PSIn) : SV_Target
 {
     float2 Dim;
     g_GBuffer_Color.GetDimensions(Dim.x, Dim.y);
-
+    
+#if defined(DESKTOP_GL) || defined(GL_ES)
+    float2 ScreenUV = float2(PSIn.UV.x, PSIn.UV.y);
+#else
     float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
+#endif
     int3   TexelPos = int3(ScreenUV * Dim, 0);
     float3 Color    = g_GBuffer_Color.Load(TexelPos).rgb;
     float  Depth    = g_GBuffer_Depth.Load(TexelPos).x;

@@ -111,8 +111,8 @@ private:
     TEXTURE_FORMAT m_DepthTargetFormat = TEX_FORMAT_UNKNOWN;
 
     int          m_TransferRateMbExp2 = 2; // two to the power of
-    bool         m_UseAsyncCompute    = true;
-    bool         m_UseAsyncTransfer   = true;
+    bool         m_UseAsyncCompute    = false;
+    bool         m_UseAsyncTransfer   = false;
     bool         m_Glow               = true;
     float3       m_LightDir           = normalize(float3{-0.49f, -0.60f, 0.64f});
     const float  m_AmbientLight       = 0.1f;
