@@ -21,7 +21,7 @@
 
 #include "BasicStructures.fxh"
 
-#define PI 3.1415928f
+#define PI 3.1415927f
 #define HEIGHT_MAP_SCALE 65535.f
 
 #ifdef __cplusplus
