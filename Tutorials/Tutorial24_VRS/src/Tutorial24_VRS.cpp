@@ -389,9 +389,8 @@ void Tutorial24_VRS::Render()
         m_pImmediateContext->SetPipelineState(m_VRS.PSO[Mode]);
         m_pImmediateContext->CommitShaderResources(m_VRS.SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        Uint32   offsets[] = {0};
-        IBuffer* pBuffs[]  = {m_CubeVertexBuffer};
-        m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+        IBuffer* pBuffs[] = {m_CubeVertexBuffer};
+        m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
         m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         DrawIndexedAttribs DrawAttrs;
@@ -427,22 +426,22 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     }
 
     if (m_Animation)
-    {
-        // Apply rotation
-        float4x4 CubeModelTransform = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);
+        m_fCurrentTime += static_cast<float>(ElapsedTime);
 
-        // Camera is at (0, 0, -5) looking along the Z axis
-        float4x4 View = float4x4::Translation(0.f, 0.0f, 4.f);
+    // Apply rotation
+    float4x4 CubeModelTransform = float4x4::RotationY(m_fCurrentTime * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);
 
-        // Get pretransform matrix that rotates the scene according the surface orientation
-        auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    // Camera is at (0, 0, -5) looking along the Z axis
+    float4x4 View = float4x4::Translation(0.f, 0.0f, 4.f);
 
-        // Get projection matrix adjusted to the current screen orientation
-        auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    // Get pretransform matrix that rotates the scene according the surface orientation
+    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
-        // Compute world-view-projection matrix
-        m_WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;
-    }
+    // Get projection matrix adjusted to the current screen orientation
+    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+
+    // Compute world-view-projection matrix
+    m_WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;
 }
 
 void Tutorial24_VRS::UpdateUI()
@@ -456,7 +455,7 @@ void Tutorial24_VRS::UpdateUI()
         if (m_NumShadingRates > 0 && m_VRSModeList[m_VRSMode] != VRS_MODE_TEXTURE_BASED)
             ImGui::Combo("Default shading rate", &m_ShadingRateIndex, m_ShadingRateNames, m_NumShadingRates);
         else
-            ImGui::Text("Click to any point at screen to change shading rate");
+            ImGui::Text("Click at any point on the screen to change shading rate");
 
         ImGui::Checkbox("Show shading rate", &m_ShowShadingRate);
         ImGui::Checkbox("Animation", &m_Animation);

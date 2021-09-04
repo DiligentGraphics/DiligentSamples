@@ -99,9 +99,9 @@ private:
     RefCntAutoPtr<IPipelineState>         m_BlitPSO;
 
     int  m_SurfaceScalePOT = 0;
-    int  m_VRSMode         = 0;
-    bool m_ShowShadingRate = false;
-    bool m_Animation       = true;
+    int  m_VRSMode         = VRS_MODE_TEXTURE_BASED;
+    bool m_ShowShadingRate = true;
+    bool m_Animation       = false;
 
     // Supported VRS modes
     int         m_NumVRSModes            = 0;
@@ -114,6 +114,7 @@ private:
     int          m_NumShadingRates                   = 0;
     int          m_ShadingRateIndex                  = 0;
 
+    float    m_fCurrentTime = 0.f;
     float4x4 m_WorldViewProjMatrix;
 };
 
