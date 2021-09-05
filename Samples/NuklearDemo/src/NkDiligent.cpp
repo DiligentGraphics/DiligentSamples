@@ -231,9 +231,9 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
         float4x4 proj = nk_get_projection_matrix(width, height, device->GetDeviceInfo().IsGLDevice());
 
         BufferDesc CBDesc;
-        CBDesc.BindFlags     = BIND_UNIFORM_BUFFER;
-        CBDesc.uiSizeInBytes = sizeof(proj);
-        CBDesc.Usage         = USAGE_DEFAULT;
+        CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
+        CBDesc.Size      = sizeof(proj);
+        CBDesc.Usage     = USAGE_DEFAULT;
         BufferData InitData(&proj, sizeof(proj));
 
         device->CreateBuffer(CBDesc, &InitData, &nk_dlg_ctx->const_buffer);
@@ -278,7 +278,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
         BufferDesc VBDesc;
         VBDesc.Name           = "Nuklear vertex buffer";
         VBDesc.BindFlags      = BIND_VERTEX_BUFFER;
-        VBDesc.uiSizeInBytes  = max_vertex_buffer_size;
+        VBDesc.Size           = max_vertex_buffer_size;
         VBDesc.Usage          = USAGE_DYNAMIC;
         VBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         device->CreateBuffer(VBDesc, nullptr, &nk_dlg_ctx->vertex_buffer);
@@ -288,7 +288,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
         BufferDesc IBDesc;
         IBDesc.Name           = "Nuklear index buffer";
         IBDesc.BindFlags      = BIND_INDEX_BUFFER;
-        IBDesc.uiSizeInBytes  = max_index_buffer_size;
+        IBDesc.Size           = max_index_buffer_size;
         IBDesc.Usage          = USAGE_DYNAMIC;
         IBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         device->CreateBuffer(IBDesc, nullptr, &nk_dlg_ctx->index_buffer);

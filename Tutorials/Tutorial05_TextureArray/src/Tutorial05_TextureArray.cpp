@@ -118,9 +118,9 @@ void Tutorial05_TextureArray::CreateInstanceBuffer()
     BufferDesc InstBuffDesc;
     InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage         = USAGE_DEFAULT;
-    InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
+    InstBuffDesc.Usage     = USAGE_DEFAULT;
+    InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+    InstBuffDesc.Size      = sizeof(InstanceData) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
     PopulateInstanceBuffer();
 }

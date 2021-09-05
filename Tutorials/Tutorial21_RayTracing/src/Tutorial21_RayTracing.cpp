@@ -341,12 +341,12 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         }
 
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "Cube Attribs";
-        BuffDesc.Usage         = USAGE_IMMUTABLE;
-        BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
-        BuffDesc.uiSizeInBytes = sizeof(Attribs);
+        BuffDesc.Name      = "Cube Attribs";
+        BuffDesc.Usage     = USAGE_IMMUTABLE;
+        BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
+        BuffDesc.Size      = sizeof(Attribs);
 
-        BufferData BufData = {&Attribs, BuffDesc.uiSizeInBytes};
+        BufferData BufData = {&Attribs, BuffDesc.Size};
 
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_CubeAttribsCB);
         VERIFY_EXPR(m_CubeAttribsCB != nullptr);
@@ -388,10 +388,10 @@ void Tutorial21_RayTracing::CreateCubeBLAS()
         RefCntAutoPtr<IBuffer> pScratchBuffer;
         {
             BufferDesc BuffDesc;
-            BuffDesc.Name          = "BLAS Scratch Buffer";
-            BuffDesc.Usage         = USAGE_DEFAULT;
-            BuffDesc.BindFlags     = BIND_RAY_TRACING;
-            BuffDesc.uiSizeInBytes = m_pCubeBLAS->GetScratchBufferSizes().Build;
+            BuffDesc.Name      = "BLAS Scratch Buffer";
+            BuffDesc.Usage     = USAGE_DEFAULT;
+            BuffDesc.BindFlags = BIND_RAY_TRACING;
+            BuffDesc.Size      = m_pCubeBLAS->GetScratchBufferSizes().Build;
 
             m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
             VERIFY_EXPR(pScratchBuffer != nullptr);
@@ -441,7 +441,7 @@ void Tutorial21_RayTracing::CreateProceduralBLAS()
         BuffDesc.Name              = "AABB Buffer";
         BuffDesc.Usage             = USAGE_IMMUTABLE;
         BuffDesc.BindFlags         = BIND_RAY_TRACING | BIND_SHADER_RESOURCE;
-        BuffDesc.uiSizeInBytes     = sizeof(Boxes);
+        BuffDesc.Size              = sizeof(Boxes);
         BuffDesc.ElementByteStride = sizeof(Boxes[0]);
         BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
 
@@ -473,10 +473,10 @@ void Tutorial21_RayTracing::CreateProceduralBLAS()
         RefCntAutoPtr<IBuffer> pScratchBuffer;
         {
             BufferDesc BuffDesc;
-            BuffDesc.Name          = "BLAS Scratch Buffer";
-            BuffDesc.Usage         = USAGE_DEFAULT;
-            BuffDesc.BindFlags     = BIND_RAY_TRACING;
-            BuffDesc.uiSizeInBytes = m_pProceduralBLAS->GetScratchBufferSizes().Build;
+            BuffDesc.Name      = "BLAS Scratch Buffer";
+            BuffDesc.Usage     = USAGE_DEFAULT;
+            BuffDesc.BindFlags = BIND_RAY_TRACING;
+            BuffDesc.Size      = m_pProceduralBLAS->GetScratchBufferSizes().Build;
 
             m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
             VERIFY_EXPR(pScratchBuffer != nullptr);
@@ -536,10 +536,10 @@ void Tutorial21_RayTracing::UpdateTLAS()
     if (!m_ScratchBuffer)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "TLAS Scratch Buffer";
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = std::max(m_pTLAS->GetScratchBufferSizes().Build, m_pTLAS->GetScratchBufferSizes().Update);
+        BuffDesc.Name      = "TLAS Scratch Buffer";
+        BuffDesc.Usage     = USAGE_DEFAULT;
+        BuffDesc.BindFlags = BIND_RAY_TRACING;
+        BuffDesc.Size      = std::max(m_pTLAS->GetScratchBufferSizes().Build, m_pTLAS->GetScratchBufferSizes().Update);
 
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_ScratchBuffer);
         VERIFY_EXPR(m_ScratchBuffer != nullptr);
@@ -549,10 +549,10 @@ void Tutorial21_RayTracing::UpdateTLAS()
     if (!m_InstanceBuffer)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "TLAS Instance Buffer";
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = TLAS_INSTANCE_DATA_SIZE * NumInstances;
+        BuffDesc.Name      = "TLAS Instance Buffer";
+        BuffDesc.Usage     = USAGE_DEFAULT;
+        BuffDesc.BindFlags = BIND_RAY_TRACING;
+        BuffDesc.Size      = TLAS_INSTANCE_DATA_SIZE * NumInstances;
 
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_InstanceBuffer);
         VERIFY_EXPR(m_InstanceBuffer != nullptr);
@@ -711,10 +711,10 @@ void Tutorial21_RayTracing::Initialize(const SampleInitInfo& InitInfo)
 
     // Create a buffer with shared constants.
     BufferDesc BuffDesc;
-    BuffDesc.Name          = "Constant buffer";
-    BuffDesc.uiSizeInBytes = sizeof(m_Constants);
-    BuffDesc.Usage         = USAGE_DEFAULT;
-    BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
+    BuffDesc.Name      = "Constant buffer";
+    BuffDesc.Size      = sizeof(m_Constants);
+    BuffDesc.Usage     = USAGE_DEFAULT;
+    BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_ConstantsCB);
     VERIFY_EXPR(m_ConstantsCB != nullptr);

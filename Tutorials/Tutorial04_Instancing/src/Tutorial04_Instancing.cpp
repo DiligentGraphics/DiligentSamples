@@ -104,9 +104,9 @@ void Tutorial04_Instancing::CreateInstanceBuffer()
     BufferDesc InstBuffDesc;
     InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage         = USAGE_DEFAULT;
-    InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
+    InstBuffDesc.Usage     = USAGE_DEFAULT;
+    InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+    InstBuffDesc.Size      = sizeof(float4x4) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
     PopulateInstanceBuffer();
 }

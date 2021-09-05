@@ -309,14 +309,14 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     BufferDesc BuffDesc;
     BuffDesc.BindFlags            = BIND_UNIFORM_BUFFER;
     BuffDesc.Usage                = USAGE_DEFAULT;
-    BuffDesc.uiSizeInBytes        = sizeof(HLSL::PostProcessConstants);
+    BuffDesc.Size                 = sizeof(HLSL::PostProcessConstants);
     BuffDesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId);
     BuffDesc.Name                 = "Post process constants";
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_PostProcessConstants);
 
     BuffDesc.Usage                = USAGE_DYNAMIC;
     BuffDesc.CPUAccessFlags       = CPU_ACCESS_WRITE;
-    BuffDesc.uiSizeInBytes        = sizeof(HLSL::DrawConstants);
+    BuffDesc.Size                 = sizeof(HLSL::DrawConstants);
     BuffDesc.ImmediateContextMask = (Uint64{1} << m_pImmediateContext->GetDesc().ContextId);
     BuffDesc.Name                 = "Draw constants";
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_DrawConstants);

@@ -368,25 +368,25 @@ void Tutorial16_BindlessResources::CreateGeometryBuffers()
 
     {
         BufferDesc VertBuffDesc;
-        VertBuffDesc.Name          = "Geometry vertex buffer";
-        VertBuffDesc.Usage         = USAGE_IMMUTABLE;
-        VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-        VertBuffDesc.uiSizeInBytes = static_cast<Uint32>(sizeof(Vertex) * Vertices.size());
+        VertBuffDesc.Name      = "Geometry vertex buffer";
+        VertBuffDesc.Usage     = USAGE_IMMUTABLE;
+        VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+        VertBuffDesc.Size      = static_cast<Uint32>(sizeof(Vertex) * Vertices.size());
         BufferData VBData;
         VBData.pData    = Vertices.data();
-        VBData.DataSize = VertBuffDesc.uiSizeInBytes;
+        VBData.DataSize = VertBuffDesc.Size;
         m_pDevice->CreateBuffer(VertBuffDesc, &VBData, &m_VertexBuffer);
     }
 
     {
         BufferDesc IndBuffDesc;
-        IndBuffDesc.Name          = "Geometry index buffer";
-        IndBuffDesc.Usage         = USAGE_IMMUTABLE;
-        IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-        IndBuffDesc.uiSizeInBytes = static_cast<Uint32>(sizeof(Indices[0]) * Indices.size());
+        IndBuffDesc.Name      = "Geometry index buffer";
+        IndBuffDesc.Usage     = USAGE_IMMUTABLE;
+        IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
+        IndBuffDesc.Size      = static_cast<Uint32>(sizeof(Indices[0]) * Indices.size());
         BufferData IBData;
         IBData.pData    = Indices.data();
-        IBData.DataSize = IndBuffDesc.uiSizeInBytes;
+        IBData.DataSize = IndBuffDesc.Size;
         m_pDevice->CreateBuffer(IndBuffDesc, &IBData, &m_IndexBuffer);
     }
     // clang-format off
@@ -405,9 +405,9 @@ void Tutorial16_BindlessResources::CreateInstanceBuffer()
     BufferDesc InstBuffDesc;
     InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage         = USAGE_DEFAULT;
-    InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    InstBuffDesc.uiSizeInBytes = sizeof(InstanceData) * MaxInstances;
+    InstBuffDesc.Usage     = USAGE_DEFAULT;
+    InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+    InstBuffDesc.Size      = sizeof(InstanceData) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
     PopulateInstanceBuffer();
 }

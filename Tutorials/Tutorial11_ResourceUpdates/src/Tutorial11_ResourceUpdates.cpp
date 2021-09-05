@@ -242,8 +242,8 @@ void Tutorial11_ResourceUpdates::CreateVertexBuffers()
             VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         }
 
-        VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-        VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
+        VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+        VertBuffDesc.Size      = sizeof(CubeVerts);
         BufferData VBData;
         VBData.pData    = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
@@ -267,10 +267,10 @@ void Tutorial11_ResourceUpdates::CreateIndexBuffer()
 
     // Create index buffer
     BufferDesc IndBuffDesc;
-    IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_IMMUTABLE;
-    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
+    IndBuffDesc.Name      = "Cube index buffer";
+    IndBuffDesc.Usage     = USAGE_IMMUTABLE;
+    IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
+    IndBuffDesc.Size      = sizeof(Indices);
     BufferData IBData;
     IBData.pData    = Indices;
     IBData.DataSize = sizeof(Indices);
@@ -331,7 +331,7 @@ void Tutorial11_ResourceUpdates::Initialize(const SampleInitInfo& InitInfo)
         VertBuffDesc.Usage          = USAGE_DYNAMIC;
         VertBuffDesc.BindFlags      = BIND_VERTEX_BUFFER; // We do not really bind the buffer, but D3D11 wants at least one bind flag bit
         VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        VertBuffDesc.uiSizeInBytes  = MaxUpdateRegionSize * MaxUpdateRegionSize * 4;
+        VertBuffDesc.Size           = MaxUpdateRegionSize * MaxUpdateRegionSize * 4;
         m_pDevice->CreateBuffer(VertBuffDesc, nullptr, &m_TextureUpdateBuffer);
     }
 }

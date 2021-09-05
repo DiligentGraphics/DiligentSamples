@@ -91,10 +91,10 @@ void Tutorial20_MeshShader::CreateCube()
     std::memcpy(Data.Indices, Indices.data(), Indices.size() * sizeof(Indices[0]));
 
     BufferDesc BuffDesc;
-    BuffDesc.Name          = "Cube vertex & index buffer";
-    BuffDesc.Usage         = USAGE_IMMUTABLE;
-    BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
-    BuffDesc.uiSizeInBytes = sizeof(Data);
+    BuffDesc.Name      = "Cube vertex & index buffer";
+    BuffDesc.Usage     = USAGE_IMMUTABLE;
+    BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
+    BuffDesc.Size      = sizeof(Data);
 
     BufferData BufData;
     BufData.pData    = &Data;
@@ -138,11 +138,11 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
-    BuffDesc.uiSizeInBytes     = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+    BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
 
     BufferData BufData;
     BufData.pData    = DrawTasks.data();
-    BufData.DataSize = BuffDesc.uiSizeInBytes;
+    BufData.DataSize = BuffDesc.Size;
 
     m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
     VERIFY_EXPR(m_pDrawTasks != nullptr);
@@ -156,11 +156,11 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
     // how many cubes are rendered with and without frustum culling.
 
     BufferDesc BuffDesc;
-    BuffDesc.Name          = "Statistics buffer";
-    BuffDesc.Usage         = USAGE_DEFAULT;
-    BuffDesc.BindFlags     = BIND_UNORDERED_ACCESS;
-    BuffDesc.Mode          = BUFFER_MODE_RAW;
-    BuffDesc.uiSizeInBytes = sizeof(DrawStatistics);
+    BuffDesc.Name      = "Statistics buffer";
+    BuffDesc.Usage     = USAGE_DEFAULT;
+    BuffDesc.BindFlags = BIND_UNORDERED_ACCESS;
+    BuffDesc.Mode      = BUFFER_MODE_RAW;
+    BuffDesc.Size      = sizeof(DrawStatistics);
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsBuffer);
     VERIFY_EXPR(m_pStatisticsBuffer != nullptr);
@@ -172,7 +172,7 @@ void Tutorial20_MeshShader::CreateStatisticsBuffer()
     BuffDesc.BindFlags      = BIND_NONE;
     BuffDesc.Mode           = BUFFER_MODE_UNDEFINED;
     BuffDesc.CPUAccessFlags = CPU_ACCESS_READ;
-    BuffDesc.uiSizeInBytes  = sizeof(DrawStatistics) * m_StatisticsHistorySize;
+    BuffDesc.Size           = sizeof(DrawStatistics) * m_StatisticsHistorySize;
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsStaging);
     VERIFY_EXPR(m_pStatisticsStaging != nullptr);
@@ -189,7 +189,7 @@ void Tutorial20_MeshShader::CreateConstantsBuffer()
     BuffDesc.Usage          = USAGE_DYNAMIC;
     BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
     BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    BuffDesc.uiSizeInBytes  = sizeof(Constants);
+    BuffDesc.Size           = sizeof(Constants);
 
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pConstants);
     VERIFY_EXPR(m_pConstants != nullptr);

@@ -54,7 +54,7 @@ public:
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.BindFlags      = BindFlags;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-        BuffDesc.uiSizeInBytes  = Size;
+        BuffDesc.Size           = Size;
         pDevice->CreateBuffer(BuffDesc, nullptr, &m_pBuffer);
     }
 
@@ -808,7 +808,7 @@ void Tutorial10_DataStreaming::CreateInstanceBuffer()
     InstBuffDesc.Usage          = USAGE_DYNAMIC;
     InstBuffDesc.BindFlags      = BIND_VERTEX_BUFFER;
     InstBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    InstBuffDesc.uiSizeInBytes  = sizeof(InstanceData) * m_BatchSize;
+    InstBuffDesc.Size           = sizeof(InstanceData) * m_BatchSize;
     m_BatchDataBuffer.Release();
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_BatchDataBuffer);
 }

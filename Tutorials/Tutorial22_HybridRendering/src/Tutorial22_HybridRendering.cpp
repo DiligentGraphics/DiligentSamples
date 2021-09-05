@@ -133,10 +133,10 @@ Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlane
         VBDesc.Name              = "Plane vertex buffer";
         VBDesc.Usage             = USAGE_IMMUTABLE;
         VBDesc.BindFlags         = BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-        VBDesc.uiSizeInBytes     = sizeof(Vertices);
+        VBDesc.Size              = sizeof(Vertices);
         VBDesc.Mode              = BUFFER_MODE_STRUCTURED;
         VBDesc.ElementByteStride = sizeof(Vertices[0]);
-        BufferData VBData{Vertices, VBDesc.uiSizeInBytes};
+        BufferData VBData{Vertices, VBDesc.Size};
         pDevice->CreateBuffer(VBDesc, &VBData, &PlaneMesh.VertexBuffer);
     }
 
@@ -147,10 +147,10 @@ Tutorial22_HybridRendering::Mesh Tutorial22_HybridRendering::CreateTexturedPlane
         BufferDesc IBDesc;
         IBDesc.Name              = "Plane index buffer";
         IBDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-        IBDesc.uiSizeInBytes     = sizeof(Indices);
+        IBDesc.Size              = sizeof(Indices);
         IBDesc.Mode              = BUFFER_MODE_STRUCTURED;
         IBDesc.ElementByteStride = sizeof(Indices[0]);
-        BufferData IBData{Indices, IBDesc.uiSizeInBytes};
+        BufferData IBData{Indices, IBDesc.Size};
         pDevice->CreateBuffer(IBDesc, &IBData, &PlaneMesh.IndexBuffer);
     }
 
@@ -191,7 +191,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
             BufferDesc VBDesc;
             VBDesc.Name              = "Shared vertex buffer";
             VBDesc.BindFlags         = BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-            VBDesc.uiSizeInBytes     = (PlaneMesh.FirstVertex + PlaneMesh.NumVertices) * sizeof(HLSL::Vertex);
+            VBDesc.Size              = (PlaneMesh.FirstVertex + PlaneMesh.NumVertices) * sizeof(HLSL::Vertex);
             VBDesc.Mode              = BUFFER_MODE_STRUCTURED;
             VBDesc.ElementByteStride = sizeof(HLSL::Vertex);
 
@@ -217,7 +217,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
             BufferDesc IBDesc;
             IBDesc.Name              = "Shared index buffer";
             IBDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-            IBDesc.uiSizeInBytes     = (PlaneMesh.FirstIndex + PlaneMesh.NumIndices) * sizeof(uint);
+            IBDesc.Size              = (PlaneMesh.FirstIndex + PlaneMesh.NumIndices) * sizeof(uint);
             IBDesc.Mode              = BUFFER_MODE_STRUCTURED;
             IBDesc.ElementByteStride = sizeof(uint);
 
@@ -337,13 +337,13 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
             }
 
             // Create or reuse scratch buffer; this will insert the barrier between BuildBLAS invocations, which may be suboptimal.
-            if (!pScratchBuffer || pScratchBuffer->GetDesc().uiSizeInBytes < Mesh.BLAS->GetScratchBufferSizes().Build)
+            if (!pScratchBuffer || pScratchBuffer->GetDesc().Size < Mesh.BLAS->GetScratchBufferSizes().Build)
             {
                 BufferDesc BuffDesc;
-                BuffDesc.Name          = "BLAS Scratch Buffer";
-                BuffDesc.Usage         = USAGE_DEFAULT;
-                BuffDesc.BindFlags     = BIND_RAY_TRACING;
-                BuffDesc.uiSizeInBytes = Mesh.BLAS->GetScratchBufferSizes().Build;
+                BuffDesc.Name      = "BLAS Scratch Buffer";
+                BuffDesc.Usage     = USAGE_DEFAULT;
+                BuffDesc.BindFlags = BIND_RAY_TRACING;
+                BuffDesc.Size      = Mesh.BLAS->GetScratchBufferSizes().Build;
 
                 pScratchBuffer = nullptr;
                 m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
@@ -401,10 +401,10 @@ void Tutorial22_HybridRendering::UpdateTLAS()
     if (!m_Scene.TLASScratchBuffer)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "TLAS Scratch Buffer";
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = std::max(m_Scene.TLAS->GetScratchBufferSizes().Build, m_Scene.TLAS->GetScratchBufferSizes().Update);
+        BuffDesc.Name      = "TLAS Scratch Buffer";
+        BuffDesc.Usage     = USAGE_DEFAULT;
+        BuffDesc.BindFlags = BIND_RAY_TRACING;
+        BuffDesc.Size      = std::max(m_Scene.TLAS->GetScratchBufferSizes().Build, m_Scene.TLAS->GetScratchBufferSizes().Update);
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.TLASScratchBuffer);
         Update = false; // this is the first build
     }
@@ -413,10 +413,10 @@ void Tutorial22_HybridRendering::UpdateTLAS()
     if (!m_Scene.TLASInstancesBuffer)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "TLAS Instance Buffer";
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.BindFlags     = BIND_RAY_TRACING;
-        BuffDesc.uiSizeInBytes = TLAS_INSTANCE_DATA_SIZE * NumInstances;
+        BuffDesc.Name      = "TLAS Instance Buffer";
+        BuffDesc.Usage     = USAGE_DEFAULT;
+        BuffDesc.BindFlags = BIND_RAY_TRACING;
+        BuffDesc.Size      = TLAS_INSTANCE_DATA_SIZE * NumInstances;
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.TLASInstancesBuffer);
     }
 
@@ -485,7 +485,7 @@ void Tutorial22_HybridRendering::CreateScene()
         BuffDesc.Name              = "Object attribs buffer";
         BuffDesc.Usage             = USAGE_DEFAULT;
         BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(m_Scene.Objects[0]) * m_Scene.Objects.size());
+        BuffDesc.Size              = static_cast<Uint64>(sizeof(m_Scene.Objects[0]) * m_Scene.Objects.size());
         BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
         BuffDesc.ElementByteStride = sizeof(m_Scene.Objects[0]);
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.ObjectAttribsBuffer);
@@ -497,11 +497,11 @@ void Tutorial22_HybridRendering::CreateScene()
         BuffDesc.Name              = "Material attribs buffer";
         BuffDesc.Usage             = USAGE_DEFAULT;
         BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
-        BuffDesc.uiSizeInBytes     = static_cast<Uint32>(sizeof(Materials[0]) * Materials.size());
+        BuffDesc.Size              = static_cast<Uint64>(sizeof(Materials[0]) * Materials.size());
         BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
         BuffDesc.ElementByteStride = sizeof(Materials[0]);
 
-        BufferData BuffData{Materials.data(), BuffDesc.uiSizeInBytes};
+        BufferData BuffData{Materials.data(), BuffDesc.Size};
         m_pDevice->CreateBuffer(BuffDesc, &BuffData, &m_Scene.MaterialAttribsBuffer);
     }
 
@@ -511,7 +511,7 @@ void Tutorial22_HybridRendering::CreateScene()
         BuffDesc.Name           = "Global constants buffer";
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
-        BuffDesc.uiSizeInBytes  = sizeof(HLSL::ObjectConstants);
+        BuffDesc.Size           = sizeof(HLSL::ObjectConstants);
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.ObjectConstants);
     }
@@ -805,9 +805,9 @@ void Tutorial22_HybridRendering::Initialize(const SampleInitInfo& InitInfo)
     // Create buffer for constants that is shared between all PSOs
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "Global constants buffer";
-        BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
-        BuffDesc.uiSizeInBytes = sizeof(HLSL::GlobalConstants);
+        BuffDesc.Name      = "Global constants buffer";
+        BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
+        BuffDesc.Size      = sizeof(HLSL::GlobalConstants);
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
     }
 

@@ -173,7 +173,7 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
     {
         BufferDesc VBDesc;
         VBDesc.Name          = "Camera background vertex buffer";
-        VBDesc.uiSizeInBytes = sizeof(float) * 4 * kNumVertices;
+        VBDesc.Size          = sizeof(float) * 4 * kNumVertices;
         VBDesc.BindFlags     = BIND_VERTEX_BUFFER;
         VBDesc.Usage         = USAGE_DEFAULT;
         pDevice->CreateBuffer(VBDesc, nullptr, &m_pVertexBuffer);

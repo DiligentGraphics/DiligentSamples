@@ -150,20 +150,20 @@ void GLTFViewer::CreateGLTFResourceCache()
 {
     std::array<BufferSuballocatorCreateInfo, 3> Buffers = {};
 
-    Buffers[0].Desc.Name          = "GLTF basic vertex attribs buffer";
-    Buffers[0].Desc.BindFlags     = BIND_VERTEX_BUFFER;
-    Buffers[0].Desc.Usage         = USAGE_DEFAULT;
-    Buffers[0].Desc.uiSizeInBytes = sizeof(GLTF::Model::VertexBasicAttribs) * 16 << 10;
+    Buffers[0].Desc.Name      = "GLTF basic vertex attribs buffer";
+    Buffers[0].Desc.BindFlags = BIND_VERTEX_BUFFER;
+    Buffers[0].Desc.Usage     = USAGE_DEFAULT;
+    Buffers[0].Desc.Size      = sizeof(GLTF::Model::VertexBasicAttribs) * 16 << 10;
 
-    Buffers[1].Desc.Name          = "GLTF skin attribs buffer";
-    Buffers[1].Desc.BindFlags     = BIND_VERTEX_BUFFER;
-    Buffers[1].Desc.Usage         = USAGE_DEFAULT;
-    Buffers[1].Desc.uiSizeInBytes = sizeof(GLTF::Model::VertexSkinAttribs) * 16 << 10;
+    Buffers[1].Desc.Name      = "GLTF skin attribs buffer";
+    Buffers[1].Desc.BindFlags = BIND_VERTEX_BUFFER;
+    Buffers[1].Desc.Usage     = USAGE_DEFAULT;
+    Buffers[1].Desc.Size      = sizeof(GLTF::Model::VertexSkinAttribs) * 16 << 10;
 
-    Buffers[2].Desc.Name          = "GLTF index buffer";
-    Buffers[2].Desc.BindFlags     = BIND_INDEX_BUFFER;
-    Buffers[2].Desc.Usage         = USAGE_DEFAULT;
-    Buffers[2].Desc.uiSizeInBytes = sizeof(Uint32) * 8 << 10;
+    Buffers[2].Desc.Name      = "GLTF index buffer";
+    Buffers[2].Desc.BindFlags = BIND_INDEX_BUFFER;
+    Buffers[2].Desc.Usage     = USAGE_DEFAULT;
+    Buffers[2].Desc.Size      = sizeof(Uint32) * 8 << 10;
 
     std::array<DynamicTextureAtlasCreateInfo, 1> Atlases;
     Atlases[0].Desc.Name      = "GLTF texture atlas";

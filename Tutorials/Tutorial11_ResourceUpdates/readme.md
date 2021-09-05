@@ -14,10 +14,10 @@ The most basic way to supply data into a buffer is to provide it at initializati
 ```cpp
 // Create index buffer
 BufferDesc IndBuffDesc;
-IndBuffDesc.Name          = "Cube index buffer";
-IndBuffDesc.Usage         = USAGE_IMMUTABLE;
-IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-IndBuffDesc.uiSizeInBytes = sizeof(Indices);
+IndBuffDesc.Name      = "Cube index buffer";
+IndBuffDesc.Usage     = USAGE_IMMUTABLE;
+IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
+IndBuffDesc.Size      = sizeof(Indices);
 BufferData IBData;
 IBData.pData    = Indices;
 IBData.DataSize = sizeof(Indices);

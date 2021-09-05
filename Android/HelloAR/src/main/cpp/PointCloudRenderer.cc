@@ -97,7 +97,7 @@ void PointCloudRenderer::Initialize(IRenderDevice* pDevice)
     {
         BufferDesc BuffDesc;
         BuffDesc.Name           = "Point cloud VS attribs constant buffer";
-        BuffDesc.uiSizeInBytes  = sizeof(float4x4) + sizeof(float4);
+        BuffDesc.Size           = sizeof(float4x4) + sizeof(float4);
         BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
@@ -176,7 +176,7 @@ void PointCloudRenderer::Draw(IDeviceContext*           pContext,
     if (m_pPointCloudBuffer)
     {
         const auto& Desc = m_pPointCloudBuffer->GetDesc();
-        if (Desc.uiSizeInBytes < number_of_points * sizeof(float4))
+        if (Desc.Size < number_of_points * sizeof(float4))
         {
             // The buffer is too small - release it and create a new one
             m_pPointCloudBuffer.Release();
@@ -186,10 +186,10 @@ void PointCloudRenderer::Draw(IDeviceContext*           pContext,
     if (!m_pPointCloudBuffer)
     {
         BufferDesc VBDesc;
-        VBDesc.Name          = "Point cloud vertex buffer";
-        VBDesc.uiSizeInBytes = sizeof(float4) * 64;
-        while (VBDesc.uiSizeInBytes < number_of_points * sizeof(float4))
-            VBDesc.uiSizeInBytes *= 2;
+        VBDesc.Name = "Point cloud vertex buffer";
+        VBDesc.Size = sizeof(float4) * 64;
+        while (VBDesc.Size < number_of_points * sizeof(float4))
+            VBDesc.Size *= 2;
         VBDesc.BindFlags      = BIND_VERTEX_BUFFER;
         VBDesc.Usage          = USAGE_DYNAMIC;
         VBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;

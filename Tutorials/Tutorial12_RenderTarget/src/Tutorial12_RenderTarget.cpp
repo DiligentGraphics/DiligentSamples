@@ -155,7 +155,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
         // Dynamic buffers can be frequently updated by the CPU
         BufferDesc CBDesc;
         CBDesc.Name           = "RTPS constants CB";
-        CBDesc.uiSizeInBytes  = sizeof(float4) + sizeof(float2x2) * 2;
+        CBDesc.Size           = sizeof(float4) + sizeof(float2x2) * 2;
         CBDesc.Usage          = USAGE_DYNAMIC;
         CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
         CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;

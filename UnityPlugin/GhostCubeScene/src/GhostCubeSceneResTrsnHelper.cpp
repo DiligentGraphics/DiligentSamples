@@ -32,7 +32,7 @@
 #include "IUnityGraphicsD3D12.h"
 #include "TextureD3D12.h"
 #include "DeviceContextD3D12.h"
-#include "ValidatedCast.hpp"
+#include "Cast.hpp"
 
 
 using namespace Diligent;
@@ -42,7 +42,7 @@ void GhostCubeSceneResTrsnHelper::TransitionResources(int stateCount, UnityGraph
     if (stateCount == 0)
         return;
 
-    auto *pCtx = ValidatedCast<IDeviceContextD3D12>(m_TheScene.m_DiligentGraphics->GetContext());
+    auto *pCtx = ClassPtrCast<IDeviceContextD3D12>(m_TheScene.m_DiligentGraphics->GetContext());
     for (int i = 0; i < stateCount; ++i)
     {
         auto &ResState = states[i];

@@ -132,11 +132,11 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*         pDevice,
     VERIFY_EXPR(it == VertexData.end());
 
     BufferDesc VertBuffDesc;
-    VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_IMMUTABLE;
-    VertBuffDesc.BindFlags     = BindFlags;
-    VertBuffDesc.uiSizeInBytes = static_cast<Uint32>(VertexData.size() * sizeof(VertexData[0]));
-    VertBuffDesc.Mode          = Mode;
+    VertBuffDesc.Name      = "Cube vertex buffer";
+    VertBuffDesc.Usage     = USAGE_IMMUTABLE;
+    VertBuffDesc.BindFlags = BindFlags;
+    VertBuffDesc.Size      = static_cast<Uint64>(VertexData.size() * sizeof(VertexData[0]));
+    VertBuffDesc.Mode      = Mode;
     if (Mode != BUFFER_MODE_UNDEFINED)
     {
         VertBuffDesc.ElementByteStride = TotalVertexComponents * sizeof(VertexData[0]);
@@ -144,7 +144,7 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*         pDevice,
 
     BufferData VBData;
     VBData.pData    = VertexData.data();
-    VBData.DataSize = VertBuffDesc.uiSizeInBytes;
+    VBData.DataSize = VertBuffDesc.Size;
     RefCntAutoPtr<IBuffer> pCubeVertexBuffer;
 
     pDevice->CreateBuffer(VertBuffDesc, &VBData, &pCubeVertexBuffer);
@@ -155,11 +155,11 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*         pDevice,
 RefCntAutoPtr<IBuffer> CreateIndexBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, BUFFER_MODE Mode)
 {
     BufferDesc IndBuffDesc;
-    IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_IMMUTABLE;
-    IndBuffDesc.BindFlags     = BindFlags;
-    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
-    IndBuffDesc.Mode          = Mode;
+    IndBuffDesc.Name      = "Cube index buffer";
+    IndBuffDesc.Usage     = USAGE_IMMUTABLE;
+    IndBuffDesc.BindFlags = BindFlags;
+    IndBuffDesc.Size      = sizeof(Indices);
+    IndBuffDesc.Mode      = Mode;
     if (Mode != BUFFER_MODE_UNDEFINED)
         IndBuffDesc.ElementByteStride = sizeof(Indices[0]);
     BufferData IBData;

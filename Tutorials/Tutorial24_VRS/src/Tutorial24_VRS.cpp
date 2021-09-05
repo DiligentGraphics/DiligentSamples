@@ -274,7 +274,7 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
     {
         BufferDesc BuffDesc;
         BuffDesc.Name           = "Constants";
-        BuffDesc.uiSizeInBytes  = sizeof(HLSL::Constants);
+        BuffDesc.Size           = sizeof(HLSL::Constants);
         BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;

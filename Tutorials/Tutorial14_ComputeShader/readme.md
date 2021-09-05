@@ -52,7 +52,7 @@ BuffDesc.Usage             = USAGE_DEFAULT;
 BuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
 BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
 BuffDesc.ElementByteStride = sizeof(ParticleAttribs);
-BuffDesc.uiSizeInBytes     = sizeof(ParticleAttribs) * m_NumParticles;
+BuffDesc.Size              = sizeof(ParticleAttribs) * m_NumParticles;
 m_pDevice->CreateBuffer(BuffDesc, &VBData, &m_pParticleAttribsBuffer);
 ```
 
@@ -101,7 +101,7 @@ one integer per particle and will be initialized as formatted buffers:
 ```cpp
 BuffDesc.ElementByteStride = sizeof(int);
 BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
-BuffDesc.uiSizeInBytes     = BuffDesc.ElementByteStride * m_NumParticles;
+BuffDesc.Size              = BuffDesc.ElementByteStride * m_NumParticles;
 BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
 m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
 m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);

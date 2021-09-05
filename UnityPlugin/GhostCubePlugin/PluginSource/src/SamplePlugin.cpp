@@ -126,7 +126,7 @@ SamplePlugin::SamplePlugin(Diligent::IRenderDevice *pDevice, bool UseReverseZ, T
         VertBuffDesc.Name = "SamplePlugin: cube vertex buffer";
         VertBuffDesc.Usage = USAGE_DEFAULT;
         VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-        VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
+        VertBuffDesc.Size = sizeof(CubeVerts);
         BufferData VBData;
         VBData.pData = CubeVerts;
         VBData.DataSize = sizeof(CubeVerts);
@@ -147,7 +147,7 @@ SamplePlugin::SamplePlugin(Diligent::IRenderDevice *pDevice, bool UseReverseZ, T
         IndBuffDesc.Name = "SamplePlugin: cube index buffer";
         IndBuffDesc.Usage = USAGE_DEFAULT;
         IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
-        IndBuffDesc.uiSizeInBytes = sizeof(Indices);
+        IndBuffDesc.Size = sizeof(Indices);
         BufferData IBData;
         IBData.pData = Indices;
         IBData.DataSize = sizeof(Indices);

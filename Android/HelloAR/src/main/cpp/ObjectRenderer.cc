@@ -61,7 +61,7 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
     {
         BufferDesc BuffDesc;
         BuffDesc.Name           = "Object attribs constant buffer";
-        BuffDesc.uiSizeInBytes  = sizeof(float4x4) * 2 + sizeof(float4) * 3;
+        BuffDesc.Size           = sizeof(float4x4) * 2 + sizeof(float4) * 3;
         BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;

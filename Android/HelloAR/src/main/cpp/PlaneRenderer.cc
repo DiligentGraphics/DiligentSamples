@@ -55,7 +55,7 @@ void PlaneRenderer::Initialize(IRenderDevice* pDevice)
     {
         BufferDesc BuffDesc;
         BuffDesc.Name           = "Plane VS attribs constant buffer";
-        BuffDesc.uiSizeInBytes  = sizeof(float4x4) * 2 + sizeof(float4) * 2;
+        BuffDesc.Size           = sizeof(float4x4) * 2 + sizeof(float4) * 2;
         BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
         BuffDesc.Usage          = USAGE_DYNAMIC;
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
@@ -171,7 +171,7 @@ void PlaneRenderer::Draw(IDeviceContext*  pContext,
     if (m_pPlaneVertexBuffer)
     {
         const auto& Desc = m_pPlaneVertexBuffer->GetDesc();
-        if (Desc.uiSizeInBytes < m_Vertices.size() * sizeof(float3))
+        if (Desc.Size < m_Vertices.size() * sizeof(float3))
         {
             // The buffer is too small - release it and create a new one
             m_pPlaneVertexBuffer.Release();
@@ -181,10 +181,10 @@ void PlaneRenderer::Draw(IDeviceContext*  pContext,
     if (!m_pPlaneVertexBuffer)
     {
         BufferDesc VBDesc;
-        VBDesc.Name          = "Plane vertex buffer";
-        VBDesc.uiSizeInBytes = sizeof(float3) * 32;
-        while (VBDesc.uiSizeInBytes < m_Vertices.size() * sizeof(float3))
-            VBDesc.uiSizeInBytes *= 2;
+        VBDesc.Name = "Plane vertex buffer";
+        VBDesc.Size = sizeof(float3) * 32;
+        while (VBDesc.Size < m_Vertices.size() * sizeof(float3))
+            VBDesc.Size *= 2;
         VBDesc.BindFlags      = BIND_VERTEX_BUFFER;
         VBDesc.Usage          = USAGE_DYNAMIC;
         VBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
@@ -202,7 +202,7 @@ void PlaneRenderer::Draw(IDeviceContext*  pContext,
     if (m_pPlaneIndexBuffer)
     {
         const auto& Desc = m_pPlaneIndexBuffer->GetDesc();
-        if (Desc.uiSizeInBytes < m_Indices.size() * sizeof(Uint32))
+        if (Desc.Size < m_Indices.size() * sizeof(Uint32))
         {
             // The buffer is too small - release it and create a new one
             m_pPlaneIndexBuffer.Release();
@@ -212,10 +212,10 @@ void PlaneRenderer::Draw(IDeviceContext*  pContext,
     if (!m_pPlaneIndexBuffer)
     {
         BufferDesc IBDesc;
-        IBDesc.Name          = "Plane index buffer";
-        IBDesc.uiSizeInBytes = sizeof(Uint32) * 32;
-        while (IBDesc.uiSizeInBytes < m_Indices.size() * sizeof(Uint32))
-            IBDesc.uiSizeInBytes *= 2;
+        IBDesc.Name = "Plane index buffer";
+        IBDesc.Size = sizeof(Uint32) * 32;
+        while (IBDesc.Size < m_Indices.size() * sizeof(Uint32))
+            IBDesc.Size *= 2;
         IBDesc.BindFlags      = BIND_INDEX_BUFFER;
         IBDesc.Usage          = USAGE_DYNAMIC;
         IBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;

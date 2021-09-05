@@ -579,17 +579,17 @@ void Buildings::CreateResources(IDeviceContext* pContext)
     // Create vertex & index buffers for opaque geometry
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "Buildings opaque VB";
-        BuffDesc.uiSizeInBytes = static_cast<Uint32>(Vertices.size() * sizeof(Vertices[0]));
-        BuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-        BuffDesc.Usage         = USAGE_IMMUTABLE;
-        BufferData BuffData{Vertices.data(), BuffDesc.uiSizeInBytes, pContext};
+        BuffDesc.Name      = "Buildings opaque VB";
+        BuffDesc.Size      = static_cast<Uint64>(Vertices.size() * sizeof(Vertices[0]));
+        BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+        BuffDesc.Usage     = USAGE_IMMUTABLE;
+        BufferData BuffData{Vertices.data(), BuffDesc.Size, pContext};
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_OpaqueVB);
 
-        BuffDesc.Name          = "Buildings opaque IB";
-        BuffDesc.uiSizeInBytes = static_cast<Uint32>(Indices.size() * sizeof(Indices[0]));
-        BuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-        BuffData               = BufferData{Indices.data(), BuffDesc.uiSizeInBytes, pContext};
+        BuffDesc.Name      = "Buildings opaque IB";
+        BuffDesc.Size      = static_cast<Uint64>(Indices.size() * sizeof(Indices[0]));
+        BuffDesc.BindFlags = BIND_INDEX_BUFFER;
+        BuffData           = BufferData{Indices.data(), BuffDesc.Size, pContext};
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_OpaqueIB);
 
         const StateTransitionDesc Barriers[] = {
@@ -787,7 +787,7 @@ void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
     pContext->SetIndexBuffer(m_OpaqueIB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs drawAttribs;
-    drawAttribs.NumIndices = static_cast<Uint32>(m_OpaqueIB->GetDesc().uiSizeInBytes / sizeof(IndexType));
+    drawAttribs.NumIndices = static_cast<Uint32>(m_OpaqueIB->GetDesc().Size / sizeof(IndexType));
     drawAttribs.IndexType  = VT_UINT32;
     drawAttribs.Flags      = DRAW_FLAG_VERIFY_ALL;
     pContext->DrawIndexed(drawAttribs);

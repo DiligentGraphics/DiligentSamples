@@ -102,7 +102,7 @@ BufferDesc InstBuffDesc;
 InstBuffDesc.Name          = "Instance data buffer";
 InstBuffDesc.Usage         = USAGE_DEFAULT; 
 InstBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-InstBuffDesc.uiSizeInBytes = sizeof(float4x4) * MaxInstances;
+InstBuffDesc.Size          = sizeof(float4x4) * MaxInstances;
 pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
 ```
 

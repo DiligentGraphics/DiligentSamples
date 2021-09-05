@@ -291,7 +291,7 @@ void UnityGraphicsD3D12Impl::Present()
     auto hr = m_SwapChain->Present( SyncInterval, 0 );
     VERIFY(SUCCEEDED(hr), "Present failed");
 
-    //auto *pDeviceD3D12 = ValidatedCast<RenderDeviceD3D12Impl>( pImmediateCtxD3D12->GetDevice() );
+    //auto *pDeviceD3D12 = ClassPtrCast<RenderDeviceD3D12Impl>( pImmediateCtxD3D12->GetDevice() );
     //pDeviceD3D12->FinishFrame();
     m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
 }

@@ -593,10 +593,10 @@ void Game::CreatePipelineState()
     CHECK_THROW(m_Map.pPSO != nullptr);
 
     BufferDesc CBDesc;
-    CBDesc.Name          = "Map constants buffer";
-    CBDesc.uiSizeInBytes = sizeof(MapConstants);
-    CBDesc.Usage         = USAGE_DEFAULT;
-    CBDesc.BindFlags     = BIND_UNIFORM_BUFFER;
+    CBDesc.Name      = "Map constants buffer";
+    CBDesc.Size      = sizeof(MapConstants);
+    CBDesc.Usage     = USAGE_DEFAULT;
+    CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
 
     GetDevice()->CreateBuffer(CBDesc, nullptr, &m_Map.pConstants);
     CHECK_THROW(m_Map.pConstants != nullptr);
@@ -607,10 +607,10 @@ void Game::InitPlayer()
     if (!m_Player.pConstants)
     {
         BufferDesc CBDesc;
-        CBDesc.Name          = "Player constants buffer";
-        CBDesc.uiSizeInBytes = sizeof(PlayerConstants);
-        CBDesc.Usage         = USAGE_DEFAULT;
-        CBDesc.BindFlags     = BIND_UNIFORM_BUFFER;
+        CBDesc.Name      = "Player constants buffer";
+        CBDesc.Size      = sizeof(PlayerConstants);
+        CBDesc.Usage     = USAGE_DEFAULT;
+        CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
 
         GetDevice()->CreateBuffer(CBDesc, nullptr, &m_Player.pConstants);
         CHECK_THROW(m_Player.pConstants != nullptr);

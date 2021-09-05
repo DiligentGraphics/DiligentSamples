@@ -114,7 +114,7 @@ that will hold the transformation matrix. To create a buffer, populate `BufferDe
 ```cpp
 BufferDesc CBDesc;
 CBDesc.Name           = "VS constants CB";
-CBDesc.uiSizeInBytes  = sizeof(float4x4);
+CBDesc.Size           = sizeof(float4x4);
 CBDesc.Usage          = USAGE_DYNAMIC;
 CBDesc.BindFlags      = BIND_UNIFORM_BUFFER;
 CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
@@ -212,7 +212,7 @@ BufferDesc VertBuffDesc;
 VertBuffDesc.Name          = "Cube vertex buffer";
 VertBuffDesc.Usage         = USAGE_IMMUTABLE;
 VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
+VertBuffDesc.Size          = sizeof(CubeVerts);
 BufferData VBData;
 VBData.pData    = CubeVerts;
 VBData.DataSize = sizeof(CubeVerts);

@@ -248,7 +248,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         desc.CPUAccessFlags = desc.Usage == USAGE_DYNAMIC ? CPU_ACCESS_WRITE : CPU_ACCESS_NONE;
         desc.BindFlags      = BIND_UNIFORM_BUFFER;
         // In bindless mode, we will only write view-projection matrix
-        desc.uiSizeInBytes = static_cast<Uint32>((m_BindingMode == BindingMode::Bindless) ? sizeof(DirectX::XMFLOAT4X4) : sizeof(DrawConstantBuffer));
+        desc.Size = static_cast<Uint32>((m_BindingMode == BindingMode::Bindless) ? sizeof(DirectX::XMFLOAT4X4) : sizeof(DrawConstantBuffer));
         mDevice->CreateBuffer(desc, nullptr, &mDrawConstantBuffer);
         if (m_BindingMode != BindingMode::Bindless)
             Barriers.emplace_back(mDrawConstantBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
@@ -261,14 +261,14 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             // so we will use this auxiliary buffer that solely contains integers in ascending order
             // (0, 1, 2, ...) and we will access it with FirstInstanceLocation.
             BufferDesc desc;
-            desc.Name          = "Instance ID buffer";
-            desc.Usage         = USAGE_IMMUTABLE;
-            desc.BindFlags     = BIND_VERTEX_BUFFER;
-            desc.uiSizeInBytes = static_cast<Uint32>(sizeof(Uint32)) * MaxAsteroidsInSubset;
+            desc.Name      = "Instance ID buffer";
+            desc.Usage     = USAGE_IMMUTABLE;
+            desc.BindFlags = BIND_VERTEX_BUFFER;
+            desc.Size      = static_cast<Uint64>(sizeof(Uint32)) * MaxAsteroidsInSubset;
             std::vector<Uint32> Ids(MaxAsteroidsInSubset);
             for (Uint32 i = 0; i < Ids.size(); ++i)
                 Ids[i] = i;
-            BufferData Data(Ids.data(), desc.uiSizeInBytes);
+            BufferData Data{Ids.data(), desc.Size};
             mDevice->CreateBuffer(desc, &Data, &mInstanceIDBuffer);
             Barriers.emplace_back(mInstanceIDBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
         }
@@ -283,7 +283,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             desc.Mode              = BUFFER_MODE_STRUCTURED;
             desc.CPUAccessFlags    = CPU_ACCESS_WRITE;
             desc.ElementByteStride = static_cast<Uint32>(sizeof(AsteroidData));
-            desc.uiSizeInBytes     = desc.ElementByteStride * MaxAsteroidsInSubset;
+            desc.Size              = desc.ElementByteStride * MaxAsteroidsInSubset;
             mAsteroidsDataBuffers.resize(mNumSubsets);
             for (Uint32 i = 0; i < mNumSubsets; ++i)
             {
@@ -435,7 +435,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         BufferDesc desc;
         desc.Name           = "skybox constant buffer (dynamic)";
         desc.Usage          = USAGE_DYNAMIC;
-        desc.uiSizeInBytes  = sizeof(SkyboxConstantBuffer);
+        desc.Size           = sizeof(SkyboxConstantBuffer);
         desc.BindFlags      = BIND_UNIFORM_BUFFER;
         desc.CPUAccessFlags = CPU_ACCESS_WRITE;
         mDevice->CreateBuffer(desc, nullptr, &mSkyboxConstantBuffer);
@@ -674,14 +674,14 @@ void Asteroids::CreateMeshes()
     // create vertex buffer
     {
         BufferDesc desc;
-        desc.Name          = "Asteroid Meshes Vertex Buffer";
-        desc.uiSizeInBytes = (Uint32)asteroidMeshes->vertices.size() * sizeof(asteroidMeshes->vertices[0]);
-        desc.BindFlags     = BIND_VERTEX_BUFFER;
-        desc.Usage         = USAGE_DEFAULT;
+        desc.Name      = "Asteroid Meshes Vertex Buffer";
+        desc.Size      = (Uint32)asteroidMeshes->vertices.size() * sizeof(asteroidMeshes->vertices[0]);
+        desc.BindFlags = BIND_VERTEX_BUFFER;
+        desc.Usage     = USAGE_DEFAULT;
 
         BufferData data;
         data.pData    = asteroidMeshes->vertices.data();
-        data.DataSize = desc.uiSizeInBytes;
+        data.DataSize = desc.Size;
 
         mDevice->CreateBuffer(desc, &data, &mVertexBuffer);
         Barriers.emplace_back(mVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
@@ -690,14 +690,14 @@ void Asteroids::CreateMeshes()
     // create index buffer
     {
         BufferDesc desc;
-        desc.Name          = "Asteroid Meshes Index Buffer";
-        desc.uiSizeInBytes = (Uint32)asteroidMeshes->indices.size() * sizeof(asteroidMeshes->indices[0]);
-        desc.BindFlags     = BIND_INDEX_BUFFER;
-        desc.Usage         = USAGE_DEFAULT;
+        desc.Name      = "Asteroid Meshes Index Buffer";
+        desc.Size      = (Uint32)asteroidMeshes->indices.size() * sizeof(asteroidMeshes->indices[0]);
+        desc.BindFlags = BIND_INDEX_BUFFER;
+        desc.Usage     = USAGE_DEFAULT;
 
         BufferData data;
         data.pData    = asteroidMeshes->indices.data();
-        data.DataSize = desc.uiSizeInBytes;
+        data.DataSize = desc.Size;
 
         mDevice->CreateBuffer(desc, &data, &mIndexBuffer);
         Barriers.emplace_back(mIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
@@ -710,14 +710,14 @@ void Asteroids::CreateMeshes()
     // create skybox vertex buffer
     {
         BufferDesc desc;
-        desc.Name          = "Skybox Vertex Buffer";
-        desc.uiSizeInBytes = (Uint32)skyboxVertices.size() * sizeof(skyboxVertices[0]);
-        desc.BindFlags     = BIND_VERTEX_BUFFER;
-        desc.Usage         = USAGE_DEFAULT;
+        desc.Name      = "Skybox Vertex Buffer";
+        desc.Size      = (Uint32)skyboxVertices.size() * sizeof(skyboxVertices[0]);
+        desc.BindFlags = BIND_VERTEX_BUFFER;
+        desc.Usage     = USAGE_DEFAULT;
 
         BufferData data;
         data.pData    = skyboxVertices.data();
-        data.DataSize = desc.uiSizeInBytes;
+        data.DataSize = desc.Size;
 
         mDevice->CreateBuffer(desc, &data, &mSkyboxVertexBuffer);
         Barriers.emplace_back(mSkyboxVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
@@ -727,7 +727,7 @@ void Asteroids::CreateMeshes()
     {
         BufferDesc desc;
         desc.Name           = "sprite vertex buffer (dynamic)";
-        desc.uiSizeInBytes  = (Uint32)MAX_SPRITE_VERTICES_PER_FRAME * sizeof(SpriteVertex);
+        desc.Size           = (Uint32)MAX_SPRITE_VERTICES_PER_FRAME * sizeof(SpriteVertex);
         desc.BindFlags      = BIND_VERTEX_BUFFER;
         desc.Usage          = USAGE_DYNAMIC;
         desc.CPUAccessFlags = CPU_ACCESS_WRITE;

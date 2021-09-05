@@ -252,13 +252,13 @@ public:
 
         // Prepare buffer description
         BufferDesc IndexBufferDesc;
-        IndexBufferDesc.Name          = "Ring mesh index buffer";
-        IndexBufferDesc.uiSizeInBytes = (Uint32)(IB.size() * sizeof(IB[0]));
-        IndexBufferDesc.BindFlags     = BIND_INDEX_BUFFER;
-        IndexBufferDesc.Usage         = USAGE_IMMUTABLE;
+        IndexBufferDesc.Name      = "Ring mesh index buffer";
+        IndexBufferDesc.Size      = (Uint32)(IB.size() * sizeof(IB[0]));
+        IndexBufferDesc.BindFlags = BIND_INDEX_BUFFER;
+        IndexBufferDesc.Usage     = USAGE_IMMUTABLE;
         BufferData IBInitData;
         IBInitData.pData    = IB.data();
-        IBInitData.DataSize = IndexBufferDesc.uiSizeInBytes;
+        IBInitData.DataSize = IndexBufferDesc.Size;
         // Create the buffer
         m_pDevice->CreateBuffer(IndexBufferDesc, &IBInitData, &CurrMesh.pIndBuff);
         VERIFY(CurrMesh.pIndBuff, "Failed to create index buffer");
@@ -786,13 +786,13 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
     GenerateSphereGeometry(pDevice, Diligent::AirScatteringAttribs().fEarthRadius, m_Params.m_iRingDimension, m_Params.m_iNumRings, pDataSource, m_Params.m_TerrainAttribs.m_fElevationSamplingInterval, m_Params.m_TerrainAttribs.m_fElevationScale, VB, m_SphereMeshes);
 
     BufferDesc VBDesc;
-    VBDesc.Name          = "Hemisphere vertex buffer";
-    VBDesc.uiSizeInBytes = (Uint32)(VB.size() * sizeof(VB[0]));
-    VBDesc.Usage         = USAGE_IMMUTABLE;
-    VBDesc.BindFlags     = BIND_VERTEX_BUFFER;
+    VBDesc.Name      = "Hemisphere vertex buffer";
+    VBDesc.Size      = static_cast<Uint64>(VB.size() * sizeof(VB[0]));
+    VBDesc.Usage     = USAGE_IMMUTABLE;
+    VBDesc.BindFlags = BIND_VERTEX_BUFFER;
     BufferData VBInitData;
     VBInitData.pData    = VB.data();
-    VBInitData.DataSize = VBDesc.uiSizeInBytes;
+    VBInitData.DataSize = VBDesc.Size;
     pDevice->CreateBuffer(VBDesc, &VBInitData, &m_pVertBuff);
     VERIFY(m_pVertBuff, "Failed to create VB");
 }

@@ -223,10 +223,10 @@ void Tutorial03_Texturing::CreateVertexBuffer()
     // clang-format on
 
     BufferDesc VertBuffDesc;
-    VertBuffDesc.Name          = "Cube vertex buffer";
-    VertBuffDesc.Usage         = USAGE_IMMUTABLE;
-    VertBuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes = sizeof(CubeVerts);
+    VertBuffDesc.Name      = "Cube vertex buffer";
+    VertBuffDesc.Usage     = USAGE_IMMUTABLE;
+    VertBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+    VertBuffDesc.Size      = sizeof(CubeVerts);
     BufferData VBData;
     VBData.pData    = CubeVerts;
     VBData.DataSize = sizeof(CubeVerts);
@@ -248,10 +248,10 @@ void Tutorial03_Texturing::CreateIndexBuffer()
     // clang-format on
 
     BufferDesc IndBuffDesc;
-    IndBuffDesc.Name          = "Cube index buffer";
-    IndBuffDesc.Usage         = USAGE_IMMUTABLE;
-    IndBuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes = sizeof(Indices);
+    IndBuffDesc.Name      = "Cube index buffer";
+    IndBuffDesc.Usage     = USAGE_IMMUTABLE;
+    IndBuffDesc.BindFlags = BIND_INDEX_BUFFER;
+    IndBuffDesc.Size      = sizeof(Indices);
     BufferData IBData;
     IBData.pData    = Indices;
     IBData.DataSize = sizeof(Indices);

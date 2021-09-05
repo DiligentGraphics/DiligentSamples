@@ -290,7 +290,7 @@ void CreateVertexBuffer(IRenderDevice* pDevice)
 
     VertBuffDesc.Usage                = USAGE_IMMUTABLE;
     VertBuffDesc.BindFlags            = BIND_VERTEX_BUFFER;
-    VertBuffDesc.uiSizeInBytes        = sizeof(CubeVerts);
+    VertBuffDesc.Size                 = sizeof(CubeVerts);
     VertBuffDesc.ImmediateContextMask = 1;
 
     BufferData VBData;
@@ -322,7 +322,7 @@ void CreateIndexBuffer(IRenderDevice* pDevice)
 
     IndBuffDesc.Usage                = USAGE_IMMUTABLE;
     IndBuffDesc.BindFlags            = BIND_INDEX_BUFFER;
-    IndBuffDesc.uiSizeInBytes        = sizeof(Indices);
+    IndBuffDesc.Size                 = sizeof(Indices);
     IndBuffDesc.ImmediateContextMask = 1;
 
     BufferData IBData;

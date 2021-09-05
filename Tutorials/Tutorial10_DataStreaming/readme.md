@@ -61,7 +61,7 @@ StreamingBuffer::StreamingBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, U
     BuffDesc.Usage          = USAGE_DYNAMIC;
     BuffDesc.BindFlags      = BindFlags;
     BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    BuffDesc.uiSizeInBytes  = Size;
+    BuffDesc.Size           = Size;
     pDevice->CreateBuffer(BuffDesc, nullptr, &m_pBuffer);
 }
 ```

@@ -653,7 +653,7 @@ void Tutorial09_Quads::CreateInstanceBuffer()
     InstBuffDesc.Usage          = USAGE_DYNAMIC;
     InstBuffDesc.BindFlags      = BIND_VERTEX_BUFFER;
     InstBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    InstBuffDesc.uiSizeInBytes  = sizeof(InstanceData) * m_BatchSize;
+    InstBuffDesc.Size           = sizeof(InstanceData) * m_BatchSize;
     m_BatchDataBuffer.Release();
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_BatchDataBuffer);
     StateTransitionDesc Barrier(m_BatchDataBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);

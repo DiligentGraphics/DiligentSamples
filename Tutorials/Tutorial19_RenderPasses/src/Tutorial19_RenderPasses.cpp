@@ -430,7 +430,7 @@ void Tutorial19_RenderPasses::CreateLightsBuffer()
     VertBuffDesc.Usage          = USAGE_DYNAMIC;
     VertBuffDesc.BindFlags      = BIND_VERTEX_BUFFER;
     VertBuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    VertBuffDesc.uiSizeInBytes  = sizeof(LightAttribs) * m_LightsCount;
+    VertBuffDesc.Size           = sizeof(LightAttribs) * m_LightsCount;
 
     m_pDevice->CreateBuffer(VertBuffDesc, nullptr, &m_pLightsBuffer);
 }

@@ -93,13 +93,13 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
     pRasterRateMap->GetParameterBufferSizeAndAlign(BufferSize, BufferAlign);
 
     if (m_pShadingRateParamBuffer == nullptr ||
-        BufferSize > m_pShadingRateParamBuffer->GetDesc().uiSizeInBytes)
+        BufferSize > m_pShadingRateParamBuffer->GetDesc().Size)
     {
         m_pShadingRateParamBuffer = nullptr;
 
         BufferDesc BuffDesc;
         BuffDesc.Name           = "RRM parameters buffer";
-        BuffDesc.uiSizeInBytes  = BufferSize;
+        BuffDesc.Size           = BufferSize;
         BuffDesc.Usage          = USAGE_UNIFIED; // buffer is used for host access and will be accessed in shader
         BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER; // only uniform buffer is compatible with unified memory
         BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;

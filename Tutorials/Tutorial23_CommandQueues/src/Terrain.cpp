@@ -98,17 +98,17 @@ void Terrain::CreateResources(IDeviceContext* pContext)
     // Create vertex & index buffers
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "Terrain VB";
-        BuffDesc.uiSizeInBytes = static_cast<Uint32>(Vertices.size() * sizeof(Vertices[0]));
-        BuffDesc.BindFlags     = BIND_VERTEX_BUFFER;
-        BuffDesc.Usage         = USAGE_IMMUTABLE;
-        BufferData BuffData{Vertices.data(), BuffDesc.uiSizeInBytes, pContext};
+        BuffDesc.Name      = "Terrain VB";
+        BuffDesc.Size      = static_cast<Uint64>(Vertices.size() * sizeof(Vertices[0]));
+        BuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+        BuffDesc.Usage     = USAGE_IMMUTABLE;
+        BufferData BuffData{Vertices.data(), BuffDesc.Size, pContext};
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_VB);
 
-        BuffDesc.Name          = "Terrain IB";
-        BuffDesc.uiSizeInBytes = static_cast<Uint32>(Indices.size() * sizeof(Indices[0]));
-        BuffDesc.BindFlags     = BIND_INDEX_BUFFER;
-        BuffData               = BufferData{Indices.data(), BuffDesc.uiSizeInBytes, pContext};
+        BuffDesc.Name      = "Terrain IB";
+        BuffDesc.Size      = static_cast<Uint64>(Indices.size() * sizeof(Indices[0]));
+        BuffDesc.BindFlags = BIND_INDEX_BUFFER;
+        BuffData           = BufferData{Indices.data(), BuffDesc.Size, pContext};
         m_Device->CreateBuffer(BuffDesc, &BuffData, &m_IB);
 
         // Buffers are used in multiple contexts, but after this transition resources state will never changes.
@@ -167,10 +167,10 @@ void Terrain::CreateResources(IDeviceContext* pContext)
     if (m_TerrainConstants[0] == nullptr || m_TerrainConstants[1] == nullptr)
     {
         BufferDesc BuffDesc;
-        BuffDesc.Name          = "Terrain constants";
-        BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
-        BuffDesc.Usage         = USAGE_DEFAULT;
-        BuffDesc.uiSizeInBytes = sizeof(HLSL::TerrainConstants);
+        BuffDesc.Name      = "Terrain constants";
+        BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
+        BuffDesc.Usage     = USAGE_DEFAULT;
+        BuffDesc.Size      = sizeof(HLSL::TerrainConstants);
 
         BuffDesc.ImmediateContextMask = m_ImmediateContextMask; // compute context
         m_Device->CreateBuffer(BuffDesc, nullptr, &m_TerrainConstants[0]);
@@ -387,7 +387,7 @@ void Terrain::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
     pContext->SetIndexBuffer(m_IB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs drawAttribs;
-    drawAttribs.NumIndices = static_cast<Uint32>(m_IB->GetDesc().uiSizeInBytes / sizeof(IndexType));
+    drawAttribs.NumIndices = static_cast<Uint32>(m_IB->GetDesc().Size / sizeof(IndexType));
     drawAttribs.IndexType  = VT_UINT32;
     drawAttribs.Flags      = DRAW_FLAG_VERIFY_ALL;
     pContext->DrawIndexed(drawAttribs);

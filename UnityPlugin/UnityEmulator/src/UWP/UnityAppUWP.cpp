@@ -27,7 +27,7 @@
 #include "UnityGraphicsD3D12Emulator.h"
 #include "DiligentGraphicsAdapterD3D11.h"
 #include "DiligentGraphicsAdapterD3D12.h"
-#include "ValidatedCast.hpp"
+#include "Cast.hpp"
 #include "StringTools.hpp"
 #include "Errors.hpp"
 
@@ -142,7 +142,7 @@ public:
             {
                 auto &GraphicsD3D11Emulator = UnityGraphicsD3D11Emulator::GetInstance();
                 GraphicsD3D11Emulator.CreateSwapChain(NativeWndHandle, backBufferWidth, backBufferHeight);
-                ValidatedCast<DiligentGraphicsAdapterD3D11>(m_DiligentGraphics.get())->InitProxySwapChain();
+                ClassPtrCast<DiligentGraphicsAdapterD3D11>(m_DiligentGraphics.get())->InitProxySwapChain();
             }
             break;
 
@@ -150,7 +150,7 @@ public:
             {
                 auto &GraphicsD3D12Emulator = UnityGraphicsD3D12Emulator::GetInstance();
                 GraphicsD3D12Emulator.CreateSwapChain(NativeWndHandle, backBufferWidth, backBufferHeight);
-                ValidatedCast<DiligentGraphicsAdapterD3D12>(m_DiligentGraphics.get())->InitProxySwapChain();
+                ClassPtrCast<DiligentGraphicsAdapterD3D12>(m_DiligentGraphics.get())->InitProxySwapChain();
             }
             break;
 

@@ -253,7 +253,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     BuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
     BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.ElementByteStride = sizeof(ParticleAttribs);
-    BuffDesc.uiSizeInBytes     = sizeof(ParticleAttribs) * m_NumParticles;
+    BuffDesc.Size              = sizeof(ParticleAttribs) * m_NumParticles;
 
     std::vector<ParticleAttribs> ParticleData(m_NumParticles);
 
@@ -284,7 +284,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
 
     BuffDesc.ElementByteStride = sizeof(int);
     BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
-    BuffDesc.uiSizeInBytes     = BuffDesc.ElementByteStride * static_cast<Uint32>(m_NumParticles);
+    BuffDesc.Size              = BuffDesc.ElementByteStride * static_cast<Uint32>(m_NumParticles);
     BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
@@ -333,7 +333,7 @@ void Tutorial14_ComputeShader::CreateConsantBuffer()
     BuffDesc.Usage          = USAGE_DYNAMIC;
     BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
     BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    BuffDesc.uiSizeInBytes  = sizeof(float4) * 2;
+    BuffDesc.Size           = sizeof(float4) * 2;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
 }
 

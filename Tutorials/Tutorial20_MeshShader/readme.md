@@ -302,10 +302,10 @@ std::memcpy(Data.uv, CubeUV, sizeof(CubeUV));
 std::memcpy(Data.indices, Indices, sizeof(Indices));
 
 BufferDesc BuffDesc;
-BuffDesc.Name          = "Cube vertex & index buffer";
-BuffDesc.Usage         = USAGE_IMMUTABLE;
-BuffDesc.BindFlags     = BIND_UNIFORM_BUFFER;
-BuffDesc.uiSizeInBytes = sizeof(Data);
+BuffDesc.Name      = "Cube vertex & index buffer";
+BuffDesc.Usage     = USAGE_IMMUTABLE;
+BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
+BuffDesc.Size      = sizeof(Data);
 
 BufferData BufData;
 BufData.pData    = &Data;
@@ -400,15 +400,15 @@ We use the structured buffer because the data size may be larger than supported 
 
 ```cpp
 BufferDesc BuffDesc;
-BuffDesc.Name          = "Draw tasks buffer";
-BuffDesc.Usage         = USAGE_DEFAULT;
-BuffDesc.BindFlags     = BIND_SHADER_RESOURCE;
-BuffDesc.Mode          = BUFFER_MODE_STRUCTURED;
-BuffDesc.uiSizeInBytes = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+BuffDesc.Name      = "Draw tasks buffer";
+BuffDesc.Usage     = USAGE_DEFAULT;
+BuffDesc.BindFlags = BIND_SHADER_RESOURCE;
+BuffDesc.Mode      = BUFFER_MODE_STRUCTURED;
+BuffDesc.Size      = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
 
 BufferData BufData;
 BufData.pData    = DrawTasks.data();
-BufData.DataSize = BuffDesc.uiSizeInBytes;
+BufData.DataSize = BuffDesc.Size;
 
 m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
 ```
