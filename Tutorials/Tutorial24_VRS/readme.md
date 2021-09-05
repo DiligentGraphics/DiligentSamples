@@ -1,41 +1,59 @@
 # Tutorial24 - Variable rate shading
 
-This tutorial demonstrates how to use variable rate shading for pixel shader optimization.
+This tutorial demonstrates how to use variable rate shading to reduce pixel shading load.
 
 
-## VRS in desktop GPU
+## VRS on desktop GPUs
 
-Variable shading rate implementation on mobile and desktop GPUs and in different GAPIs has serious differences.
-On desktop GPU variable rate shading used to change the number of pixel shader invocations per small tile,
-it allows to reduce the number of heavy pixel shader invocations for areas which will be blurred by motion blur or other post processes.
-Direct3D12 and Vulkan have three VRS types: per-draw, per-primitive, texture based and also a combination of these types.
+Variable shading rate implementations on mobile and desktop GPUs and in different APIs supported by Diligent Engine vary significantly.
+On desktop GPUs, variable rate shading is used to change the number of pixel shader invocations per small tile,
+which allows reducing the number of pixel shader invocations for areas which don't require high quality (e.g., areas that will be blurred
+by motion blur or depth-of-field, covered by UI, etc.). Direct3D12 and Vulkan provide three VRS types that may be combined together:
+per-draw, per-primitive, and texture-based rates. These options are described below. 
 
-### Per draw shading rate.
-If capability `SHADING_RATE_CAP_FLAG_PER_DRAW` is supported then we can call `IDeviceContext::SetShadingRate()`,
-where `BaseRate` is one of the supported shading rates from list in `ShadingRateProperties::ShadingRates`,
-`PrimitiveCombiner` and `TextureCombiner` must be `SHADING_RATE_COMBINER_PASSTHROUGH` because they will be used by other VRS modes.
+### Per-draw Shading Rate
 
-### Per primitive shading rate.
-If capability `SHADING_RATE_CAP_FLAG_PER_PRIMITIVE` is supported then we can call `IDeviceContext::SetShadingRate()`,
-where `PrimitiveCombiner` is one of the supported combiners in the bit field `ShadingRateProperties::Combiners`.
-`SHADING_RATE_COMBINER_PASSTHROUGH` means that per-primitive VRS is not used, `SHADING_RATE_COMBINER_OVERRIDE` means that used only per-primitive VRS,
-other values specify how to combine per-draw with per-primitive rates.
-Per-primitive shading rate specified as output value in vertex or geometry shader:
+If capability `SHADING_RATE_CAP_FLAG_PER_DRAW` is supported, we can use the `IDeviceContext::SetShadingRate()` method to
+set the shading rate that will be uniformly applied throught the entire render target.
+The `BaseRate` parameter must be one of the shading rates supported by Device. All supported rates are listed in
+`ShadingRateProperties::ShadingRates` member of the `GraphicsAdapterInfo` struct.
+`PrimitiveCombiner` and `TextureCombiner` parameters must be `SHADING_RATE_COMBINER_PASSTHROUGH`.
+
+### Per-primitive Shading Rate
+
+If capability `SHADING_RATE_CAP_FLAG_PER_PRIMITIVE` is supported, shading rate may be specified for each primitive
+by using a special vertex or geometry shader output:
 `nointerpolation uint Rate : SV_ShadingRate;`
 
-### Texture based shading rate.
-If capability `SHADING_RATE_CAP_FLAG_TEXTURE_BASED` is supported then we cal call `IDeviceContext::SetShadingRate()`,
-where `TextureCombiner`is one of the supported combiners in the bit field `ShadingRateProperties::Combiners`.
-If `PrimitiveCombiner = SHADING_RATE_COMBINER_PASSTHROUGH` and `TextureCombiner = SHADING_RATE_COMBINER_OVERRIDE` then only shading rate from texture will be used,
-other parameters specify a combination of all three modes.
+Per-primitive rate is combined with the base per-draw rate as specified by the `PrimitiveCombiner` paremeter
+of the `IDeviceContext::SetShadingRate()` method. The combiner value must be one of the supported combiners in the bit
+field `ShadingRateProperties::Combiners`. The two most commonly used combiners are
+* `SHADING_RATE_COMBINER_PASSTHROUGH`, that defines that per-primitive rate is ignored and the base rate is used instead, and
+* `SHADING_RATE_COMBINER_OVERRIDE` that defines that per-primitive rate overrides the base rate.
 
-On desktop VRS texture must be created with type `RESOURCE_DIM_TEX_2D`, bind flags `BIND_SHADING_RATE`, format `TEX_FORMAT_R8_UINT` and size must be less than render target size in `ShadingRateProperties::MaxTileSize` times.
+Other values specify how to combine per-draw base rate with the per-primitive rate.
+
+### Texture-based Shading Rate
+
+If capability `SHADING_RATE_CAP_FLAG_TEXTURE_BASED`, shading rate may be defined using a special texture that for every
+pixel of the screen defines the rate. The texture-based rate is combined with the primitive rate, and applied last.
+The combiner for the texture rate is defined by `TextureCombiner` parameter of the `IDeviceContext::SetShadingRate()`
+method. The combiner value must be one of the supported combiners in the bit field `ShadingRateProperties::Combiners`.
+If `PrimitiveCombiner` is `SHADING_RATE_COMBINER_PASSTHROUGH` and `TextureCombiner` is `SHADING_RATE_COMBINER_OVERRIDE`,
+then only the texture shading rate will be used.
+
+It is possible to use other parameters that define how all three rates are combined.
+
+On desktop GPUs, VRS texture must be created with type `RESOURCE_DIM_TEX_2D`, and use bind flag `BIND_SHADING_RATE`.
+Its format must be `TEX_FORMAT_R8_UINT` and the size must be less than the render target size divided by `ShadingRateProperties::MinTileSize`.
 The texel values correspond to the values in `SHADING_RATE` enum. This is valid for `SHADING_RATE_FORMAT_PALETTE` format in `ShadingRateProperties::Format`.
-Texture content can be updated from CPU or in compute shader, Direct3D12 forbid to create VRS texture with render target flag, in Vulkan it implementation depends.
+The texture content can be updated from CPU or in a compute shader. Note that Direct3D12 forbids creating VRS texture with the render target flag, but in
+Vulkan this may be allowed depending on the implementation.
 
 ### Combiners
 
-Shading rate combination algorithm is look like:
+Shading rate combination algorithm is as follows:
+
 ```cpp
 SHADING_RATE ApplyCombiner(SHADING_RATE_COMBINER Combiner, SHADING_RATE OriginalRate, SHADING_RATE NewRate)
 {
@@ -50,32 +68,45 @@ SHADING_RATE ApplyCombiner(SHADING_RATE_COMBINER Combiner, SHADING_RATE Original
     }
 }
 ```
-`IDeviceContext::SetShadingRate()` set the `BaseRate` value.<br/>
-`SV_ShadingRate` in vertex shader set a `PerPrimitiveRate` value and it combines with per-draw rate:
+
+`IDeviceContext::SetShadingRate()` sets the `BaseRate` value.<br/>
+`SV_ShadingRate` output of a vertex or a geometry shader defines the `PerPrimitiveRate` value and it is combined with the per-draw rate:
 `PrimitiveRate = ApplyCombiner(PrimitiveCombiner, BaseRate, PerPrimitiveRate)`<br/>
-Next, the texel from the VRS texture is read to `TextureRate` and combined:
+
+Next, the texel from the VRS texture is read to `TextureRate` and is combined with the primitive rate from the previous step:
 `FinalRate = ApplyCombiner(TextureCombiner, PrimitiveRate, TextureRate)`<br/>
-After that GPU executes pixel shaders on a 4x4 tile depending on a `FinalRate` value.<br/>
-Value `SHADING_RATE_1X1` means all pixel shaders in tile will be executed, value `SHADING_RATE_4X4` means that just one pixel shader per tile will be executed.
+
+After that GPU executes pixel shaders on a 4x4 tile using the `FinalRate` value.<br/>
+
+`SHADING_RATE_1X1` means that pixel shader will be executed for all pixels in the tile will be processed.
+`SHADING_RATE_4X4` means that just one pixel shader per tile will be executed. Other values define intermediate rates.
 
 
-## VRS in mobile GPU
+## VRS on mobile GPUs
 
 
 
 ## VRS in Metal API
 
-Metal has different implementation:
-1. It is named a rasterization rate, so all geometry in the tile will be rendered in different resolutions.
-2. Only texture based rate is supported.
-3. Rasterization rate is not specified by a 2D texture, but only a single row and column with float values in range 0..1.
-Format `SHADING_RATE_FORMAT_COL_ROW_FP32` is used to detect this kind of texture.
-The 2D texture will be calculated as multiplication between column and row elements. A new interface `IRasterizationRateMapMtl` is used to work with the rasterization rate map.
+Implementation of variable rate shading in Metal is very different compared to Direct3D12 and Vulkan. It requires
+special handling from the application.
+
+1. Unlike Direct3D12 and Vulkan where only pixel shader is executed at a lower rate, but rasterization is performed
+   at the full resolution (in particular, depth testing is performed at full resolution), in Metal everything is downscaled.
+   A 2x2 shading rate means that the entire tile is rasterized at 1/2x1/2 resolution, not just the pixel shader.
+2. Only texture-based shading rate is supported.
+3. Rasterization rate is not specified by a 2D texture. Instead, a special rasterization map is used that defines 
+   rasterization rates for columns and rows. A rasterization rate for the specific tile is given by the row and column
+   where it is located. Rows and columns use a single float value in the range 0..1.
+   Diligent defines a special shading rate format `SHADING_RATE_FORMAT_COL_ROW_FP32` to indicate this kind of shading rate map.
+   A new interface `IRasterizationRateMapMtl` is used to work with the rasterization rate map in Metal.
 ![](mtl_vrs.png)
-4. You can not change the rasterization rate map content, you should create a new object.
-5. A two render passes required to use variable rasterization rate.
-First pass is a rendering with a variable rasterization rate to the intermediate texture.
-Second pass - resolve intermediate texture to the full size render target.
+4. A rasterization rate map is an immutable object and can't be updated. A new object has to be created to use different rates.
+5. Rendering with VRS enabled is performed to a reduced-resolution texture.
+6. A special resolve pass is required to upscale this texture to the full resolution.
+
+The code snippet below shows how a resolve pass may be implemented in Metal:
+
 ```cpp
 fragment
 float4 PSmain(         VSOut                        in          [[stage_in]],   // vertex shader generates fullscreen triangle
@@ -97,19 +128,21 @@ float4 PSmain(         VSOut                        in          [[stage_in]],   
 ```
 
 
-## Updated Engine API
+## VRS API in Diligent Engine
 
-Variable rate shading feature must be enabled during engine initialization.
+Variable rate shading feature must be enabled during the engine initialization:
+
 ```cpp
 Attribs.EngineCI.Features.VariableRateShading = DEVICE_FEATURE_STATE_ENABLED;
 ```
 
-Graphics pipeline description was extended with a `PIPELINE_SHADING_RATE_FLAGS ShadingRateFlags` field.<br/>
-PSO which use per-draw or per-primitive rate must be created with the `PIPELINE_SHADING_RATE_FLAG_PER_PRIMITIVE` flag.<br/>
-When using texture based VRS all PSO which is used for rendering must be created with the `PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED` flag.
-Combination of `PIPELINE_SHADING_RATE_FLAG_PER_PRIMITIVE` and `PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED` is valid but hasn't additional effect.
+A graphics PSO that will be used with VRS must set the `PIPELINE_SHADING_RATE_FLAGS ShadingRateFlags` field in its description.<br/>
+PSO that uses per-draw or per-primitive rates must be created with the `PIPELINE_SHADING_RATE_FLAG_PER_PRIMITIVE` flag.<br/>
+When using a texture-based VRS, all PSOs that are used for rendering must be created with the `PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED` flag.
+Combination of `PIPELINE_SHADING_RATE_FLAG_PER_PRIMITIVE` and `PIPELINE_SHADING_RATE_FLAG_TEXTURE_BASED` is valid but has no additional effect.
 
-To begin texture based shading rate the new method `IDeviceContext::SetRenderTargetsExt()` was added, which uses attributes structure with `pShadingRateMap` field.
+To begin texture-based shading rate, `IDeviceContext::SetRenderTargetsExt()` should be called, that uses attributes structure with `pShadingRateMap` field:
+
 ```cpp
 ITextureView*           pRTVs[] = {m_pRTV};
 SetRenderTargetsAttribs RTAttrs;
@@ -121,7 +154,8 @@ m_pImmediateContext->SetRenderTargetsExt(RTAttrs);
 
 m_pImmediateContext->SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_OVERRIDE);
 ```
-New method `IDeviceContext::SetShadingRate()` is required on desktop GPUs to enable VRS, the default values is `SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_PASSTHROUGH)`.
-In other implementations VRS is always enabled when VRS texture is bound, but `SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_OVERRIDE)` can be used for compatibility.
 
-
+`IDeviceContext::SetShadingRate()` is required on desktop GPUs to enable VRS. The default values is
+`SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_PASSTHROUGH)`.
+In other implementations, VRS is always enabled when VRS texture is bound, but
+`SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_OVERRIDE)` can be used for compatibility.
