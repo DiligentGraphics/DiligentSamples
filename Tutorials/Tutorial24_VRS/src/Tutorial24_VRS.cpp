@@ -414,13 +414,11 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     const auto& MState = m_InputController.GetMouseState();
     if (m_VRSMode == VRS_MODE_TEXTURE_BASED && (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
     {
-        const auto NewMPos = FastFloor(float2{MState.PosX, MState.PosY});
-        if (m_PrevMPos != NewMPos)
-        {
-            m_PrevMPos = NewMPos;
-            const auto& SCDesc{m_pSwapChain->GetDesc()};
-            UpdateVRSPattern(MState.PosX, MState.PosY, SCDesc.Width, SCDesc.Height);
-        }
+        const auto& SCDesc  = m_pSwapChain->GetDesc();
+        const auto  NewMPos = float2{MState.PosX / SCDesc.Width, MState.PosY / SCDesc.Height};
+
+        if (std::abs(m_PrevNormMPos.x - NewMPos.x) > 0.001f || std::abs(m_PrevNormMPos.y - NewMPos.y) > 0.001f)
+            UpdateVRSPattern(NewMPos);
     }
 
     if (m_Animation)
@@ -479,8 +477,6 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     if (Width == 0 || Height == 0)
         return;
 
-    const auto  OriginW = Width;
-    const auto  OriginH = Height;
     const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
 
     // Scale surface
@@ -536,27 +532,25 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     m_pDevice->CreateTexture(TexDesc, nullptr, &pSRTex);
     m_pShadingRateMap = pSRTex->GetDefaultView(TEXTURE_VIEW_SHADING_RATE);
 
-    if (m_PrevMPos.x < 0)
-        m_PrevMPos = {OriginW * 0.5f, OriginH * 0.5f};
-
-    UpdateVRSPattern(m_PrevMPos.x, m_PrevMPos.y, Width, Height);
+    UpdateVRSPattern(m_PrevNormMPos);
 
     m_BlitSRB = nullptr;
     m_BlitPSO->CreateShaderResourceBinding(&m_BlitSRB);
     m_BlitSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(pRT->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
-void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Uint32 Height)
+void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
 {
     if (m_pShadingRateMap == nullptr)
         return;
 
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
-    auto*       pVRSTex = m_pShadingRateMap->GetTexture();
-    const auto& Desc    = pVRSTex->GetDesc();
-    const auto  MPos    = float2{MPosX / Width, MPosY / Height};
+    m_PrevNormMPos = MPos;
 
+    auto*              pVRSTex = m_pShadingRateMap->GetTexture();
+    const auto&        Desc    = pVRSTex->GetDesc();
+    const auto&        SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
     std::vector<Uint8> SRData;
+
     switch (SRProps.Format)
     {
         case SHADING_RATE_FORMAT_PALETTE:
@@ -574,7 +568,10 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
                     }
                 }
             }
-            SRData.resize(Desc.Width * Desc.Height);
+
+            const auto RowStride = AlignUp(Desc.Width, 32u);
+            SRData.resize(RowStride * Desc.Height);
+
             for (Uint32 y = 0; y < Desc.Height; ++y)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
@@ -587,21 +584,23 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
                     VERIFY_EXPR(XRate <= AXIS_SHADING_RATE_MAX);
                     VERIFY_EXPR(YRate <= AXIS_SHADING_RATE_MAX);
 
-                    SRData[x + y * Desc.Width] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
+                    SRData[x + y * RowStride] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
                 }
             }
             break;
         }
         case SHADING_RATE_FORMAT_UNORM8:
         {
-            SRData.resize(Desc.Width * Desc.Height * 2);
+            const auto RowStride = AlignUp(Desc.Width * 2, 32u);
+            SRData.resize(RowStride * Desc.Height);
+
             for (Uint32 y = 0; y < Desc.Height; ++y)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
                 {
                     auto XDist = clamp(std::abs(static_cast<float>(x) / Desc.Width - MPos.x), 0.f, 1.0f);
                     auto YDist = clamp(std::abs(static_cast<float>(y) / Desc.Height - MPos.y), 0.f, 1.0f);
-                    auto Idx   = (x + y * Desc.Width) * 2;
+                    auto Idx   = x * 2 + y * RowStride;
 
                     SRData[Idx + 0] = static_cast<Uint8>(XDist * 255.f);
                     SRData[Idx + 1] = static_cast<Uint8>(YDist * 255.f);

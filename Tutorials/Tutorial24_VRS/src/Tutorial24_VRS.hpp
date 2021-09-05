@@ -55,7 +55,7 @@ private:
     void CreateVRSPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);        // For desktop D3D12 and Vulkan and Metal
     void CreateDensityMapPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory); // For mobile Vulkan only
     void CreateBlitPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);
-    void UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Uint32 Height);
+    void UpdateVRSPattern(float2 MPos);
 
     float GetSurfaceScale() const
     {
@@ -96,7 +96,7 @@ private:
     RefCntAutoPtr<ITextureView>           m_pShadingRateMap;
     RefCntAutoPtr<ITextureView>           m_pRTV;
     RefCntAutoPtr<ITextureView>           m_pDSV;
-    float2                                m_PrevMPos{-1};
+    float2                                m_PrevNormMPos{0.5f};
     RefCntAutoPtr<IShaderResourceBinding> m_BlitSRB;
     RefCntAutoPtr<IPipelineState>         m_BlitPSO;
 

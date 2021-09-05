@@ -39,18 +39,16 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 
     m_pShadingRateMap = nullptr;
     m_pDSV            = nullptr;
-    m_PrevMPos        = float2{-1.f};
 
-    UpdateVRSPattern(Width * 0.5f, Height * 0.5f, Width, Height);
+    UpdateVRSPattern(m_PrevNormMPos);
 }
 
-void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Uint32 Height)
+void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
 {
-    if (m_PrevMPos.x == FastFloor(MPosX) && m_PrevMPos.y == FastFloor(MPosY) && m_pShadingRateMap != nullptr)
+    if (m_pShadingRateMap == nullptr)
         return;
 
-    m_PrevMPos      = FastFloor(float2{MPosX, MPosY});
-    const auto MPos = float2{MPosX / Width, MPosY / Height};
+    m_PrevNormMPos = MPos;
 
     // Scale surface
     Width  = ScaleSurface(Width);
