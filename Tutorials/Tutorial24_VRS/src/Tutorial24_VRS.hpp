@@ -1,30 +1,33 @@
 /*
  *  Copyright 2019-2021 Diligent Graphics LLC
- *  
+ * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ * 
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  In no event and under no legal theory, whether in tort (including negligence), 
- *  contract, or otherwise, unless required by applicable law (such as deliberate 
+ *  In no event and under no legal theory, whether in tort (including negligence),
+ *  contract, or otherwise, unless required by applicable law (such as deliberate
  *  and grossly negligent acts) or agreed to in writing, shall any Contributor be
- *  liable for any damages, including any direct, indirect, special, incidental, 
- *  or consequential damages of any character arising as a result of this License or 
- *  out of the use or inability to use the software (including but not limited to damages 
- *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and 
- *  all other commercial damages or losses), even if such Contributor has been advised 
+ *  liable for any damages, including any direct, indirect, special, incidental,
+ *  or consequential damages of any character arising as a result of this License or
+ *  out of the use or inability to use the software (including but not limited to damages
+ *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and
+ *  all other commercial damages or losses), even if such Contributor has been advised
  *  of the possibility of such damages.
  */
 
 #pragma once
+
+#include <utility>
+#include <vector>
 
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
@@ -49,14 +52,14 @@ public:
 private:
     void UpdateUI();
     void LoadTexture();
-    void CreateVRSPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);        // for desktop D3D12 and Vulkan and Metal
-    void CreateDensityMapPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory); // only for mobile Vulkan
+    void CreateVRSPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);        // For desktop D3D12 and Vulkan and Metal
+    void CreateDensityMapPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory); // For mobile Vulkan only
     void CreateBlitPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Uint32 Height);
 
     float GetSurfaceScale() const
     {
-        return m_SurfaceScalePOT >= 0 ? static_cast<float>(1u << m_SurfaceScalePOT) : 1.f / static_cast<float>(1u << -m_SurfaceScalePOT);
+        return m_SurfaceScaleExp2 >= 0 ? static_cast<float>(1u << m_SurfaceScaleExp2) : 1.f / static_cast<float>(1u << -m_SurfaceScaleExp2);
     }
 
     Uint32 ScaleSurface(Uint32 Dim) const
@@ -64,22 +67,21 @@ private:
         return static_cast<Uint32>(Dim * GetSurfaceScale() + 0.5f);
     }
 
-    static constexpr int        VRSModes        = 3;
-    static constexpr int        MaxShadingRates = SHADING_RATE_MAX;
-    static const TEXTURE_FORMAT ColorFormat     = TEX_FORMAT_RGBA8_UNORM;
-    static const TEXTURE_FORMAT DepthFormat     = TEX_FORMAT_D32_FLOAT;
+    static const TEXTURE_FORMAT ColorFormat = TEX_FORMAT_RGBA8_UNORM;
+    static const TEXTURE_FORMAT DepthFormat = TEX_FORMAT_D32_FLOAT;
 
     enum VRS_MODE : Uint32
     {
         VRS_MODE_PER_DRAW      = 0,
         VRS_MODE_PER_PRIMITIVE = 1,
         VRS_MODE_TEXTURE_BASED = 2,
+        VRS_MODE_COUNT
     };
 
     struct
     {
         RefCntAutoPtr<IShaderResourceBinding> SRB;
-        RefCntAutoPtr<IPipelineState>         PSO[VRSModes];
+        RefCntAutoPtr<IPipelineState>         PSO[VRS_MODE_COUNT];
     } m_VRS;
 
     // Cube resources
@@ -94,25 +96,22 @@ private:
     RefCntAutoPtr<ITextureView>           m_pShadingRateMap;
     RefCntAutoPtr<ITextureView>           m_pRTV;
     RefCntAutoPtr<ITextureView>           m_pDSV;
-    float2                                m_PrevMPos;
+    float2                                m_PrevMPos{-1};
     RefCntAutoPtr<IShaderResourceBinding> m_BlitSRB;
     RefCntAutoPtr<IPipelineState>         m_BlitPSO;
 
-    int  m_SurfaceScalePOT = 0;
-    int  m_VRSMode         = VRS_MODE_TEXTURE_BASED;
-    bool m_ShowShadingRate = true;
-    bool m_Animation       = false;
+    int  m_SurfaceScaleExp2 = 0;
+    bool m_ShowShadingRate  = true;
+    bool m_Animation        = false;
 
-    // Supported VRS modes
-    int         m_NumVRSModes            = 0;
-    const char* m_VRSModeNames[VRSModes] = {};
-    VRS_MODE    m_VRSModeList[VRSModes]  = {};
+    // Supported VRS modes ((mode, name) pairs)
+    std::vector<std::pair<VRS_MODE, const char*>> m_VRSModes;
 
-    // Supported shading rates for per draw mode
-    const char*  m_ShadingRateNames[MaxShadingRates] = {};
-    SHADING_RATE m_ShadingRates[MaxShadingRates]     = {};
-    int          m_NumShadingRates                   = 0;
-    int          m_ShadingRateIndex                  = 0;
+    // Supported shading rates for per draw mode ((rate, name) pairs)
+    std::vector<std::pair<SHADING_RATE, const char*>> m_ShadingRates;
+
+    VRS_MODE     m_VRSMode     = VRS_MODE_TEXTURE_BASED;
+    SHADING_RATE m_ShadingRate = SHADING_RATE_1X1;
 
     float    m_fCurrentTime = 0.f;
     float4x4 m_WorldViewProjMatrix;

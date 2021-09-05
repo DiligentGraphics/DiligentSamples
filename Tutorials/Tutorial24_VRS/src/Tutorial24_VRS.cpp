@@ -91,18 +91,18 @@ void Tutorial24_VRS::CreateVRSPipelineState(IShaderSourceInputStreamFactory* pSh
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
 
-    const LayoutElement LayoutElems[] = {
+    constexpr LayoutElement LayoutElems[] = {
         {0, 0, 3, VT_FLOAT32, False},
         {1, 0, 2, VT_FLOAT32, False} //
     };
     GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
     GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
-    const SamplerDesc SamLinearClampDesc{
+    constexpr SamplerDesc SamLinearClampDesc{
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
         TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP //
     };
-    const ImmutableSamplerDesc ImtblSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
+    constexpr ImmutableSamplerDesc ImtblSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
 
     PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
     PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
@@ -150,7 +150,7 @@ void Tutorial24_VRS::CreateDensityMapPipelineState(IShaderSourceInputStreamFacto
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
         ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "VRS - VS";
+        ShaderCI.Desc.Name       = "FDM - VS";
         ShaderCI.FilePath        = "CubeFDM_vs.glsl";
 
         m_pDevice->CreateShader(ShaderCI, &pVS);
@@ -160,24 +160,24 @@ void Tutorial24_VRS::CreateDensityMapPipelineState(IShaderSourceInputStreamFacto
     {
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "VRS - PS";
+        ShaderCI.Desc.Name       = "FDM - PS";
         ShaderCI.FilePath        = "CubeFDM_fs.glsl";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
 
-    const LayoutElement LayoutElems[] = {
+    constexpr LayoutElement LayoutElems[] = {
         {0, 0, 3, VT_FLOAT32, False},
         {1, 0, 2, VT_FLOAT32, False} //
     };
     GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
     GraphicsPipeline.InputLayout.NumElements    = _countof(LayoutElems);
 
-    const SamplerDesc SamLinearClampDesc{
+    constexpr SamplerDesc SamLinearClampDesc{
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
         TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP //
     };
-    const ImmutableSamplerDesc ImtblSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
+    constexpr ImmutableSamplerDesc ImtblSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
 
     PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
     PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
@@ -294,23 +294,17 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
 
     if (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_PER_DRAW)
     {
-        m_VRSModeNames[m_NumVRSModes] = "Per draw";
-        m_VRSModeList[m_NumVRSModes]  = VRS_MODE_PER_DRAW;
-        ++m_NumVRSModes;
+        m_VRSModes.emplace_back(VRS_MODE_PER_DRAW, "Per draw");
     }
 
     if (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_PER_PRIMITIVE)
     {
-        m_VRSModeNames[m_NumVRSModes] = "Per primitive";
-        m_VRSModeList[m_NumVRSModes]  = VRS_MODE_PER_PRIMITIVE;
-        ++m_NumVRSModes;
+        m_VRSModes.emplace_back(VRS_MODE_PER_PRIMITIVE, "Per primitive");
     }
 
     if (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_TEXTURE_BASED)
     {
-        m_VRSModeNames[m_NumVRSModes] = "Texture based";
-        m_VRSModeList[m_NumVRSModes]  = VRS_MODE_TEXTURE_BASED;
-        ++m_NumVRSModes;
+        m_VRSModes.emplace_back(VRS_MODE_TEXTURE_BASED, "Texture based");
     }
 
     static const char* ShadingRateNames[] =
@@ -331,10 +325,8 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
 
     for (Uint32 i = 0; i < SRProps.NumShadingRates; ++i)
     {
-        auto SR                               = SRProps.ShadingRates[i].Rate;
-        m_ShadingRateNames[m_NumShadingRates] = ShadingRateNames[SR];
-        m_ShadingRates[m_NumShadingRates]     = SR;
-        ++m_NumShadingRates;
+        auto SR = SRProps.ShadingRates[i].Rate;
+        m_ShadingRates.emplace_back(SR, ShadingRateNames[SR]);
     }
 }
 
@@ -349,14 +341,14 @@ void Tutorial24_VRS::Render()
 {
     {
         // Map the buffer and write current world-view-projection matrix
-        MapHelper<HLSL::Constants> CBConstants(m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
         CBConstants->WorldViewProj        = m_WorldViewProjMatrix.Transpose();
-        CBConstants->PrimitiveShadingRate = m_ShadingRates[m_ShadingRateIndex];
+        CBConstants->PrimitiveShadingRate = m_ShadingRate;
         CBConstants->DrawMode             = m_ShowShadingRate ? 1 : 0;
         CBConstants->SurfaceScale         = GetSurfaceScale();
     }
 
-    // Draw to scaled surface
+    // Draw to the scaled surface
     {
         ITextureView*           pRTVs[] = {m_pRTV};
         SetRenderTargetsAttribs RTAttrs;
@@ -365,11 +357,10 @@ void Tutorial24_VRS::Render()
         RTAttrs.pDepthStencil       = m_pDSV;
         RTAttrs.StateTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
-        const auto Mode = m_VRSModeList[m_VRSMode];
-        switch (Mode)
+        switch (m_VRSMode)
         {
             case VRS_MODE_PER_DRAW:
-                m_pImmediateContext->SetShadingRate(m_ShadingRates[m_ShadingRateIndex], SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_PASSTHROUGH);
+                m_pImmediateContext->SetShadingRate(m_ShadingRate, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_PASSTHROUGH);
                 break;
             case VRS_MODE_PER_PRIMITIVE:
                 m_pImmediateContext->SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_OVERRIDE, SHADING_RATE_COMBINER_PASSTHROUGH);
@@ -378,15 +369,17 @@ void Tutorial24_VRS::Render()
                 m_pImmediateContext->SetShadingRate(SHADING_RATE_1X1, SHADING_RATE_COMBINER_PASSTHROUGH, SHADING_RATE_COMBINER_OVERRIDE);
                 RTAttrs.pShadingRateMap = m_pShadingRateMap;
                 break;
+            default:
+                UNEXPECTED("Unexpected VRS mode");
         }
 
         m_pImmediateContext->SetRenderTargetsExt(RTAttrs);
 
-        const float ClearColor[] = {0.4f, 0.4f, 0.4f, 1.f};
+        constexpr float ClearColor[] = {0.4f, 0.4f, 0.4f, 1.f};
         m_pImmediateContext->ClearRenderTarget(pRTVs[0], ClearColor, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
         m_pImmediateContext->ClearDepthStencil(m_pDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-        m_pImmediateContext->SetPipelineState(m_VRS.PSO[Mode]);
+        m_pImmediateContext->SetPipelineState(m_VRS.PSO[m_VRSMode]);
         m_pImmediateContext->CommitShaderResources(m_VRS.SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         IBuffer* pBuffs[] = {m_CubeVertexBuffer};
@@ -419,10 +412,15 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     UpdateUI();
 
     const auto& MState = m_InputController.GetMouseState();
-    if (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
+    if (m_VRSMode == VRS_MODE_TEXTURE_BASED && (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
     {
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        UpdateVRSPattern(MState.PosX, MState.PosY, SCDesc.Width, SCDesc.Height);
+        const auto NewMPos = FastFloor(float2{MState.PosX, MState.PosY});
+        if (m_PrevMPos != NewMPos)
+        {
+            m_PrevMPos = NewMPos;
+            const auto& SCDesc{m_pSwapChain->GetDesc()};
+            UpdateVRSPattern(MState.PosX, MState.PosY, SCDesc.Width, SCDesc.Height);
+        }
     }
 
     if (m_Animation)
@@ -431,7 +429,7 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     // Apply rotation
     float4x4 CubeModelTransform = float4x4::RotationY(m_fCurrentTime * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);
 
-    // Camera is at (0, 0, -5) looking along the Z axis
+    // Camera is at (0, 0, -4) looking along the Z axis
     float4x4 View = float4x4::Translation(0.f, 0.0f, 4.f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
@@ -449,24 +447,24 @@ void Tutorial24_VRS::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (m_NumVRSModes > 0)
-            ImGui::Combo("VRS mode", &m_VRSMode, m_VRSModeNames, m_NumVRSModes);
+        if (!m_VRSModes.empty())
+            ImGui::Combo("VRS mode", &m_VRSMode, m_VRSModes.data(), static_cast<int>(m_VRSModes.size()));
 
-        if (m_NumShadingRates > 0 && m_VRSModeList[m_VRSMode] != VRS_MODE_TEXTURE_BASED)
-            ImGui::Combo("Default shading rate", &m_ShadingRateIndex, m_ShadingRateNames, m_NumShadingRates);
-        else
+        if (m_VRSMode == VRS_MODE_TEXTURE_BASED)
             ImGui::Text("Click at any point on the screen to change shading rate");
+        else if (!m_ShadingRates.empty())
+            ImGui::Combo("Default shading rate", &m_ShadingRate, m_ShadingRates.data(), static_cast<int>(m_ShadingRates.size()));
 
         ImGui::Checkbox("Show shading rate", &m_ShowShadingRate);
         ImGui::Checkbox("Animation", &m_Animation);
 
         const char* SurfaceScaleStr[] = {"1/4", "1/2", "1", "2", "4"};
-        const int   OldSurfaceScale   = m_SurfaceScalePOT;
+        const int   OldSurfaceScale   = m_SurfaceScaleExp2;
         ImGui::TextDisabled("Surface scale");
-        ImGui::SliderInt("##SurfaceScale", &m_SurfaceScalePOT, -2, 2, SurfaceScaleStr[m_SurfaceScalePOT + 2]);
+        ImGui::SliderInt("##SurfaceScale", &m_SurfaceScaleExp2, -2, 2, SurfaceScaleStr[m_SurfaceScaleExp2 + 2]);
 
         // Recreate render targets
-        if (OldSurfaceScale != m_SurfaceScalePOT)
+        if (OldSurfaceScale != m_SurfaceScaleExp2)
         {
             const auto& SCDesc = m_pSwapChain->GetDesc();
             WindowResize(SCDesc.Width, SCDesc.Height);
@@ -498,7 +496,6 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     m_pShadingRateMap = nullptr;
     m_pRTV            = nullptr;
     m_pDSV            = nullptr;
-    m_PrevMPos        = float2{-1.f};
 
     TextureDesc TexDesc;
     TexDesc.Name      = "Temporary render target";
@@ -539,7 +536,10 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     m_pDevice->CreateTexture(TexDesc, nullptr, &pSRTex);
     m_pShadingRateMap = pSRTex->GetDefaultView(TEXTURE_VIEW_SHADING_RATE);
 
-    UpdateVRSPattern(OriginW * 0.5f, OriginH * 0.5f, Width, Height);
+    if (m_PrevMPos.x < 0)
+        m_PrevMPos = {OriginW * 0.5f, OriginH * 0.5f};
+
+    UpdateVRSPattern(m_PrevMPos.x, m_PrevMPos.y, Width, Height);
 
     m_BlitSRB = nullptr;
     m_BlitPSO->CreateShaderResourceBinding(&m_BlitSRB);
@@ -550,11 +550,6 @@ void Tutorial24_VRS::UpdateVRSPattern(float MPosX, float MPosY, Uint32 Width, Ui
 {
     if (m_pShadingRateMap == nullptr)
         return;
-
-    if (m_PrevMPos.x == FastFloor(MPosX) && m_PrevMPos.y == FastFloor(MPosY))
-        return;
-
-    m_PrevMPos = FastFloor(float2{MPosX, MPosY});
 
     const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
     auto*       pVRSTex = m_pShadingRateMap->GetTexture();
