@@ -27,7 +27,7 @@ set(ASSETS
     assets/DGLogo.png
 )
 
-if(METAL_SUPPORTED)
+if(PLATFORM_MACOS OR PLATFORM_IOS)
     list(APPEND SOURCE
         src/Tutorial24_VRS.mm)
     list(APPEND SHADERS
@@ -35,3 +35,7 @@ if(METAL_SUPPORTED)
 endif()
 
 add_sample_app("Tutorial24_VRS" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+
+if(NOT METAL_SUPPORTED)
+    target_include_directories(Tutorial24_VRS PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentCore/Graphics/GraphicsEngineMetal/interface")
+endif()

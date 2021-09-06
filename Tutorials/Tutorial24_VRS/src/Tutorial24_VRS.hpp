@@ -90,7 +90,7 @@ private:
     RefCntAutoPtr<IBuffer>      m_Constants;
     RefCntAutoPtr<ITextureView> m_TextureSRV;
 
-#if METAL_SUPPORTED
+#if PLATFORM_MACOS || PLATFORM_IOS
     RefCntAutoPtr<IBuffer> m_pShadingRateParamBuffer;
 #endif
     RefCntAutoPtr<ITextureView>           m_pShadingRateMap;

@@ -45,14 +45,13 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 
 void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
 {
-    if (m_pShadingRateMap == nullptr)
-        return;
-
     m_PrevNormMPos = MPos;
 
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+
     // Scale surface
-    Width  = ScaleSurface(Width);
-    Height = ScaleSurface(Height);
+    auto Width  = ScaleSurface(SCDesc.Width);
+    auto Height = ScaleSurface(SCDesc.Height);
 
     RasterizationRateMapCreateInfo RasterRateMapCI;
     RasterRateMapCI.Desc.ScreenWidth  = Width;
@@ -82,7 +81,7 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
     RefCntAutoPtr<IRenderDeviceMtl>         pDeviceMtl{m_pDevice, IID_RenderDeviceMtl};
     RefCntAutoPtr<IRasterizationRateMapMtl> pRasterRateMap;
     pDeviceMtl->CreateRasterizationRateMap(RasterRateMapCI, &pRasterRateMap);
-    m_pShadingRateMap = pRasterRateMap->GetViewAdapter();
+    m_pShadingRateMap = pRasterRateMap->GetView();
 
     if (!m_pShadingRateMap)
         return;

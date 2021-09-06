@@ -471,7 +471,7 @@ void Tutorial24_VRS::UpdateUI()
     ImGui::End();
 }
 
-#if !METAL_SUPPORTED
+#if !(PLATFORM_MACOS || PLATFORM_IOS)
 void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 {
     if (Width == 0 || Height == 0)
