@@ -551,6 +551,13 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
     const auto&        SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
     std::vector<Uint8> SRData;
 
+    auto GetAxisShadingRate = [&](Uint32 TileIdx, Uint32 NumTiles, float Origin) {
+        float TilePos = (static_cast<float>(TileIdx) + 0.5f) / static_cast<float>(NumTiles);
+        float Dist    = std::abs(TilePos - Origin);
+        auto  Rate    = clamp(static_cast<Uint32>(Dist * (AXIS_SHADING_RATE_MAX + 1) + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
+        return static_cast<AXIS_SHADING_RATE>(Rate);
+    };
+
     switch (SRProps.Format)
     {
         case SHADING_RATE_FORMAT_PALETTE:
@@ -576,13 +583,8 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
                 {
-                    auto XDist = std::abs((static_cast<float>(x) + 0.5f) / Desc.Width - MPos.x) * 1.5f;
-                    auto YDist = std::abs((static_cast<float>(y) + 0.5f) / Desc.Height - MPos.y) * 1.5f;
-
-                    auto XRate = clamp(static_cast<Uint32>(XDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
-                    auto YRate = clamp(static_cast<Uint32>(YDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
-                    VERIFY_EXPR(XRate <= AXIS_SHADING_RATE_MAX);
-                    VERIFY_EXPR(YRate <= AXIS_SHADING_RATE_MAX);
+                    auto XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
+                    auto YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
 
                     SRData[x + y * RowStride] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
                 }
@@ -598,12 +600,11 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
                 {
-                    auto XDist = clamp(std::abs(static_cast<float>(x) / Desc.Width - MPos.x), 0.f, 1.0f);
-                    auto YDist = clamp(std::abs(static_cast<float>(y) / Desc.Height - MPos.y), 0.f, 1.0f);
-                    auto Idx   = x * 2 + y * RowStride;
+                    auto XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
+                    auto YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
 
-                    SRData[Idx + 0] = static_cast<Uint8>(XDist * 255.f);
-                    SRData[Idx + 1] = static_cast<Uint8>(YDist * 255.f);
+                    SRData[x * 2 + y * RowStride + 0] = 255 >> XRate;
+                    SRData[x * 2 + y * RowStride + 1] = 255 >> YRate;
                 }
             }
             break;
