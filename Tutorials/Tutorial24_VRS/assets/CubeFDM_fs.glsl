@@ -1,7 +1,7 @@
 #version 450 core
 #extension GL_EXT_fragment_invocation_density : require
 
-uniform sample2D g_Texture;
+uniform sampler2D g_Texture;
 
 layout(std140) uniform g_Constants
 {

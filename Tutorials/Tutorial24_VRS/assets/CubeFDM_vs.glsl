@@ -14,6 +14,6 @@ layout(location=0) out vec2 out_UV;
 
 void main()
 {
-	gl_Position = WorldViewProj * vec4(in_Pos, 1.0);
+	gl_Position = vec4(in_Pos, 1.0) * WorldViewProj;
     out_UV      = in_UV;
 }
