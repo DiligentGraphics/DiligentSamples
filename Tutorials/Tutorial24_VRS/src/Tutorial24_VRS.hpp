@@ -45,7 +45,7 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial24: Variable shading rate"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial24: Variable rate shading"; }
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 

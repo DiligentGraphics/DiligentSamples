@@ -2,6 +2,8 @@
 
 This tutorial demonstrates how to use variable rate shading to reduce pixel shading load.
 
+![](Animation_Large.gif)
+
 
 ## VRS on desktop GPUs
 

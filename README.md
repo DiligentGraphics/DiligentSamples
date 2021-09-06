@@ -48,6 +48,7 @@ To build and run the applications in the module, please follow the [instructions
   - [21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-21---ray-tracing)
   - [22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples#tutorial-22---hybrid-rendering)
   - [23 - Command Queues](https://github.com/DiligentGraphics/DiligentSamples#tutorial-23---command-queues)
+  - [24 - Variable Rate Shading](https://github.com/DiligentGraphics/DiligentSamples#tutorial-24---variable-rate-shading)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
@@ -243,6 +244,12 @@ This tutorial demonstrates how to use multiple command queues to perform renderi
 
 ![](Tutorials/Tutorial23_CommandQueues/Animation_Large.gif)
 
+
+## [Tutorial 24 - Variable Rate Shading](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial24_VRS)
+
+This tutorial demonstrates how to use variable rate shading to reduce the pixel shading load.
+
+![](Tutorials/Tutorial24_VRS/Animation_Large.gif)
 
 # Samples
 
