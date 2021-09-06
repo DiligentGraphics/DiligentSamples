@@ -25,6 +25,9 @@
  */
 
 #include "Tutorial24_VRS.hpp"
+
+#include <utility>
+
 #include "Align.hpp"
 #include "MapHelper.hpp"
 #include "TextureUtilities.h"
@@ -414,8 +417,36 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     const auto& MState = m_InputController.GetMouseState();
     if (m_VRSMode == VRS_MODE_TEXTURE_BASED && (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
     {
-        const auto& SCDesc  = m_pSwapChain->GetDesc();
-        const auto  NewMPos = float2{(MState.PosX + 0.5f) / SCDesc.Width, (MState.PosY + 0.5f) / SCDesc.Height};
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        const auto  Width  = SCDesc.Width;
+        const auto  Height = SCDesc.Height;
+
+        float2 NewMPos{MState.PosX, MState.PosY};
+        switch (SCDesc.PreTransform)
+        {
+            case SURFACE_TRANSFORM_IDENTITY:
+                break;
+
+            case SURFACE_TRANSFORM_ROTATE_90:
+                std::swap(NewMPos.x, NewMPos.y);
+                NewMPos.x = Width - NewMPos.x;
+                break;
+
+            case SURFACE_TRANSFORM_ROTATE_180:
+                NewMPos.x = Width - NewMPos.x;
+                NewMPos.y = Height - NewMPos.y;
+                break;
+
+            case SURFACE_TRANSFORM_ROTATE_270:
+                std::swap(NewMPos.x, NewMPos.y);
+                NewMPos.y = Height - NewMPos.y;
+                break;
+
+            default:
+                UNSUPPORTED("Unsupported surface transform");
+        }
+
+        NewMPos = (NewMPos + float2{0.5f}) / uint2{Width, Height}.Recast<float>();
 
         if (m_PrevNormMPos != NewMPos)
             UpdateVRSPattern(NewMPos);
