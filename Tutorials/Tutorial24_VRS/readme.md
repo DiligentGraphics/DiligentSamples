@@ -86,6 +86,12 @@ After that GPU executes pixel shaders on a 4x4 tile using the `FinalRate` value.
 
 ## VRS on mobile GPUs
 
+On mobile GPUs supported only texture based VRS.
+Format `SHADING_RATE_FORMAT_UNORM8` means that VRS texture must be created with `RG8_UNORM` format, where R channel is a pixel shader invocation rate on X-axis, G channel - on Y-axis.
+Value 1.0 means that all pixels will be processed by pixel shaders, value 0.5 - just a half of pixels will be processed on each axis.
+
+If capability `SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS` is supported then VRS texture content will be accessed on the GPU side, so if you update VRS texture in compute shader then engine can implicitly synchronize access to the VRS texture if automatic state transitions are used.
+But if capability is not supported then VRS texture will be accessed on the CPU side when `IDeviceContext::SetRenderTargetsExt()` or `IDeviceContext::BeginRenderPass()` are used and if VRS texture updated on the GPU side you need to explicitly synchronize access to the texture.
 
 
 ## VRS in Metal API
