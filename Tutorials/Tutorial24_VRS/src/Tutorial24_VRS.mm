@@ -65,11 +65,11 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
 
     for (size_t i = 0; i < Horizontal.size(); ++i)
     {
-        Horizontal[i] = clamp(1.f - std::abs(static_cast<float>(i) / Horizontal.size() - MPos.x) * 2.f, 0.f, 1.f);
+        Horizontal[i] = clamp(1.f - std::abs((static_cast<float>(i) + 0.5f) / Horizontal.size() - MPos.x) * 2.f, 0.125f, 1.f);
     }
     for (size_t i = 0; i < Vertical.size(); ++i)
     {
-        Vertical[i] = clamp(1.f - std::abs(static_cast<float>(i) / Vertical.size() - MPos.y) * 2.f, 0.f, 1.f);
+        Vertical[i] = clamp(1.f - std::abs((static_cast<float>(i) + 0.5f) / Vertical.size() - MPos.y) * 2.f, 0.125f, 1.f);
     }
 
     RasterizationRateLayerDesc Layer;

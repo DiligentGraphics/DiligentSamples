@@ -64,7 +64,7 @@ private:
 
     Uint32 ScaleSurface(Uint32 Dim) const
     {
-        return static_cast<Uint32>(Dim * GetSurfaceScale() + 0.5f);
+        return static_cast<Uint32>(Dim * GetSurfaceScale());
     }
 
     static const TEXTURE_FORMAT ColorFormat = TEX_FORMAT_RGBA8_UNORM;

@@ -415,9 +415,9 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
     if (m_VRSMode == VRS_MODE_TEXTURE_BASED && (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
     {
         const auto& SCDesc  = m_pSwapChain->GetDesc();
-        const auto  NewMPos = float2{MState.PosX / SCDesc.Width, MState.PosY / SCDesc.Height};
+        const auto  NewMPos = float2{(MState.PosX + 0.5f) / SCDesc.Width, (MState.PosY + 0.5f) / SCDesc.Height};
 
-        if (std::abs(m_PrevNormMPos.x - NewMPos.x) > 0.001f || std::abs(m_PrevNormMPos.y - NewMPos.y) > 0.001f)
+        if (m_PrevNormMPos != NewMPos)
             UpdateVRSPattern(NewMPos);
     }
 
@@ -576,8 +576,8 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
                 {
-                    auto XDist = std::abs(static_cast<float>(x) / Desc.Width - MPos.x) * 1.5f;
-                    auto YDist = std::abs(static_cast<float>(y) / Desc.Height - MPos.y) * 1.5f;
+                    auto XDist = std::abs((static_cast<float>(x) + 0.5f) / Desc.Width - MPos.x) * 1.5f;
+                    auto YDist = std::abs((static_cast<float>(y) + 0.5f) / Desc.Height - MPos.y) * 1.5f;
 
                     auto XRate = clamp(static_cast<Uint32>(XDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
                     auto YRate = clamp(static_cast<Uint32>(YDist * AXIS_SHADING_RATE_MAX + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
