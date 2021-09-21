@@ -123,7 +123,8 @@ special handling from the application:
 ![](mtl_vrs.png)
 4. A rasterization rate map is an immutable object and can't be updated. A new object has to be created to use different rates.
 5. Rendering with VRS enabled is performed to a reduced-resolution texture.
-6. A special resolve pass is required to upscale this texture to the full resolution.
+6. When rendering to an intermediate render target, viewport coordinates must be defined in final resolution.
+7. A special resolve pass is required to upscale this texture to the full resolution.
 
 The code snippet below shows how a resolve pass may be implemented in Metal:
 
@@ -133,12 +134,13 @@ float4 PSmain(         VSOut                        in          [[stage_in]],   
               constant rasterization_rate_map_data& g_RRMData   [[buffer(0)]],  // data copied from the rasterization rate map
                        texture2d<float>             g_Texture   [[texture(0)]]) // intermediate render target
 {
+    // Sampler with pixel coordinates to access the texture
     constexpr sampler readSampler(coord::pixel, address::clamp_to_zero, filter::nearest);
 
     rasterization_rate_map_decoder Decoder(g_RRMData);
 
-    // Convert normalized UV to intermediate render target coordinates in pixels
-    float2 uv = in.UV * float2(g_Texture.get_width(), g_Texture.get_height());
+    // Use screen coordinates in pixels
+    float2 uv = in.Pos.xy;
 
     // Convert from linear to non-linear coordinates
     float2 ScreenPos = Decoder.map_screen_to_physical_coordinates(uv);
