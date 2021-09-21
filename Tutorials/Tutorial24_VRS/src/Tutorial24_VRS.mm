@@ -37,9 +37,6 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     if (Width == 0 || Height == 0)
         return;
 
-    m_pShadingRateMap = nullptr;
-    m_pDSV            = nullptr;
-
     UpdateVRSPattern(m_PrevNormMPos);
 }
 
