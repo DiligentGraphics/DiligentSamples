@@ -722,7 +722,7 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
     m_pResMapping->AddResourceArray("g_tex2DTileDiffuse", 0, ptex2DTileDiffuseSRV, NUM_TILE_TEXTURES, true);
     m_pResMapping->AddResourceArray("g_tex2DTileNM", 0, ptex2DTileNMSRV, NUM_TILE_TEXTURES, true);
 
-    m_pDevice->CreateSampler(Sam_ComparsionLinearClamp, &m_pComparisonSampler);
+    m_pDevice->CreateSampler(Sam_ComparisonLinearClamp, &m_pComparisonSampler);
 
     RenderNormalMap(pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap);
 

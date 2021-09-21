@@ -183,7 +183,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
         CubeMesh.FirstVertex = 0;
         CubeMesh.FirstIndex  = 0;
         // Plane mesh data will reside after the cube. Offsets must be properly aligned!
-        PlaneMesh.FirstVertex = AlignUp(CubeMesh.NumVertices * Uint32{sizeof(HLSL::Vertex)}, RTProps.VertexBufferAlignmnent) / sizeof(HLSL::Vertex);
+        PlaneMesh.FirstVertex = AlignUp(CubeMesh.NumVertices * Uint32{sizeof(HLSL::Vertex)}, RTProps.VertexBufferAlignment) / sizeof(HLSL::Vertex);
         PlaneMesh.FirstIndex  = AlignUp(CubeMesh.NumIndices * Uint32{sizeof(uint)}, RTProps.IndexBufferAlignment) / sizeof(uint);
 
         // Merge vertex buffers
