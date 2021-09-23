@@ -10,7 +10,7 @@ jobs:
         config: [Debug, Release]
 
     runs-on: windows-latest
-    name: Windows 10, ${{ matrix.config }} ${{ matrix.toolset }}
+    name: Win10 -> ${{ matrix.toolset }}, ${{ matrix.config }}
 
     steps:
     - name: Clone DiligentSamples
@@ -25,27 +25,20 @@ jobs:
         repository: 'DiligentGraphics/DiligentFX'
         path:       DiligentFX
         submodules: recursive
-        
+
     - name: Clone DiligentTools
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentTools'
         path:       DiligentTools
         submodules: recursive
-        
+
     - name: Clone DiligentCore
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentCore'
         path:       DiligentCore
         submodules: recursive
-
-    - name: Format validation
-      working-directory: DiligentSamples
-      shell: cmd
-      run: |
-        cd BuildTools\FormatValidation
-        validate_format_win.bat
 
     - name: Configure CMake
       if: success()
@@ -54,7 +47,7 @@ jobs:
         cd $GITHUB_WORKSPACE/DiligentSamples/BuildTools/Scripts/github_actions
         ./create_cmake.sh "$GITHUB_WORKSPACE"
         cd $GITHUB_WORKSPACE/DiligentCore/BuildTools/Scripts/github_actions
-        ./configure_cmake.sh "win10" "${{runner.workspace}}" ${{ matrix.config }} ${{ matrix.toolset }}
+        ./configure_cmake.sh "win" "${{runner.workspace}}" ${{ matrix.toolset }} ${{ matrix.config }}
 
     - name: Build
       if: success()
@@ -70,7 +63,7 @@ jobs:
         config: [RelWithDebInfo]
 
     runs-on: windows-latest
-    name: Windows 10, ${{ matrix.config }}-DEV ${{ matrix.toolset }}
+    name: Win10 -> ${{ matrix.toolset }}, ${{ matrix.config }}, DEVELOPMENT
 
     steps:
     - name: Clone DiligentSamples
@@ -85,27 +78,20 @@ jobs:
         repository: 'DiligentGraphics/DiligentFX'
         path:       DiligentFX
         submodules: recursive
-        
+
     - name: Clone DiligentTools
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentTools'
         path:       DiligentTools
         submodules: recursive
-        
+
     - name: Clone DiligentCore
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentCore'
         path:       DiligentCore
         submodules: recursive
-
-    - name: Format validation
-      working-directory: DiligentSamples
-      shell: cmd
-      run: |
-        cd BuildTools\FormatValidation
-        validate_format_win.bat
 
     - name: Configure CMake
       if: success()
@@ -114,7 +100,7 @@ jobs:
         cd $GITHUB_WORKSPACE/DiligentSamples/BuildTools/Scripts/github_actions
         ./create_cmake.sh "$GITHUB_WORKSPACE"
         cd $GITHUB_WORKSPACE/DiligentCore/BuildTools/Scripts/github_actions
-        ./configure_cmake.sh "win10-dev" "${{runner.workspace}}" ${{ matrix.config }} ${{ matrix.toolset }}
+        ./configure_cmake.sh "win" "${{runner.workspace}}" ${{ matrix.toolset }} ${{ matrix.config }} "-DDILIGENT_DEVELOPMENT=ON"
 
     - name: Build
       if: success()
@@ -130,7 +116,7 @@ jobs:
         config: [Debug, Release]
 
     runs-on: windows-latest
-    name: Windows 8.1, ${{ matrix.config }} ${{ matrix.toolset }}
+    name: Win10 -> Win8.1-${{ matrix.toolset }}, ${{ matrix.config }}
 
     steps:
     - name: Clone DiligentSamples
@@ -145,27 +131,20 @@ jobs:
         repository: 'DiligentGraphics/DiligentFX'
         path:       DiligentFX
         submodules: recursive
-        
+
     - name: Clone DiligentTools
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentTools'
         path:       DiligentTools
         submodules: recursive
-        
+
     - name: Clone DiligentCore
       uses: actions/checkout@v2
       with:
         repository: 'DiligentGraphics/DiligentCore'
         path:       DiligentCore
         submodules: recursive
-
-    - name: Format validation
-      working-directory: DiligentSamples
-      shell: cmd
-      run: |
-        cd BuildTools\FormatValidation
-        validate_format_win.bat
 
     - name: Configure CMake
       if: success()
@@ -174,7 +153,7 @@ jobs:
         cd $GITHUB_WORKSPACE/DiligentSamples/BuildTools/Scripts/github_actions
         ./create_cmake.sh "$GITHUB_WORKSPACE"
         cd $GITHUB_WORKSPACE/DiligentCore/BuildTools/Scripts/github_actions
-        ./configure_cmake.sh "win8" "${{runner.workspace}}" ${{ matrix.config }} ${{ matrix.toolset }}
+        ./configure_cmake.sh "win" "${{runner.workspace}}" ${{ matrix.toolset }} ${{ matrix.config }} "-DCMAKE_SYSTEM_VERSION=8.1"
 
     - name: Build
       if: success()
