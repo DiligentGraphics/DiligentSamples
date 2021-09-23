@@ -99,11 +99,13 @@ On mobile GPUs, only texture-based VRS is supported.
 The value of 1.0 means that pixel shader will be executed for all pixels (`AXIS_SHADING_RATE_1X` counterpart), 
 the value of 0.5 specifies that pixel shaders will be executed for every other pixel along the axis (`AXIS_SHADING_RATE_2X` counterpart) and so on.
 
-If `SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS` capability is enabled, the VRS texture content will be accessed on the GPU side.
+If `SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS` capability is present, the VRS texture content will be accessed on the GPU side.
 If you update VRS texture in a compute shader, the engine can implicitly synchronize access to the VRS texture if automatic state transitions are used.
-If the capability is not enabled, VRS texture is accessed on the CPU side when `IDeviceContext::SetRenderTargetsExt()` or
+If the capability is not present, VRS texture is accessed on the CPU side when `IDeviceContext::SetRenderTargetsExt()` or
 `IDeviceContext::BeginRenderPass()` are called, and if VRS texture is updated on the GPU side, you need to explicitly synchronize access to the texture
-using fences.
+using fences and add double/tripple buffering to avoid stalls.
+
+Some GPUs will smooth out transitions between different shading rates, capability SHADING_RATE_CAP_FLAG_ADDITIONAL_INVOCATIONS indicates that.
 
 
 ## VRS in Metal API
@@ -111,20 +113,19 @@ using fences.
 Implementation of variable rate shading in Metal is very different compared to Direct3D12 and Vulkan, and requires
 special handling from the application:
 
-1. Unlike Direct3D12 and Vulkan where only pixel shader is executed at a lower rate, but rasterization is performed
+* Unlike Direct3D12 and Vulkan where only pixel shader is executed at a lower rate, but rasterization is performed
    at the full resolution (in particular, depth testing is performed at full resolution), in Metal everything is downscaled.
    A 2x2 shading rate means that the entire tile is rasterized at 1/2x1/2 resolution, not just the pixel shader.
-2. Only texture-based shading rate is supported.
-3. Rasterization rate is not specified by a 2D texture. Instead, a special rasterization map is used that defines 
+* Only texture-based shading rate is supported.
+* Rasterization rate is not specified by a 2D texture. Instead, a special rasterization map is used that defines 
    rasterization rates for columns and rows. A rasterization rate for the specific tile is given by the row and column
    where it is located. Rows and columns use a single float value in the range 0..1.
    Diligent defines a special shading rate format `SHADING_RATE_FORMAT_COL_ROW_FP32` to indicate this kind of shading rate map.
    A `IRasterizationRateMapMtl` interface is used to work with the rasterization rate map in Metal.
 ![](mtl_vrs.png)
-4. A rasterization rate map is an immutable object and can't be updated. A new object has to be created to use different rates.
-5. Rendering with VRS enabled is performed to a reduced-resolution texture.
-6. When rendering to an intermediate render target, viewport coordinates must be defined in final resolution.
-7. A special resolve pass is required to upscale this texture to the full resolution.
+* A rasterization rate map is an immutable object and can't be updated. A new object has to be created to use different rates.
+* Rendering with VRS enabled is performed to a reduced-resolution texture, but viewport coordinates must be defined in final resolution.
+* A special resolve pass is required to upscale this texture to the full resolution.
 
 The code snippet below shows how a resolve pass may be implemented in Metal:
 

@@ -15,7 +15,7 @@ layout(location=0) out vec4 out_Color;
 
 vec4 FragmentDensityToColor()
 {
-    float h   = (clamp(1.0 / float(gl_FragSizeEXT.x * gl_FragSizeEXT.y), 0.0, 1.0)) / 1.35;
+    float h   = (clamp(1.0 - 1.0 / float(gl_FragSizeEXT.x * gl_FragSizeEXT.y), 0.0, 1.0)) / 1.35;
     vec3  col = vec3(abs(h * 6.0 - 3.0) - 1.0, 2.0 - abs(h * 6.0 - 2.0), 2.0 - abs(h * 6.0 - 4.0));
     return vec4(clamp(col, vec3(0.0), vec3(1.0)), 1.0);
 }

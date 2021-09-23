@@ -267,11 +267,12 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-#if PLATFORM_ANDROID
-    CreateDensityMapPipelineState(pShaderSourceFactory);
-#else
-    CreateVRSPipelineState(pShaderSourceFactory);
-#endif
+    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    if (SRProps.Format == SHADING_RATE_FORMAT_UNORM8)
+        CreateDensityMapPipelineState(pShaderSourceFactory);
+    else
+        CreateVRSPipelineState(pShaderSourceFactory);
+
     CreateBlitPipelineState(pShaderSourceFactory);
 
     {
@@ -292,8 +293,6 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     LoadTexture();
-
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
 
     if (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_PER_DRAW)
     {
@@ -651,6 +650,15 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
     SubResData.Stride = static_cast<Uint32>(SRData.size() / Desc.Height);
 
     m_pImmediateContext->UpdateTexture(pVRSTex, 0, 0, TexBox, SubResData, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // If SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS capability is not present,
+    // access to the texture happens on the CPU side during SetRenderTargetsExt() call,
+    // so we need to wait until texture is updated, otherwise it may cause a crash.
+    if ((SRProps.CapFlags & SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS) == 0)
+    {
+        m_pImmediateContext->Flush();
+        m_pImmediateContext->WaitForIdle();
+    }
 }
 #endif
 

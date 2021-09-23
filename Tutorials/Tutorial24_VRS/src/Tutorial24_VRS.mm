@@ -78,12 +78,13 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
     RefCntAutoPtr<IRenderDeviceMtl>         pDeviceMtl{m_pDevice, IID_RenderDeviceMtl};
     RefCntAutoPtr<IRasterizationRateMapMtl> pRasterRateMap;
     pDeviceMtl->CreateRasterizationRateMap(RasterRateMapCI, &pRasterRateMap);
-    m_pShadingRateMap = pRasterRateMap->GetView();
-
-    if (!m_pShadingRateMap)
+    if (!pRasterRateMap)
         return;
 
-    Uint32 BufferSize, BufferAlign;
+    m_pShadingRateMap = pRasterRateMap->GetView();
+
+    Uint64 BufferSize  = 0;
+    Uint32 BufferAlign = 0;
     pRasterRateMap->GetParameterBufferSizeAndAlign(BufferSize, BufferAlign);
 
     if (m_pShadingRateParamBuffer == nullptr ||
