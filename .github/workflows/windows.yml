@@ -112,8 +112,8 @@ jobs:
   build-win8:
     strategy:
       matrix:
-        toolset: [Win32, x64]
-        config: [Debug, Release]
+        toolset: [x64]
+        config: [Debug]
 
     runs-on: windows-latest
     name: Win10 -> Win8.1-${{ matrix.toolset }}, ${{ matrix.config }}
