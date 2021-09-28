@@ -113,6 +113,25 @@ elseif(PLATFORM_TVOS)
         include/SampleApp.hpp
     )
 
+elseif(PLATFORM_EMSCRIPTEN)
+    set(SOURCE
+        src/Emscripten/InputControllerEmscripten.cpp
+        src/Emscripten/SampleAppEmscripten.cpp
+        src/SampleApp.cpp
+    )
+    set(INCLUDE
+        include/Emscripten/InputControllerEmscripten.hpp
+        include/SampleApp.hpp
+    )
+
+    function(append_sample_base_emscripten_source TARGET_NAME)     
+        get_target_property(SAMPLE_BASE_SOURCE_DIR Diligent-SampleBase SOURCE_DIR)
+        set(HTML_TEMPLATE_FILE 
+            ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/emscripten_template.html
+        )          
+        target_link_options(${TARGET_NAME} PRIVATE "SHELL: --shell-file '${HTML_TEMPLATE_FILE}'")   
+    endfunction()
+    
 else()
     message(FATAL_ERROR "Unknown platform")
 endif()

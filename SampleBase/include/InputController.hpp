@@ -154,6 +154,12 @@ protected:
     {
         using InputController = InputControllerAndroid;
     }
+#elif PLATFORM_EMSCRIPTEN
+    #include "Emscripten/InputControllerEmscripten.hpp"
+    namespace Diligent
+    {
+        using InputController = InputControllerEmscripten;
+    }
 #else
     namespace Diligent
     {
