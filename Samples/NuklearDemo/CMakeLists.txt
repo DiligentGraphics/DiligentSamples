@@ -31,3 +31,12 @@ if(MSVC)
     )
 endif()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if(PLATFORM_EMSCRIPTEN)
+        set_property(SOURCE
+            src/NkDiligent.cpp
+        APPEND_STRING PROPERTY
+            COMPILE_FLAGS " -Wno-unused-but-set-variable"
+        )
+    endif()
+endif()

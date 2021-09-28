@@ -1,6 +1,9 @@
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     cmake_minimum_required (VERSION 3.13)
     option(DILIGENT_INSTALL_SAMPLES "Enable installation of samples and tutorials" ON)
+elseif(PLATFORM_EMSCRIPTEN)
+    cmake_minimum_required (VERSION 3.13)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
 else()
     cmake_minimum_required (VERSION 3.6)
     set(DILIGENT_INSTALL_SAMPLES OFF)
@@ -76,6 +79,12 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
         set_target_properties(${APP_NAME} PROPERTIES
             BUILD_RPATH "${VULKAN_LIB_PATH}"
         )
+    endif()
+
+    if(PLATFORM_EMSCRIPTEN)
+        set(RESOURCE_PATH "${PROJECT_SOURCE_DIR}/assets/")
+        target_link_options(${APP_NAME} PRIVATE "SHELL: -s SINGLE_FILE -s ALLOW_MEMORY_GROWTH=1 --preload-file '${RESOURCE_PATH}@'")
+        append_sample_base_emscripten_source(${APP_NAME})
     endif()
 
     if(DILIGENT_INSTALL_SAMPLES)
