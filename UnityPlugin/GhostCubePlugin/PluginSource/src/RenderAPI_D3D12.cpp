@@ -102,6 +102,12 @@ public:
         UNSUPPORTED("Waiting for fence via unity command graphics is not supported");
     }
 
+    virtual void DILIGENT_CALL_TYPE UpdateTileMappings(ResourceTileMappingsD3D12* pMappings,
+                                                       Uint32                     Count) override final
+    {
+        UNSUPPORTED("Updating tile mappings via unity command graphics is not supported");
+    }
+
     virtual const D3D12_COMMAND_QUEUE_DESC& DILIGENT_CALL_TYPE GetD3D12CommandQueueDesc() const override final
     {
         static constexpr D3D12_COMMAND_QUEUE_DESC DefaultQueueDesc{};
