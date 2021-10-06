@@ -109,9 +109,9 @@ void Tutorial17_MSAA::Initialize(const SampleInitInfo& InitInfo)
     const auto& ColorFmtInfo = m_pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
     const auto& DepthFmtInfo = m_pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
     m_SupportedSampleCounts  = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
-    if (m_SupportedSampleCounts & 0x04)
+    if (m_SupportedSampleCounts & SAMPLE_COUNT_4)
         m_SampleCount = 4;
-    else if (m_SupportedSampleCounts & 0x02)
+    else if (m_SupportedSampleCounts & SAMPLE_COUNT_2)
         m_SampleCount = 2;
     else
     {
