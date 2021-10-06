@@ -1,4 +1,5 @@
-Texture2D g_Texture;
+Texture2D    g_Texture;
+SamplerState g_Texture_sampler; // By convention, texture samplers must use the '_sampler' suffix
 
 struct PSInput 
 { 
@@ -14,11 +15,5 @@ struct PSOutput
 void PSmain(in  PSInput  PSIn,
             out PSOutput PSOut)
 {
-    float2 Dim;
-    g_Texture.GetDimensions(Dim.x, Dim.y);
-
-    float2 ScreenUV = float2(PSIn.UV.x, 1.0 - PSIn.UV.y);
-    int3   TexelPos = int3(ScreenUV * Dim, 0);
-
-    PSOut.Color = g_Texture.Load(TexelPos); 
+    PSOut.Color = g_Texture.Sample(g_Texture_sampler, PSIn.UV); 
 }

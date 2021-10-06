@@ -244,6 +244,23 @@ void Tutorial24_VRS::CreateBlitPipelineState(IShaderSourceInputStreamFactory* pS
     PSOCreateInfo.pVS = pVS;
     PSOCreateInfo.pPS = pPS;
 
+    SamplerDesc SamLinearClampDesc{
+        FILTER_TYPE_POINT, FILTER_TYPE_POINT, FILTER_TYPE_POINT,
+        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP //
+    };
+
+    // Only immutable sampler can be used to sample subsampled texture.
+    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    if ((SRProps.CapFlags & SHADING_RATE_CAP_FLAG_SUBSAMPLED_RENDER_TARGET) != 0)
+    {
+        SamLinearClampDesc.Flags  = SAMPLER_FLAG_SUBSAMPLED;
+        SamLinearClampDesc.MinLOD = SamLinearClampDesc.MaxLOD = 0.0f;
+    }
+    const ImmutableSamplerDesc ImtblSamplers[] = {{SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}};
+
+    PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_BlitPSO);
 }
 
@@ -509,15 +526,14 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 
     const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
 
-    // Scale surface
-    Width  = AlignUp(ScaleSurface(Width), SRProps.MaxTileSize[0]);
-    Height = AlignUp(ScaleSurface(Height), SRProps.MaxTileSize[1]);
-
     // Check if the image needs to be recreated.
     if (m_pRTV != nullptr &&
         m_pRTV->GetTexture()->GetDesc().Width == Width &&
         m_pRTV->GetTexture()->GetDesc().Height == Height)
         return;
+
+    // Use subsampled render targets, if they are supported, as this may be more optimal.
+    const bool CreateSubsampled = (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_SUBSAMPLED_RENDER_TARGET) != 0;
 
     m_pShadingRateMap = nullptr;
     m_pRTV            = nullptr;
@@ -530,6 +546,7 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     TexDesc.Height    = Height;
     TexDesc.Format    = ColorFormat;
     TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+    TexDesc.MiscFlags = CreateSubsampled ? MISC_TEXTURE_FLAG_SUBSAMPLED : MISC_TEXTURE_FLAG_NONE;
 
     RefCntAutoPtr<ITexture> pRT;
     m_pDevice->CreateTexture(TexDesc, nullptr, &pRT);
@@ -547,9 +564,10 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 
     TexDesc.Name      = "Shading rate texture";
     TexDesc.Type      = RESOURCE_DIM_TEX_2D;
-    TexDesc.Width     = Width / SRProps.MaxTileSize[0];
-    TexDesc.Height    = Height / SRProps.MaxTileSize[1];
+    TexDesc.Width     = (Width + SRProps.MinTileSize[0] - 1) / SRProps.MinTileSize[0];
+    TexDesc.Height    = (Height + SRProps.MinTileSize[1] - 1) / SRProps.MinTileSize[1];
     TexDesc.BindFlags = BIND_SHADING_RATE;
+    TexDesc.MiscFlags = MISC_TEXTURE_FLAG_NONE;
 
     switch (SRProps.Format)
     {
@@ -649,12 +667,20 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
     SubResData.pData  = SRData.data();
     SubResData.Stride = static_cast<Uint32>(SRData.size() / Desc.Height);
 
+    // If shading rate access type is not ON_GPU, access to the texture happens on the CPU
+    // side during SetRenderTargetsExt() or Flush() call, so we have to wait until the texture
+    // is updated.
+    const bool GPUtoCPUSyncRequired = (SRProps.ShadingRateTextureAccess != SHADING_RATE_TEXTURE_ACCESS_ON_GPU);
+
+    if (GPUtoCPUSyncRequired)
+    {
+        m_pImmediateContext->Flush();
+        m_pImmediateContext->WaitForIdle();
+    }
+
     m_pImmediateContext->UpdateTexture(pVRSTex, 0, 0, TexBox, SubResData, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    // If SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS capability is not present,
-    // access to the texture happens on the CPU side during SetRenderTargetsExt() call,
-    // so we need to wait until texture is updated, otherwise it may cause a crash.
-    if ((SRProps.CapFlags & SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS) == 0)
+    if (GPUtoCPUSyncRequired)
     {
         m_pImmediateContext->Flush();
         m_pImmediateContext->WaitForIdle();
