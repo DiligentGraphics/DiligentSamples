@@ -761,19 +761,9 @@ void Buildings::CreatePSO(const ScenePSOCreateAttribs& Attr)
     m_DrawOpaqueSRB->GetVariableByName(SHADER_TYPE_PIXEL, "DrawConstantsCB")->Set(m_DrawConstants);
 }
 
-void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
+void Buildings::Draw(IDeviceContext* pContext)
 {
     pContext->BeginDebugGroup("Draw buildings");
-
-    {
-        const float Center = -m_DistributionGridSize * m_DistributionScale * 0.5f;
-
-        MapHelper<HLSL::DrawConstants> ConstData(pContext, m_DrawConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        ConstData->ModelViewProj = (float4x4::Translation(Center, 0.f, Center) * Attr.ViewProj).Transpose();
-        ConstData->NormalMat     = float4x4::Identity();
-        ConstData->LightDir      = Attr.LightDir;
-        ConstData->AmbientLight  = Attr.AmbientLight;
-    }
 
     pContext->SetPipelineState(m_DrawOpaquePSO);
 
@@ -795,13 +785,27 @@ void Buildings::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
     pContext->EndDebugGroup(); // Draw buildings
 }
 
-void Buildings::BeforeDraw(IDeviceContext* pContext)
+void Buildings::BeforeDraw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 {
+    // Update constants
+    {
+        const float Center = -m_DistributionGridSize * m_DistributionScale * 0.5f;
+
+        MapHelper<HLSL::DrawConstants> ConstData(pContext, m_DrawConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        ConstData->ModelViewProj = (float4x4::Translation(Center, 0.f, Center) * Attr.ViewProj).Transpose();
+        ConstData->NormalMat     = float4x4::Identity();
+        ConstData->LightDir      = Attr.LightDir;
+        ConstData->AmbientLight  = Attr.AmbientLight;
+    }
+
     // Resources must be manually transitioned to required state.
     // Vulkan:     correct pipeline barrier must contain pixel shader stages, which are not supported in transfer context.
     // DirectX 12: the texture is used as a pixel shader resource and must be transitioned in graphics context.
-    const StateTransitionDesc Barrier{m_OpaqueTexAtlas, m_OpaqueTexAtlasDefaultState, RESOURCE_STATE_SHADER_RESOURCE};
-    pContext->TransitionResourceStates(1, &Barrier);
+    const StateTransitionDesc Barriers[] = {
+        {m_OpaqueTexAtlas, m_OpaqueTexAtlasDefaultState, RESOURCE_STATE_SHADER_RESOURCE},
+        {m_DrawConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE} //
+    };
+    pContext->TransitionResourceStates(_countof(Barriers), Barriers);
 }
 
 void Buildings::AfterDraw(IDeviceContext* pContext)

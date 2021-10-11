@@ -524,10 +524,15 @@ void Tutorial23_CommandQueues::UploadPass()
 
 void Tutorial23_CommandQueues::GraphicsPass1()
 {
+    SceneDrawAttribs Attribs;
+    Attribs.ViewProj     = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
+    Attribs.LightDir     = -m_LightDir;
+    Attribs.AmbientLight = m_AmbientLight;
+
     // Make all resource transitions before and after drawing.
     // Transitions and copy operations will break render pass which is slow in tile-based renderer.
-    m_Terrain.BeforeDraw(m_pImmediateContext);
-    m_Buildings.BeforeDraw(m_pImmediateContext);
+    m_Terrain.BeforeDraw(m_pImmediateContext, Attribs);
+    m_Buildings.BeforeDraw(m_pImmediateContext, Attribs);
 
     {
         const float DebugColor[] = {1.f, 0.f, 0.f, 1.f};
@@ -544,13 +549,9 @@ void Tutorial23_CommandQueues::GraphicsPass1()
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-        SceneDrawAttribs Attribs;
-        Attribs.ViewProj     = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
-        Attribs.LightDir     = -m_LightDir;
-        Attribs.AmbientLight = m_AmbientLight;
 
-        m_Terrain.Draw(m_pImmediateContext, Attribs);
-        m_Buildings.Draw(m_pImmediateContext, Attribs);
+        m_Terrain.Draw(m_pImmediateContext);
+        m_Buildings.Draw(m_pImmediateContext);
 
         m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
 

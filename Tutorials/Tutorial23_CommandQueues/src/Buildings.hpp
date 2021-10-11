@@ -48,8 +48,8 @@ public:
     void CreateResources(IDeviceContext* pContext);
     void CreatePSO(const ScenePSOCreateAttribs& Attr);
 
-    void BeforeDraw(IDeviceContext* pContext);
-    void Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr);
+    void BeforeDraw(IDeviceContext* pContext, const SceneDrawAttribs& Attr);
+    void Draw(IDeviceContext* pContext);
     void AfterDraw(IDeviceContext* pContext);
 
     void UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRateMb, Uint32& ActualTransferRateMb);

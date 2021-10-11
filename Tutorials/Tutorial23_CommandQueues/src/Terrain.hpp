@@ -57,8 +57,8 @@ public:
 
     void Update(IDeviceContext* pContext);
 
-    void BeforeDraw(IDeviceContext* pContext);
-    void Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr);
+    void BeforeDraw(IDeviceContext* pContext, const SceneDrawAttribs& Attr);
+    void Draw(IDeviceContext* pContext);
     void AfterDraw(IDeviceContext* pContext);
 
     void Recreate(IDeviceContext* pContext);

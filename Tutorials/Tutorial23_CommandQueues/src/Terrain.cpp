@@ -113,8 +113,8 @@ void Terrain::CreateResources(IDeviceContext* pContext)
 
         // Buffers are used in multiple contexts, but after this transition resources state will never changes.
         const StateTransitionDesc Barriers[] = {
-            {m_VB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-            {m_IB, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE} //
+            {m_VB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {m_IB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE} //
         };
         pContext->TransitionResourceStates(_countof(Barriers), Barriers);
     }
@@ -160,7 +160,7 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         RefCntAutoPtr<ITexture> Tex;
         CreateTextureFromFile("Sand.jpg", loadInfo, m_Device, &m_DiffuseMap);
 
-        const StateTransitionDesc Barrier = {m_DiffuseMap, RESOURCE_STATE_COPY_DEST, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
+        const StateTransitionDesc Barrier = {m_DiffuseMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
         pContext->TransitionResourceStates(1, &Barrier);
     }
 
@@ -360,19 +360,9 @@ void Terrain::Update(IDeviceContext* pContext)
     pContext->EndDebugGroup(); // Update terrain
 }
 
-void Terrain::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
+void Terrain::Draw(IDeviceContext* pContext)
 {
     pContext->BeginDebugGroup("Draw terrain");
-
-    {
-        const float Center = -m_XZScale * 0.5f;
-
-        MapHelper<HLSL::DrawConstants> ConstData(pContext, m_DrawConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        ConstData->ModelViewProj = (float4x4::Translation(Center, 0.f, Center) * Attr.ViewProj).Transpose();
-        ConstData->NormalMat     = float4x4::Identity();
-        ConstData->LightDir      = Attr.LightDir;
-        ConstData->AmbientLight  = Attr.AmbientLight;
-    }
 
     pContext->SetPipelineState(m_DrawPSO);
 
@@ -395,7 +385,7 @@ void Terrain::Draw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
     pContext->EndDebugGroup(); // Draw terrain
 }
 
-void Terrain::BeforeDraw(IDeviceContext* pContext)
+void Terrain::BeforeDraw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
 {
     // Update constants
     {
@@ -408,6 +398,15 @@ void Terrain::BeforeDraw(IDeviceContext* pContext)
 
         pContext->UpdateBuffer(m_TerrainConstants[1], 0, sizeof(ConstData), &ConstData, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
+    {
+        const float Center = -m_XZScale * 0.5f;
+
+        MapHelper<HLSL::DrawConstants> ConstData(pContext, m_DrawConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+        ConstData->ModelViewProj = (float4x4::Translation(Center, 0.f, Center) * Attr.ViewProj).Transpose();
+        ConstData->NormalMat     = float4x4::Identity();
+        ConstData->LightDir      = Attr.LightDir;
+        ConstData->AmbientLight  = Attr.AmbientLight;
+    }
 
     // Resources must be manually transitioned to required state.
     // Vulkan:     the correct pipeline barrier must contains vertex and pixel shader stages which is not supported in compute context.
@@ -417,7 +416,8 @@ void Terrain::BeforeDraw(IDeviceContext* pContext)
     const StateTransitionDesc Barriers[] = {
         {m_HeightMap[Id], RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE},
         {m_NormalMap[Id], RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE},
-        {m_TerrainConstants[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE} //
+        {m_TerrainConstants[1], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        {m_DrawConstants, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE} //
     };
     pContext->TransitionResourceStates(_countof(Barriers), Barriers);
 }
