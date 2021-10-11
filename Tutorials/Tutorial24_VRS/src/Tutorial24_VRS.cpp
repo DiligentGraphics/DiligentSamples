@@ -524,13 +524,17 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
     if (Width == 0 || Height == 0)
         return;
 
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    // Scale surface
+    Width  = ScaleSurface(Width);
+    Height = ScaleSurface(Height);
 
     // Check if the image needs to be recreated.
     if (m_pRTV != nullptr &&
         m_pRTV->GetTexture()->GetDesc().Width == Width &&
         m_pRTV->GetTexture()->GetDesc().Height == Height)
         return;
+
+    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
 
     // Use subsampled render targets, if they are supported, as this may be more optimal.
     const bool CreateSubsampled = (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_SUBSAMPLED_RENDER_TARGET) != 0;
