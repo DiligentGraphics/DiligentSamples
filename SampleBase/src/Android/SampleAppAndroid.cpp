@@ -40,7 +40,11 @@ class SampleAppAndroid final : public SampleApp
 public:
     SampleAppAndroid()
     {
+#if VULKAN_SUPPORTED
         m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
+#else
+        m_DeviceType = RENDER_DEVICE_TYPE_GLES;
+#endif
     }
 
     virtual void DrawFrame() override final
