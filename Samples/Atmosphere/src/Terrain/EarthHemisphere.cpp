@@ -537,7 +537,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
         pFinerMipLevel              = pCurrMipLevel;
         FinerMipPitch               = CurrMipPitch;
         pCurrMipLevel += MipHeight * CurrMipPitch;
-        CurrMipPitch = iHeightMapDim / 2;
+        CurrMipPitch = FinerMipPitch / 2;
     }
 
     RefCntAutoPtr<ITexture> ptex2DHeightMap;
