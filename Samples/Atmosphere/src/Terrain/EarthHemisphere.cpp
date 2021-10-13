@@ -492,7 +492,7 @@ void GenerateSphereGeometry(IRenderDevice*                 pDevice,
 void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
                                       IDeviceContext* pContext,
                                       const Uint16*   pHeightMap,
-                                      size_t          HeightMapPitch,
+                                      size_t          HeightMapStride,
                                       int             iHeightMapDim,
                                       ITexture*       ptex2DNormalMap)
 {
@@ -506,38 +506,46 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     HeightMapDesc.BindFlags = BIND_SHADER_RESOURCE;
     HeightMapDesc.MipLevels = ComputeMipLevelsCount(HeightMapDesc.Width, HeightMapDesc.Height);
 
+    // Stack all coarse mip levels on top of each other with the same stride
+    //    __________
+    //   |__|__     |
+    //   |     |    |
+    //   |_____|____|
+    //   |          |
+    //   |          |
+    //   |          |
+    //   |__________|
     std::vector<Uint16> CoarseMipLevels;
     CoarseMipLevels.resize(iHeightMapDim / 2 * iHeightMapDim);
 
     std::vector<TextureSubResData> InitData(HeightMapDesc.MipLevels);
     InitData[0].pData            = pHeightMap;
-    InitData[0].Stride           = (Uint32)HeightMapPitch * sizeof(pHeightMap[0]);
+    InitData[0].Stride           = (Uint32)HeightMapStride * sizeof(pHeightMap[0]);
     const Uint16* pFinerMipLevel = pHeightMap;
     Uint16*       pCurrMipLevel  = &CoarseMipLevels[0];
-    size_t        FinerMipPitch  = HeightMapPitch;
-    size_t        CurrMipPitch   = iHeightMapDim / 2;
+    size_t        FinerMipStride = HeightMapStride;
+    size_t        CurrMipStride  = iHeightMapDim / 2;
     for (Uint32 uiMipLevel = 1; uiMipLevel < HeightMapDesc.MipLevels; ++uiMipLevel)
     {
-        auto MipWidth  = HeightMapDesc.Width >> uiMipLevel;
-        auto MipHeight = HeightMapDesc.Height >> uiMipLevel;
-        for (Uint32 uiRow = 0; uiRow < MipHeight; ++uiRow)
+        const auto MipProps = GetMipLevelProperties(HeightMapDesc, uiMipLevel);
+        for (Uint32 uiRow = 0; uiRow < MipProps.LogicalHeight; ++uiRow)
         {
-            for (Uint32 uiCol = 0; uiCol < MipWidth; ++uiCol)
+            for (Uint32 uiCol = 0; uiCol < MipProps.LogicalWidth; ++uiCol)
             {
                 int iAverageHeight = 0;
                 for (int i = 0; i < 2; ++i)
                     for (int j = 0; j < 2; ++j)
-                        iAverageHeight += pFinerMipLevel[(uiCol * 2 + i) + (uiRow * 2 + j) * size_t{FinerMipPitch}];
-                pCurrMipLevel[uiCol + uiRow * CurrMipPitch] = (Uint16)(iAverageHeight >> 2);
+                        iAverageHeight += pFinerMipLevel[(uiCol * 2 + i) + (uiRow * 2 + j) * size_t{FinerMipStride}];
+                pCurrMipLevel[uiCol + uiRow * CurrMipStride] = (Uint16)(iAverageHeight >> 2);
             }
         }
 
         InitData[uiMipLevel].pData  = pCurrMipLevel;
-        InitData[uiMipLevel].Stride = (Uint32)CurrMipPitch * sizeof(*pCurrMipLevel);
+        InitData[uiMipLevel].Stride = (Uint32)CurrMipStride * sizeof(*pCurrMipLevel);
         pFinerMipLevel              = pCurrMipLevel;
-        FinerMipPitch               = CurrMipPitch;
-        pCurrMipLevel += MipHeight * CurrMipPitch;
-        CurrMipPitch = iHeightMapDim / 2;
+        FinerMipStride              = CurrMipStride;
+        pCurrMipLevel += MipProps.LogicalHeight * CurrMipStride;
+        CurrMipStride = iHeightMapDim / 2; // Same stride for all mips
     }
 
     RefCntAutoPtr<ITexture> ptex2DHeightMap;
