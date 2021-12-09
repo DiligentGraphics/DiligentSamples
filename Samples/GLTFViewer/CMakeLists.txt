@@ -95,13 +95,6 @@ set_source_files_properties(${NORMAL_TANGENT_TEST_MODEL} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources/models/NormalTangentTest"
 )
 
-source_group("assets" FILES ${ASSETS})
-source_group("assets\\shaders" FILES ${SHADERS})
-source_group("assets\\shaders\\external" FILES ${EXTERNAL_SHADERS})
-source_group("assets\\textures" FILES ${TEXTURES})
-source_group("assets\\models\\BoomBoxWithAxes" FILES ${BOOM_BOX_MODEL})
-source_group("assets\\models\\CesiumMan" FILES ${CESIUM_MAN_MODEL})
-source_group("assets\\models\\DamagedHelmet" FILES ${DAMAGED_HELMENT_MODEL})
-source_group("assets\\models\\FlightHelmet" FILES ${FLIGHT_HELMENT_MODEL})
-source_group("assets\\models\\MetalRoughSpheres" FILES ${METAL_ROUGH_SPHERES_MODEL})
-source_group("assets\\models\\NormalTangentTest" FILES ${NORMAL_TANGENT_TEST_MODEL})
+# We have to use a different group name (Assets with capital A) to override grouping that was set by add_sample_app
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS})
+source_group("Assets\\shaders" FILES ${EXTERNAL_SHADERS})

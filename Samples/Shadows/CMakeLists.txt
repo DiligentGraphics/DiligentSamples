@@ -14,9 +14,12 @@ set(INCLUDE
 set(SHADERS
     assets/shaders/MeshVS.vsh
     assets/shaders/MeshPS.psh
+)
+set(EXTERNAL_SHADERS
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
     ../../../DiligentFX/Shaders/Common/public/Shadows.fxh
 )
+set(ALL_SHADERS ${SHADERS} ${EXTERNAL_SHADERS})
 
 file(GLOB POWERPLANT_FILES LIST_DIRECTORIES false assets/Powerplant/*.*)
 
@@ -24,7 +27,7 @@ set(ASSETS
     ${POWERPLANT_FILES}
 )
 
-add_sample_app("Shadows" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Shadows" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 target_link_libraries(Shadows PRIVATE Diligent-AssetLoader DiligentFX)
 
 target_include_directories(Shadows
@@ -42,10 +45,11 @@ set_source_files_properties(${POWERPLANT_FILES} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources/Powerplant"
 )
 
-set_source_files_properties(${SHADERS} PROPERTIES
+set_source_files_properties(${ALL_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION Resources/shaders
 )
 
-source_group("assets" FILES ${ASSETS})
-source_group("assets\\shaders" FILES ${SHADERS})
+# We have to use a different group name (Assets with capital A) to override grouping that was set by add_sample_app
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS})
+source_group("Assets\\shaders" FILES ${EXTERNAL_SHADERS})
