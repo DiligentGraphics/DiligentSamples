@@ -224,16 +224,16 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
     const char* spriteFile = nullptr;
     switch (DevType)
     {
-        case RENDER_DEVICE_TYPE_D3D11: spriteFile = "DiligentD3D11.dds"; break;
-        case RENDER_DEVICE_TYPE_D3D12: spriteFile = "DiligentD3D12.dds"; break;
-        case RENDER_DEVICE_TYPE_GL: spriteFile = "DiligentGL.dds"; break;
-        case RENDER_DEVICE_TYPE_VULKAN: spriteFile = "DiligentVk.dds"; break;
+        case RENDER_DEVICE_TYPE_D3D11: spriteFile = "media/DiligentD3D11.dds"; break;
+        case RENDER_DEVICE_TYPE_D3D12: spriteFile = "media/DiligentD3D12.dds"; break;
+        case RENDER_DEVICE_TYPE_GL: spriteFile = "media/DiligentGL.dds"; break;
+        case RENDER_DEVICE_TYPE_VULKAN: spriteFile = "media/DiligentVk.dds"; break;
         default: UNEXPECTED("Unexpected device type");
     }
     mSprite.reset(new GUISprite(5, 10, 140, 50, spriteFile));
 
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    mDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("src", &pShaderSourceFactory);
+    mDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
 
     std::vector<StateTransitionDesc> Barriers;
     mBackBufferWidth                = mSwapChain->GetDesc().Width;
@@ -425,7 +425,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         loadInfo.IsSRGB = true;
         loadInfo.Name   = "Skybox";
         RefCntAutoPtr<ITexture> skybox;
-        CreateTextureFromFile("starbox_1024.dds", loadInfo, mDevice, &skybox);
+        CreateTextureFromFile("media/starbox_1024.dds", loadInfo, mDevice, &skybox);
         mSkyboxSRV = skybox->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         Barriers.emplace_back(skybox, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }

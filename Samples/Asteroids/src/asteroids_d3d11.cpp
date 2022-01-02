@@ -60,7 +60,7 @@ Asteroids::Asteroids(AsteroidsSimulation* asteroids, GUI* gui, bool warp)
     , mSkyboxPixelShader(nullptr)
     , mSkyboxConstantBuffer(nullptr)
     , mSamplerState(nullptr)
-    , mD3D11Sprite( new GUISprite(5, 10, 140, 50, "directx11.dds") )
+    , mD3D11Sprite( new GUISprite(5, 10, 140, 50, "media/directx11.dds") )
 {
     QueryPerformanceFrequency((LARGE_INTEGER*)&mPerfCounterFreq);
 
@@ -191,7 +191,7 @@ Asteroids::Asteroids(AsteroidsSimulation* asteroids, GUI* gui, bool warp)
     CreateGUIResources();
 
     // Load textures
-    ThrowIfFailed(CreateDDSTextureFromFile(mDevice, L"starbox_1024.dds", &mSkyboxSRV, true));
+    ThrowIfFailed(CreateDDSTextureFromFile(mDevice, L"media/starbox_1024.dds", &mSkyboxSRV, true));
 }
 
 Asteroids::~Asteroids()

@@ -52,7 +52,7 @@ Asteroids::Asteroids(AsteroidsSimulation* asteroids, GUI *gui, UINT minCmdLsts, 
     : mAsteroids(asteroids)
     , mGUI(gui)
     , mFenceEventHandle(CreateEvent(NULL, FALSE, FALSE, NULL))
-    , mD3D12Sprite( new GUISprite(5, 10, 140, 50, "directx12.dds") )
+    , mD3D12Sprite( new GUISprite(5, 10, 140, 50, "media/directx12.dds") )
 {
     QueryPerformanceFrequency((LARGE_INTEGER*)&mPerfCounterFreq);
 
@@ -128,7 +128,7 @@ Asteroids::Asteroids(AsteroidsSimulation* asteroids, GUI *gui, UINT minCmdLsts, 
         }
 
         ThrowIfFailed(CreateTexture2DFromDDS_XXXX8(
-            mDevice, mCommandQueue, &mSkybox, "starbox_1024.dds", DXGI_FORMAT_BC1_UNORM_SRGB));
+            mDevice, mCommandQueue, &mSkybox, "media/starbox_1024.dds", DXGI_FORMAT_BC1_UNORM_SRGB));
     }
     
     CreateGUIResources();

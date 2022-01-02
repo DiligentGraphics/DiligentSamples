@@ -35,17 +35,17 @@ set(INCLUDE
 )
 
 set(SHADERS
-    src/asteroid_ps.psh
-    src/asteroid_ps_d3d11.psh
-    src/asteroid_ps_diligent.psh
-    src/font_ps.psh
-    src/skybox_ps.psh
-    src/sprite_ps.psh
+    assets/shaders/asteroid_ps.psh
+    assets/shaders/asteroid_ps_d3d11.psh
+    assets/shaders/asteroid_ps_diligent.psh
+    assets/shaders/font_ps.psh
+    assets/shaders/skybox_ps.psh
+    assets/shaders/sprite_ps.psh
 
-    src/asteroid_vs.vsh
-    src/asteroid_vs_diligent.vsh
-    src/skybox_vs.vsh
-    src/sprite_vs.vsh
+    assets/shaders/asteroid_vs.vsh
+    assets/shaders/asteroid_vs_diligent.vsh
+    assets/shaders/skybox_vs.vsh
+    assets/shaders/sprite_vs.vsh
 )
 set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 
@@ -87,12 +87,12 @@ set(GUI
 )
 
 set(MEDIA
-    DiligentD3D11.dds
-    DiligentD3D12.dds
-    DiligentGL.dds
-    directx11.dds
-    directx12.dds
-    starbox_1024.dds
+    assets/media/DiligentD3D11.dds
+    assets/media/DiligentD3D12.dds
+    assets/media/DiligentGL.dds
+    assets/media/directx11.dds
+    assets/media/directx12.dds
+    assets/media/starbox_1024.dds 
 )
 
 if(WIN32)
@@ -103,8 +103,8 @@ if(WIN32)
         ${GUI}
         ${MEDIA}
         SDK/Include/d3dx12.h
-        src/common_defines.h
-        src/shader_common.h
+        assets/shaders/common_defines.h
+        assets/shaders/shader_common.h
         readme.md
         # A target created in the same directory (CMakeLists.txt file) that specifies any output of the
         # custom command as a source file is given a rule to generate the file using the command at build time.
@@ -112,18 +112,23 @@ if(WIN32)
     )
     set_target_properties(Asteroids PROPERTIES 
         LINK_FLAGS "/SUBSYSTEM:CONSOLE"
-        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
     )
     copy_required_dlls(Asteroids)
 
+    add_custom_command(TARGET Asteroids POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "\"$<TARGET_FILE_DIR:Asteroids>\"")
 else()
     message(FATAL_ERROR "Unsupported platform")
 endif()
 
 target_include_directories(Asteroids
 PRIVATE
-    Src
+    src
     SDK/Include
+    assets/shaders
     ${CMAKE_CURRENT_BINARY_DIR}/CompiledShaders
 )
 
@@ -161,8 +166,8 @@ source_group("src" FILES ${SOURCE})
 source_group("include" FILES ${INCLUDE})
 source_group("shaders" FILES 
     ${SHADERS}
-    src/common_defines.h
-    src/shader_common.h
+    assets/shaders/common_defines.h
+    assets/shaders/shader_common.h
 )
 source_group("generated" FILES ${COMPILED_SHADERS})
 source_group("SDK" FILES SDK/Include/d3dx12.h)
