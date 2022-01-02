@@ -34,35 +34,49 @@ set(INCLUDE
     src/util.h
 )
 
-set(PIXEL_SHADERS
-    src/asteroid_ps.hlsl
-    src/asteroid_ps_d3d11.hlsl
-    src/asteroid_ps_diligent.hlsl
-    src/font_ps.hlsl
-    src/skybox_ps.hlsl
-    src/sprite_ps.hlsl
-)
+set(SHADERS
+    src/asteroid_ps.psh
+    src/asteroid_ps_d3d11.psh
+    src/asteroid_ps_diligent.psh
+    src/font_ps.psh
+    src/skybox_ps.psh
+    src/sprite_ps.psh
 
-set(VERTEX_SHADERS
-    src/asteroid_vs.hlsl
-    src/asteroid_vs_diligent.hlsl
-    src/skybox_vs.hlsl
-    src/sprite_vs.hlsl
+    src/asteroid_vs.vsh
+    src/asteroid_vs_diligent.vsh
+    src/skybox_vs.vsh
+    src/sprite_vs.vsh
 )
-
-set(SHADERS ${PIXEL_SHADERS} ${VERTEX_SHADERS})
+set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
 
 set(COMPILED_SHADERS_DIR ${CMAKE_CURRENT_BINARY_DIR}/CompiledShaders)
 file(MAKE_DIRECTORY "${COMPILED_SHADERS_DIR}")
-set_source_files_properties(${SHADERS} PROPERTIES
-    VS_SHADER_ENTRYPOINT "%(Filename)"
-    VS_SHADER_MODEL 5.0
-    VS_SHADER_VARIABLE_NAME "g_%(Filename)"
-    VS_SHADER_OUTPUT_HEADER_FILE "${COMPILED_SHADERS_DIR}/%(Filename).h"
-)
-set_source_files_properties(${PIXEL_SHADERS} PROPERTIES VS_SHADER_TYPE Pixel)
-set_source_files_properties(${VERTEX_SHADERS} PROPERTIES VS_SHADER_TYPE Vertex)
-set_source_files_properties(src/asteroid_ps.hlsl PROPERTIES VS_SHADER_MODEL 5.1)
+
+foreach(SRC_SHADER ${SHADERS})
+    get_filename_component(SHADER_NAME ${SRC_SHADER} NAME_WE)
+    get_filename_component(SHADER_EXT ${SRC_SHADER} EXT)
+    set(COMPILED_SHADER ${COMPILED_SHADERS_DIR}/${SHADER_NAME}.h)
+    list(APPEND COMPILED_SHADERS ${COMPILED_SHADER})
+
+    set(PROFILE vs_5_0)
+    if(${SHADER_NAME} STREQUAL "asteroid_ps")
+        set(PROFILE ps_5_1)
+    elseif(${SHADER_EXT} STREQUAL ".psh")
+        set(PROFILE ps_5_0)
+    endif()
+
+    add_custom_command(OUTPUT ${COMPILED_SHADER} # We must use full path here!
+                       COMMAND fxc /T ${PROFILE} /E ${SHADER_NAME} /Vn g_${SHADER_NAME} /Fh "${COMPILED_SHADER}" "${SRC_SHADER}"
+                       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                       COMMENT "Compiling ${SRC_SHADER}"
+                       VERBATIM
+    )
+endforeach(SRC_SHADER)
+
+# NB: we must use the full path, otherwise the build system will not be able to properly detect
+#     changes and shader compilation custom command will run every time
+set_source_files_properties(${COMPILED_SHADERS} PROPERTIES GENERATED TRUE)
+
 
 set(GUI
     src/font.h
@@ -92,6 +106,9 @@ if(WIN32)
         src/common_defines.h
         src/shader_common.h
         readme.md
+        # A target created in the same directory (CMakeLists.txt file) that specifies any output of the
+        # custom command as a source file is given a rule to generate the file using the command at build time.
+        ${COMPILED_SHADERS}
     )
     set_target_properties(Asteroids PROPERTIES 
         LINK_FLAGS "/SUBSYSTEM:CONSOLE"
@@ -147,6 +164,7 @@ source_group("shaders" FILES
     src/common_defines.h
     src/shader_common.h
 )
+source_group("generated" FILES ${COMPILED_SHADERS})
 source_group("SDK" FILES SDK/Include/d3dx12.h)
 source_group("GUI" FILES ${GUI})
 source_group("media" FILES ${MEDIA})

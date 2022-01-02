@@ -1,4 +1,4 @@
-#include "sprite_vs.hlsl"
+#include "sprite_vs.vsh"
 
 Texture2D Tex;// : register(t0);
 SamplerState Tex_sampler;// : register(s0);

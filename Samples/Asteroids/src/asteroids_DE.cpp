@@ -319,7 +319,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.Desc.ShaderType            = SHADER_TYPE_VERTEX;
             attribs.Desc.Name                  = "Asteroids VS";
             attribs.EntryPoint                 = "asteroid_vs_diligent";
-            attribs.FilePath                   = "asteroid_vs_diligent.hlsl";
+            attribs.FilePath                   = "asteroid_vs_diligent.vsh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
             attribs.UseCombinedTextureSamplers = true;
@@ -336,7 +336,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
             attribs.Desc.Name                  = "Asteroids PS";
             attribs.EntryPoint                 = "asteroid_ps_diligent";
-            attribs.FilePath                   = "asteroid_ps_diligent.hlsl";
+            attribs.FilePath                   = "asteroid_ps_diligent.psh";
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
             attribs.UseCombinedTextureSamplers = true;
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -453,7 +453,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         attribs.Desc.ShaderType            = SHADER_TYPE_VERTEX;
         attribs.Desc.Name                  = "Skybox VS";
         attribs.EntryPoint                 = "skybox_vs";
-        attribs.FilePath                   = "skybox_vs.hlsl";
+        attribs.FilePath                   = "skybox_vs.vsh";
         attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
         attribs.UseCombinedTextureSamplers = true;
         attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
@@ -461,7 +461,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
 
         attribs.Desc.Name       = "Skybox PS";
         attribs.EntryPoint      = "skybox_ps";
-        attribs.FilePath        = "skybox_ps.hlsl";
+        attribs.FilePath        = "skybox_ps.psh";
         attribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
         mDevice->CreateShader(attribs, &ps);
 
@@ -563,7 +563,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.Desc.ShaderType            = SHADER_TYPE_VERTEX;
             attribs.Desc.Name                  = "Sprite VS";
             attribs.EntryPoint                 = "sprite_vs";
-            attribs.FilePath                   = "sprite_vs.hlsl";
+            attribs.FilePath                   = "sprite_vs.vsh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             attribs.UseCombinedTextureSamplers = true;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
@@ -575,7 +575,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
             attribs.Desc.Name                  = "Sprite PS";
             attribs.EntryPoint                 = "sprite_ps";
-            attribs.FilePath                   = "sprite_ps.hlsl";
+            attribs.FilePath                   = "sprite_ps.psh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             attribs.UseCombinedTextureSamplers = true;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
@@ -587,7 +587,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
             attribs.Desc.Name                  = "Font PS";
             attribs.EntryPoint                 = "font_ps";
-            attribs.FilePath                   = "font_ps.hlsl";
+            attribs.FilePath                   = "font_ps.psh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             attribs.UseCombinedTextureSamplers = true;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
