@@ -24,8 +24,10 @@
  *  all other commercial damages or losses), even if such Contributor has been advised 
  *  of the possibility of such damages.
  */
-#define NOMINMAX
+
+#include "WinHPreface.h"
 #include <d3d12.h>
+#include "WinHPostface.h"
 
 #include "GhostCubeSceneResTrsnHelper.h"
 #include "GhostCubeScene.h"

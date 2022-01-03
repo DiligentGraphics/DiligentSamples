@@ -28,10 +28,9 @@
 #include "InputController.hpp"
 #include <algorithm>
 
-#ifndef NOMINMAX
-#    define NOMINMAX
-#endif
-#include "Windows.h"
+#include "WinHPreface.h"
+#include <Windows.h>
+#include "WinHPostface.h"
 
 namespace Diligent
 {

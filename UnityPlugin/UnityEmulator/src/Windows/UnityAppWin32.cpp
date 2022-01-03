@@ -25,8 +25,9 @@
  *  of the possibility of such damages.
  */
 
-#define NOMINMAX
+#include "WinHPreface.h"
 #include <Windows.h>
+#include "WinHPostface.h"
 
 #include "UnityGraphicsEmulator.h"
 #include "UnityAppBase.h"

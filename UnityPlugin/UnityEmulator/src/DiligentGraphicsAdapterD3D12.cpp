@@ -1,10 +1,12 @@
 
 #include <array>
 
-#define NOMINMAX
-#include <D3D12.h>
+#include "WinHPreface.h"
+#include <d3d12.h>
 #include <dxgi1_4.h>
 #include <atlbase.h>
+#include "WinHPostface.h"
+
 #include "UnityGraphicsD3D12Impl.h"
 #include "DiligentGraphicsAdapterD3D12.h"
 #include "UnityGraphicsD3D12Emulator.h"

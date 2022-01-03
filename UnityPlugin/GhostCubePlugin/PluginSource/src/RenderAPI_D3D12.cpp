@@ -1,5 +1,6 @@
 #include <vector>
 #include <array>
+#include <algorithm>
 
 #include "PlatformBase.h"
 
@@ -7,10 +8,9 @@
 
 #if SUPPORT_D3D12
 
-#include <algorithm>
-
-#define NOMINMAX
+#include "WinHPreface.h"
 #include <d3d12.h>
+#include "WinHPostface.h"
 
 #include "RenderAPI.h"
 #include "Unity/IUnityGraphicsD3D12.h"

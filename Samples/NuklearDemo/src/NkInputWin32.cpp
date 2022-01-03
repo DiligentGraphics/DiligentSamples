@@ -29,10 +29,9 @@
 #define NK_INCLUDE_STANDARD_VARARGS
 #include "../../../ThirdParty/nuklear/nuklear.h"
 
-#ifndef NOMINMAX
-#    define NOMINMAX
-#endif
+#include "WinHPreface.h"
 #include <Windows.h>
+#include "WinHPostface.h"
 
 #include "NkInputWin32.h"
 

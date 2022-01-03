@@ -1,5 +1,7 @@
 #pragma once
 
+#include "WinHPreface.h"
+
 #if PLATFORM_WIN32
     #include <d3d11.h>
 #elif PLATFORM_UNIVERSAL_WINDOWS
@@ -8,6 +10,8 @@
 
 #include <dxgi1_2.h>
 #include <atlbase.h>
+
+#include "WinHPostface.h"
 
 #include <memory>
 

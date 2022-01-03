@@ -1,5 +1,8 @@
+
+#include "WinHPreface.h"
 #include <d3d11.h>
-#include <dxgi1_2.h>
+#include <atlbase.h>
+#include "WinHPostface.h"
 
 #include "DiligentGraphicsAdapterD3D11.h"
 #include "UnityGraphicsD3D11Emulator.h"

@@ -34,6 +34,9 @@
 #endif
 #include <Windows.h>
 #include <crtdbg.h>
+#ifdef GetObject
+#    undef GetObject
+#endif
 
 #ifndef PLATFORM_WIN32
 #    define PLATFORM_WIN32 1

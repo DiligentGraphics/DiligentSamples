@@ -3,10 +3,11 @@
 #include <stdexcept>
 #include <deque>
 
-#define NOMINMAX
+#include "WinHPreface.h"
 #include <D3D12.h>
 #include <dxgi1_4.h>
 #include <atlbase.h>
+#include "WinHPostface.h"
 
 #include "IUnityGraphicsD3D12.h"
 #include "ResourceStateTransitionHandler.h"

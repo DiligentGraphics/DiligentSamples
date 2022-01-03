@@ -4,8 +4,10 @@
 
 #if SUPPORT_D3D11
 
+#include "WinHPreface.h"
 #include <d3d11.h>
 #include <atlbase.h>
+#include "WinHPostface.h"
 
 #include "RenderAPI.h"
 #include "Unity/IUnityGraphicsD3D11.h"

@@ -10,9 +10,11 @@
 #       define GLEW_STATIC
 #   endif
 #   include "GL/glew.h"
-#   define NOMINMAX
+
+#   include "WinHPreface.h"
 #   include "GL/wglew.h"
 #   include <GL/GL.h>
+#   include "WinHPostface.h"
 
 #elif PLATFORM_LINUX
 

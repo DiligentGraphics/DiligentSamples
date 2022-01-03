@@ -8,13 +8,15 @@
 // Intel does not assume any responsibility for any errors which may appear in this software
 // nor any responsibility to update it.
 
-#define WIN32_LEAN_AND_MEAN
+#include "WinHPreface.h"
 #include <sdkddkver.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <shellapi.h> // must be after windows.h
 #include <ShellScalingApi.h>
 #include <interactioncontext.h>
+#include "WinHPostface.h"
+
 #include <mmsystem.h>
 #include <map>
 #include <vector>
