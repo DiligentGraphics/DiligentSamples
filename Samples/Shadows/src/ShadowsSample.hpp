@@ -32,6 +32,7 @@
 #include "DXSDKMeshLoader.hpp"
 #include "FirstPersonCamera.hpp"
 #include "ShadowMapManager.hpp"
+#include "RenderStateNotationLoader.h"
 
 namespace Diligent
 {
@@ -96,6 +97,8 @@ private:
     std::vector<RefCntAutoPtr<IPipelineState>>         m_RenderMeshShadowPSO;
     std::vector<RefCntAutoPtr<IShaderResourceBinding>> m_SRBs;
     std::vector<RefCntAutoPtr<IShaderResourceBinding>> m_ShadowSRBs;
+
+    RefCntAutoPtr<IRenderStateNotationLoader> m_pRSNLoader;
 
     RefCntAutoPtr<ISampler> m_pComparisonSampler;
     RefCntAutoPtr<ISampler> m_pFilterableShadowMapSampler;

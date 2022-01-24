@@ -36,7 +36,7 @@
 #include "imgui.h"
 #include "imGuIZMO.h"
 #include "ImGuiUtils.hpp"
-
+#include "CallbackWrapper.hpp"
 
 namespace Diligent
 {
@@ -90,6 +90,21 @@ void ShadowsSample::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetRotationSpeed(0.005f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
+
+    RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
+    {
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("render_states", &pStreamFactory);
+
+        CreateRenderStateNotationParser({}, &pRSNParser);
+        pRSNParser->ParseFile("RenderStates.json", pStreamFactory);
+    }
+
+    {
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pStreamFactory);
+        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &m_pRSNLoader);
+    }
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
     CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
@@ -306,57 +321,40 @@ void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VE
 
 void ShadowsSample::CreatePipelineStates()
 {
-    ShaderCreateInfo                               ShaderCI;
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
-
     ShaderMacroHelper Macros;
-    // clang-format off
-    Macros.AddShaderMacro( "SHADOW_MODE",            m_ShadowSettings.iShadowMode);
-    Macros.AddShaderMacro( "SHADOW_FILTER_SIZE",     m_LightAttribs.ShadowAttribs.iFixedFilterSize);
-    Macros.AddShaderMacro( "FILTER_ACROSS_CASCADES", m_ShadowSettings.FilterAcrossCascades);
-    Macros.AddShaderMacro( "BEST_CASCADE_SEARCH",    m_ShadowSettings.SearchBestCascade );
-    // clang-format on
-    ShaderCI.Macros = Macros;
+    Macros.AddShaderMacro("SHADOW_MODE", m_ShadowSettings.iShadowMode);
+    Macros.AddShaderMacro("SHADOW_FILTER_SIZE", m_LightAttribs.ShadowAttribs.iFixedFilterSize);
+    Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_ShadowSettings.FilterAcrossCascades);
+    Macros.AddShaderMacro("BEST_CASCADE_SEARCH", m_ShadowSettings.SearchBestCascade);
 
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-    ShaderCI.Desc.Name       = "Mesh VS";
-    ShaderCI.EntryPoint      = "MeshVS";
-    ShaderCI.FilePath        = "MeshVS.vsh";
-    RefCntAutoPtr<IShader> pVS;
-    m_pDevice->CreateShader(ShaderCI, &pVS);
+    RefCntAutoPtr<IShader> pGeometryVS;
+    RefCntAutoPtr<IShader> pGeometryPS;
+    {
+        auto ModifyCI = MakeCallback([&](ShaderCreateInfo& ShaderCI) {
+            ShaderCI.Macros = Macros;
+        });
 
-    ShaderCI.Desc.Name       = "Mesh PS";
-    ShaderCI.EntryPoint      = "MeshPS";
-    ShaderCI.FilePath        = "MeshPS.psh";
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-    RefCntAutoPtr<IShader> pPS;
-    m_pDevice->CreateShader(ShaderCI, &pPS);
+        m_pRSNLoader->LoadShader({"Mesh VS", false, ModifyCI, ModifyCI}, &pGeometryVS);
+        m_pRSNLoader->LoadShader({"Mesh PS", false, ModifyCI, ModifyCI}, &pGeometryPS);
+    }
 
     Macros.AddShaderMacro("SHADOW_PASS", true);
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-    ShaderCI.Desc.Name       = "Mesh VS";
-    ShaderCI.EntryPoint      = "MeshVS";
-    ShaderCI.FilePath        = "MeshVS.vsh";
-    ShaderCI.Macros          = Macros;
     RefCntAutoPtr<IShader> pShadowVS;
-    m_pDevice->CreateShader(ShaderCI, &pShadowVS);
+    {
+        auto ModifyCI = MakeCallback([&](ShaderCreateInfo& ShaderCI) {
+            ShaderCI.Macros = Macros;
+        });
+
+        m_pRSNLoader->LoadShader({"Mesh VS", false, ModifyCI, ModifyCI}, &pShadowVS);
+    }
 
     m_PSOIndex.resize(m_Mesh.GetNumVBs());
     m_RenderMeshPSO.clear();
     m_RenderMeshShadowPSO.clear();
     for (Uint32 vb = 0; vb < m_Mesh.GetNumVBs(); ++vb)
     {
-        GraphicsPipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
-        PipelineResourceLayoutDesc&     ResourceLayout   = PSODesc.ResourceLayout;
-        GraphicsPipelineDesc&           GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
-
         std::vector<LayoutElement> Elements;
-        auto&                      InputLayout = PSOCreateInfo.GraphicsPipeline.InputLayout;
+        InputLayoutDesc            InputLayout{};
         DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(m_Mesh.VBElements(vb), m_Mesh.GetVertexStride(vb), InputLayout, Elements);
 
         //  Try to find PSO with the same layout
@@ -372,67 +370,50 @@ void ShadowsSample::CreatePipelineStates()
         if (pso < static_cast<Uint32>(m_RenderMeshPSO.size()))
             continue;
 
-        // clang-format off
-        ImmutableSamplerDesc ImtblSampler[] =
         {
-            {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", Sam_Aniso4xWrap}
-        };
-        // clang-format on
-        ResourceLayout.ImmutableSamplers    = ImtblSampler;
-        ResourceLayout.NumImmutableSamplers = _countof(ImtblSampler);
+            ShaderResourceVariableDesc Vars[] = {
+                {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
+                {SHADER_TYPE_PIXEL, m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}};
 
-        // clang-format off
-        ShaderResourceVariableDesc Vars[] = 
+            auto ModifyCI = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
+                auto& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
+
+                GraphicsPipelineCI.PSODesc.ResourceLayout.Variables    = Vars;
+                GraphicsPipelineCI.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+                GraphicsPipelineCI.GraphicsPipeline.InputLayout      = InputLayout;
+                GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+                GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+                GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
+
+                GraphicsPipelineCI.pVS = pGeometryVS;
+                GraphicsPipelineCI.pPS = pGeometryPS;
+            });
+
+            RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
+            m_pRSNLoader->LoadPipelineState({"Mesh PSO", PIPELINE_TYPE_GRAPHICS, false, ModifyCI, ModifyCI}, &pRenderMeshPSO);
+
+            pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
+            pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbLightAttribs")->Set(m_LightAttribsCB);
+            pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbLightAttribs")->Set(m_LightAttribsCB);
+            m_RenderMeshPSO.emplace_back(std::move(pRenderMeshPSO));
+        }
+
         {
-            {SHADER_TYPE_PIXEL, "g_tex2DDiffuse",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
-            {SHADER_TYPE_PIXEL, m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",   SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
-        };
-        // clang-format on
-        ResourceLayout.Variables    = Vars;
-        ResourceLayout.NumVariables = _countof(Vars);
+            auto ModifyCI = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
+                auto& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
 
-        PSODesc.Name      = "Mesh PSO";
-        PSOCreateInfo.pVS = pVS;
-        PSOCreateInfo.pPS = pPS;
+                GraphicsPipelineCI.GraphicsPipeline.InputLayout = InputLayout;
+                GraphicsPipelineCI.GraphicsPipeline.DSVFormat   = m_ShadowSettings.Format;
 
-        GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-        GraphicsPipeline.NumRenderTargets           = 1;
-        GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-        GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
+                GraphicsPipelineCI.pVS = pShadowVS;
+            });
 
-        RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
-        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshPSO);
-        // clang-format off
-        pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
-        pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL,  "cbLightAttribs")->Set(m_LightAttribsCB);
-        pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbLightAttribs")->Set(m_LightAttribsCB);
-        // clang-format on
-
-        PSODesc.Name      = "Mesh Shadow PSO";
-        PSOCreateInfo.pPS = nullptr;
-        PSOCreateInfo.pVS = pShadowVS;
-
-        GraphicsPipeline.NumRenderTargets = 0;
-        GraphicsPipeline.RTVFormats[0]    = TEX_FORMAT_UNKNOWN;
-        GraphicsPipeline.DSVFormat        = m_ShadowSettings.Format;
-
-        // It is crucial to disable depth clip to allow shadows from objects
-        // behind the near cascade clip plane!
-        GraphicsPipeline.RasterizerDesc.DepthClipEnable = False;
-
-        GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
-
-        ResourceLayout.ImmutableSamplers    = nullptr;
-        ResourceLayout.NumImmutableSamplers = 0;
-        ResourceLayout.Variables            = nullptr;
-        ResourceLayout.NumVariables         = 0;
-        RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
-        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderMeshShadowPSO);
-        pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
-
-        m_RenderMeshPSO.emplace_back(std::move(pRenderMeshPSO));
-        m_RenderMeshShadowPSO.emplace_back(std::move(pRenderMeshShadowPSO));
+            RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
+            m_pRSNLoader->LoadPipelineState({"Mesh Shadow PSO", PIPELINE_TYPE_GRAPHICS, false, ModifyCI, ModifyCI}, &pRenderMeshShadowPSO);
+            pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
+            m_RenderMeshShadowPSO.emplace_back(std::move(pRenderMeshShadowPSO));
+        }
     }
 }
 

@@ -1,0 +1,73 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "UseCombinedTextureSamplers": true
+        }
+    },
+    "Shaders": [
+        {
+            "Desc": {
+                "ShaderType": "VERTEX",
+                "Name": "Mesh VS"
+            },
+            "EntryPoint": "MeshVS",
+            "FilePath": "MeshVS.vsh"
+        },
+        {
+            "Desc": {
+                "ShaderType": "PIXEL",
+                "Name": "Mesh PS"
+            },
+            "EntryPoint": "MeshPS",
+            "FilePath": "MeshPS.psh"
+        }
+    ],
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "Mesh PSO",
+                "PipelineType": "GRAPHICS",
+                "ResourceLayout": {
+                    "ImmutableSamplers": [
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_tex2DDiffuse",
+                            "Desc": {
+                                "MinFilter": "ANISOTROPIC",
+                                "MagFilter": "ANISOTROPIC",
+                                "MipFilter": "ANISOTROPIC",
+                                "AddressU": "WRAP",
+                                "AddressV": "WRAP",
+                                "AddressW": "WRAP",
+                                "MaxAnisotropy": 4
+                            }
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "DepthStencilDesc": {
+                    "DepthFunc": "LESS_EQUAL"
+                }
+            }
+        },
+        {
+            "PSODesc": {
+                "Name": "Mesh Shadow PSO",
+                "PipelineType": "GRAPHICS"
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "DepthStencilDesc": {
+                    "DepthFunc": "LESS_EQUAL"
+                },
+                "RasterizerDesc": {
+                    "DepthClipEnable": false,
+                    "CullMode": "NONE"
+                }
+            }
+        }
+    ]
+}
