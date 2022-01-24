@@ -36,13 +36,22 @@ file(GLOB NORMAL_TANGENT_TEST_MODEL LIST_DIRECTORIES false assets/models/NormalT
 set(MODELS ${BOOM_BOX_MODEL} ${CESIUM_MAN_MODEL} ${DAMAGED_HELMENT_MODEL}
            ${FLIGHT_HELMENT_MODEL} ${METAL_ROUGH_SPHERES_MODEL} ${NORMAL_TANGENT_TEST_MODEL})
 set(TEXTURES assets/textures/papermill.ktx)
+
+set(RENDER_STATES assets/render_states/RenderStates.json)
+
 set(ASSETS
     ${MODELS}
     ${TEXTURES}
+    ${RENDER_STATES}
 )
 
 add_sample_app("GLTFViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
-target_link_libraries(GLTFViewer PRIVATE Diligent-AssetLoader DiligentFX)
+target_link_libraries(GLTFViewer 
+PRIVATE
+    Diligent-AssetLoader 
+    Diligent-RenderStateNotation 
+    DiligentFX
+)
 
 target_include_directories(GLTFViewer PRIVATE
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/
@@ -58,6 +67,11 @@ endforeach(FILE)
 set_source_files_properties(${ALL_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION Resources/shaders
+)
+
+set_source_files_properties(${RENDER_STATES} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "render_states"
+    MACOSX_PACKAGE_LOCATION "Resources/render_states"
 )
 
 set_source_files_properties(${TEXTURES} PROPERTIES

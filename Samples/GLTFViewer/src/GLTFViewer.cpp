@@ -39,6 +39,7 @@
 #include "imgui.h"
 #include "imGuIZMO.h"
 #include "ImGuiUtils.hpp"
+#include "CallbackWrapper.hpp"
 
 namespace Diligent
 {
@@ -240,9 +241,30 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
 
+    RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
+    {
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("render_states", &pStreamFactory);
+
+        RenderStateNotationParserCreateInfo RSNParserCI{};
+        CreateRenderStateNotationParser(RSNParserCI, &pRSNParser);
+        pRSNParser->ParseFile("RenderStates.json", pStreamFactory);
+    }
+
+    {
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pStreamFactory);
+
+        RenderStateNotationLoaderCreateInfo RSNLoaderCI{};
+        RSNLoaderCI.pDevice        = m_pDevice;
+        RSNLoaderCI.pStreamFactory = pStreamFactory;
+        RSNLoaderCI.pParser        = pRSNParser;
+        CreateRenderStateNotationLoader(RSNLoaderCI, &m_pRSNLoader);
+    }
+
     CreateEnvMapPSO();
 
-    CreateBoundBoxPSO(BackBufferFmt, DepthBufferFmt);
+    CreateBoundBoxPSO();
 
     m_LightDirection = normalize(float3(0.5f, -0.6f, -0.2f));
 
@@ -389,67 +411,14 @@ void GLTFViewer::UpdateUI()
 
 void GLTFViewer::CreateEnvMapPSO()
 {
-    ShaderCreateInfo                               ShaderCI;
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
+    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo* pPipelineCI) {
+        auto* pGraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo*>(pPipelineCI)};
+        pGraphicsPipelineCI->GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        pGraphicsPipelineCI->GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+        pGraphicsPipelineCI->GraphicsPipeline.NumRenderTargets = 1;
+    });
+    m_pRSNLoader->LoadPipelineState({"EnvMap PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_EnvMapPSO);
 
-    ShaderMacroHelper Macros;
-    Macros.AddShaderMacro("TONE_MAPPING_MODE", "TONE_MAPPING_MODE_UNCHARTED2");
-    ShaderCI.Macros = Macros;
-
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-    ShaderCI.Desc.Name       = "Environment map VS";
-    ShaderCI.EntryPoint      = "main";
-    ShaderCI.FilePath        = "env_map.vsh";
-    RefCntAutoPtr<IShader> pVS;
-    m_pDevice->CreateShader(ShaderCI, &pVS);
-
-    ShaderCI.Desc.Name       = "Environment map PS";
-    ShaderCI.EntryPoint      = "main";
-    ShaderCI.FilePath        = "env_map.psh";
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-    RefCntAutoPtr<IShader> pPS;
-    m_pDevice->CreateShader(ShaderCI, &pPS);
-
-    GraphicsPipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
-    GraphicsPipelineDesc&           GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
-
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
-
-    // clang-format off
-    ImmutableSamplerDesc ImmutableSamplers[] =
-    {
-        {SHADER_TYPE_PIXEL, "EnvMap", Sam_LinearClamp}
-    };
-    // clang-format on
-    PSODesc.ResourceLayout.ImmutableSamplers    = ImmutableSamplers;
-    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImmutableSamplers);
-
-    // clang-format off
-    ShaderResourceVariableDesc Vars[] = 
-    {
-        {SHADER_TYPE_PIXEL, "cbCameraAttribs",       SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
-        {SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC}
-    };
-    // clang-format on
-    PSODesc.ResourceLayout.Variables    = Vars;
-    PSODesc.ResourceLayout.NumVariables = _countof(Vars);
-
-    PSODesc.Name      = "EnvMap PSO";
-    PSOCreateInfo.pVS = pVS;
-    PSOCreateInfo.pPS = pPS;
-
-    GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-    GraphicsPipeline.NumRenderTargets           = 1;
-    GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-    GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
-
-    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_EnvMapPSO);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs")->Set(m_EnvMapRenderAttribsCB);
     CreateEnvMapSRB();
@@ -483,51 +452,16 @@ void GLTFViewer::CreateEnvMapSRB()
     }
 }
 
-
-void GLTFViewer::CreateBoundBoxPSO(TEXTURE_FORMAT RTVFmt, TEXTURE_FORMAT DSVFmt)
+void GLTFViewer::CreateBoundBoxPSO()
 {
-    ShaderCreateInfo                               ShaderCI;
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
+    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo* pPipelineCI) {
+        auto* pGraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo*>(pPipelineCI)};
+        pGraphicsPipelineCI->GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        pGraphicsPipelineCI->GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+        pGraphicsPipelineCI->GraphicsPipeline.NumRenderTargets = 1;
+    });
+    m_pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_BoundBoxPSO);
 
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-    ShaderCI.Desc.Name       = "BoundBox VS";
-    ShaderCI.EntryPoint      = "BoundBoxVS";
-    ShaderCI.FilePath        = "BoundBox.vsh";
-    RefCntAutoPtr<IShader> pVS;
-    m_pDevice->CreateShader(ShaderCI, &pVS);
-
-    ShaderCI.Desc.Name       = "BoundBox PS";
-    ShaderCI.EntryPoint      = "BoundBoxPS";
-    ShaderCI.FilePath        = "BoundBox.psh";
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-    RefCntAutoPtr<IShader> pPS;
-    m_pDevice->CreateShader(ShaderCI, &pPS);
-
-
-    GraphicsPipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
-    GraphicsPipelineDesc&           GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
-
-    PSODesc.Name = "BoundBox PSO";
-
-    GraphicsPipeline.NumRenderTargets = 1;
-    GraphicsPipeline.RTVFormats[0]    = RTVFmt;
-    GraphicsPipeline.DSVFormat        = DSVFmt;
-
-    PSOCreateInfo.pVS = pVS;
-    PSOCreateInfo.pPS = pPS;
-
-    GraphicsPipeline.RTVFormats[0]              = m_pSwapChain->GetDesc().ColorBufferFormat;
-    GraphicsPipeline.NumRenderTargets           = 1;
-    GraphicsPipeline.DSVFormat                  = m_pSwapChain->GetDesc().DepthBufferFormat;
-    GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_LINE_LIST;
-    GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_LESS_EQUAL;
-
-    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_BoundBoxPSO);
     m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);
 }
