@@ -476,7 +476,7 @@ void Game::CreateSDFMap()
                 ShaderCI.Macros = Macros;
             });
 
-            m_pRSNLoader->LoadPipelineState({"Generate SDF map PSO", PIPELINE_TYPE_COMPUTE, false, nullptr, nullptr, Callback, Callback}, &pGenSdfPSO);
+            m_pRSNLoader->LoadPipelineState({"Generate SDF map PSO", PIPELINE_TYPE_COMPUTE, true, nullptr, nullptr, Callback, Callback}, &pGenSdfPSO);
             CHECK_THROW(pGenSdfPSO != nullptr);
         }
 
