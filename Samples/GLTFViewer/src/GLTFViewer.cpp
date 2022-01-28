@@ -411,12 +411,13 @@ void GLTFViewer::UpdateUI()
 
 void GLTFViewer::CreateEnvMapPSO()
 {
-    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo* pPipelineCI) {
-        auto* pGraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo*>(pPipelineCI)};
-        pGraphicsPipelineCI->GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        pGraphicsPipelineCI->GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
-        pGraphicsPipelineCI->GraphicsPipeline.NumRenderTargets = 1;
+    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
+        auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
+        GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+        GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });
+
     m_pRSNLoader->LoadPipelineState({"EnvMap PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_EnvMapPSO);
 
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
@@ -454,11 +455,11 @@ void GLTFViewer::CreateEnvMapSRB()
 
 void GLTFViewer::CreateBoundBoxPSO()
 {
-    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo* pPipelineCI) {
-        auto* pGraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo*>(pPipelineCI)};
-        pGraphicsPipelineCI->GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        pGraphicsPipelineCI->GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
-        pGraphicsPipelineCI->GraphicsPipeline.NumRenderTargets = 1;
+    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
+        auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
+        GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+        GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });
     m_pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_BoundBoxPSO);
 
