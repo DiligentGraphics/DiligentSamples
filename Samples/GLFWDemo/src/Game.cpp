@@ -30,6 +30,7 @@
 
 #include "Game.hpp"
 #include "ShaderMacroHelper.hpp"
+#include "CallbackWrapper.hpp"
 
 namespace Diligent
 {
@@ -60,6 +61,21 @@ bool Game::Initialize()
     {
         GetEngineFactory()->CreateDefaultShaderSourceStreamFactory(nullptr, &m_pShaderSourceFactory);
         CHECK_THROW(m_pShaderSourceFactory);
+
+        RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
+        {
+            CreateRenderStateNotationParser({}, &pRSNParser);
+            CHECK_THROW(pRSNParser);
+            pRSNParser->ParseFile("RenderStates.json", m_pShaderSourceFactory);
+        }
+        {
+            RenderStateNotationLoaderCreateInfo RSNLoaderCI{};
+            RSNLoaderCI.pDevice        = GetDevice();
+            RSNLoaderCI.pStreamFactory = m_pShaderSourceFactory;
+            RSNLoaderCI.pParser        = pRSNParser;
+            CreateRenderStateNotationLoader(RSNLoaderCI, &m_pRSNLoader);
+            CHECK_THROW(m_pRSNLoader);
+        }
 
         GenerateMap();
         CreateSDFMap();
@@ -447,48 +463,22 @@ void Game::CreateSDFMap()
         CHECK_THROW(pSrcTex != nullptr);
     }
 
-    // Create PSO and SRB
+
     RefCntAutoPtr<IPipelineState>         pGenSdfPSO;
     RefCntAutoPtr<IShaderResourceBinding> pGenSdfSRB;
     {
-        ShaderMacroHelper Macros;
-        Macros.AddShaderMacro("RADIUS", Constants.TexFilterRadius);
-        Macros.AddShaderMacro("DIST_SCALE", 1.0f / float(Constants.SDFTexScale));
+        {
+            ShaderMacroHelper Macros;
+            Macros.AddShaderMacro("RADIUS", Constants.TexFilterRadius);
+            Macros.AddShaderMacro("DIST_SCALE", 1.0f / float(Constants.SDFTexScale));
 
-        ShaderCreateInfo ShaderCI;
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.pShaderSourceStreamFactory = m_pShaderSourceFactory;
-        ShaderCI.FilePath                   = "GenerateSDF.hlsl";
-        ShaderCI.EntryPoint                 = "main";
-        ShaderCI.Desc.ShaderType            = SHADER_TYPE_COMPUTE;
-        ShaderCI.Desc.Name                  = "Generate SDF CS";
-        ShaderCI.Macros                     = Macros;
-        ShaderCI.UseCombinedTextureSamplers = true;
+            auto Callback = MakeCallback([&](ShaderCreateInfo& ShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {
+                ShaderCI.Macros = Macros;
+            });
 
-        RefCntAutoPtr<IShader> pCS;
-        GetDevice()->CreateShader(ShaderCI, &pCS);
-        CHECK_THROW(pCS != nullptr);
-
-        ComputePipelineStateCreateInfo PSOCreateInfo;
-        PSOCreateInfo.PSODesc.Name         = "Generate SDF map PSO";
-        PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
-        PSOCreateInfo.pCS                  = pCS;
-
-        SamplerDesc SamLinearClampDesc //
-            {
-                FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-                TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP //
-            };
-        ImmutableSamplerDesc ImtblSamplers[] =
-            {
-                {SHADER_TYPE_COMPUTE, "g_SrcTex", SamLinearClampDesc} //
-            };
-        PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
-        PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
-        PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
-
-        GetDevice()->CreateComputePipelineState(PSOCreateInfo, &pGenSdfPSO);
-        CHECK_THROW(pGenSdfPSO != nullptr);
+            m_pRSNLoader->LoadPipelineState({"Generate SDF map PSO", PIPELINE_TYPE_COMPUTE, false, nullptr, nullptr, Callback, Callback}, &pGenSdfPSO);
+            CHECK_THROW(pGenSdfPSO != nullptr);
+        }
 
         pGenSdfPSO->CreateShaderResourceBinding(&pGenSdfSRB, true);
         CHECK_THROW(pGenSdfSRB != nullptr);
@@ -536,60 +526,13 @@ void Game::CreateSDFMap()
 
 void Game::CreatePipelineState()
 {
-    GraphicsPipelineStateCreateInfo PSOCreateInfo;
-    auto&                           PSODesc          = PSOCreateInfo.PSODesc;
-    auto&                           GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
+    auto Callback = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
+        auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
+        GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = GetSwapChain()->GetDesc().ColorBufferFormat;
+        GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
+    });
 
-    PSODesc.Name         = "Draw map PSO";
-    PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
-
-    GraphicsPipeline.NumRenderTargets             = 1;
-    GraphicsPipeline.RTVFormats[0]                = GetSwapChain()->GetDesc().ColorBufferFormat;
-    GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-    GraphicsPipeline.RasterizerDesc.CullMode      = CULL_MODE_NONE;
-    GraphicsPipeline.DepthStencilDesc.DepthEnable = false;
-
-    ShaderCreateInfo ShaderCI;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
-    ShaderCI.pShaderSourceStreamFactory = m_pShaderSourceFactory;
-    ShaderCI.FilePath                   = "DrawMap.hlsl";
-
-    RefCntAutoPtr<IShader> pVS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.Desc.Name       = "Draw map VS";
-        ShaderCI.EntryPoint      = "VSmain";
-        GetDevice()->CreateShader(ShaderCI, &pVS);
-        CHECK_THROW(pVS != nullptr);
-    }
-
-    RefCntAutoPtr<IShader> pPS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.Desc.Name       = "Draw map PS";
-        ShaderCI.EntryPoint      = "PSmain";
-        GetDevice()->CreateShader(ShaderCI, &pPS);
-        CHECK_THROW(pPS != nullptr);
-    }
-
-    PSOCreateInfo.pVS = pVS;
-    PSOCreateInfo.pPS = pPS;
-
-    SamplerDesc SamLinearClampDesc //
-        {
-            FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
-            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP //
-        };
-    ImmutableSamplerDesc ImtblSamplers[] =
-        {
-            {SHADER_TYPE_PIXEL, "g_SDFMap", SamLinearClampDesc} //
-        };
-    PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
-    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
-    PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
-
-    GetDevice()->CreateGraphicsPipelineState(PSOCreateInfo, &m_Map.pPSO);
+    m_pRSNLoader->LoadPipelineState({"Draw map PSO", PIPELINE_TYPE_GRAPHICS, true, Callback, Callback}, &m_Map.pPSO);
     CHECK_THROW(m_Map.pPSO != nullptr);
 
     BufferDesc CBDesc;

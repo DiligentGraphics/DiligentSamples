@@ -96,6 +96,7 @@ private:
     } Constants;
 
     RefCntAutoPtr<IShaderSourceInputStreamFactory> m_pShaderSourceFactory;
+    RefCntAutoPtr<IRenderStateNotationLoader>      m_pRSNLoader;
 };
 
 } // namespace Diligent

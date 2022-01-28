@@ -18,18 +18,24 @@ set(SHADERS
     assets/GenerateSDF.hlsl
     assets/Structures.fxh
 )
-set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
+
+set(RENDER_STATES
+    assets/RenderStates.json
+)
+
+set_source_files_properties(${RENDER_STATES} PROPERTIES VS_TOOL_OVERRIDE "None")
+set_source_files_properties(${SHADERS}       PROPERTIES VS_TOOL_OVERRIDE "None")
 
 if(PLATFORM_MACOS)
-    add_executable(GLFWDemo MACOSX_BUNDLE ${SOURCES} ${SHADERS})
+    add_executable(GLFWDemo MACOSX_BUNDLE ${SOURCES} ${SHADERS} ${RENDER_STATES})
 else()
-    add_executable(GLFWDemo ${SOURCES} ${SHADERS})
+    add_executable(GLFWDemo ${SOURCES} ${SHADERS} ${RENDER_STATES})
 endif()
 
 set_target_properties(GLFWDemo PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 target_compile_features(GLFWDemo PUBLIC cxx_std_14)
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${SHADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${SHADERS} ${RENDER_STATES})
 target_include_directories(GLFWDemo PRIVATE "../../../DiligentCore")
 if(METAL_SUPPORTED)
     target_include_directories(GLFWDemo PRIVATE "../../../DiligentCorePro")
@@ -46,6 +52,7 @@ target_link_libraries(GLFWDemo
 PRIVATE
     Diligent-Common
     Diligent-GraphicsTools
+    Diligent-RenderStateNotation
     glfw
 )
 

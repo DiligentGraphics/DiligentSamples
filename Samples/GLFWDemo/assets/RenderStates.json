@@ -1,0 +1,88 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "UseCombinedTextureSamplers": true
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "Generate SDF map PSO",
+                "ResourceLayout": {
+                    "ImmutableSamplers": [
+                        {
+                            "ShaderStages": "COMPUTE",
+                            "SamplerOrTextureName": "g_SrcTex",
+                            "Desc": {
+                                "MinFilter": "LINEAR",
+                                "MagFilter": "LINEAR",
+                                "MipFilter": "LINEAR",
+                                "AddressU": "CLAMP",
+                                "AddressV": "CLAMP",
+                                "AddressW": "CLAMP"
+                            }
+                        }
+                    ]
+                }
+            },
+            "pCS": {
+                "Desc": {
+                    "Name": "Geneate SDF CS"
+                },
+                "FilePath": "GenerateSDF.hlsl"
+            }
+        },
+        {
+            "PSODesc": {
+                "Name": "Draw map PSO",
+                "ResourceLayout": {
+                    "ImmutableSamplers": [
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_SDFMap",
+                            "Desc": {
+                                "MinFilter": "LINEAR",
+                                "MagFilter": "LINEAR",
+                                "MipFilter": "LINEAR",
+                                "AddressU": "CLAMP",
+                                "AddressV": "CLAMP",
+                                "AddressW": "CLAMP"
+                            }
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_STRIP",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "Draw map VS"
+                },
+                "FilePath": "DrawMap.hlsl",
+                "EntryPoint": "VSmain"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "Draw map PS"
+                },
+                "FilePath": "DrawMap.hlsl",
+                "EntryPoint": "PSmain"
+            }
+        }
+    ]
+}

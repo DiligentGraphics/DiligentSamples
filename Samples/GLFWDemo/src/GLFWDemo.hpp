@@ -30,12 +30,11 @@
 #include <chrono>
 #include <vector>
 
-#include "Common/interface/RefCntAutoPtr.hpp"
-
-#include "Graphics/GraphicsEngine/interface/RenderDevice.h"
-#include "Graphics/GraphicsEngine/interface/DeviceContext.h"
-#include "Graphics/GraphicsEngine/interface/SwapChain.h"
-
+#include "RefCntAutoPtr.hpp"
+#include "RenderDevice.h"
+#include "DeviceContext.h"
+#include "SwapChain.h"
+#include "RenderStateNotationLoader.h"
 #include "BasicMath.hpp"
 
 #include "GLFW/glfw3.h"
