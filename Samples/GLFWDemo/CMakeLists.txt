@@ -23,19 +23,21 @@ set(RENDER_STATES
     assets/RenderStates.json
 )
 
+set(ASSETS ${SHADERS} ${RENDER_STATES})
+
 set_source_files_properties(${RENDER_STATES} PROPERTIES VS_TOOL_OVERRIDE "None")
 set_source_files_properties(${SHADERS}       PROPERTIES VS_TOOL_OVERRIDE "None")
 
 if(PLATFORM_MACOS)
-    add_executable(GLFWDemo MACOSX_BUNDLE ${SOURCES} ${SHADERS} ${RENDER_STATES})
+    add_executable(GLFWDemo MACOSX_BUNDLE ${SOURCES} ${ASSETS})
 else()
-    add_executable(GLFWDemo ${SOURCES} ${SHADERS} ${RENDER_STATES})
+    add_executable(GLFWDemo ${SOURCES} ${ASSETS})
 endif()
 
 set_target_properties(GLFWDemo PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 target_compile_features(GLFWDemo PUBLIC cxx_std_14)
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${SHADERS} ${RENDER_STATES})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${ASSETS})
 target_include_directories(GLFWDemo PRIVATE "../../../DiligentCore")
 if(METAL_SUPPORTED)
     target_include_directories(GLFWDemo PRIVATE "../../../DiligentCorePro")
@@ -96,7 +98,7 @@ if(PLATFORM_MACOS AND VULKAN_LIB_PATH)
     )
 endif()
 
-set_source_files_properties(${SHADERS} PROPERTIES
+set_source_files_properties(${ASSETS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "."
     MACOSX_PACKAGE_LOCATION "Resources"
 )
