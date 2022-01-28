@@ -1,0 +1,216 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "UseCombinedTextureSamplers": true
+        }
+    },
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "Render Normal Map",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "ShaderStages": "PIXEL",
+                            "Name": "g_tex2DElevationMap",
+                            "Type": "STATIC"
+                        },
+                        {
+                            "ShaderStages": "PIXEL",
+                            "Name": "cbNMGenerationAttribs",
+                            "Type": "STATIC"
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_STRIP",
+                "RTVFormats": {
+                    "0": "RG8_UNORM"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false,
+                    "DepthWriteEnable": false
+                },
+                "RasterizerDesc": {
+                    "FillMode": "SOLID",
+                    "CullMode": "NONE",
+                    "FrontCounterClockwise": true
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "GenerateScreenSizeQuadVS"
+                },
+                "FilePath": "ScreenSizeQuadVS.fx",
+                "EntryPoint": "GenerateScreenSizeQuadVS"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "GenerateNormalMapPS"
+                },
+                "FilePath": "GenerateNormalMapPS.fx",
+                "EntryPoint": "GenerateNormalMapPS"
+            }
+        },
+        {
+            "PSODesc": {
+                "Name": "Render Hemisphere Z Only"
+            },
+            "GraphicsPipeline": {
+                "InputLayout": {
+                    "LayoutElements": [
+                        {
+                            "NumComponents": 3,
+                            "ValueType": "FLOAT32",
+                            "IsNormalized": false,
+                            "Stride": 20
+                        }
+                    ]
+                },
+                "PrimitiveTopology": "TRIANGLE_STRIP",
+                "RasterizerDesc": {
+                    "FillMode": "SOLID",
+                    "CullMode": "BACK",
+                    "DepthClipEnable": false,
+                    "FrontCounterClockwise": true
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "HemisphereZOnlyVS"
+                },
+                "FilePath": "HemisphereZOnlyVS.fx",
+                "EntryPoint": "HemisphereZOnlyVS"
+            }
+        },
+        {
+            "PSODesc": {
+                "Name": "RenderHemisphere",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "ShaderStages": "VERTEX",
+                            "Name": "cbCameraAttribs",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "ShaderStages": "VERTEX",
+                            "Name": "cbLightAttribs",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "ShaderStages": "VERTEX",
+                            "Name": "cbTerrainAttribs",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "ShaderStages": "VERTEX",
+                            "Name": "cbParticipatingMediaScatteringParams",
+                            "Type": "STATIC"
+                        },
+                        {
+                            "ShaderStages": "VERTEX",
+                            "Name": "g_tex2DOccludedNetDensityToAtmTop",
+                            "Type": "DYNAMIC"
+                        },
+                        {
+                            "ShaderStages": "VERTEX",
+                            "Name": "g_tex2DAmbientSkylight",
+                            "Type": "DYNAMIC"
+                        },
+                        {
+                            "ShaderStages": "PIXEL",
+                            "Name": "g_tex2DShadowMap",
+                            "Type": "DYNAMIC"
+                        }
+                    ],
+                    "ImmutableSamplers": [
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_tex2DTileDiffuse",
+                            "Desc": {
+                                "AddressU": "WRAP",
+                                "AddressV": "WRAP",
+                                "AddressW": "WRAP"
+                            }
+                        },
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_tex2DTileNM",
+                            "Desc": {
+                                "AddressU": "WRAP",
+                                "AddressV": "WRAP",
+                                "AddressW": "WRAP"
+                            }
+                        },
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_tex2DNormalMap",
+                            "Desc": {
+                                "AddressU": "MIRROR",
+                                "AddressV": "MIRROR",
+                                "AddressW": "MIRROR"
+                            }
+                        },
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_tex2DMtrlMap",
+                            "Desc": {
+                                "AddressU": "MIRROR",
+                                "AddressV": "MIRROR",
+                                "AddressW": "MIRROR"
+                            }
+                        },
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_tex2DShadowMap",
+                            "Desc": {
+                                "MinFilter": "COMPARISON_LINEAR",
+                                "MagFilter": "COMPARISON_LINEAR",
+                                "MipFilter": "COMPARISON_LINEAR",
+                                "ComparisonFunc": "LESS"
+                            }
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "InputLayout": {
+                    "LayoutElements": [
+                        {
+                            "NumComponents": 3,
+                            "ValueType": "FLOAT32"
+                        },
+                        {
+                            "InputIndex": 1,
+                            "NumComponents": 2,
+                            "ValueType": "FLOAT32"
+                        }
+                    ]
+                },
+                "PrimitiveTopology": "TRIANGLE_STRIP",
+                "RasterizerDesc": {
+                    "FillMode": "SOLID",
+                    "CullMode": "BACK",
+                    "FrontCounterClockwise": true
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "HemisphereVS"
+                },
+                "FilePath": "HemisphereVS.fx",
+                "EntryPoint": "HemisphereVS"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "HemispherePS"
+                },
+                "FilePath": "HemispherePS.fx",
+                "EntryPoint": "HemispherePS"
+            }
+        }
+    ]
+}

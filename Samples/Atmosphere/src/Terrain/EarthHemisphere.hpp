@@ -55,6 +55,7 @@
 #include "TextureView.h"
 #include "GraphicsTypes.h"
 #include "RefCntAutoPtr.hpp"
+#include "RenderStateNotationLoader.h"
 
 #include "AdvancedMath.hpp"
 
@@ -153,6 +154,8 @@ private:
 
     RefCntAutoPtr<IRenderDevice> m_pDevice;
 
+    RefCntAutoPtr<IRenderStateNotationLoader> m_pRSNLoader;
+
     RefCntAutoPtr<IBuffer>      m_pcbTerrainAttribs;
     RefCntAutoPtr<IBuffer>      m_pVertBuff;
     RefCntAutoPtr<ITextureView> m_ptex2DNormalMapSRV, m_ptex2DMtrlMaskSRV;
@@ -161,7 +164,6 @@ private:
     RefCntAutoPtr<ITextureView> m_ptex2DTilNormalMapsSRV[NUM_TILE_TEXTURES];
 
     RefCntAutoPtr<IResourceMapping> m_pResMapping;
-    RefCntAutoPtr<IShader>          m_pHemisphereVS;
 
     RefCntAutoPtr<IPipelineState>         m_pHemisphereZOnlyPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pHemisphereZOnlySRB;
