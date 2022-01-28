@@ -65,6 +65,7 @@ namespace Diligent
 #include "ShaderMacroHelper.hpp"
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
+#include "CallbackWrapper.hpp"
 
 namespace Diligent
 {
@@ -562,59 +563,9 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
 
     m_pResMapping->AddResource("cbNMGenerationAttribs", pcbNMGenerationAttribs, true);
 
-
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders\\;shaders\\terrain", &pShaderSourceFactory);
-
-    ShaderCreateInfo ShaderCI;
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.FilePath                   = "ScreenSizeQuadVS.fx";
-    ShaderCI.EntryPoint                 = "GenerateScreenSizeQuadVS";
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
-    ShaderCI.Desc.ShaderType            = SHADER_TYPE_VERTEX;
-    ShaderCI.Desc.Name                  = "GenerateScreenSizeQuadVS";
-    RefCntAutoPtr<IShader> pScreenSizeQuadVS;
-    pDevice->CreateShader(ShaderCI, &pScreenSizeQuadVS);
-
-    ShaderCI.FilePath        = "GenerateNormalMapPS.fx";
-    ShaderCI.EntryPoint      = "GenerateNormalMapPS";
-    ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-    ShaderCI.Desc.Name       = "GenerateNormalMapPS";
-
-    RefCntAutoPtr<IShader> pGenerateNormalMapPS;
-    pDevice->CreateShader(ShaderCI, &pGenerateNormalMapPS);
-
-    GraphicsPipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
-
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-    // clang-format off
-    ShaderResourceVariableDesc ShaderVars[] = 
-    {
-        {SHADER_TYPE_PIXEL, "g_tex2DElevationMap",   SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
-        {SHADER_TYPE_PIXEL, "cbNMGenerationAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC}
-    };
-    // clang-format on
-
-    PSODesc.ResourceLayout.NumVariables = _countof(ShaderVars);
-    PSODesc.ResourceLayout.Variables    = ShaderVars;
-
-    PSODesc.Name           = "Render Normal Map";
-    auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
-
-    GraphicsPipeline.DepthStencilDesc.DepthEnable         = false;
-    GraphicsPipeline.DepthStencilDesc.DepthWriteEnable    = false;
-    GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
-    GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_NONE;
-    GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
-    PSOCreateInfo.pVS                                     = pScreenSizeQuadVS;
-    PSOCreateInfo.pPS                                     = pGenerateNormalMapPS;
-    GraphicsPipeline.NumRenderTargets                     = 1;
-    GraphicsPipeline.RTVFormats[0]                        = TEX_FORMAT_RG8_UNORM;
-    GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     RefCntAutoPtr<IPipelineState> pRenderNormalMapPSO;
-    pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &pRenderNormalMapPSO);
+    m_pRSNLoader->LoadPipelineState({"Render Normal Map", PIPELINE_TYPE_GRAPHICS, false}, &pRenderNormalMapPSO);
+
     pRenderNormalMapPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 
     RefCntAutoPtr<IShaderResourceBinding> pRenderNormalMapSRB;
@@ -664,6 +615,26 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
 {
     m_Params  = Params;
     m_pDevice = pDevice;
+
+    RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
+    {
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
+        m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("render_states", &pStreamFactory);
+
+        CreateRenderStateNotationParser({}, &pRSNParser);
+        pRSNParser->ParseFile("RenderStates.json", pStreamFactory);
+    }
+
+    {
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
+        m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pStreamFactory);
+
+        RenderStateNotationLoaderCreateInfo RSNLoaderCI{};
+        RSNLoaderCI.pDevice        = m_pDevice;
+        RSNLoaderCI.pStreamFactory = pStreamFactory;
+        RSNLoaderCI.pParser        = pRSNParser;
+        CreateRenderStateNotationLoader(RSNLoaderCI, &m_pRSNLoader);
+    }
 
     const Uint16* pHeightMap;
     size_t        HeightMapPitch;
@@ -734,58 +705,12 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
 
     RenderNormalMap(pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap);
 
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pShaderSourceFactory);
-
     {
-        ShaderCreateInfo ShaderCI;
-        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-        ShaderCI.FilePath                   = "HemisphereVS.fx";
-        ShaderCI.EntryPoint                 = "HemisphereVS";
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.UseCombinedTextureSamplers = true;
-        ShaderCI.Desc.ShaderType            = SHADER_TYPE_VERTEX;
-        ShaderCI.Desc.Name                  = "HemisphereVS";
-
-        pDevice->CreateShader(ShaderCI, &m_pHemisphereVS);
-    }
-
-
-    {
-        ShaderCreateInfo ShaderCI;
-        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-        ShaderCI.FilePath                   = "HemisphereZOnlyVS.fx";
-        ShaderCI.EntryPoint                 = "HemisphereZOnlyVS";
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.UseCombinedTextureSamplers = true;
-        ShaderCI.Desc.ShaderType            = SHADER_TYPE_VERTEX;
-        ShaderCI.Desc.Name                  = "HemisphereZOnlyVS";
-        RefCntAutoPtr<IShader> pHemisphereZOnlyVS;
-        pDevice->CreateShader(ShaderCI, &pHemisphereZOnlyVS);
-
-        GraphicsPipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
-
-        PSODesc.Name                                          = "Render Hemisphere Z Only";
-        PSODesc.ResourceLayout.DefaultVariableType            = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        auto& GraphicsPipeline                                = PSOCreateInfo.GraphicsPipeline;
-        GraphicsPipeline.DepthStencilDesc                     = DSS_Default;
-        GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
-        GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
-        GraphicsPipeline.RasterizerDesc.DepthClipEnable       = False;
-        GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
-        // clang-format off
-        LayoutElement Inputs[] =
-        {
-            {0, 0, 3, VT_FLOAT32, False, 0, (3+2)*4}
-        };
-        // clang-format on
-        GraphicsPipeline.InputLayout.LayoutElements = Inputs;
-        GraphicsPipeline.InputLayout.NumElements    = _countof(Inputs);
-        GraphicsPipeline.DSVFormat                  = m_Params.ShadowMapFormat;
-        GraphicsPipeline.PrimitiveTopology          = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        PSOCreateInfo.pVS                           = pHemisphereZOnlyVS;
-        pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pHemisphereZOnlyPSO);
+        auto Callback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {
+            auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
+            GraphicsPipelineCI.GraphicsPipeline.DSVFormat = m_Params.ShadowMapFormat;
+        });
+        m_pRSNLoader->LoadPipelineState({"Render Hemisphere Z Only", PIPELINE_TYPE_GRAPHICS, false, Callback, Callback}, &m_pHemisphereZOnlyPSO);
         m_pHemisphereZOnlyPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
     }
@@ -835,45 +760,6 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
 
     if (!m_pHemispherePSO)
     {
-        ShaderCreateInfo Attrs;
-        Attrs.FilePath                   = "HemispherePS.fx";
-        Attrs.EntryPoint                 = "HemispherePS";
-        Attrs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
-        Attrs.Desc.Name                  = "HemispherePS";
-        Attrs.UseCombinedTextureSamplers = true;
-        Attrs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-        m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pShaderSourceFactory);
-        Attrs.pShaderSourceStreamFactory = pShaderSourceFactory;
-
-        std::array<ImmutableSamplerDesc, 5> ImtblSamplers = {};
-
-        ImtblSamplers[0].ShaderStages         = SHADER_TYPE_PIXEL;
-        ImtblSamplers[0].SamplerOrTextureName = "g_tex2DTileDiffuse";
-        ImtblSamplers[0].Desc.AddressU        = TEXTURE_ADDRESS_WRAP;
-        ImtblSamplers[0].Desc.AddressV        = TEXTURE_ADDRESS_WRAP;
-        ImtblSamplers[0].Desc.AddressW        = TEXTURE_ADDRESS_WRAP;
-
-        ImtblSamplers[1].ShaderStages         = SHADER_TYPE_PIXEL;
-        ImtblSamplers[1].SamplerOrTextureName = "g_tex2DTileNM";
-        ImtblSamplers[1].Desc                 = ImtblSamplers[0].Desc;
-
-        ImtblSamplers[2].ShaderStages         = SHADER_TYPE_PIXEL;
-        ImtblSamplers[2].SamplerOrTextureName = "g_tex2DNormalMap";
-        ImtblSamplers[2].Desc.AddressU        = TEXTURE_ADDRESS_MIRROR;
-        ImtblSamplers[2].Desc.AddressV        = TEXTURE_ADDRESS_MIRROR;
-        ImtblSamplers[2].Desc.AddressW        = TEXTURE_ADDRESS_MIRROR;
-
-        ImtblSamplers[3].ShaderStages         = SHADER_TYPE_PIXEL;
-        ImtblSamplers[3].SamplerOrTextureName = "g_tex2DMtrlMap";
-        ImtblSamplers[3].Desc                 = ImtblSamplers[2].Desc;
-
-        ImtblSamplers[4].ShaderStages         = SHADER_TYPE_PIXEL;
-        ImtblSamplers[4].SamplerOrTextureName = "g_tex2DShadowMap";
-        ImtblSamplers[4].Desc.MinFilter       = FILTER_TYPE_COMPARISON_LINEAR;
-        ImtblSamplers[4].Desc.MagFilter       = FILTER_TYPE_COMPARISON_LINEAR;
-        ImtblSamplers[4].Desc.MipFilter       = FILTER_TYPE_COMPARISON_LINEAR;
-        ImtblSamplers[4].Desc.ComparisonFunc  = COMPARISON_FUNC_LESS;
 
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro("TEXTURING_MODE", m_Params.m_TexturingMode);
@@ -882,58 +768,24 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         Macros.AddShaderMacro("BEST_CASCADE_SEARCH", m_Params.m_bBestCascadeSearch ? true : false);
         Macros.AddShaderMacro("SHADOW_FILTER_SIZE", m_Params.m_FixedShadowFilterSize);
         Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_Params.m_FilterAcrossShadowCascades);
-        Macros.Finalize();
-        Attrs.Macros = Macros;
 
-        RefCntAutoPtr<IShader> pHemispherePS;
-        m_pDevice->CreateShader(Attrs, &pHemispherePS);
+        auto ShaderCallback = MakeCallback([&](ShaderCreateInfo& pShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {
+            if (ShaderType == SHADER_TYPE_PIXEL)
+                pShaderCI.Macros = Macros;
+        });
 
-        LayoutElement Inputs[] =
-            {
-                {0, 0, 3, VT_FLOAT32},
-                {1, 0, 2, VT_FLOAT32}};
+        auto PipelineCallback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {
+            auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
+            GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = TEX_FORMAT_D32_FLOAT;
+            GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_Params.DstRTVFormat;
+            GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
+        });
+        m_pRSNLoader->LoadPipelineState({"RenderHemisphere", PIPELINE_TYPE_GRAPHICS, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemispherePSO);
 
-        GraphicsPipelineStateCreateInfo PSOCreateInfo;
-        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
-
-        PSODesc.Name = "RenderHemisphere";
-
-        // clang-format off
-        ShaderResourceVariableDesc Vars[] = 
-        {
-			{SHADER_TYPE_VERTEX, "cbCameraAttribs",                      SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}, 
-			{SHADER_TYPE_VERTEX, "cbLightAttribs",                       SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}, 
-			{SHADER_TYPE_VERTEX, "cbTerrainAttribs",                     SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
-			{SHADER_TYPE_VERTEX, "cbParticipatingMediaScatteringParams", SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
-			{SHADER_TYPE_VERTEX, "g_tex2DOccludedNetDensityToAtmTop",    SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-			{SHADER_TYPE_VERTEX, "g_tex2DAmbientSkylight",               SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC} ,
-            {SHADER_TYPE_PIXEL,  "g_tex2DShadowMap",                     SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
-        };
-        // clang-format on
-        PSODesc.ResourceLayout.Variables            = Vars;
-        PSODesc.ResourceLayout.NumVariables         = _countof(Vars);
-        PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers.data();
-        PSODesc.ResourceLayout.NumImmutableSamplers = static_cast<Uint32>(ImtblSamplers.size());
-
-        auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
-
-        GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
-        GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
-        GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
-        GraphicsPipeline.InputLayout.LayoutElements           = Inputs;
-        GraphicsPipeline.InputLayout.NumElements              = _countof(Inputs);
-        PSOCreateInfo.pVS                                     = m_pHemisphereVS;
-        PSOCreateInfo.pPS                                     = pHemispherePS;
-        GraphicsPipeline.RTVFormats[0]                        = m_Params.DstRTVFormat;
-        GraphicsPipeline.NumRenderTargets                     = 1;
-        GraphicsPipeline.DSVFormat                            = TEX_FORMAT_D32_FLOAT;
-        GraphicsPipeline.PrimitiveTopology                    = PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pHemispherePSO);
         m_pHemispherePSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemispherePSO->CreateShaderResourceBinding(&m_pHemisphereSRB, true);
         m_pHemisphereSRB->BindResources(SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING);
     }
-
 
     ViewFrustumExt ViewFrustum;
     auto           DevType = m_pDevice->GetDeviceInfo().Type;

@@ -36,6 +36,10 @@ set(EXTERNAL_SHADERS
     ../../../DiligentFX/Shaders/Common/public/Shadows.fxh
 )
 
+set(RENDER_STATES
+    assets/render_states/RenderStates.json
+)
+
 set(TERRAIN_TEXTURES
     assets/Terrain/HeightMap.tif
     assets/Terrain/Mask.png
@@ -54,7 +58,7 @@ set(TERRAIN_TILES
 )
 
 set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS} ${EXTERNAL_SHADERS})
-set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES})
+set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES} ${RENDER_STATES})
 add_sample_app("Atmosphere" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
 set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
@@ -64,6 +68,10 @@ set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
 set_source_files_properties(${SHADERS} ${EXTERNAL_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION "Resources/shaders"
+)
+set_source_files_properties(${RENDER_STATES} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "render_states"
+    MACOSX_PACKAGE_LOCATION "Resources/render_states"
 )
 set_source_files_properties(${TERRAIN_TEXTURES} PROPERTIES
     VS_DEPLOYMENT_LOCATION "Terrain"
@@ -87,6 +95,7 @@ target_link_libraries(Atmosphere
 PRIVATE
     Diligent-GraphicsAccessories
     Diligent-TextureLoader
+    Diligent-RenderStateNotation
     DiligentFX
 )
 
