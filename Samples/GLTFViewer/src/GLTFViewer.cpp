@@ -246,25 +246,20 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
         m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("render_states", &pStreamFactory);
 
-        RenderStateNotationParserCreateInfo RSNParserCI{};
-        CreateRenderStateNotationParser(RSNParserCI, &pRSNParser);
+        CreateRenderStateNotationParser({}, &pRSNParser);
         pRSNParser->ParseFile("RenderStates.json", pStreamFactory);
     }
 
+    RefCntAutoPtr<IRenderStateNotationLoader> pRSNLoader;
     {
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
         m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pStreamFactory);
-
-        RenderStateNotationLoaderCreateInfo RSNLoaderCI{};
-        RSNLoaderCI.pDevice        = m_pDevice;
-        RSNLoaderCI.pStreamFactory = pStreamFactory;
-        RSNLoaderCI.pParser        = pRSNParser;
-        CreateRenderStateNotationLoader(RSNLoaderCI, &m_pRSNLoader);
+        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &pRSNLoader);
     }
 
-    CreateEnvMapPSO();
+    CreateEnvMapPSO(pRSNLoader);
 
-    CreateBoundBoxPSO();
+    CreateBoundBoxPSO(pRSNLoader);
 
     m_LightDirection = normalize(float3(0.5f, -0.6f, -0.2f));
 
@@ -409,7 +404,7 @@ void GLTFViewer::UpdateUI()
     ImGui::End();
 }
 
-void GLTFViewer::CreateEnvMapPSO()
+void GLTFViewer::CreateEnvMapPSO(IRenderStateNotationLoader* pRSNLoader)
 {
     auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
         auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
@@ -418,7 +413,7 @@ void GLTFViewer::CreateEnvMapPSO()
         GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });
 
-    m_pRSNLoader->LoadPipelineState({"EnvMap PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_EnvMapPSO);
+    pRSNLoader->LoadPipelineState({"EnvMap PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_EnvMapPSO);
 
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs")->Set(m_EnvMapRenderAttribsCB);
@@ -453,7 +448,7 @@ void GLTFViewer::CreateEnvMapSRB()
     }
 }
 
-void GLTFViewer::CreateBoundBoxPSO()
+void GLTFViewer::CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader)
 {
     auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
         auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
@@ -461,7 +456,7 @@ void GLTFViewer::CreateBoundBoxPSO()
         GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
         GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });
-    m_pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_BoundBoxPSO);
+    pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_BoundBoxPSO);
 
     m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
     m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);

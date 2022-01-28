@@ -49,9 +49,9 @@ public:
     virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
 
 private:
-    void CreateEnvMapPSO();
+    void CreateEnvMapPSO(IRenderStateNotationLoader* pRSNLoader);
     void CreateEnvMapSRB();
-    void CreateBoundBoxPSO();
+    void CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader);
     void LoadModel(const char* Path);
     void ResetView();
     void UpdateUI();
@@ -101,9 +101,6 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
     RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
-
-    RefCntAutoPtr<IRenderStateNotationLoader> m_pRSNLoader;
-
     RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;
 
