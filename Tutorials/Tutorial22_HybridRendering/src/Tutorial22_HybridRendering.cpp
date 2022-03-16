@@ -744,6 +744,11 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     ShaderCI.Desc.Name = "Ray tracing CS";
     ShaderCI.FilePath  = "RayTracing.csh";
+    if (m_pDevice->GetDeviceInfo().IsMetalDevice())
+    {
+        // The shader uses macros that are not supported by MSL parser in Metal backend
+        ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_SKIP_REFLECTION;
+    }
     RefCntAutoPtr<IShader> pCS;
     m_pDevice->CreateShader(ShaderCI, &pCS);
     PSOCreateInfo.pCS = pCS;
