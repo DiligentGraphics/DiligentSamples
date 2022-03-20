@@ -134,7 +134,7 @@ void Tutorial05_TextureArray::LoadTextures()
         // Load current texture
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        auto                    FileName = FileNameSS.str();
+        const auto              FileName = FileNameSS.str();
         RefCntAutoPtr<ITexture> SrcTex   = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
         const auto&             TexDesc  = SrcTex->GetDesc();
         if (pTexArray == nullptr)

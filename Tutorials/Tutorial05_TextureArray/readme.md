@@ -86,21 +86,18 @@ appropriate texture array slice, one mip level at a time.
 
 ```cpp
 RefCntAutoPtr<ITexture> pTexArray;
-for(int tex=0; tex < NumTextures; ++tex)
+for (int tex = 0; tex < NumTextures; ++tex)
 {
     // Load current texture
-    TextureLoadInfo loadInfo;
-    loadInfo.IsSRGB = true;
-    RefCntAutoPtr<ITexture> SrcTex;
     std::stringstream FileNameSS;
     FileNameSS << "DGLogo" << tex << ".png";
-    auto FileName = FileNameSS.str();
-    CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
-    const auto &TexDesc = SrcTex->GetDesc();
+    const auto              FileName = FileNameSS.str();
+    RefCntAutoPtr<ITexture> SrcTex   = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
+    const auto&             TexDesc  = SrcTex->GetDesc();
     if (pTexArray == nullptr)
     {
-        // Create a texture array
-        auto TexArrDesc = TexDesc;
+        //	Create texture array
+        auto TexArrDesc      = TexDesc;
         TexArrDesc.ArraySize = NumTextures;
         TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
         TexArrDesc.Usage     = USAGE_DEFAULT;
@@ -108,9 +105,14 @@ for(int tex=0; tex < NumTextures; ++tex)
         m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
     }
     // Copy current texture into the texture array
-    for(Uint32 mip=0; mip < TexDesc.MipLevels; ++mip)
+    for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
     {
-        pTexArray->CopyData(m_pImmediateContext, SrcTex, mip, 0, nullptr, mip, tex, 0, 0, 0);
+        CopyTextureAttribs CopyAttribs(SrcTex, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                        pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        CopyAttribs.SrcMipLevel = mip;
+        CopyAttribs.DstMipLevel = mip;
+        CopyAttribs.DstSlice    = tex;
+        m_pImmediateContext->CopyTexture(CopyAttribs);
     }
 }
 // Get shader resource view from the texture array
