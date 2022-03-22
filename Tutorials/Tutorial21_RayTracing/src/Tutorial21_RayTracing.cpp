@@ -27,6 +27,7 @@
 
 #include "Tutorial21_RayTracing.hpp"
 #include "MapHelper.hpp"
+#include "GraphicsTypesX.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
 #include "ShaderMacroHelper.hpp"
@@ -105,7 +106,7 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     m_MaxRecursionDepth = std::min(m_MaxRecursionDepth, m_pDevice->GetAdapterInfo().RayTracing.MaxRecursionDepth);
 
     // Prepare ray tracing pipeline description.
-    RayTracingPipelineStateCreateInfo PSOCreateInfo;
+    RayTracingPipelineStateCreateInfoX PSOCreateInfo;
 
     PSOCreateInfo.PSODesc.Name         = "Ray tracing PSO";
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_RAY_TRACING;
@@ -204,38 +205,25 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     }
 
     // Setup shader groups
-    const RayTracingGeneralShaderGroup GeneralShaders[] = //
-        {
-            // Ray generation shader is an entry point for a ray tracing pipeline.
-            {"Main", pRayGen},
-            // Primary ray miss shader.
-            {"PrimaryMiss", pPrimaryMiss},
-            // Shadow ray miss shader.
-            {"ShadowMiss", pShadowMiss} //
-        };
-    const RayTracingTriangleHitShaderGroup TriangleHitShaders[] = //
-        {
-            // Primary ray hit group for the textured cube.
-            {"CubePrimaryHit", pCubePrimaryHit},
-            // Primary ray hit group for the ground.
-            {"GroundHit", pGroundHit},
-            // Primary ray hit group for the glass cube.
-            {"GlassPrimaryHit", pGlassPrimaryHit} //
-        };
-    const RayTracingProceduralHitShaderGroup ProceduralHitShaders[] = //
-        {
-            // Intersection and closest hit shaders for the procedural sphere.
-            {"SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit},
-            // Only intersection shader is needed for shadows.
-            {"SphereShadowHit", pSphereIntersection} //
-        };
 
-    PSOCreateInfo.pGeneralShaders          = GeneralShaders;
-    PSOCreateInfo.GeneralShaderCount       = _countof(GeneralShaders);
-    PSOCreateInfo.pTriangleHitShaders      = TriangleHitShaders;
-    PSOCreateInfo.TriangleHitShaderCount   = _countof(TriangleHitShaders);
-    PSOCreateInfo.pProceduralHitShaders    = ProceduralHitShaders;
-    PSOCreateInfo.ProceduralHitShaderCount = _countof(ProceduralHitShaders);
+    // Ray generation shader is an entry point for a ray tracing pipeline.
+    PSOCreateInfo.AddGeneralShader({"Main", pRayGen});
+    // Primary ray miss shader.
+    PSOCreateInfo.AddGeneralShader({"PrimaryMiss", pPrimaryMiss});
+    // Shadow ray miss shader.
+    PSOCreateInfo.AddGeneralShader({"ShadowMiss", pShadowMiss});
+
+    // Primary ray hit group for the textured cube.
+    PSOCreateInfo.AddTriangleHitShader({"CubePrimaryHit", pCubePrimaryHit});
+    // Primary ray hit group for the ground.
+    PSOCreateInfo.AddTriangleHitShader({"GroundHit", pGroundHit});
+    // Primary ray hit group for the glass cube.
+    PSOCreateInfo.AddTriangleHitShader({"GlassPrimaryHit", pGlassPrimaryHit});
+
+    // Intersection and closest hit shaders for the procedural sphere.
+    PSOCreateInfo.AddProceduralHitShader({"SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit});
+    // Only intersection shader is needed for shadows.
+    PSOCreateInfo.AddProceduralHitShader({"SphereShadowHit", pSphereIntersection});
 
     // Specify the maximum ray recursion depth.
     // WARNING: the driver does not track the recursion depth and it is the
@@ -256,23 +244,15 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
         FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR,
         TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP, TEXTURE_ADDRESS_WRAP //
     };
-    ImmutableSamplerDesc ImmutableSamplers[] = //
-        {
-            {SHADER_TYPE_RAY_CLOSEST_HIT, "g_SamLinearWrap", SamLinearWrapDesc} //
-        };
 
-    ShaderResourceVariableDesc Variables[] = //
-        {
-            {SHADER_TYPE_RAY_GEN | SHADER_TYPE_RAY_MISS | SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB", SHADER_RESOURCE_VARIABLE_TYPE_STATIC},
-            {SHADER_TYPE_RAY_GEN, "g_ColorBuffer", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
-            //
-        };
+    PipelineResourceLayoutDescX ResourceLayout;
+    ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    ResourceLayout.AddImmutableSampler({SHADER_TYPE_RAY_CLOSEST_HIT, "g_SamLinearWrap", SamLinearWrapDesc});
+    ResourceLayout
+        .AddVariable({SHADER_TYPE_RAY_GEN | SHADER_TYPE_RAY_MISS | SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB", SHADER_RESOURCE_VARIABLE_TYPE_STATIC})
+        .AddVariable({SHADER_TYPE_RAY_GEN, "g_ColorBuffer", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC});
 
-    PSOCreateInfo.PSODesc.ResourceLayout.Variables            = Variables;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables         = _countof(Variables);
-    PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImmutableSamplers;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImmutableSamplers);
-    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    PSOCreateInfo.PSODesc.ResourceLayout = ResourceLayout;
 
     m_pDevice->CreateRayTracingPipelineState(PSOCreateInfo, &m_pRayTracingPSO);
     VERIFY_EXPR(m_pRayTracingPSO != nullptr);
@@ -567,10 +547,10 @@ void Tutorial21_RayTracing::UpdateTLAS()
         float  TimeOffset;
     } CubeInstData[] = // clang-format off
     {
-            {float3{ 1, 1,  1}, 0.00f},
-            {float3{ 2, 0, -1}, 0.53f},
-            {float3{-1, 1,  2}, 1.27f},
-            {float3{-2, 0, -1}, 4.16f}
+        {float3{ 1, 1,  1}, 0.00f},
+        {float3{ 2, 0, -1}, 0.53f},
+        {float3{-1, 1,  2}, 1.27f},
+        {float3{-2, 0, -1}, 4.16f}
     };
     // clang-format on
     static_assert(_countof(CubeInstData) == NumCubes, "Cube instance data array size mismatch");
