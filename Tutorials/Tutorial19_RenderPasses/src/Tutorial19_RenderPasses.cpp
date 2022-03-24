@@ -207,16 +207,19 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    const auto IsVulkan = m_pDevice->GetDeviceInfo().IsVulkanDevice();
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
-        // For Vulkan, we will use special version that uses native input attachments
-        ShaderCI.SourceLanguage  = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
+        // For Vulkan and Metal, we will use a special GLSL shader that uses native input attachments
+        const auto UseGLSL =
+            m_pDevice->GetDeviceInfo().IsVulkanDevice() ||
+            m_pDevice->GetDeviceInfo().IsMetalDevice();
+
+        ShaderCI.SourceLanguage  = UseGLSL ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Light volume PS";
-        ShaderCI.FilePath        = IsVulkan ? "light_volume_glsl.psh" : "light_volume_hlsl.psh";
+        ShaderCI.FilePath        = UseGLSL ? "light_volume_glsl.psh" : "light_volume_hlsl.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }
@@ -288,16 +291,19 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
         VERIFY_EXPR(pVS != nullptr);
     }
 
-    const auto IsVulkan = m_pDevice->GetDeviceInfo().IsVulkanDevice();
-
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.SourceLanguage  = IsVulkan ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
+        // For Vulkan and Metal, we will use a special GLSL shader that uses native input attachments
+        const auto UseGLSL =
+            m_pDevice->GetDeviceInfo().IsVulkanDevice() ||
+            m_pDevice->GetDeviceInfo().IsMetalDevice();
+
+        ShaderCI.SourceLanguage  = UseGLSL ? SHADER_SOURCE_LANGUAGE_GLSL : SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Ambient light PS";
-        ShaderCI.FilePath        = IsVulkan ? "ambient_light_glsl.psh" : "ambient_light_hlsl.psh";
+        ShaderCI.FilePath        = UseGLSL ? "ambient_light_glsl.psh" : "ambient_light_hlsl.psh";
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }
@@ -620,15 +626,19 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     if (!m_pLightVolumeSRB)
     {
         m_pLightVolumePSO->CreateShaderResourceBinding(&m_pLightVolumeSRB, true);
-        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        if (auto* pInputColor = m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor"))
+            pInputColor->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        if (auto* pInputDepthZ = m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ"))
+            pInputDepthZ->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     if (!m_pAmbientLightSRB)
     {
         m_pAmbientLightPSO->CreateShaderResourceBinding(&m_pAmbientLightSRB, true);
-        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor")->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ")->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        if (auto* pInputColor = m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor"))
+            pInputColor->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        if (auto* pInputDepthZ = m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ"))
+            pInputDepthZ->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     return pFramebuffer;
