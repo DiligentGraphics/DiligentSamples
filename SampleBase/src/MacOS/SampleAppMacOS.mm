@@ -178,6 +178,7 @@ public:
             {
                 double wheel_dx = 0.0;
                 double wheel_dy = 0.0;
+                (void)wheel_dx;
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
                 if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
