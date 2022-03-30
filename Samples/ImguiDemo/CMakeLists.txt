@@ -4,7 +4,7 @@ project(ImguiDemo CXX)
 
 set(SOURCE
     src/ImguiDemo.cpp
-    ../../../DiligentTools/ThirdParty/imgui/imgui_demo.cpp
+    ${DILIGENT_DEAR_IMGUI_PATH}/imgui_demo.cpp
 )
 
 set(INCLUDE

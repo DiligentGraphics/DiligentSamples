@@ -23,6 +23,7 @@ set(ASSETS
 )
 
 add_sample_app("NuklearDemo" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+target_include_directories(NuklearDemo PRIVATE ${DILIGENT_NUKLEAR_DIR})
 
 if(MSVC)
     target_compile_definitions(NuklearDemo PRIVATE _CRT_SECURE_NO_WARNINGS)
