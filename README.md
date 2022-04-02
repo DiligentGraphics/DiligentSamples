@@ -1,7 +1,10 @@
 # DiligentSamples <img src="https://github.com/DiligentGraphics/DiligentCore/blob/master/media/diligentgraphics-logo.png" height=64 align="right" valign="middle">
 
 
-This module contains tutorials and sample applications intended to demonstrate the usage of [Diligent Engine](https://github.com/DiligentGraphics/DiligentEngine). The module depends on the [Core](https://github.com/DiligentGraphics/DiligentCore) and [Tools](https://github.com/DiligentGraphics/DiligentTools) submodules.
+This module contains tutorials and sample applications intended to demonstrate the usage of
+[Diligent Engine](https://github.com/DiligentGraphics/DiligentEngine). The module depends on
+the [Core](https://github.com/DiligentGraphics/DiligentCore), [Tools](https://github.com/DiligentGraphics/DiligentTools),
+and [FX](https://github.com/DiligentGraphics/DiligentFX) submodules.
 
 To build and run the applications in the module, please follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine#build-and-run-instructions) in the master repository.
 
@@ -379,7 +382,7 @@ In submitting any content to this repository,
 and you agree that the content is free of any Intellectual Property claims and you have the right to license it under those terms. 
 
 Diligent Engine uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) to ensure
-consistent source code style throughout the code base. The format is validated by appveyor and travis
+consistent source code style throughout the code base. The format is validated by CI
 for each commit and pull request, and the build will fail if any code formatting issue is found. Please refer
 to [this page](https://github.com/DiligentGraphics/DiligentCore/blob/master/doc/code_formatting.md) for instructions
 on how to set up clang-format and automatic code formatting.
