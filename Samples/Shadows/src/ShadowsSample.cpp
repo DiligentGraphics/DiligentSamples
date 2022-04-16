@@ -73,7 +73,7 @@ void ShadowsSample::Initialize(const SampleInitInfo& InitInfo)
     std::string MeshFileName = "Powerplant/Powerplant.sdkmesh";
     m_Mesh.Create(MeshFileName.c_str());
     std::string Directory;
-    FileSystem::SplitFilePath(MeshFileName, &Directory, nullptr);
+    FileSystem::GetPathComponents(MeshFileName, &Directory, nullptr);
     m_Mesh.LoadGPUResources(Directory.c_str(), m_pDevice, m_pImmediateContext);
 
     m_LightAttribs.ShadowAttribs.iNumCascades     = 4;
