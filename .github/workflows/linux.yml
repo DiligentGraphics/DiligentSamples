@@ -73,9 +73,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Linux -> x64, Clang, ${{ matrix.config }}
 
-    env:
-      CMAKE_GENERATOR: "Ninja"
-
     steps:
     - name: Clone DiligentSamples
       uses: actions/checkout@v2
@@ -117,6 +114,7 @@ jobs:
       env:
         CC: clang-12
         CXX: clang++-12
+        CMAKE_GENERATOR: Ninja
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE/DiligentSamples/BuildTools/Scripts/github_actions
