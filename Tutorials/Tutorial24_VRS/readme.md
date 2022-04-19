@@ -15,7 +15,7 @@ by motion blur or depth-of-field, covered by UI, etc.). Direct3D12 and Vulkan su
 
 ### Per-draw Shading Rate
 
-If `SHADING_RATE_CAP_FLAG_PER_DRAW` capability is supported, a uniform shading rate that will be applied throught
+If `SHADING_RATE_CAP_FLAG_PER_DRAW` capability is supported, a uniform shading rate that will be applied throughout
 the entire render target may be set using the `IDeviceContext::SetShadingRate()` method. 
 The `BaseRate` parameter must be one of the shading rates supported by the device. All supported rates are listed in
 `ShadingRateProperties::ShadingRates` member of the `GraphicsAdapterInfo` struct.
@@ -103,7 +103,7 @@ If `SHADING_RATE_CAP_FLAG_TEXTURE_DEVICE_ACCESS` capability is present, the VRS 
 If you update VRS texture in a compute shader, the engine can implicitly synchronize access to the VRS texture if automatic state transitions are used.
 If the capability is not present, VRS texture is accessed on the CPU side when `IDeviceContext::SetRenderTargetsExt()` or
 `IDeviceContext::BeginRenderPass()` are called, and if VRS texture is updated on the GPU side, you need to explicitly synchronize access to the texture
-using fences and add double/tripple buffering to avoid stalls.
+using fences and add double/triple buffering to avoid stalls.
 
 Some GPUs will smooth out transitions between different shading rates, capability SHADING_RATE_CAP_FLAG_ADDITIONAL_INVOCATIONS indicates that.
 

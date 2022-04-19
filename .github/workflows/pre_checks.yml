@@ -49,6 +49,14 @@ jobs:
         cd $GITHUB_WORKSPACE/DiligentSamples/BuildTools/FormatValidation
         ./validate_format_linux.sh
 
+    - name: Codespell
+      uses: codespell-project/actions-codespell@master
+      with:
+        check_filenames: true
+        ignore_words_list: inout,lod,ba
+        skip: ./DiligentSamples/ThirdParty,./DiligentSamples/Samples/Asteroids/SDK,*.gltf
+        path: ./DiligentSamples
+
   run-macos:
 
     runs-on: macos-latest

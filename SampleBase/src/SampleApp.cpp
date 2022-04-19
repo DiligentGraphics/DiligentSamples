@@ -541,17 +541,17 @@ void SampleApp::UpdateAdaptersDialog()
 std::string GetArgument(const char*& pos, const char* ArgName)
 {
     size_t      ArgNameLen = 0;
-    const char* delimeters = " \n\r";
-    while (pos[ArgNameLen] != 0 && strchr(delimeters, pos[ArgNameLen]) == nullptr)
+    const char* delimiters = " \n\r";
+    while (pos[ArgNameLen] != 0 && strchr(delimiters, pos[ArgNameLen]) == nullptr)
         ++ArgNameLen;
 
     if (StrCmpNoCase(pos, ArgName, ArgNameLen) == 0)
     {
         pos += ArgNameLen;
-        while (*pos != 0 && strchr(delimeters, *pos) != nullptr)
+        while (*pos != 0 && strchr(delimiters, *pos) != nullptr)
             ++pos;
         std::string Arg;
-        while (*pos != 0 && strchr(delimeters, *pos) == nullptr)
+        while (*pos != 0 && strchr(delimiters, *pos) == nullptr)
             Arg.push_back(*(pos++));
         return Arg;
     }

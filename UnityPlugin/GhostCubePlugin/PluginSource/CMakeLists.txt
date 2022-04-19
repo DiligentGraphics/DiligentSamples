@@ -112,7 +112,7 @@ endif()
 
 if(MSVC)
     # Disable MSVC-specific warnings
-    # - w4201: nonstandard extension used: nameless struct/unio
+    # - w4201: nonstandard extension used: nameless struct/union
     target_compile_options(GhostCubePlugin-shared PRIVATE /wd4201)
 endif()
 

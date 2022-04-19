@@ -35,7 +35,7 @@
             },
             "pCS": {
                 "Desc": {
-                    "Name": "Geneate SDF CS"
+                    "Name": "Generate SDF CS"
                 },
                 "FilePath": "GenerateSDF.hlsl"
             }
