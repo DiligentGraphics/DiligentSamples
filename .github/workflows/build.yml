@@ -51,7 +51,7 @@ jobs:
       with:
         check_filenames: true
         ignore_words_file: ./DiligentSamples/.github/.codespellignore
-        skip: ./DiligentSamples/ThirdParty,./DiligentSamples/Samples/Asteroids/SDK,*.gltf
+        skip: ./DiligentSamples/.git,./DiligentSamples/ThirdParty,./DiligentSamples/Samples/Asteroids/SDK,*.gltf
         path: ./DiligentSamples
 
   macos-precheks:
