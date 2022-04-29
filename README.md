@@ -23,6 +23,7 @@ To build and run the applications in the module, please follow the [instructions
 [![Chat on gitter](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/diligent-engine)
 [![Chat on Discord](https://img.shields.io/discord/730091778081947680?logo=discord)](https://discord.gg/t7HGBK7)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
+[![Code Scanning](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/codeql.yml?query=branch%3Amaster)
 [![Lines of Code](https://tokei.rs/b1/github.com/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
 
 # Table of Contents
