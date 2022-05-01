@@ -208,7 +208,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly through the pipeline state object.
     IShaderResourceVariable* pVar = IPipelineState_GetStaticVariableByName(g_pPSO, SHADER_TYPE_VERTEX, "Constants");
-    IShaderResourceVariable_Set(pVar, (IDeviceObject*)g_pVSConstants);
+    IShaderResourceVariable_Set(pVar, (IDeviceObject*)g_pVSConstants, SET_SHADER_RESOURCE_FLAG_NONE);
 
     // Since we are using mutable variable, we must create a shader resource binding object
     // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
@@ -349,7 +349,7 @@ void LoadTexture(IRenderDevice* pDevice)
 
     // Set texture SRV in the SRB
     IShaderResourceVariable* pVar = IShaderResourceBinding_GetVariableByName(g_pSRB, SHADER_TYPE_PIXEL, "g_Texture");
-    IShaderResourceVariable_Set(pVar, (IDeviceObject*)pTextureSRV);
+    IShaderResourceVariable_Set(pVar, (IDeviceObject*)pTextureSRV, SET_SHADER_RESOURCE_FLAG_NONE);
     IObject_Release((IObject*)pTex);
 }
 
