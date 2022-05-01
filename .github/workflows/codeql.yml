@@ -36,7 +36,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: DiligentGraphics/github-action/checkout@master
+      uses: DiligentGraphics/github-action/checkout@v1
 
     - name: Set up build environment
       if: success()
@@ -47,7 +47,7 @@ jobs:
 
     - name: Configure CMake
       if: success()
-      uses: DiligentGraphics/github-action/configure-cmake@dev
+      uses: DiligentGraphics/github-action/configure-cmake@v1
       with:
         cc:         ${{ matrix.cc }}
         cxx:        ${{ matrix.cxx }}
