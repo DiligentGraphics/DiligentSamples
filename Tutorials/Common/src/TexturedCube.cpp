@@ -244,11 +244,11 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInf
 
     Uint32 Attrib = 0;
     if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_POSITION)
-        InputLayout.Add(Attrib++, 0, 3, VT_FLOAT32, False);
+        InputLayout.Add(Attrib++, 0u, 3u, VT_FLOAT32, False);
     if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_NORMAL)
-        InputLayout.Add(Attrib++, 0, 3, VT_FLOAT32, False);
+        InputLayout.Add(Attrib++, 0u, 3u, VT_FLOAT32, False);
     if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_TEXCOORD)
-        InputLayout.Add(Attrib++, 0, 2, VT_FLOAT32, False);
+        InputLayout.Add(Attrib++, 0u, 2u, VT_FLOAT32, False);
 
     for (Uint32 i = 0; i < CreateInfo.NumExtraLayoutElements; ++i)
         InputLayout.Add(CreateInfo.ExtraLayoutElements[i]);

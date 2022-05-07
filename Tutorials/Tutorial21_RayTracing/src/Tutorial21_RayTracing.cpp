@@ -207,23 +207,23 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
     // Setup shader groups
 
     // Ray generation shader is an entry point for a ray tracing pipeline.
-    PSOCreateInfo.AddGeneralShader({"Main", pRayGen});
+    PSOCreateInfo.AddGeneralShader("Main", pRayGen);
     // Primary ray miss shader.
-    PSOCreateInfo.AddGeneralShader({"PrimaryMiss", pPrimaryMiss});
+    PSOCreateInfo.AddGeneralShader("PrimaryMiss", pPrimaryMiss);
     // Shadow ray miss shader.
-    PSOCreateInfo.AddGeneralShader({"ShadowMiss", pShadowMiss});
+    PSOCreateInfo.AddGeneralShader("ShadowMiss", pShadowMiss);
 
     // Primary ray hit group for the textured cube.
-    PSOCreateInfo.AddTriangleHitShader({"CubePrimaryHit", pCubePrimaryHit});
+    PSOCreateInfo.AddTriangleHitShader("CubePrimaryHit", pCubePrimaryHit);
     // Primary ray hit group for the ground.
-    PSOCreateInfo.AddTriangleHitShader({"GroundHit", pGroundHit});
+    PSOCreateInfo.AddTriangleHitShader("GroundHit", pGroundHit);
     // Primary ray hit group for the glass cube.
-    PSOCreateInfo.AddTriangleHitShader({"GlassPrimaryHit", pGlassPrimaryHit});
+    PSOCreateInfo.AddTriangleHitShader("GlassPrimaryHit", pGlassPrimaryHit);
 
     // Intersection and closest hit shaders for the procedural sphere.
-    PSOCreateInfo.AddProceduralHitShader({"SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit});
+    PSOCreateInfo.AddProceduralHitShader("SpherePrimaryHit", pSphereIntersection, pSpherePrimaryHit);
     // Only intersection shader is needed for shadows.
-    PSOCreateInfo.AddProceduralHitShader({"SphereShadowHit", pSphereIntersection});
+    PSOCreateInfo.AddProceduralHitShader("SphereShadowHit", pSphereIntersection);
 
     // Specify the maximum ray recursion depth.
     // WARNING: the driver does not track the recursion depth and it is the
@@ -247,10 +247,10 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
 
     PipelineResourceLayoutDescX ResourceLayout;
     ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
-    ResourceLayout.AddImmutableSampler({SHADER_TYPE_RAY_CLOSEST_HIT, "g_SamLinearWrap", SamLinearWrapDesc});
+    ResourceLayout.AddImmutableSampler(SHADER_TYPE_RAY_CLOSEST_HIT, "g_SamLinearWrap", SamLinearWrapDesc);
     ResourceLayout
-        .AddVariable({SHADER_TYPE_RAY_GEN | SHADER_TYPE_RAY_MISS | SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB", SHADER_RESOURCE_VARIABLE_TYPE_STATIC})
-        .AddVariable({SHADER_TYPE_RAY_GEN, "g_ColorBuffer", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC});
+        .AddVariable(SHADER_TYPE_RAY_GEN | SHADER_TYPE_RAY_MISS | SHADER_TYPE_RAY_CLOSEST_HIT, "g_ConstantsCB", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
+        .AddVariable(SHADER_TYPE_RAY_GEN, "g_ColorBuffer", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
 
     PSOCreateInfo.PSODesc.ResourceLayout = ResourceLayout;
 
