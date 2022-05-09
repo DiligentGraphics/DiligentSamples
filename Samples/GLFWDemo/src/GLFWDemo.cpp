@@ -77,14 +77,23 @@
 #    include "Graphics/GraphicsEngineMetal/interface/EngineFactoryMtl.h"
 #endif
 
-#if PLATFORM_WIN32
+#ifdef GetObject
 #    undef GetObject
+#endif
+#ifdef CreateWindow
 #    undef CreateWindow
 #endif
 
 #include "GLFWDemo.hpp"
 
 #include "GLFW/glfw3native.h"
+#ifdef GetObject
+#    undef GetObject
+#endif
+#ifdef CreateWindow
+#    undef CreateWindow
+#endif
+
 
 #if PLATFORM_MACOS
 extern void* GetNSWindowView(GLFWwindow* wnd);
