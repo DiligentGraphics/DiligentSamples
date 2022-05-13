@@ -173,7 +173,8 @@ void Tutorial06_Multithreading::Initialize(const SampleInitInfo& InitInfo)
 
 void Tutorial06_Multithreading::PopulateInstanceData()
 {
-    m_InstanceData.resize(m_GridSize * m_GridSize * m_GridSize);
+    const auto zGridSize = static_cast<size_t>(m_GridSize);
+    m_InstanceData.resize(zGridSize * zGridSize * zGridSize);
     // Populate instance data buffer
     float fGridSize = static_cast<float>(m_GridSize);
 

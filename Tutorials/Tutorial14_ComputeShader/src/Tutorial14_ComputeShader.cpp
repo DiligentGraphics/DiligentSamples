@@ -284,7 +284,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
 
     BuffDesc.ElementByteStride = sizeof(int);
     BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
-    BuffDesc.Size              = BuffDesc.ElementByteStride * static_cast<Uint32>(m_NumParticles);
+    BuffDesc.Size              = Uint64{BuffDesc.ElementByteStride} * static_cast<Uint64>(m_NumParticles);
     BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);

@@ -104,7 +104,7 @@ RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*         pDevice,
         ((Components & VERTEX_COMPONENT_FLAG_NORMAL) ? 3 : 0) +
         ((Components & VERTEX_COMPONENT_FLAG_TEXCOORD) ? 2 : 0);
 
-    std::vector<float> VertexData(TotalVertexComponents * NumVertices);
+    std::vector<float> VertexData(size_t{TotalVertexComponents} * NumVertices);
 
     auto it = VertexData.begin();
     for (Uint32 v = 0; v < NumVertices; ++v)

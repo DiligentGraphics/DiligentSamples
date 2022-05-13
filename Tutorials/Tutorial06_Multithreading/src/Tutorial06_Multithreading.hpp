@@ -94,7 +94,7 @@ private:
     struct InstanceData
     {
         float4x4 Matrix;
-        int      TextureInd;
+        int      TextureInd = 0;
     };
     std::vector<InstanceData> m_InstanceData;
 };

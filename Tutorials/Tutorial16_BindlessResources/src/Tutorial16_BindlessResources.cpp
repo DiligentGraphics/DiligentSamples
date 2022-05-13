@@ -480,8 +480,9 @@ void Tutorial16_BindlessResources::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial16_BindlessResources::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    m_InstanceData.resize(m_GridSize * m_GridSize * m_GridSize);
-    m_GeometryType.resize(m_GridSize * m_GridSize * m_GridSize);
+    const auto zGridSize = static_cast<size_t>(m_GridSize);
+    m_InstanceData.resize(zGridSize * zGridSize * zGridSize);
+    m_GeometryType.resize(zGridSize * zGridSize * zGridSize);
 
     float fGridSize = static_cast<float>(m_GridSize);
 

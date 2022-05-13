@@ -78,7 +78,7 @@ private:
     struct InstanceData
     {
         float4x4 Matrix;
-        uint     TextureInd;
+        uint     TextureInd = 0;
     };
     std::vector<InstanceData> m_InstanceData;
     std::vector<Uint32>       m_GeometryType;

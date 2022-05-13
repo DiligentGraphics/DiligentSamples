@@ -157,9 +157,9 @@ void Game::Update(float dt)
                                        lerp(YRange.x, YRange.y, UNormPlayerPos.y)};
 
         // convert mouse position to signed normalized screen coordinates
-        const auto SCDesc        = GetSwapChain()->GetDesc();
-        float2     SNormMousePos = (m_Player.MousePos / uint2(SCDesc.Width, SCDesc.Height).Recast<float>()) * 2.0f - float2(1.f, 1.f);
-        SNormMousePos.y          = -SNormMousePos.y;
+        const auto& SCDesc        = GetSwapChain()->GetDesc();
+        float2      SNormMousePos = (m_Player.MousePos / uint2{SCDesc.Width, SCDesc.Height}.Recast<float>()) * 2.0f - float2(1.f, 1.f);
+        SNormMousePos.y           = -SNormMousePos.y;
 
         // calculate direction from player position to mouse position
         m_Player.FlashLightDir = normalize(SNormMousePos - SNormPlayerPos);
@@ -184,7 +184,7 @@ void Game::Draw()
 
     // update map constants
     {
-        const auto   SCDesc = pSwapchain->GetDesc();
+        const auto&  SCDesc = pSwapchain->GetDesc();
         MapConstants Const;
 
         GetScreenTransform(Const.ScreenRectLR, Const.ScreenRectTB);
@@ -306,7 +306,7 @@ void Game::GenerateMap()
     auto&       MapData = m_Map.MapData;
 
     MapData.clear();
-    MapData.resize(TexDim.x * TexDim.y, 0);
+    MapData.resize(size_t{TexDim.x} * size_t{TexDim.y}, 0);
 
     // Set top and bottom borders
     for (Uint32 x = 0, x2 = TexDim.x * (TexDim.y - 1); x < TexDim.x; ++x, ++x2)
@@ -316,7 +316,7 @@ void Game::GenerateMap()
     }
 
     // Set left and right borders
-    for (Uint32 y = 0; y < TexDim.y; ++y)
+    for (size_t y = 0; y < TexDim.y; ++y)
     {
         MapData[y * TexDim.x]           = true;
         MapData[(y + 1) * TexDim.x - 1] = true;
@@ -493,7 +493,7 @@ void Game::CreateSDFMap()
     // upload map to pSrcTex
     {
         std::vector<Uint8> MapData(m_Map.MapData.size());
-        VERIFY_EXPR(MapData.size() == (SrcTexDim.x * SrcTexDim.y));
+        VERIFY_EXPR(MapData.size() == (size_t{SrcTexDim.x} * size_t{SrcTexDim.y}));
 
         // convert 1-bit to 8-bit texture
         for (size_t i = 0; i < MapData.size(); ++i)

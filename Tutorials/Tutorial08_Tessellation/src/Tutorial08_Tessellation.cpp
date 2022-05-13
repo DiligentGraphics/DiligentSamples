@@ -254,9 +254,9 @@ void Tutorial08_Tessellation::LoadTextures()
         loadInfo.Name   = "Terrain height map";
         RefCntAutoPtr<ITexture> HeightMap;
         CreateTextureFromFile("ps_height_1k.png", loadInfo, m_pDevice, &HeightMap);
-        const auto HMDesc = HeightMap->GetDesc();
-        m_HeightMapWidth  = HMDesc.Width;
-        m_HeightMapHeight = HMDesc.Height;
+        const auto& HMDesc = HeightMap->GetDesc();
+        m_HeightMapWidth   = HMDesc.Width;
+        m_HeightMapHeight  = HMDesc.Height;
         // Get shader resource view from the texture
         m_HeightMapSRV = HeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     }

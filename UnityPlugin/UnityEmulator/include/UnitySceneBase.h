@@ -69,7 +69,7 @@ public:
     IResourceStateTransitionHandler* GetStateTransitionHandler() { return m_pStateTransitionHandler.get(); }
 
 protected:
-    DiligentGraphicsAdapter* m_DiligentGraphics;
+    DiligentGraphicsAdapter* m_DiligentGraphics = nullptr;
     std::unique_ptr<IResourceStateTransitionHandler> m_pStateTransitionHandler;
 
     int m_WindowWidth = 640;

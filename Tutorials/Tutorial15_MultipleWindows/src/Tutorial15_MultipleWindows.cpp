@@ -432,7 +432,7 @@ private:
     struct WindowInfo
     {
         RefCntAutoPtr<ISwapChain> pSwapChain;
-        HWND                      hWnd;
+        HWND                      hWnd = NULL;
     };
     std::vector<WindowInfo> m_Windows;
 };
@@ -441,7 +441,10 @@ std::unique_ptr<Tutorial00App> g_pTheApp;
 
 LRESULT CALLBACK MessageProc(HWND, UINT, WPARAM, LPARAM);
 // Main
-int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
+int WINAPI WinMain(_In_ HINSTANCE     hInstance,
+                   _In_opt_ HINSTANCE hPrevInstance,
+                   _In_ LPSTR         lpCmdLine,
+                   _In_ int           nShowCmd)
 {
 #if defined(_DEBUG) || defined(DEBUG)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -455,7 +458,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
 
     // Register our window class
     WNDCLASSEX wcex = {sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, MessageProc,
-                       0L, 0L, instance, NULL, NULL, NULL, NULL, L"SampleApp", NULL};
+                       0L, 0L, hInstance, NULL, NULL, NULL, NULL, L"SampleApp", NULL};
     RegisterClassEx(&wcex);
 
     constexpr size_t NumWindows = 3;
@@ -488,13 +491,13 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int cmdShow)
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
         hWnds[i] = CreateWindow(L"SampleApp", Title.c_str(),
                                 WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-                                rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, instance, NULL);
+                                rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
         if (!hWnds[i])
         {
             MessageBox(NULL, L"Cannot create window", L"Error", MB_OK | MB_ICONERROR);
             return -1;
         }
-        ShowWindow(hWnds[i], cmdShow);
+        ShowWindow(hWnds[i], nShowCmd);
         UpdateWindow(hWnds[i]);
     }
 

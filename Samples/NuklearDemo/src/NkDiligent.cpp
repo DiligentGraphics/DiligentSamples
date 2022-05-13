@@ -439,7 +439,7 @@ nk_diligent_font_stash_end(nk_diligent_context* nk_dlg_ctx,
 
     TextureSubResData mip0data[] =
         {
-            {image, desc.Width * 4}};
+            {image, size_t{desc.Width} * 4u}};
     TextureData data(mip0data, _countof(mip0data));
     nk_dlg_ctx->device->CreateTexture(desc, &data, &font_texture);
 

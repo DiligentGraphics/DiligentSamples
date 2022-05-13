@@ -191,7 +191,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
             BufferDesc VBDesc;
             VBDesc.Name              = "Shared vertex buffer";
             VBDesc.BindFlags         = BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-            VBDesc.Size              = (PlaneMesh.FirstVertex + PlaneMesh.NumVertices) * sizeof(HLSL::Vertex);
+            VBDesc.Size              = (Uint64{PlaneMesh.FirstVertex} + Uint64{PlaneMesh.NumVertices}) * sizeof(HLSL::Vertex);
             VBDesc.Mode              = BUFFER_MODE_STRUCTURED;
             VBDesc.ElementByteStride = sizeof(HLSL::Vertex);
 
@@ -217,7 +217,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
             BufferDesc IBDesc;
             IBDesc.Name              = "Shared index buffer";
             IBDesc.BindFlags         = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
-            IBDesc.Size              = (PlaneMesh.FirstIndex + PlaneMesh.NumIndices) * sizeof(uint);
+            IBDesc.Size              = (Uint64{PlaneMesh.FirstIndex} + Uint64{PlaneMesh.NumIndices}) * sizeof(uint);
             IBDesc.Mode              = BUFFER_MODE_STRUCTURED;
             IBDesc.ElementByteStride = sizeof(uint);
 
@@ -354,12 +354,12 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
             TriangleData.GeometryName         = Triangles.GeometryName;
             TriangleData.pVertexBuffer        = Mesh.VertexBuffer;
             TriangleData.VertexStride         = Mesh.VertexBuffer->GetDesc().ElementByteStride;
-            TriangleData.VertexOffset         = Mesh.FirstVertex * TriangleData.VertexStride;
+            TriangleData.VertexOffset         = Uint64{Mesh.FirstVertex} * Uint64{TriangleData.VertexStride};
             TriangleData.VertexCount          = Mesh.NumVertices;
             TriangleData.VertexValueType      = Triangles.VertexValueType;
             TriangleData.VertexComponentCount = Triangles.VertexComponentCount;
             TriangleData.pIndexBuffer         = Mesh.IndexBuffer;
-            TriangleData.IndexOffset          = Mesh.FirstIndex * Mesh.IndexBuffer->GetDesc().ElementByteStride;
+            TriangleData.IndexOffset          = Uint64{Mesh.FirstIndex} * Uint64{Mesh.IndexBuffer->GetDesc().ElementByteStride};
             TriangleData.PrimitiveCount       = Triangles.MaxPrimitiveCount;
             TriangleData.IndexType            = Triangles.IndexType;
             TriangleData.Flags                = RAYTRACING_GEOMETRY_FLAG_OPAQUE;
@@ -416,7 +416,7 @@ void Tutorial22_HybridRendering::UpdateTLAS()
         BuffDesc.Name      = "TLAS Instance Buffer";
         BuffDesc.Usage     = USAGE_DEFAULT;
         BuffDesc.BindFlags = BIND_RAY_TRACING;
-        BuffDesc.Size      = TLAS_INSTANCE_DATA_SIZE * NumInstances;
+        BuffDesc.Size      = Uint64{TLAS_INSTANCE_DATA_SIZE} * Uint64{NumInstances};
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Scene.TLASInstancesBuffer);
     }
 

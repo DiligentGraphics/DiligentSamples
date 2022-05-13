@@ -78,7 +78,7 @@ private:
     double       m_LastBufferUpdateTime  = 0;
     double       m_LastMapTime           = 0;
     std::mt19937 m_gen{0}; //Use 0 as the seed to always generate the same sequence
-    double       m_CurrTime;
+    double       m_CurrTime = 0;
 };
 
 } // namespace Diligent

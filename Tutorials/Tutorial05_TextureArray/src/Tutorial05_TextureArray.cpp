@@ -195,7 +195,8 @@ void Tutorial05_TextureArray::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial05_TextureArray::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    std::vector<InstanceData> InstanceData(m_GridSize * m_GridSize * m_GridSize);
+    const auto                zGridSize = static_cast<size_t>(m_GridSize);
+    std::vector<InstanceData> InstanceData(zGridSize * zGridSize * zGridSize);
 
     float fGridSize = static_cast<float>(m_GridSize);
 

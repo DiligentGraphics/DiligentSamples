@@ -76,7 +76,7 @@ void Tutorial20_MeshShader::CreateCube()
 
     // Pack each triangle indices into uint4
     std::array<uint4, TexturedCube::NumIndices / 3> Indices{};
-    for (Uint32 tri = 0; tri < Indices.size(); ++tri)
+    for (size_t tri = 0; tri < Indices.size(); ++tri)
     {
         const auto* src_ind{&TexturedCube::Indices[tri * 3]};
         Indices[tri] = {src_ind[0], src_ind[1], src_ind[2], 0};
@@ -116,7 +116,7 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     FastRandReal<float> Rnd{0, 0.f, 1.f};
 
     std::vector<DrawTask> DrawTasks;
-    DrawTasks.resize(GridDim.x * GridDim.y);
+    DrawTasks.resize(static_cast<size_t>(GridDim.x) * static_cast<size_t>(GridDim.y));
 
     for (int y = 0; y < GridDim.y; ++y)
     {

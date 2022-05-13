@@ -628,8 +628,8 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
                 }
             }
 
-            const auto RowStride = AlignUp(Desc.Width, 32u);
-            SRData.resize(RowStride * Desc.Height);
+            const size_t RowStride = AlignUp(Desc.Width, 32u);
+            SRData.resize(RowStride * size_t{Desc.Height});
 
             for (Uint32 y = 0; y < Desc.Height; ++y)
             {
@@ -638,15 +638,15 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
                     auto XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
                     auto YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
 
-                    SRData[x + y * RowStride] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
+                    SRData[size_t{x} + size_t{y} * RowStride] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
                 }
             }
             break;
         }
         case SHADING_RATE_FORMAT_UNORM8:
         {
-            const auto RowStride = AlignUp(Desc.Width * 2, 32u);
-            SRData.resize(RowStride * Desc.Height);
+            const size_t RowStride = AlignUp(Desc.Width * 2, 32u);
+            SRData.resize(RowStride * size_t{Desc.Height});
 
             for (Uint32 y = 0; y < Desc.Height; ++y)
             {
@@ -655,8 +655,8 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
                     auto XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
                     auto YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
 
-                    SRData[x * 2 + y * RowStride + 0] = 255 >> XRate;
-                    SRData[x * 2 + y * RowStride + 1] = 255 >> YRate;
+                    SRData[size_t{x} * 2u + size_t{y} * RowStride + 0u] = 255 >> XRate;
+                    SRData[size_t{x} * 2u + size_t{y} * RowStride + 1u] = 255 >> YRate;
                 }
             }
             break;

@@ -162,7 +162,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             }
 
             NumImmediateContexts = std::max(1u, EngineCI.NumImmediateContexts);
-            ppContexts.resize(NumImmediateContexts + EngineCI.NumDeferredContexts);
+            ppContexts.resize(size_t{NumImmediateContexts} + size_t{EngineCI.NumDeferredContexts});
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, ppContexts.data());
             if (!m_pDevice)
             {
@@ -854,12 +854,12 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
 
     m_ExitCode = 0;
-    for (Uint32 row = 0; row < TexDesc.Height; ++row)
+    for (size_t row = 0; row < TexDesc.Height; ++row)
     {
-        for (Uint32 col = 0; col < TexDesc.Width; ++col)
+        for (size_t col = 0; col < TexDesc.Width; ++col)
         {
-            const auto* SrcPixel = &CapturedPixels[(col + row * TexDesc.Width) * 3];
-            const auto* DstPixel = pGoldenImgPixels + row * GoldenImgDesc.RowStride + col * GoldenImgDesc.NumComponents;
+            const auto* SrcPixel = &CapturedPixels[(col + row * size_t{TexDesc.Width}) * 3u];
+            const auto* DstPixel = pGoldenImgPixels + row * size_t{GoldenImgDesc.RowStride} + col * size_t{GoldenImgDesc.NumComponents};
             if (std::abs(int{SrcPixel[0]} - int{DstPixel[0]}) > m_GoldenImgPixelTolerance ||
                 std::abs(int{SrcPixel[1]} - int{DstPixel[1]}) > m_GoldenImgPixelTolerance ||
                 std::abs(int{SrcPixel[2]} - int{DstPixel[2]}) > m_GoldenImgPixelTolerance)

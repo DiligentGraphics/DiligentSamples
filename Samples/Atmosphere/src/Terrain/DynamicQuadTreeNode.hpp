@@ -98,7 +98,7 @@ public:
 
 protected:
     QuadTreeNodeLocation m_current;
-    int                  m_currentLevelSize;
+    int                  m_currentLevelSize = 0;
 };
 
 // Iterator for recursively traversing the quad tree starting from the root up to the specified level

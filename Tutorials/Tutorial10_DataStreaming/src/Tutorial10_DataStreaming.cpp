@@ -453,8 +453,8 @@ void Tutorial10_DataStreaming::Initialize(const SampleInitInfo& InitInfo)
     CreatePipelineStates(Barriers);
     LoadTextures(Barriers);
 
-    m_StreamingVB.reset(new StreamingBuffer(m_pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * sizeof(float2), 1 + InitInfo.NumDeferredCtx, "Streaming vertex buffer"));
-    m_StreamingIB.reset(new StreamingBuffer(m_pDevice, BIND_INDEX_BUFFER, MaxVertsInStreamingBuffer * 3 * sizeof(Uint32), 1 + InitInfo.NumDeferredCtx, "Streaming index buffer"));
+    m_StreamingVB = std::make_unique<StreamingBuffer>(m_pDevice, BIND_VERTEX_BUFFER, MaxVertsInStreamingBuffer * Uint32{sizeof(float2)}, 1u + InitInfo.NumDeferredCtx, "Streaming vertex buffer");
+    m_StreamingIB = std::make_unique<StreamingBuffer>(m_pDevice, BIND_INDEX_BUFFER, MaxVertsInStreamingBuffer * 3u * Uint32{sizeof(Uint32)}, 1u + InitInfo.NumDeferredCtx, "Streaming index buffer");
 
     // Transition the buffers to required state
     Barriers.emplace_back(m_StreamingVB->GetBuffer(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
@@ -478,7 +478,7 @@ void Tutorial10_DataStreaming::InitializePolygonGeometry()
     {
         auto& PolygonGeo = m_PolygonGeo[NumVerts];
         PolygonGeo.Verts.reserve(NumVerts);
-        PolygonGeo.Inds.reserve((NumVerts - 2) * 3);
+        PolygonGeo.Inds.reserve(size_t{NumVerts - 2} * 3);
         float ArcLen = PI_F * 2.f / static_cast<float>(NumVerts);
         float Angle  = ((NumVerts % 2) == 1) ? PI_F / 2.f : PI_F / 2.f - ArcLen / 2.f;
         for (Uint32 v = 0; v < NumVerts; ++v, Angle += ArcLen)

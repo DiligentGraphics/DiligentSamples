@@ -95,7 +95,7 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
 
     VERIFY(ImgInfo.ComponentType == VT_UINT16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected");
     auto* pSrcImgData = reinterpret_cast<Uint8*>(pImageData->GetDataPtr());
-    for (Uint32 row = 0; row < ImgInfo.Height; row++, pSrcImgData += ImgInfo.RowStride)
+    for (size_t row = 0; row < ImgInfo.Height; row++, pSrcImgData += ImgInfo.RowStride)
     {
         memcpy(&m_TheHeightMap[row * m_iStride], pSrcImgData, size_t{ImgInfo.Width} * size_t{GetValueSize(ImgInfo.ComponentType)});
     }

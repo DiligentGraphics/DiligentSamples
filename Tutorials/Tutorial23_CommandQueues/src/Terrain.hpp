@@ -35,22 +35,27 @@ struct SceneDrawAttribs
 {
     float4x4 ViewProj;
     float3   LightDir;
-    float    AmbientLight;
+    float    AmbientLight = 0;
 };
 
 struct ScenePSOCreateAttribs
 {
-    IShaderSourceInputStreamFactory* pShaderSourceFactory;
-    TEXTURE_FORMAT                   ColorTargetFormat;
-    TEXTURE_FORMAT                   DepthTargetFormat;
-    int                              TurbulenceOctaves = 2;
-    int                              NoiseOctaves      = 2;
+    IShaderSourceInputStreamFactory* pShaderSourceFactory = nullptr;
+
+    TEXTURE_FORMAT ColorTargetFormat = TEX_FORMAT_UNKNOWN;
+    TEXTURE_FORMAT DepthTargetFormat = TEX_FORMAT_UNKNOWN;
+    int            TurbulenceOctaves = 2;
+    int            NoiseOctaves      = 2;
 };
 
 
 class Terrain
 {
 public:
+    Terrain() noexcept :
+        m_FrameId{0}
+    {}
+
     void Initialize(IRenderDevice* pDevice, IBuffer* pDrawConstants, Uint64 ImmediateContextMask);
     void CreateResources(IDeviceContext* pContext);
     void CreatePSO(const ScenePSOCreateAttribs& Attr);

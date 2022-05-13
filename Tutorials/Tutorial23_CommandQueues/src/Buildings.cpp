@@ -419,7 +419,7 @@ void CreateBuilding(const float2            Center,
             {
                 // First and last vertice produce the last quad
                 const auto Left   = e + 1;
-                const auto Right  = e + 2 == NumCornerPoints ? 0 : e + 2;
+                const auto Right  = (e + 2 == NumCornerPoints) ? 0 : e + 2;
                 const auto Top    = static_cast<Uint32>(Vertices.size() - NumCornerPoints);
                 const auto Bottom = static_cast<Uint32>(Top - NumCornerPoints);
 
@@ -518,7 +518,7 @@ void Buildings::CreateResources(IDeviceContext* pContext)
 
     const int             GridSize = m_DistributionGridSize;
     std::vector<Building> TempCityGrid;
-    TempCityGrid.resize(GridSize * GridSize);
+    TempCityGrid.resize(static_cast<size_t>(GridSize) * static_cast<size_t>(GridSize));
 
     for (int y = 0; y < GridSize; ++y)
     {
@@ -646,7 +646,7 @@ void Buildings::CreateResources(IDeviceContext* pContext)
         for (Uint32 Mip = 0; Mip < TexDesc.MipLevels; ++Mip)
             SliceSize += std::max(1u, TexDesc.Width >> Mip) * std::max(1u, TexDesc.Height >> Mip);
 
-        m_OpaqueTexAtlasPixels.resize(SliceSize * TexDesc.ArraySize);
+        m_OpaqueTexAtlasPixels.resize(size_t{SliceSize} * size_t{TexDesc.ArraySize});
         m_GenTexTask.Pixels.resize(SliceSize);
         m_OpaqueTexAtlasSliceSize = SliceSize * 4;
 
@@ -1090,7 +1090,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
             pContext->CopyTexture(Attribs);
 #else
             TextureSubResData SubRes;
-            SubRes.Stride = W * 4;
+            SubRes.Stride = Uint64{W} * 4u;
             SubRes.pData = &m_OpaqueTexAtlasPixels[Offset];
             Box Region{0u, W, 0u, H};
             pContext->UpdateTexture(m_OpaqueTexAtlas, Mipmap, Slice, Region, SubRes, RESOURCE_STATE_TRANSITION_MODE_NONE, RESOURCE_STATE_TRANSITION_MODE_NONE);

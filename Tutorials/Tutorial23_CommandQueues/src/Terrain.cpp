@@ -60,10 +60,10 @@ void Terrain::CreateResources(IDeviceContext* pContext)
     std::vector<IndexType> Indices;
 
     const auto  GridSize  = std::max(1u, (1u << TerrainSize) / m_ComputeGroupSize) * m_ComputeGroupSize;
-    const float GridScale = 1.0f / float(GridSize - 1);
+    const float GridScale = 1.0f / static_cast<float>(GridSize - 1);
 
-    Vertices.resize(GridSize * GridSize);
-    Indices.resize((GridSize - 1) * (GridSize - 1) * 6);
+    Vertices.resize(size_t{GridSize} * size_t{GridSize});
+    Indices.resize(size_t{GridSize - 1} * size_t{GridSize - 1} * 6u);
 
     {
         auto*  pVertices = Vertices.data();

@@ -398,11 +398,11 @@ void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, U
     auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
     auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
     auto c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
-    for (Uint32 j = 0; j < Height; ++j)
+    for (size_t j = 0; j < Height; ++j)
     {
-        for (Uint32 i = 0; i < Width; ++i)
+        for (size_t i = 0; i < Width; ++i)
         {
-            for (int c = 0; c < 4; ++c)
+            for (size_t c = 0; c < 4; ++c)
                 pData[i * 4 + c + j * Stride] = (i * x_scale + j * y_scale + c * c_scale) & 0xFF;
         }
     }
@@ -413,11 +413,11 @@ void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width,
     auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
     auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
     auto c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
-    for (Uint32 j = 0; j < Height; ++j)
+    for (size_t j = 0; j < Height; ++j)
     {
-        for (Uint32 i = 0; i < Width; ++i)
+        for (size_t i = 0; i < Width; ++i)
         {
-            for (int c = 0; c < 4; ++c)
+            for (size_t c = 0; c < 4; ++c)
                 pData[i * 4 + c + j * Stride] = (::abs(static_cast<int>(i) - static_cast<int>(Width / 2)) * x_scale + ::abs(static_cast<int>(j) - static_cast<int>(Height / 2)) * y_scale + c * c_scale) & 0xFF;
         }
     }
@@ -435,8 +435,8 @@ void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
         Uint32 Width  = std::uniform_int_distribution<Uint32>{2, MaxUpdateRegionSize}(m_gen);
         Uint32 Height = std::uniform_int_distribution<Uint32>{2, MaxUpdateRegionSize}(m_gen);
 
-        std::vector<Uint8> Data(Width * Height * 4);
-        WriteStripPattern(Data.data(), Width, Height, Width * 4);
+        std::vector<Uint8> Data(size_t{Width} * size_t{Height} * 4u);
+        WriteStripPattern(Data.data(), Width, Height, size_t{Width} * 4u);
 
         Box UpdateBox;
         UpdateBox.MinX = std::uniform_int_distribution<Uint32>{0, TexDesc.Width - Width}(m_gen);
@@ -445,7 +445,7 @@ void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
         UpdateBox.MaxY = UpdateBox.MinY + Height;
 
         TextureSubResData SubresData;
-        SubresData.Stride = Width * 4;
+        SubresData.Stride = size_t{Width} * 4u;
         SubresData.pData  = Data.data();
         Uint32 MipLevel   = 0;
         Uint32 ArraySlice = 0;

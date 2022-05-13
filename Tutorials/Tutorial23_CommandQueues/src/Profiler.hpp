@@ -45,6 +45,10 @@ public:
         TRANSFER,
     };
 
+    Profiler() noexcept :
+        m_FrameId{0}
+    {}
+
     void Initialize(IRenderDevice* pDevice);
 
     void Begin(IDeviceContext* pContext, PASS_TYPE Pass);

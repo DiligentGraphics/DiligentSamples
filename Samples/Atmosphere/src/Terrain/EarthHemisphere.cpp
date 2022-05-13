@@ -312,7 +312,7 @@ void GenerateSphereGeometry(IRenderDevice*                 pDevice,
     for (int iRing = iStartRing; iRing < iNumRings; ++iRing)
     {
         int iCurrGridStart = (int)VB.size();
-        VB.resize(VB.size() + iGridDimension * iGridDimension);
+        VB.resize(VB.size() + static_cast<size_t>(iGridDimension) * static_cast<size_t>(iGridDimension));
         float fGridScale = 1.f / (float)(1 << (iNumRings - 1 - iRing));
         // Fill vertex buffer
         for (int iRow = 0; iRow < iGridDimension; ++iRow)
@@ -517,7 +517,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     //   |          |
     //   |__________|
     std::vector<Uint16> CoarseMipLevels;
-    CoarseMipLevels.resize(iHeightMapDim / 2 * iHeightMapDim);
+    CoarseMipLevels.resize(static_cast<size_t>(iHeightMapDim) / 2 * iHeightMapDim);
 
     std::vector<TextureSubResData> InitData(HeightMapDesc.MipLevels);
     InitData[0].pData            = pHeightMap;
@@ -529,15 +529,19 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     for (Uint32 uiMipLevel = 1; uiMipLevel < HeightMapDesc.MipLevels; ++uiMipLevel)
     {
         const auto MipProps = GetMipLevelProperties(HeightMapDesc, uiMipLevel);
-        for (Uint32 uiRow = 0; uiRow < MipProps.LogicalHeight; ++uiRow)
+        for (size_t Row = 0; Row < MipProps.LogicalHeight; ++Row)
         {
-            for (Uint32 uiCol = 0; uiCol < MipProps.LogicalWidth; ++uiCol)
+            for (size_t Col = 0; Col < MipProps.LogicalWidth; ++Col)
             {
                 int iAverageHeight = 0;
-                for (int i = 0; i < 2; ++i)
-                    for (int j = 0; j < 2; ++j)
-                        iAverageHeight += pFinerMipLevel[(uiCol * 2 + i) + (uiRow * 2 + j) * size_t{FinerMipStride}];
-                pCurrMipLevel[uiCol + uiRow * CurrMipStride] = (Uint16)(iAverageHeight >> 2);
+                for (size_t i = 0; i < 2; ++i)
+                {
+                    for (size_t j = 0; j < 2; ++j)
+                    {
+                        iAverageHeight += pFinerMipLevel[(Col * 2 + i) + (Row * 2 + j) * size_t{FinerMipStride}];
+                    }
+                }
+                pCurrMipLevel[Col + Row * CurrMipStride] = (Uint16)(iAverageHeight >> 2);
             }
         }
 
