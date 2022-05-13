@@ -52,10 +52,10 @@ struct ParticleAttribs
     float2 f2Speed;
     float2 f2NewSpeed;
 
-    float fSize;
-    float fTemperature;
-    int   iNumCollisions;
-    float fPadding0;
+    float fSize          = 0;
+    float fTemperature   = 0;
+    int   iNumCollisions = 0;
+    float fPadding0      = 0;
 };
 
 } // namespace

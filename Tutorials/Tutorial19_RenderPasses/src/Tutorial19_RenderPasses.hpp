@@ -73,7 +73,7 @@ private:
     struct LightAttribs
     {
         float3 Location;
-        float  Size;
+        float  Size = 0;
         float3 Color;
     };
 

@@ -49,7 +49,7 @@ namespace
 struct InstanceData
 {
     float4x4 Matrix;
-    float    TextureInd;
+    float    TextureInd = 0;
 };
 
 } // namespace

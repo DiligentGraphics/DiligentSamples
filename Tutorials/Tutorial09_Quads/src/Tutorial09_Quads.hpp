@@ -102,11 +102,11 @@ private:
     {
         float2 Pos;
         float2 MoveDir;
-        float  Size;
-        float  Angle;
-        float  RotSpeed;
-        int    TextureInd;
-        int    StateInd;
+        float  Size       = 0;
+        float  Angle      = 0;
+        float  RotSpeed   = 0;
+        int    TextureInd = 0;
+        int    StateInd   = 0;
     };
     std::vector<QuadData> m_Quads;
 
