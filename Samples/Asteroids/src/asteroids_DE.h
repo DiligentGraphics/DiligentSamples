@@ -70,8 +70,8 @@ private:
     
     std::mutex mMutex;
     std::condition_variable mCondVar;
-    ThreadingTools::Signal mUpdateSubsetsSignal;
-    ThreadingTools::Signal mRenderSubsetsSignal;
+    Threading::Signal mUpdateSubsetsSignal;
+    Threading::Signal mRenderSubsetsSignal;
     std::atomic_int m_NumThreadsCompleted;
     static void WorkerThreadFunc(Asteroids *pThis, Diligent::Uint32 ThreadNum);
 

@@ -63,9 +63,9 @@ private:
 
     static void WorkerThreadFunc(Tutorial06_Multithreading* pThis, Uint32 ThreadNum);
 
-    ThreadingTools::Signal   m_RenderSubsetSignal;
-    ThreadingTools::Signal   m_ExecuteCommandListsSignal;
-    ThreadingTools::Signal   m_GotoNextFrameSignal;
+    Threading::Signal        m_RenderSubsetSignal;
+    Threading::Signal        m_ExecuteCommandListsSignal;
+    Threading::Signal        m_GotoNextFrameSignal;
     std::atomic_int          m_NumThreadsCompleted;
     std::atomic_int          m_NumThreadsReady;
     std::vector<std::thread> m_WorkerThreads;
