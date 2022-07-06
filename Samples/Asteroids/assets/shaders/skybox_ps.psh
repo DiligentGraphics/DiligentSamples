@@ -1,6 +1,6 @@
 struct Skybox_VSOut
 {
-	float3 coords   : UVFACE;
+	float3 coords : UVFACE;
 };
 
 TextureCube Skybox;// : register(t0);

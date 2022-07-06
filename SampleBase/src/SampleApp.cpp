@@ -307,6 +307,15 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
+            const char* const ppIgnoreDebugMessages[] = //
+                {
+                    // Validation Performance Warning: [ UNASSIGNED-CoreValidation-Shader-OutputNotConsumed ]
+                    // vertex shader writes to output location 1.0 which is not consumed by fragment shader
+                    "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed" //
+                };
+            EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
+            EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
+
             auto* pFactoryVk = GetEngineFactoryVk();
             m_pEngineFactory = pFactoryVk;
 

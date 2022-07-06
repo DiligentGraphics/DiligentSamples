@@ -158,6 +158,16 @@ void Asteroids::InitDevice(HWND hWnd, RENDER_DEVICE_TYPE DevType)
             EngineVkCreateInfo EngineCI;
             EngineCI.NumDeferredContexts = mNumSubsets - 1;
             EngineCI.DynamicHeapSize     = 64 << 20;
+
+            const char* const ppIgnoreDebugMessages[] = //
+                {
+                    // Validation Performance Warning: [ UNASSIGNED-CoreValidation-Shader-OutputNotConsumed ]
+                    // Vertex attribute at location 1 not consumed by vertex shader
+                    "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed" //
+                };
+            EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
+            EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
+
 #    if ENGINE_DLL
             if (GetEngineFactoryVulkan == nullptr)
                 GetEngineFactoryVulkan = LoadGraphicsEngineVk();
