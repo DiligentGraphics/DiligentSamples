@@ -425,7 +425,8 @@ void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAt
     Attribs.EngineCI.NumImmediateContexts  = static_cast<Uint32>(m_ContextCI.size());
 
     // Native fence may be a bit faster on Vulkan.
-    Attribs.EngineCI.Features.NativeFence = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.NativeFence    = DEVICE_FEATURE_STATE_OPTIONAL;
+    Attribs.EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
 
     // Time queries for profiling.
     Attribs.EngineCI.Features.TimestampQueries              = DEVICE_FEATURE_STATE_OPTIONAL;
