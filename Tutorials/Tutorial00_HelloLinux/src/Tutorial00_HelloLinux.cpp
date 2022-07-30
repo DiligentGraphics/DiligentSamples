@@ -662,36 +662,34 @@ int main(int argc, char** argv)
 #    error No supported backends
 #endif
 
-    if (argc > 1)
+    int arg = 0;
+    while (arg < argc && strcmp(argv[arg], "--mode") != 0 && strcmp(argv[arg], "-m") != 0)
+        ++arg;
+    if (arg + 1 < argc)
     {
-        const auto* Key = "-mode ";
-        const auto* pos = strstr(argv[1], Key);
-        if (pos != nullptr)
+        const auto* mode = argv[arg + 1];
+        if (strcasecmp(mode, "GL") == 0)
         {
-            pos += strlen(Key);
-            if (strcasecmp(pos, "GL") == 0)
-            {
 #if GL_SUPPORTED
-                DevType = RENDER_DEVICE_TYPE_GL;
+            DevType = RENDER_DEVICE_TYPE_GL;
 #else
-                std::cerr << "OpenGL is not supported";
-                return -1;
+            std::cerr << "OpenGL is not supported";
+            return -1;
 #endif
-            }
-            else if (strcasecmp(pos, "VK") == 0)
-            {
+        }
+        else if (strcasecmp(mode, "VK") == 0)
+        {
 #if VULKAN_SUPPORTED
-                DevType = RENDER_DEVICE_TYPE_VULKAN;
+            DevType = RENDER_DEVICE_TYPE_VULKAN;
 #else
-                std::cerr << "Vulkan is not supported";
-                return -1;
+            std::cerr << "Vulkan is not supported";
+            return -1;
 #endif
-            }
-            else
-            {
-                std::cerr << "Unknown device type. Only the following types are supported: GL, VK";
-                return -1;
-            }
+        }
+        else
+        {
+            std::cerr << mode << " is not a valid device type. Only the following types are supported: GL, VK";
+            return -1;
         }
     }
 
