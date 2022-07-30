@@ -248,12 +248,25 @@ public:
 
     bool ProcessCommandLine(const char* CmdLine)
     {
-        const auto* Key = "-mode ";
-        const auto* pos = strstr(CmdLine, Key);
-        if (pos != nullptr)
+        const char* mode = nullptr;
+
+        const char* Keys[] = {"--mode ", "--mode=", "-m "};
+        for (size_t i = 0; i < _countof(Keys); ++i)
         {
-            pos += strlen(Key);
-            if (_stricmp(pos, "D3D11") == 0)
+            const auto* Key = Keys[i];
+            if ((mode = strstr(CmdLine, Key)) != nullptr)
+            {
+                mode += strlen(Key);
+                break;
+            }
+        }
+
+        if (mode != nullptr)
+        {
+            while (*mode == ' ')
+                ++mode;
+
+            if (_stricmp(mode, "D3D11") == 0)
             {
 #if D3D11_SUPPORTED
                 m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
@@ -262,7 +275,7 @@ public:
                 return false;
 #endif
             }
-            else if (_stricmp(pos, "D3D12") == 0)
+            else if (_stricmp(mode, "D3D12") == 0)
             {
 #if D3D12_SUPPORTED
                 m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
@@ -271,7 +284,7 @@ public:
                 return false;
 #endif
             }
-            else if (_stricmp(pos, "GL") == 0)
+            else if (_stricmp(mode, "GL") == 0)
             {
 #if GL_SUPPORTED
                 m_DeviceType = RENDER_DEVICE_TYPE_GL;
@@ -280,7 +293,7 @@ public:
                 return false;
 #endif
             }
-            else if (_stricmp(pos, "VK") == 0)
+            else if (_stricmp(mode, "VK") == 0)
             {
 #if VULKAN_SUPPORTED
                 m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
@@ -291,7 +304,7 @@ public:
             }
             else
             {
-                std::cerr << "Unknown device type. Only the following types are supported: D3D11, D3D12, GL, VK";
+                std::cerr << mode << " is not a valid device type. Only the following types are supported: D3D11, D3D12, GL, VK";
                 return false;
             }
         }
