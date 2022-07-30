@@ -370,7 +370,7 @@ bool GLFWDemo::ProcessCommandLine(int argc, const char* const* argv, RENDER_DEVI
 #endif
 
     int arg = 0;
-    while (arg < argc && strcmp(argv[arg], "--mode") != 0)
+    while (arg < argc && strcmp(argv[arg], "--mode") != 0 && strcmp(argv[arg], "-m") != 0)
         ++arg;
     if (arg + 1 < argc)
     {
