@@ -77,7 +77,7 @@ public:
     virtual bool HandleNativeMessage(const void* pNativeMsgData) { return false; }
 
     virtual const Char* GetSampleName() const { return "Diligent Engine Sample"; }
-    virtual void        ProcessCommandLine(const char* CmdLine) {}
+    virtual bool        ProcessCommandLine(int argc, const char* const* argv) { return true; }
 
     InputController& GetInputController()
     {

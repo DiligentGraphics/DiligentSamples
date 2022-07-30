@@ -363,18 +363,19 @@ void GLFWDemo::Quit()
     glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
 }
 
-bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType)
+bool GLFWDemo::ProcessCommandLine(int argc, const char* const* argv, RENDER_DEVICE_TYPE& DevType)
 {
 #if PLATFORM_LINUX || PLATFORM_MACOS
 #    define _stricmp strcasecmp
 #endif
 
-    const auto* Key = "-mode ";
-    const auto* pos = strstr(CmdLine, Key);
-    if (pos != nullptr)
+    int arg = 0;
+    while (arg < argc && strcmp(argv[arg], "--mode") != 0)
+        ++arg;
+    if (arg + 1 < argc)
     {
-        pos += strlen(Key);
-        if (_stricmp(pos, "D3D11") == 0)
+        const auto* mode = argv[arg + 1];
+        if (_stricmp(mode, "D3D11") == 0)
         {
 #if D3D11_SUPPORTED
             DevType = RENDER_DEVICE_TYPE_D3D11;
@@ -383,7 +384,7 @@ bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevTy
             return false;
 #endif
         }
-        else if (_stricmp(pos, "D3D12") == 0)
+        else if (_stricmp(mode, "D3D12") == 0)
         {
 #if D3D12_SUPPORTED
             DevType = RENDER_DEVICE_TYPE_D3D12;
@@ -392,7 +393,7 @@ bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevTy
             return false;
 #endif
         }
-        else if (_stricmp(pos, "GL") == 0)
+        else if (_stricmp(mode, "GL") == 0)
         {
 #if GL_SUPPORTED
             DevType = RENDER_DEVICE_TYPE_GL;
@@ -401,7 +402,7 @@ bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevTy
             return false;
 #endif
         }
-        else if (_stricmp(pos, "VK") == 0)
+        else if (_stricmp(mode, "VK") == 0)
         {
 #if VULKAN_SUPPORTED
             DevType = RENDER_DEVICE_TYPE_VULKAN;
@@ -410,7 +411,7 @@ bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevTy
             return false;
 #endif
         }
-        else if (_stricmp(pos, "MTL") == 0)
+        else if (_stricmp(mode, "MTL") == 0)
         {
 #if METAL_SUPPORTED
             DevType = RENDER_DEVICE_TYPE_METAL;
@@ -442,12 +443,12 @@ bool GLFWDemo::ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevTy
     return true;
 }
 
-int GLFWDemoMain(const char* cmdLine)
+int GLFWDemoMain(int argc, const char* const* argv)
 {
     std::unique_ptr<GLFWDemo> Samp{CreateGLFWApp()};
 
     RENDER_DEVICE_TYPE DevType = RENDER_DEVICE_TYPE_UNDEFINED;
-    if (!Samp->ProcessCommandLine(cmdLine, DevType))
+    if (!Samp->ProcessCommandLine(argc, argv, DevType))
         return -1;
 
     String Title("GLFW Demo");
@@ -493,5 +494,5 @@ int GLFWDemoMain(const char* cmdLine)
 
 int main(int argc, const char** argv)
 {
-    return Diligent::GLFWDemoMain(argc >= 2 ? argv[1] : "");
+    return Diligent::GLFWDemoMain(argc, argv);
 }

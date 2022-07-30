@@ -109,7 +109,7 @@ public:
 private:
     bool CreateWindow(const char* Title, int Width, int Height, int GlfwApiHint);
     bool InitEngine(RENDER_DEVICE_TYPE DevType);
-    bool ProcessCommandLine(const char* CmdLine, RENDER_DEVICE_TYPE& DevType);
+    bool ProcessCommandLine(int argc, const char* const* argv, RENDER_DEVICE_TYPE& DevType);
     void Loop();
     void OnKeyEvent(Key key, KeyState state);
 
@@ -119,7 +119,7 @@ private:
     static void GLFW_CursorPosCallback(GLFWwindow* wnd, double xpos, double ypos);
     static void GLFW_MouseWheelCallback(GLFWwindow* wnd, double dx, double dy);
 
-    friend int GLFWDemoMain(const char* cmdLine);
+    friend int GLFWDemoMain(int argc, const char* const* argv);
 
 private:
     RefCntAutoPtr<IRenderDevice>  m_pDevice;

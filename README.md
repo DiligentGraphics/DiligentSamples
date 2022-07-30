@@ -337,18 +337,23 @@ Please refer to Build and Run Instructions section in the
 
 Command line options:
 
-* **-mode** {*d3d11*|*d3d12*|*vk*|*gl*} - select rendering back-end (example: *-mode d3d12*).
-* **-width** *value* - set desired window width (example: *-width 1024*).
-* **-height** *value* - set desired window height (example: *-height 768*).
-* **-capture_path** *path* - path to the folder where screen captures will be saved. Specifying this parameter enables screen capture (example: *-capture_path .*).
-* **-capture_name** *name* - screen capture file name. Specifying this parameter enables screen capture (example: *-capture_name frame*).
-* **-capture_fps** *fps*   - recording fps when capturing frame sequence (example: *-capture_fps 10*). Default value: 15.
-* **-capture_frames** *value* - number of frames to capture after the app starts (example: *-capture_frames 50*).
-* **-capture_format** {*jpg*|*png*} - image file format (example: *-capture_format jpg*). Default value: jpg.
-* **-capture_quality** *value* - jpeg quality (example: *-capture_quality 80*). Default value: 95.
-* **-capture_alpha** *value* - when saving png, whether to write alpha channel (example: *-capture_alpha 1*). Default value: false.
-* **-validation** *value* - set validation level (example: *-validation 1*). Default value: 1 in debug build; 0 in release builds.
-* **-adapter** *value* - select GPU adapter, if there are more than one installed on the system (example: *-adapter 1*). Default value: 0.
+* **--mode**, **-m** {*d3d11*|*d3d12*|*vk*|*gl*} - select rendering back-end (example: *--mode d3d12*, *-m vk*).
+* **--width**, **-w** *value* - set desired window width (example: *--width 1024*, *-w 1280*).
+* **--height**, **-h** *value* - set desired window height (example: *--height 768*, *-h 1024*).
+* **--capture_path** *path* - path to the folder where screen captures will be saved. Specifying this parameter enables screen capture (example: *--capture_path .*).
+* **--capture_name** *name* - screen capture file name. Specifying this parameter enables screen capture (example: *--capture_name frame*).
+* **--capture_fps** *fps*   - recording fps when capturing frame sequence (example: *--capture_fps 10*). Default value: 15.
+* **--capture_frames** *value* - number of frames to capture after the app starts (example: *--capture_frames 50*).
+* **--capture_format** {*jpg*|*png*} - image file format (example: *--capture_format jpg*). Default value: jpg.
+* **--capture_quality** *value* - jpeg quality (example: *--capture_quality 80*). Default value: 95.
+* **--capture_alpha** *value* - when saving png, whether to write alpha channel (example: *--capture_alpha 1*). Default value: false.
+* **--validation** *value* - set validation level (example: *--validation 1*). Default value: 1 in debug build; 0 in release builds.
+* **--adapter** *value* - select GPU adapter, if there are more than one installed on the system (example: *--adapter 1*). Default value: 0.
+* **--adapters_dialog** *value* - whether to show adapters dialog (example: *--adapters_dialog 0*). Default value: 1.
+* **--show_ui** *value* - whether to show user interface (example: *--show_ui 0*). Default value: 1.
+* **--golden_image_mode** {*none*|*capture*|*compare*|*compare_update*} - golden image capture mode. Default value: none.
+* **--golden_image_tolerance** *value* - golden image comparison tolerance. Default value: 0.
+* **--non_separable_progs** *value* - force non-separable programs in GL
 
 When image capture is enabled the following hot keys are available:
 
@@ -359,7 +364,7 @@ When image capture is enabled the following hot keys are available:
 To record multiple frames after the app starts, use command line like this:
 
 ```
--mode d3d12 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format png -capture_frames 50
+--mode d3d12 --capture_path . --capture_fps 15 --capture_name frame --width 640 --height 480 --capture_format png --capture_frames 50
 ```
 
 # License

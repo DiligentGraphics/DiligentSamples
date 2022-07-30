@@ -45,7 +45,7 @@ public:
     UnityAppBase();
     virtual ~UnityAppBase()override;
 
-    virtual void ProcessCommandLine(const char *CmdLine)override;
+    virtual bool ProcessCommandLine(int argc, const char* const* argv) override;
     virtual const char* GetAppTitle()const override { return m_AppTitle.c_str(); }
     virtual void Render()override;
     virtual void Present()override;

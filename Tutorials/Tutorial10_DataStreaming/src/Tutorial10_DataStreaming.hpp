@@ -43,7 +43,7 @@ class Tutorial10_DataStreaming final : public SampleBase
 {
 public:
     ~Tutorial10_DataStreaming() override;
-    virtual void ProcessCommandLine(const char* CmdLine) override final;
+    virtual bool ProcessCommandLine(int argc, const char* const* argv) override final;
     virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
 
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;

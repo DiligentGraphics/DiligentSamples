@@ -41,7 +41,7 @@ class GLTFViewer final : public SampleBase
 {
 public:
     ~GLTFViewer();
-    virtual void ProcessCommandLine(const char* CmdLine) override final;
+    virtual bool ProcessCommandLine(int argc, const char* const* argv) override final;
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
@@ -118,6 +118,8 @@ private:
     Uint32 m_CameraId = 0;
 
     std::vector<const GLTF::Camera*> m_Cameras;
+
+    std::string m_InitialModelPath;
 };
 
 } // namespace Diligent

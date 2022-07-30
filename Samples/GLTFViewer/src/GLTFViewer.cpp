@@ -40,6 +40,7 @@
 #include "imGuIZMO.h"
 #include "ImGuiUtils.hpp"
 #include "CallbackWrapper.hpp"
+#include "CommandLineParser.hpp"
 
 namespace Diligent
 {
@@ -130,21 +131,13 @@ void GLTFViewer::ResetView()
     m_CameraRotation = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 }
 
-std::string GetArgument(const char*& pos, const char* ArgName);
-
-void GLTFViewer::ProcessCommandLine(const char* CmdLine)
+bool GLTFViewer::ProcessCommandLine(int argc, const char* const* argv)
 {
-    const auto* pos = strchr(CmdLine, '-');
-    while (pos != nullptr)
-    {
-        ++pos;
-        std::string Arg;
-        if (!(Arg = GetArgument(pos, "use_cache")).empty())
-        {
-            m_bUseResourceCache = Arg == "1" || Arg == "true";
-        }
-        pos = strchr(pos, '-');
-    }
+    CommandLineParser ArgsParser{argc, argv};
+    ArgsParser.Parse("use_cache", m_bUseResourceCache);
+    ArgsParser.Parse("model", m_InitialModelPath);
+
+    return true;
 }
 
 void GLTFViewer::CreateGLTFResourceCache()
@@ -266,7 +259,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     if (m_bUseResourceCache)
         CreateGLTFResourceCache();
 
-    LoadModel(GLTFModels[m_SelectedModel].second);
+    LoadModel(!m_InitialModelPath.empty() ? m_InitialModelPath.c_str() : GLTFModels[m_SelectedModel].second);
 }
 
 void GLTFViewer::UpdateUI()

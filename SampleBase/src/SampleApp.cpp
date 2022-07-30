@@ -37,6 +37,7 @@
 #include "MapHelper.hpp"
 #include "Image.h"
 #include "FileWrapper.hpp"
+#include "CommandLineParser.hpp"
 
 #if D3D11_SUPPORTED
 #    include "EngineFactoryD3D11.h"
@@ -547,203 +548,141 @@ void SampleApp::UpdateAdaptersDialog()
 }
 
 
-std::string GetArgument(const char*& pos, const char* ArgName)
-{
-    size_t      ArgNameLen = 0;
-    const char* delimiters = " \n\r";
-    while (pos[ArgNameLen] != 0 && strchr(delimiters, pos[ArgNameLen]) == nullptr)
-        ++ArgNameLen;
-
-    if (StrCmpNoCase(pos, ArgName, ArgNameLen) == 0)
-    {
-        pos += ArgNameLen;
-        while (*pos != 0 && strchr(delimiters, *pos) != nullptr)
-            ++pos;
-        std::string Arg;
-        while (*pos != 0 && strchr(delimiters, *pos) == nullptr)
-            Arg.push_back(*(pos++));
-        return Arg;
-    }
-    else
-    {
-        return std::string{};
-    }
-}
-
 // Command line example to capture frames:
 //
-//     -mode d3d11 -adapters_dialog 0 -capture_path . -capture_fps 15 -capture_name frame -width 640 -height 480 -capture_format png -capture_quality 100 -capture_frames 3 -capture_alpha 0
+//     --mode d3d11 --adapters_dialog 0 --capture_path . --capture_fps 15 --capture_name frame -w 640 -h 480 --capture_format png --capture_quality 100 --capture_frames 3 --capture_alpha 0
 //
 // Image magick command to create animated gif:
 //
 //     magick convert  -delay 6  -loop 0 -layers Optimize -compress LZW -strip -resize 240x180   frame*.png   Animation.gif
 //
-void SampleApp::ProcessCommandLine(const char* CmdLine)
+bool SampleApp::ProcessCommandLine(int argc, const char* const* argv)
 {
-    const auto* pos = strchr(CmdLine, '-');
-    while (pos != nullptr)
-    {
-        ++pos;
-        std::string Arg;
-        if (!(Arg = GetArgument(pos, "mode")).empty())
-        {
-            if (StrCmpNoCase(Arg.c_str(), "D3D11", Arg.length()) == 0)
-            {
-#if D3D11_SUPPORTED
-                m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
-#else
-                LOG_ERROR_MESSAGE("Direct3D11 is not supported. Please select another device type");
-#endif
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "D3D12", Arg.length()) == 0)
-            {
-#if D3D12_SUPPORTED
-                m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
-#else
-                LOG_ERROR_MESSAGE("Direct3D12 is not supported. Please select another device type");
-#endif
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "GL", Arg.length()) == 0)
-            {
-#if GL_SUPPORTED
-                m_DeviceType = RENDER_DEVICE_TYPE_GL;
-#else
-                LOG_ERROR_MESSAGE("OpenGL is not supported. Please select another device type");
-#endif
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "GLES", Arg.length()) == 0)
-            {
-#if GLES_SUPPORTED
-                m_DeviceType = RENDER_DEVICE_TYPE_GLES;
-#else
-                LOG_ERROR_MESSAGE("OpenGLES is not supported. Please select another device type");
-#endif
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "VK", Arg.length()) == 0)
-            {
-#if VULKAN_SUPPORTED
-                m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
-#else
-                LOG_ERROR_MESSAGE("Vulkan is not supported. Please select another device type");
-#endif
-            }
-            else
-            {
-                LOG_ERROR_MESSAGE("Unknown device type: '", pos, "'. Only the following types are supported: D3D11, D3D12, GL, GLES, VK");
-            }
-        }
-        else if (!(Arg = GetArgument(pos, "capture_path")).empty())
-        {
-            m_ScreenCaptureInfo.Directory    = std::move(Arg);
-            m_ScreenCaptureInfo.AllowCapture = true;
-        }
-        else if (!(Arg = GetArgument(pos, "capture_name")).empty())
-        {
-            m_ScreenCaptureInfo.FileName     = std::move(Arg);
-            m_ScreenCaptureInfo.AllowCapture = true;
-        }
-        else if (!(Arg = GetArgument(pos, "capture_fps")).empty())
-        {
-            m_ScreenCaptureInfo.CaptureFPS = atof(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "capture_frames")).empty())
-        {
-            m_ScreenCaptureInfo.FramesToCapture = atoi(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "capture_format")).empty())
-        {
-            if (StrCmpNoCase(Arg.c_str(), "jpeg", Arg.length()) == 0 || StrCmpNoCase(Arg.c_str(), "jpg", Arg.length()) == 0)
-            {
-                m_ScreenCaptureInfo.FileFormat = IMAGE_FILE_FORMAT_JPEG;
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "png", Arg.length()) == 0)
-            {
-                m_ScreenCaptureInfo.FileFormat = IMAGE_FILE_FORMAT_PNG;
-            }
-            else
-            {
-                LOG_ERROR_MESSAGE("Unknown capture format. The following are allowed values: 'jpeg', 'jpg', 'png'");
-            }
-        }
-        else if (!(Arg = GetArgument(pos, "capture_quality")).empty())
-        {
-            m_ScreenCaptureInfo.JpegQuality = atoi(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "capture_alpha")).empty())
-        {
-            m_ScreenCaptureInfo.KeepAlpha = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
-        }
-        else if (!(Arg = GetArgument(pos, "width")).empty())
-        {
-            m_InitialWindowWidth = atoi(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "height")).empty())
-        {
-            m_InitialWindowHeight = atoi(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "validation")).empty())
-        {
-            m_ValidationLevel = atoi(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "adapter")).empty())
-        {
-            if (StrCmpNoCase(Arg.c_str(), "sw", Arg.length()) == 0)
-            {
-                m_AdapterType = ADAPTER_TYPE_SOFTWARE;
-            }
-            else
-            {
-                auto AdapterId = atoi(Arg.c_str());
-                VERIFY_EXPR(AdapterId >= 0);
-                m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
-            }
-        }
-        else if (!(Arg = GetArgument(pos, "adapters_dialog")).empty())
-        {
-            m_bShowAdaptersDialog = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
-        }
-        else if (!(Arg = GetArgument(pos, "show_ui")).empty())
-        {
-            m_bShowUI = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || Arg == "1";
-        }
-        else if (!(Arg = GetArgument(pos, "golden_image_mode")).empty())
-        {
-            if (StrCmpNoCase(Arg.c_str(), "none", Arg.length()) == 0)
-            {
-                m_GoldenImgMode = GoldenImageMode::None;
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "capture", Arg.length()) == 0)
-            {
-                m_GoldenImgMode = GoldenImageMode::Capture;
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "compare", Arg.length()) == 0)
-            {
-                m_GoldenImgMode = GoldenImageMode::Compare;
-            }
-            else if (StrCmpNoCase(Arg.c_str(), "compare_update", Arg.length()) == 0)
-            {
-                m_GoldenImgMode = GoldenImageMode::CompareUpdate;
-            }
-            else
-            {
-                LOG_ERROR_MESSAGE("Unknown golden image mode. The following are allowed values: 'none', 'capture', 'compare', 'compare_update'");
-            }
-        }
-        else if (!(Arg = GetArgument(pos, "golden_image_tolerance")).empty())
-        {
-            m_GoldenImgPixelTolerance = atoi(Arg.c_str());
-        }
-        else if (!(Arg = GetArgument(pos, "vsync")).empty())
-        {
-            m_bVSync = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || (StrCmpNoCase(Arg.c_str(), "on", Arg.length()) == 0) || Arg == "1";
-        }
-        else if (!(Arg = GetArgument(pos, "non_separable_progs")).empty())
-        {
-            m_bForceNonSeprblProgs = (StrCmpNoCase(Arg.c_str(), "true", Arg.length()) == 0) || (StrCmpNoCase(Arg.c_str(), "on", Arg.length()) == 0) || Arg == "1";
-        }
+    if (argc == 0)
+        return true;
 
-        pos = strchr(pos, '-');
+    if (argv == nullptr)
+    {
+        UNEXPECTED("argv is null when argc (", argc, ") is not zero");
+        return false;
     }
+
+    CommandLineParser ArgsParser{argc, argv};
+
+    {
+        const std::vector<std::pair<const char*, RENDER_DEVICE_TYPE>> DeviceTypeEnumVals =
+            {
+                {"D3D11", RENDER_DEVICE_TYPE_D3D11},
+                {"D3D12", RENDER_DEVICE_TYPE_D3D12},
+                {"GL", RENDER_DEVICE_TYPE_GL},
+                {"GLES", RENDER_DEVICE_TYPE_GLES},
+                {"VK", RENDER_DEVICE_TYPE_VULKAN},
+                {"MTL", RENDER_DEVICE_TYPE_METAL} //
+            };
+        ArgsParser.ParseEnum("mode", 'm', DeviceTypeEnumVals, m_DeviceType);
+    }
+
+#if !D3D11_SUPPORTED
+    if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11)
+    {
+        m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
+        LOG_ERROR_MESSAGE("Direct3D11 is not supported. Please select another device type");
+    }
+#endif
+#if !D3D12_SUPPORTED
+    if (m_DeviceType == RENDER_DEVICE_TYPE_D3D12)
+    {
+        m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
+        LOG_ERROR_MESSAGE("Direct3D12 is not supported. Please select another device type");
+    }
+#endif
+#if !GL_SUPPORTED
+    if (m_DeviceType == RENDER_DEVICE_TYPE_GL)
+    {
+        m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
+        LOG_ERROR_MESSAGE("OpenGL is not supported. Please select another device type");
+    }
+#endif
+#if !GLES_SUPPORTED
+    if (m_DeviceType == RENDER_DEVICE_TYPE_GLES)
+    {
+        m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
+        LOG_ERROR_MESSAGE("OpenGLES is not supported. Please select another device type");
+    }
+#endif
+#if !VULKAN_SUPPORTED
+    if (m_DeviceType == RENDER_DEVICE_TYPE_VULKAN)
+    {
+        m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
+        LOG_ERROR_MESSAGE("Vulkan is not supported. Please select another device type");
+    }
+#endif
+#if !METAL_SUPPORTED
+    if (m_DeviceType == RENDER_DEVICE_TYPE_METAL)
+    {
+        m_DeviceType = RENDER_DEVICE_TYPE_UNDEFINED;
+        LOG_ERROR_MESSAGE("Metal is not supported. Please select another device type");
+    }
+#endif
+
+    if (ArgsParser.Parse("capture_path", m_ScreenCaptureInfo.Directory))
+        m_ScreenCaptureInfo.AllowCapture = true;
+
+    if (ArgsParser.Parse("capture_name", m_ScreenCaptureInfo.FileName))
+        m_ScreenCaptureInfo.AllowCapture = true;
+
+    ArgsParser.Parse("capture_fps", m_ScreenCaptureInfo.CaptureFPS);
+    ArgsParser.Parse("capture_frames", m_ScreenCaptureInfo.FramesToCapture);
+
+    {
+        const std::vector<std::pair<const char*, IMAGE_FILE_FORMAT>> FileFmtEnumVals =
+            {
+                {"jpeg", IMAGE_FILE_FORMAT_JPEG},
+                {"jpg", IMAGE_FILE_FORMAT_JPEG},
+                {"png", IMAGE_FILE_FORMAT_PNG} //
+            };
+        ArgsParser.ParseEnum("capture_format", '\0', FileFmtEnumVals, m_ScreenCaptureInfo.FileFormat);
+    }
+
+    ArgsParser.Parse("capture_quality", m_ScreenCaptureInfo.JpegQuality);
+    ArgsParser.Parse("capture_alpha", m_ScreenCaptureInfo.KeepAlpha);
+    ArgsParser.Parse("width", 'w', m_InitialWindowWidth);
+    ArgsParser.Parse("height", 'h', m_InitialWindowHeight);
+    ArgsParser.Parse("validation", m_ValidationLevel);
+
+    ArgsParser.Parse("adapter", '\0',
+                     [&](const char* ArgVal) {
+                         if (StrCmpNoCase(ArgVal, "sw") == 0)
+                         {
+                             m_AdapterType = ADAPTER_TYPE_SOFTWARE;
+                         }
+                         else
+                         {
+                             auto AdapterId = atoi(ArgVal);
+                             VERIFY_EXPR(AdapterId >= 0);
+                             m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
+                         }
+                         return true;
+                     });
+
+    ArgsParser.Parse("adapters_dialog", m_bShowAdaptersDialog);
+    ArgsParser.Parse("show_ui", m_bShowUI);
+
+    {
+        const std::vector<std::pair<const char*, GoldenImageMode>> GoldenImgModeEnumVals =
+            {
+                {"none", GoldenImageMode::None},
+                {"capture", GoldenImageMode::Capture},
+                {"compare", GoldenImageMode::Compare},
+                {"compare_update", GoldenImageMode::CompareUpdate} //
+            };
+        ArgsParser.ParseEnum("golden_image_mode", '\0', GoldenImgModeEnumVals, m_GoldenImgMode);
+    }
+
+    ArgsParser.Parse("golden_image_tolerance", m_GoldenImgPixelTolerance);
+    ArgsParser.Parse("vsync", m_bVSync);
+    ArgsParser.Parse("non_separable_progs", m_bForceNonSeprblProgs);
+
 
     if (m_DeviceType == RENDER_DEVICE_TYPE_UNDEFINED)
     {
@@ -762,7 +701,7 @@ void SampleApp::ProcessCommandLine(const char* CmdLine)
         }
     }
 
-    m_TheSample->ProcessCommandLine(CmdLine);
+    return m_TheSample->ProcessCommandLine(ArgsParser.ArgC(), ArgsParser.ArgV());
 }
 
 void SampleApp::WindowResize(int width, int height)

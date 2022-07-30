@@ -38,6 +38,7 @@
 #include "TextureUtilities.h"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
+#include "CommandLineParser.hpp"
 
 namespace Diligent
 {
@@ -132,29 +133,23 @@ Tutorial10_DataStreaming::~Tutorial10_DataStreaming()
     StopWorkerThreads();
 }
 
-std::string GetArgument(const char*& pos, const char* ArgName);
-
-void Tutorial10_DataStreaming::ProcessCommandLine(const char* CmdLine)
+bool Tutorial10_DataStreaming::ProcessCommandLine(int argc, const char* const* argv)
 {
-    const auto* pos = strchr(CmdLine, '-');
-    while (pos != nullptr)
+    CommandLineParser ArgsParser{argc, argv};
+    if (ArgsParser.Parse("polygons", 'p', m_NumPolygons))
     {
-        ++pos;
-        std::string Arg;
-        if (!(Arg = GetArgument(pos, "polygons")).empty())
-        {
-            m_NumPolygons = clamp(atoi(Arg.c_str()), 1, MaxPolygons);
-        }
-        else if (!(Arg = GetArgument(pos, "batch")).empty())
-        {
-            m_BatchSize = clamp(atoi(Arg.c_str()), 1, MaxBatchSize);
-        }
-        else if (!(Arg = GetArgument(pos, "threads")).empty())
-        {
-            m_NumWorkerThreads = clamp(atoi(Arg.c_str()), 0, 128);
-        }
-        pos = strchr(pos, '-');
+        m_NumPolygons = clamp(m_NumPolygons, 1, MaxPolygons);
     }
+    if (ArgsParser.Parse("batch", 'b', m_BatchSize))
+    {
+        m_BatchSize = clamp(m_BatchSize, 1, MaxBatchSize);
+    }
+    if (ArgsParser.Parse("threads", 't', m_NumWorkerThreads))
+    {
+        m_NumWorkerThreads = clamp(m_NumWorkerThreads, 0, 128);
+    }
+
+    return true;
 }
 
 void Tutorial10_DataStreaming::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)

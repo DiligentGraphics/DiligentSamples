@@ -38,6 +38,7 @@
 #include "TextureUtilities.h"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
+#include "CommandLineParser.hpp"
 
 namespace Diligent
 {
@@ -52,29 +53,23 @@ Tutorial09_Quads::~Tutorial09_Quads()
     StopWorkerThreads();
 }
 
-std::string GetArgument(const char*& pos, const char* ArgName);
-
-void Tutorial09_Quads::ProcessCommandLine(const char* CmdLine)
+bool Tutorial09_Quads::ProcessCommandLine(int argc, const char* const* argv)
 {
-    const auto* pos = strchr(CmdLine, '-');
-    while (pos != nullptr)
+    CommandLineParser ArgsParser{argc, argv};
+    if (ArgsParser.Parse("quads", 'q', m_NumQuads))
     {
-        ++pos;
-        std::string Arg;
-        if (!(Arg = GetArgument(pos, "quads")).empty())
-        {
-            m_NumQuads = clamp(atoi(Arg.c_str()), 1, MaxQuads);
-        }
-        else if (!(Arg = GetArgument(pos, "batch")).empty())
-        {
-            m_BatchSize = clamp(atoi(Arg.c_str()), 1, MaxBatchSize);
-        }
-        else if (!(Arg = GetArgument(pos, "threads")).empty())
-        {
-            m_NumWorkerThreads = clamp(atoi(Arg.c_str()), 0, 128);
-        }
-        pos = strchr(pos, '-');
+        m_NumQuads = clamp(m_NumQuads, 1, MaxQuads);
     }
+    if (ArgsParser.Parse("batch", 'b', m_BatchSize))
+    {
+        m_BatchSize = clamp(m_BatchSize, 1, MaxBatchSize);
+    }
+    if (ArgsParser.Parse("threads", 't', m_NumWorkerThreads))
+    {
+        m_NumWorkerThreads = clamp(m_NumWorkerThreads, 0, 128);
+    }
+
+    return true;
 }
 
 void Tutorial09_Quads::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)

@@ -11,10 +11,10 @@ if "%num_args%" LSS "4" (
     echo build_path      - path to the root of the build tree
     echo config          - configuration (Debug, Release, etc.^)
     echo golden_img_mode - golden image processing mode (capture or compare^)
-    echo test_modes      - list of test modes (e.g. "-mode d3d11" "-mode d3d11 -adapter sw" "-mode d3d12" "-mode gl" "-mode vk"^)
+    echo test_modes      - list of test modes (e.g. "--mode d3d11" "--mode d3d11 --adapter sw" "--mode d3d12" "--mode gl" "--mode vk"^)
     echo. 
     echo Example:
-    echo   ProcessGoldenImages.bat c:\Projects\DiligentEngine\build\Win64 Debug compare "-mode d3d11" "-mode d3d12 -adapter sw"
+    echo   ProcessGoldenImages.bat c:\Projects\DiligentEngine\build\Win64 Debug compare "--mode d3d11" "--mode d3d12 --adapter sw"
     EXIT /B -1
 )
 
@@ -143,7 +143,7 @@ EXIT /B %ERROR%
         set extra_args=
         set mode_param=0
         for %%Y in (%%~X) do (
-            if "%%Y" == "-mode" (
+            if "%%Y" == "--mode" (
                 set mode_param=1
             ) else (
                 if "!mode_param!" == "1" (
@@ -161,7 +161,7 @@ EXIT /B %ERROR%
         rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
         rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
         rem   ~ removes quotes from %%~X
-        !app_path! %%~X -width %golden_img_width% -height %golden_img_height% -golden_image_mode %golden_img_mode% -capture_path %golden_img_dir% -capture_name !capture_name! -capture_format png -adapters_dialog 0 -show_ui %show_ui%
+        !app_path! %%~X --width %golden_img_width% --height %golden_img_height% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 --show_ui %show_ui%
 
         if !ERRORLEVEL! NEQ 0 (
             if !ERRORLEVEL! GEQ 0 (
