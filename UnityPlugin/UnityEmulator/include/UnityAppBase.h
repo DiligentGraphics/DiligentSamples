@@ -45,13 +45,14 @@ public:
     UnityAppBase();
     virtual ~UnityAppBase()override;
 
-    virtual bool ProcessCommandLine(int argc, const char* const* argv) override;
+    virtual CommandLineStatus ProcessCommandLine(int argc, const char* const* argv) override;
+
     virtual const char* GetAppTitle()const override { return m_AppTitle.c_str(); }
     virtual void Render()override;
     virtual void Present()override;
     virtual void WindowResize(int width, int height)override;
     virtual void Update(double CurrTime, double ElapsedTime)override;
-    
+
     virtual bool IsReady() const override
     {
         return m_DiligentGraphics && m_Scene;

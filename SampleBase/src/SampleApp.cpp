@@ -556,15 +556,15 @@ void SampleApp::UpdateAdaptersDialog()
 //
 //     magick convert  -delay 6  -loop 0 -layers Optimize -compress LZW -strip -resize 240x180   frame*.png   Animation.gif
 //
-bool SampleApp::ProcessCommandLine(int argc, const char* const* argv)
+SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char* const* argv)
 {
     if (argc == 0)
-        return true;
+        return CommandLineStatus::OK;
 
     if (argv == nullptr)
     {
         UNEXPECTED("argv is null when argc (", argc, ") is not zero");
-        return false;
+        return CommandLineStatus::Error;
     }
 
     CommandLineParser ArgsParser{argc, argv};

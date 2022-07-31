@@ -133,7 +133,7 @@ Tutorial10_DataStreaming::~Tutorial10_DataStreaming()
     StopWorkerThreads();
 }
 
-bool Tutorial10_DataStreaming::ProcessCommandLine(int argc, const char* const* argv)
+Tutorial10_DataStreaming::CommandLineStatus Tutorial10_DataStreaming::ProcessCommandLine(int argc, const char* const* argv)
 {
     CommandLineParser ArgsParser{argc, argv};
     if (ArgsParser.Parse("polygons", 'p', m_NumPolygons))
@@ -149,7 +149,7 @@ bool Tutorial10_DataStreaming::ProcessCommandLine(int argc, const char* const* a
         m_NumWorkerThreads = clamp(m_NumWorkerThreads, 0, 128);
     }
 
-    return true;
+    return CommandLineStatus::OK;
 }
 
 void Tutorial10_DataStreaming::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)

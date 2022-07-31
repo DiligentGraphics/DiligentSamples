@@ -69,7 +69,7 @@ UnityAppBase::~UnityAppBase()
 
 
 
-bool UnityAppBase::ProcessCommandLine(int argc, const char* const* argv)
+UnityAppBase::CommandLineStatus UnityAppBase::ProcessCommandLine(int argc, const char* const* argv)
 {
     CommandLineParser ArgsParser{argc, argv};
     std::string       mode;
@@ -95,7 +95,7 @@ bool UnityAppBase::ProcessCommandLine(int argc, const char* const* argv)
         else
         {
             LOG_ERROR_MESSAGE(mode, " is not a valid device type. Only the following types are supported: D3D11, D3D12, GL, VK");
-            return false;
+            return CommandLineStatus::Error;
         }
     }
 
@@ -113,7 +113,7 @@ bool UnityAppBase::ProcessCommandLine(int argc, const char* const* argv)
         default: UNEXPECTED("Unknown device type");
     }
 
-    return true;
+    return CommandLineStatus::OK;
 }
 
 void UnityAppBase::InitGraphics(

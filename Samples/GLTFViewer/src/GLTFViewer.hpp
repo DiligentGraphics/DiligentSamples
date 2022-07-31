@@ -41,7 +41,8 @@ class GLTFViewer final : public SampleBase
 {
 public:
     ~GLTFViewer();
-    virtual bool ProcessCommandLine(int argc, const char* const* argv) override final;
+    virtual CommandLineStatus ProcessCommandLine(int argc, const char* const* argv) override final;
+
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;

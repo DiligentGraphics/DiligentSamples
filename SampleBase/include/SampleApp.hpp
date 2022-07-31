@@ -51,7 +51,8 @@ class SampleApp : public NativeAppBase
 public:
     SampleApp();
     ~SampleApp();
-    virtual bool        ProcessCommandLine(int argc, const char* const* argv) override final;
+    virtual CommandLineStatus ProcessCommandLine(int argc, const char* const* argv) override final;
+
     virtual const char* GetAppTitle() const override final { return m_AppTitle.c_str(); }
     virtual void        Update(double CurrTime, double ElapsedTime) override;
     virtual void        WindowResize(int width, int height) override;

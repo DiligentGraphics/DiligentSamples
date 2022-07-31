@@ -53,7 +53,7 @@ Tutorial09_Quads::~Tutorial09_Quads()
     StopWorkerThreads();
 }
 
-bool Tutorial09_Quads::ProcessCommandLine(int argc, const char* const* argv)
+Tutorial09_Quads::CommandLineStatus Tutorial09_Quads::ProcessCommandLine(int argc, const char* const* argv)
 {
     CommandLineParser ArgsParser{argc, argv};
     if (ArgsParser.Parse("quads", 'q', m_NumQuads))
@@ -69,7 +69,7 @@ bool Tutorial09_Quads::ProcessCommandLine(int argc, const char* const* argv)
         m_NumWorkerThreads = clamp(m_NumWorkerThreads, 0, 128);
     }
 
-    return true;
+    return CommandLineStatus::OK;
 }
 
 void Tutorial09_Quads::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)

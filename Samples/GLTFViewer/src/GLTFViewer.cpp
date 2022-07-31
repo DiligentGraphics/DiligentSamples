@@ -131,13 +131,13 @@ void GLTFViewer::ResetView()
     m_CameraRotation = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 }
 
-bool GLTFViewer::ProcessCommandLine(int argc, const char* const* argv)
+GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const char* const* argv)
 {
     CommandLineParser ArgsParser{argc, argv};
     ArgsParser.Parse("use_cache", m_bUseResourceCache);
     ArgsParser.Parse("model", m_InitialModelPath);
 
-    return true;
+    return CommandLineStatus::OK;
 }
 
 void GLTFViewer::CreateGLTFResourceCache()
