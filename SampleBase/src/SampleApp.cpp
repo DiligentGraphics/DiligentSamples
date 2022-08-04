@@ -103,6 +103,86 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 
     Uint32 NumImmediateContexts = 0;
 
+#if D3D11_SUPPORTED || D3D12_SUPPORTED || VULKAN_SUPPORTED
+    auto FindAdapter = [this](auto* pFactory, Version GraphicsAPIVersion, GraphicsAdapterInfo& AdapterAttribs) {
+        Uint32 NumAdapters = 0;
+        pFactory->EnumerateAdapters(GraphicsAPIVersion, NumAdapters, nullptr);
+        std::vector<GraphicsAdapterInfo> Adapters(NumAdapters);
+        if (NumAdapters > 0)
+            pFactory->EnumerateAdapters(GraphicsAPIVersion, NumAdapters, Adapters.data());
+        else
+            LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
+
+        auto AdapterId = m_AdapterId;
+        if (AdapterId != DEFAULT_ADAPTER_ID)
+        {
+            if (AdapterId < Adapters.size())
+            {
+                m_AdapterType = Adapters[AdapterId].Type;
+            }
+            else
+            {
+                LOG_ERROR_MESSAGE("Adapter ID (", AdapterId, ") is invalid. Only ", Adapters.size(), " compatible ", (Adapters.size() == 1 ? "adapter" : "adapters"), " present in the system");
+                AdapterId = DEFAULT_ADAPTER_ID;
+            }
+        }
+
+        if (AdapterId == DEFAULT_ADAPTER_ID && m_AdapterType != ADAPTER_TYPE_UNKNOWN)
+        {
+            for (Uint32 i = 0; i < Adapters.size(); ++i)
+            {
+                if (Adapters[i].Type == m_AdapterType)
+                {
+                    AdapterId = i;
+                    break;
+                }
+            }
+            if (AdapterId == DEFAULT_ADAPTER_ID)
+                LOG_WARNING_MESSAGE("Unable to find the requested adapter type. Using default adapter.");
+        }
+
+        if (AdapterId == DEFAULT_ADAPTER_ID)
+        {
+            m_AdapterType = ADAPTER_TYPE_UNKNOWN;
+            for (Uint32 i = 0; i < Adapters.size(); ++i)
+            {
+                const auto& AdapterInfo = Adapters[i];
+                const auto  AdapterType = AdapterInfo.Type;
+                static_assert((ADAPTER_TYPE_DISCRETE > ADAPTER_TYPE_INTEGRATED &&
+                               ADAPTER_TYPE_INTEGRATED > ADAPTER_TYPE_SOFTWARE &&
+                               ADAPTER_TYPE_SOFTWARE > ADAPTER_TYPE_UNKNOWN),
+                              "Unexpected ADAPTER_TYPE enum ordering");
+                if (AdapterType > m_AdapterType)
+                {
+                    // Prefer Discrete over Integrated over Software
+                    m_AdapterType = AdapterType;
+                    AdapterId     = i;
+                }
+                else if (AdapterType == m_AdapterType)
+                {
+                    // Select adapter with more memory
+                    const auto& NewAdapterMem   = AdapterInfo.Memory;
+                    const auto  NewTotalMemory  = NewAdapterMem.LocalMemory + NewAdapterMem.HostVisibleMemory + NewAdapterMem.UnifiedMemory;
+                    const auto& CurrAdapterMem  = Adapters[AdapterId].Memory;
+                    const auto  CurrTotalMemory = CurrAdapterMem.LocalMemory + CurrAdapterMem.HostVisibleMemory + CurrAdapterMem.UnifiedMemory;
+                    if (NewTotalMemory > CurrTotalMemory)
+                    {
+                        AdapterId = i;
+                    }
+                }
+            }
+        }
+
+        if (AdapterId != DEFAULT_ADAPTER_ID)
+        {
+            AdapterAttribs = Adapters[AdapterId];
+            LOG_INFO_MESSAGE("Using adapter ", AdapterId, ": '", AdapterAttribs.Description, "'");
+        }
+
+        return AdapterId;
+    };
+#endif
+
     std::vector<IDeviceContext*> ppContexts;
     switch (m_DeviceType)
     {
@@ -125,37 +205,12 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            Uint32 NumAdapters = 0;
-            pFactoryD3D11->EnumerateAdapters(EngineCI.GraphicsAPIVersion, NumAdapters, nullptr);
-            std::vector<GraphicsAdapterInfo> Adapters(NumAdapters);
-            if (NumAdapters > 0)
-            {
-                pFactoryD3D11->EnumerateAdapters(EngineCI.GraphicsAPIVersion, NumAdapters, Adapters.data());
-            }
-            else
-            {
-                LOG_ERROR_AND_THROW("Failed to find Direct3D11-compatible hardware adapters");
-            }
-
-            EngineCI.AdapterId = m_AdapterId;
-            if (m_AdapterType == ADAPTER_TYPE_SOFTWARE)
-            {
-                for (Uint32 i = 0; i < Adapters.size(); ++i)
-                {
-                    if (Adapters[i].Type == m_AdapterType)
-                    {
-                        EngineCI.AdapterId = i;
-                        LOG_INFO_MESSAGE("Found software adapter '", Adapters[i].Description, "'");
-                        break;
-                    }
-                }
-            }
-
+            EngineCI.AdapterId = FindAdapter(pFactoryD3D11, EngineCI.GraphicsAPIVersion, m_AdapterAttribs);
             m_TheSample->ModifyEngineInitInfo({pFactoryD3D11, m_DeviceType, EngineCI, m_SwapChainInitDesc});
 
-            m_AdapterAttribs = Adapters[EngineCI.AdapterId];
-            if (m_AdapterType != ADAPTER_TYPE_SOFTWARE)
+            if (m_AdapterType != ADAPTER_TYPE_SOFTWARE && EngineCI.AdapterId != DEFAULT_ADAPTER_ID)
             {
+                // Display mode enumeration fails with error for software adapter
                 Uint32 NumDisplayModes = 0;
                 pFactoryD3D11->EnumerateDisplayModes(EngineCI.GraphicsAPIVersion, EngineCI.AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
                 m_DisplayModes.resize(NumDisplayModes);
@@ -196,14 +251,11 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            Uint32 NumAdapters = 0;
-            pFactoryD3D12->EnumerateAdapters(EngineCI.GraphicsAPIVersion, NumAdapters, nullptr);
-            std::vector<GraphicsAdapterInfo> Adapters(NumAdapters);
-            if (NumAdapters > 0)
+            try
             {
-                pFactoryD3D12->EnumerateAdapters(EngineCI.GraphicsAPIVersion, NumAdapters, Adapters.data());
+                EngineCI.AdapterId = FindAdapter(pFactoryD3D12, EngineCI.GraphicsAPIVersion, m_AdapterAttribs);
             }
-            else
+            catch (...)
             {
 #    if D3D11_SUPPORTED
                 LOG_ERROR_MESSAGE("Failed to find Direct3D12-compatible hardware adapters. Attempting to initialize the engine in Direct3D11 mode.");
@@ -211,29 +263,15 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 InitializeDiligentEngine(pWindow);
                 return;
 #    else
-                LOG_ERROR_AND_THROW("Failed to find Direct3D12-compatible hardware adapters.");
+                throw;
 #    endif
-            }
-
-            EngineCI.AdapterId = m_AdapterId;
-            if (m_AdapterType == ADAPTER_TYPE_SOFTWARE)
-            {
-                for (Uint32 i = 0; i < Adapters.size(); ++i)
-                {
-                    if (Adapters[i].Type == m_AdapterType)
-                    {
-                        EngineCI.AdapterId = i;
-                        LOG_INFO_MESSAGE("Found software adapter '", Adapters[i].Description, "'");
-                        break;
-                    }
-                }
             }
 
             m_TheSample->ModifyEngineInitInfo({pFactoryD3D12, m_DeviceType, EngineCI, m_SwapChainInitDesc});
 
-            m_AdapterAttribs = Adapters[EngineCI.AdapterId];
-            if (m_AdapterType != ADAPTER_TYPE_SOFTWARE)
+            if (m_AdapterType != ADAPTER_TYPE_SOFTWARE && EngineCI.AdapterId != DEFAULT_ADAPTER_ID)
             {
+                // Display mode enumeration fails with error for software adapter
                 Uint32 NumDisplayModes = 0;
                 pFactoryD3D12->EnumerateDisplayModes(EngineCI.GraphicsAPIVersion, EngineCI.AdapterId, 0, TEX_FORMAT_RGBA8_UNORM_SRGB, NumDisplayModes, nullptr);
                 m_DisplayModes.resize(NumDisplayModes);
@@ -320,6 +358,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             auto* pFactoryVk = GetEngineFactoryVk();
             m_pEngineFactory = pFactoryVk;
 
+            EngineCI.AdapterId = FindAdapter(pFactoryVk, EngineCI.GraphicsAPIVersion, m_AdapterAttribs);
             m_TheSample->ModifyEngineInitInfo({pFactoryVk, m_DeviceType, EngineCI, m_SwapChainInitDesc});
 
             NumImmediateContexts = std::max(1u, EngineCI.NumImmediateContexts);

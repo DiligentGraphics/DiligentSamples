@@ -121,7 +121,7 @@ protected:
     int          m_InitialWindowHeight = 0;
     int          m_ValidationLevel     = -1;
     std::string  m_AppTitle;
-    Uint32       m_AdapterId   = 0;
+    Uint32       m_AdapterId   = DEFAULT_ADAPTER_ID;
     ADAPTER_TYPE m_AdapterType = ADAPTER_TYPE_UNKNOWN;
     std::string  m_AdapterDetailsString;
     int          m_SelectedDisplayMode  = 0;
