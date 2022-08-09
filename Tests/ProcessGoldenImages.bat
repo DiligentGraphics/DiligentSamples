@@ -29,7 +29,7 @@ if "%golden_img_height%" == "" (
     set golden_img_height=512
 )
 if "%golden_images_root_dir%" == "" (
-    set golden_images_root_dir=../../../Tests/GoldenImages
+    set golden_images_root_dir=.
 )
 
  :: ~ removes surrounding quotes
@@ -51,7 +51,7 @@ set rest_args=
     goto loop1
 :end_loop1
 
-cd ../..
+cd ..
 
 set Tutorials=Tutorial01_HelloTriangle^
               Tutorial02_Cube^
@@ -93,7 +93,7 @@ for %%X in (%Samples%) do (
    set /a APP_ID=!APP_ID!*2
 )
 
-cd Tests/GoldenImages
+cd Tests
 
 EXIT /B %ERROR%
 
@@ -155,7 +155,7 @@ EXIT /B %ERROR%
             )
         )
         set capture_name=%app_name%_gi_!backend_name!
-        
+
 
         rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
         rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!

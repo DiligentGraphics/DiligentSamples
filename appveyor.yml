@@ -10,11 +10,6 @@ image:
 - Visual Studio 2019
 
 environment:
-  # use 'capture' to generate golden images and upload them as build artifacts
-  # use 'compare' to render and compare with the golden references
-  # use 'compare_update' to first compare with the references and then update them
-  test_mode: compare_update
-
   matrix:
     - platform: x64
       configuration: Debug
@@ -52,15 +47,3 @@ build:
   project: c:\projects\build\DiligentSamples_Test.sln
   verbosity: minimal
   parallel: true
-
-test_script:
-  - 'cd %APPVEYOR_BUILD_FOLDER%\Tests\GoldenImages'
-  - '%APPVEYOR_BUILD_FOLDER%\BuildTools\Scripts\appveyor\run_tests.bat c:\projects\build %test_mode%'
-
-after_test:
-  - 'cd %APPVEYOR_BUILD_FOLDER%'
-  - 7z a golden_images-"%CONFIGURATION%".zip .\Tests\GoldenImages\*\*
-
-artifacts:
-  - path: \golden_images-*.zip
-    name: golden_images-zip
