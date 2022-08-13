@@ -1,42 +1,35 @@
 @echo off
 
+:: Enable delayed expansion to be able to use !ERRORLEVEL!
+setlocal ENABLEDELAYEDEXPANSION
+
 set num_args=0
 for %%x in (%*) do Set /A num_args+=1
 
-if "%num_args%" LSS "4" (
-    echo Command line format:
-    echo.
-    echo   ProcessGoldenImages.bat build_path config golden_img_mode test_modes
-    echo.
-    echo build_path      - path to the root of the build tree
-    echo config          - configuration (Debug, Release, etc.^)
-    echo golden_img_mode - golden image processing mode (capture or compare^)
-    echo test_modes      - list of test modes (e.g. "--mode d3d11" "--mode d3d11 --adapter sw" "--mode d3d12" "--mode gl" "--mode vk"^)
-    echo. 
-    echo Example:
-    echo   ProcessGoldenImages.bat c:\Projects\DiligentEngine\build\Win64 Debug compare "--mode d3d11" "--mode d3d12 --adapter sw"
-    EXIT /B -1
+if "%num_args%" LSS "3" (
+    echo At least three arguments are required
+    goto help
 )
 
-
-rem  Enable delayed expansion to be able to use !ERRORLEVEL!
-setlocal ENABLEDELAYEDEXPANSION
-
-if "%golden_img_width%" == "" (
-    set golden_img_width=512
-)
-if "%golden_img_height%" == "" (
-    set golden_img_height=512
-)
-if "%golden_images_root_dir%" == "" (
-    set golden_images_root_dir=.
+if "%DILIGENT_BUILD_TYPE%" == "" (
+    echo Required DILIGENT_BUILD_TYPE variable is not set
+    goto help
 )
 
- :: ~ removes surrounding quotes
-set build_folder=%~1
-shift
+if "%DILIGENT_BUILD_DIR%" == "" (
+    echo Required DILIGENT_BUILD_DIR variable is not set
+    goto help
+)
 
-set config=%1
+if "%GOLDEN_IMAGE_WIDTH%" == "" (
+    set GOLDEN_IMAGE_WIDTH=512
+)
+if "%GOLDEN_IMAGE_HEIGHT%" == "" (
+    set GOLDEN_IMAGE_HEIGHT=512
+)
+
+:: ~ removes surrounding quotes
+set golden_images_dir=%~1
 shift
 
 set golden_img_mode=%1
@@ -44,12 +37,22 @@ shift
 
 set rest_args=
 :loop1
+    :: ~ removes surrounding quotes
     if "%~1"=="" goto end_loop1
     :: Do not remove quotes yet as this will ungroup arguments
     set rest_args=%rest_args% %1
     shift
     goto loop1
 :end_loop1
+
+
+echo Build type:  %DILIGENT_BUILD_TYPE%
+echo Build dir:   %DILIGENT_BUILD_DIR%
+echo Img mode:    %golden_img_mode%
+echo Img dir:     %golden_images_dir%
+echo Img size:    %GOLDEN_IMAGE_WIDTH% x %GOLDEN_IMAGE_HEIGHT%
+echo App modes:   %rest_args%
+echo.
 
 cd ..
 
@@ -129,7 +132,7 @@ EXIT /B %ERROR%
 
     cd "%app_folder%/%app_name%/assets"
 
-    set golden_img_dir=%golden_images_root_dir%/%app_folder%/%app_name%
+    set golden_img_dir=%golden_images_dir%/%app_folder%/%app_name%
     if not exist "%golden_img_dir%" (
         md "%golden_img_dir%"
     )
@@ -137,7 +140,11 @@ EXIT /B %ERROR%
     set EXIT_CODE=0
     for %%X in (%test_modes%) do (
 
-        set app_path=%build_folder%/DiligentSamples/%app_folder%/%app_name%/%config%/%app_name%.exe
+        set app_path=%DILIGENT_BUILD_DIR%/DiligentSamples/%app_folder%/%app_name%
+        if exist "!app_path!/%DILIGENT_BUILD_TYPE%" (
+            set app_path=!app_path!/%DILIGENT_BUILD_TYPE%
+        )
+        set app_path=!app_path!/%app_name%.exe
 
         :: Get the backend name and extra arguments
         set extra_args=
@@ -161,7 +168,7 @@ EXIT /B %ERROR%
         rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
         rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
         rem   ~ removes quotes from %%~X
-        !app_path! %%~X --width %golden_img_width% --height %golden_img_height% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 --show_ui %show_ui%
+        !app_path! %%~X --width %GOLDEN_IMAGE_WIDTH% --height %GOLDEN_IMAGE_HEIGHT% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 --show_ui %show_ui%
 
         if !ERRORLEVEL! NEQ 0 (
             if !ERRORLEVEL! GEQ 0 (
@@ -186,3 +193,35 @@ EXIT /B %ERROR%
     cd ../../../
 
     EXIT /B %EXIT_CODE%
+
+
+
+:help
+
+    echo.
+    echo === ProcessGoldenImages.bat ===
+    echo.
+    echo Required variables:
+    echo.
+    echo   DILIGENT_BUILD_TYPE - Build type (e.g. Debug, Release, etc.^)
+    echo   DILIGENT_BUILD_DIR  - Path to the build directory
+    echo.
+    echo Optional variables:
+    echo.
+    echo   GOLDEN_IMAGE_WIDTH  - Golden image width (Default: 512^)
+    echo   GOLDEN_IMAGE_HEIGHT - Golden image height (Default: 512^)
+    echo.
+    echo Command line format:
+    echo.
+    echo   ProcessGoldenImages.bat golden_images_dir golden_img_mode test_modes
+    echo.
+    echo     golden_images_dir - Path to the golden images directory
+    echo     golden_img_mode   - golden image processing mode (capture, compare, or compare_update^)
+    echo     test_modes        - list of test modes (e.g. "--mode d3d11" "--mode d3d11 --adapter sw" "--mode d3d12" "--mode gl" "--mode vk"^)
+    echo. 
+    echo Example:
+    echo   set DILIGENT_BUILD_DIR=c:\git\DiligentEngine\build\Win64
+    echo   set DILIGENT_BUILD_TYPE=Debug
+    echo   ProcessGoldenImages.bat c:\git\DiligentTestData\GoldenImages compare "--mode d3d11" "--mode d3d12 --adapter sw"
+
+    EXIT /B -1

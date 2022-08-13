@@ -129,8 +129,7 @@ jobs:
       shell: cmd
       run: |
         :: Run Sample Tests D3D11
-        set golden_images_root_dir=${{github.workspace}}/DiligentTestData/GoldenImages
-        ProcessGoldenImages.bat ${{env.DILIGENT_BUILD_DIR}} ${{matrix.build_type}} ${{env.test_mode}} "--mode d3d11 --adapter sw"
+        ProcessGoldenImages.bat "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode d3d11 --adapter sw"
 
     - name: Run Sample Tests D3D12
       working-directory: ${{github.workspace}}/DiligentSamples/Tests
@@ -140,8 +139,7 @@ jobs:
       shell: cmd
       run: |
         :: Run Sample Tests D3D12
-        set golden_images_root_dir=${{github.workspace}}/DiligentTestData/GoldenImages
-        ProcessGoldenImages.bat ${{env.DILIGENT_BUILD_DIR}} ${{matrix.build_type}} ${{env.test_mode}} "--mode d3d12 --adapter sw"
+        ProcessGoldenImages.bat "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode d3d12 --adapter sw"
 
     - name: Upload Golden Images
       uses: actions/upload-artifact@v2
