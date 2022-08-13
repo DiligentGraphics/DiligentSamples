@@ -91,7 +91,8 @@ struct Building
     }
 };
 
-void CreateBuilding(const float2            Center,
+void CreateBuilding(std::mt19937&           RndDev,
+                    const float2            Center,
                     const float             MaxRadius,
                     float                   MaxHeight,
                     const Uint32            BaseTexIndex,
@@ -137,7 +138,6 @@ void CreateBuilding(const float2            Center,
     std::vector<Corner> Corners;
     BuildingShape       ShapeId = BuildingShape::COUNT;
     {
-        std::mt19937                       RndDev{std::random_device{}()};
         std::uniform_int_distribution<int> ShapeIdDistrib{0, static_cast<int>(BuildingShape::COUNT) - 1};
         ShapeId = static_cast<BuildingShape>(ShapeIdDistrib(RndDev));
 
@@ -241,7 +241,6 @@ void CreateBuilding(const float2            Center,
     };
     std::vector<Section> Sections;
     {
-        std::mt19937                          RndDev{std::random_device{}()};
         std::uniform_int_distribution<Uint32> NumSectionsDistrib{2u, 7u};
         std::uniform_int_distribution<Uint32> RndTexIndex{0u, 32u};
         std::uniform_real_distribution<float> RndAngle{0.0f, PI_F * 0.5f};
@@ -567,13 +566,16 @@ void Buildings::CreateResources(IDeviceContext* pContext)
 
     VERIFY_EXPR(CityGrid.size() > 0);
 
+    // Use default seed to produce consistent distributions
+    std::mt19937 RndDev;
+
     std::vector<Vertex>    Vertices;
     std::vector<IndexType> Indices;
     const float            Scale = m_DistributionScale;
     for (Uint32 i = 0; i < CityGrid.size(); ++i)
     {
         auto& b = CityGrid[i];
-        CreateBuilding(b.Center * Scale, b.Radius * Scale, b.Height, i, NumUniqueSlices, Vertices, Indices);
+        CreateBuilding(RndDev, b.Center * Scale, b.Radius * Scale, b.Height, i, NumUniqueSlices, Vertices, Indices);
     }
 
     // Create vertex & index buffers for opaque geometry

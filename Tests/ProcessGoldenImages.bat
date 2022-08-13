@@ -51,7 +51,7 @@ echo Build dir:   %DILIGENT_BUILD_DIR%
 echo Img mode:    %golden_img_mode%
 echo Img dir:     %golden_images_dir%
 echo Img size:    %GOLDEN_IMAGE_WIDTH% x %GOLDEN_IMAGE_HEIGHT%
-echo App modes:   %rest_args%
+echo Test modes:  %rest_args%
 echo.
 
 cd ..
@@ -74,7 +74,8 @@ set Tutorials=Tutorial01_HelloTriangle^
               Tutorial16_BindlessResources^
               Tutorial17_MSAA^
 			  Tutorial18_Queries^
-              Tutorial19_RenderPasses
+              Tutorial19_RenderPasses^
+              Tutorial23_CommandQueues
 
 set Samples=Atmosphere^
             GLTFViewer^
@@ -120,6 +121,7 @@ EXIT /B %ERROR%
         if "%app_name%" == "ImguiDemo" set show_ui=1
     )
 	if "%app_name%" == "Tutorial18_Queries" set show_ui=0
+    if "%app_name%" == "Tutorial23_CommandQueues" set show_ui=0
 	
     set test_modes=
     :loop2
