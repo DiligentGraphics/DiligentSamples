@@ -93,14 +93,8 @@ set TESTS_FAILED=0
 set TESTS_PASSED=0
 set OVERAL_STATUS=
 
-
 for %%X in (%TestApps%) do (
     call :gen_golden_img %%X
-    if "!ERRORLEVEL!" == "0" (
-        set /a TESTS_PASSED=!TESTS_PASSED!+1
-    ) else (
-        set /a TESTS_FAILED=!TESTS_FAILED!+1
-    )
 )
 
 cd Tests
@@ -111,14 +105,14 @@ for %%X in (%OVERAL_STATUS%) do (
 
 echo.
 if "%TESTS_PASSED%" NEQ "0" (
-    echo %FONT_GREEN%%TESTS_PASSED% tests PASSED%FONT_DEFAULT%
+    echo %FONT_GREEN%!TESTS_PASSED! tests PASSED%FONT_DEFAULT%
 )
 
 if "%TESTS_FAILED%" NEQ "0" (
-    echo %FONT_RED%%TESTS_FAILED% tests FAILED%FONT_DEFAULT%
+    echo %FONT_RED%!TESTS_FAILED! tests FAILED%FONT_DEFAULT%
 )
 
-EXIT /B %TESTS_FAILED%
+EXIT /B !TESTS_FAILED!
 
 :: For some reason, colored font does not work after the line that starts the sample app
 :print_colored
@@ -187,7 +181,12 @@ EXIT /B %TESTS_FAILED%
         echo !app_path! !cmd_args!
         !app_path! !cmd_args!
 
-        if !ERRORLEVEL! NEQ 0 (set EXIT_CODE=1)
+        if !ERRORLEVEL! NEQ 0 (
+            set EXIT_CODE=1
+            set /a TESTS_FAILED=!TESTS_FAILED!+1
+        ) else (
+            set /a TESTS_PASSED=!TESTS_PASSED!+1
+        )
 
         if "%golden_img_mode%" == "compare" (
             if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name% [!test_mode!].%FONT_DEFAULT%)
@@ -216,7 +215,7 @@ EXIT /B %TESTS_FAILED%
 
     cd ../../../
 
-    EXIT /B %EXIT_CODE%
+    EXIT /B !EXIT_CODE!
 
 
 
