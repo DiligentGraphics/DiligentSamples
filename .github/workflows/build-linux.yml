@@ -96,12 +96,12 @@ jobs:
       if:   success()
       uses: DiligentGraphics/github-action/build@v1
 
-    - name: Run Sample Tests Vk
+    - name: Sample Tests Vk
       working-directory: ${{github.workspace}}/DiligentSamples/Tests
       if:   success()
       shell: bash
       run: |
-        # Run Sample Tests Vk
+        # Sample Tests Vk
         chmod +x ./ProcessGoldenImages.sh
         ./ProcessGoldenImages.sh "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode vk --adapter sw"
 
