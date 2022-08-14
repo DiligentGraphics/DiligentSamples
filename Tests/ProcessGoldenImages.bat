@@ -1,6 +1,8 @@
 @echo off
 
-:: Enable delayed expansion to be able to use !ERRORLEVEL!
+rem !!! DO NOT USE :: for comments as it misbehaves and is parsed as drive letter !!!
+
+rem Enable delayed expansion to be able to use !ERRORLEVEL!
 setlocal ENABLEDELAYEDEXPANSION
 
 for /F %%d in ('echo prompt $E ^| cmd') do (set "ESC=%%d")
@@ -34,7 +36,7 @@ if "%GOLDEN_IMAGE_HEIGHT%" == "" (
     set GOLDEN_IMAGE_HEIGHT=512
 )
 
-:: ~ removes surrounding quotes
+rem ~ removes surrounding quotes
 set golden_images_dir=%~1
 shift
 
@@ -43,9 +45,9 @@ shift
 
 set test_modes=
 :loop1
-    :: ~ removes surrounding quotes
+    rem ~ removes surrounding quotes
     if "%~1"=="" goto end_loop1
-    :: Do not remove quotes yet as this will ungroup arguments
+    rem Do not remove quotes yet as this will ungroup arguments
     set test_modes=%test_modes% %1
     shift
     goto loop1
@@ -114,7 +116,7 @@ if "%TESTS_FAILED%" NEQ "0" (
 
 EXIT /B !TESTS_FAILED!
 
-:: For some reason, colored font does not work after the line that starts the sample app
+rem For some reason, colored font does not work after the line that starts the sample app
 :print_colored
     echo %~1
     EXIT /B 0
@@ -122,11 +124,11 @@ EXIT /B !TESTS_FAILED!
 
 
 :gen_golden_img
-    :: https://ss64.com/nt/for_f.html
-    :: Tutorials/Tutorial18_Queries --show_ui 0
-    :: |-------| |----------------| |---------| 
-    ::     ^            ^                ^
-    ::     1            2                *
+    rem https://ss64.com/nt/for_f.html
+    rem Tutorials/Tutorial18_Queries --show_ui 0
+    rem |-------| |----------------| |---------| 
+    rem     ^            ^                ^
+    rem     1            2                *
     for /F "tokens=1,2,* delims=/ " %%a in (%1) do (
         set app_folder=%%a
         set app_name=%%b
@@ -146,7 +148,7 @@ EXIT /B !TESTS_FAILED!
 
     set EXIT_CODE=0
     for %%X in (%test_modes%) do (
-        :: ~ removes quotes from %%X
+        rem ~ removes quotes from %%X
         set test_mode=%%~X
 
         set app_path=%DILIGENT_BUILD_DIR%/DiligentSamples/%app_folder%/%app_name%
@@ -155,7 +157,7 @@ EXIT /B !TESTS_FAILED!
         )
         set app_path=!app_path!/%app_name%.exe
 
-        :: Get the backend name and extra arguments
+        rem Get the backend name
         set mode_param=0
         for %%Y in (!test_mode!) do (
             if "%%Y" == "--mode" (
@@ -204,13 +206,12 @@ EXIT /B !TESTS_FAILED!
             if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED% FAILED to validate or update golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
         )
 
-        :: For some reason, colored font does not work after the line that starts the sample app
+        rem For some reason, colored font does not work after the line that starts the sample app
         call :print_colored "!STATUS!"
 
-        :: Increment test id first to make it work properly with for loop
+        rem Increment test id first to make it work properly with for loop
         set /a TEST_ID=!TEST_ID!+1
-        :: Note that a single variable can only contain up to 8191 characters,
-        :: so we must use array.
+        rem Note that a single variable can only contain up to 8191 characters, so we must use array.
         set TEST_STATUS[!TEST_ID!]=!STATUS!
 
 		echo.
