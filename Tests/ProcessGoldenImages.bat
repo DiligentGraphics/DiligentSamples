@@ -84,22 +84,55 @@ set Samples=Atmosphere^
 
 rem  ImguiDemo has fps counter in the UI, so we have to skip it
 
-set ERROR=0
-set APP_ID=1
+set TESTS_FAILED=0
+set TESTS_PASSED=0
+set OVERAL_STATUS=
+
+for /F %%d in ('echo prompt $E ^| cmd') do (set "ESC=%%d")
+
+set FONT_RED=%ESC%[91m
+set FONT_GREEN=%ESC%[92m
+set FONT_DEFAULT=%ESC%[0m
 
 for %%X in (%Tutorials%) do (
-    call :gen_golden_img Tutorials %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
-    set /a APP_ID=!APP_ID!*2
+    call :gen_golden_img Tutorials %%X %rest_args%
+    if "!ERRORLEVEL!" == "0" (
+        set /a TESTS_PASSED=!TESTS_PASSED!+1
+    ) else (
+        set /a TESTS_FAILED=!TESTS_FAILED!+1
+    )
 )
 
 for %%X in (%Samples%) do (
-   call :gen_golden_img Samples %%X %rest_args% || set /a ERROR=!ERROR!+!APP_ID!
-   set /a APP_ID=!APP_ID!*2
+    call :gen_golden_img Samples %%X %rest_args%
+    if "!ERRORLEVEL!" == "0" (
+        set /a TESTS_PASSED=!TESTS_PASSED!+1
+    ) else (
+        set /a TESTS_FAILED=!TESTS_FAILED!+1
+    )
 )
 
 cd Tests
 
-EXIT /B %ERROR%
+for %%X in (%OVERAL_STATUS%) do (
+    echo %%~X
+)
+
+echo.
+if "%TESTS_PASSED%" NEQ "0" (
+    echo %FONT_GREEN%%TESTS_PASSED% tests PASSED%FONT_DEFAULT%
+)
+
+if "%TESTS_FAILED%" NEQ "0" (
+    echo %FONT_RED%%TESTS_FAILED% tests FAILED%FONT_DEFAULT%
+)
+
+EXIT /B %TESTS_FAILED%
+
+:: For some reason, colored font does not work after the line that starts the sample app
+:print_colored
+    echo %~1
+    EXIT /B 0
 
 
 
@@ -172,21 +205,28 @@ EXIT /B %ERROR%
         rem   ~ removes quotes from %%~X
         !app_path! %%~X --width %GOLDEN_IMAGE_WIDTH% --height %GOLDEN_IMAGE_HEIGHT% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 --show_ui %show_ui%
 
-        if !ERRORLEVEL! NEQ 0 (
-            if !ERRORLEVEL! GEQ 0 (
-                echo Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: !ERRORLEVEL! inconsistent pixels found
-                if "%golden_img_mode%" == "compare_update" echo Golden image updated
-            ) else (
-                if "%golden_img_mode%" == "compare" echo Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: unknown error
-                if "%golden_img_mode%" == "capture" echo FAILED to generate golden image for %app_name% [!backend_name!!extra_args!]: unknown error
-                if "%golden_img_mode%" == "compare_update" echo FAILED to validate or update golden image for %app_name% [!backend_name!!extra_args!]: unknown error
-            )
-            set EXIT_CODE=1
-        ) else (
-            if "%golden_img_mode%" == "compare" echo Golden image validation PASSED for %app_name% [!backend_name!!extra_args!]
-            if "%golden_img_mode%" == "capture" echo Successfully generated golden image for %app_name% [!backend_name!!extra_args!]
-            if "%golden_img_mode%" == "compare_update" echo Golden image validation PASSED for %app_name%. Image updated. [!backend_name!!extra_args!]
+        if !ERRORLEVEL! NEQ 0 (set EXIT_CODE=1)
+
+        if "%golden_img_mode%" == "compare" (
+            if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name% [!backend_name!!extra_args!].%FONT_DEFAULT%)
+            if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: !ERRORLEVEL! inconsistent pixels found.%FONT_DEFAULT%)
+            if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
         )
+        if "%golden_img_mode%" == "capture" (
+            if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Successfully generated golden image for %app_name% [!backend_name!!extra_args!].%FONT_DEFAULT%)
+            if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!backend_name!!extra_args!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+            if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!backend_name!!extra_args!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+        )
+        if "%golden_img_mode%" == "compare_update" (
+            if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name%. Image updated. [!backend_name!!extra_args!].%FONT_DEFAULT%)
+            if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!backend_name!!extra_args!]: !ERRORLEVEL! inconsistent pixels found. Image updated.%FONT_DEFAULT%)
+            if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED% FAILED to validate or update golden image for %app_name% [!backend_name!!extra_args!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+        )
+
+        :: For some reason, colored font does not work after the line that starts the sample app
+        call :print_colored "!STATUS!"
+
+        set OVERAL_STATUS=!OVERAL_STATUS! "!STATUS!"
 
 		echo.
         echo.
