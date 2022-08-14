@@ -3,21 +3,27 @@
 :: Enable delayed expansion to be able to use !ERRORLEVEL!
 setlocal ENABLEDELAYEDEXPANSION
 
+for /F %%d in ('echo prompt $E ^| cmd') do (set "ESC=%%d")
+
+set FONT_RED=%ESC%[91m
+set FONT_GREEN=%ESC%[92m
+set FONT_DEFAULT=%ESC%[0m
+
 set num_args=0
 for %%x in (%*) do Set /A num_args+=1
 
 if "%num_args%" LSS "3" (
-    echo At least three arguments are required
+    echo %FONT_RED%At least three arguments are required%FONT_DEFAULT%
     goto help
 )
 
 if "%DILIGENT_BUILD_TYPE%" == "" (
-    echo Required DILIGENT_BUILD_TYPE variable is not set
+    echo %FONT_RED%Required DILIGENT_BUILD_TYPE variable is not set%FONT_DEFAULT%
     goto help
 )
 
 if "%DILIGENT_BUILD_DIR%" == "" (
-    echo Required DILIGENT_BUILD_DIR variable is not set
+    echo %FONT_RED%Required DILIGENT_BUILD_DIR variable is not set%FONT_DEFAULT%
     goto help
 )
 
@@ -88,11 +94,6 @@ set TESTS_FAILED=0
 set TESTS_PASSED=0
 set OVERAL_STATUS=
 
-for /F %%d in ('echo prompt $E ^| cmd') do (set "ESC=%%d")
-
-set FONT_RED=%ESC%[91m
-set FONT_GREEN=%ESC%[92m
-set FONT_DEFAULT=%ESC%[0m
 
 for %%X in (%Tutorials%) do (
     call :gen_golden_img Tutorials %%X %rest_args%

@@ -25,15 +25,20 @@ function print_help
     echo "  bash ProcessGoldenImages.sh /git/DiligentTestData/GoldenImages compare \"--mode gl\" \"--mode vk --adapter sw\""
 }
 
-if [[ $# -lt 3 ]]; then   
-    echo "At least three arguments are required"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No color
+
+if [[ $# -lt 3 ]]; then
+    printf "${RED}At least three arguments are required${NC}\n"
     print_help
     exit -1
 fi
 
 
 if [[ "$DILIGENT_BUILD_DIR" == "" ]]; then
-    echo "Required DILIGENT_BUILD_DIR variable is not set"
+    printf "${RED}Required DILIGENT_BUILD_DIR variable is not set${NC}\n"
     print_help
     exit -1
 fi
@@ -98,10 +103,6 @@ tests_failed=0
 tests_passed=0
 overall_status=""
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No color
-
 function process_golden_img
 {
     IFS='/ ' read -r -a inputs <<< "$1"
@@ -115,7 +116,7 @@ function process_golden_img
             extra_args="$extra_args ${inputs[$i]}"
         fi
     done
-        
+
     echo "Testing $app_folder/$app_name$extra_args"
 
     cd "$app_folder/$app_name/assets"
