@@ -66,52 +66,57 @@ echo "Img size:    $GOLDEN_IMAGE_WIDTH x $GOLDEN_IMAGE_HEIGHT"
 echo "Test modes:  $test_modes_str"
 echo ""
 
-declare -a Tutorials=(
-    "Tutorial01_HelloTriangle"
-    "Tutorial02_Cube"
-    "Tutorial03_Texturing"
-    "Tutorial03_Texturing-C"
-    "Tutorial04_Instancing"
-    "Tutorial05_TextureArray"
-    "Tutorial06_Multithreading"
-    "Tutorial07_GeometryShader"
-    "Tutorial08_Tessellation"
-    "Tutorial09_Quads"
-    "Tutorial10_DataStreaming"
-    "Tutorial11_ResourceUpdates"
-    "Tutorial12_RenderTarget"
-    "Tutorial13_ShadowMap"
-    "Tutorial14_ComputeShader"
-    # "Tutorial16_BindlessResources" does not work properly on llvmpipe 
-    "Tutorial17_MSAA"
-    "Tutorial18_Queries"
-    "Tutorial19_RenderPasses"
-    "Tutorial23_CommandQueues"
-)
-
-declare -a Samples=(
-    "Atmosphere"
-    "GLTFViewer"
-    "NuklearDemo"
-    "Shadows"
-    # "ImguiDemo" has fps counter in the UI, so we have to skip it
+declare -a TestApps=(
+    "Tutorials/Tutorial01_HelloTriangle"
+    "Tutorials/Tutorial02_Cube"
+    "Tutorials/Tutorial03_Texturing"
+    "Tutorials/Tutorial03_Texturing-C"
+    "Tutorials/Tutorial04_Instancing"
+    "Tutorials/Tutorial05_TextureArray"
+    "Tutorials/Tutorial06_Multithreading"
+    "Tutorials/Tutorial07_GeometryShader"
+    "Tutorials/Tutorial08_Tessellation"
+    "Tutorials/Tutorial09_Quads"
+    "Tutorials/Tutorial10_DataStreaming"
+    "Tutorials/Tutorial11_ResourceUpdates"
+    "Tutorials/Tutorial12_RenderTarget"
+    "Tutorials/Tutorial13_ShadowMap"
+    "Tutorials/Tutorial14_ComputeShader"
+    # "Tutorials/Tutorial16_BindlessResources" does not work properly on llvmpipe 
+    "Tutorials/Tutorial17_MSAA"
+    "Tutorials/Tutorial18_Queries --show_ui 0"
+    "Tutorials/Tutorial19_RenderPasses"
+    "Tutorials/Tutorial23_CommandQueues --show_ui 0"
+    "Samples/Atmosphere --show_ui 0"
+    "Samples/GLTFViewer --show_ui 0"
+    "Samples/NuklearDemo --show_ui 0"
+    "Samples/Shadows --show_ui 0"
+    # "Samples/ImguiDemo" has fps counter in the UI, so we have to skip it
 )
 
 tests_failed=0
 tests_passed=0
+overall_status=""
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No color
 
 function process_golden_img
 {
-    local app_folder=$1
-    local app_name=$2
-        
-    echo "Testing $app_folder/$app_name..."
-    echo  ""
+    IFS='/ ' read -r -a inputs <<< "$1"
 
-    local show_ui=1
-    if [[ "$app_folder" == "Samples" || "$app_name" == "Tutorial18_Queries" || "$app_name" == "Tutorial23_CommandQueues" ]]; then
-        show_ui=0
-    fi
+    local app_folder=${inputs[0]}
+    local app_name=${inputs[1]}
+
+    local extra_args=""
+    for i in "${!inputs[@]}"; do
+        if [[ "$i" -ge 2 ]]; then
+            extra_args="$extra_args ${inputs[$i]}"
+        fi
+    done
+        
+    echo "Testing $app_folder/$app_name$extra_args"
 
     cd "$app_folder/$app_name/assets"
 
@@ -134,36 +139,38 @@ function process_golden_img
 
         local capture_name="$app_name""_gi_""$backend_name"
 
-        local cmd="$app_path $mode --width $GOLDEN_IMAGE_WIDTH --height $GOLDEN_IMAGE_HEIGHT --golden_image_mode $golden_img_mode --capture_path $golden_img_dir --capture_name $capture_name --capture_format png --adapters_dialog 0 --show_ui $show_ui"
+        local cmd="$app_path $mode --width $GOLDEN_IMAGE_WIDTH --height $GOLDEN_IMAGE_HEIGHT --golden_image_mode $golden_img_mode --capture_path $golden_img_dir --capture_name $capture_name --capture_format png --adapters_dialog 0 $extra_args"
         echo $cmd
         echo ""
         bash -c "$cmd"
-
         local res=$?
+
         if [[ "$res" == "0" ]]; then
             let tests_passed=$tests_passed+1
         else
             let tests_failed=$tests_failed+1
         fi
 
+        local status=""
         if [[ "$golden_img_mode" == "compare" ]]; then
-            if [[ "$res" -eq "0" ]]; then echo "Golden image validation PASSED for $app_name ($mode)."; fi
-            if [[ "$res" -gt "0" ]]; then echo "Golden image validation FAILED for $app_name ($mode): $res inconsistent pixels found."; fi
-            if [[ "$res" -lt "0" ]]; then echo "Golden image validation FAILED for $app_name ($mode) with error $res."; fi
+            if [[ "$res" -eq "0" ]]; then status="${GREEN}Golden image validation PASSED for $app_name ($mode).${NC}"; fi
+            if [[ "$res" -gt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode).${NC}"; fi
+            if [[ "$res" -lt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode) with error $res.${NC}"; fi
         fi
         if [[ "$golden_img_mode" == "capture" ]]; then
-            if [[ "$res" -eq "0" ]]; then echo "Successfully generated golden image for $app_name ($mode)."; fi
-            if [[ "$res" -gt "0" ]]; then echo "FAILED to generate golden image for $app_name ($mode). Error code: $res."; fi
-            if [[ "$res" -lt "0" ]]; then echo "FAILED to generate golden image for $app_name ($mode). Error code: $res."; fi        
+            if [[ "$res" -eq "0" ]]; then status="${GREEN}Successfully generated golden image for $app_name ($mode).${NC}"; fi
+            if [[ "$res" -gt "0" ]]; then status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}"; fi
+            if [[ "$res" -lt "0" ]]; then status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}"; fi        
         fi
         if [[ "$golden_img_mode" == "compare_update" ]]; then
-            if [[ "$res" -eq "0" ]]; then echo "Golden image validation PASSED for $app_name ($mode). Image updated."; fi
-            if [[ "$res" -gt "0" ]]; then echo "Golden image validation FAILED for $app_name ($mode): $res inconsistent pixels found. Image updated."; fi
-            if [[ "$res" -lt "0" ]]; then echo "Golden image validation FAILED for $app_name ($mode) with error $res."; fi
+            if [[ "$res" -eq "0" ]]; then status="${GREEN}Golden image validation PASSED for $app_name ($mode). Image updated.${NC}"; fi
+            if [[ "$res" -gt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode). Image updated.${NC}"; fi
+            if [[ "$res" -lt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode) with error $res.${NC}"; fi
         fi
-        
-		echo ""
-        echo ""
+
+        overall_status="$overall_status$status\n"
+
+        printf "$status\n\n\n"  
     done
 
     cd ../../../
@@ -171,20 +178,23 @@ function process_golden_img
 
 cd ..
 
-for App in ${Tutorials[@]}; do
-   process_golden_img Tutorials $App $AppModes
-done
-
-for App in ${Samples[@]}; do
-   process_golden_img Samples $App $AppModes
+# NB: we must iterate using the index because
+#       for App in ${TestApps[@]}; do
+#     splits the strings at spaces
+for i in "${!TestApps[@]}"; do
+    process_golden_img "${TestApps[$i]}"
 done
 
 cd Tests
 
-echo "$tests_passed tests PASSED"
+printf "$overall_status\n"
+
+if [[ "$tests_passed" != "0" ]]; then
+    printf "${GREEN}$tests_passed tests PASSED${NC}\n"
+fi
 
 if [[ "$tests_failed" != "0" ]]; then
-    echo "$tests_failed tests FAILED"
+    printf "${RED}$tests_failed tests FAILED${NC}\n"
 fi
 
 exit $tests_failed
