@@ -38,7 +38,7 @@ if "%GOLDEN_IMAGE_HEIGHT%" == "" (
 set golden_images_dir=%~1
 shift
 
-set golden_img_mode=%1
+set golden_img_mode=%~1
 shift
 
 set test_modes=
