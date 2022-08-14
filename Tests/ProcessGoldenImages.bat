@@ -91,7 +91,7 @@ rem  ImguiDemo has fps counter in the UI, so we have to skip it
 
 set TESTS_FAILED=0
 set TESTS_PASSED=0
-set OVERAL_STATUS=
+set TEST_ID=0
 
 for %%X in (%TestApps%) do (
     call :gen_golden_img %%X
@@ -99,8 +99,8 @@ for %%X in (%TestApps%) do (
 
 cd Tests
 
-for %%X in (%OVERAL_STATUS%) do (
-    echo %%~X
+for /l %%i in (1,1,!TEST_ID!) do ( 
+   echo !TEST_STATUS[%%i]!
 )
 
 echo.
@@ -207,7 +207,11 @@ EXIT /B !TESTS_FAILED!
         :: For some reason, colored font does not work after the line that starts the sample app
         call :print_colored "!STATUS!"
 
-        set OVERAL_STATUS=!OVERAL_STATUS! "!STATUS!"
+        :: Increment test id first to make it work properly with for loop
+        set /a TEST_ID=!TEST_ID!+1
+        :: Note that a single variable can only contain up to 8191 characters,
+        :: so we must use array.
+        set TEST_STATUS[!TEST_ID!]=!STATUS!
 
 		echo.
         echo.
