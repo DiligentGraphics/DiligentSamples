@@ -223,7 +223,9 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
                 // Random scale
                 float scale = BaseScale * scale_distr(gen);
                 // Random rotation
-                float4x4 rotation = float4x4::RotationX(rot_distr(gen)) * float4x4::RotationY(rot_distr(gen)) * float4x4::RotationZ(rot_distr(gen));
+                float4x4 rotation = float4x4::RotationX(rot_distr(gen));
+                rotation *= float4x4::RotationY(rot_distr(gen));
+                rotation *= float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
                 float4x4 matrix   = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
                 auto&    CurrInst = InstanceData[instId++];

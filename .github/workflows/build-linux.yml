@@ -2,6 +2,12 @@ name: Linux build
 
 on: [push, pull_request]
 
+env:
+  # 'capture'        - generate golden images
+  # 'compare'        - render and compare with the references
+  # 'compare_update' - first compare with the references and then update them
+  test_mode: compare_update
+
 jobs:
   precheks:
     name:    Linux -> Pre-checks
@@ -38,11 +44,11 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         name:       ["GCC", "Clang"]
         build_type: ["Debug", "Release"]
-        # Do not build GLSLang and friends to save time as it is built by the Core and Engine CI.
-        cmake_args: ["-DDILIGENT_NO_GLSLANG=ON -DDILIGENT_NO_HLSL=ON"]
+        cmake_args: [""]
 
         include:
           - name:            "GCC"
@@ -58,8 +64,15 @@ jobs:
     name: Linux -> ${{ matrix.name }}-x64, ${{ matrix.build_type }}
 
     steps:
-    - name: Checkout
+    - name: Checkout Code Base
       uses: DiligentGraphics/github-action/checkout@v1
+
+    - name: Checkout Test Data
+      if:   success()
+      uses: actions/checkout@v2
+      with:
+        repository: DiligentGraphics/DiligentTestData
+        path:       DiligentTestData
 
     - name: Set up build environment
       if:   success()
@@ -79,5 +92,26 @@ jobs:
         cmake-args: ${{ matrix.cmake_args }}
 
     - name: Build
+      id:   build
       if:   success()
       uses: DiligentGraphics/github-action/build@v1
+
+    - name: Run Sample Tests Vk
+      working-directory: ${{github.workspace}}/DiligentSamples/Tests
+      if:   success()
+      shell: bash
+      run: |
+        # Run Sample Tests Vk
+        chmod +x ./ProcessGoldenImages.sh
+        ./ProcessGoldenImages.sh "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode vk --adapter sw"
+
+    - name: Upload Golden Images
+      uses: actions/upload-artifact@v2
+      # NB: it is essential to include failure() to override the default status check of success()
+      #     that is automatically applied to if conditions that don't contain a status check function.
+      if: ${{ success() || failure() && steps.build.outcome == 'success' }}
+      with:
+        name: GoldenImages-${{ matrix.name }}-${{ matrix.toolset }}-${{ matrix.build_type }}
+        path: |
+          ${{github.workspace}}/DiligentTestData/GoldenImages
+        retention-days: 90
