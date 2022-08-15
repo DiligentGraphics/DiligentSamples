@@ -41,7 +41,7 @@ jobs:
 
   build:
     needs:   precheks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
@@ -64,15 +64,8 @@ jobs:
     name: Linux -> ${{ matrix.name }}-x64, ${{ matrix.build_type }}
 
     steps:
-    - name: Checkout Code Base
+    - name: Checkout
       uses: DiligentGraphics/github-action/checkout@v1
-
-    - name: Checkout Test Data
-      if:   success()
-      uses: actions/checkout@v2
-      with:
-        repository: DiligentGraphics/DiligentTestData
-        path:       DiligentTestData
 
     - name: Set up build environment
       if:   success()
