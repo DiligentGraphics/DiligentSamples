@@ -180,7 +180,7 @@ public:
         return m_TheSample->HandleNativeMessage(&MsgData);
     }
 
-    virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight) override final
+    virtual bool OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight) override final
     {
         m_hWnd = hWnd;
 
@@ -197,8 +197,11 @@ public:
         }
         catch (...)
         {
-            LOG_ERROR("Failed to initialize Diligent Engine.");
+            LOG_ERROR_MESSAGE("Failed to initialize Diligent Engine.");
+            return false;
         }
+
+        return true;
     }
 
 

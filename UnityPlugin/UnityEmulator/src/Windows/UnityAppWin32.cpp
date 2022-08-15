@@ -39,10 +39,19 @@ HMODULE g_DLLHandle;
 class UnityAppWin32 : public UnityAppBase
 {
 public:
-    virtual void OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight)override final
+    virtual bool OnWindowCreated(HWND hWnd, LONG WindowWidth, LONG WindowHeight) override final
     {
-        InitGraphics(hWnd, WindowWidth, WindowHeight);
-        InitScene();
+        try
+        {
+            InitGraphics(hWnd, WindowWidth, WindowHeight);
+            InitScene();
+        }
+        catch (...)
+        {
+            LOG_ERROR_MESSAGE("Failed to initialize Unity scene");
+            return false;
+        }
+        return true;
     }
 };
 
@@ -54,12 +63,12 @@ NativeAppBase* CreateApplication()
     return new UnityAppWin32();
 }
 
-}
+} // namespace Diligent
 
 void* UnityAppBase::LoadPluginFunction(const char* FunctionName)
 {
     auto Func = GetProcAddress(g_DLLHandle, FunctionName);
-    VERIFY( Func != nullptr, "Failed to import plugin function \"", FunctionName, "\"." );
+    VERIFY(Func != nullptr, "Failed to import plugin function \"", FunctionName, "\".");
     return reinterpret_cast<void*>(Func);
 }
 
@@ -79,20 +88,20 @@ bool UnityAppBase::LoadPlugin()
 #endif
 
     LibName += ".dll";
-    g_DLLHandle = LoadLibraryA( LibName.c_str() );
-    if( g_DLLHandle == NULL )
+    g_DLLHandle = LoadLibraryA(LibName.c_str());
+    if (g_DLLHandle == NULL)
     {
-        LOG_ERROR_MESSAGE( "Failed to load ", LibName, " library." );
+        LOG_ERROR_MESSAGE("Failed to load ", LibName, " library.");
         return false;
     }
 
-    UnityPluginLoad = reinterpret_cast<TUnityPluginLoad>( GetProcAddress(g_DLLHandle, "UnityPluginLoad") );
-    UnityPluginUnload = reinterpret_cast<TUnityPluginUnload>( GetProcAddress(g_DLLHandle, "UnityPluginUnload") );
-    GetRenderEventFunc = reinterpret_cast<TGetRenderEventFunc>( GetProcAddress(g_DLLHandle, "GetRenderEventFunc") );
-    if( UnityPluginLoad == nullptr || UnityPluginUnload == nullptr || GetRenderEventFunc == nullptr )
+    UnityPluginLoad    = reinterpret_cast<TUnityPluginLoad>(GetProcAddress(g_DLLHandle, "UnityPluginLoad"));
+    UnityPluginUnload  = reinterpret_cast<TUnityPluginUnload>(GetProcAddress(g_DLLHandle, "UnityPluginUnload"));
+    GetRenderEventFunc = reinterpret_cast<TGetRenderEventFunc>(GetProcAddress(g_DLLHandle, "GetRenderEventFunc"));
+    if (UnityPluginLoad == nullptr || UnityPluginUnload == nullptr || GetRenderEventFunc == nullptr)
     {
-        LOG_ERROR_MESSAGE( "Failed to import plugin functions from ", LibName, " library." );
-        FreeLibrary( g_DLLHandle );
+        LOG_ERROR_MESSAGE("Failed to import plugin functions from ", LibName, " library.");
+        FreeLibrary(g_DLLHandle);
         return false;
     }
 
