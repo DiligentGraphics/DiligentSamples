@@ -9,6 +9,7 @@ for /F %%d in ('echo prompt $E ^| cmd') do (set "ESC=%%d")
 
 set FONT_RED=%ESC%[91m
 set FONT_GREEN=%ESC%[92m
+set FONT_YELLOW=%ESC%[93m
 set FONT_DEFAULT=%ESC%[0m
 
 set num_args=0
@@ -93,6 +94,7 @@ rem  ImguiDemo has fps counter in the UI, so we have to skip it
 
 set TESTS_FAILED=0
 set TESTS_PASSED=0
+set TESTS_SKIPPED=0
 set TEST_ID=0
 
 for %%X in (%TestApps%) do (
@@ -116,6 +118,10 @@ if "%TESTS_PASSED%" NEQ "0" (
 
 if "%TESTS_FAILED%" NEQ "0" (
     echo %FONT_RED%!TESTS_FAILED! tests FAILED%FONT_DEFAULT%
+)
+
+if "%TESTS_SKIPPED%" NEQ "0" (
+    echo %FONT_YELLOW%!TESTS_SKIPPED! tests SKIPPED%FONT_DEFAULT%
 )
 
 EXIT /B !TESTS_FAILED!
@@ -179,35 +185,48 @@ rem For some reason, colored font does not work after the line that starts the s
         )
         set capture_name=%app_name%_gi_!backend_name!
 
+        set SKIP_TEST=0
+        if "!backend_name!" == "gl" (
+            rem !str:abc=! replaces substring abc in str with empty string
+            if not "!test_mode:--non_separable_progs=!" == "!test_mode!" (
+                if "%app_name%" == "Tutorial07_GeometryShader" (set SKIP_TEST=1)
+                if "%app_name%" == "Tutorial08_Tessellation" (set SKIP_TEST=1)
+            )
+        )
 
-        rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
-        rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
-        rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
-        set cmd_args=!test_mode! --width %GOLDEN_IMAGE_WIDTH% --height %GOLDEN_IMAGE_HEIGHT% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 %extra_args%
-        echo !app_path! !cmd_args!
-        !app_path! !cmd_args!
+        if "!SKIP_TEST!" == "0" (
+            rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
+            rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
+            rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
+            set cmd_args=!test_mode! --width %GOLDEN_IMAGE_WIDTH% --height %GOLDEN_IMAGE_HEIGHT% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 %extra_args%
+            echo !app_path! !cmd_args!
+            !app_path! !cmd_args!
 
-        if !ERRORLEVEL! NEQ 0 (
-            set EXIT_CODE=1
-            set /a TESTS_FAILED=!TESTS_FAILED!+1
+            if !ERRORLEVEL! NEQ 0 (
+                set EXIT_CODE=1
+                set /a TESTS_FAILED=!TESTS_FAILED!+1
+            ) else (
+                set /a TESTS_PASSED=!TESTS_PASSED!+1
+            )
+
+            if "%golden_img_mode%" == "compare" (
+                if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name% [!test_mode!].%FONT_DEFAULT%)
+                if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]: !ERRORLEVEL! inconsistent pixels found.%FONT_DEFAULT%)
+                if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+            )
+            if "%golden_img_mode%" == "capture" (
+                if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Successfully generated golden image for %app_name% [!test_mode!].%FONT_DEFAULT%)
+                if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+                if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+            )
+            if "%golden_img_mode%" == "compare_update" (
+                if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name%. Image updated. [!test_mode!].%FONT_DEFAULT%)
+                if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]: !ERRORLEVEL! inconsistent pixels found. Image updated.%FONT_DEFAULT%)
+                if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED% FAILED to validate or update golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+            )
         ) else (
-            set /a TESTS_PASSED=!TESTS_PASSED!+1
-        )
-
-        if "%golden_img_mode%" == "compare" (
-            if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name% [!test_mode!].%FONT_DEFAULT%)
-            if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]: !ERRORLEVEL! inconsistent pixels found.%FONT_DEFAULT%)
-            if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
-        )
-        if "%golden_img_mode%" == "capture" (
-            if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Successfully generated golden image for %app_name% [!test_mode!].%FONT_DEFAULT%)
-            if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
-            if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
-        )
-        if "%golden_img_mode%" == "compare_update" (
-            if !ERRORLEVEL! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name%. Image updated. [!test_mode!].%FONT_DEFAULT%)
-            if !ERRORLEVEL! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]: !ERRORLEVEL! inconsistent pixels found. Image updated.%FONT_DEFAULT%)
-            if !ERRORLEVEL! LSS 0 (set STATUS=%FONT_RED% FAILED to validate or update golden image for %app_name% [!test_mode!]. Error code: !ERRORLEVEL!.%FONT_DEFAULT%)
+            set STATUS=%FONT_YELLOW%Golden image processing SKIPPED for %app_name% [!test_mode!].%FONT_DEFAULT%
+            set /a TESTS_SKIPPED=!TESTS_SKIPPED!+1
         )
 
         rem For some reason, colored font does not work after the line that starts the sample app
