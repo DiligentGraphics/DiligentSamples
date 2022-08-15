@@ -105,6 +105,22 @@ jobs:
         chmod +x ./ProcessGoldenImages.sh
         ./ProcessGoldenImages.sh "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode vk --adapter sw"
 
+    - name: Sample Tests GL
+      working-directory: ${{github.workspace}}/DiligentSamples/Tests
+      if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
+      shell: bash
+      run: |
+        # Sample Tests GL
+        ./ProcessGoldenImages.sh "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode gl"
+
+    - name: Sample Tests GL with Non-Separable Programs
+      working-directory: ${{github.workspace}}/DiligentSamples/Tests
+      if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
+      shell: bash
+      run: |
+        # Sample Tests GL with Non-Separable Programs
+        ./ProcessGoldenImages.sh "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode gl --non_separable_progs 1"
+
     - name: Upload Golden Images
       uses: actions/upload-artifact@v2
       # NB: it is essential to include failure() to override the default status check of success()
