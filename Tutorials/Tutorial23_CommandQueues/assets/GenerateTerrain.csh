@@ -101,7 +101,7 @@ void CSMain(uint2 GroupId : SV_GroupID,
 
     GroupMemoryBarrierWithGroupSync();
 
-    if (all(GreaterEqual(LocalPos, int2(0, 0)) && Less(LocalPos, int2(GROUP_SIZE, GROUP_SIZE))))
+    if (all(GreaterEqual(LocalPos, int2(0, 0))) && all(Less(LocalPos, int2(GROUP_SIZE, GROUP_SIZE))))
     {
         //    v2    v3
         //      \   |
