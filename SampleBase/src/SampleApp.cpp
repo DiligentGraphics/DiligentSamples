@@ -608,18 +608,38 @@ SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char*
 
     CommandLineParser ArgsParser{argc, argv};
 
-    {
-        const std::vector<std::pair<const char*, RENDER_DEVICE_TYPE>> DeviceTypeEnumVals =
-            {
-                {"D3D11", RENDER_DEVICE_TYPE_D3D11},
-                {"D3D12", RENDER_DEVICE_TYPE_D3D12},
-                {"GL", RENDER_DEVICE_TYPE_GL},
-                {"GLES", RENDER_DEVICE_TYPE_GLES},
-                {"VK", RENDER_DEVICE_TYPE_VULKAN},
-                {"MTL", RENDER_DEVICE_TYPE_METAL} //
-            };
-        ArgsParser.ParseEnum("mode", 'm', DeviceTypeEnumVals, m_DeviceType);
-    }
+    ArgsParser.Parse("mode", 'm',
+                     [&](const char* ArgVal) {
+                         if (StrCmpNoCase(ArgVal, "d3d11_sw") == 0)
+                         {
+                             m_DeviceType  = RENDER_DEVICE_TYPE_D3D11;
+                             m_AdapterType = ADAPTER_TYPE_SOFTWARE;
+                             return true;
+                         }
+                         else if (StrCmpNoCase(ArgVal, "d3d12_sw") == 0)
+                         {
+                             m_DeviceType  = RENDER_DEVICE_TYPE_D3D12;
+                             m_AdapterType = ADAPTER_TYPE_SOFTWARE;
+                             return true;
+                         }
+                         else if (StrCmpNoCase(ArgVal, "vk_sw") == 0)
+                         {
+                             m_DeviceType  = RENDER_DEVICE_TYPE_VULKAN;
+                             m_AdapterType = ADAPTER_TYPE_SOFTWARE;
+                             return true;
+                         }
+
+                         const std::vector<std::pair<const char*, RENDER_DEVICE_TYPE>> DeviceTypeEnumVals =
+                             {
+                                 {"d3d11", RENDER_DEVICE_TYPE_D3D11},
+                                 {"d3d12", RENDER_DEVICE_TYPE_D3D12},
+                                 {"gl", RENDER_DEVICE_TYPE_GL},
+                                 {"gles", RENDER_DEVICE_TYPE_GLES},
+                                 {"vk", RENDER_DEVICE_TYPE_VULKAN},
+                                 {"mtl", RENDER_DEVICE_TYPE_METAL} //
+                             };
+                         return ArgsParser.ParseEnum("mode", 'm', DeviceTypeEnumVals, m_DeviceType);
+                     });
 
 #if !D3D11_SUPPORTED
     if (m_DeviceType == RENDER_DEVICE_TYPE_D3D11)
