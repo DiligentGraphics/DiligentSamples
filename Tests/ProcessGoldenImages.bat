@@ -99,6 +99,10 @@ for %%X in (%TestApps%) do (
     call :gen_golden_img %%X
 )
 
+for %%X in (%ADDITIONAL_TEST_APPS%) do (
+    call :gen_golden_img %%X
+)
+
 cd Tests
 
 for /l %%i in (1,1,!TEST_ID!) do ( 
@@ -236,8 +240,11 @@ rem For some reason, colored font does not work after the line that starts the s
     echo.
     echo Optional variables:
     echo.
-    echo   GOLDEN_IMAGE_WIDTH  - Golden image width (Default: 512^)
-    echo   GOLDEN_IMAGE_HEIGHT - Golden image height (Default: 512^)
+    echo   GOLDEN_IMAGE_WIDTH   - Golden image width (Default: 512^)
+    echo   GOLDEN_IMAGE_HEIGHT  - Golden image height (Default: 512^)
+    echo   ADDITIONAL_TEST_APPS - A list of additional applications to test.
+    echo                          Each application should be defined as follows:
+    echo                            Folder/Application ^<optional arguments^>
     echo.
     echo Command line format:
     echo.
