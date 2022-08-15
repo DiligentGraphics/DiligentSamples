@@ -2,12 +2,6 @@ name: Win32/UWP build
 
 on: [push, pull_request]
 
-env:
-  # 'capture'        - generate golden images
-  # 'compare'        - render and compare with the references
-  # 'compare_update' - first compare with the references and then update them
-  test_mode: compare_update
-
 jobs:
   precheks:
     name:    Win10 -> Pre-checks
@@ -118,22 +112,20 @@ jobs:
       uses: DiligentGraphics/github-action/build@v1
 
     - name: Sample Tests D3D11
-      working-directory: ${{github.workspace}}/DiligentSamples/Tests
       if:   ${{ matrix.name == 'Win10' || matrix.name == 'Win8.1' || matrix.name == 'Win10-Ninja' }}
-      shell: cmd
-      run: |
-        :: Sample Tests D3D11
-        ProcessGoldenImages.bat "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode d3d11 --adapter sw"
+      uses: DiligentGraphics/github-action/run-sample-tests@v1
+      with:
+        args:              "--mode d3d11 --adapter sw"
+        golden-image-mode: "compare_update"
 
     - name: Sample Tests D3D12
-      working-directory: ${{github.workspace}}/DiligentSamples/Tests
       # NB: it is essential to include failure() to override the default status check of success()
       #     that is automatically applied to if conditions that don't contain a status check function.
       if:   ${{ (success() || failure() && steps.build.outcome == 'success') && (matrix.name == 'Win10' || matrix.name == 'Win10-Ninja') }}
-      shell: cmd
-      run: |
-        :: Sample Tests D3D12
-        ProcessGoldenImages.bat "${{github.workspace}}/DiligentTestData/GoldenImages" ${{env.test_mode}} "--mode d3d12 --adapter sw"
+      uses: DiligentGraphics/github-action/run-sample-tests@v1
+      with:
+        args:              "--mode d3d12 --adapter sw"
+        golden-image-mode: "compare_update"
 
     - name: Upload Golden Images
       uses: actions/upload-artifact@v2
