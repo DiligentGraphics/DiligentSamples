@@ -139,7 +139,7 @@ function process_golden_img
                 backend_name="${args[$j]}"
             fi
         done
-        
+
         skip_test=0
         if [[ "$backend_name" == "gl" && ("$app_name" == "Tutorial07_GeometryShader" || "$app_name" == "Tutorial08_Tessellation") ]]; then
             for i in "${!args[@]}"; do
@@ -153,7 +153,7 @@ function process_golden_img
         fi
 
         if [[ "$skip_test" == "0" ]]; then
-            local capture_name="$app_name""_gi_""$backend_name"
+            local capture_name="$app_name""_""$backend_name"
 
             local cmd="$app_path $mode --width $GOLDEN_IMAGE_WIDTH --height $GOLDEN_IMAGE_HEIGHT --golden_image_mode $golden_img_mode --capture_path $golden_img_dir --capture_name $capture_name --capture_format png --adapters_dialog 0 $extra_args"
             echo $cmd
@@ -167,21 +167,28 @@ function process_golden_img
                 let tests_failed=$tests_failed+1
             fi
 
+            # Note that linux return codes are always positive, and we only get the low 8 bits
             local status=""
             if [[ "$golden_img_mode" == "compare" ]]; then
-                if [[ "$res" -eq "0" ]]; then status="${GREEN}Golden image validation PASSED for $app_name ($mode).${NC}"; fi
-                if [[ "$res" -gt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode).${NC}"; fi
-                if [[ "$res" -lt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode) with error $res.${NC}"; fi
+                if [[ "$res" == "0" ]]; then
+                    status="${GREEN}Golden image validation PASSED for $app_name ($mode).${NC}";
+                else
+                    status="${RED}Golden image validation FAILED for $app_name ($mode).${NC}";
+                fi
             fi
             if [[ "$golden_img_mode" == "capture" ]]; then
-                if [[ "$res" -eq "0" ]]; then status="${GREEN}Successfully generated golden image for $app_name ($mode).${NC}"; fi
-                if [[ "$res" -gt "0" ]]; then status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}"; fi
-                if [[ "$res" -lt "0" ]]; then status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}"; fi        
+                if [[ "$res" == "0" ]]; then
+                    status="${GREEN}Successfully generated golden image for $app_name ($mode).${NC}"; 
+                else
+                    status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}";
+                fi
             fi
             if [[ "$golden_img_mode" == "compare_update" ]]; then
-                if [[ "$res" -eq "0" ]]; then status="${GREEN}Golden image validation PASSED for $app_name ($mode). Image updated.${NC}"; fi
-                if [[ "$res" -gt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode). Image updated.${NC}"; fi
-                if [[ "$res" -lt "0" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode) with error $res.${NC}"; fi
+                if [[ "$res" == "0" ]]; then
+                    status="${GREEN}Golden image validation PASSED for $app_name ($mode). Image updated.${NC}";
+                else
+                    status="${RED}Golden image validation FAILED for $app_name ($mode). Image updated.${NC}";
+                fi
             fi
         else
             status="${YELLOW}Golden image processing SKIPPED for $app_name ($mode).${NC}"

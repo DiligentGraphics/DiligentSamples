@@ -115,7 +115,7 @@ jobs:
       if:   ${{ matrix.name == 'Win10' || matrix.name == 'Win8.1' || matrix.name == 'Win10-Ninja' }}
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
-        args:              "--mode d3d11 --adapter sw"
+        mode:              "d3d11_sw"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests D3D12
@@ -124,7 +124,7 @@ jobs:
       if:   ${{ (success() || failure() && steps.build.outcome == 'success') && (matrix.name == 'Win10' || matrix.name == 'Win10-Ninja') }}
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
-        args:              "--mode d3d12 --adapter sw"
+        mode:              "d3d12_sw"
         golden-image-mode: "compare_update"
 
     - name: Upload Golden Images

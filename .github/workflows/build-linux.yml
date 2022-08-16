@@ -87,22 +87,23 @@ jobs:
       if:   success()
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
-        args:              "--mode vk --adapter sw"
+        mode:              "vk_sw"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests GL
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
-        args:              "--mode gl"
+        mode:              "gl"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests GL with Non-Separable Programs
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
-        args:              "--mode gl --non_separable_progs 1"
-        golden-image-mode: "compare_update"
+        mode:                "gl"
+        golden-image-mode:   "compare_update"
+        non-separable-progs: "true"
 
 
     - name: Upload Golden Images
