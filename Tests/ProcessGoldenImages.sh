@@ -58,6 +58,12 @@ shift
 golden_img_mode=$1
 shift
 
+if [[ !("$golden_img_mode" == "capture" || "$golden_img_mode" == "compare" || "$golden_img_mode" == "compare_update") ]]; then
+    printf "${RED}${golden_img_mode} is not a valid golden image mode${NC}\n"
+    print_help
+    exit -1
+fi
+
 
 test_modes=( "$@" )
 test_modes_str=""
@@ -161,34 +167,20 @@ function process_golden_img
             bash -c "$cmd"
             local res=$?
 
-            if [[ "$res" == "0" ]]; then
-                let tests_passed=$tests_passed+1
-            else
-                let tests_failed=$tests_failed+1
-            fi
-
             # Note that linux return codes are always positive, and we only get the low 8 bits
             local status=""
-            if [[ "$golden_img_mode" == "compare" ]]; then
-                if [[ "$res" == "0" ]]; then
-                    status="${GREEN}Golden image validation PASSED for $app_name ($mode).${NC}";
-                else
-                    status="${RED}Golden image validation FAILED for $app_name ($mode).${NC}";
-                fi
-            fi
-            if [[ "$golden_img_mode" == "capture" ]]; then
-                if [[ "$res" == "0" ]]; then
-                    status="${GREEN}Successfully generated golden image for $app_name ($mode).${NC}"; 
-                else
-                    status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}";
-                fi
-            fi
-            if [[ "$golden_img_mode" == "compare_update" ]]; then
-                if [[ "$res" == "0" ]]; then
-                    status="${GREEN}Golden image validation PASSED for $app_name ($mode). Image updated.${NC}";
-                else
-                    status="${RED}Golden image validation FAILED for $app_name ($mode). Image updated.${NC}";
-                fi
+            if [[ "$res" == "0" ]]; then
+                let tests_passed=$tests_passed+1
+
+                if [[ "$golden_img_mode" == "compare" ]];        then status="${GREEN}Golden image validation PASSED for $app_name ($mode).${NC}"; fi
+                if [[ "$golden_img_mode" == "capture" ]];        then status="${GREEN}Successfully generated golden image for $app_name ($mode).${NC}"; fi
+                if [[ "$golden_img_mode" == "compare_update" ]]; then status="${GREEN}Golden image validation PASSED for $app_name ($mode). Image updated.${NC}"; fi
+            else
+                let tests_failed=$tests_failed+1
+
+                if [[ "$golden_img_mode" == "compare" ]];        then status="${RED}Golden image validation FAILED for $app_name ($mode).${NC}"; fi
+                if [[ "$golden_img_mode" == "capture" ]];        then status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}"; fi
+                if [[ "$golden_img_mode" == "compare_update" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode). Error code: $res.${NC}"; fi
             fi
         else
             status="${YELLOW}Golden image processing SKIPPED for $app_name ($mode).${NC}"

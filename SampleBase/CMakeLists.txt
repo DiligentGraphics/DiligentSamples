@@ -158,7 +158,7 @@ PUBLIC
 
 if(MSVC)
     target_compile_options(Diligent-SampleBase PRIVATE -DUNICODE)
-    
+
     if(PLATFORM_UNIVERSAL_WINDOWS)
         # Disable w4189: local variable is initialized but not referenced
         # Disable w4063: case is not a valid value for switch of enum
@@ -178,6 +178,7 @@ PUBLIC
     Diligent-TextureLoader
     Diligent-TargetPlatform
     Diligent-Imgui
+    Diligent-GraphicsAccessories
     ${ENGINE_LIBRARIES}
     Diligent-NativeAppBase
 )

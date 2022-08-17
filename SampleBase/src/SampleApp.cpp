@@ -38,6 +38,7 @@
 #include "Image.h"
 #include "FileWrapper.hpp"
 #include "CommandLineParser.hpp"
+#include "GraphicsAccessories.hpp"
 
 #if D3D11_SUPPORTED
 #    include "EngineFactoryD3D11.h"
@@ -319,7 +320,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_DISABLED;
             if (EngineCI.NumDeferredContexts != 0)
             {
-                LOG_ERROR_MESSAGE("Deferred contexts are not supported in OpenGL mode");
+                LOG_WARNING_MESSAGE("Deferred contexts are not supported in OpenGL mode");
                 EngineCI.NumDeferredContexts = 0;
             }
 
@@ -409,18 +410,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             break;
     }
 
-    switch (m_DeviceType)
-    {
-        // clang-format off
-        case RENDER_DEVICE_TYPE_D3D11:  m_AppTitle.append(" (D3D11");    break;
-        case RENDER_DEVICE_TYPE_D3D12:  m_AppTitle.append(" (D3D12");    break;
-        case RENDER_DEVICE_TYPE_GL:     m_AppTitle.append(" (OpenGL");   break;
-        case RENDER_DEVICE_TYPE_GLES:   m_AppTitle.append(" (OpenGLES"); break;
-        case RENDER_DEVICE_TYPE_VULKAN: m_AppTitle.append(" (Vulkan");   break;
-        case RENDER_DEVICE_TYPE_METAL:  m_AppTitle.append(" (Metal");    break;
-        default: UNEXPECTED("Unknown/unsupported device type");
-            // clang-format on
-    }
+    m_AppTitle.append(" (");
+    m_AppTitle.append(GetRenderDeviceTypeString(m_DeviceType));
     m_AppTitle.append(", API ");
     m_AppTitle.append(std::to_string(DILIGENT_API_VERSION));
     m_AppTitle.push_back(')');
@@ -830,7 +821,7 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     if (!pGoldenImg)
     {
         LOG_ERROR_MESSAGE("Failed to load golden image from file ", FileName);
-        m_ExitCode = -2;
+        m_ExitCode = 2;
         return;
     }
 
@@ -839,13 +830,13 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     if (GoldenImgDesc.Width != TexDesc.Width)
     {
         LOG_ERROR_MESSAGE("Golden image width (", GoldenImgDesc.Width, ") does not match the captured image width (", TexDesc.Width, ")");
-        m_ExitCode = -3;
+        m_ExitCode = 3;
         return;
     }
     if (GoldenImgDesc.Height != TexDesc.Height)
     {
         LOG_ERROR_MESSAGE("Golden image height (", GoldenImgDesc.Height, ") does not match the captured image height (", TexDesc.Height, ")");
-        m_ExitCode = -4;
+        m_ExitCode = 4;
         return;
     }
 
@@ -860,7 +851,8 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
 
     auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
 
-    m_ExitCode = 0;
+
+    size_t NumBadPixels = 0;
     for (size_t row = 0; row < TexDesc.Height; ++row)
     {
         for (size_t col = 0; col < TexDesc.Width; ++col)
@@ -870,9 +862,15 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
             if (std::abs(int{SrcPixel[0]} - int{DstPixel[0]}) > m_GoldenImgPixelTolerance ||
                 std::abs(int{SrcPixel[1]} - int{DstPixel[1]}) > m_GoldenImgPixelTolerance ||
                 std::abs(int{SrcPixel[2]} - int{DstPixel[2]}) > m_GoldenImgPixelTolerance)
-                ++m_ExitCode;
+                ++NumBadPixels;
         }
     }
+    if (NumBadPixels == 0)
+        LOG_INFO_MESSAGE(TextColorCode::Green, GetAppTitle(), ": golden image validation PASSED.", TextColorCode::Default);
+    else
+        LOG_ERROR_MESSAGE(GetAppTitle(), ": golden image validation FAILED: ", NumBadPixels, " inconsistent pixels found.");
+
+    m_ExitCode = NumBadPixels > 0 ? 10 : 0;
 }
 
 void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::CaptureInfo& Capture)
@@ -904,15 +902,17 @@ void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::Ca
         if (!res)
         {
             LOG_ERROR_MESSAGE("Failed to write screen capture file '", FileName, "'.");
-            m_ExitCode = -5;
+            m_ExitCode = 5;
         }
         pFile.Close();
     }
     else
     {
         LOG_ERROR_MESSAGE("Failed to create screen capture file '", FileName, "'. Verify that the directory exists and the app has sufficient rights to write to this directory.");
-        m_ExitCode = -6;
+        m_ExitCode = 6;
     }
+
+    // Do NOT set exit code to 0! We must not clear the previous error code.
 }
 
 void SampleApp::Present()
@@ -942,7 +942,7 @@ void SampleApp::Present()
                 if (!m_pScreenCapture->HasCapture())
                 {
                     LOG_ERROR_MESSAGE("Screen capture is not available after idling the context");
-                    m_ExitCode = -1;
+                    m_ExitCode = 1;
                 }
             }
         }

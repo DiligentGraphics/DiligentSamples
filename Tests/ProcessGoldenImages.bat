@@ -44,6 +44,15 @@ shift
 set golden_img_mode=%~1
 shift
 
+set golden_img_mode_ok=""
+if "%golden_img_mode%" == "capture" (set golden_img_mode_ok=OK)
+if "%golden_img_mode%" == "compare" (set golden_img_mode_ok=OK)
+if "%golden_img_mode%" == "compare_update" (set golden_img_mode_ok=OK)
+if NOT "%golden_img_mode_ok%" == "OK" (
+    echo %FONT_RED%%golden_img_mode% is not a valid golden image mode%FONT_DEFAULT%
+    goto help
+)
+
 set test_modes=
 :loop1
     rem ~ removes surrounding quotes
@@ -204,27 +213,19 @@ rem For some reason, colored font does not work after the line that starts the s
             rem It is important to save the value of !ERRORLEVEL! so that it is not overridden by further commands
             set ERROR=!ERRORLEVEL!
 
-            if !ERROR! NEQ 0 (
+            if "!ERROR!" == "0" (
+                set /a TESTS_PASSED=!TESTS_PASSED!+1
+
+                if "%golden_img_mode%" == "compare"        (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name% [!test_mode!].%FONT_DEFAULT%)
+                if "%golden_img_mode%" == "capture"        (set STATUS=%FONT_GREEN%Successfully generated golden image for %app_name% [!test_mode!].%FONT_DEFAULT%)
+                if "%golden_img_mode%" == "compare_update" (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name%. Image updated. [!test_mode!].%FONT_DEFAULT%)
+            ) else (
                 set EXIT_CODE=1
                 set /a TESTS_FAILED=!TESTS_FAILED!+1
-            ) else (
-                set /a TESTS_PASSED=!TESTS_PASSED!+1
-            )
 
-            if "%golden_img_mode%" == "compare" (
-                if !ERROR! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name% [!test_mode!].%FONT_DEFAULT%)
-                if !ERROR! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]: !ERROR! inconsistent pixels found.%FONT_DEFAULT%)
-                if !ERROR! LSS 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
-            )
-            if "%golden_img_mode%" == "capture" (
-                if !ERROR! EQU 0 (set STATUS=%FONT_GREEN%Successfully generated golden image for %app_name% [!test_mode!].%FONT_DEFAULT%)
-                if !ERROR! GTR 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
-                if !ERROR! LSS 0 (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
-            )
-            if "%golden_img_mode%" == "compare_update" (
-                if !ERROR! EQU 0 (set STATUS=%FONT_GREEN%Golden image validation PASSED for %app_name%. Image updated. [!test_mode!].%FONT_DEFAULT%)
-                if !ERROR! GTR 0 (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]: !ERROR! inconsistent pixels found. Image updated.%FONT_DEFAULT%)
-                if !ERROR! LSS 0 (set STATUS=%FONT_RED% FAILED to validate or update golden image for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
+                if "%golden_img_mode%" == "compare"        (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
+                if "%golden_img_mode%" == "capture"        (set STATUS=%FONT_RED%FAILED to generate golden image for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
+                if "%golden_img_mode%" == "compare_update" (set STATUS=%FONT_RED%Golden image validation FAILED for %app_name% [!test_mode!]. Error code: !ERROR!.%FONT_DEFAULT%)
             )
         ) else (
             set STATUS=%FONT_YELLOW%Golden image processing SKIPPED for %app_name% [!test_mode!].%FONT_DEFAULT%
