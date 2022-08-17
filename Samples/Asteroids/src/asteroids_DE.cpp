@@ -284,7 +284,7 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         }
 
         {
-            // Structured buffer that contains asteroid data. Evey thread needs to use
+            // Structured buffer that contains asteroid data. Every thread needs to use
             // its own buffer.
             BufferDesc desc;
             desc.Name              = "Asteroids data buffer";

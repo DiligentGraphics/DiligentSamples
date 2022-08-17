@@ -115,5 +115,5 @@ pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), IBOffsets, RESOURCE_STATE_TRANS
 ```
 
 
-Shader and pipeline state inititalization as well as multithreaded rendering is done similar to previous sample; refer to 
+Shader and pipeline state initialization as well as multithreaded rendering is done similar to previous sample; refer to 
 [Tutorial09 - Quads](../Tutorial09_Quads) for details.

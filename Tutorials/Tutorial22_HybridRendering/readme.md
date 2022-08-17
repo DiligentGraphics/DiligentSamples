@@ -39,7 +39,7 @@ struct ObjectAttribs
 
 `ModelMat` and `NormalMat` are local-to-world transformations for object positions and normals. `MaterialId` indicates the object material.
 `FirstIndex` and `FirstVertex` specify the position of the first index and first vertex in the index and vertex buffers correspondingly.
-`MeshId` is currently unused, but may inidicate e.g. an index in the vertex buffer array.
+`MeshId` is currently unused, but may indicate e.g. an index in the vertex buffer array.
 
 For ray tracing, each mesh needs a bottom-level acceleration structure (BLAS). Note that in some cases, it may better to merge all static meshes 
 into a single BLAS, which may improve ray tracing performance and speed up top-level AS construction.
@@ -172,7 +172,7 @@ The ray tracing shader performs the following steps:
   The function searches for any intersection and returns 0 if the intersection is found, and 1 otherwise.
 - Casts another ray in the reflection direction using the `Reflection(...)` function. This function
   finds the closest intersection with the scene, applies material and calculates lighting by casting a
-  scondary shadow ray.
+  secondary shadow ray.
 - Writes the result to the output texture: reflection color is stored in the rgb components, and lighting
   information is stored in the alpha component.
 

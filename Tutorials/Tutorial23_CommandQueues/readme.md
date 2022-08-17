@@ -351,7 +351,7 @@ m_ComputeCtx->Flush();
 m_pImmediateContext->DeviceWaitForFence(m_ComputeCtxFence, m_ComputeCtxFenceValue);
 ```
 
-When creating a pipeline state, similar to resource initialization, we need to inidicate which contexts it may be used in. 
+When creating a pipeline state, similar to resource initialization, we need to indicate which contexts it may be used in. 
 Our compute PSO may be used in graphics and compute contexts depending on whether the async compute is active.
 `ImmediateContextMask` must be initialized to be compatible with the graphics and compute contexts:
 

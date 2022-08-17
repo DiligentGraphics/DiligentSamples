@@ -35,7 +35,7 @@ UNITY_DECLARE_INTERFACE(IUnityGraphicsMetal)
 	// In that case you should end unity's encoder before creating your own and end yours before returning control to unity
 	void					(UNITY_INTERFACE_API * EndCurrentCommandEncoder)();
 
-	// access to RenderBuffer's texure
+	// access to RenderBuffer's texture
 	// NB: you pass here *native* RenderBuffer, acquired by calling (C#) RenderBuffer.GetNativeRenderBufferPtr
 	// AAResolvedTextureFromRenderBuffer will return nil in case of non-AA RenderBuffer or if called for depth RenderBuffer
 	// StencilTextureFromRenderBuffer will return nil in case of no-stencil RenderBuffer or if called for color RenderBuffer
