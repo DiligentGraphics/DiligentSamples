@@ -178,7 +178,7 @@ function process_golden_img
             else
                 let tests_failed=$tests_failed+1
 
-                if [[ "$golden_img_mode" == "compare" ]];        then status="${RED}Golden image validation FAILED for $app_name ($mode).${NC}"; fi
+                if [[ "$golden_img_mode" == "compare" ]];        then status="${RED}Golden image validation FAILED for $app_name ($mode). Error code: $res.${NC}"; fi
                 if [[ "$golden_img_mode" == "capture" ]];        then status="${RED}FAILED to generate golden image for $app_name ($mode). Error code: $res.${NC}"; fi
                 if [[ "$golden_img_mode" == "compare_update" ]]; then status="${RED}Golden image validation FAILED for $app_name ($mode). Error code: $res.${NC}"; fi
             fi

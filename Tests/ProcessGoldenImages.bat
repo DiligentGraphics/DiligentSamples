@@ -44,7 +44,7 @@ shift
 set golden_img_mode=%~1
 shift
 
-set golden_img_mode_ok=""
+set golden_img_mode_ok=
 if "%golden_img_mode%" == "capture" (set golden_img_mode_ok=OK)
 if "%golden_img_mode%" == "compare" (set golden_img_mode_ok=OK)
 if "%golden_img_mode%" == "compare_update" (set golden_img_mode_ok=OK)
