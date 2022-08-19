@@ -34,14 +34,14 @@ NC='\033[0m' # No color
 if [[ $# -lt 3 ]]; then
     printf "${RED}At least three arguments are required${NC}\n"
     print_help
-    exit -1
+    exit 1
 fi
 
 
 if [[ "$DILIGENT_BUILD_DIR" == "" ]]; then
     printf "${RED}Required DILIGENT_BUILD_DIR variable is not set${NC}\n"
     print_help
-    exit -1
+    exit 1
 fi
 
 if [[ "$GOLDEN_IMAGE_WIDTH" == "" ]]; then
@@ -61,7 +61,7 @@ shift
 if [[ !("$golden_img_mode" == "capture" || "$golden_img_mode" == "compare" || "$golden_img_mode" == "compare_update") ]]; then
     printf "${RED}${golden_img_mode} is not a valid golden image mode${NC}\n"
     print_help
-    exit -1
+    exit 1
 fi
 
 

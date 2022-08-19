@@ -4,6 +4,7 @@ rem !!! DO NOT USE :: for comments as it misbehaves and is parsed as drive lette
 
 rem Enable delayed expansion to be able to use !ERRORLEVEL!
 setlocal ENABLEDELAYEDEXPANSION
+setlocal
 
 for /F %%d in ('echo prompt $E ^| cmd') do (set "ESC=%%d")
 
@@ -281,4 +282,4 @@ rem For some reason, colored font does not work after the line that starts the s
     echo   set DILIGENT_BUILD_TYPE=Debug
     echo   ProcessGoldenImages.bat c:\git\DiligentTestData\GoldenImages compare "--mode d3d11" "--mode d3d12 --adapter sw"
 
-    EXIT /B -1
+    EXIT /B 1
