@@ -1,0 +1,19 @@
+Texture2D g_Radiance;
+
+struct PSInput 
+{ 
+    float4 Pos    : SV_POSITION; 
+    float2 ClipXY : ClipPos; 
+};
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET0;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float2 UV = (PSIn.ClipXY + float2(1.0, 1.0)) * 0.5;
+    PSOut.Color = g_Radiance.Load(int3(PSIn.Pos.xy, 0));
+}
