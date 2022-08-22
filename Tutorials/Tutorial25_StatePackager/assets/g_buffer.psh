@@ -14,9 +14,10 @@ struct PSInput
 
 struct PSOutput
 {
-    float4 Albedo : SV_TARGET0;
-    float4 Normal : SV_TARGET1;
-    float  Depth  : SV_TARGET2;
+    float4 Albedo   : SV_TARGET0;
+    float4 Normal   : SV_TARGET1;
+    float4 Emissive : SV_TARGET2;
+    float  Depth    : SV_TARGET3;
 };
 
 void main(in  PSInput  PSIn,
@@ -32,8 +33,18 @@ void main(in  PSInput  PSIn,
 
     HitInfo Hit = IntersectScene(Ray);
 
-    PSOut.Albedo = float4(Hit.Albedo, 0.0);
-    PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
+    float3 Albedo   = float3(0.0, 0.0, 0.0);
+    float3 Emissive = float3(0.0, 0.0, 0.0);
+    float3 Normal   = float3(0.0, 0.0, 0.0);
+
+    if (Hit.Type == HIT_TYPE_LAMBERTIAN)
+        Albedo = Hit.Color;
+    else if (Hit.Type == HIT_TYPE_DIFFUSE_LIGHT)
+        Emissive = Hit.Color;
+
+    PSOut.Albedo   = float4(Albedo, 0.0);
+    PSOut.Emissive = float4(Emissive, 0.0);
+    PSOut.Normal   = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 
     if (Hit.Distance < INF)
     {

@@ -1,8 +1,9 @@
 #ifndef _SCENE_FXH_
 #define _SCENE_FXH_
 
-#define PI  3.1415927
-#define INF 1e+30
+#define PI      3.1415927
+#define INF     1e+30
+#define EPSILON 1e-3
 
 float3 ClipToWorld(float4 ClipPos, float4x4 ViewProjInvMat)
 {
@@ -46,44 +47,55 @@ RayInfo RotateRayY(RayInfo Ray, float a)
     return RotatedRay;
 }
 
+#define HIT_TYPE_NONE          0
+#define HIT_TYPE_LAMBERTIAN    1
+#define HIT_TYPE_DIFFUSE_LIGHT 2
+
 struct HitInfo
 {
-    float3 Albedo;
+    float3 Color; // Albedo or radiance for light
     float3 Normal;
     float  Distance;
+    int    Type;
+};
+
+struct BoxInfo
+{
+    float3  Center;
+    float3  Size;
+    float3  Color;
+    int     Type;
 };
 
 bool IntersectAABB(in    RayInfo Ray,
-                   in    float3  BoxCenter,
-                   in    float3  BoxSize,
-                   in    float3  BoxAlbedo,
+                   in    BoxInfo Box,
                    inout HitInfo Hit)
 {
-    float3 t1     = (BoxCenter - BoxSize - Ray.Origin) / Ray.Dir;
-    float3 t2     = (BoxCenter + BoxSize - Ray.Origin) / Ray.Dir;
+    float3 t1     = (Box.Center - Box.Size - Ray.Origin) / Ray.Dir;
+    float3 t2     = (Box.Center + Box.Size - Ray.Origin) / Ray.Dir;
     float3 t_min  = min(t1, t2);
     float3 t_max  = max(t1, t2);
     float  t_near = max(max(t_min.x, t_min.y), t_min.z);
     float  t_far  = min(min(t_max.x, t_max.y), t_max.z);
 
-    if (t_near >= t_far || t_near < 0.0 || t_near > Hit.Distance)
+    if (t_near >= t_far || t_near < EPSILON || t_near > Hit.Distance)
         return false;
 
-    Hit.Albedo   = BoxAlbedo;
+    Hit.Color    = Box.Color;
     Hit.Normal   = -sign(Ray.Dir) * step(t_min.yzx, t_min.xyz) * step(t_min.zxy, t_min.xyz);
     Hit.Distance = t_near;
+    Hit.Type     = Box.Type;
+
     return true;
 }
 
 bool IntersectRotatedAABB(in    RayInfo Ray,
-                          in    float3  BoxCenter,
-                          in    float3  BoxSize,
-                          in    float3  BoxAlbedo,
+                          in    BoxInfo Box,
                           in    float   RotationY,
                           inout HitInfo Hit)
 {
     RayInfo RotRay = RotateRayY(Ray, -RotationY);
-    if (IntersectAABB(RotRay, BoxCenter, BoxSize, BoxAlbedo, Hit))
+    if (IntersectAABB(RotRay, Box, Hit))
     {
         Hit.Normal = RotateY(Hit.Normal, RotationY);
         return true;
@@ -97,35 +109,81 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 {
     float RoomSize = 10;
     float WallThick = 0.05;
+
+    BoxInfo Box;
+    Box.Type = HIT_TYPE_LAMBERTIAN;
+
+    float3 Green = float3(0.1, 0.6, 0.1);
+    float3 Red   = float3(0.6, 0.1, 0.1);
+    float3 Grey  = float3(0.5, 0.5, 0.5);
+
     // Right wall
-    IntersectAABB(Ray, float3(+RoomSize * 0.5 + WallThick * 0.5, 0.0, 0.0), float3(WallThick, RoomSize * 0.5, RoomSize * 0.5), float3(0.1, 0.6, 0.1), Hit);
+    Box.Center = float3(RoomSize * 0.5 + WallThick * 0.5, 0.0, 0.0);
+    Box.Size   = float3(WallThick, RoomSize * 0.5, RoomSize * 0.5);
+    Box.Color  = Green;
+    IntersectAABB(Ray, Box, Hit);
+
     // Left wall
-    IntersectAABB(Ray, float3(-RoomSize * 0.5 - WallThick * 0.5, 0.0, 0.0), float3(WallThick, RoomSize * 0.5, RoomSize * 0.5), float3(0.6, 0.1, 0.1), Hit);
+    Box.Center = float3(-RoomSize * 0.5 - WallThick * 0.5, 0.0, 0.0);
+    Box.Size   = float3(WallThick, RoomSize * 0.5, RoomSize * 0.5);
+    Box.Color  = Red;
+    IntersectAABB(Ray, Box, Hit);
+
     // Top wall
-    IntersectAABB(Ray, float3(0.0, +RoomSize * 0.5 + WallThick * 0.5, 0.0), float3(RoomSize * 0.5, WallThick, RoomSize * 0.5), float3(0.5, 0.5, 0.5), Hit);
+    Box.Center = float3(0.0, +RoomSize * 0.5 + WallThick * 0.5, 0.0);
+    Box.Size   = float3(RoomSize * 0.5, WallThick, RoomSize * 0.5);
+    Box.Color  = Grey;
+    IntersectAABB(Ray, Box, Hit);
+
     // Bottom wall
-    IntersectAABB(Ray, float3(0.0, -RoomSize * 0.5 + WallThick * 0.5, 0.0), float3(RoomSize * 0.5, WallThick, RoomSize * 0.5), float3(0.5, 0.5, 0.5), Hit);
+    Box.Center = float3(0.0, -RoomSize * 0.5 + WallThick * 0.5, 0.0);
+    Box.Size   = float3(RoomSize * 0.5, WallThick, RoomSize * 0.5);
+    Box.Color  = Grey;
+    IntersectAABB(Ray, Box, Hit);
+
     // Back wall
-    IntersectAABB(Ray, float3(0.0, 0.0, +RoomSize * 0.5 + WallThick * 0.5), float3(RoomSize * 0.5, RoomSize * 0.5, WallThick), float3(0.5, 0.5, 0.5), Hit);
+    Box.Center = float3(0.0, 0.0, +RoomSize * 0.5 + WallThick * 0.5);
+    Box.Size   = float3(RoomSize * 0.5, RoomSize * 0.5, WallThick);
+    Box.Color  = Grey;
+    IntersectAABB(Ray, Box, Hit);
 }
 
 void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
 {
+    BoxInfo Box;
+    Box.Type = HIT_TYPE_LAMBERTIAN;
+
     // Tall box
-    IntersectRotatedAABB(Ray, float3(-2.0, -2.0,  1.5), float3(1.3, 3.0, 1.3), float3(0.6, 0.6, 0.6), +PI * 0.1, Hit);
+    Box.Center = float3(-2.0, -2.0,  1.5);
+    Box.Size   = float3(1.3, 3.0, 1.3);
+    Box.Color  = float3(0.6, 0.6, 0.6);
+    IntersectRotatedAABB(Ray, Box, +PI * 0.1, Hit);
+
+
     // Small box
-    IntersectRotatedAABB(Ray, float3(+2.5, -3.5, -1.0), float3(1.5, 1.5, 1.5), float3(0.6, 0.6, 0.6), -PI * 0.1, Hit);
+    Box.Center = float3(+2.5, -3.5, -1.0);
+    Box.Size   = float3(1.5, 1.5, 1.5);
+    Box.Color  = float3(0.6, 0.6, 0.6);
+    IntersectRotatedAABB(Ray, Box, -PI * 0.1, Hit);
 }
 
 HitInfo IntersectScene(RayInfo Ray)
 {
     HitInfo Hit;
-    Hit.Albedo   = float3(0.0, 0.0, 0.0);
+    Hit.Color    = float3(0.0, 0.0, 0.0);
     Hit.Normal   = float3(0.0, 0.0, 0.0);
     Hit.Distance = INF;
 
     IntersectSceneInterior(Ray, Hit);
     IntersectWalls(Ray, Hit);
+
+    // Light
+    BoxInfo Box;
+    Box.Type = HIT_TYPE_DIFFUSE_LIGHT;
+    Box.Center = float3(0.0, 4.95, 0.0);
+    Box.Size   = float3(1.5, 0.02, 1.5);
+    Box.Color  = float3(5.0, 5.0, 5.0);
+    IntersectAABB(Ray, Box, Hit);
 
     return Hit;
 }
@@ -133,7 +191,7 @@ HitInfo IntersectScene(RayInfo Ray)
 float TestShadow(RayInfo Ray)
 {
     HitInfo Hit;
-    Hit.Albedo   = float3(0.0, 0.0, 0.0);
+    Hit.Color    = float3(0.0, 0.0, 0.0);
     Hit.Normal   = float3(0.0, 0.0, 0.0);
     Hit.Distance = INF;
 
