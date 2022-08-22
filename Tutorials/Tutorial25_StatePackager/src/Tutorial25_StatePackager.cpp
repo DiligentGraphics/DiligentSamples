@@ -70,7 +70,14 @@ void Tutorial25_StatePackager::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::Checkbox("Next event estimation", &m_bUseNextEventEstimation);
+        if (ImGui::Checkbox("Next event estimation", &m_bUseNextEventEstimation))
+            m_SampleCount = 0;
+
+        if (ImGui::SliderInt("Num bounces", &m_NumBounces, 1, 8))
+            m_SampleCount = 0;
+
+        if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
+            m_SampleCount = 0;
     }
     ImGui::End();
 }
@@ -151,6 +158,8 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
         UnpackInfo.pUserData                     = ModifyResolvePSODesc;
         pDearchiver->UnpackPipelineState(UnpackInfo, &m_pResolvePSO);
         VERIFY_EXPR(m_pResolvePSO);
+
+        m_pResolvePSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbConstants")->Set(m_pShaderConstantsCB);
     }
 
     m_Camera.SetPos(float3(0.0f, 1.0f, -20.0f));
@@ -218,6 +227,9 @@ void Tutorial25_StatePackager::CreateGBuffer()
     m_pResolveSRB.Release();
     m_pResolvePSO->CreateShaderResourceBinding(&m_pResolveSRB, true);
     m_pResolveSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Radiance")->Set(m_pRadianceAccumulationBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+
+    m_SampleCount       = 0;
+    m_LastFrameViewProj = {};
 }
 
 // Render a frame
@@ -227,6 +239,8 @@ void Tutorial25_StatePackager::Render()
         CreateGBuffer();
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
+
+    bool UpdateGBuffer = false;
     {
         MapHelper<HLSL::ShaderConstants> ShaderData{m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD};
         ShaderData->uScreenWidth  = SCDesc.Width;
@@ -238,11 +252,26 @@ void Tutorial25_StatePackager::Render()
         const auto& Proj     = m_Camera.GetProjMatrix();
         const auto  ViewProj = View * Proj;
 
+        if (m_LastFrameViewProj != ViewProj)
+        {
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = ViewProj;
+            UpdateGBuffer       = true;
+        }
+
+        ShaderData->fLastSampleCount = static_cast<float>(m_SampleCount);
+        m_SampleCount += m_NumSamplesPerFrame;
+        ShaderData->fNewSampleCount = static_cast<float>(m_SampleCount);
+
+        ShaderData->iNumBounces         = m_NumBounces;
+        ShaderData->iNumSamplesPerFrame = m_NumSamplesPerFrame;
+
         ShaderData->ViewProjMat    = ViewProj.Transpose();
         ShaderData->ViewProjInvMat = ViewProj.Inverse().Transpose();
     }
 
     // Draw the scene into G-buffer
+    if (UpdateGBuffer)
     {
         ITextureView* ppRTVs[] = {
             m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),

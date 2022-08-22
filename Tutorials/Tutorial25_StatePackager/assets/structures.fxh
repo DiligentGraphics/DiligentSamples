@@ -8,10 +8,10 @@ struct ShaderConstants
 	float fScreenWidth;
 	float fScreenHeight;
 
-	float fFrameNumber;
-	float fPadding0;
-	float fPadding1;
-	float fPadding2;
+	float fLastSampleCount;
+	float fNewSampleCount;
+	int   iNumBounces;
+	int   iNumSamplesPerFrame;
 
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;

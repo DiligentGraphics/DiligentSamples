@@ -82,7 +82,16 @@
 
         {
             "PSODesc": {
-                "Name": "Resolve PSO"
+                "Name": "Resolve PSO",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbConstants",
+                            "ShaderStages": "PIXEL",
+                            "Type": "STATIC"
+                        }
+                    ]
+                }
             },
             "GraphicsPipeline": {
                 "PrimitiveTopology": "TRIANGLE_LIST",

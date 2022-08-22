@@ -81,6 +81,11 @@ private:
     RefCntAutoPtr<ITexture> m_pRadianceAccumulationBuffer;
 
     bool m_bUseNextEventEstimation = true;
+    int  m_NumBounces              = 3;
+    int  m_NumSamplesPerFrame      = 8;
+
+    int      m_SampleCount = 0;
+    float4x4 m_LastFrameViewProj;
 
     FirstPersonCamera m_Camera;
 };

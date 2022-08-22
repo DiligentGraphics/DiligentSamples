@@ -1,7 +1,8 @@
 #ifndef _SCENE_FXH_
 #define _SCENE_FXH_
 
-#define PI 3.1415927
+#define PI  3.1415927
+#define INF 1e+30
 
 float3 ClipToWorld(float4 ClipPos, float4x4 ViewProjInvMat)
 {
@@ -81,7 +82,7 @@ bool IntersectRotatedAABB(in    RayInfo Ray,
                           in    float   RotationY,
                           inout HitInfo Hit)
 {
-    RayInfo RotRay = RotateRayY(Ray, RotationY);
+    RayInfo RotRay = RotateRayY(Ray, -RotationY);
     if (IntersectAABB(RotRay, BoxCenter, BoxSize, BoxAlbedo, Hit))
     {
         Hit.Normal = RotateY(Hit.Normal, RotationY);
@@ -111,9 +112,9 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
 {
     // Tall box
-    IntersectRotatedAABB(Ray, float3(-2.0, -1.5,  1.5), float3(1.3, 3.0, 1.3), float3(0.6, 0.6, 0.6), -PI * 0.1, Hit);
+    IntersectRotatedAABB(Ray, float3(-2.0, -2.0,  1.5), float3(1.3, 3.0, 1.3), float3(0.6, 0.6, 0.6), +PI * 0.1, Hit);
     // Small box
-    IntersectRotatedAABB(Ray, float3(+2.5, -3.5, -1.0), float3(1.5, 1.5, 1.5), float3(0.6, 0.6, 0.6), +PI * 0.2, Hit);
+    IntersectRotatedAABB(Ray, float3(+2.5, -3.5, -1.0), float3(1.5, 1.5, 1.5), float3(0.6, 0.6, 0.6), -PI * 0.1, Hit);
 }
 
 HitInfo IntersectScene(RayInfo Ray)
@@ -121,12 +122,24 @@ HitInfo IntersectScene(RayInfo Ray)
     HitInfo Hit;
     Hit.Albedo   = float3(0.0, 0.0, 0.0);
     Hit.Normal   = float3(0.0, 0.0, 0.0);
-    Hit.Distance = 1e+30;
+    Hit.Distance = INF;
 
     IntersectSceneInterior(Ray, Hit);
     IntersectWalls(Ray, Hit);
 
     return Hit;
+}
+
+float TestShadow(RayInfo Ray)
+{
+    HitInfo Hit;
+    Hit.Albedo   = float3(0.0, 0.0, 0.0);
+    Hit.Normal   = float3(0.0, 0.0, 0.0);
+    Hit.Distance = INF;
+
+    IntersectSceneInterior(Ray, Hit);
+
+    return Hit.Distance < INF ? 0.0 : 1.0;
 }
 
 #endif // _SCENE_FXH_

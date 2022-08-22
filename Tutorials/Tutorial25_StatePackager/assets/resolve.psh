@@ -1,4 +1,11 @@
+#include "structures.fxh"
+
 Texture2D g_Radiance;
+
+cbuffer cbConstants
+{
+    ShaderConstants g_Constants;
+}
 
 struct PSInput 
 { 
@@ -15,5 +22,5 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
     float2 UV = (PSIn.ClipXY + float2(1.0, 1.0)) * 0.5;
-    PSOut.Color = g_Radiance.Load(int3(PSIn.Pos.xy, 0));
+    PSOut.Color = g_Radiance.Load(int3(PSIn.Pos.xy, 0)) / g_Constants.fNewSampleCount;
 }
