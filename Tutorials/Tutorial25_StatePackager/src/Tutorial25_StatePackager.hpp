@@ -28,6 +28,7 @@
 
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
+#include "FirstPersonCamera.hpp"
 
 namespace Diligent
 {
@@ -81,8 +82,7 @@ private:
 
     bool m_bUseNextEventEstimation = true;
 
-    float4x4 m_CameraViewProjMatrix;
-    float4x4 m_CameraViewProjInvMatrix;
+    FirstPersonCamera m_Camera;
 };
 
 } // namespace Diligent

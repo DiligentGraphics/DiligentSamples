@@ -31,27 +31,24 @@ struct HitInfo
     float  Distance;
 };
 
-// Plane: dot(P, PlaneNormal) = PlaneDistance
-void IntersectPlane(in    RayInfo Ray,
-                    in    float3  PlaneNormal,
-                    in    float   PlaneDistance,
-                    in    float3  PlaneAlbedo,
-                    inout HitInfo Hit)
+void IntersectAABB(in    RayInfo Ray,
+                   in    float3  BoxCenter,
+                   in    float3  BoxSize,
+                   in    float3  BoxAlbedo,
+                   inout HitInfo Hit)
 {
-    float Denom = dot(Ray.Dir, PlaneNormal);
-    if (abs(Denom) < 0.0001)
-        return;
+    float3 t1     = (BoxCenter - BoxSize - Ray.Origin) / Ray.Dir;
+    float3 t2     = (BoxCenter + BoxSize - Ray.Origin) / Ray.Dir;
+    float3 t_min  = min(t1, t2);
+    float3 t_max  = max(t1, t2);
+    float  t_near = max(max(t_min.x, t_min.y), t_min.z);
+    float  t_far  = min(min(t_max.x, t_max.y), t_max.z);
 
-
-    float HitDist = (PlaneDistance - dot(Ray.Origin, PlaneNormal)) / Denom;
-    if (HitDist < 0.0)
-        return;
-
-    if (HitDist < Hit.Distance)
+    if (t_near < t_far && t_near > 0.0 && t_near < Hit.Distance)
     {
-        Hit.Albedo   = PlaneAlbedo;
-        Hit.Normal   = PlaneNormal;
-        Hit.Distance = HitDist;
+        Hit.Albedo   = BoxAlbedo;
+        Hit.Normal   = -sign(Ray.Dir) * step(t_min.yzx, t_min.xyz) * step(t_min.zxy, t_min.xyz);
+        Hit.Distance = t_near;
     }
 }
 
@@ -62,20 +59,25 @@ HitInfo IntersectScene(RayInfo Ray)
     Hit.Normal   = float3(0.0, 0.0, 0.0);
     Hit.Distance =  1e+30;
 
-    float BoxSize = 5;
+    float RoomSize = 10;
+    float WallThick = 0.05;
     // Right wall
-    IntersectPlane(Ray, float3(+1.0, 0.0, 0.0), -BoxSize, float3(0.6, 0.1, 0.1), Hit);
+    IntersectAABB(Ray, float3(+RoomSize * 0.5 + WallThick * 0.5, 0.0, 0.0), float3(WallThick, RoomSize * 0.5, RoomSize * 0.5), float3(0.1, 0.6, 0.1), Hit);
     // Left wall
-    IntersectPlane(Ray, float3(-1.0, 0.0, 0.0), -BoxSize, float3(0.1, 0.6, 0.1), Hit);
+    IntersectAABB(Ray, float3(-RoomSize * 0.5 - WallThick * 0.5, 0.0, 0.0), float3(WallThick, RoomSize * 0.5, RoomSize * 0.5), float3(0.6, 0.1, 0.1), Hit);
     // Top wall
-    IntersectPlane(Ray, float3(0.0, -1.0, 0.0), -BoxSize, float3(0.5, 0.5, 0.5), Hit);
+    IntersectAABB(Ray, float3(0.0, +RoomSize * 0.5 + WallThick * 0.5, 0.0), float3(RoomSize * 0.5, WallThick, RoomSize * 0.5), float3(0.5, 0.5, 0.5), Hit);
     // Bottom wall
-    IntersectPlane(Ray, float3(0.0, +1.0, 0.0), -BoxSize, float3(0.5, 0.5, 0.5), Hit);
+    IntersectAABB(Ray, float3(0.0, -RoomSize * 0.5 + WallThick * 0.5, 0.0), float3(RoomSize * 0.5, WallThick, RoomSize * 0.5), float3(0.5, 0.5, 0.5), Hit);
     // Back wall
-    IntersectPlane(Ray, float3(0.0, 0.0, -1.0), -BoxSize, float3(0.5, 0.5, 0.5), Hit);
+    IntersectAABB(Ray, float3(0.0, 0.0, +RoomSize * 0.5 + WallThick * 0.5), float3(RoomSize * 0.5, RoomSize * 0.5, WallThick), float3(0.5, 0.5, 0.5), Hit);
 
-    return Hit;   
+    // Tall box
+    IntersectAABB(Ray,  float3(-2.0, -2.0,  1.0), float3(1.5, 3.0, 1.5), float3(0.6, 0.6, 0.6), Hit);
+    // Small box
+    IntersectAABB(Ray,  float3(+1.5, -3.5, -2.5), float3(1.5, 1.5, 1.5), float3(0.6, 0.6, 0.6), Hit);
+
+    return Hit;
 }
-
 
 #endif // _SCENE_FXH_

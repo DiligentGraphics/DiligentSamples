@@ -152,6 +152,11 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
         pDearchiver->UnpackPipelineState(UnpackInfo, &m_pResolvePSO);
         VERIFY_EXPR(m_pResolvePSO);
     }
+
+    m_Camera.SetPos(float3(0.0f, 1.0f, -20.0f));
+    m_Camera.SetRotationSpeed(0.002f);
+    m_Camera.SetMoveSpeed(5.f);
+    m_Camera.SetSpeedUpScales(5.f, 10.f);
 }
 
 void Tutorial25_StatePackager::WindowResize(Uint32 Width, Uint32 Height)
@@ -160,6 +165,12 @@ void Tutorial25_StatePackager::WindowResize(Uint32 Width, Uint32 Height)
     m_pPathTraceSRB.Release();
     m_pResolveSRB.Release();
     m_pRadianceAccumulationBuffer.Release();
+
+    float NearPlane   = 0.1f;
+    float FarPlane    = 50.f;
+    float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+    m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f,
+                            m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceInfo().IsGLDevice());
 }
 
 void Tutorial25_StatePackager::CreateGBuffer()
@@ -223,8 +234,12 @@ void Tutorial25_StatePackager::Render()
         ShaderData->fScreenWidth  = static_cast<float>(SCDesc.Width);
         ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
 
-        ShaderData->ViewProjMat    = m_CameraViewProjMatrix.Transpose();
-        ShaderData->ViewProjInvMat = m_CameraViewProjInvMatrix.Transpose();
+        const auto& View     = m_Camera.GetViewMatrix();
+        const auto& Proj     = m_Camera.GetProjMatrix();
+        const auto  ViewProj = View * Proj;
+
+        ShaderData->ViewProjMat    = ViewProj.Transpose();
+        ShaderData->ViewProjInvMat = ViewProj.Inverse().Transpose();
     }
 
     // Draw the scene into G-buffer
@@ -269,17 +284,7 @@ void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    float4x4 View = float4x4::Translation(0.0f, 0.0f, 20.0f);
-
-    // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
-
-    // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
-
-    // Compute world-view-projection matrix
-    m_CameraViewProjMatrix    = View * SrfPreTransform * Proj;
-    m_CameraViewProjInvMatrix = m_CameraViewProjMatrix.Inverse();
+    m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
 }
 
 } // namespace Diligent
