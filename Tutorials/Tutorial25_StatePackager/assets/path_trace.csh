@@ -1,4 +1,5 @@
 #include "structures.fxh"
+#include "scene.fxh"
 
 Texture2D g_Albedo;
 Texture2D g_Normal;
@@ -25,5 +26,6 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     float3 f3Normal = normalize(g_Normal.Load(int3(ThreadId.xy, 0)).xyz * 2.0 - 1.0);
     float  fDepth  = g_Depth.Load(int3(ThreadId.xy, 0)).x;
 
-    g_Radiance[ThreadId.xy] = float4(f3Albedo + f3Normal * 0.01, fDepth);
+    float3 LightDir = normalize(float3(0.2, -0.7, 0.3));
+    g_Radiance[ThreadId.xy] = float4(f3Albedo * (max(dot(-LightDir, f3Normal), 0.0) * float3(2.0, 2.0, 2.0) + float3(0.05, 0.05, 0.05)), fDepth);
 }

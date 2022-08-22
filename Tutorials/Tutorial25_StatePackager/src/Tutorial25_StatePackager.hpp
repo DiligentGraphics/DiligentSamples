@@ -50,10 +50,10 @@ private:
     void UpdateUI();
     void CreateGBuffer();
 
-    // Cube resources
-    RefCntAutoPtr<IPipelineState> m_pGBufferPSO;
-    RefCntAutoPtr<IBuffer>        m_pShaderConstantsCB;
+    RefCntAutoPtr<IBuffer> m_pShaderConstantsCB;
 
+    RefCntAutoPtr<IPipelineState>         m_pGBufferPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_pGBufferSRB;
     RefCntAutoPtr<IPipelineState>         m_pPathTracePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pPathTraceSRB;
     RefCntAutoPtr<IPipelineState>         m_pResolvePSO;

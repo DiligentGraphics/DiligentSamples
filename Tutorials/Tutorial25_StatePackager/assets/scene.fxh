@@ -26,17 +26,56 @@ struct RayInfo
 
 struct HitInfo
 {
-    float3 Color;
+    float3 Albedo;
     float3 Normal;
     float  Distance;
 };
 
-void IntersectPlane(in    RayInfo Ray, 
-                    in    float3  PlaneNormal, 
+// Plane: dot(P, PlaneNormal) = PlaneDistance
+void IntersectPlane(in    RayInfo Ray,
+                    in    float3  PlaneNormal,
                     in    float   PlaneDistance,
+                    in    float3  PlaneAlbedo,
                     inout HitInfo Hit)
 {
+    float Denom = dot(Ray.Dir, PlaneNormal);
+    if (abs(Denom) < 0.0001)
+        return;
 
+
+    float HitDist = (PlaneDistance - dot(Ray.Origin, PlaneNormal)) / Denom;
+    if (HitDist < 0.0)
+        return;
+
+    if (HitDist < Hit.Distance)
+    {
+        Hit.Albedo   = PlaneAlbedo;
+        Hit.Normal   = PlaneNormal;
+        Hit.Distance = HitDist;
+    }
 }
+
+HitInfo IntersectScene(RayInfo Ray)
+{
+    HitInfo Hit;
+    Hit.Albedo   = float3(0.0, 0.0, 0.0);
+    Hit.Normal   = float3(0.0, 0.0, 0.0);
+    Hit.Distance =  1e+30;
+
+    float BoxSize = 5;
+    // Right wall
+    IntersectPlane(Ray, float3(+1.0, 0.0, 0.0), -BoxSize, float3(0.6, 0.1, 0.1), Hit);
+    // Left wall
+    IntersectPlane(Ray, float3(-1.0, 0.0, 0.0), -BoxSize, float3(0.1, 0.6, 0.1), Hit);
+    // Top wall
+    IntersectPlane(Ray, float3(0.0, -1.0, 0.0), -BoxSize, float3(0.5, 0.5, 0.5), Hit);
+    // Bottom wall
+    IntersectPlane(Ray, float3(0.0, +1.0, 0.0), -BoxSize, float3(0.5, 0.5, 0.5), Hit);
+    // Back wall
+    IntersectPlane(Ray, float3(0.0, 0.0, -1.0), -BoxSize, float3(0.5, 0.5, 0.5), Hit);
+
+    return Hit;   
+}
+
 
 #endif // _SCENE_FXH_

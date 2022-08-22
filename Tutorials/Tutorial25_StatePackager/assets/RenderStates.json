@@ -16,7 +16,16 @@
     "Pipelines": [
         {
             "PSODesc": {
-                "Name": "G-Buffer PSO"
+                "Name": "G-Buffer PSO",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbConstants",
+                            "ShaderStages": "PIXEL",
+                            "Type": "STATIC"
+                        }
+                    ]
+                }
             },
             "GraphicsPipeline": {
                 "PrimitiveTopology": "TRIANGLE_LIST",

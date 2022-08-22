@@ -114,6 +114,10 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
         UnpackInfo.pUserData                     = ModifyGBufferPSODesc;
         pDearchiver->UnpackPipelineState(UnpackInfo, &m_pGBufferPSO);
         VERIFY_EXPR(m_pGBufferPSO);
+
+        m_pGBufferPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbConstants")->Set(m_pShaderConstantsCB);
+        m_pGBufferPSO->CreateShaderResourceBinding(&m_pGBufferSRB, true);
+        VERIFY_EXPR(m_pGBufferSRB);
     }
 
     {
@@ -218,6 +222,9 @@ void Tutorial25_StatePackager::Render()
         ShaderData->uScreenHeight = SCDesc.Height;
         ShaderData->fScreenWidth  = static_cast<float>(SCDesc.Width);
         ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
+
+        ShaderData->ViewProjMat    = m_CameraViewProjMatrix.Transpose();
+        ShaderData->ViewProjInvMat = m_CameraViewProjInvMatrix.Transpose();
     }
 
     // Draw the scene into G-buffer
@@ -229,6 +236,7 @@ void Tutorial25_StatePackager::Render()
         };
         m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+        m_pImmediateContext->CommitShaderResources(m_pGBufferSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->SetPipelineState(m_pGBufferPSO);
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
     }
@@ -261,8 +269,7 @@ void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-#if 0
-    float4x4 View = float4x4::Translation(0.0f, 0.0f, 25.0f);
+    float4x4 View = float4x4::Translation(0.0f, 0.0f, 20.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
     auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
@@ -273,7 +280,6 @@ void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime)
     // Compute world-view-projection matrix
     m_CameraViewProjMatrix    = View * SrfPreTransform * Proj;
     m_CameraViewProjInvMatrix = m_CameraViewProjMatrix.Inverse();
-#endif
 }
 
 } // namespace Diligent

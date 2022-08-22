@@ -1,7 +1,15 @@
-struct PSInput 
-{ 
-    float4 Pos    : SV_POSITION; 
-    float2 ClipXY : ClipPos; 
+#include "structures.fxh"
+#include "scene.fxh"
+
+cbuffer cbConstants
+{
+    ShaderConstants g_Constants;
+}
+
+struct PSInput
+{
+    float4 Pos    : SV_POSITION;
+    float2 ClipXY : ClipPos;
 };
 
 struct PSOutput
@@ -15,7 +23,18 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
     float2 UV = (PSIn.ClipXY + float2(1.0, 1.0)) * 0.5;
-    PSOut.Albedo = float4(UV, 0.2, 0.0); 
-    PSOut.Normal = float4(0.0, 0.0, 1.0, 0.0);
+
+    float2 f2ScreenSize = float2(g_Constants.fScreenWidth, g_Constants.fScreenHeight);
+    float3 f3RayStart = ScreenToWorld(PSIn.Pos.xy, 0.0, f2ScreenSize, g_Constants.ViewProjInvMat);
+    float3 f3RayEnd   = ScreenToWorld(PSIn.Pos.xy, 1.0, f2ScreenSize, g_Constants.ViewProjInvMat);
+
+    RayInfo Ray;
+    Ray.Origin = f3RayStart; 
+    Ray.Dir    = normalize(f3RayEnd - f3RayStart); 
+
+    HitInfo Hit = IntersectScene(Ray);
+
+    PSOut.Albedo = float4(Hit.Albedo, 0.0);
+    PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
     PSOut.Depth  = 0.0;
 }
