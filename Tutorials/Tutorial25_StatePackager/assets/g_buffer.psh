@@ -31,7 +31,7 @@ void main(in  PSInput  PSIn,
     Ray.Origin = f3RayStart; 
     Ray.Dir    = normalize(f3RayEnd - f3RayStart); 
 
-    HitInfo Hit = IntersectScene(Ray, float2(g_Constants.fLightPosX, g_Constants.fLightPosZ));
+    HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
 
     float3 Albedo   = float3(0.0, 0.0, 0.0);
     float3 Emissive = float3(0.0, 0.0, 0.0);

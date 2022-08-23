@@ -78,11 +78,26 @@ void Tutorial25_StatePackager::UpdateUI()
         if (ImGui::SliderInt("Num bounces", &m_NumBounces, 1, 8))
             m_SampleCount = 0;
 
+        if (ImGui::Checkbox("Show only last bounce", &m_ShowOnlyLastBounce))
+            m_SampleCount = 0;
+
         if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
             m_SampleCount = 0;
 
         if (ImGui::SliderFloat("Light intensity", &m_LightIntensity, 1, 50))
             m_SampleCount = 0;
+
+        if (ImGui::SliderFloat("Light Width", &m_LightSize.x, 0.5, 3))
+        {
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = {}; // Need to update G-buffer
+        }
+
+        if (ImGui::SliderFloat("Light Height", &m_LightSize.y, 0.5, 3))
+        {
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = {}; // Need to update G-buffer
+        }
 
         if (ImGui::ColorPicker3("Light color", &m_LightColor.x))
         {
@@ -175,7 +190,7 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
         m_pResolvePSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbConstants")->Set(m_pShaderConstantsCB);
     }
 
-    m_Camera.SetPos(float3(0.0f, 1.0f, -20.0f));
+    m_Camera.SetPos(float3{0.0f, 1.0f, -20.0f});
     m_Camera.SetRotationSpeed(0.002f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
@@ -269,9 +284,19 @@ void Tutorial25_StatePackager::Render()
 
         ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
         ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1));
-        ShaderData->fLightPosX  = m_LightPos.x;
-        ShaderData->fLightPosZ  = m_LightPos.y;
 
+        ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
+
+        auto LightPos = clamp(m_LightPos, float2{-4.5, -4.5} + m_LightSize, float2{+4.5, +4.5} - m_LightSize);
+        if (LightPos != m_LightPos)
+        {
+            m_LightPos          = LightPos;
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = {};
+        }
+
+        ShaderData->f2LightPosXZ     = m_LightPos;
+        ShaderData->f2LightSizeXZ    = m_LightSize;
         ShaderData->f4LightIntensity = float4{m_LightColor, m_LightIntensity};
 
         const auto& View     = m_Camera.GetViewMatrix();
@@ -357,7 +382,6 @@ void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime)
                 constexpr float LightMoveSpeed = 0.01f;
 
                 m_LightPos += DeltaPos * LightMoveSpeed;
-                m_LightPos = clamp(m_LightPos, float2{-3, -3}, float2{+3, +3});
 
                 m_LastFrameViewProj = {};
                 m_SampleCount       = 0;

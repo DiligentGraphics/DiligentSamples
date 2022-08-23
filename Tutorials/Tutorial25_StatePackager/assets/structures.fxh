@@ -13,10 +13,13 @@ struct ShaderConstants
 	int   iNumBounces;
 	int   iNumSamplesPerFrame;
 
-	uint  uFrameSeed1;
-	uint  uFrameSeed2;
-	float fLightPosX;
-	float fLightPosZ;
+	uint uFrameSeed1;
+	uint uFrameSeed2;
+	int  iShowOnlyLastBounce;
+	int  Padding0;
+
+	float2 f2LightPosXZ;
+	float2 f2LightSizeXZ;
 
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;
