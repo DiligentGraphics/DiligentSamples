@@ -20,6 +20,8 @@ struct ShaderConstants
 
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;
+
+	float4 f4LightIntensity;
 };
 
 #endif // _STRUCTURES_FXH_

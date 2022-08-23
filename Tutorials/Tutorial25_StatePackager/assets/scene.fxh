@@ -163,7 +163,6 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     Box.Color  = float3(0.6, 0.6, 0.6);
     IntersectRotatedAABB(Ray, Box, +PI * 0.1, Hit);
 
-
     // Small box
     Box.Center = float3(+2.5, -3.5, -1.0);
     Box.Size   = float3(1.5, 1.5, 1.5);
@@ -200,6 +199,9 @@ HitInfo IntersectScene(RayInfo Ray)
 
 float TestShadow(RayInfo Ray)
 {
+    if (Ray.Dir.y <= 0)
+        return 0.0;
+
     HitInfo Hit;
     Hit.Color    = float3(0.0, 0.0, 0.0);
     Hit.Normal   = float3(0.0, 0.0, 0.0);

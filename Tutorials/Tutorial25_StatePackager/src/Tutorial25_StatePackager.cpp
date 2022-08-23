@@ -260,6 +260,8 @@ void Tutorial25_StatePackager::Render()
         ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
         ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1));
 
+        ShaderData->f4LightIntensity = float4(1.0, 1.0, 1.0, 0.0) * 10.0;
+
         const auto& View     = m_Camera.GetViewMatrix();
         const auto& Proj     = m_Camera.GetProjMatrix();
         const auto  ViewProj = View * Proj;
