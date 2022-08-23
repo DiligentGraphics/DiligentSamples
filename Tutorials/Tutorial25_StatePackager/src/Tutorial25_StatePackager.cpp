@@ -71,6 +71,10 @@ void Tutorial25_StatePackager::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
+        ImGui::Text("Controls\n"
+                    "  Camera: LMB + WASDQE\n"
+                    "  Light:  RMB");
+
         if (ImGui::SliderInt("Num bounces", &m_NumBounces, 1, 8))
             m_SampleCount = 0;
 
@@ -265,6 +269,8 @@ void Tutorial25_StatePackager::Render()
 
         ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
         ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1));
+        ShaderData->fLightPosX  = m_LightPos.x;
+        ShaderData->fLightPosZ  = m_LightPos.y;
 
         ShaderData->f4LightIntensity = float4{m_LightColor, m_LightIntensity};
 
@@ -335,6 +341,30 @@ void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime)
     UpdateUI();
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
+    {
+        const auto& mouseState = m_InputController.GetMouseState();
+        if (m_LastMouseState.PosX >= 0 &&
+            m_LastMouseState.PosY >= 0 &&
+            (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)
+        {
+            float2 DeltaPos =
+                {
+                    mouseState.PosX - m_LastMouseState.PosX,
+                    mouseState.PosY - m_LastMouseState.PosY //
+                };
+            if (DeltaPos != float2{})
+            {
+                constexpr float LightMoveSpeed = 0.01f;
+
+                m_LightPos += DeltaPos * LightMoveSpeed;
+                m_LightPos = clamp(m_LightPos, float2{-3, -3}, float2{+3, +3});
+
+                m_LastFrameViewProj = {};
+                m_SampleCount       = 0;
+            }
+        }
+        m_LastMouseState = mouseState;
+    }
 }
 
 } // namespace Diligent

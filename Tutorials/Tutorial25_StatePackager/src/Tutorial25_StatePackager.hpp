@@ -86,11 +86,13 @@ private:
     int    m_NumSamplesPerFrame = 8;
     float3 m_LightColor         = {1, 1, 1};
     float  m_LightIntensity     = 10.f;
+    float2 m_LightPos           = {0, 0};
 
     int      m_SampleCount = 0;
     float4x4 m_LastFrameViewProj;
 
     FirstPersonCamera m_Camera;
+    MouseState        m_LastMouseState;
 };
 
 } // namespace Diligent

@@ -84,7 +84,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
         for (int j = 0; j < g_Constants.iNumBounces; ++j)
         {
             float2 rnd2 = hash22(Seed);
-            float3 f3LightPos = SampleLight(rnd2);
+            float3 f3LightPos = SampleLight(float2(g_Constants.fLightPosX, g_Constants.fLightPosZ), rnd2);
             float3 f3DirToLight = f3LightPos - f3SamplePos;
             float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
             f3DirToLight /= sqrt(fDistToLightSqr);
@@ -94,7 +94,12 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             ShadowRay.Dir    = f3DirToLight;
 
             f3Attenuation *= f3Albedo;
-            f3Radiance += f3Attenuation * TestShadow(ShadowRay) * max(dot(f3DirToLight, f3Normal), 0.0) * g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a / fDistToLightSqr;
+            f3Radiance +=
+                f3Attenuation
+                * TestShadow(ShadowRay)
+                * max(dot(f3DirToLight, f3Normal), 0.0)
+                * g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a
+                / fDistToLightSqr;
 
             Seed += uint2(17, 123);
 
@@ -105,7 +110,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             Ray.Origin = f3SamplePos;
             Ray.Dir    = SampleDirectionCosineHemisphere(f3Normal, rnd2);
 
-            HitInfo Hit = IntersectScene(Ray);
+            HitInfo Hit = IntersectScene(Ray, float2(g_Constants.fLightPosX, g_Constants.fLightPosZ));
             if (Hit.Type != HIT_TYPE_LAMBERTIAN)
                 break;
 
