@@ -90,6 +90,9 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             if (g_Constants.iShowOnlyLastBounce != 0)
                 f3PathContrib = float3(0.0, 0.0, 0.0);
 
+            if (all(f3Normal == float3(0, 0, 0)))
+                break;
+
             float2 rnd2 = hash22(Seed);
             float3 f3LightSample = SampleLight(g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ, rnd2);
             float3 f3DirToLight  = f3LightSample - f3SamplePos;
