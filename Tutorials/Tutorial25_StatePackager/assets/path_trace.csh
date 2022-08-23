@@ -22,6 +22,7 @@ cbuffer cbConstants
 // Returns a random cosine-weighted direction on the hemisphere around z = 1
 float3 SampleDirectionCosineHemisphere(float2 UV)
 {
+    UV = UV * 2.0 - 1.0;
     // Square -> disk
     float2 scale = abs(UV);
     scale /= max(scale.x, scale.y);
@@ -73,6 +74,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     float3 f3Emissive = g_Emissive.Load(int3(ThreadId.xy, 0)).xyz;
     float3 f3Radiance = float3(0.0, 0.0, 0.0);
 
+    float fLightArea = g_Constants.f2LightSizeXZ.x * g_Constants.f2LightSizeXZ.y * 2.0;
+
     uint2 Seed = ThreadId.xy + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
     for (int i = 0; i < g_Constants.iNumSamplesPerFrame; ++i)
     {
@@ -84,12 +87,12 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
         float3 f3Attenuation = float3(1.0, 1.0, 1.0);
         for (int j = 0; j < g_Constants.iNumBounces; ++j)
         {
-            if (g_Constants.iShowOnlyLastBounce != 0 && j == g_Constants.iNumBounces-1)
+            if (g_Constants.iShowOnlyLastBounce != 0)
                 f3PathContrib = float3(0.0, 0.0, 0.0);
 
             float2 rnd2 = hash22(Seed);
-            float3 f3LightPos = SampleLight(g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ, rnd2);
-            float3 f3DirToLight = f3LightPos - f3SamplePos;
+            float3 f3LightSample = SampleLight(g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ, rnd2);
+            float3 f3DirToLight  = f3LightSample - f3SamplePos;
             float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
             f3DirToLight /= sqrt(fDistToLightSqr);
 
@@ -103,7 +106,9 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 * TestShadow(ShadowRay)
                 * max(dot(f3DirToLight, f3Normal), 0.0)
                 * g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a
-                / fDistToLightSqr;
+                * max(f3DirToLight.y, 0.0)
+                * fLightArea
+                / (PI * fDistToLightSqr);
 
             Seed += uint2(17, 123);
 
@@ -116,7 +121,11 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
             HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
             if (Hit.Type != HIT_TYPE_LAMBERTIAN)
+            {
+                if (g_Constants.iShowOnlyLastBounce != 0)
+                    f3PathContrib = float3(0.0, 0.0, 0.0);
                 break;
+            }
 
             f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
             f3Albedo    = Hit.Color;
