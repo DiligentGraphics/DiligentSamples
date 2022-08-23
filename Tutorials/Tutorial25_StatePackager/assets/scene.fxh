@@ -3,7 +3,7 @@
 
 #define PI      3.1415927
 #define INF     1e+30
-#define EPSILON 1e-3
+#define EPSILON 5e-2
 
 float3 ClipToWorld(float4 ClipPos, float4x4 ViewProjInvMat)
 {
@@ -77,13 +77,17 @@ bool IntersectAABB(in    RayInfo Ray,
     float3 t_max  = max(t1, t2);
     float  t_near = max(max(t_min.x, t_min.y), t_min.z);
     float  t_far  = min(min(t_max.x, t_max.y), t_max.z);
+    if (t_near >= t_far)
+        return false;
 
-    if (t_near >= t_far || t_near < EPSILON || t_near > Hit.Distance)
+    float t = t_near > EPSILON ? t_near : t_far;
+    if (t < EPSILON || t_near > Hit.Distance)
         return false;
 
     Hit.Color    = Box.Color;
+    // Compute normal for the entry point. We only use internal intersection for shadows.
     Hit.Normal   = -sign(Ray.Dir) * step(t_min.yzx, t_min.xyz) * step(t_min.zxy, t_min.xyz);
-    Hit.Distance = t_near;
+    Hit.Distance = t;
     Hit.Type     = Box.Type;
 
     return true;

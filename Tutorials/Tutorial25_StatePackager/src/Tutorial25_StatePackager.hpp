@@ -69,7 +69,7 @@ private:
 
         static constexpr auto AlbedoFormat   = TEX_FORMAT_RGBA8_UNORM;
         static constexpr auto NormalFormat   = TEX_FORMAT_RGBA8_UNORM;
-        static constexpr auto DepthFormat    = TEX_FORMAT_R16_UNORM;
+        static constexpr auto DepthFormat    = TEX_FORMAT_R32_FLOAT; // 16-bit is not enough
         static constexpr auto EmissiveFormat = TEX_FORMAT_R11G11B10_FLOAT;
 
         RefCntAutoPtr<ITexture> pAlbedo;

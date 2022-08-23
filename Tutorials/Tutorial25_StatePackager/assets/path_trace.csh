@@ -31,7 +31,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     }
 
     float2 f2ScreenSize = float2(g_Constants.fScreenWidth, g_Constants.fScreenHeight);
-    float3 f3WorldPos   = ScreenToWorld(float2(ThreadId.xy)  + float2(0.5, 0.5), fDepth, f2ScreenSize, g_Constants.ViewProjInvMat);
+    float3 f3WorldPos   = ScreenToWorld(float2(ThreadId.xy) + float2(0.5, 0.5), fDepth, f2ScreenSize, g_Constants.ViewProjInvMat);
 
     float3 f3Albedo   = g_Albedo.Load(int3(ThreadId.xy, 0)).xyz;
     float3 f3Emissive = g_Emissive.Load(int3(ThreadId.xy, 0)).xyz;

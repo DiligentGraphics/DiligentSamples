@@ -50,7 +50,7 @@ void main(in  PSInput  PSIn,
     {
         float3 HitWorldPos = Ray.Origin + Ray.Dir * Hit.Distance;
         float4 HitClipPos = mul(float4(HitWorldPos, 1.0), g_Constants.ViewProjMat);
-        PSOut.Depth = HitClipPos.z / HitClipPos.w;
+        PSOut.Depth = min(HitClipPos.z / HitClipPos.w, 1.0);
     }
     else
     {
