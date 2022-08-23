@@ -71,14 +71,20 @@ void Tutorial25_StatePackager::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (ImGui::Checkbox("Next event estimation", &m_bUseNextEventEstimation))
-            m_SampleCount = 0;
-
         if (ImGui::SliderInt("Num bounces", &m_NumBounces, 1, 8))
             m_SampleCount = 0;
 
         if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
             m_SampleCount = 0;
+
+        if (ImGui::SliderFloat("Light intensity", &m_LightIntensity, 1, 50))
+            m_SampleCount = 0;
+
+        if (ImGui::ColorPicker3("Light color", &m_LightColor.x))
+        {
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = {}; // Need to update G-buffer
+        }
     }
     ImGui::End();
 }
@@ -260,7 +266,7 @@ void Tutorial25_StatePackager::Render()
         ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
         ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1));
 
-        ShaderData->f4LightIntensity = float4(1.0, 1.0, 1.0, 0.0) * 10.0;
+        ShaderData->f4LightIntensity = float4{m_LightColor, m_LightIntensity};
 
         const auto& View     = m_Camera.GetViewMatrix();
         const auto& Proj     = m_Camera.GetProjMatrix();

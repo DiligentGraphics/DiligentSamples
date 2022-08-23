@@ -94,7 +94,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             ShadowRay.Dir    = f3DirToLight;
 
             f3Attenuation *= f3Albedo;
-            f3Radiance += f3Attenuation * TestShadow(ShadowRay) * max(dot(f3DirToLight, f3Normal), 0.0) * g_Constants.f4LightIntensity.rgb / fDistToLightSqr;
+            f3Radiance += f3Attenuation * TestShadow(ShadowRay) * max(dot(f3DirToLight, f3Normal), 0.0) * g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a / fDistToLightSqr;
 
             Seed += uint2(17, 123);
 

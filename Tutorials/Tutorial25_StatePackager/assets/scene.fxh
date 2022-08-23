@@ -7,6 +7,9 @@
 
 float3 ClipToWorld(float4 ClipPos, float4x4 ViewProjInvMat)
 {
+#if defined(DESKTOP_GL) || defined(GL_ES)
+    ClipPos.y *= -1.0;
+#endif
     // Reconstruct world position by applying inverse view-projection matrix
     float4 WorldPos = mul(ClipPos, ViewProjInvMat);
     return WorldPos.xyz / WorldPos.w;
@@ -174,9 +177,9 @@ BoxInfo GetLight()
 {
     BoxInfo Box;
     Box.Type = HIT_TYPE_DIFFUSE_LIGHT;
-    Box.Center = float3(0.0, 4.95, 0.0);
+    Box.Center = float3(0.0, 4.9, 0.0);
     Box.Size   = float3(1.5, 0.02, 1.5);
-    Box.Color  = float3(5.0, 5.0, 5.0);
+    Box.Color  = float3(0.0, 0.0, 0.0);
     return Box;
 }
 

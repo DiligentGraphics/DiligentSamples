@@ -82,9 +82,10 @@ private:
     static constexpr auto   RadianceAccumulationFormat = TEX_FORMAT_RGBA32_FLOAT;
     RefCntAutoPtr<ITexture> m_pRadianceAccumulationBuffer;
 
-    bool m_bUseNextEventEstimation = true;
-    int  m_NumBounces              = 3;
-    int  m_NumSamplesPerFrame      = 8;
+    int    m_NumBounces         = 3;
+    int    m_NumSamplesPerFrame = 8;
+    float3 m_LightColor         = {1, 1, 1};
+    float  m_LightIntensity     = 10.f;
 
     int      m_SampleCount = 0;
     float4x4 m_LastFrameViewProj;

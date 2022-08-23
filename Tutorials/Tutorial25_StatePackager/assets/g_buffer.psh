@@ -40,7 +40,7 @@ void main(in  PSInput  PSIn,
     if (Hit.Type == HIT_TYPE_LAMBERTIAN)
         Albedo = Hit.Color;
     else if (Hit.Type == HIT_TYPE_DIFFUSE_LIGHT)
-        Emissive = Hit.Color;
+        Emissive = g_Constants.f4LightIntensity.rgb;
 
     PSOut.Albedo   = float4(Albedo, 0.0);
     PSOut.Emissive = float4(Emissive, 0.0);
