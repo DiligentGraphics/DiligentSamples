@@ -23,6 +23,7 @@ set(SHADERS
     assets/RenderStates.json
     assets/structures.fxh
     assets/scene.fxh
+    assets/hash.fxh
     ${PSO_ARCHIVE}
 )
 
@@ -47,6 +48,7 @@ add_custom_command(OUTPUT ${PSO_ARCHIVE} # We must use full path here!
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/path_trace.csh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/structures.fxh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/scene.fxh"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/assets/hash.fxh"
                            "$<TARGET_FILE:Diligent-RenderStatePackager>"
                    COMMENT "Creating render state archive..."
                    VERBATIM

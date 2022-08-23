@@ -171,6 +171,16 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     IntersectRotatedAABB(Ray, Box, -PI * 0.1, Hit);
 }
 
+BoxInfo GetLight()
+{
+    BoxInfo Box;
+    Box.Type = HIT_TYPE_DIFFUSE_LIGHT;
+    Box.Center = float3(0.0, 4.95, 0.0);
+    Box.Size   = float3(1.5, 0.02, 1.5);
+    Box.Color  = float3(5.0, 5.0, 5.0);
+    return Box;
+}
+
 HitInfo IntersectScene(RayInfo Ray)
 {
     HitInfo Hit;
@@ -182,11 +192,7 @@ HitInfo IntersectScene(RayInfo Ray)
     IntersectWalls(Ray, Hit);
 
     // Light
-    BoxInfo Box;
-    Box.Type = HIT_TYPE_DIFFUSE_LIGHT;
-    Box.Center = float3(0.0, 4.95, 0.0);
-    Box.Size   = float3(1.5, 0.02, 1.5);
-    Box.Color  = float3(5.0, 5.0, 5.0);
+    BoxInfo Box = GetLight();
     IntersectAABB(Ray, Box, Hit);
 
     return Hit;
@@ -202,6 +208,17 @@ float TestShadow(RayInfo Ray)
     IntersectSceneInterior(Ray, Hit);
 
     return Hit.Distance < INF ? 0.0 : 1.0;
+}
+
+float3 SampleLight(float2 uv)
+{
+    BoxInfo Box = GetLight();
+    float3 Corner0 = Box.Center - Box.Size;
+    float3 Corner1 = Box.Center + Box.Size;
+    float3 Pos;
+    Pos.xz = lerp(Corner0.xz, Corner1.xz, uv);
+    Pos.y  = Corner0.y;
+    return Pos;
 }
 
 #endif // _SCENE_FXH_

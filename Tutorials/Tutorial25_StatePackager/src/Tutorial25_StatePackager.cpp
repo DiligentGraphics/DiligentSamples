@@ -33,6 +33,7 @@
 #include "FileWrapper.hpp"
 #include "DataBlobImpl.hpp"
 #include "CallbackWrapper.hpp"
+#include "HashUtils.hpp"
 
 namespace Diligent
 {
@@ -255,6 +256,9 @@ void Tutorial25_StatePackager::Render()
         ShaderData->uScreenHeight = SCDesc.Height;
         ShaderData->fScreenWidth  = static_cast<float>(SCDesc.Width);
         ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
+
+        ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
+        ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1));
 
         const auto& View     = m_Camera.GetViewMatrix();
         const auto& Proj     = m_Camera.GetProjMatrix();
