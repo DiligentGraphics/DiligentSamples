@@ -162,17 +162,28 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     BoxInfo Box;
     Box.Type = HIT_TYPE_LAMBERTIAN;
 
+    float Box1Rotation = +PI * 0.1;
+    float Box2Rotation = -PI * 0.1;
+    // In OpenGL, clip space is flipped vertically. If we rotate objects in the vertex shader,
+    // this does not matter as the axis is flipped by the rasterizer.
+    // We, however, work in the pixel shader, so we have to negate the
+    // rotation directions to compensate for the coordinate system change.
+#if defined(DESKTOP_GL) || defined(GL_ES)
+    Box1Rotation *= -1.0;
+    Box2Rotation *= -1.0;
+#endif
+
     // Tall box
     Box.Center = float3(-2.0, -2.0,  1.5);
     Box.Size   = float3(1.3, 3.0, 1.3);
     Box.Color  = float3(0.6, 0.6, 0.6);
-    IntersectRotatedAABB(Ray, Box, +PI * 0.1, Hit);
+    IntersectRotatedAABB(Ray, Box, Box1Rotation, Hit);
 
     // Small box
     Box.Center = float3(+2.5, -3.5, -1.0);
     Box.Size   = float3(1.5, 1.5, 1.5);
     Box.Color  = float3(0.6, 0.6, 0.6);
-    IntersectRotatedAABB(Ray, Box, -PI * 0.1, Hit);
+    IntersectRotatedAABB(Ray, Box, Box2Rotation, Hit);
 }
 
 BoxInfo GetLight(float2 Pos, float2 Size)

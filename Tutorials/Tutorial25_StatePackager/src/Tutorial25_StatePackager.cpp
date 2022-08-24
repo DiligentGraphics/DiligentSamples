@@ -218,8 +218,9 @@ void Tutorial25_StatePackager::WindowResize(Uint32 Width, Uint32 Height)
     float NearPlane   = 0.1f;
     float FarPlane    = 50.f;
     float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
-    m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f,
-                            m_pSwapChain->GetDesc().PreTransform, m_pDevice->GetDeviceInfo().IsGLDevice());
+    // Note: don't use GL matrix in GL mode since we are writing depth directly to the G-buffer
+    static constexpr bool UseGLProjection = false;
+    m_Camera.SetProjAttribs(NearPlane, FarPlane, AspectRatio, PI_F / 4.f, m_pSwapChain->GetDesc().PreTransform, UseGLProjection);
 }
 
 void Tutorial25_StatePackager::CreateGBuffer()
