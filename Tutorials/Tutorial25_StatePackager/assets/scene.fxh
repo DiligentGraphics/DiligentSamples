@@ -83,6 +83,8 @@ bool IntersectAABB(in    RayInfo Ray,
     if (t_near >= t_far)
         return false;
 
+    // Use far intersection if t_near > EPSILON.
+    // This is important to avoid light leaks.
     float t = t_near > EPSILON ? t_near : t_far;
     if (t < EPSILON || t_near > Hit.Distance)
         return false;
@@ -114,7 +116,7 @@ bool IntersectRotatedAABB(in    RayInfo Ray,
 
 void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 {
-    float RoomSize = 10;
+    float RoomSize  = 10;
     float WallThick = 0.05;
 
     BoxInfo Box;

@@ -29,11 +29,11 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "Dearchiver.h"
-#include "imgui.h"
 #include "FileWrapper.hpp"
 #include "DataBlobImpl.hpp"
 #include "CallbackWrapper.hpp"
 #include "HashUtils.hpp"
+#include "imgui.h"
 
 namespace Diligent
 {
@@ -114,23 +114,30 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
 
     CreateUniformBuffer(m_pDevice, sizeof(HLSL::ShaderConstants), "Shader constants CB", &m_pShaderConstantsCB);
 
+    // Create the dearchiver object
     RefCntAutoPtr<IDearchiver> pDearchiver;
     DearchiverCreateInfo       DearchiverCI{};
     m_pEngineFactory->CreateDearchiver(DearchiverCI, &pDearchiver);
 
+    // Load archive data from file
     FileWrapper pArchive{"StateArchive.bin"};
     VERIFY_EXPR(pArchive);
     auto pArchiveData = DataBlobImpl::Create();
     pArchive->Read(pArchiveData);
     VERIFY_EXPR(pArchiveData);
+    // Load the archive contents into dearchiver
     pDearchiver->LoadArchive(pArchiveData);
 
+    // Unpack G-buffer PSO
     {
         PipelineStateUnpackInfo UnpackInfo;
         UnpackInfo.pDevice      = m_pDevice;
         UnpackInfo.PipelineType = PIPELINE_TYPE_GRAPHICS;
         UnpackInfo.Name         = "G-Buffer PSO";
 
+        // Define the callback that is called by the dearchiver before creating
+        // the pipeline to let the application modify some parameters. We will use
+        // it to set the render target formats.
         auto ModifyGBufferPSODesc = MakeCallback(
             [](PipelineStateCreateInfo& PSODesc) {
                 auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
@@ -155,6 +162,7 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
         VERIFY_EXPR(m_pGBufferSRB);
     }
 
+    // Unpack the path trace PSO
     {
         PipelineStateUnpackInfo UnpackInfo;
         UnpackInfo.pDevice      = m_pDevice;
@@ -166,12 +174,16 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
         m_pPathTracePSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "cbConstants")->Set(m_pShaderConstantsCB);
     }
 
+    // Unpack the resolve PSO
     {
         PipelineStateUnpackInfo UnpackInfo;
         UnpackInfo.pDevice      = m_pDevice;
         UnpackInfo.PipelineType = PIPELINE_TYPE_GRAPHICS;
         UnpackInfo.Name         = "Resolve PSO";
 
+        // Define the callback to set the render target and depth stencil formats.
+        // These formats are only known at run time, so we can't define them in the
+        // render state notation file.
         auto ModifyResolvePSODesc = MakeCallback(
             [this](PipelineStateCreateInfo& PSODesc) {
                 auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
@@ -214,9 +226,8 @@ void Tutorial25_StatePackager::CreateGBuffer()
 {
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
-    // Create window-size offscreen render target
     TextureDesc TexDesc;
-    TexDesc.Name      = "G-buffer Albedo";
+    TexDesc.Name      = "G-buffer albedo";
     TexDesc.Type      = RESOURCE_DIM_TEX_2D;
     TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
     TexDesc.Format    = GBuffer::AlbedoFormat;
@@ -237,6 +248,8 @@ void Tutorial25_StatePackager::CreateGBuffer()
     m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pEmissive);
     VERIFY_EXPR(m_GBuffer.pEmissive);
 
+    // Note that since we are generating our G-buffer by ray tracing the scene,
+    // we bind depth buffer as render target, not as the depth-stencil buffer.
     TexDesc.Name      = "G-buffer depth";
     TexDesc.Format    = GBuffer::DepthFormat;
     TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
@@ -269,11 +282,13 @@ void Tutorial25_StatePackager::CreateGBuffer()
 // Render a frame
 void Tutorial25_StatePackager::Render()
 {
+    // Create G-buffer, if necessary
     if (!m_GBuffer)
         CreateGBuffer();
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
+    // Update the constant buffer
     bool UpdateGBuffer = false;
     {
         MapHelper<HLSL::ShaderConstants> ShaderData{m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD};
@@ -283,7 +298,7 @@ void Tutorial25_StatePackager::Render()
         ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
 
         ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
-        ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1));
+        ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1715));
 
         ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
 
@@ -339,6 +354,7 @@ void Tutorial25_StatePackager::Render()
 
     // Path trace
     {
+        // Matches the THREAD_GROUP_SIZE in the render state notation file
         static constexpr Uint32 ThreadGroupSize = 8;
 
         m_pImmediateContext->SetPipelineState(m_pPathTracePSO);

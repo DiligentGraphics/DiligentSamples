@@ -43,7 +43,7 @@ public:
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
-    virtual const Char* GetSampleName() const override final { return "Tutorial19: Render Passes"; }
+    virtual const Char* GetSampleName() const override final { return "Tutorial25: Render State Packager"; }
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
