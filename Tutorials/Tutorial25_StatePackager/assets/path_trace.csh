@@ -79,7 +79,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
     float fLightArea = g_Constants.f2LightSizeXZ.x * g_Constants.f2LightSizeXZ.y * 2.0;
 
-    uint2 Seed = ThreadId.xy + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
+    uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
     for (int i = 0; i < g_Constants.iNumSamplesPerFrame; ++i)
     {
         // The first sample is always the G-buffer
@@ -125,7 +125,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 / (PI * fDistToLightSqr);
 
             // Update the seed
-            Seed += uint2(17, 123);
+            Seed += uint2(129, 1725);
 
             if (j == g_Constants.iNumBounces-1)
             {

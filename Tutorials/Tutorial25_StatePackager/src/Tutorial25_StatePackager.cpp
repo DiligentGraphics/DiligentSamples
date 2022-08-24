@@ -298,8 +298,11 @@ void Tutorial25_StatePackager::Render()
         ShaderData->fScreenWidth  = static_cast<float>(SCDesc.Width);
         ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
 
-        ShaderData->uFrameSeed1 = static_cast<uint>(ComputeHash(m_SampleCount));
-        ShaderData->uFrameSeed2 = static_cast<uint>(ComputeHash(m_SampleCount + 1715));
+        const auto Seed1 = ComputeHash(m_SampleCount);
+        const auto Seed2 = ComputeHash(Seed1);
+
+        ShaderData->uFrameSeed1 = static_cast<uint>(Seed1);
+        ShaderData->uFrameSeed2 = static_cast<uint>(Seed2);
 
         ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
 
