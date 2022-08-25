@@ -1,38 +1,41 @@
 # Tutorial25 - Render State Packager
 
-This tutorial shows how to create and archive pipeline states off-line with the render state packager tool
-using the simple path tracer as an example.
+This tutorial shows how to create and archive pipeline states with the render state packager off-line tool
+on the example of a simple path tracer.
 
+![](Screenshot.jpg)
 
 ## Render State Packager
 
-Diligent Engine allows creating shaders at run-time from source and then using them to create pipeline states.
-While easy and convenient, this approach has downsides:
+Diligent Engine allows compiling shaders from source code at run-time and using them to create pipeline states.
+While simple and convenient, this approach has downsides:
 
 - Compiling shaders at run-time is expensive. An application that uses a lot of shaders may see significant load times.
 - Compiling shaders at run-time requires bundling the compiler with the engine. For Vulkan, this includes glslang, SPIRV-Tools
   and other components, which significantly increase the binary size.
-- After shaders are compiled, Diligent needs to patch them to make them compatible with resource layout or
-  pipeline resource signatures.
+- After shaders are compiled, Diligent further needs to patch them to make them compatible with the pipeline resource layout or
+  resource signatures.
 
 Pipeline state processing can be completely performed off-line using the 
 [Render state packager](https://github.com/DiligentGraphics/DiligentTools/tree/master/RenderStatePackager) tool.
 The tool uses the `Diligent Render State Notation`, a JSON-based render state description language. One archive
-produced by the packager can contain multiple pipeline states, shaders and pipeline resource signatures that can
+produced by the packager can contain multiple pipeline states as well as shaders and pipeline resource signatures that can
 be loaded and immediately used at run-time without any overhead. Each object can also contain data for different
 backends (e.g. DX12 and Vulkan), thus one archive can be used on different platforms.
 
 Archivig pipelines off-line provides a number of benefits:
 
-- Run-time loading overhead is reduced to minimum as no shader compilation or byte code patching is performed
-- Shader compilation tool chain can be removed from the binary reducing its size
+- Run-time loading overhead is reduced to minimum as no shader compilation or byte code patching is performed.
+- Shader compilation tool chain can be removed from the binary to reduce its size.
 - Render states are separated from the executable code that improves the code structure.
   Shaders and pipeline states can be updated without the need to rebuild the application.
 
+In this tutorial we will use the render state packager to create an archive that contains all pipeline
+states required to perform path tracing.
 
 ## Path Tracing
 
-This tutorial implements a basic path tracing algorithm with the next event estimation (aka light source sampling).
+This tutorial implements a basic path tracing algorithm with next event estimation (aka light source sampling).
 In this section we provide some details about the rendering process. Additional information on path tracing can be easily
 found on the internet. [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/)
 could be a good starting point.
@@ -52,8 +55,8 @@ At the first stage, the scene is rendered into a G-buffer consisting of the foll
 
 At the second state, a compute shader is executed that for each pixel of the G-buffer reconstructs its
 world-space position, traces a light path through the scene and adds the contribution to the radiance accumulation
-buffer. Each frame, a set number of new paths are traced and their contributions are accumulated. When camera moves,
-light attributes change, the accumulation buffer is cleard and the process starts from scratch.
+buffer. Each frame, a set number of new paths are traced and their contributions are accumulated. If camera moves
+or light attributes change, the accumulation buffer is cleard and the process starts over.
 
 Finally, at the third stage, the radiance in the light accumulation buffer is resolved by averaging the contribution of all
 light paths.
@@ -76,7 +79,7 @@ struct BoxInfo
 };
 ```
 
-For the type, two values are allowed: lambertian diffuse surface and a light source.
+For the type, two values are allowed: lambertian diffuse surface and light source.
 
 A ray is defined by its origin and normalized direction:
 
@@ -102,7 +105,7 @@ struct HitInfo
 };
 ```
 
-An intersection of the ray with the box is performed by the `IntersectAABB` function:
+An intersection of the ray with the box is computed by the `IntersectAABB` function:
 
 ```hlsl
 bool IntersectAABB(in    RayInfo Ray,
@@ -114,7 +117,7 @@ The function takes the ray information, box attributes and also the current hit 
 If the new hit point is closer than the current one defined by the `Hit`, the struct is updated with
 the new color, normal, distance and hit type.
 
-Casting a ray though the scene then consists of intersecting the ray through each box:
+Casting a ray though the scene then consists of intersecting the ray with each box:
 
 ```hlsl
 float RoomSize  = 10;
@@ -134,6 +137,12 @@ Box.Color  = Green;
 IntersectAABB(Ray, Box, Hit);
 
 // Left wall
+Box.Center = float3(-RoomSize * 0.5 - WallThick * 0.5, 0.0, 0.0);
+Box.Size   = float3(WallThick, RoomSize * 0.5, RoomSize * 0.5);
+Box.Color  = Red;
+IntersectAABB(Ray, Box, Hit);
+
+// Ceiling
 // ...
 ```
 
@@ -173,7 +182,7 @@ PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 ```
 
 In this example we only have one light source, so we use the light properties from the
-constant buffer. Real applications will retrieve the light properties using the ray tracing.
+constant buffer. Real applications will retrieve the light properties from the hit point.
 
 Finally, we compute the depth by transforming the hit point with the view-projection matrix:
 
@@ -189,12 +198,12 @@ PSOut.Depth        = min(HitClipPos.z / HitClipPos.w, 1.0);
 Path tracing is the core part of the rendering process and is implemented by a compute shader that
 runs one thread for each screen pixel. It starts from positions defined by the G-buffer
 and traces a given number of light paths through the scene, each path performing a given number of bounces.
-For each bounce, we trace a ray towards the light source and compute its contribution. We then next select
-a random direction at the shading point using the cosine-weighted hemispherical distribution, cast
-a ray in this direction and repeat the process at the new location.
+For each bounce, the shader traces a ray towards the light source and compute its contribution. It then selects
+a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
+a ray in this direction and repeats the process at the new location.
 
-The shader starts with reconstructing the world space position of the current sample using the inverse
-view-projection matrix, and also reading the sample attributes from the G-buffer:
+The shader starts with reading the sample attributes from the G-buffer and reconstructing the world space position
+of the current sample using the inverse view-projection matrix:
 
 ```hlsl
 float  fDepth       = g_Depth.Load(int3(ThreadId.xy, 0)).x;
@@ -214,7 +223,7 @@ uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g
 ```
 
 This is quite important moment: the seed must be unique for each frame, each sample and every bounce to
-produce a good random sequence. Bad sequence will result in slower convergence.
+produce a good random sequence. Bad sequences will result in slower convergence or biased result.
 `g_Constants.uFrameSeed1` and `g_Constants.uFrameSeed2` are random frame seeds computed by the CPU for each frame.
 
 The shader then traces a given number of light paths and accumulates their contributions. Each path starts from the 
@@ -324,7 +333,7 @@ HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightS
 Cosine-weighted distribution assigns more random samples near the normal direction and fewer
 at the surface tangent, since they produce lesser contribution due to the 'N dot L' term.
 
-At this point, if we hit the light we stop the loop - the light contribution is accounted for
+At this point, if we hit the light, we stop the loop - the light contribution is accounted for
 separately:
 
 ```hlsl
@@ -332,7 +341,7 @@ if (Hit.Type != HIT_TYPE_LAMBERTIAN)
     break;
 ```
 
-Finally, we multiply the attenuation with the current surface point albedo and
+Finally, we multiply the attenuation with the current surface albedo and
 update the sample properties:
 
 ```hlsl
@@ -393,13 +402,13 @@ are unpacked using the `IDearchiver` object.
 Diligent Render State Notation (DRSN) is a JSON-based render state description language.
 The DRSN file conists of the following sections:
 
-- "Imports" sections defines other DRSN files whose objects should be imported into this one,
+- `Imports` sections defines other DRSN files whose objects should be imported into this one,
   pretty much the same way the `#include` directive works.
-- "Defaults" section defines the default values for objects defined in the file
-- "Shaders" section contains shader descriptions
-- "RenderPasses" section defines render passes used by the pipelines
-- "ResourceSignatures" section defines pipeline resource signatures
-- "Pipelines" section contains pipeline states
+- `Defaults` section defines the default values for objects defined in the file.
+- `Shaders` section contains shader descriptions.
+- `RenderPasses` section defines render passes used by the pipelines.
+- `ResourceSignatures` section defines pipeline resource signatures.
+- `Pipelines` section contains pipeline states.
 
 All objects in DRSN files are referenced by names that must be unique for each object
 category. The names are used at run-time to unpack the states.
@@ -475,7 +484,7 @@ The command line uses the following options:
 For the [full list of command line options](https://github.com/DiligentGraphics/DiligentTools/tree/master/RenderStatePackager#command-line-arguments),
 run the packager with `-h` or `--help` option.
 
-If you use CMake, you can define a custom command to build the archive:
+If you use CMake, you can define a custom command to create the archive as a build step:
 
 ```CMake
 set(PSO_ARCHIVE ${CMAKE_CURRENT_SOURCE_DIR}/assets/StateArchive.bin)
@@ -533,13 +542,13 @@ UnpackInfo.Name         = "Resolve PSO";
 While most of the pipeline state parameters can be defined at build time,
 some can only be specified at run-time. For instance, the swap chain format
 may not be known at the archive unpacking time. The dearchiver gives an application
-a chance to modify some pipeline state create properties through a special callback.
-Properties that can be modified include the render target formats, depth-stencil
+a chance to modify some of the pipeline state create properties through a special callback.
+Properties that can be modified include render target and depth buffer formats, depth-stencil
 state, blend state, rasterizer state. Note that properties that effect the resource
 layout can't be modified.
-Note that modifying allowed properties does hinder the pipeline loading speed.
+Note also that modifying properties does hinder the loading speed.
 
-We define the callback that sets the render target formats as follows:
+We define the callback that sets the render target formats using the `MakeCallback` helper function:
 
 ```cpp
 auto ModifyResolvePSODesc = MakeCallback(
@@ -562,14 +571,13 @@ Finally, we call the `UnpackPipelineState` method to create the PSO from the arc
 pDearchiver->UnpackPipelineState(UnpackInfo, &m_pResolvePSO);
 ```
 
-
 ### Rendering
 
-After pipeline states are unpacked from the archive, they can be used in
+After the pipeline states are unpacked from the archive, they can be used in
 a usual way. We need to create the shader resource binding objects and
 initialize the variables.
 
-To render the scene, we run each stage we described above. First, populate the G-buffer:
+To render the scene, we run each of the three stages described above. First, populate the G-buffer:
 
 ```cpp
 ITextureView* ppRTVs[] = {
@@ -615,11 +623,11 @@ m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 
 ### Controlling the Application
 
-- Move camera: left mouse button + WSADQE
-- Move light:  right mouse button
+- *Move camera*: left mouse button + WSADQE
+- *Move light*:  right mouse button
 
 You can also change the following parameters:
-- Num bounces - the number of bounces in each path
-- Show only last bounce - render only the last bounce in the path
-- Samples per frame - the number of light paths to take each frame
-- Light intensity, width, height and color - control different light parameters
+- *Num bounces* - the number of bounces in each path
+- *Show only last bounce* - render only the last bounce in the path
+- *Samples per frame* - the number of light paths to take each frame for each pixel
+- *Light intensity*, *width*, *height* and *color* - different light parameters

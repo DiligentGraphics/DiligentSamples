@@ -138,13 +138,13 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
     Box.Color  = Red;
     IntersectAABB(Ray, Box, Hit);
 
-    // Top wall
+    // Ceiling
     Box.Center = float3(0.0, +RoomSize * 0.5 + WallThick * 0.5, 0.0);
     Box.Size   = float3(RoomSize * 0.5, WallThick, RoomSize * 0.5);
     Box.Color  = Grey;
     IntersectAABB(Ray, Box, Hit);
 
-    // Bottom wall
+    // Floor
     Box.Center = float3(0.0, -RoomSize * 0.5 + WallThick * 0.5, 0.0);
     Box.Size   = float3(RoomSize * 0.5, WallThick, RoomSize * 0.5);
     Box.Color  = Grey;

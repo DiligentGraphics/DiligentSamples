@@ -54,6 +54,7 @@ To build and run the applications in the module, please follow the [instructions
   - [22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples#tutorial-22---hybrid-rendering)
   - [23 - Command Queues](https://github.com/DiligentGraphics/DiligentSamples#tutorial-23---command-queues)
   - [24 - Variable Rate Shading](https://github.com/DiligentGraphics/DiligentSamples#tutorial-24---variable-rate-shading)
+  - [25 - Render State Packager](https://github.com/DiligentGraphics/DiligentSamples#tutorial-25---render-state-packager)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
@@ -255,6 +256,15 @@ This tutorial demonstrates how to use multiple command queues to perform renderi
 This tutorial demonstrates how to use variable rate shading to reduce the pixel shading load.
 
 ![](Tutorials/Tutorial24_VRS/Animation_Large.gif)
+
+
+## [Tutorial 25 - Render State Packager](https://github.com/DiligentGraphics/DiligentSamples/tree/tutorial25/Tutorials/Tutorial25_StatePackager)
+
+This tutorial shows how to create and archive pipeline states with the render state packager off-line tool
+on the example of a simple path tracer.
+
+![](Tutorials/Tutorial25_StatePackager/Screenshot.jpg)
+
 
 # Samples
 
