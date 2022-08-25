@@ -77,7 +77,10 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     float3 f3Emissive = g_Emissive.Load(int3(ThreadId.xy, 0)).xyz;
     float3 f3Radiance = float3(0.0, 0.0, 0.0);
 
-    float fLightArea = g_Constants.f2LightSizeXZ.x * g_Constants.f2LightSizeXZ.y * 2.0;
+    // We have a single light in this example
+    float  fLightArea       = g_Constants.f2LightSizeXZ.x * g_Constants.f2LightSizeXZ.y * 2.0;
+    float3 f3LightIntensity = g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a;
+    float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
 
     uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
     for (int i = 0; i < g_Constants.iNumSamplesPerFrame; ++i)
@@ -96,13 +99,10 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             if (g_Constants.iShowOnlyLastBounce != 0)
                 f3PathContrib = float3(0.0, 0.0, 0.0);
 
-            if (all(Equal(f3Normal, float3(0, 0, 0))))
+            if (all(Equal(f3Normal, float3(0.0, 0.0, 0.0))))
                 break;
 
-            // Get the random sample on the light source.
-            // Note that a more accurate way to sample the light source is to use the projected
-            // solid angle. For this example however just taking a random sample in the rectanlge
-            // is OK.
+            // Get random sample on the light source surface.
             float2 rnd2 = hash22(Seed);
             float3 f3LightSample = SampleLight(g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ, rnd2);
             float3 f3DirToLight  = f3LightSample - f3SamplePos;
@@ -113,16 +113,23 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             RayInfo ShadowRay;
             ShadowRay.Origin = f3SamplePos;
             ShadowRay.Dir    = f3DirToLight;
+            float fLightVisibility = TestShadow(ShadowRay);
 
-            f3Attenuation *= f3Albedo;
+            // In Monte-Carlo integration, we pretend that each sample speaks for the full light
+            // source surface, so we project the entire light surface area onto the hemisphere
+            // around the shaded point and see how much solid angle it covers.
+            float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
+
+            // Lambertian BRDF
+            float3 f3BRDF = f3Albedo / PI;
+
             f3PathContrib +=
                 f3Attenuation
-                * TestShadow(ShadowRay)
+                * f3BRDF
                 * max(dot(f3DirToLight, f3Normal), 0.0)
-                * g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a
-                * max(f3DirToLight.y, 0.0)
-                * fLightArea
-                / (PI * fDistToLightSqr);
+                * fLightVisibility
+                * f3LightIntensity
+                * fLightProjectedArea;
 
             // Update the seed
             Seed += uint2(129, 1725);
@@ -147,6 +154,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                     f3PathContrib = float3(0.0, 0.0, 0.0);
                 break;
             }
+
+            f3Attenuation *= f3Albedo;
 
             // Update current sample properties
             f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
