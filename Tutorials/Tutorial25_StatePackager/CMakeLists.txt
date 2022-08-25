@@ -24,8 +24,9 @@ set(SHADERS
     assets/structures.fxh
     assets/scene.fxh
     assets/hash.fxh
-    ${PSO_ARCHIVE}
 )
+
+set(ASSETS ${PSO_ARCHIVE})
 
 add_sample_app("Tutorial25_StatePackager" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
@@ -53,7 +54,5 @@ add_custom_command(OUTPUT ${PSO_ARCHIVE} # We must use full path here!
                    COMMENT "Creating render state archive..."
                    VERBATIM
 )
-
-target_sources(Tutorial25_StatePackager PRIVATE ${PSO_ARCHIVE})
 
 source_group("generated" FILES ${PSO_ARCHIVE})

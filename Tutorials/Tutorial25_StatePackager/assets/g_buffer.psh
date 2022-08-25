@@ -30,7 +30,7 @@ void main(in  PSInput  PSIn,
 
     RayInfo Ray;
     Ray.Origin = f3RayStart; 
-    Ray.Dir    = normalize(f3RayEnd - f3RayStart); 
+    Ray.Dir    = normalize(f3RayEnd - f3RayStart);
 
     // Trace the scene
     HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
