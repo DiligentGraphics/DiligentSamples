@@ -26,13 +26,14 @@
 
 #include "Tutorial25_StatePackager.hpp"
 
+#include <random>
+
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "Dearchiver.h"
 #include "FileWrapper.hpp"
 #include "DataBlobImpl.hpp"
 #include "CallbackWrapper.hpp"
-#include "HashUtils.hpp"
 #include "imgui.h"
 
 namespace Diligent
@@ -298,11 +299,10 @@ void Tutorial25_StatePackager::Render()
         ShaderData->fScreenWidth  = static_cast<float>(SCDesc.Width);
         ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
 
-        const auto Seed1 = ComputeHash(m_SampleCount);
-        const auto Seed2 = ComputeHash(Seed1);
-
-        ShaderData->uFrameSeed1 = static_cast<uint>(Seed1);
-        ShaderData->uFrameSeed2 = static_cast<uint>(Seed2);
+        std::mt19937                        gen{static_cast<unsigned int>(m_SampleCount)};
+        std::uniform_int_distribution<uint> seed;
+        ShaderData->uFrameSeed1 = seed(gen);
+        ShaderData->uFrameSeed2 = seed(gen);
 
         ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
 
