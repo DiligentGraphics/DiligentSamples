@@ -82,6 +82,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     float3 f3LightIntensity = g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a;
     float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
 
+    // Make sure the seed is unique for each sample
     uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
     for (int i = 0; i < g_Constants.iNumSamplesPerFrame; ++i)
     {

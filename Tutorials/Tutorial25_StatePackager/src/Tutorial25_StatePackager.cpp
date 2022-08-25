@@ -331,7 +331,7 @@ void Tutorial25_StatePackager::Render()
 
         ShaderData->fLastSampleCount = static_cast<float>(m_SampleCount);
         m_SampleCount += m_NumSamplesPerFrame;
-        ShaderData->fNewSampleCount = static_cast<float>(m_SampleCount);
+        ShaderData->fCurrSampleCount = static_cast<float>(m_SampleCount);
 
         ShaderData->iNumBounces         = m_NumBounces;
         ShaderData->iNumSamplesPerFrame = m_NumSamplesPerFrame;

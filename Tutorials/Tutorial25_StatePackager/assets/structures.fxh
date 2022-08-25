@@ -9,7 +9,7 @@ struct ShaderConstants
 	float fScreenHeight;
 
 	float fLastSampleCount;
-	float fNewSampleCount;
+	float fCurrSampleCount;
 	int   iNumBounces;
 	int   iNumSamplesPerFrame;
 

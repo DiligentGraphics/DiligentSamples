@@ -21,6 +21,5 @@ struct PSOutput
 void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
-    float2 UV = (PSIn.ClipXY + float2(1.0, 1.0)) * 0.5;
-    PSOut.Color = g_Radiance.Load(int3(PSIn.Pos.xy, 0)) / g_Constants.fNewSampleCount;
+    PSOut.Color = g_Radiance.Load(int3(PSIn.Pos.xy, 0)) / g_Constants.fCurrSampleCount;
 }
