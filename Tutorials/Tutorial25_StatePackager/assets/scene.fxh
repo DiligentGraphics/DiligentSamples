@@ -116,7 +116,7 @@ bool IntersectRotatedAABB(in    RayInfo Ray,
 
 void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 {
-    float RoomSize  = 10;
+    float RoomSize  = 10.0;
     float WallThick = 0.05;
 
     BoxInfo Box;

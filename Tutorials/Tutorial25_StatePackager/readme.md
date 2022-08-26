@@ -30,8 +30,8 @@ Archivig pipelines off-line provides a number of benefits:
 - Render states are separated from the executable code that improves the code structure.
   Shaders and pipeline states can be updated without the need to rebuild the application.
 
-In this tutorial we will use the render state packager to create an archive that contains all pipeline
-states required to perform path tracing.
+In this tutorial, we will use the render state packager to create an archive that contains all pipeline
+states required to perform basic path tracing.
 
 ## Path Tracing
 
@@ -58,14 +58,16 @@ world-space position, traces a light path through the scene and adds the contrib
 buffer. Each frame, a set number of new paths are traced and their contributions are accumulated. If camera moves
 or light attributes change, the accumulation buffer is cleard and the process starts over.
 
-Finally, at the third stage, the radiance in the light accumulation buffer is resolved by averaging the contribution of all
-light paths.
+Finally, at the third stage, the radiance in the light accumulation buffer is resolved by averaging all
+light path contributions.
 
 ### Scene Representtion
 
 For the sake of illustration, the scene in this tutorial is defined by a number of analytic shapes (boxes) and
 rays are traced through the scene by computing intersections with each box and finding the closest one for each ray.
-Real applications will likely use DXR/Vulkan ray tracing.
+Real applications will likely use DXR/Vulkan ray tracing (see
+[Tutorial 21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial21_RayTracing) and 
+[Tutorial 22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial22_HybridRendering)).
 
 A box is defined by its center, sizes, color and type:
 
@@ -120,7 +122,7 @@ the new color, normal, distance and hit type.
 Casting a ray though the scene then consists of intersecting the ray with each box:
 
 ```hlsl
-float RoomSize  = 10;
+float RoomSize  = 10.0;
 float WallThick = 0.05;
 
 BoxInfo Box;
@@ -147,9 +149,9 @@ IntersectAABB(Ray, Box, Hit);
 ```
 
 
-### G-buffer rendering
+### G-buffer Rendering
 
-The G-buffer is rendered by a full-screen render pass, where a pixel shader
+The G-buffer is rendered by a full-screen render pass, where the pixel shader
 performs ray casting through the scene. It starts with computing the ray starting
 and end points using the inverse view-projection matrix:
 
@@ -202,7 +204,7 @@ For each bounce, the shader traces a ray towards the light source and compute it
 a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
 a ray in this direction and repeats the process at the new location.
 
-The shader starts with reading the sample attributes from the G-buffer and reconstructing the world space position
+The shader starts with reading the sample attributes from the G-buffer and reconstructing the world-space position
 of the current sample using the inverse view-projection matrix:
 
 ```hlsl
@@ -224,7 +226,7 @@ uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g
 
 This is quite important moment: the seed must be unique for each frame, each sample and every bounce to
 produce a good random sequence. Bad sequences will result in slower convergence or biased result.
-`g_Constants.uFrameSeed1` and `g_Constants.uFrameSeed2` are random frame seeds computed by the CPU for each frame.
+`g_Constants.uFrameSeed1` and `g_Constants.uFrameSeed2` are random seeds computed by the CPU for each frame.
 
 The shader then traces a given number of light paths and accumulates their contributions. Each path starts from the 
 same G-buffer sample:
@@ -256,7 +258,7 @@ f3DirToLight /= sqrt(fDistToLightSqr);
 ```
 
 The `hash22` function takes a seed and produces two pseudo-random values in the [0, 1] range. The
-SampleLight light function then uses these value to interpolate between the light corners:
+`SampleLight` function then uses these values to interpolate between the light box corners:
 
 ```hlsl
 float3 SampleLight(float2 Pos, float2 Size, float2 uv)
@@ -331,7 +333,7 @@ HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightS
 ```
 
 Cosine-weighted distribution assigns more random samples near the normal direction and fewer
-at the surface tangent, since they produce lesser contribution due to the 'N dot L' term.
+at the horizon, since they produce lesser contribution due to the 'N dot L' term.
 
 At this point, if we hit the light, we stop the loop - the light contribution is accounted for
 separately:
@@ -541,12 +543,13 @@ UnpackInfo.Name         = "Resolve PSO";
 
 While most of the pipeline state parameters can be defined at build time,
 some can only be specified at run-time. For instance, the swap chain format
-may not be known at the archive unpacking time. The dearchiver gives an application
+may not be known at the archive packing time. The dearchiver gives an application
 a chance to modify some of the pipeline state create properties through a special callback.
 Properties that can be modified include render target and depth buffer formats, depth-stencil
-state, blend state, rasterizer state. Note that properties that effect the resource
+state, blend state, rasterizer state. Note that properties that define the resource
 layout can't be modified.
-Note also that modifying properties does hinder the loading speed.
+Note also that modifying properties does not affect the loading speed as no shader recompilation
+or patching is necessary.
 
 We define the callback that sets the render target formats using the `MakeCallback` helper function:
 
@@ -608,7 +611,7 @@ DispatchComputeAttribs DispatchArgs{
 m_pImmediateContext->DispatchCompute(DispatchArgs);
 ```
 
-Finally, resolve the radiance:
+Finally, resolve radiance:
 
 ```cpp
 ITextureView* ppRTVs[] = {m_pSwapChain->GetCurrentBackBufferRTV()};
@@ -631,3 +634,9 @@ You can also change the following parameters:
 - *Show only last bounce* - render only the last bounce in the path
 - *Samples per frame* - the number of light paths to take each frame for each pixel
 - *Light intensity*, *width*, *height* and *color* - different light parameters
+
+
+## Resources
+
+[Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/) by P.Shirley
+[Physically Based Rendering: From Theory to Implementation](https://www.pbrt.org/) by M.Pharr, W.Jakob, and G.Humphreys
