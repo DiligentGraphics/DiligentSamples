@@ -638,5 +638,6 @@ You can also change the following parameters:
 
 ## Resources
 
-[Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/) by P.Shirley
-[Physically Based Rendering: From Theory to Implementation](https://www.pbrt.org/) by M.Pharr, W.Jakob, and G.Humphreys
+1. [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/) by P.Shirley
+2. [Physically Based Rendering: From Theory to Implementation](https://www.pbrt.org/) by M.Pharr, W.Jakob, and G.Humphreys
+3. [Rendering Introduction Course from TU Wien University](https://www.cg.tuwien.ac.at/courses/Rendering/VU/2021S) by B.Kerbl, and A.Celarek
