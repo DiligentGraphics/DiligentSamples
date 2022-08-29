@@ -29,6 +29,7 @@ Archivig pipelines off-line provides a number of benefits:
 - Shader compilation tool chain can be removed from the binary to reduce its size.
 - Render states are separated from the executable code that improves the code structure.
   Shaders and pipeline states can be updated without the need to rebuild the application.
+- Shader compilation errors and pipeline state issues are detected at build time.
 
 In this tutorial, we will use the render state packager to create an archive that contains all pipeline
 states required to perform basic path tracing.
