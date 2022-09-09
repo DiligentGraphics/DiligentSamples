@@ -33,22 +33,10 @@ void main(in  PSInput  PSIn,
     Ray.Dir    = normalize(f3RayEnd - f3RayStart);
 
     // Trace the scene
-    HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
+    HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 
-    PSOut.Albedo   = float4(0.0, 0.0, 0.0, 0.0);
-    PSOut.Emissive = float4(0.0, 0.0, 0.0, 0.0);
-
-    if (Hit.Type == HIT_TYPE_LAMBERTIAN)
-    {
-        PSOut.Albedo.rgb = Hit.Color;
-    }
-    else if (Hit.Type == HIT_TYPE_DIFFUSE_LIGHT)
-    {
-        // We only have one light source in this example.
-        // Real applications will use the light source properties
-        // from the hit.
-        PSOut.Emissive.rgb = g_Constants.f4LightIntensity.rgb;
-    }
+    PSOut.Albedo   = float4(Hit.Albedo,   0.0);
+    PSOut.Emissive = float4(Hit.Emissive, 0.0);
 
     // [-1, +1] -> [0, 1]
     PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);

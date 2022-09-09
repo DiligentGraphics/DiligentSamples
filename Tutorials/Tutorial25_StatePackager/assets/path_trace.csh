@@ -78,8 +78,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     float3 f3Radiance = float3(0.0, 0.0, 0.0);
 
     // We have a single light in this example
-    float  fLightArea       = g_Constants.f2LightSizeXZ.x * g_Constants.f2LightSizeXZ.y * 2.0;
-    float3 f3LightIntensity = g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a;
+    float  fLightArea       = g_Constants.Light.f2SizeXZ.x * g_Constants.Light.f2SizeXZ.y * 2.0;
+    float3 f3LightIntensity = g_Constants.Light.f4Intensity.rgb * g_Constants.Light.f4Intensity.a;
     float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
 
     // Make sure the seed is unique for each sample
@@ -105,7 +105,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
             // Get random sample on the light source surface.
             float2 rnd2 = hash22(Seed);
-            float3 f3LightSample = SampleLight(g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ, rnd2);
+            float3 f3LightSample = SampleLight(g_Constants.Light, rnd2);
             float3 f3DirToLight  = f3LightSample - f3SamplePos;
             float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
             f3DirToLight /= sqrt(fDistToLightSqr);
@@ -147,25 +147,30 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             Ray.Dir    = SampleDirectionCosineHemisphere(f3Normal, rnd2);
 
             // Trace the scene in the selected direction
-            HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
-            if (Hit.Type != HIT_TYPE_LAMBERTIAN)
+            HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
+            if (Hit.Type == HIT_TYPE_NONE)
             {
-                // Stop the loop if we hit the light or missed the scene
+                // Stop the loop if the ray missed the scene
                 if (g_Constants.iShowOnlyLastBounce != 0)
                     f3PathContrib = float3(0.0, 0.0, 0.0);
                 break;
             }
 
+            // Note: since we use a cosine-weighted distribution, we don't multiply
+            //       attenuation by dot(Hit.Normal, Ray.Dir) as this factor is
+            //       compensated by the sample probability in the denominator.
             f3Attenuation *= f3Albedo;
 
             // Update current sample properties
             f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
-            f3Albedo    = Hit.Color;
+            f3Albedo    = Hit.Albedo;
             f3Normal    = Hit.Normal;
         }
 
         // Combine path contribution and emissive component for this sample
-        f3Radiance += f3PathContrib + f3Emissive;
+        f3Radiance += f3PathContrib;
+        if (g_Constants.iShowOnlyLastBounce == 0 || g_Constants.iNumBounces == 1)
+            f3Radiance += f3Emissive;
     }
 
     // Add the total radiance to the accumulation buffer

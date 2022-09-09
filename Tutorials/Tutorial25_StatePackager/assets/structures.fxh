@@ -1,6 +1,13 @@
 #ifndef _STRUCTURES_FXH_
 #define _STRUCTURES_FXH_
 
+struct LightAttribs
+{
+	float2 f2PosXZ;
+	float2 f2SizeXZ;
+	float4 f4Intensity;
+};
+
 struct ShaderConstants
 {
 	uint  uScreenWidth;
@@ -18,13 +25,10 @@ struct ShaderConstants
 	int  iShowOnlyLastBounce;
 	int  Padding0;
 
-	float2 f2LightPosXZ;
-	float2 f2LightSizeXZ;
-
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;
 
-	float4 f4LightIntensity;
+	LightAttribs Light;
 };
 
 #endif // _STRUCTURES_FXH_

@@ -314,9 +314,9 @@ void Tutorial25_StatePackager::Render()
             m_LastFrameViewProj = {};
         }
 
-        ShaderData->f2LightPosXZ     = m_LightPos;
-        ShaderData->f2LightSizeXZ    = m_LightSize;
-        ShaderData->f4LightIntensity = float4{m_LightColor, m_LightIntensity};
+        ShaderData->Light.f2PosXZ     = m_LightPos;
+        ShaderData->Light.f2SizeXZ    = m_LightSize;
+        ShaderData->Light.f4Intensity = float4{m_LightColor, m_LightIntensity};
 
         const auto& View     = m_Camera.GetViewMatrix();
         const auto& Proj     = m_Camera.GetProjMatrix();

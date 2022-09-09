@@ -70,15 +70,16 @@ Real applications will likely use DXR/Vulkan ray tracing (see
 [Tutorial 21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial21_RayTracing) and 
 [Tutorial 22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial22_HybridRendering)).
 
-A box is defined by its center, sizes, color and type:
+A box is defined by its center, sizes, albedo, emissive power and type:
 
 ```hlsl
 struct BoxInfo
 {
-    float3  Center;
-    float3  Size;
-    float3  Color;
-    int     Type;
+    float3 Center;
+    float3 Size;
+    float3 Albedo;
+    float3 Emissive;
+    int    Type;
 };
 ```
 
@@ -101,11 +102,13 @@ diffuse light source or none):
 ```hlsl
 struct HitInfo
 {
-    float3 Color; // Albedo or radiance for light
+    float3 Albedo;
+    float3 Emissive;
     float3 Normal;
     float  Distance;
     int    Type;
 };
+
 ```
 
 An intersection of the ray with the box is computed by the `IntersectAABB` function:
@@ -127,7 +130,8 @@ float RoomSize  = 10.0;
 float WallThick = 0.05;
 
 BoxInfo Box;
-Box.Type = HIT_TYPE_LAMBERTIAN;
+Box.Type     = HIT_TYPE_LAMBERTIAN;
+Box.Emissive = float3(0.0, 0.0, 0.0);
 
 float3 Green = float3(0.1, 0.6, 0.1);
 float3 Red   = float3(0.6, 0.1, 0.1);
@@ -136,13 +140,13 @@ float3 Grey  = float3(0.5, 0.5, 0.5);
 // Right wall
 Box.Center = float3(RoomSize * 0.5 + WallThick * 0.5, 0.0, 0.0);
 Box.Size   = float3(WallThick, RoomSize * 0.5, RoomSize * 0.5);
-Box.Color  = Green;
+Box.Albedo = Green;
 IntersectAABB(Ray, Box, Hit);
 
 // Left wall
 Box.Center = float3(-RoomSize * 0.5 - WallThick * 0.5, 0.0, 0.0);
 Box.Size   = float3(WallThick, RoomSize * 0.5, RoomSize * 0.5);
-Box.Color  = Red;
+Box.Albedo = Red;
 IntersectAABB(Ray, Box, Hit);
 
 // Ceiling
@@ -171,21 +175,12 @@ targets:
 ```hlsl
 PSOutput PSOut;
 
-HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
-if (Hit.Type == HIT_TYPE_LAMBERTIAN)
-{
-    PSOut.Albedo.rgb = Hit.Color;
-}
-else if (Hit.Type == HIT_TYPE_DIFFUSE_LIGHT)
-{
-    PSOut.Emissive.rgb = g_Constants.f4LightIntensity.rgb;
-}
+HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 
-PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
+PSOut.Albedo   = float4(Hit.Albedo,   0.0);
+PSOut.Emissive = float4(Hit.Emissive, 0.0);
+PSOut.Normal   = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 ```
-
-In this example we only have one light source, so we use the light properties from the
-constant buffer. Real applications will retrieve the light properties from the hit point.
 
 Finally, we compute the depth by transforming the hit point with the view-projection matrix:
 
@@ -252,7 +247,7 @@ In the loop, the shader first samples a random point on the light surface:
 
 ```hlsl
 float2 rnd2 = hash22(Seed);
-float3 f3LightSample = SampleLight(g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ, rnd2);
+float3 f3LightSample = SampleLight(g_Constants.Light, rnd2);
 float3 f3DirToLight  = f3LightSample - f3SamplePos;
 float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
 f3DirToLight /= sqrt(fDistToLightSqr);
@@ -262,9 +257,9 @@ The `hash22` function takes a seed and produces two pseudo-random values in the 
 `SampleLight` function then uses these values to interpolate between the light box corners:
 
 ```hlsl
-float3 SampleLight(float2 Pos, float2 Size, float2 uv)
+float3 SampleLight(LightAttribs Light, float2 uv)
 {
-    BoxInfo Box = GetLight(Pos, Size);
+    BoxInfo Box = GetLight(Light);
     float3 Corner0 = Box.Center - Box.Size;
     float3 Corner1 = Box.Center + Box.Size;
     float3 Sample;
@@ -278,8 +273,8 @@ In this example, the light source is a rectangular area light in XZ plane direct
 Its properties are constant:
 
 ```hlsl
-float  fLightArea       = g_Constants.f2LightSizeXZ.x * g_Constants.f2LightSizeXZ.y * 2.0;
-float3 f3LightIntensity = g_Constants.f4LightIntensity.rgb * g_Constants.f4LightIntensity.a;
+float  fLightArea       = g_Constants.Light.f2SizeXZ.x * g_Constants.Light.f2SizeXZ.y * 2.0;
+float3 f3LightIntensity = g_Constants.Light.f4Intensity.rgb * g_Constants.Light.f4Intensity.a;
 float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
 ```
 
@@ -320,7 +315,11 @@ Where:
 In Monte-Carlo integration, we pretend that each sample speaks for the full light
 source surface, so we project the entire light surface area onto the hemisphere
 around the shaded point and see how much solid angle it covers. This value is given
-by `fLightProjectedArea`.
+by `fLightProjectedArea`:
+
+```hlsl
+float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
+```
 
 After adding the light contribution, we go to the next sample by selecting a random
 direction using the cosine-weighted hemispherical distribution:
@@ -330,17 +329,16 @@ RayInfo Ray;
 Ray.Origin = f3SamplePos;
 Ray.Dir    = SampleDirectionCosineHemisphere(f3Normal, rnd2);
 // Trace the scene in the selected direction
-HitInfo Hit = IntersectScene(Ray, g_Constants.f2LightPosXZ, g_Constants.f2LightSizeXZ);
+HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 ```
 
 Cosine-weighted distribution assigns more random samples near the normal direction and fewer
 at the horizon, since they produce lesser contribution due to the 'N dot L' term.
 
-At this point, if we hit the light, we stop the loop - the light contribution is accounted for
-separately:
+At this point, if the ray missed the scene, we stop the loop.
 
 ```hlsl
-if (Hit.Type != HIT_TYPE_LAMBERTIAN)
+if (Hit.Type == HIT_TYPE_NONE)
     break;
 ```
 
@@ -352,7 +350,7 @@ f3Attenuation *= f3Albedo;
 
 // Update current sample properties
 f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
-f3Albedo    = Hit.Color;
+f3Albedo    = Hit.Albedo;
 f3Normal    = Hit.Normal;
 ```
 
