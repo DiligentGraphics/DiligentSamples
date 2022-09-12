@@ -234,8 +234,8 @@ float3 f3Normal    = f3Normal0;
 
 // Total contribution of this path
 float3 f3PathContrib = float3(0.0, 0.0, 0.0);
-// Bounce attenutation
-float3 f3Attenuation = float3(1.0, 1.0, 1.0);
+// Path throughput
+float3 f3Throughput = float3(1.0, 1.0, 1.0);
 
 for (int j = 0; j < g_Constants.iNumBounces; ++j)
 {
@@ -294,7 +294,7 @@ The path radiance is then updated as follows:
 
 ```hlsl
 f3PathContrib +=
-    f3Attenuation
+    f3Throughput
     * f3BRDF
     * max(dot(f3DirToLight, f3Normal), 0.0)
     * fLightVisibility
@@ -304,7 +304,7 @@ f3PathContrib +=
 
 Where:
 
-- `f3Attenuation` is the path attenuation. Initially it is `float3(1, 1, 1)`, and is multiplied by 
+- `f3Throughput` is the path throughput. Initially it is `float3(1, 1, 1)`, and is multiplied by 
   surface albedo at each bounce
 - `f3BRDF` is the Lambertian BRDF (perfectly diffuse surface), and equals to `f3Albedo / PI`
 - `max(dot(f3DirToLight, f3Normal), 0.0)` is the 'N dot L' term
@@ -342,11 +342,11 @@ if (Hit.Type == HIT_TYPE_NONE)
     break;
 ```
 
-Finally, we multiply the attenuation with the current surface albedo and
+Finally, we multiply the throughput with the current surface albedo and
 update the sample properties:
 
 ```hlsl
-f3Attenuation *= f3Albedo;
+f3Throughput *= f3Albedo;
 
 // Update current sample properties
 f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;

@@ -93,8 +93,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
         // Total contribution of this path
         float3 f3PathContrib = float3(0.0, 0.0, 0.0);
-        // Bounce attenutation
-        float3 f3Attenuation = float3(1.0, 1.0, 1.0);
+        // Path throughput
+        float3 f3Throughput = float3(1.0, 1.0, 1.0);
         for (int j = 0; j < g_Constants.iNumBounces; ++j)
         {
             if (g_Constants.iShowOnlyLastBounce != 0)
@@ -125,7 +125,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             float3 f3BRDF = f3Albedo / PI;
 
             f3PathContrib +=
-                f3Attenuation
+                f3Throughput
                 * f3BRDF
                 * max(dot(f3DirToLight, f3Normal), 0.0)
                 * fLightVisibility
@@ -157,9 +157,9 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             }
 
             // Note: since we use a cosine-weighted distribution, we don't multiply
-            //       attenuation by dot(Hit.Normal, Ray.Dir) as this factor is
+            //       throughput by dot(Hit.Normal, Ray.Dir) as this factor is
             //       compensated by the sample probability in the denominator.
-            f3Attenuation *= f3Albedo;
+            f3Throughput *= f3Albedo;
 
             // Update current sample properties
             f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
