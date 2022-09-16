@@ -84,6 +84,21 @@ struct ReflectionResult
     float  NdotL;
     bool   Found;
 };
+
+#ifdef DXCOMPILER
+// Without this struct, DXC fails to compile the shader with the following error:
+//
+//      error: variable has incomplete type 'SamplerState [2]'
+//                SAMPLER_ARRAY(Samplers,      NUM_SAMPLERS   ),
+//                              ^
+//
+// https://github.com/microsoft/DirectXShaderCompiler/issues/4666
+struct _DXCBugWorkaround_
+{
+    SamplerState Samplers[2];
+};
+#endif
+
 ReflectionResult Reflection(TEXTURE_ARRAY(Textures,      NUM_TEXTURES   ),
                             SAMPLER_ARRAY(Samplers,      NUM_SAMPLERS   ),
                             BUFFER(       VertexBuffer,  Vertex         ),
