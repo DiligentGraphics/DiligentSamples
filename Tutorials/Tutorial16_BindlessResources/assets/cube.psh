@@ -30,7 +30,7 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
 #ifdef BINDLESS
-    PSOut.Color = g_Texture[PSIn.TexIndex].Sample(g_Texture_sampler, PSIn.UV);
+    PSOut.Color = g_Texture[NonUniformResourceIndex(PSIn.TexIndex)].Sample(g_Texture_sampler, PSIn.UV);
 #else
     PSOut.Color = g_Texture.Sample(g_Texture_sampler, PSIn.UV);
 #endif

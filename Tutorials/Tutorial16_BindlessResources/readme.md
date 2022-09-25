@@ -50,9 +50,14 @@ struct PSOutput
 void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
-    PSOut.Color = g_Texture[PSIn.TexIndex].Sample(g_Texture_sampler, PSIn.UV);
+    PSOut.Color = g_Texture[NonUniformResourceIndex(PSIn.TexIndex)].Sample(g_Texture_sampler, PSIn.UV);
 }
 ```
+
+Notice the `NonUniformResourceIndex` pseudo-function. It tells the shader compiler that the texture index is
+not uniform, e.g. it may be different in every pixel.
+[Using it is essential](https://www.asawicki.info/news_1608_direct3d_12_-_watch_out_for_non-uniform_resource_index),
+or the shader may behave incorrectly.
 
 ## Pipeline State and Shader Resource Binding
 
