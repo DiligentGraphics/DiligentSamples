@@ -4,6 +4,11 @@
 #   define NUM_TEXTURES 1
 #endif
 
+#ifdef VULKAN
+// NonUniformResourceIndex is not supported by GLSLang
+#   define NonUniformResourceIndex(x) x
+#endif
+
 Texture2D     g_Texture[NUM_TEXTURES];
 SamplerState  g_Texture_sampler; // By convention, texture samplers must use the '_sampler' suffix
 
