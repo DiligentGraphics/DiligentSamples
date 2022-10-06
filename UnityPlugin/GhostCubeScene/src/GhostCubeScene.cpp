@@ -105,25 +105,22 @@ void GhostCubeScene::OnGraphicsInitialized()
         pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
         ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
         ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.UseCombinedTextureSamplers = true;
 
         CreateUniformBuffer(pDevice, sizeof(float4x4), "Mirror VS constants CB", &m_pMirrorVSConstants);
 
         RefCntAutoPtr<IShader> pVS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+            ShaderCI.Desc = {"Mirror VS", SHADER_TYPE_VERTEX, true};
             ShaderCI.EntryPoint = "main";
-            ShaderCI.Desc.Name = "Mirror VS";
             ShaderCI.FilePath = "Mirror.vsh";
             pDevice->CreateShader(ShaderCI, &pVS);
         }
 
-        
+
         RefCntAutoPtr<IShader> pPS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.Desc = {"Mirror PS", SHADER_TYPE_PIXEL, true};
             ShaderCI.EntryPoint = "main";
-            ShaderCI.Desc.Name = "Mirror PS";
             ShaderCI.FilePath = "Mirror.psh";
             pDevice->CreateShader(ShaderCI, &pPS);
         }

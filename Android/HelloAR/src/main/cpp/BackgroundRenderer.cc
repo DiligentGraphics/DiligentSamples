@@ -126,25 +126,22 @@ void BackgroundRenderer::Initialize(Diligent::IRenderDevice* pDevice)
         PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
         ShaderCreateInfo ShaderCI;
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM;
-        ShaderCI.UseCombinedTextureSamplers = true;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM;
 
         RefCntAutoPtr<IShader> pVS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Background vertex shader";
-            ShaderCI.Source          = kVertexShaderSource;
+            ShaderCI.Desc       = {"Background vertex shader", SHADER_TYPE_VERTEX, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.Source     = kVertexShaderSource;
             pDevice->CreateShader(ShaderCI, &pVS);
             VERIFY(pVS, "Failed to create background vertex shader");
         }
 
         RefCntAutoPtr<IShader> pPS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Background fragment shader";
-            ShaderCI.Source          = kFragmentShaderSource;
+            ShaderCI.Desc       = {"Background fragment shader", SHADER_TYPE_PIXEL, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.Source     = kFragmentShaderSource;
             pDevice->CreateShader(ShaderCI, &pPS);
             VERIFY(pPS, "Failed to create background fragment shader");
         }

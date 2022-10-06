@@ -71,25 +71,22 @@ void Tutorial24_VRS::CreateVRSPipelineState(IShaderSourceInputStreamFactory* pSh
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.ShaderCompiler             = IsMetal ? SHADER_COMPILER_DEFAULT : SHADER_COMPILER_DXC;
-    ShaderCI.UseCombinedTextureSamplers = true;
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "VRS - VS";
-        ShaderCI.FilePath        = "CubeVRS.vsh";
+        ShaderCI.Desc       = {"VRS - VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "CubeVRS.vsh";
 
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "VRS - PS";
-        ShaderCI.FilePath        = "CubeVRS.psh";
+        ShaderCI.Desc       = {"VRS - PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "CubeVRS.psh";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
@@ -146,25 +143,22 @@ void Tutorial24_VRS::CreateDensityMapPipelineState(IShaderSourceInputStreamFacto
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_GLSL_VERBATIM;
-    ShaderCI.UseCombinedTextureSamplers = true;
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "FDM - VS";
-        ShaderCI.FilePath        = "CubeFDM_vs.glsl";
+        ShaderCI.Desc       = {"FDM - VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "CubeFDM_vs.glsl";
 
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "FDM - PS";
-        ShaderCI.FilePath        = "CubeFDM_fs.glsl";
+        ShaderCI.Desc       = {"FDM - PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "CubeFDM_fs.glsl";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
@@ -218,25 +212,22 @@ void Tutorial24_VRS::CreateBlitPipelineState(IShaderSourceInputStreamFactory* pS
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = IsMetal ? SHADER_SOURCE_LANGUAGE_MSL : SHADER_SOURCE_LANGUAGE_HLSL;
-    ShaderCI.UseCombinedTextureSamplers = true;
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "VSmain";
-        ShaderCI.Desc.Name       = "Blit - VS";
-        ShaderCI.FilePath        = IsMetal ? "ImageBlit.msl" : "ImageBlit.vsh";
+        ShaderCI.Desc       = {"Blit - VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "VSmain";
+        ShaderCI.FilePath   = IsMetal ? "ImageBlit.msl" : "ImageBlit.vsh";
 
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "PSmain";
-        ShaderCI.Desc.Name       = "Blit - PS";
-        ShaderCI.FilePath        = IsMetal ? "ImageBlit.msl" : "ImageBlit.psh";
+        ShaderCI.Desc       = {"Blit - PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "PSmain";
+        ShaderCI.FilePath   = IsMetal ? "ImageBlit.msl" : "ImageBlit.psh";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }

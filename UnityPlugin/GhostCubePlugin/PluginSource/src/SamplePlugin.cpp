@@ -66,24 +66,21 @@ SamplePlugin::SamplePlugin(Diligent::IRenderDevice *pDevice, bool UseReverseZ, T
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.UseCombinedTextureSamplers = true;
 
         CreateUniformBuffer(pDevice, sizeof(float4x4), "SamplePlugin: VS constants CB", &m_VSConstants);
 
         RefCntAutoPtr<IShader> pVS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
+            ShaderCI.Desc= {"Sample cube VS", SHADER_TYPE_VERTEX, true};
             ShaderCI.EntryPoint = "main";
-            ShaderCI.Desc.Name = "Sample cube VS";
             ShaderCI.Source = VSSource;
             pDevice->CreateShader(ShaderCI, &pVS);
         }
 
         RefCntAutoPtr<IShader> pPS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.Desc = {"Sample cube PS", SHADER_TYPE_PIXEL, true};
             ShaderCI.EntryPoint = "main";
-            ShaderCI.Desc.Name = "Sample cube PS";
             ShaderCI.Source = PSSource;
             pDevice->CreateShader(ShaderCI, &pPS);
         }

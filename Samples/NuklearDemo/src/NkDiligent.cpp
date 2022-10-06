@@ -195,24 +195,21 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
     GraphicsPipeline.PrimitiveTopology            = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     ShaderCreateInfo ShaderCI;
-    ShaderCI.UseCombinedTextureSamplers = True;
-    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     RefCntAutoPtr<IShader> pVS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.Desc.Name       = "Nuklear VS";
-        ShaderCI.EntryPoint      = "vs";
-        ShaderCI.Source          = NuklearVertexShaderSource;
+        ShaderCI.Desc       = {"Nuklear VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "vs";
+        ShaderCI.Source     = NuklearVertexShaderSource;
         device->CreateShader(ShaderCI, &pVS);
     }
 
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.Desc.Name       = "Nuklear PS";
-        ShaderCI.EntryPoint      = "ps";
-        ShaderCI.Source          = NuklearPixelShaderSource;
+        ShaderCI.Desc       = {"Nuklear PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "ps";
+        ShaderCI.Source     = NuklearPixelShaderSource;
         device->CreateShader(ShaderCI, &pPS);
     }
 

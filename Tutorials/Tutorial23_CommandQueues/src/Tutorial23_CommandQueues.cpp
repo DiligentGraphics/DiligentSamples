@@ -93,24 +93,21 @@ void Tutorial23_CommandQueues::CreatePostProcessPSO(IShaderSourceInputStreamFact
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.UseCombinedTextureSamplers = true;
 
     RefCntAutoPtr<IShader> pVS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Post process VS";
-        ShaderCI.FilePath        = "PostProcess.vsh";
+        ShaderCI.Desc       = {"Post process VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "PostProcess.vsh";
         m_pDevice->CreateShader(ShaderCI, &pVS);
     }
 
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Post process PS";
-        ShaderCI.FilePath        = "PostProcess.psh";
-        ShaderCI.Macros          = Macros;
+        ShaderCI.Desc       = {"Post process PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "PostProcess.psh";
+        ShaderCI.Macros     = Macros;
         m_pDevice->CreateShader(ShaderCI, &pPS);
     }
 
@@ -124,11 +121,10 @@ void Tutorial23_CommandQueues::CreatePostProcessPSO(IShaderSourceInputStreamFact
 
     RefCntAutoPtr<IShader> pPSnoGlow;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Post process without glow PS";
-        ShaderCI.FilePath        = "PostProcess.psh";
-        ShaderCI.Macros          = Macros;
+        ShaderCI.Desc       = {"Post process without glow PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "PostProcess.psh";
+        ShaderCI.Macros     = Macros;
         m_pDevice->CreateShader(ShaderCI, &pPSnoGlow);
     }
     PSOCreateInfo.pPS          = pPSnoGlow;
@@ -139,10 +135,9 @@ void Tutorial23_CommandQueues::CreatePostProcessPSO(IShaderSourceInputStreamFact
 
     RefCntAutoPtr<IShader> pDownSamplePS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Down sample PS";
-        ShaderCI.FilePath        = "DownSample.psh";
+        ShaderCI.Desc       = {"Down sample PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "DownSample.psh";
         m_pDevice->CreateShader(ShaderCI, &pDownSamplePS);
     }
     PSOCreateInfo.pPS = pDownSamplePS;

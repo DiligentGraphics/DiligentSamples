@@ -217,7 +217,7 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInf
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     ShaderCI.pShaderSourceStreamFactory = CreateInfo.pShaderSourceFactory;
     // Create a vertex shader

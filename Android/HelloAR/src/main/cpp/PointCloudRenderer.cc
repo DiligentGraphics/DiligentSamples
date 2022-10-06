@@ -122,25 +122,22 @@ void PointCloudRenderer::Initialize(IRenderDevice* pDevice)
         PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False;
 
         ShaderCreateInfo ShaderCI;
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.UseCombinedTextureSamplers = true;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
         RefCntAutoPtr<IShader> pVS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Point cloud vertex shader";
-            ShaderCI.Source          = kVertexShaderSource;
+            ShaderCI.Desc       = {"Point cloud vertex shader", SHADER_TYPE_VERTEX, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.Source     = kVertexShaderSource;
             pDevice->CreateShader(ShaderCI, &pVS);
             VERIFY(pVS, "Failed to create point cloud vertex shader");
         }
 
         RefCntAutoPtr<IShader> pPS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Point cloud fragment shader";
-            ShaderCI.Source          = kFragmentShaderSource;
+            ShaderCI.Desc       = {"Point cloud fragment shader", SHADER_TYPE_PIXEL, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.Source     = kFragmentShaderSource;
             pDevice->CreateShader(ShaderCI, &pPS);
             VERIFY(pPS, "Failed to create point cloud fragment shader");
         }

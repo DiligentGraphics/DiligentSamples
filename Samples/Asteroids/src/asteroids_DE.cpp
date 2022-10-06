@@ -326,13 +326,11 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         RefCntAutoPtr<IShader> vs, ps;
         {
             ShaderCreateInfo attribs;
-            attribs.Desc.ShaderType            = SHADER_TYPE_VERTEX;
-            attribs.Desc.Name                  = "Asteroids VS";
+            attribs.Desc                       = {"Asteroids VS", SHADER_TYPE_VERTEX, true};
             attribs.EntryPoint                 = "asteroid_vs_diligent";
             attribs.FilePath                   = "asteroid_vs_diligent.vsh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
-            attribs.UseCombinedTextureSamplers = true;
 
             ShaderMacro Macros[] = {{"BINDLESS", "1"}, {}};
             if (m_BindingMode == BindingMode::Bindless)
@@ -343,12 +341,10 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
 
         {
             ShaderCreateInfo attribs;
-            attribs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
-            attribs.Desc.Name                  = "Asteroids PS";
+            attribs.Desc                       = {"Asteroids PS", SHADER_TYPE_PIXEL, true};
             attribs.EntryPoint                 = "asteroid_ps_diligent";
             attribs.FilePath                   = "asteroid_ps_diligent.psh";
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
-            attribs.UseCombinedTextureSamplers = true;
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
 
             ShaderMacro Macros[] = {{"BINDLESS", "1"}, {}};
@@ -460,19 +456,16 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
 
         RefCntAutoPtr<IShader> vs, ps;
         ShaderCreateInfo       attribs;
-        attribs.Desc.ShaderType            = SHADER_TYPE_VERTEX;
-        attribs.Desc.Name                  = "Skybox VS";
+        attribs.Desc                       = {"Skybox VS", SHADER_TYPE_VERTEX, true};
         attribs.EntryPoint                 = "skybox_vs";
         attribs.FilePath                   = "skybox_vs.vsh";
         attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        attribs.UseCombinedTextureSamplers = true;
         attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
         mDevice->CreateShader(attribs, &vs);
 
-        attribs.Desc.Name       = "Skybox PS";
-        attribs.EntryPoint      = "skybox_ps";
-        attribs.FilePath        = "skybox_ps.psh";
-        attribs.Desc.ShaderType = SHADER_TYPE_PIXEL;
+        attribs.Desc       = {"Skybox PS", SHADER_TYPE_PIXEL, true};
+        attribs.EntryPoint = "skybox_ps";
+        attribs.FilePath   = "skybox_ps.psh";
         mDevice->CreateShader(attribs, &ps);
 
         GraphicsPipelineStateCreateInfo PSOCreateInfo;
@@ -570,36 +563,30 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
         RefCntAutoPtr<IShader> sprite_vs, sprite_ps, font_ps;
         {
             ShaderCreateInfo attribs;
-            attribs.Desc.ShaderType            = SHADER_TYPE_VERTEX;
-            attribs.Desc.Name                  = "Sprite VS";
+            attribs.Desc                       = {"Sprite VS", SHADER_TYPE_VERTEX, true};
             attribs.EntryPoint                 = "sprite_vs";
             attribs.FilePath                   = "sprite_vs.vsh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-            attribs.UseCombinedTextureSamplers = true;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
             mDevice->CreateShader(attribs, &sprite_vs);
         }
 
         {
             ShaderCreateInfo attribs;
-            attribs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
-            attribs.Desc.Name                  = "Sprite PS";
+            attribs.Desc                       = {"Sprite PS", SHADER_TYPE_PIXEL, true};
             attribs.EntryPoint                 = "sprite_ps";
             attribs.FilePath                   = "sprite_ps.psh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-            attribs.UseCombinedTextureSamplers = true;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
             mDevice->CreateShader(attribs, &sprite_ps);
         }
 
         {
             ShaderCreateInfo attribs;
-            attribs.Desc.ShaderType            = SHADER_TYPE_PIXEL;
-            attribs.Desc.Name                  = "Font PS";
+            attribs.Desc                       = {"Font PS", SHADER_TYPE_PIXEL, true};
             attribs.EntryPoint                 = "font_ps";
             attribs.FilePath                   = "font_ps.psh";
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-            attribs.UseCombinedTextureSamplers = true;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
             mDevice->CreateShader(attribs, &font_ps);
         }

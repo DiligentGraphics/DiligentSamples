@@ -98,7 +98,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
     // Create shadow vertex shader
     RefCntAutoPtr<IShader> pShadowVS;
     {
@@ -183,7 +183,7 @@ void Tutorial13_ShadowMap::CreatePlanePSO()
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -279,7 +279,7 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;

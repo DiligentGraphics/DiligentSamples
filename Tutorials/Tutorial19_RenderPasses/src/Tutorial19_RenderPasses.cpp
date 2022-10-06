@@ -89,7 +89,7 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Create cube vertex shader
@@ -193,7 +193,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Create a vertex shader
@@ -277,7 +277,7 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Create a vertex shader

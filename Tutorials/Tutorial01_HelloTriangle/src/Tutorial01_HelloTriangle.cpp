@@ -122,7 +122,7 @@ void Tutorial01_HelloTriangle::Initialize(const SampleInitInfo& InitInfo)
     // For OpenGL, the engine will convert this into GLSL under the hood.
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
     // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
     {

@@ -99,8 +99,8 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
-    ShaderCI.CombinedSamplerSuffix      = "_sampler";
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.CombinedSamplerSuffix      = "_sampler";
 
     // Create a shader source stream factory to load shaders from files.
     IEngineFactory* pEngineFactory = IRenderDevice_GetEngineFactory(pDevice);

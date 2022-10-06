@@ -95,8 +95,7 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
         PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
         ShaderCreateInfo ShaderCI;
-        ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-        ShaderCI.UseCombinedTextureSamplers = true;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
         // Create a shader source stream factory to load shaders from files.
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -105,20 +104,18 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
 
         RefCntAutoPtr<IShader> pVS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Object vertex shader";
-            ShaderCI.FilePath        = "shaders/object.vsh";
+            ShaderCI.Desc       = {"Object vertex shader", SHADER_TYPE_VERTEX, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.FilePath   = "shaders/object.vsh";
             pDevice->CreateShader(ShaderCI, &pVS);
             VERIFY(pVS, "Failed to create object vertex shader");
         }
 
         RefCntAutoPtr<IShader> pPS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Object fragment shader";
-            ShaderCI.FilePath        = "shaders/object.psh";
+            ShaderCI.Desc       = {"Object fragment shader", SHADER_TYPE_PIXEL, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.FilePath   = "shaders/object.psh";
             pDevice->CreateShader(ShaderCI, &pPS);
             VERIFY(pPS, "Failed to create object fragment shader");
         }

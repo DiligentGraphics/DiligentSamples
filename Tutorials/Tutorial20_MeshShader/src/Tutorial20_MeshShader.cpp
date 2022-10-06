@@ -237,7 +237,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
     // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
 
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;

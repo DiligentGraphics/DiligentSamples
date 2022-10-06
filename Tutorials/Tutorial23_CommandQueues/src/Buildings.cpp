@@ -702,23 +702,20 @@ void Buildings::CreatePSO(const ScenePSOCreateAttribs& Attr)
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.pShaderSourceStreamFactory = Attr.pShaderSourceFactory;
-    ShaderCI.UseCombinedTextureSamplers = true;
 
     RefCntAutoPtr<IShader> pVS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Draw Building VS";
-        ShaderCI.FilePath        = "DrawBuilding.vsh";
+        ShaderCI.Desc       = {"Draw Building VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "DrawBuilding.vsh";
         m_Device->CreateShader(ShaderCI, &pVS);
     }
 
     RefCntAutoPtr<IShader> pPS;
     {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Draw Building PS";
-        ShaderCI.FilePath        = "DrawBuilding.psh";
+        ShaderCI.Desc       = {"Draw Building PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "DrawBuilding.psh";
         m_Device->CreateShader(ShaderCI, &pPS);
     }
 

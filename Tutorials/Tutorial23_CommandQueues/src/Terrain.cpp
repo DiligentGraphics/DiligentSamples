@@ -232,12 +232,10 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
         Macros.AddShaderMacro("NOISE_OCTAVES", Attr.NoiseOctaves);
 
         ShaderCreateInfo ShaderCI;
-        ShaderCI.UseCombinedTextureSamplers = true;
-        ShaderCI.Desc.ShaderType            = SHADER_TYPE_COMPUTE;
+        ShaderCI.Desc                       = {"Generate terrain height and normal map CS", SHADER_TYPE_COMPUTE, true};
         ShaderCI.pShaderSourceStreamFactory = Attr.pShaderSourceFactory;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.Macros                     = Macros;
-        ShaderCI.Desc.Name                  = "Generate terrain height and normal map CS";
         ShaderCI.FilePath                   = "GenerateTerrain.csh";
         ShaderCI.EntryPoint                 = "CSMain";
 
@@ -273,23 +271,20 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
         ShaderCI.pShaderSourceStreamFactory = Attr.pShaderSourceFactory;
-        ShaderCI.UseCombinedTextureSamplers = true;
 
         RefCntAutoPtr<IShader> pVS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Draw terrain VS";
-            ShaderCI.FilePath        = "DrawTerrain.vsh";
+            ShaderCI.Desc       = {"Draw terrain VS", SHADER_TYPE_VERTEX, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.FilePath   = "DrawTerrain.vsh";
             m_Device->CreateShader(ShaderCI, &pVS);
         }
 
         RefCntAutoPtr<IShader> pPS;
         {
-            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-            ShaderCI.EntryPoint      = "main";
-            ShaderCI.Desc.Name       = "Draw terrain PS";
-            ShaderCI.FilePath        = "DrawTerrain.psh";
+            ShaderCI.Desc       = {"Draw terrain PS", SHADER_TYPE_PIXEL, true};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.FilePath   = "DrawTerrain.psh";
             m_Device->CreateShader(ShaderCI, &pPS);
         }
 

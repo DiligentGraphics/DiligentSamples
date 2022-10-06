@@ -89,7 +89,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
-    ShaderCI.UseCombinedTextureSamplers = true;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
