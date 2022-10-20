@@ -9,13 +9,13 @@ jobs:
 
     steps:
     - name: Clone DiligentCore
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: DiligentGraphics/DiligentCore
         path:       DiligentCore
 
     - name: Clone DiligentSamples
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: DiligentSamples
 
@@ -128,7 +128,7 @@ jobs:
         golden-image-mode: "compare_update"
 
     - name: Upload Golden Images
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       # NB: it is essential to include failure() to override the default status check of success()
       #     that is automatically applied to if conditions that don't contain a status check function.
       if: ${{ (success() || failure() && steps.build.outcome == 'success') && (matrix.name == 'Win10' || matrix.name == 'Win8.1') }}
