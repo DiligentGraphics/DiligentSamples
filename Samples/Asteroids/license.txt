@@ -1,9 +1,9 @@
-Code Samples License - Intel® Software Network
+Code Samples License - Intel(R) Software Network
 IMPORTANT - READ BEFORE COPYING, INSTALLING, OR USING. 
 Do not copy, install, or use the "Materials" provided under this license agreement ("Agreement"), until you have carefully read the following terms and conditions.By copying, installing, or otherwise using the Materials, you agree to be bound by the terms of this Agreement. If you do not agree to the terms of this Agreement, do not copy, install, or use the Materials. 
 
 
-INTEL® PRODUCT LICENSE AGREEMENT
+INTEL(R) PRODUCT LICENSE AGREEMENT
 
 LICENSE GRANT: 
 Subject to the License Restrictions below, Intel Corporation ("Intel") grants to you the following non-exclusive, non-assignable royalty-free copyright licenses in the "Materials" below, which are identified specifically in License Definitions, and in any updates thereto that Intel may offer in the future. 

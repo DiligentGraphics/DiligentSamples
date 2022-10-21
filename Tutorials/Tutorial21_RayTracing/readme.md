@@ -40,7 +40,7 @@ top-level AS. Bottom-level acceleration structure (BLAS) is where the actual geo
 Top-level acceleration structure is a set of references to one or more BLASes. One TLAS may reference
 multiple instances of the same BLAS with different transformations. BLASes are more expensive to build 
 or update than TLASes. The two-level structure is a trade-off between the ability to update the AS 
-at run-time and ray tracing efficiency. For example, object animation can be implemented by updating 
+at run-time and ray tracing efficiency. For example, object animation can be implemented by updating 
 instance transformations in the TLAS without the need to rebuild BLASes that represent animated objects.
 
 ### Creating Bottom-level Acceleration Structures
@@ -198,10 +198,10 @@ Attribs.BindingMode    = HIT_GROUP_BINDING_MODE_PER_INSTANCE;
 `HitGroupStride` is the number of different ray types. In this tutorial we use two ray types: primary and shadow.
 You may add more ray types, e.g. a secondary ray that uses simplified hit shaders for reflected rays.
 
-`BindingMode` is the hit group location calculation mode. In our example we will be assigning different 
-hit groups to different instances, so we use the `HIT_GROUP_BINDING_MODE_PER_INSTANCE` mode. If an application 
-needs more control, it can use `HIT_GROUP_BINDING_MODE_PER_GEOMETRY` mode to assign indiviudal hit group to 
-each geometry within every instance. On the other hand, it can use `HIT_GROUP_BINDING_MODE_PER_TLAS` mode 
+`BindingMode` is the hit group location calculation mode. In our example we will be assigning different 
+hit groups to different instances, so we use the `HIT_GROUP_BINDING_MODE_PER_INSTANCE` mode. If an application 
+needs more control, it can use `HIT_GROUP_BINDING_MODE_PER_GEOMETRY` mode to assign indiviudal hit group to 
+each geometry within every instance. On the other hand, it can use `HIT_GROUP_BINDING_MODE_PER_TLAS` mode 
 to assign the same hit group to all geometries in all instances.
 
 The actual TLAS instance data is stored in an instance buffer. The required size per one instance is fixed and
@@ -685,7 +685,7 @@ To improve ray tracing performance we use the following flags:
 
 In SBT, we bind null hit group for shadow ray for triangle geometry. For procedural geometry we use the intersection shader only,
 so we don't have any closest hit shaders anyway, and `RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` flag may have no effect in our particular case.
-However, if we used the same hit groups for shadow rays as for the primary rays, we might have seen a significant performance improvement.
+However, if we used the same hit groups for shadow rays as for the primary rays, we might have seen a significant performance improvement.
 
 Note that for some shading techniques this optimization may be inapplicable. For example: for ambient 
 occlusion you may need to know the precise distance to the nearest occluder instead of the binary information about 
