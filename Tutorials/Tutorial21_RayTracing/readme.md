@@ -46,7 +46,7 @@ instance transformations in the TLAS without the need to rebuild BLASes that rep
 ### Creating Bottom-level Acceleration Structures
 
 There are two types of geometries that a BLAS can contain: triangle geometry or procedural.
-Triangle geomtery is represented by a conventional set of vertices and indices.
+Triangle geometry is represented by a conventional set of vertices and indices.
 Procedural geometry requires an application to define a special type of shader that determines
 how a ray intersects the object. That shader can implement any custom algorithm, but is more 
 expensive than a built-in ray-triangle intersection test.

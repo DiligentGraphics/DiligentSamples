@@ -31,7 +31,8 @@ set(ASSETS ${PSO_ARCHIVE})
 add_sample_app("Tutorial25_StatePackager" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
 set(DEVICE_FLAGS --dx11 --dx12)
-if (NOT ${DILIGENT_NO_HLSL})
+# Compute shaders are not supported in OpenGL on MacOS
+if (NOT ${DILIGENT_NO_HLSL} AND NOT PLATFORM_MACOS)
     list(APPEND DEVICE_FLAGS --opengl)
 endif()
 if((NOT ${DILIGENT_NO_GLSLANG}) AND (NOT ${DILIGENT_NO_HLSL}))
