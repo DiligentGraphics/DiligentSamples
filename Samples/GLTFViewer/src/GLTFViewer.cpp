@@ -216,7 +216,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     RendererCI.UseIBL          = true;
     RendererCI.FrontCCW        = true;
     RendererCI.UseTextureAtlas = m_bUseResourceCache;
-    m_GLTFRenderer.reset(new GLTF_PBR_Renderer(m_pDevice, m_pImmediateContext, RendererCI));
+    m_GLTFRenderer.reset(new GLTF_PBR_Renderer{m_pDevice, nullptr, m_pImmediateContext, RendererCI});
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
     CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
@@ -232,7 +232,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, m_pImmediateContext, m_EnvironmentMapSRV);
+    m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, nullptr, m_pImmediateContext, m_EnvironmentMapSRV);
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {

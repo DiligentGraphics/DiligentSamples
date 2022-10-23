@@ -491,7 +491,7 @@ void ShadowsSample::CreateShadowMap()
     }
     SMMgrInitInfo.pFilterableShadowMapSampler = m_pFilterableShadowMapSampler;
 
-    m_ShadowMapMgr.Initialize(m_pDevice, SMMgrInitInfo);
+    m_ShadowMapMgr.Initialize(m_pDevice, nullptr, SMMgrInitInfo);
 
     InitializeResourceBindings();
 }

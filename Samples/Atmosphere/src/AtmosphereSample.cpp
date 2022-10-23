@@ -134,7 +134,7 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
     CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light Attribs CB", &m_pcbLightAttribs);
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
-    m_pLightSctrPP.reset(new EpipolarLightScattering(m_pDevice, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT));
+    m_pLightSctrPP.reset(new EpipolarLightScattering(m_pDevice, nullptr, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT));
     auto* pcMediaScatteringParams = m_pLightSctrPP->GetMediaAttribsCB();
 
     m_EarthHemisphere.Create(m_pElevDataSource.get(),
@@ -481,7 +481,7 @@ void AtmosphereSample::CreateShadowMap()
     }
     SMMgrInitInfo.pComparisonSampler = m_pComparisonSampler;
 
-    m_ShadowMapMgr.Initialize(m_pDevice, SMMgrInitInfo);
+    m_ShadowMapMgr.Initialize(m_pDevice, nullptr, SMMgrInitInfo);
 }
 
 void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
@@ -577,7 +577,7 @@ void AtmosphereSample::Render()
     // The first time GetAmbientSkyLightSRV() is called, the ambient sky light texture
     // is computed and render target is set. So we need to query the texture before setting
     // render targets
-    auto* pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, m_pImmediateContext);
+    auto* pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, nullptr, m_pImmediateContext);
 
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
