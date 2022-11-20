@@ -1,0 +1,56 @@
+#include "structures.fxh"
+#include "scene.fxh"
+
+cbuffer cbConstants
+{
+    ShaderConstants g_Constants;
+}
+
+struct PSInput
+{
+    float4 Pos    : SV_POSITION;
+    float2 ClipXY : ClipPos;
+};
+
+struct PSOutput
+{
+    float4 Albedo   : SV_TARGET0;
+    float4 Normal   : SV_TARGET1;
+    float4 Emissive : SV_TARGET2;
+    float  Depth    : SV_TARGET3;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float2 f2ScreenSize = float2(g_Constants.fScreenWidth, g_Constants.fScreenHeight);
+    // Trace the ray from the near to the far clip plane
+    float3 f3RayStart = ScreenToWorld(PSIn.Pos.xy, 0.0, f2ScreenSize, g_Constants.ViewProjInvMat);
+    float3 f3RayEnd   = ScreenToWorld(PSIn.Pos.xy, 1.0, f2ScreenSize, g_Constants.ViewProjInvMat);
+
+    RayInfo Ray;
+    Ray.Origin = f3RayStart; 
+    Ray.Dir    = normalize(f3RayEnd - f3RayStart);
+
+    // Trace the scene
+    HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
+
+    PSOut.Albedo   = float4(Hit.Albedo,   0.0);
+    PSOut.Emissive = float4(Hit.Emissive, 0.0);
+
+    // [-1, +1] -> [0, 1]
+    PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
+
+    if (Hit.Distance < INF)
+    {
+        // Compute depth of the hit point
+        float3 HitWorldPos = Ray.Origin + Ray.Dir * Hit.Distance;
+        float4 HitClipPos  = mul(float4(HitWorldPos, 1.0), g_Constants.ViewProjMat);
+        PSOut.Depth        = min(HitClipPos.z / HitClipPos.w, 1.0);
+    }
+    else
+    {
+        // No hit - background
+        PSOut.Depth = 1.0;
+    }
+}

@@ -1,0 +1,123 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "G-Buffer PSO",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbConstants",
+                            "ShaderStages": "PIXEL",
+                            "Type": "STATIC"
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "Screen Triangle VS"
+                },
+                "FilePath": "screen_tri.vsh",
+                "EntryPoint": "main"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "G-Buffer PS"
+                },
+                "FilePath": "g_buffer.psh",
+                "EntryPoint": "main"
+            }
+        },
+
+        {
+            "PSODesc": {
+                "Name": "Path Trace PSO",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbConstants",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "STATIC"
+                        }
+                    ]
+                }
+            },
+            "pCS": {
+                "Desc": {
+                    "Name": "Path Trace CS"
+                },
+                "FilePath": "path_trace.csh",
+                "EntryPoint": "main",
+                "Macros": [
+                    {
+                        "Name": "THREAD_GROUP_SIZE",
+                        "Definition": "8"
+                    }
+                ]
+            }
+        },
+
+        {
+            "PSODesc": {
+                "Name": "Resolve PSO",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbConstants",
+                            "ShaderStages": "PIXEL",
+                            "Type": "STATIC"
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "Screen Triangle VS"
+                },
+                "FilePath": "screen_tri.vsh",
+                "EntryPoint": "main"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "Resolve PS"
+                },
+                "FilePath": "resolve.psh",
+                "EntryPoint": "main"
+            }
+        }
+    ]
+}
