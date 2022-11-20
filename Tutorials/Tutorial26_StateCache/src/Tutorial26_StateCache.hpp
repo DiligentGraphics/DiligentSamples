@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
 #include "FirstPersonCamera.hpp"
@@ -49,6 +51,8 @@ public:
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+    ~Tutorial26_StateCache();
+
 private:
     void UpdateUI();
     void CreateGBuffer();
@@ -65,6 +69,8 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_pPathTraceSRB;
     RefCntAutoPtr<IPipelineState>         m_pResolvePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pResolveSRB;
+
+    std::string m_StateCachePath;
 
     struct GBuffer
     {

@@ -32,6 +32,8 @@
 #include "GraphicsUtilities.h"
 #include "FileWrapper.hpp"
 #include "CallbackWrapper.hpp"
+#include "GraphicsAccessories.hpp"
+#include "DataBlobImpl.hpp"
 #include "imgui.h"
 
 namespace Diligent
@@ -103,6 +105,24 @@ void Tutorial26_StateCache::UpdateUI()
             m_SampleCount       = 0;
             m_LastFrameViewProj = {}; // Need to update G-buffer
         }
+
+        ImGui::Separator();
+
+        if (m_pStateCache)
+        {
+            if (ImGui::Button("Reload states"))
+            {
+                m_pStateCache->Reload();
+            }
+        }
+
+        if (!m_StateCachePath.empty())
+        {
+            if (ImGui::Button("Delete cache file"))
+            {
+                FileSystem::DeleteFile(m_StateCachePath.c_str());
+            }
+        }
     }
     ImGui::End();
 }
@@ -137,6 +157,53 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
         CacheCI.EnableHotReload = true;
         CreateRenderStateCache(CacheCI, &m_pStateCache);
         VERIFY(m_pStateCache, "Failed to create render state cache");
+    }
+
+    // Try to load state cache data
+    {
+        // Get local application data directory.
+        m_StateCachePath = FileSystem::GetLocalAppDataDirectory("DiligentEngine-Tutorial26");
+        if (!FileSystem::PathExists(m_StateCachePath.c_str()))
+        {
+            // Create the directory if it does not exist
+            FileSystem::CreateDirectory(m_StateCachePath.c_str());
+        }
+
+        if (!FileSystem::IsSlash(m_StateCachePath.back()))
+            m_StateCachePath.push_back(FileSystem::SlashSymbol);
+
+        m_StateCachePath += "state_cache_";
+        // Use different cache files for each device type. This is not required, but is more convenient.
+        m_StateCachePath += GetRenderDeviceTypeShortString(m_pDevice->GetDeviceInfo().Type);
+
+        // Use different cache files for debug and release. This is not required, but is more convenient.
+#ifdef DILIGENT_DEBUG
+        m_StateCachePath += "_d";
+#else
+        m_StateCachePath += "_r";
+#endif
+        m_StateCachePath += ".bin";
+
+        if (FileSystem::FileExists(m_StateCachePath.c_str()))
+        {
+            FileWrapper CacheDataFile{m_StateCachePath.c_str()};
+            auto        pCacheData = DataBlobImpl::Create();
+            if (CacheDataFile->Read(pCacheData))
+            {
+                if (m_pStateCache->Load(pCacheData))
+                    LOG_INFO_MESSAGE("Successfully loaded state cache file ", m_StateCachePath);
+                else
+                    LOG_ERROR_MESSAGE("Failed to load state cache file ", m_StateCachePath);
+            }
+            else
+            {
+                LOG_ERROR_MESSAGE("Failed to read state cache file ", m_StateCachePath);
+            }
+        }
+        else
+        {
+            LOG_INFO_MESSAGE("State cache file ", m_StateCachePath, " does not exist");
+        }
     }
 
     // Create render state notation loader
@@ -426,6 +493,24 @@ void Tutorial26_StateCache::Update(double CurrTime, double ElapsedTime)
             }
         }
         m_LastMouseState = mouseState;
+    }
+}
+
+Tutorial26_StateCache::~Tutorial26_StateCache()
+{
+    // Save cache data
+    if (m_pStateCache && !m_StateCachePath.empty())
+    {
+        RefCntAutoPtr<IDataBlob> pCacheData;
+        if (m_pStateCache->WriteToBlob(&pCacheData))
+        {
+            if (pCacheData)
+            {
+                FileWrapper CacheDataFile{m_StateCachePath.c_str(), EFileAccessMode::Overwrite};
+                if (CacheDataFile->Write(pCacheData->GetConstDataPtr(), pCacheData->GetSize()))
+                    LOG_INFO_MESSAGE("Successfully saved state cache file ", m_StateCachePath, " (", FormatMemorySize(pCacheData->GetSize()), ").");
+            }
+        }
     }
 }
 
