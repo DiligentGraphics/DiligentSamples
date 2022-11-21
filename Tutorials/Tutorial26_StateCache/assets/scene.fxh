@@ -219,6 +219,17 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
     IntersectAABB(Ray, Box, Hit);
 }
 
+void IntersectMirrorSphere(RayInfo Ray, inout HitInfo Hit)
+{
+    SphereInfo Sphere;
+    Sphere.Center   = float3(+2.5, -3.415, -2.0);
+    Sphere.Radius   = 1.5;
+    Sphere.Albedo   = float3(0.6, 0.6, 0.6);
+    Sphere.Emissive = float3(0.0, 0.0, 0.0);
+    Sphere.Type     = HIT_TYPE_MIRROR; 
+    IntersectSphere(Ray, Sphere, Hit);
+}
+
 void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
 {
     BoxInfo Box;
@@ -242,14 +253,7 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     Box.Albedo = float3(0.6, 0.6, 0.6);
     IntersectRotatedAABB(Ray, Box, Box1Rotation, Hit);
 
-
-    SphereInfo Sphere;
-    Sphere.Center   = float3(+2.5, -3.415, -2.0);
-    Sphere.Radius   = 1.5;
-    Sphere.Albedo   = float3(0.6, 0.6, 0.6);
-    Sphere.Emissive = float3(0.0, 0.0, 0.0);
-    Sphere.Type     = HIT_TYPE_LAMBERTIAN; 
-    IntersectSphere(Ray, Sphere, Hit);
+    IntersectMirrorSphere(Ray, Hit);
 }
 
 BoxInfo GetLight(LightAttribs Light)
@@ -263,16 +267,20 @@ BoxInfo GetLight(LightAttribs Light)
     return Box;
 }
 
+void IntersectLight(RayInfo Ray, LightAttribs Light, inout HitInfo Hit)
+{
+    BoxInfo Box = GetLight(Light);
+    IntersectAABB(Ray, Box, Hit);
+}
+
+
 HitInfo IntersectScene(RayInfo Ray, LightAttribs Light)
 {
     HitInfo Hit = NullHit();
 
     IntersectSceneInterior(Ray, Hit);
     IntersectWalls(Ray, Hit);
-
-    // Light
-    BoxInfo Box = GetLight(Light);
-    IntersectAABB(Ray, Box, Hit);
+    IntersectLight(Ray, Light, Hit);
 
     return Hit;
 }

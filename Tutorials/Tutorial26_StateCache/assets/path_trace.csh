@@ -75,11 +75,17 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     float2 f2ScreenSize = float2(g_Constants.fScreenWidth, g_Constants.fScreenHeight);
     float3 f3SamplePos0 = ScreenToWorld(float2(ThreadId.xy) + float2(0.5, 0.5), fDepth, f2ScreenSize, g_Constants.ViewProjInvMat);
     // Read the starting sample attributes from the G-buffer
-    float3 f3Albedo0 = g_Albedo.Load(int3(ThreadId.xy, 0)).xyz;
-    float3 f3Normal0 = normalize(g_Normal.Load(int3(ThreadId.xy, 0)).xyz * 2.0 - 1.0);
+    float4 f4Albedo_Type0 = g_Albedo.Load(int3(ThreadId.xy, 0));
+    float3 f3Albedo0      = f4Albedo_Type0.rgb;
+    int    iHitType0      = int(f4Albedo_Type0.a * 255.0);
+    float3 f3Normal0      = normalize(g_Normal.Load(int3(ThreadId.xy, 0)).xyz * 2.0 - 1.0);
 
     float3 f3Emissive = g_Emissive.Load(int3(ThreadId.xy, 0)).xyz;
     float3 f3Radiance = float3(0.0, 0.0, 0.0);
+
+    RayInfo Ray0;
+    Ray0.Origin = g_Constants.CameraPos.xyz;
+    Ray0.Dir    = normalize(f3SamplePos0 - Ray0.Origin);
 
     // We have a single light in this example
     float  fLightArea       = g_Constants.Light.f2SizeXZ.x * g_Constants.Light.f2SizeXZ.y * 2.0;
@@ -90,10 +96,13 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
     for (int i = 0; i < g_Constants.iNumSamplesPerFrame; ++i)
     {
+        RayInfo Ray = Ray0;
+
         // The first sample is always the G-buffer
         float3 f3SamplePos = f3SamplePos0;
         float3 f3Albedo    = f3Albedo0;
         float3 f3Normal    = f3Normal0;
+        int    iHitType    = iHitType0;
 
         // Total contribution of this path
         float3 f3PathContrib = float3(0.0, 0.0, 0.0);
@@ -107,49 +116,62 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             if (all(Equal(f3Normal, float3(0.0, 0.0, 0.0))))
                 break;
 
-            // Get random sample on the light source surface.
-            float2 rnd2 = hash22(Seed);
-            float3 f3LightSample = SampleLight(g_Constants.Light, rnd2);
-            float3 f3DirToLight  = f3LightSample - f3SamplePos;
-            float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
-            f3DirToLight /= sqrt(fDistToLightSqr);
-
-            // The ray towards the light sample
-            RayInfo ShadowRay;
-            ShadowRay.Origin = f3SamplePos;
-            ShadowRay.Dir    = f3DirToLight;
-            float fLightVisibility = TestShadow(ShadowRay);
-
-            // In Monte-Carlo integration, we pretend that each sample speaks for the full light
-            // source surface, so we project the entire light surface area onto the hemisphere
-            // around the shaded point and see how much solid angle it covers.
-            float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
-
-            // Lambertian BRDF
-            float3 f3BRDF = f3Albedo / PI;
-
-            f3PathContrib +=
-                f3Throughput
-                * f3BRDF
-                * max(dot(f3DirToLight, f3Normal), 0.0)
-                * fLightVisibility
-                * f3LightIntensity
-                * fLightProjectedArea;
-
-            // Update the seed
-            Seed += uint2(129, 1725);
-
-            if (j == g_Constants.iNumBounces-1)
+            if (iHitType == HIT_TYPE_LAMBERTIAN)
             {
-                // Last bounce - complete the loop
-                break; 
-            }
+                // Get random sample on the light source surface.
+                float2 rnd2 = hash22(Seed);
+                float3 f3LightSample = SampleLight(g_Constants.Light, rnd2);
+                float3 f3DirToLight  = f3LightSample - f3SamplePos;
+                float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
+                f3DirToLight /= sqrt(fDistToLightSqr);
 
-            // Sample the BRDF - in our case this is a cosine-weighted hemispherical distribution.
-            RayInfo Ray;
-            Ray.Origin = f3SamplePos;
-            float Prob;
-            SampleDirectionCosineHemisphere(f3Normal, rnd2, Ray.Dir, Prob);
+                // The ray towards the light sample
+                RayInfo ShadowRay;
+                ShadowRay.Origin = f3SamplePos;
+                ShadowRay.Dir    = f3DirToLight;
+                float fLightVisibility = TestShadow(ShadowRay);
+
+                // In Monte-Carlo integration, we pretend that each sample speaks for the full light
+                // source surface, so we project the entire light surface area onto the hemisphere
+                // around the shaded point and see how much solid angle it covers.
+                float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
+
+                // Lambertian BRDF
+                float3 f3BRDF = f3Albedo / PI;
+
+                f3PathContrib +=
+                    f3Throughput
+                    * f3BRDF
+                    * max(dot(f3DirToLight, f3Normal), 0.0)
+                    * fLightVisibility
+                    * f3LightIntensity
+                    * fLightProjectedArea;
+
+                // Update the seed
+                Seed += uint2(129, 1725);
+
+                if (j == g_Constants.iNumBounces-1)
+                {
+                    // Last bounce - complete the loop
+                    break; 
+                }
+
+                // Sample the BRDF - in our case this is a cosine-weighted hemispherical distribution.
+                Ray.Origin = f3SamplePos;
+                float Prob;
+                SampleDirectionCosineHemisphere(f3Normal, rnd2, Ray.Dir, Prob);
+
+                // Note that in case of a cosine-weighted distribution, ray direction
+                // probability is the same as cos(theta), and they cancel out. We
+                // keep them here for the sake of generality.
+                float CosTheta = dot(f3Normal, Ray.Dir);
+                f3Throughput *= f3Albedo * CosTheta / Prob;
+            }
+            else if (iHitType == HIT_TYPE_MIRROR)
+            {
+                Ray.Origin = f3SamplePos;
+                Ray.Dir    = Ray.Dir - 2.0 * dot(Ray.Dir, f3Normal) * f3Normal;
+            }
 
             // Trace the scene in the selected direction
             HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
@@ -160,17 +182,16 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                     f3PathContrib = float3(0.0, 0.0, 0.0);
                 break;
             }
-
-            // Note that in case of a cosine-weighted distribution, ray direction
-            // probability is the same as cos(theta), and they cancel out. We
-            // keep them here for the sake of generality.
-            float CosTheta = dot(f3Normal, Ray.Dir);
-            f3Throughput *= f3Albedo * CosTheta / Prob;
+            else if (Hit.Type == HIT_TYPE_DIFFUSE_LIGHT && iHitType == HIT_TYPE_MIRROR)
+            {
+                f3PathContrib += Hit.Emissive;
+            }
 
             // Update current sample properties
             f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
             f3Albedo    = Hit.Albedo;
             f3Normal    = Hit.Normal;
+            iHitType    = Hit.Type;
         }
 
         // Combine path contribution and emissive component for this sample

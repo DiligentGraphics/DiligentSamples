@@ -25,6 +25,7 @@ struct ShaderConstants
 	int  iShowOnlyLastBounce;
 	int  Padding0;
 
+	float4   CameraPos;
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;
 

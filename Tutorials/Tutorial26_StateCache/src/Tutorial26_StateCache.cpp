@@ -423,6 +423,7 @@ void Tutorial26_StateCache::Render()
         ShaderData->iNumBounces         = m_NumBounces;
         ShaderData->iNumSamplesPerFrame = m_NumSamplesPerFrame;
 
+        ShaderData->CameraPos      = m_Camera.GetPos();
         ShaderData->ViewProjMat    = ViewProj.Transpose();
         ShaderData->ViewProjInvMat = ViewProj.Inverse().Transpose();
     }
