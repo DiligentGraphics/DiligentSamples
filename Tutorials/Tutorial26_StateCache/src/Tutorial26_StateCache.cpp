@@ -113,6 +113,8 @@ void Tutorial26_StateCache::UpdateUI()
             if (ImGui::Button("Reload states"))
             {
                 m_pStateCache->Reload();
+                m_SampleCount       = 0;
+                m_LastFrameViewProj = {}; // Need to update G-buffer
             }
         }
 

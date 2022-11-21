@@ -5,7 +5,7 @@
 
 #define PI      3.1415927
 #define INF     1e+30
-#define EPSILON 5e-2
+#define EPSILON 1e-2
 
 float3 ClipToWorld(float4 ClipPos, float4x4 ViewProjInvMat)
 {
@@ -54,7 +54,9 @@ RayInfo RotateRayY(RayInfo Ray, float a)
 
 #define HIT_TYPE_NONE          0
 #define HIT_TYPE_LAMBERTIAN    1
-#define HIT_TYPE_DIFFUSE_LIGHT 2
+#define HIT_TYPE_GLASS         2
+#define HIT_TYPE_MIRROR        3
+#define HIT_TYPE_DIFFUSE_LIGHT 4
 
 struct HitInfo
 {
@@ -130,6 +132,49 @@ bool IntersectRotatedAABB(in    RayInfo Ray,
 }
 
 
+struct SphereInfo
+{
+    float3 Center;
+    float  Radius;
+    float3 Albedo;
+    float3 Emissive;
+    int    Type;
+};
+
+bool IntersectSphere(in    RayInfo    Ray,
+                     in    SphereInfo Sphere,
+                     inout HitInfo    Hit)
+{
+    // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
+    float3 Orig = Ray.Origin - Sphere.Center;
+    float A = dot(Ray.Dir, Ray.Dir);
+    float B = 2.0 * dot(Orig, Ray.Dir);
+    float C = dot(Orig, Orig) - Sphere.Radius * Sphere.Radius;
+    float D = B * B - 4.0 * A * C;
+    // If discriminant is negative, there are no real roots hence the ray misses the
+    // sphere
+    if (D < 0.0)
+        return false;
+
+    D = sqrt(D);
+    float t_near = (-B - D) / (2.0 * A);
+    float t_far  = (-B + D) / (2.0 * A);
+    
+    float t = t_near > EPSILON ? t_near : t_far;
+    if (t < EPSILON || t > Hit.Distance)
+        return false;
+
+    float3 HitPos = Ray.Origin + t * Ray.Dir;
+
+    Hit.Albedo   = Sphere.Albedo;
+    Hit.Emissive = Sphere.Emissive;
+    Hit.Normal   = normalize(HitPos - Sphere.Center);
+    Hit.Distance = t;
+    Hit.Type     = Sphere.Type;
+
+    return true;
+}
+
 void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 {
     float RoomSize  = 10.0;
@@ -197,11 +242,14 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     Box.Albedo = float3(0.6, 0.6, 0.6);
     IntersectRotatedAABB(Ray, Box, Box1Rotation, Hit);
 
-    // Small box
-    Box.Center = float3(+2.5, -3.5, -1.0);
-    Box.Size   = float3(1.5, 1.5, 1.5);
-    Box.Albedo = float3(0.6, 0.6, 0.6);
-    IntersectRotatedAABB(Ray, Box, Box2Rotation, Hit);
+
+    SphereInfo Sphere;
+    Sphere.Center   = float3(+2.5, -3.415, -2.0);
+    Sphere.Radius   = 1.5;
+    Sphere.Albedo   = float3(0.6, 0.6, 0.6);
+    Sphere.Emissive = float3(0.0, 0.0, 0.0);
+    Sphere.Type     = HIT_TYPE_LAMBERTIAN; 
+    IntersectSphere(Ray, Sphere, Hit);
 }
 
 BoxInfo GetLight(LightAttribs Light)
