@@ -131,24 +131,6 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    CreateUniformBuffer(m_pDevice, sizeof(HLSL::ShaderConstants), "Shader constants CB", &m_pShaderConstantsCB);
-
-    // Create a shader source stream factory to load shaders and DRSN files
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-
-    // Create render state notation parser
-    {
-        RenderStateNotationParserCreateInfo ParserCI;
-        // Enable state reloading in the parser
-        ParserCI.EnableReload = true;
-        CreateRenderStateNotationParser(ParserCI, &m_pRSNParser);
-        VERIFY(m_pRSNParser != nullptr, "Failed to create RSN parser");
-        // Parse the render state notation file
-        auto res = m_pRSNParser->ParseFile("RenderStates.json", pShaderSourceFactory);
-        VERIFY(res, "Failed to parse render states file");
-    }
-
     // Create render state cache
     {
         RenderStateCacheCreateInfo CacheCI;
@@ -159,7 +141,7 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
         VERIFY(m_pStateCache, "Failed to create render state cache");
     }
 
-    // Try to load state cache data
+    // Try to load the state cache data
     {
         // Get local application data directory.
         m_StateCachePath = FileSystem::GetLocalAppDataDirectory("DiligentEngine-Tutorial26");
@@ -204,6 +186,24 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
         {
             LOG_INFO_MESSAGE("State cache file ", m_StateCachePath, " does not exist");
         }
+    }
+
+    CreateUniformBuffer(m_pDevice, sizeof(HLSL::ShaderConstants), "Shader constants CB", &m_pShaderConstantsCB);
+
+    // Create a shader source stream factory to load shaders and DRSN files
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+
+    // Create render state notation parser
+    {
+        RenderStateNotationParserCreateInfo ParserCI;
+        // Enable state reloading in the parser
+        ParserCI.EnableReload = true;
+        CreateRenderStateNotationParser(ParserCI, &m_pRSNParser);
+        VERIFY(m_pRSNParser != nullptr, "Failed to create RSN parser");
+        // Parse the render state notation file
+        auto res = m_pRSNParser->ParseFile("RenderStates.json", pShaderSourceFactory);
+        VERIFY(res, "Failed to parse render states file");
     }
 
     // Create render state notation loader
