@@ -18,28 +18,14 @@ cbuffer cbConstants
 #   define THREAD_GROUP_SIZE 8
 #endif
 
-// https://github.com/TheRealMJP/DXRPathTracer (MIT)
 // Returns a random cosine-weighted direction on the hemisphere around z = 1
 void SampleDirectionCosineHemisphere(in  float2 UV,
                                      out float3 Dir,
                                      out float  Prob)
 {
-    // [0, 1] -> [-1, +1]
-    UV = UV * 2.0 - 1.0;
-
-    // Square -> disk
-    if (any(NotEqual(UV, float2(0.0, 0.0))))
-    {
-        // Normalize by the maximum diagonal length
-        float2 scale = abs(UV);
-        scale /= max(scale.x, scale.y);
-        UV /= length(scale);
-    }
-
-    // Project samples on the disk to the hemisphere to get a
-    // cosine-weighted distribution
-    Dir.xy = UV;
-    Dir.z  = sqrt(max(1.0 - dot(Dir.xy, Dir.xy), 0.0));
+    Dir.x = cos(2.0 * PI * UV.x) * sqrt(1.0 - UV.y);
+    Dir.y = sin(2.0 * PI * UV.x) * sqrt(1.0 - UV.y);
+    Dir.z = sqrt(UV.y);
     // Avoid zero probability
     Prob = max(Dir.z, 1e-6);
 }
