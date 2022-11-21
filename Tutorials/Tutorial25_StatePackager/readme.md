@@ -304,8 +304,8 @@ f3PathContrib +=
 
 Where:
 
-- `f3Throughput` is the path throughput. Initially it is `float3(1, 1, 1)`, and is multiplied by 
-  surface albedo at each bounce
+- `f3Throughput` is the path throughput. Initially it is `float3(1, 1, 1)`, and is updated
+  at each bounce
 - `f3BRDF` is the Lambertian BRDF (perfectly diffuse surface), and equals to `f3Albedo / PI`
 - `max(dot(f3DirToLight, f3Normal), 0.0)` is the 'N dot L' term
 - `fLightVisibility` is the light visibility computed by casting the shadow ray

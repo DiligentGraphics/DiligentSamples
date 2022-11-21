@@ -20,7 +20,9 @@ cbuffer cbConstants
 
 // https://github.com/TheRealMJP/DXRPathTracer (MIT)
 // Returns a random cosine-weighted direction on the hemisphere around z = 1
-float3 SampleDirectionCosineHemisphere(float2 UV)
+void SampleDirectionCosineHemisphere(in  float2 UV,
+                                     out float3 Dir,
+                                     out float  Prob)
 {
     // [0, 1] -> [-1, +1]
     UV = UV * 2.0 - 1.0;
@@ -36,20 +38,22 @@ float3 SampleDirectionCosineHemisphere(float2 UV)
 
     // Project samples on the disk to the hemisphere to get a
     // cosine-weighted distribution
-    float3 Dir;
     Dir.xy = UV;
     Dir.z  = sqrt(max(1.0 - dot(Dir.xy, Dir.xy), 0.0));
-
-    return Dir;
+    // Avoid zero probability
+    Prob = max(Dir.z, 1e-6);
 }
 
 // Returns a random cosine-weighted direction on the hemisphere around N
-float3 SampleDirectionCosineHemisphere(float3 N, float2 UV)
+void SampleDirectionCosineHemisphere(in  float3 N,
+                                     in  float2 UV,
+                                     out float3 Dir,
+                                     out float  Prob)
 {
 	float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
 	float3 B = cross(T, N);
-    float3 Dir = SampleDirectionCosineHemisphere(UV);
-    return normalize(Dir.x * T + Dir.y * B + Dir.z * N);
+    SampleDirectionCosineHemisphere(UV, Dir, Prob);
+    Dir = normalize(Dir.x * T + Dir.y * B + Dir.z * N);
 }
 
 
@@ -144,7 +148,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             // Sample the BRDF - in our case this is a cosine-weighted hemispherical distribution.
             RayInfo Ray;
             Ray.Origin = f3SamplePos;
-            Ray.Dir    = SampleDirectionCosineHemisphere(f3Normal, rnd2);
+            float Prob;
+            SampleDirectionCosineHemisphere(f3Normal, rnd2, Ray.Dir, Prob);
 
             // Trace the scene in the selected direction
             HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
@@ -156,10 +161,11 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 break;
             }
 
-            // Note: since we use a cosine-weighted distribution, we don't multiply
-            //       throughput by dot(Hit.Normal, Ray.Dir) as this factor is
-            //       compensated by the sample probability in the denominator.
-            f3Throughput *= f3Albedo;
+            // Note that in case of a cosine-weighted distribution, ray direction
+            // probability is the same as cos(theta), and they cancel out. We
+            // keep them here for the sake of generality.
+            float CosTheta = dot(f3Normal, Ray.Dir);
+            f3Throughput *= f3Albedo * CosTheta / Prob;
 
             // Update current sample properties
             f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
