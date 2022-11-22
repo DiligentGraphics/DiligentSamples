@@ -192,6 +192,9 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             if (Hit.Type == HIT_TYPE_MIRROR)
             {
                 Dir = Ray.Dir - 2.0 * dot(Ray.Dir, Hit.Normal) * Hit.Normal;
+                // Note: if NEE is enabled, we need to perform light sampling here.
+                //       However, since we need to sample the light in the same reflected direction,
+                //       we will add its contribution later when we find the next hit point.
             }
             else
             {
@@ -232,10 +235,17 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
             }
 
+            // We did not perform next event estimation for the mirror surface and
+            // we need to add emittance of the next hit point.
+            bool AddEmissive = (g_Constants.iUseNEE != 0) && (Hit.Type == HIT_TYPE_MIRROR);
+
             // Trace the scene in the selected direction
             Ray.Origin = f3HitPos;
             Ray.Dir    = Dir;
             Hit = IntersectScene(Ray, g_Constants.Light);
+
+            if (AddEmissive)
+                f3PathContrib += f3Throughput * Hit.Emissive;
         }
 
         // Combine contributions
