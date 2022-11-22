@@ -294,10 +294,8 @@ void Tutorial25_StatePackager::Render()
     bool UpdateGBuffer = false;
     {
         MapHelper<HLSL::ShaderConstants> ShaderData{m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD};
-        ShaderData->uScreenWidth  = SCDesc.Width;
-        ShaderData->uScreenHeight = SCDesc.Height;
-        ShaderData->fScreenWidth  = static_cast<float>(SCDesc.Width);
-        ShaderData->fScreenHeight = static_cast<float>(SCDesc.Height);
+        ShaderData->u2ScreenSize = uint2{SCDesc.Width, SCDesc.Height};
+        ShaderData->f2ScreenSize = float2{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height)};
 
         std::mt19937                        gen{static_cast<unsigned int>(m_SampleCount)};
         std::uniform_int_distribution<uint> seed;
@@ -338,6 +336,7 @@ void Tutorial25_StatePackager::Render()
 
         ShaderData->ViewProjMat    = ViewProj.Transpose();
         ShaderData->ViewProjInvMat = ViewProj.Inverse().Transpose();
+        ShaderData->CameraPos      = m_Camera.GetPos();
     }
 
     // Draw the scene into G-buffer

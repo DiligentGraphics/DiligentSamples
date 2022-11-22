@@ -161,8 +161,8 @@ performs ray casting through the scene. It starts with computing the ray startin
 and end points using the inverse view-projection matrix:
 
 ```hlsl
-float3 f3RayStart = ScreenToWorld(PSIn.Pos.xy, 0.0, f2ScreenSize, g_Constants.ViewProjInvMat);
-float3 f3RayEnd   = ScreenToWorld(PSIn.Pos.xy, 1.0, f2ScreenSize, g_Constants.ViewProjInvMat);
+float3 f3RayStart = ScreenToWorld(PSIn.Pos.xy, 0.0, g_Constants.f2ScreenSize, g_Constants.ViewProjInvMat);
+float3 f3RayEnd   = ScreenToWorld(PSIn.Pos.xy, 1.0, g_Constants.f2ScreenSize, g_Constants.ViewProjInvMat);
 
 RayInfo Ray;
 Ray.Origin = f3RayStart; 
@@ -177,7 +177,7 @@ PSOutput PSOut;
 
 HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 
-PSOut.Albedo   = float4(Hit.Albedo,   0.0);
+PSOut.Albedo   = float4(Hit.Albedo,   float(Hit.Type) * 255.0);
 PSOut.Emissive = float4(Hit.Emissive, 0.0);
 PSOut.Normal   = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 ```
@@ -200,16 +200,13 @@ For each bounce, the shader traces a ray towards the light source and compute it
 a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
 a ray in this direction and repeats the process at the new location.
 
-The shader starts with reading the sample attributes from the G-buffer and reconstructing the world-space position
-of the current sample using the inverse view-projection matrix:
+The shader starts with reading the sample attributes from the G-buffer and reconstructing the
+the primary camera ray using the inverse view-projection matrix:
 
 ```hlsl
-float  fDepth       = g_Depth.Load(int3(ThreadId.xy, 0)).x;
-float3 f3SamplePos0 = ScreenToWorld(float2(ThreadId.xy) + float2(0.5, 0.5), fDepth, f2ScreenSize, g_Constants.ViewProjInvMat);
-
-float3 f3Albedo0  = g_Albedo.Load(int3(ThreadId.xy, 0)).xyz;
-float3 f3Normal0  = normalize(g_Normal.Load(int3(ThreadId.xy, 0)).xyz * 2.0 - 1.0);
-float3 f3Emissive = g_Emissive.Load(int3(ThreadId.xy, 0)).xyz;
+HitInfo Hit0;
+RayInfo Ray0;
+GetPrimaryRay(ThreadId.xy, Hit0, Ray0);
 ```
 
 Where `ThreadId` is the compute shader thread index in a two-dimensional grid and matches the screen coordinates.
@@ -224,17 +221,16 @@ This is quite important moment: the seed must be unique for each frame, each sam
 produce a good random sequence. Bad sequences will result in slower convergence or biased result.
 `g_Constants.uFrameSeed1` and `g_Constants.uFrameSeed2` are random seeds computed by the CPU for each frame.
 
-The shader then traces a given number of light paths and accumulates their contributions. Each path starts from the 
-same G-buffer sample:
+The shader then traces a given number of light paths and accumulates their contributions. Each path starts
+with the primary camera ray:
 
 ```hlsl
-float3 f3SamplePos = f3SamplePos0;
-float3 f3Albedo    = f3Albedo0;
-float3 f3Normal    = f3Normal0;
+HitInfo Hit = Hit0;
+RayInfo Ray = Ray0;
 
 // Total contribution of this path
 float3 f3PathContrib = float3(0.0, 0.0, 0.0);
-// Path throughput
+// Path throughput, or the maximum possible remaining contribution after all bounces so far.
 float3 f3Throughput = float3(1.0, 1.0, 1.0);
 
 for (int j = 0; j < g_Constants.iNumBounces; ++j)
@@ -248,7 +244,7 @@ In the loop, the shader first samples a random point on the light surface:
 ```hlsl
 float2 rnd2 = hash22(Seed);
 float3 f3LightSample = SampleLight(g_Constants.Light, rnd2);
-float3 f3DirToLight  = f3LightSample - f3SamplePos;
+float3 f3DirToLight  = f3LightSample - f3HitPos;
 float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
 f3DirToLight /= sqrt(fDistToLightSqr);
 ```
@@ -283,7 +279,7 @@ visibility:
 
 ```hlsl
 RayInfo ShadowRay;
-ShadowRay.Origin = f3SamplePos;
+ShadowRay.Origin = f3HitPos;
 ShadowRay.Dir    = f3DirToLight;
 float fLightVisibility = TestShadow(ShadowRay);
 ```
@@ -293,21 +289,33 @@ float fLightVisibility = TestShadow(ShadowRay);
 The path radiance is then updated as follows:
 
 ```hlsl
+float3 f3LightRadiance;
+float3 f3DirToLight;
+SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
+float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+
 f3PathContrib +=
     f3Throughput
-    * f3BRDF
-    * max(dot(f3DirToLight, f3Normal), 0.0)
-    * fLightVisibility
-    * f3LightIntensity
-    * fLightProjectedArea;
+    * BRDF(Hit, -Ray.Dir, f3DirToLight)
+    * NdotL
+    * f3LightRadiance;
 ```
 
 Where:
 
 - `f3Throughput` is the path throughput. Initially it is `float3(1, 1, 1)`, and is updated
   at each bounce
-- `f3BRDF` is the Lambertian BRDF (perfectly diffuse surface), and equals to `f3Albedo / PI`
-- `max(dot(f3DirToLight, f3Normal), 0.0)` is the 'N dot L' term
+- `BRDF` is the Lambertian BRDF (perfectly diffuse surface), and equals to `f3Albedo / PI`
+- `f3LightRadiance` is the light radiance.
+
+The light radiance is computed as follows:
+
+```hlsl
+f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
+```
+
+Where:
+
 - `fLightVisibility` is the light visibility computed by casting the shadow ray
 - `f3LightIntensity` is the light intensity constant
 - `fLightProjectedArea` is the light surface area projected onto the hemisphere
@@ -321,37 +329,38 @@ by `fLightProjectedArea`:
 float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
 ```
 
+The light radiance is then computed as follows:
+
 After adding the light contribution, we go to the next sample by selecting a random
 direction using the cosine-weighted hemispherical distribution:
 
 ```hlsl
-RayInfo Ray;
-Ray.Origin = f3SamplePos;
-Ray.Dir    = SampleDirectionCosineHemisphere(f3Normal, rnd2);
-// Trace the scene in the selected direction
-HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
+float3 Dir;
+float  Prob;
+SampleBRDFDirection(Hit, rnd2, Dir, Prob);
 ```
 
+`Dir` is the direction and `Prob` is its corresponding probability density.
 Cosine-weighted distribution assigns more random samples near the normal direction and fewer
 at the horizon, since they produce lesser contribution due to the 'N dot L' term.
 
-At this point, if the ray missed the scene, we stop the loop.
+We then update the throughput:
 
 ```hlsl
-if (Hit.Type == HIT_TYPE_NONE)
-    break;
+float CosTheta = dot(Hit.Normal, Dir);
+f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
 ```
 
-Finally, we multiply the throughput with the current surface albedo and
-update the sample properties:
+Finally we trace a ray in the generated direction and update the hit properties:
 
 ```hlsl
-f3Throughput *= f3Albedo;
+// Trace the scene in the selected direction
+Ray.Origin = f3HitPos;
+Ray.Dir    = Dir;
+Hit = IntersectScene(Ray, g_Constants.Light);
 
-// Update current sample properties
-f3SamplePos = Ray.Origin + Ray.Dir * Hit.Distance;
-f3Albedo    = Hit.Albedo;
-f3Normal    = Hit.Normal;
+// Update hit properties
+f3HitPos += Dir * Hit.Distance;
 ```
 
 The process then repeats for the next surface sample location.
