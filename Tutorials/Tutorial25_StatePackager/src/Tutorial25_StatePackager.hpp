@@ -85,6 +85,7 @@ private:
     int    m_NumBounces         = 3;
     int    m_NumSamplesPerFrame = 8;
     bool   m_ShowOnlyLastBounce = false;
+    bool   m_UseNEE             = true;
     float3 m_LightColor         = {1, 1, 1};
     float  m_LightIntensity     = 15.f;
     float2 m_LightPos           = {0, 0};

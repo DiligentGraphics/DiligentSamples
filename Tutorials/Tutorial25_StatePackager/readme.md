@@ -229,20 +229,22 @@ HitInfo Hit = Hit0;
 RayInfo Ray = Ray0;
 
 // Total contribution of this path
-float3 f3PathContrib = float3(0.0, 0.0, 0.0);
+// We need to add emissive component from the first hit, which is like performing
+// light source sampling for the primary ray origin (aka "0-th" hit).
+float3 f3PathContrib = Hit0.Emissive;
 // Path throughput, or the maximum possible remaining contribution after all bounces so far.
 float3 f3Throughput = float3(1.0, 1.0, 1.0);
-
 for (int j = 0; j < g_Constants.iNumBounces; ++j)
 {
     // ...
 }
 ```
 
-In the loop, the shader first samples a random point on the light surface:
+In the loop, the shader first samples the light source:
 
 ```hlsl
 float2 rnd2 = hash22(Seed);
+Seed += uint2(129, 1725);
 
 float3 f3LightRadiance;
 float3 f3DirToLight;
@@ -250,15 +252,15 @@ SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
 float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 ```
 
-The `SampleLight` function returns a direction to the random point on the light surface (`f3DirToLight`)
+The `SampleLight` function returns a direction to the random point on the light (`f3DirToLight`)
 and the radiance incident from this direction (`f3LightRadiance`).
 In this example, the light source is a rectangular area light in XZ plane directed down along the Y axis.
 Its properties are constant:
 
 ```hlsl
-float  fLightArea       = Light.f2SizeXZ.x * Light.f2SizeXZ.y * 2.0;
+float  fLightArea       = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
 float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
-float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
+float3 f3LightNormal    = Light.f4Normal.xyz;
 ```
 
 `SampleLight` starts by selecting a random point on the light source surface and computing
@@ -272,7 +274,7 @@ float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
 f3DirToLight /= sqrt(fDistToLightSqr);
 ```
 
-Next, the function casts a shadow ray towards the selected light source point and computes it visibility:
+Next, the function casts a shadow ray towards the selected point and computes it visibility:
 
 ```hlsl
 RayInfo ShadowRay;
@@ -341,9 +343,6 @@ Finally, we trace a ray in the generated direction and update the hit properties
 Ray.Origin = f3HitPos;
 Ray.Dir    = Dir;
 Hit = IntersectScene(Ray, g_Constants.Light);
-
-// Update hit properties
-f3HitPos += Dir * Hit.Distance;
 ```
 
 The process then repeats for the next surface sample location.
