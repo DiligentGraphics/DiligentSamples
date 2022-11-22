@@ -88,7 +88,7 @@ void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3
     float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
     float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
 
-    float3 f3LightSample = GetLightSamplePos(g_Constants.Light, rnd2);
+    float3 f3LightSample = GetLightSamplePos(Light, rnd2);
     f3DirToLight  = f3LightSample - f3HitPos;
     float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
     f3DirToLight /= sqrt(fDistToLightSqr);
@@ -214,10 +214,13 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             f3HitPos += Dir * Hit.Distance;
         }
 
-        // Combine path contribution and emissive component for this sample
-        f3Radiance += f3PathContrib;
+        // We need to add emissive component from the first hit, which is in essence
+        // performing the next event estimation for the primary ray origin (aka "0-th" hit).
         if (g_Constants.iShowOnlyLastBounce == 0 || g_Constants.iNumBounces == 1)
-            f3Radiance += Hit0.Emissive;
+            f3PathContrib += Hit0.Emissive;
+
+        // Combine contributions
+        f3Radiance += f3PathContrib;
     }
 
     // Add the total radiance to the accumulation buffer

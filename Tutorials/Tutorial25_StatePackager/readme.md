@@ -196,7 +196,7 @@ PSOut.Depth        = min(HitClipPos.z / HitClipPos.w, 1.0);
 Path tracing is the core part of the rendering process and is implemented by a compute shader that
 runs one thread for each screen pixel. It starts from positions defined by the G-buffer
 and traces a given number of light paths through the scene, each path performing a given number of bounces.
-For each bounce, the shader traces a ray towards the light source and compute its contribution. It then selects
+For each bounce, the shader traces a ray towards the light source and computes its contribution. It then selects
 a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
 a ray in this direction and repeats the process at the new location.
 
@@ -243,39 +243,36 @@ In the loop, the shader first samples a random point on the light surface:
 
 ```hlsl
 float2 rnd2 = hash22(Seed);
-float3 f3LightSample = SampleLight(g_Constants.Light, rnd2);
-float3 f3DirToLight  = f3LightSample - f3HitPos;
-float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
-f3DirToLight /= sqrt(fDistToLightSqr);
+
+float3 f3LightRadiance;
+float3 f3DirToLight;
+SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
+float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 ```
 
-The `hash22` function takes a seed and produces two pseudo-random values in the [0, 1] range. The
-`SampleLight` function then uses these values to interpolate between the light box corners:
-
-```hlsl
-float3 SampleLight(LightAttribs Light, float2 uv)
-{
-    BoxInfo Box = GetLight(Light);
-    float3 Corner0 = Box.Center - Box.Size;
-    float3 Corner1 = Box.Center + Box.Size;
-    float3 Sample;
-    Sample.xz = lerp(Corner0.xz, Corner1.xz, uv);
-    Sample.y  = Corner0.y;
-    return Sample;
-}
-```
-
+The `SampleLight` function returns a direction to the random point on the light surface (`f3DirToLight`)
+and the radiance incident from this direction (`f3LightRadiance`).
 In this example, the light source is a rectangular area light in XZ plane directed down along the Y axis.
 Its properties are constant:
 
 ```hlsl
-float  fLightArea       = g_Constants.Light.f2SizeXZ.x * g_Constants.Light.f2SizeXZ.y * 2.0;
-float3 f3LightIntensity = g_Constants.Light.f4Intensity.rgb * g_Constants.Light.f4Intensity.a;
+float  fLightArea       = Light.f2SizeXZ.x * Light.f2SizeXZ.y * 2.0;
+float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
 float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
 ```
 
-After the random point on the light is retrieved, a shadow ray is cast towards that point to test
-visibility:
+`SampleLight` starts by selecting a random point on the light source surface and computing
+the direction vector to this point. It uses two pseudo-random values in the [0, 1] range produced
+by the `hash22` function:
+
+```hlsl
+float3 f3LightSample = GetLightSamplePos(Light, rnd2);
+f3DirToLight  = f3LightSample - f3HitPos;
+float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
+f3DirToLight /= sqrt(fDistToLightSqr);
+```
+
+Next, the function casts a shadow ray towards the selected light source point and computes it visibility:
 
 ```hlsl
 RayInfo ShadowRay;
@@ -283,42 +280,6 @@ ShadowRay.Origin = f3HitPos;
 ShadowRay.Dir    = f3DirToLight;
 float fLightVisibility = TestShadow(ShadowRay);
 ```
-
-`TestShadow` function casts a ray through the scene and returns 1 if it hits no objects, and 0 otherwise.
-
-The path radiance is then updated as follows:
-
-```hlsl
-float3 f3LightRadiance;
-float3 f3DirToLight;
-SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
-float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
-
-f3PathContrib +=
-    f3Throughput
-    * BRDF(Hit, -Ray.Dir, f3DirToLight)
-    * NdotL
-    * f3LightRadiance;
-```
-
-Where:
-
-- `f3Throughput` is the path throughput. Initially it is `float3(1, 1, 1)`, and is updated
-  at each bounce
-- `BRDF` is the Lambertian BRDF (perfectly diffuse surface), and equals to `f3Albedo / PI`
-- `f3LightRadiance` is the light radiance.
-
-The light radiance is computed as follows:
-
-```hlsl
-f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
-```
-
-Where:
-
-- `fLightVisibility` is the light visibility computed by casting the shadow ray
-- `f3LightIntensity` is the light intensity constant
-- `fLightProjectedArea` is the light surface area projected onto the hemisphere
 
 In Monte-Carlo integration, we pretend that each sample speaks for the full light
 source surface, so we project the entire light surface area onto the hemisphere
@@ -330,6 +291,28 @@ float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 
 ```
 
 The light radiance is then computed as follows:
+
+```hlsl
+f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
+```
+
+After we get the radiance received by the current point, we update the total path radiance as follows:
+
+```hlsl
+float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+
+f3PathContrib +=
+    f3Throughput
+    * BRDF(Hit, -Ray.Dir, f3DirToLight)
+    * NdotL
+    * f3LightRadiance;
+```
+
+In the above, `f3Throughput` is the path throughput, e.g. the maximum possible remaining
+contribution after all bounces so far. Initially it is `float3(1, 1, 1)`, and is updated
+at each bounce. `BRDF` is the bidirectional reflectance distribution function that determines
+how much of the incoming light is reflected into the view direction. In our case, it is a simple
+Lambertian BRDF (perfectly diffuse surface), and equals to `Hit.Albedo / PI`.
 
 After adding the light contribution, we go to the next sample by selecting a random
 direction using the cosine-weighted hemispherical distribution:
@@ -351,7 +334,7 @@ float CosTheta = dot(Hit.Normal, Dir);
 f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
 ```
 
-Finally we trace a ray in the generated direction and update the hit properties:
+Finally, we trace a ray in the generated direction and update the hit properties:
 
 ```hlsl
 // Trace the scene in the selected direction
@@ -369,7 +352,7 @@ After all bounces in the path are traced, the total path contribution is combine
 with the emissive term from the G-buffer and is added to the total radiance:
 
 ```hlsl
-f3Radiance += f3PathContrib + f3Emissive;
+f3Radiance += f3PathContrib + Hit0.Emissive;
 ```
 
 After all samples are traced, the shader adds the total radiance to the accumulation
