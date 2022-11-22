@@ -177,7 +177,7 @@ PSOutput PSOut;
 
 HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 
-PSOut.Albedo   = float4(Hit.Albedo,   float(Hit.Type) * 255.0);
+PSOut.Albedo   = float4(Hit.Albedo,   float(Hit.Type) / 255.0);
 PSOut.Emissive = float4(Hit.Emissive, 0.0);
 PSOut.Normal   = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 ```
