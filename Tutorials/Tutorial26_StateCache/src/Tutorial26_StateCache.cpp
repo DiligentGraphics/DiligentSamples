@@ -82,11 +82,17 @@ void Tutorial26_StateCache::UpdateUI()
         if (ImGui::Checkbox("Show only last bounce", &m_ShowOnlyLastBounce))
             m_SampleCount = 0;
 
+        if (ImGui::Checkbox("Next Event Estimation", &m_UseNEE))
+            m_SampleCount = 0;
+
         if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
             m_SampleCount = 0;
 
         if (ImGui::SliderFloat("Light intensity", &m_LightIntensity, 1, 50))
-            m_SampleCount = 0;
+        {
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = {}; // Need to update G-buffer
+        }
 
         if (ImGui::SliderFloat("Light Width", &m_LightSize.x, 0.5, 3))
         {
@@ -390,6 +396,7 @@ void Tutorial26_StateCache::Render()
         ShaderData->uFrameSeed2 = seed(gen);
 
         ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
+        ShaderData->iUseNEE             = m_UseNEE ? 1 : 0;
 
         auto LightPos = clamp(m_LightPos, float2{-4.5, -4.5} + m_LightSize, float2{+4.5, +4.5} - m_LightSize);
         if (LightPos != m_LightPos)
@@ -402,6 +409,7 @@ void Tutorial26_StateCache::Render()
         ShaderData->Light.f2PosXZ     = m_LightPos;
         ShaderData->Light.f2SizeXZ    = m_LightSize;
         ShaderData->Light.f4Intensity = float4{m_LightColor, m_LightIntensity};
+        ShaderData->Light.f4Normal    = float3{0, -1, 0};
 
         const auto& View     = m_Camera.GetViewMatrix();
         const auto& Proj     = m_Camera.GetProjMatrix();

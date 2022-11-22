@@ -89,7 +89,10 @@ void Tutorial25_StatePackager::UpdateUI()
             m_SampleCount = 0;
 
         if (ImGui::SliderFloat("Light intensity", &m_LightIntensity, 1, 50))
-            m_SampleCount = 0;
+        {
+            m_SampleCount       = 0;
+            m_LastFrameViewProj = {}; // Need to update G-buffer
+        }
 
         if (ImGui::SliderFloat("Light Width", &m_LightSize.x, 0.5, 3))
         {

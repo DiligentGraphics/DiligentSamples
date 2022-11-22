@@ -263,16 +263,22 @@ BoxInfo GetLight(LightAttribs Light)
     Box.Center   = float3(Light.f2PosXZ.x,  4.90, Light.f2PosXZ.y);
     Box.Size     = float3(Light.f2SizeXZ.x, 0.02, Light.f2SizeXZ.y);
     Box.Albedo   = float3(0.75, 0.75, 0.75);
-    Box.Emissive = Light.f4Intensity.rgb;
+    Box.Emissive = Light.f4Intensity.rgb * Light.f4Intensity.a;
     return Box;
 }
 
 void IntersectLight(RayInfo Ray, LightAttribs Light, inout HitInfo Hit)
 {
     BoxInfo Box = GetLight(Light);
-    IntersectAABB(Ray, Box, Hit);
+    if (IntersectAABB(Ray, Box, Hit))
+    {
+        // Check that the ray hit the light from the emissive side
+        if (dot(Hit.Normal, Light.f4Normal.xyz) < 0.99)
+        {
+            Hit.Emissive = float3(0.0, 0.0, 0.0);
+        }
+    }
 }
-
 
 HitInfo IntersectScene(RayInfo Ray, LightAttribs Light)
 {

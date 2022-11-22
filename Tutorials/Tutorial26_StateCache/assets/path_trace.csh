@@ -62,7 +62,7 @@ void GetPrimaryRay(in    uint2   ScreenXY,
                    out   HitInfo Hit,
                    out   RayInfo Ray)
 {
-    float fDepth          = g_Depth.Load(int3(ScreenXY, 0)).x;
+    float  fDepth         = g_Depth.Load(int3(ScreenXY, 0)).x;
     float4 f4Albedo_Type0 = g_Albedo.Load(int3(ScreenXY, 0));
 
     float3 HitPos = ScreenToWorld(float2(ScreenXY) + float2(0.5, 0.5),
@@ -84,9 +84,9 @@ void GetPrimaryRay(in    uint2   ScreenXY,
 
 void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3LightRadiance, out float3 f3DirToLight)
 {
-    float  fLightArea       = Light.f2SizeXZ.x * Light.f2SizeXZ.y * 2.0;
+    float  fLightArea       = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
     float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
-    float3 f3LightNormal    = float3(0.0, -1.0, 0.0);
+    float3 f3LightNormal    = Light.f4Normal.xyz;
 
     float3 f3LightSample = GetLightSamplePos(Light, rnd2);
     f3DirToLight  = f3LightSample - f3HitPos;
@@ -103,6 +103,8 @@ void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3
     // source surface, so we project the entire light surface area onto the hemisphere
     // around the shaded point and see how much solid angle it covers.
     float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
+    // Notice that when not using NEE, we randomly sample the hemisphere and will
+    // eventually cover the same solid angle.
 
     f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
 }
@@ -160,9 +162,18 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
         // Total contribution of this path
         float3 f3PathContrib = float3(0.0, 0.0, 0.0);
+        if (g_Constants.iUseNEE != 0)
+        {
+            // We need to add emissive component from the first hit, which is like performing
+            // light source sampling for the primary ray origin (aka "0-th" hit).
+            f3PathContrib += Hit0.Emissive;
+        }
+
         // Path throughput, or the maximum possible remaining contribution after all bounces so far.
         float3 f3Throughput = float3(1.0, 1.0, 1.0);
-        for (int j = 0; j < g_Constants.iNumBounces; ++j)
+        // Note that when using next event estimation, we sample light source at each bounce.
+        // To compensate for that, we add extra bounce when not using NEE.
+        for (int j = 0; j < g_Constants.iNumBounces + (1 - g_Constants.iUseNEE); ++j)
         {
             if (g_Constants.iShowOnlyLastBounce != 0)
                 f3PathContrib = float3(0.0, 0.0, 0.0);
@@ -177,28 +188,41 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             // Update the seed
             Seed += uint2(129, 1725);
 
-            float3 Dir  = float3(0, 0, 0);
-            float  Prob = 0;
-            if (Hit.Type == HIT_TYPE_LAMBERTIAN)
+            float3 Dir = float3(0, 0, 0);
+            if (Hit.Type == HIT_TYPE_MIRROR)
             {
-                float3 f3LightRadiance;
-                float3 f3DirToLight;
-                SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
-                float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+                Dir = Ray.Dir - 2.0 * dot(Ray.Dir, Hit.Normal) * Hit.Normal;
+            }
+            else
+            {
+                if (g_Constants.iUseNEE != 0)
+                {
+                    // Sample light source
+                    float3 f3LightRadiance;
+                    float3 f3DirToLight;
+                    SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
+                    float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 
-                f3PathContrib +=
-                    f3Throughput
-                    * BRDF(Hit, -Ray.Dir, f3DirToLight)
-                    * NdotL
-                    * f3LightRadiance;
+                    f3PathContrib +=
+                        f3Throughput
+                        * BRDF(Hit, -Ray.Dir, f3DirToLight)
+                        * NdotL
+                        * f3LightRadiance;
+                }
+                else
+                {
+                    f3PathContrib += f3Throughput * Hit.Emissive;
+                }
 
-                if (j == g_Constants.iNumBounces-1)
+                // NEE effectively performs one additional bounce
+                if (j == g_Constants.iNumBounces - g_Constants.iUseNEE)
                 {
                     // Last bounce - complete the loop
                     break; 
                 }
 
                 // Sample the BRDF - in our case this is a cosine-weighted hemispherical distribution.
+                float Prob;
                 SampleBRDFDirection(Hit, rnd2, Dir, Prob);
 
                 float CosTheta = dot(Hit.Normal, Dir);
@@ -207,24 +231,12 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 // 1/PI factor from BRDF. We however keep them here for the sake of generality.
                 f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
             }
-            else if (Hit.Type == HIT_TYPE_MIRROR)
-            {
-                Dir = Ray.Dir - 2.0 * dot(Ray.Dir, Hit.Normal) * Hit.Normal;
-            }
 
             // Trace the scene in the selected direction
             Ray.Origin = f3HitPos;
             Ray.Dir    = Dir;
             Hit = IntersectScene(Ray, g_Constants.Light);
-
-            // Update hit properties
-            f3HitPos += Dir * Hit.Distance;
         }
-
-        // We need to add emissive component from the first hit, which is in essence
-        // performing the next event estimation for the primary ray origin (aka "0-th" hit).
-        if (g_Constants.iShowOnlyLastBounce == 0 || g_Constants.iNumBounces == 1)
-            f3PathContrib += Hit0.Emissive;
 
         // Combine contributions
         f3Radiance += f3PathContrib;
