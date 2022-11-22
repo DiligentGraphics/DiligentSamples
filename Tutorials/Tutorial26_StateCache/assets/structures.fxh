@@ -10,10 +10,8 @@ struct LightAttribs
 
 struct ShaderConstants
 {
-	uint  uScreenWidth;
-	uint  uScreenHeight;
-	float fScreenWidth;
-	float fScreenHeight;
+	uint2  u2ScreenSize;
+	float2 f2ScreenSize;
 
 	float fLastSampleCount;
 	float fCurrSampleCount;
@@ -25,9 +23,9 @@ struct ShaderConstants
 	int  iShowOnlyLastBounce;
 	int  Padding0;
 
-	float4   CameraPos;
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;
+	float4   CameraPos;
 
 	LightAttribs Light;
 };

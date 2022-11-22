@@ -297,7 +297,7 @@ float TestShadow(RayInfo Ray)
     return Hit.Distance < INF ? 0.0 : 1.0;
 }
 
-float3 SampleLight(LightAttribs Light, float2 uv)
+float3 GetLightSamplePos(LightAttribs Light, float2 uv)
 {
     BoxInfo Box = GetLight(Light);
     float3 Corner0 = Box.Center - Box.Size;

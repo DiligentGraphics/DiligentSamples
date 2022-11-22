@@ -74,7 +74,7 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     float3 RayDir = HitPos - Ray.Origin;
     float  RayLen = length(RayDir);
     Ray.Dir = RayDir / RayLen;
-    
+
     Hit.Albedo   = f4Albedo_Type0.rgb;
     Hit.Emissive = g_Emissive.Load(int3(ScreenXY, 0)).rgb;
     Hit.Normal   = normalize(g_Normal.Load(int3(ScreenXY, 0)).xyz * 2.0 - 1.0);
