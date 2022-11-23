@@ -76,17 +76,19 @@ private:
     {
         explicit operator bool() const
         {
-            return pAlbedo && pNormal && pDepth;
+            return pBaseColor && pNormal && pEmittance && pPhysDesc && pDepth;
         }
 
-        static constexpr auto AlbedoFormat    = TEX_FORMAT_RGBA8_UNORM;
+        static constexpr auto BaseColorFormat = TEX_FORMAT_RGBA8_UNORM;
         static constexpr auto NormalFormat    = TEX_FORMAT_RGBA8_UNORM;
-        static constexpr auto DepthFormat     = TEX_FORMAT_R32_FLOAT; // 16-bit is not enough
         static constexpr auto EmittanceFormat = TEX_FORMAT_R11G11B10_FLOAT;
+        static constexpr auto PhysDescFormat  = TEX_FORMAT_RG8_UNORM; // Metallic-roughness
+        static constexpr auto DepthFormat     = TEX_FORMAT_R32_FLOAT; // 16-bit is not enough
 
-        RefCntAutoPtr<ITexture> pAlbedo;
+        RefCntAutoPtr<ITexture> pBaseColor;
         RefCntAutoPtr<ITexture> pNormal;
         RefCntAutoPtr<ITexture> pEmittance;
+        RefCntAutoPtr<ITexture> pPhysDesc;
         RefCntAutoPtr<ITexture> pDepth;
     };
     GBuffer m_GBuffer;
@@ -94,8 +96,8 @@ private:
     static constexpr auto   RadianceAccumulationFormat = TEX_FORMAT_RGBA32_FLOAT;
     RefCntAutoPtr<ITexture> m_pRadianceAccumulationBuffer;
 
-    int    m_NumBounces         = 3;
-    int    m_NumSamplesPerFrame = 8;
+    int    m_NumBounces         = 4;
+    int    m_NumSamplesPerFrame = 4;
     bool   m_ShowOnlyLastBounce = false;
     bool   m_UseNEE             = true;
     float3 m_LightColor         = {1, 1, 1};

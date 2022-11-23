@@ -14,10 +14,11 @@ struct PSInput
 
 struct PSOutput
 {
-    float4 Albedo    : SV_TARGET0;
+    float4 BaseColor : SV_TARGET0;
     float4 Normal    : SV_TARGET1;
     float4 Emittance : SV_TARGET2;
-    float  Depth     : SV_TARGET3;
+    float2 PhysDesc  : SV_TARGET3;
+    float  Depth     : SV_TARGET4;
 };
 
 void main(in  PSInput  PSIn,
@@ -34,8 +35,9 @@ void main(in  PSInput  PSIn,
     // Trace the scene
     HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 
-    PSOut.Albedo    = float4(Hit.Albedo,   float(Hit.Type) / 255.0);
-    PSOut.Emittance = float4(Hit.Emittance, 0.0);
+    PSOut.BaseColor = float4(Hit.Mat.BaseColor, float(Hit.Mat.Type) / 255.0);
+    PSOut.Emittance = float4(Hit.Mat.Emittance, 0.0);
+    PSOut.PhysDesc  = float2(Hit.Mat.Metallic, Hit.Mat.Roughness);
 
     // [-1, +1] -> [0, 1]
     PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);

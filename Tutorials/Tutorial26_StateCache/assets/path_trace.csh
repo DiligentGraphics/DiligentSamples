@@ -1,10 +1,12 @@
 #include "structures.fxh"
 #include "scene.fxh"
 #include "hash.fxh"
+#include "PBR_Common.fxh"
 
-Texture2D g_Albedo;
+Texture2D g_BaseColor;
 Texture2D g_Normal;
 Texture2D g_Emittance;
+Texture2D g_PhysDesc;
 Texture2D g_Depth;
 
 RWTexture2D<float4 /*format = rgba32f*/> g_Radiance;
@@ -48,8 +50,30 @@ void SampleDirectionCosineHemisphere(in  float3 N,   // Normal
 
 float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
 {
-    // Lambertian BRDF
-    return Hit.Albedo / PI;
+    float3 f0 = float3(0.04, 0.04, 0.04);
+
+    SurfaceReflectanceInfo SrfInfo;
+    SrfInfo.PerceptualRoughness = Hit.Mat.Roughness;
+    SrfInfo.DiffuseColor        = Hit.Mat.BaseColor.rgb * (float3(1.0, 1.0, 1.0) - f0) * (1.0 - Hit.Mat.Metallic);
+    SrfInfo.Reflectance0        = lerp(f0, Hit.Mat.BaseColor.rgb, Hit.Mat.Metallic);
+
+    float reflectance = max(max(SrfInfo.Reflectance0.r, SrfInfo.Reflectance0.g), SrfInfo.Reflectance0.b);
+    // Anything less than 2% is physically impossible and is instead considered to be shadowing. Compare to "Real-Time-Rendering" 4th editon on page 325.
+    SrfInfo.Reflectance90 = clamp(reflectance * 50.0, 0.0, 1.0) * float3(1.0, 1.0, 1.0);
+
+    float3 DiffuseContrib;
+    float3 SpecContrib;
+    float  NdotL;
+    BRDF(InDir,
+         Hit.Normal,
+         OutDir,
+         SrfInfo,
+         DiffuseContrib,
+         SpecContrib,
+         NdotL
+    );
+
+    return DiffuseContrib + SpecContrib;
 }
 
 void SampleBRDFDirection(HitInfo Hit, float2 rnd2, out float3 Dir, out float Prob)
@@ -62,8 +86,10 @@ void GetPrimaryRay(in    uint2   ScreenXY,
                    out   HitInfo Hit,
                    out   RayInfo Ray)
 {
-    float  fDepth         = g_Depth.Load(int3(ScreenXY, 0)).x;
-    float4 f4Albedo_Type0 = g_Albedo.Load(int3(ScreenXY, 0));
+    float  fDepth          = g_Depth.Load(int3(ScreenXY, 0)).r;
+    float4 f4BaseCol_Type0 = g_BaseColor.Load(int3(ScreenXY, 0));
+    float2 f2PhysDesc      = g_PhysDesc.Load(int3(ScreenXY, 0)).rg;
+
 
     float3 HitPos = ScreenToWorld(float2(ScreenXY) + float2(0.5, 0.5),
                                   fDepth, 
@@ -75,11 +101,14 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     float  RayLen = length(RayDir);
     Ray.Dir = RayDir / RayLen;
 
-    Hit.Albedo    = f4Albedo_Type0.rgb;
-    Hit.Emittance = g_Emittance.Load(int3(ScreenXY, 0)).rgb;
-    Hit.Normal    = normalize(g_Normal.Load(int3(ScreenXY, 0)).xyz * 2.0 - 1.0);
-    Hit.Distance  = RayLen;
-    Hit.Type      = int(f4Albedo_Type0.a * 255.0);
+    Hit.Mat.BaseColor = f4BaseCol_Type0.rgb;
+    Hit.Mat.Emittance = g_Emittance.Load(int3(ScreenXY, 0)).rgb;
+    Hit.Mat.Metallic  = f2PhysDesc.x;
+    Hit.Mat.Roughness = f2PhysDesc.y;
+    Hit.Mat.Type      = int(f4BaseCol_Type0.a * 255.0);
+
+    Hit.Normal   = normalize(g_Normal.Load(int3(ScreenXY, 0)).xyz * 2.0 - 1.0);
+    Hit.Distance = RayLen;
 }
 
 void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3LightRadiance, out float3 f3DirToLight)
@@ -113,7 +142,7 @@ void Reflect(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
 {
     Ray.Origin = f3HitPos;
     Ray.Dir    = reflect(Ray.Dir, Hit.Normal);
-    f3Througput *= Hit.Albedo;
+    f3Througput *= Hit.Mat.BaseColor;
 }
 
 
@@ -199,7 +228,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     RayInfo Ray0;
     GetPrimaryRay(ThreadId.xy, Hit0, Ray0);
 
-    if (Hit0.Type == HIT_TYPE_NONE)
+    if (Hit0.Mat.Type == MAT_TYPE_NONE)
     {
         // Background
         g_Radiance[ThreadId.xy] = float4(0.0, 0.0, 0.0, 0.0);
@@ -253,7 +282,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
         {
             // We need to add emittance from the first hit, which is like performing
             // light source sampling for the primary ray origin (aka "0-th" hit).
-            f3PathContrib += Hit0.Emittance;
+            f3PathContrib += Hit0.Mat.Emittance;
         }
 
         // Path throughput, or the maximum possible remaining contribution after all bounces so far.
@@ -265,7 +294,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             if (g_Constants.iShowOnlyLastBounce != 0)
                 f3PathContrib = float3(0.0, 0.0, 0.0);
 
-            if (Hit.Type == HIT_TYPE_NONE)
+            if (Hit.Mat.Type == MAT_TYPE_NONE)
                 break;
 
             float3 f3HitPos = Ray.Origin + Ray.Dir * Hit.Distance;
@@ -275,14 +304,14 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             // Update the seed
             Seed += uint2(129, 1725);
 
-            if (Hit.Type == HIT_TYPE_MIRROR)
+            if (Hit.Mat.Type == MAT_TYPE_MIRROR)
             {
                 Reflect(Hit, f3HitPos, Ray, f3Throughput);
                 // Note: if NEE is enabled, we need to perform light sampling here.
                 //       However, since we need to sample the light in the same reflected direction,
                 //       we will add its contribution later when we find the next hit point.
             }
-            else if (Hit.Type == HIT_TYPE_GLASS)
+            else if (Hit.Mat.Type == MAT_TYPE_GLASS)
             {
                 Refract(Hit, f3HitPos, Ray, f3Throughput, rnd2.x);
                 // As with mirror, we will perform light sampling later
@@ -305,7 +334,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 }
                 else
                 {
-                    f3PathContrib += f3Throughput * Hit.Emittance;
+                    f3PathContrib += f3Throughput * Hit.Mat.Emittance;
                 }
 
                 // NEE effectively performs one additional bounce
@@ -332,13 +361,13 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
             // We did not perform next event estimation for the mirror surface and
             // we need to add emittance of the next hit point.
-            bool AddEmittance = (g_Constants.iUseNEE != 0) && (Hit.Type == HIT_TYPE_MIRROR || Hit.Type == HIT_TYPE_GLASS);
+            bool AddEmittance = (g_Constants.iUseNEE != 0) && (Hit.Mat.Type == MAT_TYPE_MIRROR || Hit.Mat.Type == MAT_TYPE_GLASS);
 
             // Trace the scene in the selected direction
             Hit = IntersectScene(Ray, g_Constants.Light);
 
             if (AddEmittance)
-                f3PathContrib += f3Throughput * Hit.Emittance;
+                f3PathContrib += f3Throughput * Hit.Mat.Emittance;
         }
 
         // Combine contributions

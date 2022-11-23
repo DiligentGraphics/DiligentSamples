@@ -64,7 +64,7 @@ private:
     {
         explicit operator bool() const
         {
-            return pAlbedo && pNormal && pDepth;
+            return pAlbedo && pNormal && pEmittance && pDepth;
         }
 
         static constexpr auto AlbedoFormat    = TEX_FORMAT_RGBA8_UNORM;

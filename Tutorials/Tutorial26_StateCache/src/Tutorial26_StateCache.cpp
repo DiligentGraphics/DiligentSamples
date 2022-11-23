@@ -239,12 +239,13 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
                 auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
                 auto& GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
 
-                GraphicsPipeline.NumRenderTargets = 4;
+                GraphicsPipeline.NumRenderTargets = 5;
 
-                GraphicsPipeline.RTVFormats[0] = GBuffer::AlbedoFormat;
+                GraphicsPipeline.RTVFormats[0] = GBuffer::BaseColorFormat;
                 GraphicsPipeline.RTVFormats[1] = GBuffer::NormalFormat;
                 GraphicsPipeline.RTVFormats[2] = GBuffer::EmittanceFormat;
-                GraphicsPipeline.RTVFormats[3] = GBuffer::DepthFormat;
+                GraphicsPipeline.RTVFormats[3] = GBuffer::PhysDescFormat;
+                GraphicsPipeline.RTVFormats[4] = GBuffer::DepthFormat;
                 GraphicsPipeline.DSVFormat     = TEX_FORMAT_UNKNOWN;
             });
 
@@ -325,13 +326,13 @@ void Tutorial26_StateCache::CreateGBuffer()
     TexDesc.Name      = "G-buffer albedo";
     TexDesc.Type      = RESOURCE_DIM_TEX_2D;
     TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
-    TexDesc.Format    = GBuffer::AlbedoFormat;
+    TexDesc.Format    = GBuffer::BaseColorFormat;
     TexDesc.Width     = SCDesc.Width;
     TexDesc.Height    = SCDesc.Height;
     TexDesc.MipLevels = 1;
 
-    m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pAlbedo);
-    VERIFY_EXPR(m_GBuffer.pAlbedo);
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pBaseColor);
+    VERIFY_EXPR(m_GBuffer.pBaseColor);
 
     TexDesc.Name   = "G-buffer normal";
     TexDesc.Format = GBuffer::NormalFormat;
@@ -342,6 +343,11 @@ void Tutorial26_StateCache::CreateGBuffer()
     TexDesc.Format = GBuffer::EmittanceFormat;
     m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pEmittance);
     VERIFY_EXPR(m_GBuffer.pEmittance);
+
+    TexDesc.Name   = "G-buffer physical description";
+    TexDesc.Format = GBuffer::PhysDescFormat;
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pPhysDesc);
+    VERIFY_EXPR(m_GBuffer.pPhysDesc);
 
     // Note that since we are generating our G-buffer by ray tracing the scene,
     // we bind depth buffer as render target, not as the depth-stencil buffer.
@@ -360,9 +366,10 @@ void Tutorial26_StateCache::CreateGBuffer()
 
     m_pPathTraceSRB.Release();
     m_pPathTracePSO->CreateShaderResourceBinding(&m_pPathTraceSRB, true);
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Albedo")->Set(m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_BaseColor")->Set(m_GBuffer.pBaseColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Normal")->Set(m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Emittance")->Set(m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_PhysDesc")->Set(m_GBuffer.pPhysDesc->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Depth")->Set(m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Radiance")->Set(m_pRadianceAccumulationBuffer->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
 
@@ -438,9 +445,10 @@ void Tutorial26_StateCache::Render()
     if (UpdateGBuffer)
     {
         ITextureView* ppRTVs[] = {
-            m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+            m_GBuffer.pBaseColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
             m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
             m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+            m_GBuffer.pPhysDesc->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
             m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) //
         };
         m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
