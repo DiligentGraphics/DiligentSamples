@@ -117,7 +117,20 @@ void Reflect(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
 }
 
 
-// Optimized fresnel calculation.
+// Fresnel term
+// https://en.wikipedia.org/wiki/Fresnel_equations
+//
+//             cosThetaI
+//           |      .'
+//           |    .'
+//           |  .'      Ri
+//   ________|.'__________    eta = Ri/Rt
+//          /|
+//         / |          Rt
+//        /  |
+//       /   |
+//  cosThetaT
+//
 float Fresnel(float eta, float cosThetaI)
 {
     cosThetaI = clamp(cosThetaI, -1.0, 1.0);
@@ -127,8 +140,10 @@ float Fresnel(float eta, float cosThetaI)
         cosThetaI = -cosThetaI;
     }
 
+    // Snell's law:
+    // Ri * sin(ThetaI) = Rt * sin(ThetaT)
     float sinThetaTSq = eta * eta * (1.0 - cosThetaI * cosThetaI);
-    if (sinThetaTSq > 1.0)
+    if (sinThetaTSq >= 1.0)
     {
         // Total internal reflection
         return 1.0;
