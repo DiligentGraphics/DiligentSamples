@@ -243,7 +243,7 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
 
                 GraphicsPipeline.RTVFormats[0] = GBuffer::AlbedoFormat;
                 GraphicsPipeline.RTVFormats[1] = GBuffer::NormalFormat;
-                GraphicsPipeline.RTVFormats[2] = GBuffer::EmissiveFormat;
+                GraphicsPipeline.RTVFormats[2] = GBuffer::EmittanceFormat;
                 GraphicsPipeline.RTVFormats[3] = GBuffer::DepthFormat;
                 GraphicsPipeline.DSVFormat     = TEX_FORMAT_UNKNOWN;
             });
@@ -338,10 +338,10 @@ void Tutorial26_StateCache::CreateGBuffer()
     m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pNormal);
     VERIFY_EXPR(m_GBuffer.pNormal);
 
-    TexDesc.Name   = "G-buffer emissive";
-    TexDesc.Format = GBuffer::EmissiveFormat;
-    m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pEmissive);
-    VERIFY_EXPR(m_GBuffer.pEmissive);
+    TexDesc.Name   = "G-buffer emittance";
+    TexDesc.Format = GBuffer::EmittanceFormat;
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_GBuffer.pEmittance);
+    VERIFY_EXPR(m_GBuffer.pEmittance);
 
     // Note that since we are generating our G-buffer by ray tracing the scene,
     // we bind depth buffer as render target, not as the depth-stencil buffer.
@@ -362,7 +362,7 @@ void Tutorial26_StateCache::CreateGBuffer()
     m_pPathTracePSO->CreateShaderResourceBinding(&m_pPathTraceSRB, true);
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Albedo")->Set(m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Normal")->Set(m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Emissive")->Set(m_GBuffer.pEmissive->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Emittance")->Set(m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Depth")->Set(m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Radiance")->Set(m_pRadianceAccumulationBuffer->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
 
@@ -440,7 +440,7 @@ void Tutorial26_StateCache::Render()
         ITextureView* ppRTVs[] = {
             m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
             m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
-            m_GBuffer.pEmissive->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+            m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
             m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) //
         };
         m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

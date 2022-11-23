@@ -51,7 +51,7 @@ At the first stage, the scene is rendered into a G-buffer consisting of the foll
 
 - Albedo (`RGBA8_UNORM`)
 - Normal (`RGBA8_UNORM`)
-- Emissive (`R11G11B10_FLOAT`)
+- Emittance (`R11G11B10_FLOAT`)
 - Depth (`R32_FLOAT`)
 
 At the second state, a compute shader is executed that for each pixel of the G-buffer reconstructs its
@@ -78,7 +78,7 @@ struct BoxInfo
     float3 Center;
     float3 Size;
     float3 Albedo;
-    float3 Emissive;
+    float3 Emittance;
     int    Type;
 };
 ```
@@ -103,7 +103,7 @@ diffuse light source or none):
 struct HitInfo
 {
     float3 Albedo;
-    float3 Emissive;
+    float3 Emittance;
     float3 Normal;
     float  Distance;
     int    Type;
@@ -130,8 +130,8 @@ float RoomSize  = 10.0;
 float WallThick = 0.05;
 
 BoxInfo Box;
-Box.Type     = HIT_TYPE_LAMBERTIAN;
-Box.Emissive = float3(0.0, 0.0, 0.0);
+Box.Type      = HIT_TYPE_LAMBERTIAN;
+Box.Emittance = float3(0.0, 0.0, 0.0);
 
 float3 Green = float3(0.1, 0.6, 0.1);
 float3 Red   = float3(0.6, 0.1, 0.1);
@@ -177,9 +177,9 @@ PSOutput PSOut;
 
 HitInfo Hit = IntersectScene(Ray, g_Constants.Light);
 
-PSOut.Albedo   = float4(Hit.Albedo,   float(Hit.Type) / 255.0);
-PSOut.Emissive = float4(Hit.Emissive, 0.0);
-PSOut.Normal   = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
+PSOut.Albedo    = float4(Hit.Albedo,   float(Hit.Type) / 255.0);
+PSOut.Emittance = float4(Hit.Emittance, 0.0);
+PSOut.Normal    = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 ```
 
 Finally, we compute the depth by transforming the hit point with the view-projection matrix:
@@ -229,9 +229,9 @@ HitInfo Hit = Hit0;
 RayInfo Ray = Ray0;
 
 // Total contribution of this path
-// We need to add emissive component from the first hit, which is like performing
+// We need to add emittance from the first hit, which is like performing
 // light source sampling for the primary ray origin (aka "0-th" hit).
-float3 f3PathContrib = Hit0.Emissive;
+float3 f3PathContrib = Hit0.Emittance;
 // Path throughput, or the maximum possible remaining contribution after all bounces so far.
 float3 f3Throughput = float3(1.0, 1.0, 1.0);
 for (int j = 0; j < g_Constants.iNumBounces; ++j)
@@ -347,11 +347,11 @@ Hit = IntersectScene(Ray, g_Constants.Light);
 
 The process then repeats for the next surface sample location.
 
-After all bounces in the path are traced, the total path contribution is combined
-with the emissive term from the G-buffer and is added to the total radiance:
+After all bounces in the path are traced, the path contribution is combined
+with the total radiance:
 
 ```hlsl
-f3Radiance += f3PathContrib + Hit0.Emissive;
+f3Radiance += f3PathContrib;
 ```
 
 After all samples are traced, the shader adds the total radiance to the accumulation
@@ -576,7 +576,7 @@ To render the scene, we run each of the three stages described above. First, pop
 ITextureView* ppRTVs[] = {
     m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
     m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
-    m_GBuffer.pEmissive->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+    m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
     m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET)
 };
 m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

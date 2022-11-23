@@ -4,7 +4,7 @@
 
 Texture2D g_Albedo;
 Texture2D g_Normal;
-Texture2D g_Emissive;
+Texture2D g_Emittance;
 Texture2D g_Depth;
 
 RWTexture2D<float4 /*format = rgba32f*/> g_Radiance;
@@ -75,11 +75,11 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     float  RayLen = length(RayDir);
     Ray.Dir = RayDir / RayLen;
 
-    Hit.Albedo   = f4Albedo_Type0.rgb;
-    Hit.Emissive = g_Emissive.Load(int3(ScreenXY, 0)).rgb;
-    Hit.Normal   = normalize(g_Normal.Load(int3(ScreenXY, 0)).xyz * 2.0 - 1.0);
-    Hit.Distance = RayLen;
-    Hit.Type     = int(f4Albedo_Type0.a * 255.0);
+    Hit.Albedo    = f4Albedo_Type0.rgb;
+    Hit.Emittance = g_Emittance.Load(int3(ScreenXY, 0)).rgb;
+    Hit.Normal    = normalize(g_Normal.Load(int3(ScreenXY, 0)).xyz * 2.0 - 1.0);
+    Hit.Distance  = RayLen;
+    Hit.Type      = int(f4Albedo_Type0.a * 255.0);
 }
 
 void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3LightRadiance, out float3 f3DirToLight)
@@ -236,9 +236,9 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
         float3 f3PathContrib = float3(0.0, 0.0, 0.0);
         if (g_Constants.iUseNEE != 0)
         {
-            // We need to add emissive component from the first hit, which is like performing
+            // We need to add emittance from the first hit, which is like performing
             // light source sampling for the primary ray origin (aka "0-th" hit).
-            f3PathContrib += Hit0.Emissive;
+            f3PathContrib += Hit0.Emittance;
         }
 
         // Path throughput, or the maximum possible remaining contribution after all bounces so far.
@@ -290,7 +290,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 }
                 else
                 {
-                    f3PathContrib += f3Throughput * Hit.Emissive;
+                    f3PathContrib += f3Throughput * Hit.Emittance;
                 }
 
                 // NEE effectively performs one additional bounce
@@ -317,13 +317,13 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
             // We did not perform next event estimation for the mirror surface and
             // we need to add emittance of the next hit point.
-            bool AddEmissive = (g_Constants.iUseNEE != 0) && (Hit.Type == HIT_TYPE_MIRROR || Hit.Type == HIT_TYPE_GLASS);
+            bool AddEmittance = (g_Constants.iUseNEE != 0) && (Hit.Type == HIT_TYPE_MIRROR || Hit.Type == HIT_TYPE_GLASS);
 
             // Trace the scene in the selected direction
             Hit = IntersectScene(Ray, g_Constants.Light);
 
-            if (AddEmissive)
-                f3PathContrib += f3Throughput * Hit.Emissive;
+            if (AddEmittance)
+                f3PathContrib += f3Throughput * Hit.Emittance;
         }
 
         // Combine contributions

@@ -61,7 +61,7 @@ RayInfo RotateRayY(RayInfo Ray, float a)
 struct HitInfo
 {
     float3 Albedo;
-    float3 Emissive;
+    float3 Emittance;
     float3 Normal;
     float  Distance;
     int    Type;
@@ -70,11 +70,11 @@ struct HitInfo
 HitInfo NullHit()
 {
     HitInfo Hit;
-    Hit.Albedo   = float3(0.0, 0.0, 0.0);
-    Hit.Normal   = float3(0.0, 0.0, 0.0);
-    Hit.Emissive = float3(0.0, 0.0, 0.0);
-    Hit.Distance = INF;
-    Hit.Type     = HIT_TYPE_NONE;
+    Hit.Albedo    = float3(0.0, 0.0, 0.0);
+    Hit.Normal    = float3(0.0, 0.0, 0.0);
+    Hit.Emittance = float3(0.0, 0.0, 0.0);
+    Hit.Distance  = INF;
+    Hit.Type      = HIT_TYPE_NONE;
     return Hit;
 }
 
@@ -83,7 +83,7 @@ struct BoxInfo
     float3 Center;
     float3 Size;
     float3 Albedo;
-    float3 Emissive;
+    float3 Emittance;
     int    Type;
 };
 
@@ -106,8 +106,8 @@ bool IntersectAABB(in    RayInfo Ray,
     if (t < EPSILON || t_near > Hit.Distance)
         return false;
 
-    Hit.Albedo   = Box.Albedo;
-    Hit.Emissive = Box.Emissive;
+    Hit.Albedo    = Box.Albedo;
+    Hit.Emittance = Box.Emittance;
     // Compute normal for the entry point. We only use internal intersection for shadows.
     Hit.Normal   = -sign(Ray.Dir) * step(t_min.yzx, t_min.xyz) * step(t_min.zxy, t_min.xyz);
     Hit.Distance = t;
@@ -137,7 +137,7 @@ struct SphereInfo
     float3 Center;
     float  Radius;
     float3 Albedo;
-    float3 Emissive;
+    float3 Emittance;
     int    Type;
 };
 
@@ -166,11 +166,11 @@ bool IntersectSphere(in    RayInfo    Ray,
 
     float3 HitPos = Ray.Origin + t * Ray.Dir;
 
-    Hit.Albedo   = Sphere.Albedo;
-    Hit.Emissive = Sphere.Emissive;
-    Hit.Normal   = normalize(HitPos - Sphere.Center);
-    Hit.Distance = t;
-    Hit.Type     = Sphere.Type;
+    Hit.Albedo    = Sphere.Albedo;
+    Hit.Emittance = Sphere.Emittance;
+    Hit.Normal    = normalize(HitPos - Sphere.Center);
+    Hit.Distance  = t;
+    Hit.Type      = Sphere.Type;
 
     return true;
 }
@@ -181,8 +181,8 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
     float WallThick = 0.05;
 
     BoxInfo Box;
-    Box.Type     = HIT_TYPE_LAMBERTIAN;
-    Box.Emissive = float3(0.0, 0.0, 0.0);
+    Box.Type      = HIT_TYPE_LAMBERTIAN;
+    Box.Emittance = float3(0.0, 0.0, 0.0);
 
     float3 Green = float3(0.1, 0.6, 0.1);
     float3 Red   = float3(0.6, 0.1, 0.1);
@@ -222,30 +222,30 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 void IntersectMirrorSphere(RayInfo Ray, inout HitInfo Hit)
 {
     SphereInfo Sphere;
-    Sphere.Center   = float3(+2.5, -3.415, -2.0);
-    Sphere.Radius   = 1.5;
-    Sphere.Albedo   = float3(1.0, 1.0, 1.0);
-    Sphere.Emissive = float3(0.0, 0.0, 0.0);
-    Sphere.Type     = HIT_TYPE_MIRROR; 
+    Sphere.Center    = float3(+2.5, -3.415, -2.0);
+    Sphere.Radius    = 1.5;
+    Sphere.Albedo    = float3(1.0, 1.0, 1.0);
+    Sphere.Emittance = float3(0.0, 0.0, 0.0);
+    Sphere.Type      = HIT_TYPE_MIRROR; 
     IntersectSphere(Ray, Sphere, Hit);
 }
 
 void IntersectGlassSphere(RayInfo Ray, inout HitInfo Hit)
 {
     SphereInfo Sphere;
-    Sphere.Center   = float3(-1.5, -3.415, -1.0);
-    Sphere.Radius   = 1.5;
-    Sphere.Albedo   = float3(1.0, 1.0, 1.0);
-    Sphere.Emissive = float3(0.0, 0.0, 0.0);
-    Sphere.Type     = HIT_TYPE_GLASS; 
+    Sphere.Center    = float3(-1.5, -3.415, -1.0);
+    Sphere.Radius    = 1.5;
+    Sphere.Albedo    = float3(1.0, 1.0, 1.0);
+    Sphere.Emittance = float3(0.0, 0.0, 0.0);
+    Sphere.Type      = HIT_TYPE_GLASS; 
     IntersectSphere(Ray, Sphere, Hit);
 }
 
 void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
 {
     BoxInfo Box;
-    Box.Type     = HIT_TYPE_LAMBERTIAN;
-    Box.Emissive = float3(0.0, 0.0, 0.0);
+    Box.Type      = HIT_TYPE_LAMBERTIAN;
+    Box.Emittance = float3(0.0, 0.0, 0.0);
 
     float Box1Rotation = +PI * 0.1;
     float Box2Rotation = -PI * 0.1;
@@ -265,11 +265,11 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
 BoxInfo GetLight(LightAttribs Light)
 {
     BoxInfo Box;
-    Box.Type     = HIT_TYPE_DIFFUSE_LIGHT;
-    Box.Center   = float3(Light.f2PosXZ.x,  4.90, Light.f2PosXZ.y);
-    Box.Size     = float3(Light.f2SizeXZ.x, 0.02, Light.f2SizeXZ.y);
-    Box.Albedo   = float3(0.75, 0.75, 0.75);
-    Box.Emissive = Light.f4Intensity.rgb * Light.f4Intensity.a;
+    Box.Type      = HIT_TYPE_DIFFUSE_LIGHT;
+    Box.Center    = float3(Light.f2PosXZ.x,  4.90, Light.f2PosXZ.y);
+    Box.Size      = float3(Light.f2SizeXZ.x, 0.02, Light.f2SizeXZ.y);
+    Box.Albedo    = float3(0.75, 0.75, 0.75);
+    Box.Emittance = Light.f4Intensity.rgb * Light.f4Intensity.a;
     return Box;
 }
 
@@ -281,7 +281,7 @@ void IntersectLight(RayInfo Ray, LightAttribs Light, inout HitInfo Hit)
         // Check that the ray hit the light from the emissive side
         if (dot(Hit.Normal, Light.f4Normal.xyz) < 0.99)
         {
-            Hit.Emissive = float3(0.0, 0.0, 0.0);
+            Hit.Emittance = float3(0.0, 0.0, 0.0);
         }
     }
 }
