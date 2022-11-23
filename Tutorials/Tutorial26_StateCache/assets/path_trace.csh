@@ -109,6 +109,70 @@ void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3
     f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
 }
 
+void Reflect(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Througput)
+{
+    Ray.Origin = f3HitPos;
+    Ray.Dir    = reflect(Ray.Dir, Hit.Normal);
+    f3Througput *= Hit.Albedo;
+}
+
+
+// Optimized fresnel calculation.
+float Fresnel(float eta, float cosThetaI)
+{
+    cosThetaI = clamp(cosThetaI, -1.0, 1.0);
+    if (cosThetaI < 0.0)
+    {
+        eta = 1.0 / eta;
+        cosThetaI = -cosThetaI;
+    }
+
+    float sinThetaTSq = eta * eta * (1.0 - cosThetaI * cosThetaI);
+    if (sinThetaTSq > 1.0)
+    {
+        // Total internal reflection
+        return 1.0;
+    }
+
+    float cosThetaT = sqrt(1.0 - sinThetaTSq);
+
+    float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+    float Rp = (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI);
+
+    return 0.5 * (Rs * Rs + Rp * Rp);
+}
+
+void Refract(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Througput, float rnd)
+{
+    // Compute fresnel term
+    float AirIOR    = 1.0;
+    float GlassIOR  = 1.52;
+    float relIOR    = AirIOR / GlassIOR;
+    float cosThetaI = dot(-Ray.Dir, Hit.Normal);
+    if (cosThetaI < 0.0)
+    {
+        Hit.Normal *= -1.0;
+        cosThetaI  *= -1.0;
+        relIOR = 1.0 / relIOR;
+    }
+    float F = Fresnel(relIOR, cosThetaI);
+
+    if (rnd <= F)
+    {
+        // Note that technically we need to multiply throughput by F,
+        // but also by 1/P, but since P==F they cancel out.
+        Reflect(Hit, f3HitPos, Ray, f3Througput);
+    }
+    else
+    {
+        Ray.Origin = f3HitPos;
+        Ray.Dir    = refract(Ray.Dir, Hit.Normal, relIOR);
+
+        // Note that refraction also changes the differential solid angle of the flux
+        f3Througput /= relIOR * relIOR;
+    }
+}
+
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
 void main(uint3 ThreadId : SV_DispatchThreadID)
 {
@@ -139,7 +203,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //             x
     //
     //      L(x->v) = E(x) + Integral{ BRDF(x, v, w) * L(x<-w) * (n, w) * dw }
-    // 
+    //
     // Monte-Carlo integration:
     //
     //   L(x1->v)         x2
@@ -148,9 +212,17 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //        v '.   .' w1    '.w2
     //            '.'           '. 
     //             x1             x3
-    // 
+    //
     //      L(x1->v) = 1/N * Sum{ E(x1) + BRDF(x1, v1, w1) * [E(x2) + BRDF(x2, -w1, w2) * (...) * (n2, w2) * 1/p(w2)]  * (n1, w1) * 1/p(w1) }
     //
+    //  This can be rewritten as
+    //
+    //      L(x1->v) = 1/N * { T0 * E(x1) + T1 * E(x2) + T2 * E(x3) + ... }
+    //
+    //  where Ti is the throughput after i bounces:
+    //
+    //      T0 = 1
+    //      Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)
 
     // Make sure the seed is unique for each sample
     uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
@@ -188,13 +260,17 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             // Update the seed
             Seed += uint2(129, 1725);
 
-            float3 Dir = float3(0, 0, 0);
             if (Hit.Type == HIT_TYPE_MIRROR)
             {
-                Dir = Ray.Dir - 2.0 * dot(Ray.Dir, Hit.Normal) * Hit.Normal;
+                Reflect(Hit, f3HitPos, Ray, f3Throughput);
                 // Note: if NEE is enabled, we need to perform light sampling here.
                 //       However, since we need to sample the light in the same reflected direction,
                 //       we will add its contribution later when we find the next hit point.
+            }
+            else if (Hit.Type == HIT_TYPE_GLASS)
+            {
+                Refract(Hit, f3HitPos, Ray, f3Throughput, rnd2.x);
+                // As with mirror, we will perform light sampling later
             }
             else
             {
@@ -225,7 +301,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 }
 
                 // Sample the BRDF - in our case this is a cosine-weighted hemispherical distribution.
-                float Prob;
+                float  Prob;
+                float3 Dir;
                 SampleBRDFDirection(Hit, rnd2, Dir, Prob);
 
                 float CosTheta = dot(Hit.Normal, Dir);
@@ -233,15 +310,16 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 // probability is cos(theta) / PI, and it cancels out with CosTheta and
                 // 1/PI factor from BRDF. We however keep them here for the sake of generality.
                 f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
+
+                Ray.Origin = f3HitPos;
+                Ray.Dir    = Dir;
             }
 
             // We did not perform next event estimation for the mirror surface and
             // we need to add emittance of the next hit point.
-            bool AddEmissive = (g_Constants.iUseNEE != 0) && (Hit.Type == HIT_TYPE_MIRROR);
+            bool AddEmissive = (g_Constants.iUseNEE != 0) && (Hit.Type == HIT_TYPE_MIRROR || Hit.Type == HIT_TYPE_GLASS);
 
             // Trace the scene in the selected direction
-            Ray.Origin = f3HitPos;
-            Ray.Dir    = Dir;
             Hit = IntersectScene(Ray, g_Constants.Light);
 
             if (AddEmissive)

@@ -139,7 +139,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //             x
     //
     //      L(x->v) = E(x) + Integral{ BRDF(x, v, w) * L(x<-w) * (n, w) * dw }
-    // 
+    //
     // Monte-Carlo integration:
     //
     //   L(x1->v)         x2
@@ -148,9 +148,17 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //        v '.   .' w1    '.w2
     //            '.'           '. 
     //             x1             x3
-    // 
+    //
     //      L(x1->v) = 1/N * Sum{ E(x1) + BRDF(x1, v1, w1) * [E(x2) + BRDF(x2, -w1, w2) * (...) * (n2, w2) * 1/p(w2)]  * (n1, w1) * 1/p(w1) }
     //
+    //  This can be rewritten as
+    //
+    //      L(x1->v) = 1/N * { T0 * E(x1) + T1 * E(x2) + T2 * E(x3) + ... }
+    //
+    //  where Ti is the throughput after i bounces:
+    //
+    //      T0 = 1
+    //      Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)
 
     // Make sure the seed is unique for each sample
     uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);

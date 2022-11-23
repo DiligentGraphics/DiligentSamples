@@ -224,9 +224,20 @@ void IntersectMirrorSphere(RayInfo Ray, inout HitInfo Hit)
     SphereInfo Sphere;
     Sphere.Center   = float3(+2.5, -3.415, -2.0);
     Sphere.Radius   = 1.5;
-    Sphere.Albedo   = float3(0.6, 0.6, 0.6);
+    Sphere.Albedo   = float3(1.0, 1.0, 1.0);
     Sphere.Emissive = float3(0.0, 0.0, 0.0);
     Sphere.Type     = HIT_TYPE_MIRROR; 
+    IntersectSphere(Ray, Sphere, Hit);
+}
+
+void IntersectGlassSphere(RayInfo Ray, inout HitInfo Hit)
+{
+    SphereInfo Sphere;
+    Sphere.Center   = float3(-1.5, -3.415, -1.0);
+    Sphere.Radius   = 1.5;
+    Sphere.Albedo   = float3(1.0, 1.0, 1.0);
+    Sphere.Emissive = float3(0.0, 0.0, 0.0);
+    Sphere.Type     = HIT_TYPE_GLASS; 
     IntersectSphere(Ray, Sphere, Hit);
 }
 
@@ -247,13 +258,8 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     Box2Rotation *= -1.0;
 #endif
 
-    // Tall box
-    Box.Center = float3(-2.0, -2.0,  1.5);
-    Box.Size   = float3(1.3, 3.0, 1.3);
-    Box.Albedo = float3(0.6, 0.6, 0.6);
-    IntersectRotatedAABB(Ray, Box, Box1Rotation, Hit);
-
     IntersectMirrorSphere(Ray, Hit);
+    IntersectGlassSphere(Ray, Hit);
 }
 
 BoxInfo GetLight(LightAttribs Light)
