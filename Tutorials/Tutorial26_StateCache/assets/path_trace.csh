@@ -47,24 +47,30 @@ void SampleDirectionCosineHemisphere(in  float3 N,   // Normal
     Dir = normalize(Dir.x * T + Dir.y * B + Dir.z * N);
 }
 
-
-float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
+SurfaceReflectanceInfo GetReflectanceInfo(Material Mat)
 {
     float3 f0 = float3(0.04, 0.04, 0.04);
 
     SurfaceReflectanceInfo SrfInfo;
-    SrfInfo.PerceptualRoughness = Hit.Mat.Roughness;
-    SrfInfo.DiffuseColor        = Hit.Mat.BaseColor.rgb * (float3(1.0, 1.0, 1.0) - f0) * (1.0 - Hit.Mat.Metallic);
-    SrfInfo.Reflectance0        = lerp(f0, Hit.Mat.BaseColor.rgb, Hit.Mat.Metallic);
+    SrfInfo.PerceptualRoughness = Mat.Roughness;
+    SrfInfo.DiffuseColor        = Mat.BaseColor.rgb * (float3(1.0, 1.0, 1.0) - f0) * (1.0 - Mat.Metallic);
+    SrfInfo.Reflectance0        = lerp(f0, Mat.BaseColor.rgb, Mat.Metallic);
 
     float reflectance = max(max(SrfInfo.Reflectance0.r, SrfInfo.Reflectance0.g), SrfInfo.Reflectance0.b);
     // Anything less than 2% is physically impossible and is instead considered to be shadowing. Compare to "Real-Time-Rendering" 4th editon on page 325.
     SrfInfo.Reflectance90 = clamp(reflectance * 50.0, 0.0, 1.0) * float3(1.0, 1.0, 1.0);
 
+    return SrfInfo;
+}
+
+float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
+{
+    SurfaceReflectanceInfo SrfInfo = GetReflectanceInfo(Hit.Mat);
+
     float3 DiffuseContrib;
     float3 SpecContrib;
     float  NdotL;
-    BRDF(InDir,
+    BRDF(InDir, // To light
          Hit.Normal,
          OutDir,
          SrfInfo,
@@ -76,9 +82,14 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     return DiffuseContrib + SpecContrib;
 }
 
-void SampleBRDFDirection(HitInfo Hit, float2 rnd2, out float3 Dir, out float Prob)
+
+void SampleBRDFDirection(HitInfo Hit, float3 View, float2 rnd2, out float3 Dir, out float3 Reflectance)
 {
+    float Prob;
     SampleDirectionCosineHemisphere(Hit.Normal, rnd2, Dir, Prob);
+
+    float CosTheta = dot(Hit.Normal, Dir);
+    Reflectance = BRDF(Hit, View, Dir) * CosTheta / Prob;
 }
 
 // Reconstructs primary ray from the G-buffer
@@ -344,16 +355,12 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                     break; 
                 }
 
-                // Sample the BRDF - in our case this is a cosine-weighted hemispherical distribution.
-                float  Prob;
+                // Sample the BRDF
+                float3 Reflectance;
                 float3 Dir;
-                SampleBRDFDirection(Hit, rnd2, Dir, Prob);
+                SampleBRDFDirection(Hit, -Ray.Dir, rnd2, Dir, Reflectance);
 
-                float CosTheta = dot(Hit.Normal, Dir);
-                // Note that in case of a cosine-weighted distribution, ray direction
-                // probability is cos(theta) / PI, and it cancels out with CosTheta and
-                // 1/PI factor from BRDF. We however keep them here for the sake of generality.
-                f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
+                f3Throughput *= Reflectance;
 
                 Ray.Origin = f3HitPos;
                 Ray.Dir    = Dir;

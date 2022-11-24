@@ -53,7 +53,7 @@ RayInfo RotateRayY(RayInfo Ray, float a)
 }
 
 #define MAT_TYPE_NONE          0
-#define MAT_TYPE_GGX           1
+#define MAT_TYPE_SMITH_GGX     1
 #define MAT_TYPE_GLASS         2
 #define MAT_TYPE_MIRROR        3
 #define MAT_TYPE_DIFFUSE_LIGHT 4
@@ -192,7 +192,7 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
     float WallThick = 0.05;
 
     BoxInfo Box;
-    Box.Mat.Type      = MAT_TYPE_GGX;
+    Box.Mat.Type      = MAT_TYPE_SMITH_GGX;
     Box.Mat.Emittance = float3(0.0, 0.0, 0.0);
     Box.Mat.Metallic  = 0.0;
     Box.Mat.Roughness = 1.0;
@@ -275,28 +275,28 @@ void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
     Sphere.Mat.Emittance = float3(0.0, 0.0, 0.0);
     Sphere.Mat.Metallic  = 0.9;
     Sphere.Mat.Roughness = 0.1;
-    Sphere.Mat.Type      = MAT_TYPE_GGX; 
+    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
     IntersectSphere(Ray, Sphere, Hit);
 
     Sphere.Center        = float3(+0.5, -4.165, -2.5);
     Sphere.Mat.BaseColor = float3(0.9, 0.7, 0.1);
     Sphere.Mat.Metallic  = 0.9;
     Sphere.Mat.Roughness = 0.8;
-    Sphere.Mat.Type      = MAT_TYPE_GGX; 
+    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
     IntersectSphere(Ray, Sphere, Hit);
 
     Sphere.Center        = float3(-3.3, -4.165, -3.5);
     Sphere.Mat.BaseColor = float3(0.9, 0.8, 0.9);
     Sphere.Mat.Metallic  = 0.2;
     Sphere.Mat.Roughness = 0.1;
-    Sphere.Mat.Type      = MAT_TYPE_GGX; 
+    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
     IntersectSphere(Ray, Sphere, Hit);
 
     Sphere.Center        = float3(-3.7, -4.165, +3.5);
     Sphere.Mat.BaseColor = float3(0.9, 0.8, 0.9);
     Sphere.Mat.Metallic  = 0.2;
     Sphere.Mat.Roughness = 0.8;
-    Sphere.Mat.Type      = MAT_TYPE_GGX; 
+    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
     IntersectSphere(Ray, Sphere, Hit);
 }
 
