@@ -82,14 +82,93 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     return DiffuseContrib + SpecContrib;
 }
 
-
-void SampleBRDFDirection(HitInfo Hit, float3 View, float2 rnd2, out float3 Dir, out float3 Reflectance)
+float3 SampleGGXVisibleNormal(float3 wo, float ax, float ay, float u1, float u2)
 {
-    float Prob;
-    SampleDirectionCosineHemisphere(Hit.Normal, rnd2, Dir, Prob);
+    // Stretch the view vector so we are sampling as though
+    // roughness==1
+    float3 v = normalize(float3(wo.x * ax, wo.y * ay, wo.z));
 
-    float CosTheta = dot(Hit.Normal, Dir);
-    Reflectance = BRDF(Hit, View, Dir) * CosTheta / Prob;
+    // Build an orthonormal basis with v, t1, and t2
+    float3 t1 = (v.z < 0.999f) ? normalize(cross(v, float3(0, 0, 1))) : float3(1, 0, 0);
+    float3 t2 = cross(t1, v);
+
+    // Choose a point on a disk with each half of the disk weighted
+    // proportionally to its projection onto direction v
+    float a = 1.0f / (1.0f + v.z);
+    float r = sqrt(u1);
+    float phi = (u2 < a) ? (u2 / a) * PI : PI + (u2 - a) / (1.0f - a) * PI;
+    float p1 = r * cos(phi);
+    float p2 = r * sin(phi) * ((u2 < a) ? 1.0f : v.z);
+
+    // Calculate the normal in this stretched tangent space
+    float3 n = p1 * t1 + p2 * t2 + sqrt(max(0.0f, 1.0f - p1 * p1 - p2 * p2)) * v;
+
+    // Unstretch and normalize the normal
+    return normalize(float3(ax * n.x, ay * n.y, max(0.0f, n.z)));
+}
+
+void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance)
+{
+    SurfaceReflectanceInfo SrfInfo = GetReflectanceInfo(Hit.Mat);
+
+    float DiffuseProb = 0.5;
+    if (rnd3.z < DiffuseProb)
+    {
+        float Prob;
+        SampleDirectionCosineHemisphere(Hit.Normal, rnd3.xy, Dir, Prob);
+        float3 H     = normalize(View + Dir);
+        float  HdotV = dot(H, View);
+        float3 F     = SchlickReflection(HdotV, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
+
+        // BRDF        = DiffuseColor / PI
+        // DirProb     = CosTheta / PI
+        // Reflectance = (1.0 - F) * BRDF * CosTheta / (DirProb * DiffuseProb)
+        Reflectance = (1.0 - F) * SrfInfo.DiffuseColor / DiffuseProb;
+    }
+    else
+    {
+        // https://schuttejoe.github.io/post/ggximportancesamplingpart2/
+        // https://jcgt.org/published/0007/04/01/
+        // https://github.com/TheRealMJP/DXRPathTracer/blob/master/DXRPathTracer/RayTrace.hlsl
+        float3 N = Hit.Normal;
+	    float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
+	    float3 B = cross(T, N);
+        float3x3 TangentToWorld = MatrixFromRows(T, B, N);
+
+        float AlphaRoughness = SrfInfo.PerceptualRoughness * SrfInfo.PerceptualRoughness;
+
+        float3 ViewDirTS     = normalize(mul(View, transpose(TangentToWorld)));
+        float3 MicroNormalTS = SampleGGXVisibleNormal(ViewDirTS, AlphaRoughness, AlphaRoughness, rnd3.x, rnd3.y);
+        float3 SampleDirTS   = reflect(-ViewDirTS, MicroNormalTS);
+
+        // Micro normal is the halfway vector
+        float HdotV = dot(MicroNormalTS, ViewDirTS);
+        // Tangent-space normal is (0, 0, 1)
+        float NdotL = SampleDirTS.z;
+        float NdotV = ViewDirTS.z;
+
+        if (NdotL > 0 && NdotV > 0)
+        {
+            float3 F = SchlickReflection(HdotV, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
+            float a2 = AlphaRoughness * AlphaRoughness;
+            float G1 = 2 /* * NdotV */ / (sqrt(a2 + (1.0 - a2) * NdotV * NdotV) + NdotV);
+            float G2 = 4 /* * NdotV */ * NdotL * SmithGGXVisibilityCorrelated(NdotL, NdotV, AlphaRoughness);
+
+            Reflectance = F * (G2 / G1) / (1.0 - DiffuseProb);
+        }
+        else
+        {
+            Reflectance = float3(0, 0, 0);
+        }
+
+        Dir = normalize(mul(SampleDirTS, TangentToWorld));
+    }
+
+    //float Prob;
+    //SampleDirectionCosineHemisphere(Hit.Normal, rnd2, Dir, Prob);
+
+    //float CosTheta = dot(Hit.Normal, Dir);
+    //Reflectance = BRDF(Hit, View, Dir) * CosTheta / Prob;
 }
 
 // Reconstructs primary ray from the G-buffer
@@ -308,10 +387,13 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             if (Hit.Mat.Type == MAT_TYPE_NONE)
                 break;
 
+            if (max(f3Throughput.x, max(f3Throughput.y, f3Throughput.z)) == 0.0)
+                break;
+
             float3 f3HitPos = Ray.Origin + Ray.Dir * Hit.Distance;
 
             // Get random sample on the light source surface.
-            float2 rnd2 = hash22(Seed);
+            float3 rnd3 = hash32(Seed);
             // Update the seed
             Seed += uint2(129, 1725);
 
@@ -324,7 +406,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             }
             else if (Hit.Mat.Type == MAT_TYPE_GLASS)
             {
-                Refract(Hit, f3HitPos, Ray, f3Throughput, rnd2.x);
+                Refract(Hit, f3HitPos, Ray, f3Throughput, rnd3.x);
                 // As with mirror, we will perform light sampling later
             }
             else
@@ -334,7 +416,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                     // Sample light source
                     float3 f3LightRadiance;
                     float3 f3DirToLight;
-                    SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
+                    SampleLight(g_Constants.Light, rnd3.xy, f3HitPos, f3LightRadiance, f3DirToLight);
                     float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 
                     f3PathContrib +=
@@ -358,7 +440,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 // Sample the BRDF
                 float3 Reflectance;
                 float3 Dir;
-                SampleBRDFDirection(Hit, -Ray.Dir, rnd2, Dir, Reflectance);
+                SampleBRDFDirection(Hit, -Ray.Dir, rnd3, Dir, Reflectance);
 
                 f3Throughput *= Reflectance;
 
