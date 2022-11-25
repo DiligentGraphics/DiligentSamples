@@ -171,3 +171,8 @@ Note that there are some limitations to reloading functionality:
 - While shaders can be changed, a shader can't be replaced with another one in pipeline state description in a DRSN file
 
 After pipeline states are loaded, they are used the same way as in the previous Tutorial.
+
+## Resources
+
+1. [Sampling the GGX Distribution of Visible Normals](https://jcgt.org/published/0007/04/01/) (2018) by Eric Heitz
+2. [Importance Sampling techniques for GGX with Smith Masking-Shadowing](https://schuttejoe.github.io/post/ggximportancesamplingpart2/) (2018) by Joe Schutte
