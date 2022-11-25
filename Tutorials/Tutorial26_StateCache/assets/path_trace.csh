@@ -166,6 +166,28 @@ void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, 
     }
 }
 
+float BRDFSampleDirection_PDF(HitInfo Hit, float3 V, float3 L)
+{
+    float3 N = Hit.Normal;
+
+    float NdotV = dot(V, N);
+    float NdotL = dot(L, N);
+    if (NdotL <= 0.0 || NdotV <= 0.0)
+        return 0.0;
+
+    float DiffuseProb = 0.5;
+    // Diffuse component
+    float Prob = NdotL / PI * DiffuseProb;
+
+    // Specular component
+    float AlphaRoughness = Hit.Mat.Roughness * Hit.Mat.Roughness;
+    float VNDF = SmithGGXSampleDirectionPDF(V, N, L, AlphaRoughness);
+    Prob += VNDF * (1.0 - DiffuseProb);
+
+    return Prob;
+}
+
+
 // Reconstructs primary ray from the G-buffer
 void GetPrimaryRay(in    uint2   ScreenXY,
                    out   HitInfo Hit,
@@ -196,7 +218,7 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     Hit.Distance = RayLen;
 }
 
-void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3LightRadiance, out float3 f3DirToLight)
+void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3LightRadiance, out float3 f3DirToLight, out float Prob)
 {
     float  fLightArea       = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
     float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
@@ -220,8 +242,30 @@ void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3
     // Notice that when not using NEE, we randomly sample the hemisphere and will
     // eventually cover the same solid angle.
 
+    Prob = fLightProjectedArea > 0.0 ? 1.0 / fLightProjectedArea : 0.0;
     f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
 }
+
+float LightDirPDF(LightAttribs Light, float3 f3HitPos, float3 f3DirToLight)
+{
+    HitInfo Hit = NullHit();
+    RayInfo Ray;
+    Ray.Origin = f3HitPos;
+    Ray.Dir    = f3DirToLight;
+    IntersectLight(Ray, Light, Hit);
+    if (Hit.Mat.Type != MAT_TYPE_DIFFUSE_LIGHT)
+        return 0.0;
+
+    if (max(Hit.Mat.Emittance.x, max(Hit.Mat.Emittance.y, Hit.Mat.Emittance.z)) == 0.0)
+        return 0.0;
+
+    float fLightArea = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
+    float fDistToLightSqr = Hit.Distance * Hit.Distance;
+    float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, Light.f4Normal.xyz), 0.0) / fDistToLightSqr;
+
+    return fLightProjectedArea > 0 ? 1.0 / fLightProjectedArea : 0.0;
+}
+
 
 void Reflect(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Througput)
 {
@@ -409,16 +453,58 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 if (g_Constants.iUseNEE != 0)
                 {
                     // Sample light source
-                    float3 f3LightRadiance;
-                    float3 f3DirToLight;
-                    SampleLight(g_Constants.Light, rnd3.xy, f3HitPos, f3LightRadiance, f3DirToLight);
-                    float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+                    {
+                        float3 f3LightEmittance;
+                        float3 f3DirToLight;
+                        float  Prob;
+                        SampleLight(g_Constants.Light, rnd3.xy, f3HitPos, f3LightEmittance, f3DirToLight, Prob);
+                        float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 
-                    f3PathContrib +=
-                        f3Throughput
-                        * BRDF(Hit, -Ray.Dir, f3DirToLight)
-                        * NdotL
-                        * f3LightRadiance;
+                        float CombinedProb = Prob + BRDFSampleDirection_PDF(Hit, -Ray.Dir, f3DirToLight);
+                        if (CombinedProb > 0)
+                        {
+                            float MISWeight = Prob / CombinedProb;
+                            float3 fLightContrib = 
+                                BRDF(Hit, -Ray.Dir, f3DirToLight)
+                                * NdotL
+                                * f3LightEmittance
+                                * MISWeight;
+                            f3PathContrib += fLightContrib * f3Throughput;
+                        }
+                    }
+
+                    // Sample BRDF
+                    {
+                        // Sample the BRDF
+                        float3 Reflectance;
+                        float3 f3DirToLight;
+                        float  Prob;
+                        SampleBRDFDirection(Hit, -Ray.Dir, rnd3.zxy, f3DirToLight, Reflectance, Prob);
+                        HitInfo LightHit = NullHit();
+                        RayInfo LightRay;
+                        LightRay.Origin = f3HitPos;
+                        LightRay.Dir    = f3DirToLight;
+                        IntersectLight(LightRay, g_Constants.Light, LightHit);
+                        if (LightHit.Mat.Type == MAT_TYPE_DIFFUSE_LIGHT)
+                        {
+                            float fLightVisibility = TestShadow(LightRay);
+                            if (fLightVisibility > 0)
+                            {
+                                float CombinedProb =  Prob + LightDirPDF(g_Constants.Light, f3HitPos, f3DirToLight);
+                                float NdotL = dot(f3DirToLight, Hit.Normal);
+                                if (CombinedProb > 0 && NdotL > 0)
+                                {
+                                    float MISWeight = Prob / CombinedProb;
+                                    f3PathContrib +=
+                                        f3Throughput
+                                        * Reflectance
+                                        * LightHit.Mat.Emittance
+                                        * fLightVisibility
+                                        * MISWeight;
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                 {
