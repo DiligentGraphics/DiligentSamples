@@ -41,8 +41,8 @@ void SampleDirectionCosineHemisphere(in  float3 N,   // Normal
                                      out float  Prob // Probability of the generated direction
                                     )
 {
-	float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
-	float3 B = cross(T, N);
+    float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
+    float3 B = cross(T, N);
     SampleDirectionCosineHemisphere(UV, Dir, Prob);
     Dir = normalize(Dir.x * T + Dir.y * B + Dir.z * N);
 }
@@ -82,31 +82,6 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     return DiffuseContrib + SpecContrib;
 }
 
-float3 SampleGGXVisibleNormal(float3 wo, float ax, float ay, float u1, float u2)
-{
-    // Stretch the view vector so we are sampling as though
-    // roughness==1
-    float3 v = normalize(float3(wo.x * ax, wo.y * ay, wo.z));
-
-    // Build an orthonormal basis with v, t1, and t2
-    float3 t1 = (v.z < 0.999f) ? normalize(cross(v, float3(0, 0, 1))) : float3(1, 0, 0);
-    float3 t2 = cross(t1, v);
-
-    // Choose a point on a disk with each half of the disk weighted
-    // proportionally to its projection onto direction v
-    float a = 1.0f / (1.0f + v.z);
-    float r = sqrt(u1);
-    float phi = (u2 < a) ? (u2 / a) * PI : PI + (u2 - a) / (1.0f - a) * PI;
-    float p1 = r * cos(phi);
-    float p2 = r * sin(phi) * ((u2 < a) ? 1.0f : v.z);
-
-    // Calculate the normal in this stretched tangent space
-    float3 n = p1 * t1 + p2 * t2 + sqrt(max(0.0f, 1.0f - p1 * p1 - p2 * p2)) * v;
-
-    // Unstretch and normalize the normal
-    return normalize(float3(ax * n.x, ay * n.y, max(0.0f, n.z)));
-}
-
 void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance, out float Prob)
 {
     SurfaceReflectanceInfo SrfInfo = GetReflectanceInfo(Hit.Mat);
@@ -142,8 +117,8 @@ void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, 
 
         // Construct tangent-space basis
         float3 N = Hit.Normal;
-	    float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
-	    float3 B = cross(T, N);
+        float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
+        float3 B = cross(T, N);
         float3x3 TangentToWorld = MatrixFromRows(T, B, N);
 
         float AlphaRoughness = SrfInfo.PerceptualRoughness * SrfInfo.PerceptualRoughness;
@@ -151,7 +126,7 @@ void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, 
         // Transform normal from world to tangent space
         float3 ViewDirTS     = normalize(mul(View, transpose(TangentToWorld)));
         // Get GGX sampling micronormal in tangent space
-        float3 MicroNormalTS = SampleGGXVisibleNormal(ViewDirTS, AlphaRoughness, AlphaRoughness, rnd3.x, rnd3.y);
+        float3 MicroNormalTS = SmithGGXSampleVisibleNormal(ViewDirTS, AlphaRoughness, AlphaRoughness, rnd3.x, rnd3.y);
         // Reflect view direction off the micronormal to get the sampling direction
         float3 SampleDirTS   = reflect(-ViewDirTS, MicroNormalTS);
         float3 NormalTS      = float3(0, 0, 1);
@@ -433,16 +408,16 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             {
                 if (g_Constants.iUseNEE != 0)
                 {
-                        // Sample light source
-                        float3 f3LightRadiance;
-                        float3 f3DirToLight;
+                    // Sample light source
+                    float3 f3LightRadiance;
+                    float3 f3DirToLight;
                     SampleLight(g_Constants.Light, rnd3.xy, f3HitPos, f3LightRadiance, f3DirToLight);
-                        float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+                    float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 
-                        f3PathContrib +=
-                            f3Throughput
-                            * BRDF(Hit, -Ray.Dir, f3DirToLight)
-                            * NdotL
+                    f3PathContrib +=
+                        f3Throughput
+                        * BRDF(Hit, -Ray.Dir, f3DirToLight)
+                        * NdotL
                         * f3LightRadiance;
                 }
                 else
