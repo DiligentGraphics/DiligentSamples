@@ -70,19 +70,19 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     float3 DiffuseContrib;
     float3 SpecContrib;
     float  NdotL;
-    BRDF(OutDir,
-         Hit.Normal,
-         InDir, // To light
-         SrfInfo,
-         DiffuseContrib,
-         SpecContrib,
-         NdotL
+    SmithGGX_BRDF(OutDir,
+                  Hit.Normal,
+                  InDir, // To light
+                  SrfInfo,
+                  DiffuseContrib,
+                  SpecContrib,
+                  NdotL
     );
 
     return DiffuseContrib + SpecContrib;
 }
 
-void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance, out float Prob)
+void ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance, out float Prob)
 {
     SurfaceReflectanceInfo SrfInfo = GetReflectanceInfo(Hit.Mat);
 
@@ -152,18 +152,31 @@ void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, 
             // Simplified reflectance formulation above is equivalent to the following
             // standard Monte-Carlo estimator:
             float3 DiffuseContrib, SpecContrib;
-            BRDF(Dir, // To light
-                 Hit.Normal,
-                 View,
-                 SrfInfo,
-                 DiffuseContrib,
-                 SpecContrib,
-                 NdotL
+            SmithGGX_BRDF(Dir, // To light
+                          Hit.Normal,
+                          View,
+                          SrfInfo,
+                          DiffuseContrib,
+                          SpecContrib,
+                          NdotL
             );
             Reflectance = SpecContrib * NdotL / Prob;
 #endif
         }
     }
+}
+
+void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance, out float Prob)
+{
+#if BRDF_SAMPLING_MODE == BRDF_SAMPLING_MODE_COS_WEIGHTED
+    SampleDirectionCosineHemisphere(Hit.Normal, rnd3.xy, Dir, Prob);
+    // Reflectance = BRDF * CosTheta / Prob
+    // Prob = CosTheta / PI
+    // Thus:
+    Reflectance = BRDF(Hit, View, Dir) * PI;
+#elif BRDF_SAMPLING_MODE == BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING
+    ImportanceSampleSmithGGX(Hit, View, rnd3, Dir, Reflectance, Prob);
+#endif
 }
 
 float BRDFSampleDirection_PDF(HitInfo Hit, float3 V, float3 L)
@@ -453,6 +466,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 if (g_Constants.iUseNEE != 0)
                 {
                     // Sample light source
+                    #if NEE_MODE == NEE_MODE_LIGHT || NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_LIGHT
                     {
                         float3 f3LightEmittance;
                         float3 f3DirToLight;
@@ -460,20 +474,25 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                         SampleLight(g_Constants.Light, rnd3.xy, f3HitPos, f3LightEmittance, f3DirToLight, Prob);
                         float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 
-                        float CombinedProb = Prob + BRDFSampleDirection_PDF(Hit, -Ray.Dir, f3DirToLight);
+                        float CombinedProb = Prob;
+                        #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_LIGHT
+                            CombinedProb += BRDFSampleDirection_PDF(Hit, -Ray.Dir, f3DirToLight);
+                        #endif
                         if (CombinedProb > 0)
                         {
-                            float MISWeight = Prob / CombinedProb;
+                            float Weight = Prob / CombinedProb;
                             float3 fLightContrib = 
                                 BRDF(Hit, -Ray.Dir, f3DirToLight)
                                 * NdotL
                                 * f3LightEmittance
-                                * MISWeight;
+                                * Weight;
                             f3PathContrib += fLightContrib * f3Throughput;
                         }
                     }
+                    #endif
 
                     // Sample BRDF
+                    #if NEE_MODE == NEE_MODE_BRDF || NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
                     {
                         // Sample the BRDF
                         float3 Reflectance;
@@ -490,7 +509,10 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                             float fLightVisibility = TestShadow(LightRay);
                             if (fLightVisibility > 0)
                             {
-                                float CombinedProb =  Prob + LightDirPDF(g_Constants.Light, f3HitPos, f3DirToLight);
+                                float CombinedProb = Prob;
+                                #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
+                                    CombinedProb += LightDirPDF(g_Constants.Light, f3HitPos, f3DirToLight);
+                                #endif
                                 float NdotL = dot(f3DirToLight, Hit.Normal);
                                 if (CombinedProb > 0 && NdotL > 0)
                                 {
@@ -505,6 +527,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                             }
                         }
                     }
+                    #endif
                 }
                 else
                 {

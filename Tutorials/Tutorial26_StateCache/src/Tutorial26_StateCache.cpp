@@ -34,6 +34,7 @@
 #include "CallbackWrapper.hpp"
 #include "GraphicsAccessories.hpp"
 #include "DataBlobImpl.hpp"
+#include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 
 namespace Diligent
@@ -84,6 +85,26 @@ void Tutorial26_StateCache::UpdateUI()
 
         if (ImGui::Checkbox("Next Event Estimation", &m_UseNEE))
             m_SampleCount = 0;
+
+        if (ImGui::Combo("BRDF Sampling mode", &m_BRDFSamplingMode, "Cosine-weighted\0"
+                                                                    "Importance Sampling\0"))
+        {
+            CreatePathTracePSO();
+            m_SampleCount = 0;
+        }
+
+        if (m_UseNEE)
+        {
+            if (ImGui::Combo("NEE mode", &m_NEEMode, "Sample Light\0"
+                                                     "Sample BRDF\0"
+                                                     "MIS\0"
+                                                     "MIS - Light part\0"
+                                                     "MIS - BRDF part\0"))
+            {
+                CreatePathTracePSO();
+                m_SampleCount = 0;
+            }
+        }
 
         if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
             m_SampleCount = 0;
@@ -260,15 +281,7 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
     }
 
     // Load the path trace PSO
-    {
-        LoadPipelineStateInfo LoadInfo;
-        LoadInfo.PipelineType = PIPELINE_TYPE_COMPUTE;
-        LoadInfo.Name         = "Path Trace PSO";
-        m_pRSNLoader->LoadPipelineState(LoadInfo, &m_pPathTracePSO);
-        VERIFY_EXPR(m_pPathTracePSO);
-
-        m_pPathTracePSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "cbConstants")->Set(m_pShaderConstantsCB);
-    }
+    CreatePathTracePSO();
 
     // Load the resolve PSO
     {
@@ -301,6 +314,45 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetRotationSpeed(0.002f);
     m_Camera.SetMoveSpeed(5.f);
     m_Camera.SetSpeedUpScales(5.f, 10.f);
+}
+
+void Tutorial26_StateCache::CreatePathTracePSO()
+{
+    ShaderMacroHelper Macros;
+    Macros.AddShaderMacro("BRDF_SAMPLING_MODE_COS_WEIGHTED", BRDF_SAMPLING_MODE_COS_WEIGHTED);
+    Macros.AddShaderMacro("BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING", BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING);
+    Macros.AddShaderMacro("BRDF_SAMPLING_MODE", m_BRDFSamplingMode);
+
+    Macros.AddShaderMacro("NEE_MODE_LIGHT", NEE_MODE_LIGHT);
+    Macros.AddShaderMacro("NEE_MODE_BRDF", NEE_MODE_BRDF);
+    Macros.AddShaderMacro("NEE_MODE_MIS", NEE_MODE_MIS);
+    Macros.AddShaderMacro("NEE_MODE_MIS_LIGHT", NEE_MODE_MIS_LIGHT);
+    Macros.AddShaderMacro("NEE_MODE_MIS_BRDF", NEE_MODE_MIS_BRDF);
+    Macros.AddShaderMacro("NEE_MODE", m_NEEMode);
+
+    auto ModifyShaderCI = MakeCallback(
+        [&](ShaderCreateInfo& ShaderCI, SHADER_TYPE Type, bool& AddToLoaderCache) {
+            VERIFY_EXPR(Type == SHADER_TYPE_COMPUTE);
+            ShaderCI.Macros = Macros;
+            // Do not add the shader to the loader's cache as
+            // we may be recreating the shader at run-time.
+            AddToLoaderCache = false;
+        });
+
+    LoadPipelineStateInfo LoadInfo;
+    LoadInfo.ModifyShader      = ModifyShaderCI;
+    LoadInfo.pModifyShaderData = ModifyShaderCI;
+    LoadInfo.PipelineType      = PIPELINE_TYPE_COMPUTE;
+    LoadInfo.Name              = "Path Trace PSO";
+    // Do not add the PSO to the loader's cache as we may be
+    // recreating the pipeline.
+    // Note that the PSO is awlays added to the render state cache.
+    LoadInfo.AddToCache = false;
+    m_pPathTracePSO.Release();
+    m_pRSNLoader->LoadPipelineState(LoadInfo, &m_pPathTracePSO);
+    VERIFY_EXPR(m_pPathTracePSO);
+
+    m_pPathTracePSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "cbConstants")->Set(m_pShaderConstantsCB);
 }
 
 void Tutorial26_StateCache::WindowResize(Uint32 Width, Uint32 Height)

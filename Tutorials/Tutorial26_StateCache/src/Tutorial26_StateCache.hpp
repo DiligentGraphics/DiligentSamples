@@ -56,6 +56,7 @@ public:
 private:
     void UpdateUI();
     void CreateGBuffer();
+    void CreatePathTracePSO();
 
     RefCntAutoPtr<IRenderStateNotationParser> m_pRSNParser;
     RefCntAutoPtr<IRenderStateNotationLoader> m_pRSNLoader;
@@ -95,6 +96,23 @@ private:
 
     static constexpr auto   RadianceAccumulationFormat = TEX_FORMAT_RGBA32_FLOAT;
     RefCntAutoPtr<ITexture> m_pRadianceAccumulationBuffer;
+
+    enum BRDF_SAMPLING_MODE
+    {
+        BRDF_SAMPLING_MODE_COS_WEIGHTED = 0,
+        BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING
+    };
+    int m_BRDFSamplingMode = BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING;
+
+    enum NEE_MODE
+    {
+        NEE_MODE_LIGHT,     // Sample light
+        NEE_MODE_BRDF,      // Sample BRDF
+        NEE_MODE_MIS,       // Multiple importance sampling
+        NEE_MODE_MIS_LIGHT, // MIS - light component
+        NEE_MODE_MIS_BRDF   // MIS - BRDF component
+    };
+    int m_NEEMode = NEE_MODE_MIS;
 
     int    m_NumBounces         = 4;
     int    m_NumSamplesPerFrame = 4;
