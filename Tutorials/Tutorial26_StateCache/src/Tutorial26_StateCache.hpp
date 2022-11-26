@@ -27,6 +27,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
@@ -36,6 +37,14 @@
 
 namespace Diligent
 {
+
+namespace
+{
+namespace HLSL
+{
+struct SceneAttribs;
+}
+} // namespace
 
 class Tutorial26_StateCache final : public SampleBase
 {
@@ -51,6 +60,7 @@ public:
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+    Tutorial26_StateCache();
     ~Tutorial26_StateCache();
 
 private:
@@ -114,20 +124,18 @@ private:
     };
     int m_NEEMode = NEE_MODE_MIS;
 
-    int    m_NumBounces         = 4;
-    int    m_NumSamplesPerFrame = 4;
-    bool   m_ShowOnlyLastBounce = false;
-    bool   m_UseNEE             = true;
-    float3 m_LightColor         = {1, 1, 1};
-    float  m_LightIntensity     = 15.f;
-    float2 m_LightPos           = {0, 0};
-    float2 m_LightSize          = {1.5f, 1.5f};
+    int  m_NumBounces         = 4;
+    int  m_NumSamplesPerFrame = 4;
+    bool m_ShowOnlyLastBounce = false;
+    bool m_UseNEE             = true;
 
     int      m_SampleCount = 0;
     float4x4 m_LastFrameViewProj;
 
     FirstPersonCamera m_Camera;
     MouseState        m_LastMouseState;
+
+    std::unique_ptr<HLSL::SceneAttribs> m_Scene;
 };
 
 } // namespace Diligent

@@ -1,12 +1,53 @@
 #ifndef _STRUCTURES_FXH_
 #define _STRUCTURES_FXH_
 
+#define MAT_TYPE_NONE          0
+#define MAT_TYPE_SMITH_GGX     1
+#define MAT_TYPE_GLASS         2
+#define MAT_TYPE_MIRROR        3
+#define MAT_TYPE_DIFFUSE_LIGHT 4
+
+#define NUM_BALLS 6
+
+struct Material
+{
+    float4 BaseColor;
+    float4 Emittance;
+
+    int   Type;
+    float Metallic;
+    float Roughness;
+    float IOR;
+};
+
+struct BoxInfo
+{
+    float3 Center;
+    float3 Size;
+
+    Material Mat;
+};
+
+struct SphereInfo
+{
+    float3 Center;
+    float  Radius;
+
+    Material Mat;
+};
+
 struct LightAttribs
 {
 	float2 f2PosXZ;
 	float2 f2SizeXZ;
 	float4 f4Intensity;
 	float4 f4Normal;
+};
+
+struct SceneAttribs
+{
+	LightAttribs Light;
+	SphereInfo   Balls[NUM_BALLS];
 };
 
 struct ShaderConstants
@@ -28,7 +69,7 @@ struct ShaderConstants
 	float4x4 ViewProjInvMat;
 	float4   CameraPos;
 
-	LightAttribs Light;
+	SceneAttribs Scene;
 };
 
 #endif // _STRUCTURES_FXH_

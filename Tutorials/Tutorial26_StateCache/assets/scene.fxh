@@ -52,21 +52,6 @@ RayInfo RotateRayY(RayInfo Ray, float a)
     return RotatedRay;
 }
 
-#define MAT_TYPE_NONE          0
-#define MAT_TYPE_SMITH_GGX     1
-#define MAT_TYPE_GLASS         2
-#define MAT_TYPE_MIRROR        3
-#define MAT_TYPE_DIFFUSE_LIGHT 4
-
-struct Material
-{
-    float3 BaseColor;
-    float3 Emittance;
-    float  Metallic;
-    float  Roughness;
-    int    Type;
-};
-
 struct HitInfo
 {
     Material Mat;
@@ -78,11 +63,12 @@ struct HitInfo
 Material NullMaterial()
 {
     Material Mat;
-    Mat.BaseColor = float3(0.0, 0.0, 0.0);
-    Mat.Emittance = float3(0.0, 0.0, 0.0);
+    Mat.BaseColor = float4(0.0, 0.0, 0.0, 0.0);
+    Mat.Emittance = float4(0.0, 0.0, 0.0, 0.0);
+    Mat.Type      = MAT_TYPE_NONE;
     Mat.Metallic  = 0.0;
     Mat.Roughness = 0.0;
-    Mat.Type      = MAT_TYPE_NONE;
+    Mat.IOR       = 0.0;
     return Mat;
 }
 
@@ -94,14 +80,6 @@ HitInfo NullHit()
     Hit.Distance = INF;
     return Hit;
 }
-
-struct BoxInfo
-{
-    float3 Center;
-    float3 Size;
-
-    Material Mat;
-};
 
 bool IntersectAABB(in    RayInfo Ray,
                    in    BoxInfo Box,
@@ -145,15 +123,6 @@ bool IntersectRotatedAABB(in    RayInfo Ray,
     return false;
 }
 
-
-struct SphereInfo
-{
-    float3 Center;
-    float  Radius;
-
-    Material Mat;
-};
-
 bool IntersectSphere(in    RayInfo    Ray,
                      in    SphereInfo Sphere,
                      inout HitInfo    Hit)
@@ -193,13 +162,14 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
 
     BoxInfo Box;
     Box.Mat.Type      = MAT_TYPE_SMITH_GGX;
-    Box.Mat.Emittance = float3(0.0, 0.0, 0.0);
+    Box.Mat.Emittance = float4(0.0, 0.0, 0.0, 0.0);
     Box.Mat.Metallic  = 0.0;
     Box.Mat.Roughness = 1.0;
+    Box.Mat.IOR       = 1.0;
 
-    float3 Green = float3(0.1, 0.6, 0.1);
-    float3 Red   = float3(0.6, 0.1, 0.1);
-    float3 Grey  = float3(0.5, 0.5, 0.5);
+    float4 Green = float4(0.1, 0.6, 0.1, 0.0);
+    float4 Red   = float4(0.6, 0.1, 0.1, 0.0);
+    float4 Grey  = float4(0.5, 0.5, 0.5, 0.0);
 
     // Right wall
     Box.Center        = float3(RoomSize * 0.5 + WallThick * 0.5, 0.0, 0.0);
@@ -232,72 +202,14 @@ void IntersectWalls(RayInfo Ray, inout HitInfo Hit)
     IntersectAABB(Ray, Box, Hit);
 }
 
-void IntersectMirrorSphere(RayInfo Ray, inout HitInfo Hit)
+void IntersectSceneInterior(SceneAttribs Scene, RayInfo Ray, inout HitInfo Hit)
 {
-    SphereInfo Sphere;
-    Sphere.Center = float3(+2.5, -3.415, 1.5);
-    Sphere.Radius = 1.5;
-
-    Sphere.Mat.BaseColor = float3(1.0, 1.0, 1.0);
-    Sphere.Mat.Emittance = float3(0.0, 0.0, 0.0);
-    Sphere.Mat.Metallic  = 1.0;
-    Sphere.Mat.Roughness = 0.0;
-    Sphere.Mat.Type      = MAT_TYPE_MIRROR; 
-
-    IntersectSphere(Ray, Sphere, Hit);
-}
-
-void IntersectGlassSphere(RayInfo Ray, inout HitInfo Hit)
-{
-    SphereInfo Sphere;
-    Sphere.Center = float3(-1.5, -3.415, 0.5);
-    Sphere.Radius = 1.5;
-
-    Sphere.Mat.BaseColor = float3(1.0, 1.0, 1.0);
-    Sphere.Mat.Emittance = float3(0.0, 0.0, 0.0);
-    Sphere.Mat.Metallic  = 0.0;
-    Sphere.Mat.Roughness = 0.0;
-    Sphere.Mat.Type      = MAT_TYPE_GLASS; 
-
-    IntersectSphere(Ray, Sphere, Hit);
-}
-
-void IntersectSceneInterior(RayInfo Ray, inout HitInfo Hit)
-{
-    IntersectMirrorSphere(Ray, Hit);
-    IntersectGlassSphere(Ray, Hit);
-
-    SphereInfo Sphere;
-    Sphere.Center = float3(+3.0, -4.165, -3.2);
-    Sphere.Radius = 0.75;
-
-    Sphere.Mat.BaseColor = float3(0.9, 0.7, 0.1);
-    Sphere.Mat.Emittance = float3(0.0, 0.0, 0.0);
-    Sphere.Mat.Metallic  = 0.9;
-    Sphere.Mat.Roughness = 0.1;
-    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
-    IntersectSphere(Ray, Sphere, Hit);
-
-    Sphere.Center        = float3(+0.5, -4.165, -2.5);
-    Sphere.Mat.BaseColor = float3(0.9, 0.7, 0.1);
-    Sphere.Mat.Metallic  = 0.9;
-    Sphere.Mat.Roughness = 0.8;
-    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
-    IntersectSphere(Ray, Sphere, Hit);
-
-    Sphere.Center        = float3(-3.3, -4.165, -3.5);
-    Sphere.Mat.BaseColor = float3(0.9, 0.8, 0.9);
-    Sphere.Mat.Metallic  = 0.2;
-    Sphere.Mat.Roughness = 0.1;
-    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
-    IntersectSphere(Ray, Sphere, Hit);
-
-    Sphere.Center        = float3(-3.7, -4.165, +3.5);
-    Sphere.Mat.BaseColor = float3(0.9, 0.8, 0.9);
-    Sphere.Mat.Metallic  = 0.2;
-    Sphere.Mat.Roughness = 0.8;
-    Sphere.Mat.Type      = MAT_TYPE_SMITH_GGX; 
-    IntersectSphere(Ray, Sphere, Hit);
+    IntersectSphere(Ray, Scene.Balls[0], Hit);
+    IntersectSphere(Ray, Scene.Balls[1], Hit);
+    IntersectSphere(Ray, Scene.Balls[2], Hit);
+    IntersectSphere(Ray, Scene.Balls[3], Hit);
+    IntersectSphere(Ray, Scene.Balls[4], Hit);
+    IntersectSphere(Ray, Scene.Balls[5], Hit);
 }
 
 BoxInfo GetLight(LightAttribs Light)
@@ -307,10 +219,11 @@ BoxInfo GetLight(LightAttribs Light)
     Box.Size   = float3(Light.f2SizeXZ.x, 0.02, Light.f2SizeXZ.y);
 
     Box.Mat.Type      = MAT_TYPE_DIFFUSE_LIGHT;
-    Box.Mat.BaseColor = float3(0.75, 0.75, 0.75);
-    Box.Mat.Emittance = Light.f4Intensity.rgb * Light.f4Intensity.a;
+    Box.Mat.BaseColor = float4(0.75, 0.75, 0.75, 0.0);
+    Box.Mat.Emittance = float4(Light.f4Intensity.rgb * Light.f4Intensity.a, 0.0);
     Box.Mat.Metallic  = 0.0;
     Box.Mat.Roughness = 1.0;
+    Box.Mat.IOR       = 1.5;
     return Box;
 }
 
@@ -322,30 +235,30 @@ void IntersectLight(RayInfo Ray, LightAttribs Light, inout HitInfo Hit)
         // Check that the ray hit the light from the emissive side
         if (dot(Hit.Normal, Light.f4Normal.xyz) < 0.99)
         {
-            Hit.Mat.Emittance = float3(0.0, 0.0, 0.0);
+            Hit.Mat.Emittance = float4(0.0, 0.0, 0.0, 0.0);
         }
     }
 }
 
-HitInfo IntersectScene(RayInfo Ray, LightAttribs Light)
+HitInfo IntersectScene(RayInfo Ray, SceneAttribs Scene)
 {
     HitInfo Hit = NullHit();
 
-    IntersectSceneInterior(Ray, Hit);
+    IntersectSceneInterior(Scene, Ray, Hit);
     IntersectWalls(Ray, Hit);
-    IntersectLight(Ray, Light, Hit);
+    IntersectLight(Ray, Scene.Light, Hit);
 
     return Hit;
 }
 
-float TestShadow(RayInfo Ray)
+float TestShadow(SceneAttribs Scene, RayInfo Ray)
 {
     if (Ray.Dir.y <= 0)
         return 0.0;
 
     HitInfo Hit = NullHit();
 
-    IntersectSceneInterior(Ray, Hit);
+    IntersectSceneInterior(Scene, Ray, Hit);
 
     return Hit.Distance < INF ? 0.0 : 1.0;
 }

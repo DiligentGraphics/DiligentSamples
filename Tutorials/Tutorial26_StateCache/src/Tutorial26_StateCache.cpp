@@ -57,6 +57,76 @@ SampleBase* CreateSample()
     return new Tutorial26_StateCache{};
 }
 
+Tutorial26_StateCache::Tutorial26_StateCache() :
+    m_Scene{std::make_unique<HLSL::SceneAttribs>()}
+{
+    {
+        auto& Light{m_Scene->Light};
+        Light.f4Normal    = {0, -1, 0};
+        Light.f4Intensity = {1, 1, 1, 15};
+        Light.f2PosXZ     = {0, 0};
+        Light.f2SizeXZ    = {1.5f, 1.5f};
+    }
+
+    {
+        auto& MirrorBall{m_Scene->Balls[0]};
+        MirrorBall.Center = float3{+2.5f, -3.415f, 1.5f};
+        MirrorBall.Radius = 1.5;
+
+        MirrorBall.Mat.BaseColor = float3{1.0, 1.0, 1.0};
+        MirrorBall.Mat.Emittance = float3{0.0, 0.0, 0.0};
+        MirrorBall.Mat.Type      = MAT_TYPE_MIRROR;
+        MirrorBall.Mat.Metallic  = 1.0;
+        MirrorBall.Mat.Roughness = 0.0;
+        MirrorBall.Mat.IOR       = 1.5;
+    }
+
+    {
+        auto& GlassBall{m_Scene->Balls[1]};
+        GlassBall.Center = float3{-1.5f, -3.415f, 0.5f};
+        GlassBall.Radius = 1.5;
+
+        GlassBall.Mat.BaseColor = float3{1.0, 1.0, 1.0};
+        GlassBall.Mat.Emittance = float3{0.0, 0.0, 0.0};
+        GlassBall.Mat.Type      = MAT_TYPE_GLASS;
+        GlassBall.Mat.Metallic  = 0.0;
+        GlassBall.Mat.Roughness = 0.0;
+        GlassBall.Mat.IOR       = 1.5;
+    }
+
+    {
+        HLSL::SphereInfo Sphere;
+        Sphere.Mat.Type = MAT_TYPE_SMITH_GGX;
+        Sphere.Mat.IOR  = 1.5;
+
+        Sphere.Center        = float3{+3.0f, -4.165f, -3.2f};
+        Sphere.Radius        = 0.75;
+        Sphere.Mat.BaseColor = float3{0.9f, 0.7f, 0.1f};
+        Sphere.Mat.Emittance = float3{0.0f, 0.0f, 0.0f};
+        Sphere.Mat.Metallic  = 0.9f;
+        Sphere.Mat.Roughness = 0.1f;
+        m_Scene->Balls[2]    = Sphere;
+
+        Sphere.Center        = float3{+0.5f, -4.165f, -2.5f};
+        Sphere.Mat.BaseColor = float3{0.9f, 0.7f, 0.1f};
+        Sphere.Mat.Metallic  = 0.9f;
+        Sphere.Mat.Roughness = 0.8f;
+        m_Scene->Balls[3]    = Sphere;
+
+        Sphere.Center        = float3{-3.3f, -4.165f, -3.5f};
+        Sphere.Mat.BaseColor = float3{0.9f, 0.8f, 0.9f};
+        Sphere.Mat.Metallic  = 0.2f;
+        Sphere.Mat.Roughness = 0.1f;
+        m_Scene->Balls[4]    = Sphere;
+
+        Sphere.Center        = float3{-3.7f, -4.165f, +3.5f};
+        Sphere.Mat.BaseColor = float3{0.9f, 0.8f, 0.9f};
+        Sphere.Mat.Metallic  = 0.2f;
+        Sphere.Mat.Roughness = 0.8f;
+        m_Scene->Balls[5]    = Sphere;
+    }
+}
+
 void Tutorial26_StateCache::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
     SampleBase::ModifyEngineInitInfo(Attribs);
@@ -109,28 +179,74 @@ void Tutorial26_StateCache::UpdateUI()
         if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
             m_SampleCount = 0;
 
-        if (ImGui::SliderFloat("Light intensity", &m_LightIntensity, 1, 50))
-        {
-            m_SampleCount       = 0;
-            m_LastFrameViewProj = {}; // Need to update G-buffer
-        }
+        ImGui::Separator();
 
-        if (ImGui::SliderFloat("Light Width", &m_LightSize.x, 0.5, 3))
+        if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            m_SampleCount       = 0;
-            m_LastFrameViewProj = {}; // Need to update G-buffer
-        }
+            ImGui::TreePop();
 
-        if (ImGui::SliderFloat("Light Height", &m_LightSize.y, 0.5, 3))
-        {
-            m_SampleCount       = 0;
-            m_LastFrameViewProj = {}; // Need to update G-buffer
-        }
+            bool ResetTracer = false;
+            if (ImGui::TreeNode("Light"))
+            {
+                if (ImGui::SliderFloat("Intensity", &m_Scene->Light.f4Intensity.a, 1, 50))
+                    ResetTracer = true;
 
-        if (ImGui::ColorPicker3("Light color", &m_LightColor.x))
-        {
-            m_SampleCount       = 0;
-            m_LastFrameViewProj = {}; // Need to update G-buffer
+                if (ImGui::SliderFloat("Width", &m_Scene->Light.f2SizeXZ.x, 0.5, 3))
+                    ResetTracer = true;
+
+                if (ImGui::SliderFloat("Height", &m_Scene->Light.f2SizeXZ.y, 0.5, 3))
+                    ResetTracer = true;
+
+                ImGui::SetNextItemWidth(150);
+                if (ImGui::ColorPicker3("Color", &m_Scene->Light.f4Intensity.x))
+                    ResetTracer = true;
+
+                ImGui::TreePop();
+            }
+
+            for (int i = 0; i < NUM_BALLS; ++i)
+            {
+                std::string NodeID = "SphereNode";
+                NodeID += std::to_string(i);
+                if (ImGui::TreeNode(NodeID.c_str(), "Ball %d", i))
+                {
+                    auto& Mat     = m_Scene->Balls[i].Mat;
+                    auto  MatType = Mat.Type - 1;
+                    if (ImGui::Combo("Material", &MatType,
+                                     "Smith GGX\0"
+                                     "Glass\0"
+                                     "Mirror\0"))
+                    {
+                        Mat.Type    = MatType + 1;
+                        ResetTracer = true;
+                    }
+
+                    ImGui::SetNextItemWidth(150);
+                    if (ImGui::ColorPicker3("Base color", &Mat.BaseColor.x))
+                        ResetTracer = true;
+
+                    if (Mat.Type == MAT_TYPE_GLASS)
+                    {
+                        if (ImGui::SliderFloat("Index of Refraction", &Mat.IOR, 1.0, 2.5))
+                            ResetTracer = true;
+                    }
+
+                    if (Mat.Type == MAT_TYPE_SMITH_GGX)
+                    {
+                        if (ImGui::SliderFloat("Metallic", &Mat.Metallic, 0.0, 1.0))
+                            ResetTracer = true;
+                        if (ImGui::SliderFloat("Roughness", &Mat.Roughness, 0.0, 1.0))
+                            ResetTracer = true;
+                    }
+
+                    ImGui::TreePop();
+                }
+            }
+            if (ResetTracer)
+            {
+                m_SampleCount       = 0;
+                m_LastFrameViewProj = {}; // Need to update G-buffer
+            }
         }
 
         ImGui::Separator();
@@ -457,18 +573,17 @@ void Tutorial26_StateCache::Render()
         ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
         ShaderData->iUseNEE             = m_UseNEE ? 1 : 0;
 
-        auto LightPos = clamp(m_LightPos, float2{-4.5, -4.5} + m_LightSize, float2{+4.5, +4.5} - m_LightSize);
-        if (LightPos != m_LightPos)
+        auto& LightPos    = m_Scene->Light.f2PosXZ;
+        auto& LightSize   = m_Scene->Light.f2SizeXZ;
+        auto  AdjustedPos = clamp(LightPos, float2{-4.5, -4.5} + LightSize, float2{+4.5, +4.5} - LightSize);
+        if (LightPos != AdjustedPos)
         {
-            m_LightPos          = LightPos;
+            LightPos            = AdjustedPos;
             m_SampleCount       = 0;
             m_LastFrameViewProj = {};
         }
 
-        ShaderData->Light.f2PosXZ     = m_LightPos;
-        ShaderData->Light.f2SizeXZ    = m_LightSize;
-        ShaderData->Light.f4Intensity = float4{m_LightColor, m_LightIntensity};
-        ShaderData->Light.f4Normal    = float3{0, -1, 0};
+        ShaderData->Scene = *m_Scene;
 
         const auto& View     = m_Camera.GetViewMatrix();
         const auto& Proj     = m_Camera.GetProjMatrix();
@@ -555,7 +670,7 @@ void Tutorial26_StateCache::Update(double CurrTime, double ElapsedTime)
             {
                 constexpr float LightMoveSpeed = 0.01f;
 
-                m_LightPos += DeltaPos * LightMoveSpeed;
+                m_Scene->Light.f2PosXZ += DeltaPos * LightMoveSpeed;
 
                 m_LastFrameViewProj = {};
                 m_SampleCount       = 0;

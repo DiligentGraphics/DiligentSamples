@@ -206,9 +206,11 @@ void GetPrimaryRay(in    uint2   ScreenXY,
                    out   HitInfo Hit,
                    out   RayInfo Ray)
 {
-    float  fDepth          = g_Depth.Load(int3(ScreenXY, 0)).r;
-    float4 f4BaseCol_Type0 = g_BaseColor.Load(int3(ScreenXY, 0));
-    float2 f2PhysDesc      = g_PhysDesc.Load(int3(ScreenXY, 0)).rg;
+    float  fDepth         = g_Depth.Load(int3(ScreenXY, 0)).r;
+    float4 f4BaseCol_Type = g_BaseColor.Load(int3(ScreenXY, 0));
+    float4 f4Emittance    = g_Emittance.Load(int3(ScreenXY, 0));
+    float4 f4Normal_IOR   = g_Normal.Load(int3(ScreenXY, 0));
+    float2 f2PhysDesc     = g_PhysDesc.Load(int3(ScreenXY, 0)).rg;
 
 
     float3 HitPos = ScreenToWorld(float2(ScreenXY) + float2(0.5, 0.5),
@@ -221,13 +223,14 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     float  RayLen = length(RayDir);
     Ray.Dir = RayDir / RayLen;
 
-    Hit.Mat.BaseColor = f4BaseCol_Type0.rgb;
-    Hit.Mat.Emittance = g_Emittance.Load(int3(ScreenXY, 0)).rgb;
+    Hit.Mat.BaseColor = float4(f4BaseCol_Type.rgb, 0.0);
+    Hit.Mat.Emittance = f4Emittance;
     Hit.Mat.Metallic  = f2PhysDesc.x;
     Hit.Mat.Roughness = f2PhysDesc.y;
-    Hit.Mat.Type      = int(f4BaseCol_Type0.a * 255.0);
+    Hit.Mat.Type      = int(f4BaseCol_Type.a * 255.0);
+    Hit.Mat.IOR       = max(f4Normal_IOR.w * 5.0, 1.0);
 
-    Hit.Normal   = normalize(g_Normal.Load(int3(ScreenXY, 0)).xyz * 2.0 - 1.0);
+    Hit.Normal   = normalize(f4Normal_IOR.xyz * 2.0 - 1.0);
     Hit.Distance = RayLen;
 }
 
@@ -246,7 +249,7 @@ void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3
     RayInfo ShadowRay;
     ShadowRay.Origin = f3HitPos;
     ShadowRay.Dir    = f3DirToLight;
-    float fLightVisibility = TestShadow(ShadowRay);
+    float fLightVisibility = TestShadow(g_Constants.Scene, ShadowRay);
 
     // In Monte-Carlo integration, we pretend that each sample speaks for the full light
     // source surface, so we project the entire light surface area onto the hemisphere
@@ -284,7 +287,7 @@ void Reflect(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
 {
     Ray.Origin = f3HitPos;
     Ray.Dir    = reflect(Ray.Dir, Hit.Normal);
-    f3Througput *= Hit.Mat.BaseColor;
+    f3Througput *= Hit.Mat.BaseColor.rgb;
 }
 
 
@@ -332,7 +335,7 @@ void Refract(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
 {
     // Compute fresnel term
     float AirIOR    = 1.0;
-    float GlassIOR  = 1.52;
+    float GlassIOR  = Hit.Mat.IOR;
     float relIOR    = AirIOR / GlassIOR;
     float cosThetaI = dot(-Ray.Dir, Hit.Normal);
     if (cosThetaI < 0.0)
@@ -424,7 +427,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
         {
             // We need to add emittance from the first hit, which is like performing
             // light source sampling for the primary ray origin (aka "0-th" hit).
-            f3PathContrib += Hit0.Mat.Emittance;
+            f3PathContrib += Hit0.Mat.Emittance.rgb;
         }
 
         // Path throughput, or the maximum possible remaining contribution after all bounces so far.
@@ -471,7 +474,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                         float3 f3LightEmittance;
                         float3 f3DirToLight;
                         float  Prob;
-                        SampleLight(g_Constants.Light, rnd3.xy, f3HitPos, f3LightEmittance, f3DirToLight, Prob);
+                        SampleLight(g_Constants.Scene.Light, rnd3.xy, f3HitPos, f3LightEmittance, f3DirToLight, Prob);
                         float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
 
                         float CombinedProb = Prob;
@@ -503,15 +506,15 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                         RayInfo LightRay;
                         LightRay.Origin = f3HitPos;
                         LightRay.Dir    = f3DirToLight;
-                        IntersectLight(LightRay, g_Constants.Light, LightHit);
+                        IntersectLight(LightRay, g_Constants.Scene.Light, LightHit);
                         if (LightHit.Mat.Type == MAT_TYPE_DIFFUSE_LIGHT)
                         {
-                            float fLightVisibility = TestShadow(LightRay);
+                            float fLightVisibility = TestShadow(g_Constants.Scene, LightRay);
                             if (fLightVisibility > 0)
                             {
                                 float CombinedProb = Prob;
                                 #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
-                                    CombinedProb += LightDirPDF(g_Constants.Light, f3HitPos, f3DirToLight);
+                                    CombinedProb += LightDirPDF(g_Constants.Scene.Light, f3HitPos, f3DirToLight);
                                 #endif
                                 float NdotL = dot(f3DirToLight, Hit.Normal);
                                 if (CombinedProb > 0 && NdotL > 0)
@@ -520,7 +523,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                                     f3PathContrib +=
                                         f3Throughput
                                         * Reflectance
-                                        * LightHit.Mat.Emittance
+                                        * LightHit.Mat.Emittance.rgb
                                         * fLightVisibility
                                         * MISWeight;
                                 }
@@ -531,7 +534,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 }
                 else
                 {
-                    f3PathContrib += f3Throughput * Hit.Mat.Emittance;
+                    f3PathContrib += f3Throughput * Hit.Mat.Emittance.rgb;
                 }
 
                 // NEE effectively performs one additional bounce
@@ -558,10 +561,10 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             bool AddEmittance = (g_Constants.iUseNEE != 0) && (Hit.Mat.Type == MAT_TYPE_MIRROR || Hit.Mat.Type == MAT_TYPE_GLASS);
 
             // Trace the scene in the selected direction
-            Hit = IntersectScene(Ray, g_Constants.Light);
+            Hit = IntersectScene(Ray, g_Constants.Scene);
 
             if (AddEmittance)
-                f3PathContrib += f3Throughput * Hit.Mat.Emittance;
+                f3PathContrib += f3Throughput * Hit.Mat.Emittance.rgb;
         }
 
         // Combine contributions
