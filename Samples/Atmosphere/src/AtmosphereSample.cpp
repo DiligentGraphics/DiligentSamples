@@ -159,7 +159,7 @@ void AtmosphereSample::UpdateUI()
         ImGui::gizmo3D("Light direction", static_cast<float3&>(m_f3LightDir), ImGui::GetTextLineHeight() * 10);
         ImGui::SliderFloat("Camera altitude", &m_f3CameraPos.y, 2000, 100000);
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Shadows"))
         {
             {

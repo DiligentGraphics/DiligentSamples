@@ -315,7 +315,7 @@ void GLTFViewer::UpdateUI()
             ImGui::SliderFloat("Camera distance", &m_CameraDist, 0.1f, 5.0f);
         }
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Lighting"))
         {
             ImGui::ColorEdit3("Light Color", &m_LightColor.r);
@@ -330,7 +330,7 @@ void GLTFViewer::UpdateUI()
 
         if (!m_Model->Animations.empty())
         {
-            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             if (ImGui::TreeNode("Animation"))
             {
                 ImGui::Checkbox("Play", &m_PlayAnimation);
@@ -342,7 +342,7 @@ void GLTFViewer::UpdateUI()
             }
         }
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Tone mapping"))
         {
             // clang-format off

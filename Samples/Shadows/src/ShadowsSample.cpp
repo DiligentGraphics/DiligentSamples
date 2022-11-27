@@ -198,7 +198,7 @@ void ShadowsSample::UpdateUI()
             }
         }
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Cascade allocation"))
         {
             if (ImGui::InputFloat("Partitioning Factor", &m_ShadowSettings.PartitioningFactor, 0.001f, 0.01f, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
@@ -217,7 +217,7 @@ void ShadowsSample::UpdateUI()
             ImGui::TreePop();
         }
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Filtering"))
         {
             if (ImGui::Checkbox("Filter across cascades", &m_ShadowSettings.FilterAcrossCascades))
@@ -253,7 +253,7 @@ void ShadowsSample::UpdateUI()
             ImGui::TreePop();
         }
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Visualization"))
         {
             ImGui::Checkbox("Visualize cascades", &m_LightAttribs.ShadowAttribs.bVisualizeCascades);

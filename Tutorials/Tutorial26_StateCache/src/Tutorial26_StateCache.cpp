@@ -110,7 +110,7 @@ Tutorial26_StateCache::Tutorial26_StateCache() :
         Sphere.Center        = float3{+0.5f, -4.165f, -2.5f};
         Sphere.Mat.BaseColor = float3{0.9f, 0.7f, 0.1f};
         Sphere.Mat.Metallic  = 0.9f;
-        Sphere.Mat.Roughness = 0.8f;
+        Sphere.Mat.Roughness = 0.5f;
         m_Scene->Balls[3]    = Sphere;
 
         Sphere.Center        = float3{-3.3f, -4.165f, -3.5f};
@@ -188,17 +188,16 @@ void Tutorial26_StateCache::UpdateUI()
             bool ResetTracer = false;
             if (ImGui::TreeNode("Light"))
             {
-                if (ImGui::SliderFloat("Intensity", &m_Scene->Light.f4Intensity.a, 1, 50))
-                    ResetTracer = true;
-
                 if (ImGui::SliderFloat("Width", &m_Scene->Light.f2SizeXZ.x, 0.5, 3))
                     ResetTracer = true;
 
                 if (ImGui::SliderFloat("Height", &m_Scene->Light.f2SizeXZ.y, 0.5, 3))
                     ResetTracer = true;
 
-                ImGui::SetNextItemWidth(150);
-                if (ImGui::ColorPicker3("Color", &m_Scene->Light.f4Intensity.x))
+                if (ImGui::SliderFloat("Intensity", &m_Scene->Light.f4Intensity.a, 1, 50))
+                    ResetTracer = true;
+
+                if (ImGui::ColorEdit3("Color", &m_Scene->Light.f4Intensity.x))
                     ResetTracer = true;
 
                 ImGui::TreePop();
@@ -221,8 +220,7 @@ void Tutorial26_StateCache::UpdateUI()
                         ResetTracer = true;
                     }
 
-                    ImGui::SetNextItemWidth(150);
-                    if (ImGui::ColorPicker3("Base color", &Mat.BaseColor.x))
+                    if (ImGui::ColorEdit3("Base color", &Mat.BaseColor.x))
                         ResetTracer = true;
 
                     if (Mat.Type == MAT_TYPE_GLASS)
