@@ -9,6 +9,8 @@
 
 #define NUM_BALLS 6
 
+#define IOR_GBUFFER_SCALE 5.0
+
 struct Material
 {
     float4 BaseColor;

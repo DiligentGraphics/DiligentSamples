@@ -40,7 +40,7 @@ void main(in  PSInput  PSIn,
     PSOut.PhysDesc  = float2(Hit.Mat.Metallic, Hit.Mat.Roughness);
 
     // [-1, +1] -> [0, 1]
-    PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), Hit.Mat.IOR / 5.0);
+    PSOut.Normal = float4(saturate(Hit.Normal * 0.5 + 0.5), Hit.Mat.IOR / IOR_GBUFFER_SCALE);
 
     if (Hit.Distance < INF)
     {

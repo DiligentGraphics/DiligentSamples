@@ -1,7 +1,8 @@
 # Tutorial26 - Render State Cache
 
-This tutorial demonstrates how to use the render state cache to save pipeline states created at run time
-and load them when the application starts next time. It also demonstrates hot shader reloading.
+This tutorial expands the path tracing technique implemented in previous tutorial and demonstrates
+how to use the render state cache to save pipeline states created at run time and load them when the
+application starts next time.
 
 [Tutorial 25](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial25_StatePackager) shows
 how to package pipeline states off-line during the build process. This tutorial demonstrates an alternative approach, where
@@ -174,5 +175,6 @@ After pipeline states are loaded, they are used the same way as in the previous 
 
 ## Resources
 
-1. [Sampling the GGX Distribution of Visible Normals](https://jcgt.org/published/0007/04/01/) (2018) by Eric Heitz
-2. [Importance Sampling techniques for GGX with Smith Masking-Shadowing](https://schuttejoe.github.io/post/ggximportancesamplingpart2/) (2018) by Joe Schutte
+1. [Optimally Combining Sampling Techniques for Monte Carlo Rendering](https://cseweb.ucsd.edu/~viscomp/classes/cse168/sp21/readings/veach.pdf) (1995) by Eric Veach and Leonidas J. Guibas
+2. [Sampling the GGX Distribution of Visible Normals](https://jcgt.org/published/0007/04/01/) (2018) by Eric Heitz
+3. [Importance Sampling techniques for GGX with Smith Masking-Shadowing](https://schuttejoe.github.io/post/ggximportancesamplingpart2/) (2018) by Joe Schutte

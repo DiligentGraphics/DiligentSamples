@@ -47,6 +47,7 @@ void SampleDirectionCosineHemisphere(in  float3 N,   // Normal
     Dir = normalize(Dir.x * T + Dir.y * B + Dir.z * N);
 }
 
+// Gets the surface reflectance info from the material attributes
 SurfaceReflectanceInfo GetReflectanceInfo(Material Mat)
 {
     float3 f0 = float3(0.04, 0.04, 0.04);
@@ -70,9 +71,9 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     float3 DiffuseContrib;
     float3 SpecContrib;
     float  NdotL;
-    SmithGGX_BRDF(OutDir,
+    SmithGGX_BRDF(InDir, // To light
                   Hit.Normal,
-                  InDir, // To light
+                  OutDir,
                   SrfInfo,
                   DiffuseContrib,
                   SpecContrib,
@@ -82,20 +83,41 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     return DiffuseContrib + SpecContrib;
 }
 
-void ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance, out float Prob)
+#define SMITH_GGX_SPECULAR_PROB 0.5
+
+// Importance-sample Lambertian + Smith-GGX BRDF
+//
+//     L(x->v)      L(x<-l)
+//          '.   .'
+//        v   '.'   l
+//             x
+// 
+//  L(x->v) = L(x->l) * BRDF(x, v, l) * (n, l) / p(l)
+//
+struct BRDFSamplingAttribs
+{
+    float3 Dir;         // l
+    float3 Reflectance; // BRDF(x, v, l) * (n, l) / p(l)
+    float  Prob;        // p(l)
+};
+BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3)
 {
     SurfaceReflectanceInfo SrfInfo = GetReflectanceInfo(Hit.Mat);
 
-    Reflectance = float3(0.0, 0.0, 0.0);
-    Prob = 0.0;
+    BRDFSamplingAttribs Sample;
+    Sample.Dir         = float3(0.0, 0.0, 0.0);
+    Sample.Reflectance = float3(0.0, 0.0, 0.0);
+    Sample.Prob        = 0.0;
 
-    float DiffuseProb = 0.5;
+    float DiffuseProb = 1.0 - SMITH_GGX_SPECULAR_PROB;
+    // Choose diffuse (Lambertian) vs specular (Smith-GGX) path
     if (rnd3.z < DiffuseProb)
     {
-        SampleDirectionCosineHemisphere(Hit.Normal, rnd3.xy, Dir, Prob);
-        Prob *= DiffuseProb;
+        // Importance-sampling of the Lambertian BRDF is the cosine-weighted distribution
+        SampleDirectionCosineHemisphere(Hit.Normal, rnd3.xy, Sample.Dir, Sample.Prob);
+        Sample.Prob *= DiffuseProb;
 
-        float3 H     = normalize(View + Dir);
+        float3 H     = normalize(View + Sample.Dir);
         float  HdotV = dot(H, View);
         float3 F     = SchlickReflection(HdotV, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
 
@@ -103,14 +125,17 @@ void ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3, out float3 
         // DirProb     = CosTheta / PI
         // Reflectance = (1.0 - F) * BRDF * CosTheta / (DirProb * DiffuseProb)
 #if 1
-        Reflectance = (1.0 - F) * SrfInfo.DiffuseColor / DiffuseProb;
+        Sample.Reflectance = (1.0 - F) * SrfInfo.DiffuseColor / DiffuseProb;
 #else
-        float CosTheta = dot(Hit.Normal, Dir);
-        Reflectance = (1.0 - F) * LambertianDiffuse(SrfInfo.DiffuseColor) * CosTheta / Prob;
+        float CosTheta = dot(Hit.Normal, Sample.Dir);
+        Sample.Reflectance = (1.0 - F) * LambertianDiffuse(SrfInfo.DiffuseColor) * CosTheta / Sample.Prob;
 #endif
     }
     else
     {
+        // Importance-sample Smith-GGX using Visible Normal Distribution.
+        // [1] "Sampling the GGX Distribution of Visible Normals" (2018) by Eric Heitz.
+
         // https://schuttejoe.github.io/post/ggximportancesamplingpart2/
         // https://jcgt.org/published/0007/04/01/
         // https://github.com/TheRealMJP/DXRPathTracer/blob/master/DXRPathTracer/RayTrace.hlsl
@@ -125,16 +150,16 @@ void ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3, out float3 
 
         // Transform normal from world to tangent space
         float3 ViewDirTS     = normalize(mul(View, transpose(TangentToWorld)));
-        // Get GGX sampling micronormal in tangent space
+        // Get the tangent-space micronormal from the GGX Visible Normal Distribution
         float3 MicroNormalTS = SmithGGXSampleVisibleNormal(ViewDirTS, AlphaRoughness, AlphaRoughness, rnd3.x, rnd3.y);
         // Reflect view direction off the micronormal to get the sampling direction
         float3 SampleDirTS   = reflect(-ViewDirTS, MicroNormalTS);
         float3 NormalTS      = float3(0, 0, 1);
 
-        // Transform tangent space normal to world space
-        Dir = normalize(mul(SampleDirTS, TangentToWorld));
+        // Transform tangent-space normal to world space
+        Sample.Dir = normalize(mul(SampleDirTS, TangentToWorld));
         // Get probability of sampling direction
-        Prob = SmithGGXSampleDirectionPDF(ViewDirTS, NormalTS, SampleDirTS, AlphaRoughness) * (1.0 - DiffuseProb);
+        Sample.Prob = SmithGGXSampleDirectionPDF(ViewDirTS, NormalTS, SampleDirTS, AlphaRoughness) * SMITH_GGX_SPECULAR_PROB;
 
         // Micro normal is the halfway vector
         float HdotV = dot(MicroNormalTS, ViewDirTS);
@@ -147,12 +172,13 @@ void ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3, out float3 
             float G1 = SmithGGXMasking(NdotV, AlphaRoughness);
             float G2 = SmithGGXShadowMasking(NdotL, NdotV, AlphaRoughness);
 #if 1
-            Reflectance = F * (G2 / G1) / (1.0 - DiffuseProb);
+            // Eq. (19) from [1]
+            Sample.Reflectance = F * (G2 / G1) / SMITH_GGX_SPECULAR_PROB;
 #else
             // Simplified reflectance formulation above is equivalent to the following
             // standard Monte-Carlo estimator:
             float3 DiffuseContrib, SpecContrib;
-            SmithGGX_BRDF(Dir, // To light
+            SmithGGX_BRDF(Sample.Dir, // To light
                           Hit.Normal,
                           View,
                           SrfInfo,
@@ -160,25 +186,34 @@ void ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rnd3, out float3 
                           SpecContrib,
                           NdotL
             );
-            Reflectance = SpecContrib * NdotL / Prob;
+            Sample.Reflectance = SpecContrib * NdotL / Sample.Prob;
 #endif
         }
     }
+
+    return Sample;
 }
 
-void SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3, out float3 Dir, out float3 Reflectance, out float Prob)
+BRDFSamplingAttribs SampleBRDFDirection(HitInfo Hit, float3 View, float3 rnd3)
 {
 #if BRDF_SAMPLING_MODE == BRDF_SAMPLING_MODE_COS_WEIGHTED
-    SampleDirectionCosineHemisphere(Hit.Normal, rnd3.xy, Dir, Prob);
-    // Reflectance = BRDF * CosTheta / Prob
-    // Prob = CosTheta / PI
-    // Thus:
-    Reflectance = BRDF(Hit, View, Dir) * PI;
+    {
+        BRDFSamplingAttribs Sample;
+        SampleDirectionCosineHemisphere(Hit.Normal, rnd3.xy, Sample.Dir, Sample.Prob);
+        // Reflectance = BRDF * CosTheta / Prob
+        // Prob = CosTheta / PI
+        // Thus:
+        Sample.Reflectance = BRDF(Hit, View, Sample.Dir) * PI;
+        return Sample;
+    }
 #elif BRDF_SAMPLING_MODE == BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING
-    ImportanceSampleSmithGGX(Hit, View, rnd3, Dir, Reflectance, Prob);
+    {
+        return ImportanceSampleSmithGGX(Hit, View, rnd3);
+    }
 #endif
 }
 
+// Gets the probability of the direction in Lambertian + Smith-GGX BRDF
 float BRDFSampleDirection_PDF(HitInfo Hit, float3 V, float3 L)
 {
     float3 N = Hit.Normal;
@@ -188,23 +223,22 @@ float BRDFSampleDirection_PDF(HitInfo Hit, float3 V, float3 L)
     if (NdotL <= 0.0 || NdotV <= 0.0)
         return 0.0;
 
-    float DiffuseProb = 0.5;
-    // Diffuse component
-    float Prob = NdotL / PI * DiffuseProb;
+    // Diffuse path
+    float Prob = NdotL / PI * (1.0 - SMITH_GGX_SPECULAR_PROB);
 
-    // Specular component
+    // Specular path
     float AlphaRoughness = Hit.Mat.Roughness * Hit.Mat.Roughness;
     float VNDF = SmithGGXSampleDirectionPDF(V, N, L, AlphaRoughness);
-    Prob += VNDF * (1.0 - DiffuseProb);
+    Prob += VNDF * SMITH_GGX_SPECULAR_PROB;
 
     return Prob;
 }
 
 
 // Reconstructs primary ray from the G-buffer
-void GetPrimaryRay(in    uint2   ScreenXY,
-                   out   HitInfo Hit,
-                   out   RayInfo Ray)
+void GetPrimaryRay(in  uint2   ScreenXY,
+                   out HitInfo Hit,
+                   out RayInfo Ray)
 {
     float  fDepth         = g_Depth.Load(int3(ScreenXY, 0)).r;
     float4 f4BaseCol_Type = g_BaseColor.Load(int3(ScreenXY, 0));
@@ -228,10 +262,18 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     Hit.Mat.Metallic  = f2PhysDesc.x;
     Hit.Mat.Roughness = f2PhysDesc.y;
     Hit.Mat.Type      = int(f4BaseCol_Type.a * 255.0);
-    Hit.Mat.IOR       = max(f4Normal_IOR.w * 5.0, 1.0);
+    Hit.Mat.IOR       = max(f4Normal_IOR.w * IOR_GBUFFER_SCALE, 1.0);
 
     Hit.Normal   = normalize(f4Normal_IOR.xyz * 2.0 - 1.0);
     Hit.Distance = RayLen;
+}
+
+// Returns the light source projected area
+float GetLightProjectedArea(LightAttribs Light, float3 Dir, float DistSqr)
+{
+    float  fLightArea    = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
+    float3 f3LightNormal = Light.f4Normal.xyz;
+    return fLightArea * max(dot(-Dir, f3LightNormal), 0.0) / DistSqr;
 }
 
 // Sample a random point on the light source surface and evaluate terms
@@ -281,16 +323,13 @@ LightSampleAttribs SampleLightSource(in  LightAttribs Light,
     //    / .'
     //   /.'
     //
-    float  fLightArea    = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
-    float3 f3LightNormal = Light.f4Normal.xyz;
-    float  fSolidAngle   = fLightArea * max(dot(-Sample.f3Dir, f3LightNormal), 0.0) / fDistToLightSqr;
-
+    float fSolidAngle = GetLightProjectedArea(Light, Sample.f3Dir, fDistToLightSqr);
     Sample.Prob = fSolidAngle > 0.0 ? 1.0 / fSolidAngle : 0.0;
 
     return Sample;
 }
 
-
+// Get the probability density of sampling light source with the given direction
 float LightDirPDF(LightAttribs Light, float3 f3HitPos, float3 f3DirToLight)
 {
     HitInfo Hit = NullHit();
@@ -299,16 +338,20 @@ float LightDirPDF(LightAttribs Light, float3 f3HitPos, float3 f3DirToLight)
     Ray.Dir    = f3DirToLight;
     IntersectLight(Ray, Light, Hit);
     if (Hit.Mat.Type != MAT_TYPE_DIFFUSE_LIGHT)
+    {
+        // Ray does not hit the light box
         return 0.0;
+    }
 
     if (max(Hit.Mat.Emittance.x, max(Hit.Mat.Emittance.y, Hit.Mat.Emittance.z)) == 0.0)
+    {
+        // Ray hits the light box in the non-emissive surface
         return 0.0;
+    }
 
-    float fLightArea = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
     float fDistToLightSqr = Hit.Distance * Hit.Distance;
-    float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, Light.f4Normal.xyz), 0.0) / fDistToLightSqr;
-
-    return fLightProjectedArea > 0 ? 1.0 / fLightProjectedArea : 0.0;
+    float fSolidAngle     = GetLightProjectedArea(Light, f3DirToLight, fDistToLightSqr);
+    return fSolidAngle > 0 ? 1.0 / fSolidAngle : 0.0;
 }
 
 
@@ -375,6 +418,7 @@ void Refract(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
     }
     float F = Fresnel(relIOR, cosThetaI);
 
+    // Choose between refraction path and reflection path
     if (rnd <= F)
     {
         // Note that technically we need to multiply throughput by F,
@@ -510,6 +554,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                         LightSampleAttribs LightSample = SampleLightSource(g_Constants.Scene.Light, rnd3.xy, f3HitPos);
                         float CombinedProb = LightSample.Prob;
                         #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_LIGHT
+                            // In case of multiple importance sampling, we modify the probability as 
+                            // See Figure 9.3 in 
                             CombinedProb += BRDFSampleDirection_PDF(Hit, -Ray.Dir, LightSample.f3Dir);
                         #endif
                         if (CombinedProb > 0)
@@ -533,31 +579,31 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                     #if NEE_MODE == NEE_MODE_BRDF || NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
                     {
                         // Sample the BRDF
-                        float3 Reflectance;
-                        float3 f3DirToLight;
-                        float  Prob;
-                        SampleBRDFDirection(Hit, -Ray.Dir, rnd3.zxy, f3DirToLight, Reflectance, Prob);
+                        BRDFSamplingAttribs BRDFSample = SampleBRDFDirection(Hit, -Ray.Dir, rnd3.zxy);
+                        // Check if the ray hits the light
                         HitInfo LightHit = NullHit();
                         RayInfo LightRay;
                         LightRay.Origin = f3HitPos;
-                        LightRay.Dir    = f3DirToLight;
+                        LightRay.Dir    = BRDFSample.Dir;
                         IntersectLight(LightRay, g_Constants.Scene.Light, LightHit);
-                        if (LightHit.Mat.Type == MAT_TYPE_DIFFUSE_LIGHT)
+                        if (LightHit.Mat.Type == MAT_TYPE_DIFFUSE_LIGHT &&
+                            max(LightHit.Mat.Emittance.r, max(LightHit.Mat.Emittance.g, LightHit.Mat.Emittance.b)) > 0.0)
                         {
+                            // Get light visibility
                             float fLightVisibility = TestShadow(g_Constants.Scene, LightRay);
                             if (fLightVisibility > 0)
                             {
-                                float CombinedProb = Prob;
+                                float CombinedProb = BRDFSample.Prob;
                                 #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
-                                    CombinedProb += LightDirPDF(g_Constants.Scene.Light, f3HitPos, f3DirToLight);
+                                    CombinedProb += LightDirPDF(g_Constants.Scene.Light, f3HitPos, BRDFSample.Dir);
                                 #endif
-                                float NdotL = dot(f3DirToLight, Hit.Normal);
+                                float NdotL = dot(BRDFSample.Dir, Hit.Normal);
                                 if (CombinedProb > 0 && NdotL > 0)
                                 {
-                                    float MISWeight = Prob / CombinedProb;
+                                    float MISWeight = BRDFSample.Prob / CombinedProb;
                                     f3PathContrib +=
                                         f3Throughput
-                                        * Reflectance
+                                        * BRDFSample.Reflectance
                                         * LightHit.Mat.Emittance.rgb
                                         * fLightVisibility
                                         * MISWeight;
@@ -582,16 +628,13 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                 }
 
                 // Sample the BRDF
-                float3 Reflectance;
-                float3 Dir;
-                float  Prob;
-                SampleBRDFDirection(Hit, -Ray.Dir, rnd3, Dir, Reflectance, Prob);
+                BRDFSamplingAttribs BRDFSample = SampleBRDFDirection(Hit, -Ray.Dir, rnd3);
                 // Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)
                 //             |-----------Reflectance-----------|
-                f3Throughput *= Reflectance;
+                f3Throughput *= BRDFSample.Reflectance;
 
                 Ray.Origin = f3HitPos;
-                Ray.Dir    = Dir;
+                Ray.Dir    = BRDFSample.Dir;
             }
 
             // We did not perform next event estimation for the mirror surface and
