@@ -36,10 +36,10 @@ states required to perform basic path tracing.
 
 ## Path Tracing
 
-This tutorial implements a basic path tracing algorithm with next event estimation (aka light source sampling).
-In this section we provide some details about the rendering process. Additional information on path tracing can be easily
+This tutorial implements a basic path tracing algorithm with the next event estimation (aka light source sampling).
+In this section we provide some details about the rendering process. Additional information about path tracing can be easily
 found on the internet. [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/)
-could be a good starting point.
+could be a good starting point. Path tracing shader source code also contains a lot of additional details.
 
 The rendering process consists of the following three stages:
 
@@ -70,7 +70,7 @@ Real applications will likely use DXR/Vulkan ray tracing (see
 [Tutorial 21 - Ray Tracing](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial21_RayTracing) and 
 [Tutorial 22 - Hybrid Rendering](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial22_HybridRendering)).
 
-A box is defined by its center, sizes, albedo, emissive power and type:
+A box is defined by its center, size, albedo, emissive power and type:
 
 ```hlsl
 struct BoxInfo
@@ -182,7 +182,7 @@ PSOut.Emittance = float4(Hit.Emittance, 0.0);
 PSOut.Normal    = float4(saturate(Hit.Normal * 0.5 + 0.5), 0.0);
 ```
 
-Finally, we compute the depth by transforming the hit point with the view-projection matrix:
+Finally, the shader computes the depth by transforming the hit point with the view-projection matrix:
 
 ```hlsl
 float3 HitWorldPos = Ray.Origin + Ray.Dir * Hit.Distance;
@@ -200,8 +200,8 @@ For each bounce, the shader traces a ray towards the light source and computes i
 a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
 a ray in this direction and repeats the process at the new location.
 
-The shader starts with reading the sample attributes from the G-buffer and reconstructing the
-the primary camera ray using the inverse view-projection matrix:
+The shader starts with reading the G-buffer and reconstructing the
+attributes of the primary camera ray:
 
 ```hlsl
 HitInfo Hit0;
@@ -211,7 +211,7 @@ GetPrimaryRay(ThreadId.xy, Hit0, Ray0);
 
 Where `ThreadId` is the compute shader thread index in a two-dimensional grid and matches the screen coordinates.
 
-The shader then prepares a two-dimensional hash seed:
+The shader then prepares a two-dimensional hash seed that will be used for pseudo-random number generation:
 
 ```hlsl
 uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
@@ -229,9 +229,14 @@ HitInfo Hit = Hit0;
 RayInfo Ray = Ray0;
 
 // Total contribution of this path
-// We need to add emittance from the first hit, which is like performing
-// light source sampling for the primary ray origin (aka "0-th" hit).
-float3 f3PathContrib = Hit0.Emittance;
+float3 f3PathContrib = float3(0.0, 0.0, 0.0);
+if (g_Constants.iUseNEE != 0)
+{
+    // We need to add emittance from the first hit, which is like performing
+    // light source sampling for the primary ray origin (aka "0-th" hit).
+    f3PathContrib += Hit0.Emittance;
+}
+
 // Path throughput, or the maximum possible remaining contribution after all bounces so far.
 float3 f3Throughput = float3(1.0, 1.0, 1.0);
 for (int j = 0; j < g_Constants.iNumBounces; ++j)
@@ -243,78 +248,75 @@ for (int j = 0; j < g_Constants.iNumBounces; ++j)
 In the loop, the shader first samples the light source:
 
 ```hlsl
+// Get uniform random variables
 float2 rnd2 = hash22(Seed);
 Seed += uint2(129, 1725);
 
-float3 f3LightRadiance;
-float3 f3DirToLight;
-SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
-float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+LightSampleAttribs LightSample = SampleLightSource(g_Constants.Light, rnd2, f3HitPos);
 ```
 
-The `SampleLight` function returns a direction to the random point on the light (`f3DirToLight`)
-and the radiance incident from this direction (`f3LightRadiance`).
-In this example, the light source is a rectangular area light in XZ plane directed down along the Y axis.
-Its properties are constant:
+The `SampleLightSource` function samples a random point on the light source surface and evaluates terms
+required for the next event estimation. It starts by using two pseudo-random values in the [0, 1]
+range produced by the `hash22` to select a random point on the light source and computing the direction
+vector to this point:
 
 ```hlsl
-float  fLightArea       = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
-float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
-float3 f3LightNormal    = Light.f4Normal.xyz;
-```
+LightSampleAttribs Sample;
 
-`SampleLight` starts by selecting a random point on the light source surface and computing
-the direction vector to this point. It uses two pseudo-random values in the [0, 1] range produced
-by the `hash22` function:
+Sample.f3Emittance = Light.f4Intensity.rgb * Light.f4Intensity.a;
 
-```hlsl
-float3 f3LightSample = GetLightSamplePos(Light, rnd2);
-f3DirToLight  = f3LightSample - f3HitPos;
-float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
-f3DirToLight /= sqrt(fDistToLightSqr);
+float3 f3SamplePos = GetLightSamplePos(Light, rnd2);
+Sample.f3Dir       = f3SamplePos - f3SrfPos;
+float fDistToLightSqr = dot(Sample.f3Dir, Sample.f3Dir);
+Sample.f3Dir /= sqrt(fDistToLightSqr);
 ```
 
 Next, the function casts a shadow ray towards the selected point and computes it visibility:
 
 ```hlsl
 RayInfo ShadowRay;
-ShadowRay.Origin = f3HitPos;
-ShadowRay.Dir    = f3DirToLight;
-float fLightVisibility = TestShadow(ShadowRay);
+ShadowRay.Origin   = f3SrfPos;
+ShadowRay.Dir      = Sample.f3Dir;
+Sample.fVisibility = TestShadow(ShadowRay);
 ```
 
-In Monte-Carlo integration, we pretend that each sample speaks for the full light
-source surface, so we project the entire light surface area onto the hemisphere
-around the shaded point and see how much solid angle it covers. This value is given
-by `fLightProjectedArea`:
+Finally, the function computes the probability density of the selected direction, which in our
+case is constant and is equal to 1 over the projected solid angle spanned by the light source:
 
 ```hlsl
-float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
+float  fLightArea    = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
+float3 f3LightNormal = Light.f4Normal.xyz;
+float  fSolidAngle   = fLightArea * max(dot(-Sample.f3Dir, f3LightNormal), 0.0) / fDistToLightSqr;
+
+Sample.Prob = fSolidAngle > 0.0 ? 1.0 / fSolidAngle : 0.0;
 ```
 
-The light radiance is then computed as follows:
+After we get the light source sample properties, we update the path radiance as follows:
 
 ```hlsl
-f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
-```
-
-After we get the radiance received by the current point, we update the total path radiance as follows:
-
-```hlsl
-float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
-
+float NdotL = max(dot(LightSample.f3Dir, Hit.Normal), 0.0);
 f3PathContrib +=
-    f3Throughput
-    * BRDF(Hit, -Ray.Dir, f3DirToLight)
-    * NdotL
-    * f3LightRadiance;
+    f3Throughput                             // Ti-1
+    * BRDF(Hit, -Ray.Dir, LightSample.f3Dir) // BRDF(xi, vi, li)
+    * NdotL                                  // (ni, li)
+    * LightSample.f3Emittance                // L(xi, li)
+    * LightSample.fVisibility                // V(xi, li)
+    / LightSample.Prob;                      // p(li)
 ```
 
-In the above, `f3Throughput` is the path throughput, e.g. the maximum possible remaining
-contribution after all bounces so far. Initially it is `float3(1, 1, 1)`, and is updated
-at each bounce. `BRDF` is the bidirectional reflectance distribution function that determines
-how much of the incoming light is reflected into the view direction. In our case, it is a simple
-Lambertian BRDF (perfectly diffuse surface), and equals to `Hit.Albedo / PI`.
+Where:
+
+- `f3Throughput` is the path throughput, i.e. the maximum possible remaining
+  contribution after all bounces so far. Initially it is `float3(1, 1, 1)`, and
+  is updated at each bounce.
+- `BRDF` is the bidirectional reflectance distribution function that determines
+  how much of the incoming light is reflected into the view direction. In our case, it 
+  is a simple Lambertian BRDF (perfectly diffuse surface), and equals to `Hit.Albedo / PI`.
+- `NdotL` aka cos(Theta) is the cosine of the angle between the surface normal and the direction
+  to the light source.
+- `LightSample.f3Emittance` is the light source emittance.
+- `LightSample.fVisibility` is the light source point visibility.
+- `LightSample.Prob` is the probabity of selecting the direction.
 
 After adding the light contribution, we go to the next sample by selecting a random
 direction using the cosine-weighted hemispherical distribution:
@@ -333,7 +335,12 @@ We then update the throughput:
 
 ```hlsl
 float CosTheta = dot(Hit.Normal, Dir);
-f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
+// Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)
+f3Throughput = 
+    f3Throughput                // Ti-1
+    * BRDF(Hit, -Ray.Dir, Dir)  // BRDF(xi, vi, wi)
+    * CosTheta                  // (ni, wi)
+    / Prob;                     // p(wi)
 ```
 
 Finally, we trace a ray in the generated direction and update the hit properties:
@@ -366,6 +373,10 @@ g_Radiance[ThreadId.xy] = float4(f3Radiance, 0.0);
 The `fLastSampleCount` indicates how many samples have been accumulated so far.
 Zero value indicates that the shader is executed for the first time and in this
 case it overwrites the previous value.
+
+Refer to the
+[shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial25_StatePackager/assets/path_trace.csh)
+for additional details.
 
 
 ### Resolve

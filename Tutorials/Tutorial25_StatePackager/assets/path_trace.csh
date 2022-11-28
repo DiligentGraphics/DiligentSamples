@@ -58,9 +58,9 @@ void SampleBRDFDirection(HitInfo Hit, float2 rnd2, out float3 Dir, out float Pro
 }
 
 // Reconstructs primary ray from the G-buffer
-void GetPrimaryRay(in    uint2   ScreenXY,
-                   out   HitInfo Hit,
-                   out   RayInfo Ray)
+void GetPrimaryRay(in  uint2   ScreenXY,
+                   out HitInfo Hit,
+                   out RayInfo Ray)
 {
     float  fDepth         = g_Depth.Load(int3(ScreenXY, 0)).x;
     float4 f4Albedo_Type0 = g_Albedo.Load(int3(ScreenXY, 0));
@@ -82,32 +82,63 @@ void GetPrimaryRay(in    uint2   ScreenXY,
     Hit.Type      = int(f4Albedo_Type0.a * 255.0);
 }
 
-void SampleLight(LightAttribs Light, float2 rnd2, float3 f3HitPos, out float3 f3LightRadiance, out float3 f3DirToLight)
+
+// Sample a random point on the light source surface and evaluate terms
+// required for the next event estimation.
+//
+//     L(x->v)      L(x<-l)
+//          '.   .'
+//        v   '.'   l
+//             x
+// 
+//  L(x->v) = L(x->l) * V(x, l) * BRDF(x, v, l) *  (n, l) / p(l)
+//
+struct LightSampleAttribs
 {
-    float  fLightArea       = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
-    float3 f3LightIntensity = Light.f4Intensity.rgb * Light.f4Intensity.a;
-    float3 f3LightNormal    = Light.f4Normal.xyz;
+    float3 f3Emittance;  // L(x->l)
+    float3 f3Dir;        // l
+    float  fVisibility;  // V(l)
+    float  Prob;         // p(l)
+};
+LightSampleAttribs SampleLightSource(in  LightAttribs Light, 
+                                     in  float2       rnd2,
+                                     in  float3       f3SrfPos // x
+                                     )
+{
+    LightSampleAttribs Sample;
 
-    float3 f3LightSample = GetLightSamplePos(Light, rnd2);
-    f3DirToLight  = f3LightSample - f3HitPos;
-    float fDistToLightSqr = dot(f3DirToLight, f3DirToLight);
-    f3DirToLight /= sqrt(fDistToLightSqr);
+    Sample.f3Emittance = Light.f4Intensity.rgb * Light.f4Intensity.a;
 
-    // Trace shadow ray towards the light sample
+    float3 f3SamplePos = GetLightSamplePos(Light, rnd2);
+    Sample.f3Dir       = f3SamplePos - f3SrfPos;
+    float fDistToLightSqr = dot(Sample.f3Dir, Sample.f3Dir);
+    Sample.f3Dir /= sqrt(fDistToLightSqr);
+
+    // Trace shadow ray towards the light
     RayInfo ShadowRay;
-    ShadowRay.Origin = f3HitPos;
-    ShadowRay.Dir    = f3DirToLight;
-    float fLightVisibility = TestShadow(ShadowRay);
+    ShadowRay.Origin   = f3SrfPos;
+    ShadowRay.Dir      = Sample.f3Dir;
+    Sample.fVisibility = TestShadow(ShadowRay);
 
-    // In Monte-Carlo integration, we pretend that each sample speaks for the full light
-    // source surface, so we project the entire light surface area onto the hemisphere
-    // around the shaded point and see how much solid angle it covers.
-    float fLightProjectedArea = fLightArea * max(dot(-f3DirToLight, f3LightNormal), 0.0) / fDistToLightSqr;
-    // Notice that when not using NEE, we randomly sample the hemisphere and will
-    // eventually cover the same solid angle.
+    // We need to compute p(l) which is the probability density of the direction l
+    // and is equal to 1 over the solid angle spanned by the light source:
+    //
+    //        ______
+    //       /    .'
+    //      /   .'
+    //     /  .'
+    //    / .'
+    //   /.'
+    //
+    float  fLightArea    = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
+    float3 f3LightNormal = Light.f4Normal.xyz;
+    float  fSolidAngle   = fLightArea * max(dot(-Sample.f3Dir, f3LightNormal), 0.0) / fDistToLightSqr;
 
-    f3LightRadiance = fLightProjectedArea * f3LightIntensity * fLightVisibility;
+    Sample.Prob = fSolidAngle > 0.0 ? 1.0 / fSolidAngle : 0.0;
+
+    return Sample;
 }
+
 
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
 void main(uint3 ThreadId : SV_DispatchThreadID)
@@ -138,7 +169,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //            '.'
     //             x
     //
-    //      L(x->v) = E(x) + Integral{ BRDF(x, v, w) * L(x<-w) * (n, w) * dw }
+    //      L(x->v) = E(x) + Integral{ BRDF(x, v, w) * L(x<-w) * (n, w) * dw }      (1)
     //
     // Monte-Carlo integration:
     //
@@ -149,16 +180,16 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //            '.'           '. 
     //             x1             x3
     //
-    //      L(x1->v) = 1/N * Sum{ E(x1) + BRDF(x1, v1, w1) * [E(x2) + BRDF(x2, -w1, w2) * (...) * (n2, w2) * 1/p(w2)]  * (n1, w1) * 1/p(w1) }
+    //      L(x1->v) = 1/N * Sum{ E(x1) + BRDF(x1, v1, w1) * [E(x2) + BRDF(x2, -w1, w2) * (...) * (n2, w2) * 1/p(w2)]  * (n1, w1) * 1/p(w1) }   (2)
     //
     //  This can be rewritten as
     //
-    //      L(x1->v) = 1/N * { T0 * E(x1) + T1 * E(x2) + T2 * E(x3) + ... }
+    //      L(x1->v) = 1/N * { T0 * E(x1) + T1 * E(x2) + T2 * E(x3) + ... }     (3)
     //
     //  where Ti is the throughput after i bounces:
     //
-    //      T0 = 1
-    //      Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)
+    //      T0 = 1                                              (4)
+    //      Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)     (5)
 
     // Make sure the seed is unique for each sample
     uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
@@ -178,7 +209,8 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
         }
 
         // Path throughput, or the maximum possible remaining contribution after all bounces so far.
-        float3 f3Throughput = float3(1.0, 1.0, 1.0);
+        float3 f3Throughput = float3(1.0, 1.0, 1.0); // T0
+
         // Note that when using next event estimation, we sample light source at each bounce.
         // To compensate for that, we add extra bounce when not using NEE.
         for (int j = 0; j < g_Constants.iNumBounces + (1 - g_Constants.iUseNEE); ++j)
@@ -191,28 +223,40 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
             float3 f3HitPos = Ray.Origin + Ray.Dir * Hit.Distance;
 
-            // Get random sample on the light source surface.
+            // Get uniform random variables
             float2 rnd2 = hash22(Seed);
-            // Update the seed
             Seed += uint2(129, 1725);
 
             if (g_Constants.iUseNEE != 0)
             {
-                // Sample light source
-                float3 f3LightRadiance;
-                float3 f3DirToLight;
-                SampleLight(g_Constants.Light, rnd2, f3HitPos, f3LightRadiance, f3DirToLight);
-                float NdotL = max(dot(f3DirToLight, Hit.Normal), 0.0);
+                // Trace a ray towards the light source to estimate E(xi) instead of using E(xi) from the hit:
+                // 
+                //      E(xi) = BRDF(xi, vi, li) * (ni, li) * L(xi, li) * V(xi, li) / p(li)
+                //
+                // Notice how this way we start with E(x2) and skip E(x1) in (2), which is why we needed to add
+                // the primary ray hit emittance above.
 
-                f3PathContrib +=
-                    f3Throughput
-                    * BRDF(Hit, -Ray.Dir, f3DirToLight)
-                    * NdotL
-                    * f3LightRadiance;
+                LightSampleAttribs LightSample = SampleLightSource(g_Constants.Light, rnd2, f3HitPos);
+                if (LightSample.Prob > 0)
+                {
+                    float NdotL = max(dot(LightSample.f3Dir, Hit.Normal), 0.0);
+                    f3PathContrib +=
+                        f3Throughput                             // Ti-1
+                        * BRDF(Hit, -Ray.Dir, LightSample.f3Dir) // BRDF(xi, vi, li)
+                        * NdotL                                  // (ni, li)
+                        * LightSample.f3Emittance                // L(xi, li)
+                        * LightSample.fVisibility                // V(xi, li)
+                        / LightSample.Prob;                      // p(li)
+
+                    // Note that L in the rendering equation is radiance, however
+                    // L * dl ~ Irradiance aka Emittance
+                }
             }
             else
             {
-                f3PathContrib += f3Throughput * Hit.Emittance;
+                f3PathContrib += 
+                    f3Throughput * // Ti-1
+                    Hit.Emittance; // E(xi)
             }
 
             // NEE effectively performs one additional bounce
@@ -228,10 +272,16 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
             SampleBRDFDirection(Hit, rnd2, Dir, Prob);
 
             float CosTheta = dot(Hit.Normal, Dir);
+            // Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)
+            f3Throughput = 
+                f3Throughput                // Ti-1
+                * BRDF(Hit, -Ray.Dir, Dir)  // BRDF(xi, vi, wi)
+                * CosTheta                  // (ni, wi)
+                / Prob;                     // p(wi)
+
             // Note that in case of a cosine-weighted distribution, ray direction
             // probability is cos(theta) / PI, and it cancels out with CosTheta and
             // 1/PI factor from BRDF. We however keep them here for the sake of generality.
-            f3Throughput *= BRDF(Hit, -Ray.Dir, Dir) * CosTheta / Prob;
 
             // Trace the scene in the selected direction
             Ray.Origin = f3HitPos;
