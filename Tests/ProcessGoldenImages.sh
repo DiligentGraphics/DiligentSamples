@@ -100,6 +100,9 @@ declare -a TestApps=(
     "Tutorials/Tutorial19_RenderPasses"
     "Tutorials/Tutorial23_CommandQueues --show_ui 0"
     "Tutorials/Tutorial25_StatePackager --show_ui 0"
+    "Tutorials/Tutorial26_StateCache --show_ui 0"
+     # On the second run the states should be loaded from the cache
+    "Tutorials/Tutorial26_StateCache --show_ui 0"
     "Samples/Atmosphere --show_ui 0"
     "Samples/GLTFViewer --show_ui 0"
     "Samples/NuklearDemo --show_ui 0"
