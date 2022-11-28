@@ -39,7 +39,10 @@ states required to perform basic path tracing.
 This tutorial implements a basic path tracing algorithm with the next event estimation (aka light source sampling).
 In this section we provide some details about the rendering process. Additional information about path tracing can be easily
 found on the internet. [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/)
-could be a good starting point. Path tracing shader source code also contains a lot of additional details.
+and [Rendering Introduction Course from TU Wien University](https://www.cg.tuwien.ac.at/courses/Rendering/VU/2021S)
+could be good starting points.
+[Path tracing shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial25_StatePackager/assets/path_trace.csh)
+also contains a lot of additional details.
 
 The rendering process consists of the following three stages:
 
@@ -83,7 +86,7 @@ struct BoxInfo
 };
 ```
 
-For the type, two values are allowed: lambertian diffuse surface and light source.
+For the `Type` field, two values are allowed: lambertian diffuse surface and light source.
 
 A ray is defined by its origin and normalized direction:
 
@@ -123,7 +126,7 @@ The function takes the ray information, box attributes and also the current hit 
 If the new hit point is closer than the current one defined by the `Hit`, the struct is updated with
 the new color, normal, distance and hit type.
 
-Casting a ray though the scene then consists of intersecting the ray with each box:
+Casting a ray though the scene consists of intersecting the ray with each box:
 
 ```hlsl
 float RoomSize  = 10.0;
@@ -157,7 +160,7 @@ IntersectAABB(Ray, Box, Hit);
 ### G-buffer Rendering
 
 The G-buffer is rendered by a full-screen render pass, where the pixel shader
-performs ray casting through the scene. It starts with computing the ray starting
+performs ray casting through the scene. It starts by computing the ray starting
 and end points using the inverse view-projection matrix:
 
 ```hlsl
@@ -200,7 +203,7 @@ For each bounce, the shader traces a ray towards the light source and computes i
 a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
 a ray in this direction and repeats the process at the new location.
 
-The shader starts with reading the G-buffer and reconstructing the
+The shader starts by reading the G-buffer and reconstructing the
 attributes of the primary camera ray:
 
 ```hlsl
@@ -315,7 +318,7 @@ Where:
 - `NdotL` aka cos(Theta) is the cosine of the angle between the surface normal and the direction
   to the light source.
 - `LightSample.f3Emittance` is the light source emittance.
-- `LightSample.fVisibility` is the light source point visibility.
+- `LightSample.fVisibility` is the light source sample point visibility.
 - `LightSample.Prob` is the probabity of selecting the direction.
 
 After adding the light contribution, we go to the next sample by selecting a random
@@ -633,6 +636,7 @@ m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 You can also change the following parameters:
 - *Num bounces* - the number of bounces in each path
 - *Show only last bounce* - render only the last bounce in the path
+- *Next Event Estimation* - whether to perform next event estimation at each bounce
 - *Samples per frame* - the number of light paths to take each frame for each pixel
 - *Light intensity*, *width*, *height* and *color* - different light parameters
 
