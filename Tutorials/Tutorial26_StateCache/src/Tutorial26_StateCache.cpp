@@ -176,8 +176,33 @@ void Tutorial26_StateCache::UpdateUI()
             }
         }
 
+        if (ImGui::Checkbox("Full BRDF reflectance term (debugging)", &m_FullBRDFReflectance))
+        {
+            CreatePathTracePSO();
+            m_SampleCount = 0;
+        }
+
         if (ImGui::SliderInt("Samples per frame", &m_NumSamplesPerFrame, 1, 32))
             m_SampleCount = 0;
+
+        ImGui::Text("Samples count: %d", m_SampleCount);
+        if (ImGui::Checkbox("Limit Sample Count", &m_LimitSampleCount))
+        {
+            if (m_LimitSampleCount)
+                m_SampleCount = 0;
+        }
+
+        if (m_LimitSampleCount)
+        {
+            if (ImGui::InputInt("Max Samples", &m_MaxSamples, 8, 128))
+            {
+                m_MaxSamples = std::max(m_MaxSamples, 1);
+                if (m_SampleCount > m_MaxSamples)
+                {
+                    m_SampleCount = 0;
+                }
+            }
+        }
 
         ImGui::Separator();
 
@@ -444,6 +469,8 @@ void Tutorial26_StateCache::CreatePathTracePSO()
     Macros.AddShaderMacro("NEE_MODE_MIS_BRDF", NEE_MODE_MIS_BRDF);
     Macros.AddShaderMacro("NEE_MODE", m_NEEMode);
 
+    Macros.AddShaderMacro("OPTIMIZED_BRDF_REFLECTANCE", !m_FullBRDFReflectance);
+
     auto ModifyShaderCI = MakeCallback(
         [&](ShaderCreateInfo& ShaderCI, SHADER_TYPE Type, bool& AddToLoaderCache) {
             VERIFY_EXPR(Type == SHADER_TYPE_COMPUTE);
@@ -595,8 +622,7 @@ void Tutorial26_StateCache::Render()
         }
 
         ShaderData->fLastSampleCount = static_cast<float>(m_SampleCount);
-        m_SampleCount += m_NumSamplesPerFrame;
-        ShaderData->fCurrSampleCount = static_cast<float>(m_SampleCount);
+        ShaderData->fCurrSampleCount = static_cast<float>(m_SampleCount + m_NumSamplesPerFrame);
 
         ShaderData->iNumBounces         = m_NumBounces;
         ShaderData->iNumSamplesPerFrame = m_NumSamplesPerFrame;
@@ -624,6 +650,7 @@ void Tutorial26_StateCache::Render()
     }
 
     // Path trace
+    if (!m_LimitSampleCount || m_SampleCount < m_MaxSamples)
     {
         // Matches the THREAD_GROUP_SIZE in the render state notation file
         static constexpr Uint32 ThreadGroupSize = 8;
@@ -633,6 +660,8 @@ void Tutorial26_StateCache::Render()
 
         DispatchComputeAttribs DispatchArgs{(SCDesc.Width + ThreadGroupSize - 1) / ThreadGroupSize, (SCDesc.Height + ThreadGroupSize - 1) / ThreadGroupSize};
         m_pImmediateContext->DispatchCompute(DispatchArgs);
+
+        m_SampleCount += m_NumSamplesPerFrame;
     }
 
     // Resolve

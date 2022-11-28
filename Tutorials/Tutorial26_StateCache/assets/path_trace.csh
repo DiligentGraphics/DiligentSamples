@@ -124,7 +124,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
         // BRDF        = DiffuseColor / PI
         // DirProb     = CosTheta / PI
         // Reflectance = (1.0 - F) * BRDF * CosTheta / (DirProb * DiffuseProb)
-#if 1
+#if OPTIMIZED_BRDF_REFLECTANCE
         Sample.Reflectance = (1.0 - F) * SrfInfo.DiffuseColor / DiffuseProb;
 #else
         float CosTheta = dot(Hit.Normal, Sample.Dir);
@@ -171,7 +171,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
             float3 F = SchlickReflection(HdotV, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
             float G1 = SmithGGXMasking(NdotV, AlphaRoughness);
             float G2 = SmithGGXShadowMasking(NdotL, NdotV, AlphaRoughness);
-#if 1
+#if OPTIMIZED_BRDF_REFLECTANCE
             // Eq. (19) from [1]
             Sample.Reflectance = F * (G2 / G1) / SMITH_GGX_SPECULAR_PROB;
 #else
