@@ -124,11 +124,12 @@ private:
     };
     int m_NEEMode = NEE_MODE_MIS;
 
-    int  m_NumBounces          = 4;
-    int  m_NumSamplesPerFrame  = 4;
-    bool m_ShowOnlyLastBounce  = false;
-    bool m_UseNEE              = true;
-    bool m_FullBRDFReflectance = false;
+    int   m_NumBounces             = 4;
+    int   m_NumSamplesPerFrame     = 4;
+    bool  m_ShowOnlyLastBounce     = false;
+    bool  m_UseNEE                 = true;
+    bool  m_FullBRDFReflectance    = false;
+    float m_BalanceHeuristicsPower = 2;
 
     int  m_SampleCount      = 0;
     bool m_LimitSampleCount = false;

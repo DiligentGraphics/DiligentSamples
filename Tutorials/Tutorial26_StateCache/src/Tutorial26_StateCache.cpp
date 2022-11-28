@@ -174,6 +174,12 @@ void Tutorial26_StateCache::UpdateUI()
                 CreatePathTracePSO();
                 m_SampleCount = 0;
             }
+
+            if (m_NEEMode >= NEE_MODE_MIS)
+            {
+                if (ImGui::DragFloat("Balance Heuristics Power", &m_BalanceHeuristicsPower, 0.01f, 1, 4))
+                    m_SampleCount = 0;
+            }
         }
 
         if (ImGui::Checkbox("Full BRDF reflectance term (debugging)", &m_FullBRDFReflectance))
@@ -597,6 +603,8 @@ void Tutorial26_StateCache::Render()
 
         ShaderData->iShowOnlyLastBounce = m_ShowOnlyLastBounce ? 1 : 0;
         ShaderData->iUseNEE             = m_UseNEE ? 1 : 0;
+
+        ShaderData->fBalanceHeuristicsPower = m_BalanceHeuristicsPower;
 
         auto& LightPos    = m_Scene->Light.f2PosXZ;
         auto& LightSize   = m_Scene->Light.f2SizeXZ;

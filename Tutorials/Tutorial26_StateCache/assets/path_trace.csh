@@ -435,6 +435,16 @@ void Refract(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
     }
 }
 
+// Computes the multiple-importance sampling weight using the
+// balance heuristics.
+float GetMISWeight(float Prob1, float Prob2)
+{
+    float W1 = pow(Prob1, g_Constants.fBalanceHeuristicsPower);
+    float W2 = pow(Prob2, g_Constants.fBalanceHeuristicsPower);
+    float W  = W1 + W2;
+    return W > 0 ? W1 / W : 0.0;
+}
+
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
 void main(uint3 ThreadId : SV_DispatchThreadID)
 {
@@ -552,22 +562,28 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                         // the primary ray hit emittance above.
 
                         LightSampleAttribs LightSample = SampleLightSource(g_Constants.Scene.Light, rnd3.xy, f3HitPos);
-                        float CombinedProb = LightSample.Prob;
-                        #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_LIGHT
-                            // In case of multiple importance sampling, we modify the probability as 
-                            // See Figure 9.3 in 
-                            CombinedProb += BRDFSampleDirection_PDF(Hit, -Ray.Dir, LightSample.f3Dir);
-                        #endif
-                        if (CombinedProb > 0)
+                        if (LightSample.Prob > 0)
                         {
+                            float MISWeight = 1.0;
+                            #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_LIGHT
+                            {
+                                // Get probability of this direction in BRDF distribution
+                                float BRDFProb = BRDFSampleDirection_PDF(Hit, -Ray.Dir, LightSample.f3Dir);
+                                // Compute the MIS weight
+                                MISWeight = GetMISWeight(LightSample.Prob, BRDFProb);
+                                // Note that when the balance heuristics power is equal to 1,
+                                // MISWeight / LightSample.Prob == 1 / (LightSample.Prob + BRDFProb)
+                            }
+                            #endif
                             float NdotL = max(dot(LightSample.f3Dir, Hit.Normal), 0.0);
                             f3PathContrib +=
                                 f3Throughput                             // Ti-1
+                                * MISWeight                              // MIS weight
                                 * BRDF(Hit, -Ray.Dir, LightSample.f3Dir) // BRDF(xi, vi, li)
                                 * NdotL                                  // (ni, li)
                                 * LightSample.f3Emittance                // L(xi, li)
                                 * LightSample.fVisibility                // V(xi, li)
-                                / CombinedProb;                          // p(li)
+                                / LightSample.Prob;                      // p(li)
 
                             // Note that L in the rendering equation is radiance, however
                             // L * dl ~ Irradiance aka Emittance
@@ -593,20 +609,24 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                             float fLightVisibility = TestShadow(g_Constants.Scene, LightRay);
                             if (fLightVisibility > 0)
                             {
-                                float CombinedProb = BRDFSample.Prob;
-                                #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
-                                    CombinedProb += LightDirPDF(g_Constants.Scene.Light, f3HitPos, BRDFSample.Dir);
-                                #endif
                                 float NdotL = dot(BRDFSample.Dir, Hit.Normal);
-                                if (CombinedProb > 0 && NdotL > 0)
+                                if (NdotL > 0)
                                 {
-                                    float MISWeight = BRDFSample.Prob / CombinedProb;
+                                    float MISWeight = 1.0;
+                                    #if NEE_MODE == NEE_MODE_MIS || NEE_MODE == NEE_MODE_MIS_BRDF
+                                    {
+                                        // Get the probability of this direction in light sampling distribution
+                                        float LightProb = LightDirPDF(g_Constants.Scene.Light, f3HitPos, BRDFSample.Dir);
+                                        // Compute the MIS weight
+                                        MISWeight = GetMISWeight(BRDFSample.Prob, LightProb);
+                                    }
+                                    #endif
                                     f3PathContrib +=
-                                        f3Throughput
-                                        * BRDFSample.Reflectance
-                                        * LightHit.Mat.Emittance.rgb
-                                        * fLightVisibility
-                                        * MISWeight;
+                                        f3Throughput                 // Ti-1
+                                        * MISWeight                  // MIS Weight
+                                        * BRDFSample.Reflectance     // BRDF(xi, vi, li) * (ni, li) / p(li)
+                                        * LightHit.Mat.Emittance.rgb // L(xi, li)
+                                        * fLightVisibility;          // V(xi, li)
                                 }
                             }
                         }

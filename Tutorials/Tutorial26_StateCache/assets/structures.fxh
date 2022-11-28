@@ -67,6 +67,11 @@ struct ShaderConstants
 	int  iShowOnlyLastBounce;
 	int  iUseNEE;
 
+	float fBalanceHeuristicsPower;
+	float fPadding0;
+	float fPadding1;
+	float fPadding2;
+
 	float4x4 ViewProjMat;
 	float4x4 ViewProjInvMat;
 	float4   CameraPos;
