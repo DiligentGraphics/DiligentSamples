@@ -430,6 +430,11 @@ void Refract(HitInfo Hit, float3 f3HitPos, inout RayInfo Ray, inout float3 f3Thr
         Ray.Origin = f3HitPos;
         Ray.Dir    = refract(Ray.Dir, Hit.Normal, relIOR);
 
+        // Note that this is not very accurate as we need to
+        // compute optical depth of the light path through glass.
+        // This is good enough for this example.
+        f3Througput *= Hit.Mat.BaseColor.rgb;
+
         // Note that refraction also changes the differential solid angle of the flux
         f3Througput /= relIOR * relIOR;
     }
