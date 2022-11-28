@@ -2,12 +2,15 @@
 
 This tutorial expands the path tracing technique implemented in previous tutorial and demonstrates
 how to use the render state cache to save pipeline states created at run time and load them when the
-application starts next time.
+application starts.
+
+![](Screenshot.jpg)
 
 [Tutorial 25](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial25_StatePackager) shows
 how to package pipeline states off-line during the build process. This tutorial demonstrates an alternative approach, where
 pipeline states are created at run time, but when the application exits, they are saved to a file and loaded when
-the application starts next time.
+the application starts next time. It also demonstrates a very useful feature of the render state cache: hot
+shader reload.
 
 
 ## Render State Cache

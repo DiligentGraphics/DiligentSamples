@@ -55,6 +55,7 @@ To build and run the applications in the module, please follow the [instructions
   - [23 - Command Queues](https://github.com/DiligentGraphics/DiligentSamples#tutorial-23---command-queues)
   - [24 - Variable Rate Shading](https://github.com/DiligentGraphics/DiligentSamples#tutorial-24---variable-rate-shading)
   - [25 - Render State Packager](https://github.com/DiligentGraphics/DiligentSamples#tutorial-25---render-state-packager)
+  - [26 - Render State Cache](https://github.com/DiligentGraphics/DiligentSamples#tutorial-26---render-state-cache)
 - [Samples](https://github.com/DiligentGraphics/DiligentSamples#samples)
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
@@ -264,6 +265,15 @@ This tutorial shows how to create and archive pipeline states with the render st
 on the example of a simple path tracer.
 
 ![](Tutorials/Tutorial25_StatePackager/Screenshot.jpg)
+
+
+## [Tutorial 26 - Render State Cache](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial26_StateCache)
+
+This tutorial expands the path tracing technique implemented in previous tutorial and demonstrates
+how to use the render state cache to save pipeline states created at run time and load them when the
+application starts.
+
+![](Tutorials/Tutorial26_StateCache/Screenshot.jpg)
 
 
 # Samples
