@@ -108,7 +108,7 @@ CreateRenderStateNotationParser(ParserCI, &m_pRSNParser);
 ```
 
 Note that we also need to enable hot shader reloading in the parser.
-Next, we load the DRSN file that describes that pipelines used in this tutorial:
+Next, we load the DRSN file that describes pipeline states used in this tutorial:
 
 ```cpp
 m_pRSNParser->ParseFile("RenderStates.json", pShaderSourceFactory);
@@ -157,6 +157,43 @@ m_pRSNLoader->LoadPipelineState(LoadInfo, &m_pResolvePSO);
 
 The loader transparently for the application uses the cache to create the state objects.
 
+Shader create information can also be modified, e.g.:
+
+```cpp
+ShaderMacroHelper Macros;
+Macros.AddShaderMacro("BRDF_SAMPLING_MODE_COS_WEIGHTED", BRDF_SAMPLING_MODE_COS_WEIGHTED);
+Macros.AddShaderMacro("BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING", BRDF_SAMPLING_MODE_IMPORTANCE_SAMPLING);
+Macros.AddShaderMacro("BRDF_SAMPLING_MODE", m_BRDFSamplingMode);
+// Add more macros
+// ...
+
+auto ModifyShaderCI = MakeCallback(
+    [&](ShaderCreateInfo& ShaderCI, SHADER_TYPE Type, bool& AddToLoaderCache) {
+        VERIFY_EXPR(Type == SHADER_TYPE_COMPUTE);
+        ShaderCI.Macros = Macros;
+        // Do not add the shader to the loader's cache as
+        // we may be recreating the shader at run-time.
+        AddToLoaderCache = false;
+    });
+
+LoadPipelineStateInfo LoadInfo;
+LoadInfo.ModifyShader      = ModifyShaderCI;
+LoadInfo.pModifyShaderData = ModifyShaderCI;
+LoadInfo.PipelineType      = PIPELINE_TYPE_COMPUTE;
+LoadInfo.Name              = "Path Trace PSO";
+// Do not add the PSO to the loader's cache as we may be
+// recreating the pipeline.
+LoadInfo.AddToCache = false;
+m_pPathTracePSO.Release();
+m_pRSNLoader->LoadPipelineState(LoadInfo, &m_pPathTracePSO);
+```
+
+The loader has its own cache that holds objects previously created by the application and
+uses the object name as the key. In this example we recompile the path tracing
+pipeline at run time when some of the settings change. The pipeline uses the same name, and
+we don't want to get old pipeline from the loader cache, so we set `LoadInfo.AddToCache = false`.
+Note that the pipeline is always added to the render state cache.
+
 Hot reloading as easy as calling 
 
 ```cpp
@@ -176,8 +213,54 @@ Note that there are some limitations to reloading functionality:
 
 After pipeline states are loaded, they are used the same way as in the previous Tutorial.
 
+## Path Tracing Improvements
+
+Path tracing technique in this tutorial extends the method from Tutorial 25 and implements a number of major improvements:
+
+- Smith-GGX BRDF with metallic-roughness parameterization
+- Reflective (mirror) and refractive (glass) materials
+- Importance sampling of the BRDF using the GGX distribution of visible normals
+- Multiple importance sampling with balance heuristics
+
+Please refer to the
+[shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial26_StateCache/assets/path_trace.csh)
+for more details.
+
+
+## Controlling the Application
+
+- *Move camera*: left mouse button + WSADQE
+- *Move light*:  right mouse button
+
+UI controls:
+
+- *Num bounces* - the number of bounces in each path
+- *Show only last bounce* - render only the last bounce in the path
+- *Next Event Estimation* - whether to perform the next event estimation at each bounce
+- *BRDF Sampling mode*:
+  - *Cosine-weighted*: use basic cosine-weighted hemispherical distribution
+  - *Importance sampling*: use Smith-GGX importance sampling
+- *NEE mode*:
+  - *Sample Light*: use light source sampling
+  - *Sample BRDF*: use BRDF sampling
+  - *MIS*: use multiple importance sampling
+  - *MIS - Light part*: use light sampling component of the multiple importance sampling
+  - *MIS - BRDF part*: use BRDF sampling component of the multiple importance sampling
+- *Balance Heuristics Power*: the probability power used in the MIS balance heuristics
+- *Full BRDF Reflectance term*: use full equation (`BRDF * (n, w) / p(w)`) for the reflectance term.
+  This option is intended for debugging purposes.
+- *Samples per frame* - the number of light paths to take each frame for each pixel
+- *Limit Sample Count*: whether to limit the total number of samples by the specific value
+- *Reload States*: hot-reload modified shaders
+- *Delete Cache File*: delete saved cached file
+
+
 ## Resources
 
 1. [Optimally Combining Sampling Techniques for Monte Carlo Rendering](https://cseweb.ucsd.edu/~viscomp/classes/cse168/sp21/readings/veach.pdf) (1995) by Eric Veach and Leonidas J. Guibas
-2. [Sampling the GGX Distribution of Visible Normals](https://jcgt.org/published/0007/04/01/) (2018) by Eric Heitz
-3. [Importance Sampling techniques for GGX with Smith Masking-Shadowing](https://schuttejoe.github.io/post/ggximportancesamplingpart2/) (2018) by Joe Schutte
+2. [Microfacet Models for Refraction through Rough Surfaces](https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf) (2007) by Bruce Walter et. al.
+3. [Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs](https://jcgt.org/published/0003/02/03/) (2014) by Eric Heitz
+4. [PBR Diffuse Lighting for GGX+Smith Microsurfaces](https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc2017/Presentations/Hammon_Earl_PBR_Diffuse_Lighting.pdf) (2017) by Earl Hammon, Jr.
+5. [A Simpler and Exact Sampling Routine for the GGX Distribution of Visible Normals](https://hal.archives-ouvertes.fr/hal-01509746/document) (2017) by Eric Heitz
+6. [Sampling the GGX Distribution of Visible Normals](https://jcgt.org/published/0007/04/01/) (2018) by Eric Heitz
+7. [Importance Sampling techniques for GGX with Smith Masking-Shadowing](https://schuttejoe.github.io/post/ggximportancesamplingpart2/) (2018) by Joe Schutte

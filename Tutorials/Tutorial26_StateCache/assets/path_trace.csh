@@ -83,6 +83,7 @@ float3 BRDF(HitInfo Hit, float3 OutDir, float3 InDir)
     return DiffuseContrib + SpecContrib;
 }
 
+// Probability of selecting specular lobe vs diffuse lobe
 #define SMITH_GGX_SPECULAR_PROB 0.5
 
 // Importance-sample Lambertian + Smith-GGX BRDF
@@ -134,11 +135,12 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
     else
     {
         // Importance-sample Smith-GGX using Visible Normal Distribution.
-        // [1] "Sampling the GGX Distribution of Visible Normals" (2018) by Eric Heitz.
-
-        // https://schuttejoe.github.io/post/ggximportancesamplingpart2/
-        // https://jcgt.org/published/0007/04/01/
-        // https://github.com/TheRealMJP/DXRPathTracer/blob/master/DXRPathTracer/RayTrace.hlsl
+        // [1] "A Simpler and Exact Sampling Routine for the GGX Distribution of Visible Normals" (2017) by Eric Heitz
+        //     https://hal.archives-ouvertes.fr/hal-01509746/document
+        // [2] "Sampling the GGX Distribution of Visible Normals" (2018) by Eric Heitz
+        //     https://jcgt.org/published/0007/04/01/
+        // [3] "Importance Sampling techniques for GGX with Smith Masking-Shadowing" by Joe Schutte
+        //     https://github.com/TheRealMJP/DXRPathTracer/blob/master/DXRPathTracer/RayTrace.hlsl
 
         // Construct tangent-space basis
         float3 N = Hit.Normal;
@@ -148,7 +150,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
 
         float AlphaRoughness = SrfInfo.PerceptualRoughness * SrfInfo.PerceptualRoughness;
 
-        // Transform normal from world to tangent space
+        // Transform view direction from world to tangent space
         float3 ViewDirTS     = normalize(mul(View, transpose(TangentToWorld)));
         // Get the tangent-space micronormal from the GGX Visible Normal Distribution
         float3 MicroNormalTS = SmithGGXSampleVisibleNormal(ViewDirTS, AlphaRoughness, AlphaRoughness, rnd3.x, rnd3.y);
@@ -171,11 +173,13 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
             float3 F = SchlickReflection(HdotV, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
             float G1 = SmithGGXMasking(NdotV, AlphaRoughness);
             float G2 = SmithGGXShadowMasking(NdotL, NdotV, AlphaRoughness);
+            // Note: G1 is % microfacets visible in 1 direction
+            //       G2 is % microfacets visible in 2 directions
 #if OPTIMIZED_BRDF_REFLECTANCE
             // Eq. (19) from [1]
             Sample.Reflectance = F * (G2 / G1) / SMITH_GGX_SPECULAR_PROB;
 #else
-            // Simplified reflectance formulation above is equivalent to the following
+            // Optimized reflectance formulation above is equivalent to the following
             // standard Monte-Carlo estimator:
             float3 DiffuseContrib, SpecContrib;
             SmithGGX_BRDF(Sample.Dir, // To light
@@ -576,7 +580,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
                                 float BRDFProb = BRDFSampleDirection_PDF(Hit, -Ray.Dir, LightSample.f3Dir);
                                 // Compute the MIS weight
                                 MISWeight = GetMISWeight(LightSample.Prob, BRDFProb);
-                                // Note that when the balance heuristics power is equal to 1,
+                                // Note that when the balance heuristics power is 1.0,
                                 // MISWeight / LightSample.Prob == 1 / (LightSample.Prob + BRDFProb)
                             }
                             #endif

@@ -492,10 +492,11 @@ void Tutorial26_StateCache::CreatePathTracePSO()
     LoadInfo.pModifyShaderData = ModifyShaderCI;
     LoadInfo.PipelineType      = PIPELINE_TYPE_COMPUTE;
     LoadInfo.Name              = "Path Trace PSO";
-    // Do not add the PSO to the loader's cache as we may be
-    // recreating the pipeline.
-    // Note that the PSO is awlays added to the render state cache.
-    LoadInfo.AddToCache = false;
+    // The loader has its own cache that holds objects previously created by the application and
+    // uses the object name as the key. In this example we recompile the path tracing
+    // pipeline at run time when some of the settings change. The pipeline uses the same name, and
+    // we don't want to get old pipeline from the cache, so we set `LoadInfo.AddToCache = false`. Note
+    // that the pipeline is always added to the render state cache.
     m_pPathTracePSO.Release();
     m_pRSNLoader->LoadPipelineState(LoadInfo, &m_pPathTracePSO);
     VERIFY_EXPR(m_pPathTracePSO);
