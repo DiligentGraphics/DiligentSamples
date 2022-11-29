@@ -140,7 +140,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
         // [2] "Sampling the GGX Distribution of Visible Normals" (2018) by Eric Heitz
         //     https://jcgt.org/published/0007/04/01/
         // [3] "Importance Sampling techniques for GGX with Smith Masking-Shadowing" by Joe Schutte
-        //     https://github.com/TheRealMJP/DXRPathTracer/blob/master/DXRPathTracer/RayTrace.hlsl
+        //     https://schuttejoe.github.io/post/ggximportancesamplingpart2/
 
         // Construct tangent-space basis
         float3 N = Hit.Normal;
@@ -176,7 +176,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
             // Note: G1 is % microfacets visible in 1 direction
             //       G2 is % microfacets visible in 2 directions
 #if OPTIMIZED_BRDF_REFLECTANCE
-            // Eq. (19) from [1]
+            // Eq. (19) from [2]
             Sample.Reflectance = F * (G2 / G1) / SMITH_GGX_SPECULAR_PROB;
 #else
             // Optimized reflectance formulation above is equivalent to the following
