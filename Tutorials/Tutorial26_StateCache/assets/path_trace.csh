@@ -41,7 +41,7 @@ void SampleDirectionCosineHemisphere(in  float3 N,   // Normal
                                      out float  Prob // Probability of the generated direction
                                     )
 {
-    float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
+    float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1.0, 0.0, 0.0) : float3(0.0, 1.0, 0.0)));
     float3 B = cross(T, N);
     SampleDirectionCosineHemisphere(UV, Dir, Prob);
     Dir = normalize(Dir.x * T + Dir.y * B + Dir.z * N);
@@ -144,7 +144,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
 
         // Construct tangent-space basis
         float3 N = Hit.Normal;
-        float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1, 0, 0) : float3(0, 1, 0)));
+        float3 T = normalize(cross(N, abs(N.y) > 0.5 ? float3(1.0, 0.0, 0.0) : float3(0.0, 1.0, 0.0)));
         float3 B = cross(T, N);
         float3x3 TangentToWorld = MatrixFromRows(T, B, N);
 
@@ -156,7 +156,7 @@ BRDFSamplingAttribs ImportanceSampleSmithGGX(HitInfo Hit, float3 View, float3 rn
         float3 MicroNormalTS = SmithGGXSampleVisibleNormal(ViewDirTS, AlphaRoughness, AlphaRoughness, rnd3.x, rnd3.y);
         // Reflect view direction off the micronormal to get the sampling direction
         float3 SampleDirTS   = reflect(-ViewDirTS, MicroNormalTS);
-        float3 NormalTS      = float3(0, 0, 1);
+        float3 NormalTS      = float3(0.0, 0.0, 1.0);
 
         // Transform tangent-space normal to world space
         Sample.Dir = normalize(mul(SampleDirTS, TangentToWorld));
@@ -275,6 +275,12 @@ void GetPrimaryRay(in  uint2   ScreenXY,
 // Returns the light source projected area
 float GetLightProjectedArea(LightAttribs Light, float3 Dir, float DistSqr)
 {
+    //        ______
+    //       /    .'
+    //      /   .'
+    //     /  .'
+    //    / .'
+    //   /.'
     float  fLightArea    = (Light.f2SizeXZ.x * 2.0) * (Light.f2SizeXZ.y * 2.0);
     float3 f3LightNormal = Light.f4Normal.xyz;
     return fLightArea * max(dot(-Dir, f3LightNormal), 0.0) / DistSqr;
@@ -288,7 +294,7 @@ float GetLightProjectedArea(LightAttribs Light, float3 Dir, float DistSqr)
 //        v   '.'   l
 //             x
 // 
-//  L(x->v) = L(x->l) * V(x, l) * BRDF(x, v, l) *  (n, l) / p(l)
+//  L(x->v) = L(x->l) * V(x, l) * BRDF(x, v, l) * (n, l) / p(l)
 //
 struct LightSampleAttribs
 {
@@ -319,14 +325,6 @@ LightSampleAttribs SampleLightSource(in  LightAttribs Light,
 
     // We need to compute p(l) which is the probability density of the direction l
     // and is equal to 1 over the solid angle spanned by the light source:
-    //
-    //        ______
-    //       /    .'
-    //      /   .'
-    //     /  .'
-    //    / .'
-    //   /.'
-    //
     float fSolidAngle = GetLightProjectedArea(Light, Sample.f3Dir, fDistToLightSqr);
     Sample.Prob = fSolidAngle > 0.0 ? 1.0 / fSolidAngle : 0.0;
 
@@ -353,6 +351,8 @@ float LightDirPDF(LightAttribs Light, float3 f3HitPos, float3 f3DirToLight)
         return 0.0;
     }
 
+    // Probability density of the direction l is equal to 1 over the solid angle
+    // spanned by the light source.
     float fDistToLightSqr = Hit.Distance * Hit.Distance;
     float fSolidAngle     = GetLightProjectedArea(Light, f3DirToLight, fDistToLightSqr);
     return fSolidAngle > 0 ? 1.0 / fSolidAngle : 0.0;

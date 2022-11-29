@@ -147,7 +147,7 @@ LoadInfo.Name         = "Resolve PSO";
 // render state notation file.
 auto ModifyResolvePSODesc = MakeCallback(
     [this](PipelineStateCreateInfo& PSODesc) {
-        // Same as in Tutorial 25
+        // Similar to Tutorial 25
     });
 
 LoadInfo.ModifyPipeline      = ModifyResolvePSODesc;
@@ -246,7 +246,7 @@ UI controls:
   - *MIS*: use multiple importance sampling
   - *MIS - Light part*: use light sampling component of the multiple importance sampling
   - *MIS - BRDF part*: use BRDF sampling component of the multiple importance sampling
-- *Balance Heuristics Power*: the probability power used in the MIS balance heuristics
+- *Balance Heuristics Power*: the exponent used in the MIS balance heuristics
 - *Full BRDF Reflectance term*: use full equation (`BRDF * (n, w) / p(w)`) for the reflectance term.
   This option is intended for debugging purposes.
 - *Samples per frame* - the number of light paths to take each frame for each pixel
