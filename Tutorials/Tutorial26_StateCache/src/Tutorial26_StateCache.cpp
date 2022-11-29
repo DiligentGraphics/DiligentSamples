@@ -497,6 +497,7 @@ void Tutorial26_StateCache::CreatePathTracePSO()
     // pipeline at run time when some of the settings change. The pipeline uses the same name, and
     // we don't want to get old pipeline from the cache, so we set `LoadInfo.AddToCache = false`. Note
     // that the pipeline is always added to the render state cache.
+    LoadInfo.AddToCache = false;
     m_pPathTracePSO.Release();
     m_pRSNLoader->LoadPipelineState(LoadInfo, &m_pPathTracePSO);
     VERIFY_EXPR(m_pPathTracePSO);
