@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os:         ["windows-latest", "ubuntu-latest", "macos-latest"]
+        os:         ["windows-latest", "ubuntu-20.04", "macos-latest"]
         build_type: ["Debug", "Release"]
         exclude:
           # Exclude MacOS-Release
@@ -17,7 +17,7 @@ jobs:
           - os:        "windows-latest"
             host_name: "Win10"
 
-          - os:        "ubuntu-latest"
+          - os:        "ubuntu-20.04"
             host_name: "Linux"
 
           - os:        "macos-latest"
