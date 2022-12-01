@@ -1,6 +1,11 @@
 #include "common_defines.h"
 #include "shader_common.h"
 
+#ifdef VULKAN
+// NonUniformResourceIndex is not supported by GLSLang
+#   define NonUniformResourceIndex(x) x
+#endif
+
 #ifdef BINDLESS
 
 Texture2DArray<float4> Tex[NUM_UNIQUE_TEXTURES];
@@ -41,9 +46,9 @@ void asteroid_ps_diligent(in float4 position : SV_Position,
     // coordinates...
     float3 detailTex = float3(0.0, 0.0, 0.0);
 #ifdef BINDLESS
-    detailTex += blendWeights.x * Tex[vs_output.textureId].Sample(Tex_sampler, coords1).xyz;
-    detailTex += blendWeights.y * Tex[vs_output.textureId].Sample(Tex_sampler, coords2).xyz;
-    detailTex += blendWeights.z * Tex[vs_output.textureId].Sample(Tex_sampler, coords3).xyz;
+    detailTex += blendWeights.x * Tex[NonUniformResourceIndex(vs_output.textureId)].Sample(Tex_sampler, coords1).xyz;
+    detailTex += blendWeights.y * Tex[NonUniformResourceIndex(vs_output.textureId)].Sample(Tex_sampler, coords2).xyz;
+    detailTex += blendWeights.z * Tex[NonUniformResourceIndex(vs_output.textureId)].Sample(Tex_sampler, coords3).xyz;
 #else
     detailTex += blendWeights.x * Tex.Sample(Tex_sampler, coords1).xyz;
     detailTex += blendWeights.y * Tex.Sample(Tex_sampler, coords2).xyz;
