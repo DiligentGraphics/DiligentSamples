@@ -178,7 +178,10 @@ void Tutorial26_StateCache::UpdateUI()
             if (m_NEEMode >= NEE_MODE_MIS)
             {
                 if (ImGui::DragFloat("Balance Heuristics Power", &m_BalanceHeuristicsPower, 0.01f, 1, 4))
-                    m_SampleCount = 0;
+                {
+                    m_BalanceHeuristicsPower = clamp(m_BalanceHeuristicsPower, 0.01f, 4.f);
+                    m_SampleCount            = 0;
+                }
             }
         }
 
