@@ -298,6 +298,7 @@ void Tutorial26_StateCache::UpdateUI()
             if (ImGui::Button("Delete cache file"))
             {
                 FileSystem::DeleteFile(m_StateCachePath.c_str());
+                m_pStateCache->Reset();
             }
         }
     }
