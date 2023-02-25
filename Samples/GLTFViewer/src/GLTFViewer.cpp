@@ -184,10 +184,10 @@ void GLTFViewer::CreateGLTFResourceCache()
 
     m_pResourceMgr = GLTF::ResourceManager::Create(m_pDevice, ResourceMgrCI);
 
-    m_CacheUseInfo.pResourceMgr     = m_pResourceMgr;
-    m_CacheUseInfo.VertexBuffer0Idx = 0;
-    m_CacheUseInfo.VertexBuffer1Idx = 1;
-    m_CacheUseInfo.IndexBufferIdx   = 2;
+    m_CacheUseInfo.pResourceMgr       = m_pResourceMgr;
+    m_CacheUseInfo.VertexBufferIdx[0] = 0;
+    m_CacheUseInfo.VertexBufferIdx[1] = 1;
+    m_CacheUseInfo.IndexBufferIdx     = 2;
 
     m_CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
     m_CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
