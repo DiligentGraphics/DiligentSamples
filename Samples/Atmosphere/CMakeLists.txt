@@ -10,10 +10,8 @@ set(SOURCE
 
 set(INCLUDE
     src/AtmosphereSample.hpp
-    src/Terrain/DynamicQuadTreeNode.hpp
     src/Terrain/EarthHemisphere.hpp
     src/Terrain/ElevationDataSource.hpp
-    src/Terrain/HierarchyArray.hpp
 )
 
 set(TERRAIN_SHADERS
@@ -29,7 +27,7 @@ set(SHADERS
     assets/shaders/HostSharedTerrainStructs.fxh
 )
 set(EXTERNAL_SHADERS
-	../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh
+    ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh
     ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringFunctions.fxh
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh

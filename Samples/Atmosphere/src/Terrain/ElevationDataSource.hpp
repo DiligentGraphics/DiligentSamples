@@ -46,10 +46,9 @@
 #pragma once
 
 #include <vector>
+
 #include "BasicTypes.h"
 #include "BasicMath.hpp"
-#include "HierarchyArray.hpp"
-#include "DynamicQuadTreeNode.hpp"
 
 namespace Diligent
 {
@@ -70,7 +69,6 @@ public:
     // Returns maximal height of the whole terrain
     Uint16 GetGlobalMaxElevation() const;
 
-    void RecomputePatchMinMaxElevations(const QuadTreeNodeLocation& pos);
 
     void SetOffsets(int iColOffset, int iRowOffset)
     {
@@ -94,19 +92,20 @@ private:
     inline Uint16  GetElevSample(Int32 i, Int32 j) const;
     inline Uint16& GetElevSample(Int32 i, Int32 j);
 
-    // Calculates min/max elevations for all patches in the tree
-    void CalculateMinMaxElevations();
+    Uint16 m_GlobalMinElevation = 0;
+    Uint16 m_GlobalMaxElevation = 0;
 
-    // Hierarchy array storing minimal and maximal heights for quad tree nodes
-    HierarchyArray<std::pair<Uint16, Uint16>> m_MinMaxElevation;
-
-    int m_iNumLevels;
-    int m_iPatchSize;
-    int m_iColOffset, m_iRowOffset;
+    int m_iNumLevels = 0;
+    int m_iPatchSize = 0;
+    int m_iColOffset = 0;
+    int m_iRowOffset = 0;
 
     // The whole terrain height map
     std::vector<Uint16> m_TheHeightMap;
-    Uint32              m_iNumCols, m_iNumRows, m_iStride;
+
+    Uint32 m_iNumCols = 0;
+    Uint32 m_iNumRows = 0;
+    Uint32 m_iStride  = 0;
 };
 
 } // namespace Diligent

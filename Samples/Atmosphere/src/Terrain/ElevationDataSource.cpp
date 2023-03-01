@@ -135,10 +135,14 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
         }
     }
 #endif
-    m_MinMaxElevation.Resize(m_iNumLevels);
 
-    // Calculate min/max elevations
-    CalculateMinMaxElevations();
+    m_GlobalMinElevation = m_TheHeightMap[0];
+    m_GlobalMaxElevation = m_TheHeightMap[0];
+    for (auto Elev : m_TheHeightMap)
+    {
+        m_GlobalMinElevation = std::min(m_GlobalMinElevation, Elev);
+        m_GlobalMaxElevation = std::max(m_GlobalMaxElevation, Elev);
+    }
 }
 
 ElevationDataSource::~ElevationDataSource(void)
@@ -147,12 +151,12 @@ ElevationDataSource::~ElevationDataSource(void)
 
 Uint16 ElevationDataSource::GetGlobalMinElevation() const
 {
-    return m_MinMaxElevation[QuadTreeNodeLocation()].first;
+    return m_GlobalMinElevation;
 }
 
 Uint16 ElevationDataSource::GetGlobalMaxElevation() const
 {
-    return m_MinMaxElevation[QuadTreeNodeLocation()].second;
+    return m_GlobalMaxElevation;
 }
 
 int MirrorCoord(int iCoord, int iDim)
@@ -227,52 +231,6 @@ float3 ElevationDataSource::ComputeSurfaceNormal(float fCol, float fRow, float f
     float3 Normal = normalize(Grad);
 
     return Normal;
-}
-
-void ElevationDataSource::RecomputePatchMinMaxElevations(const QuadTreeNodeLocation& pos)
-{
-    if (pos.level == m_iNumLevels - 1)
-    {
-        std::pair<Uint16, Uint16>& CurrPatchMinMaxElev = m_MinMaxElevation[QuadTreeNodeLocation(pos.horzOrder, pos.vertOrder, pos.level)];
-
-        int iStartCol = pos.horzOrder * m_iPatchSize;
-        int iStartRow = pos.vertOrder * m_iPatchSize;
-
-        CurrPatchMinMaxElev.first = CurrPatchMinMaxElev.second = GetElevSample(iStartCol, iStartRow);
-        for (int iRow = iStartRow; iRow <= iStartRow + m_iPatchSize; iRow++)
-            for (int iCol = iStartCol; iCol <= iStartCol + m_iPatchSize; iCol++)
-            {
-                Uint16 CurrElev            = GetElevSample(std::min(iCol, (Int32)m_iNumCols - 1), std::min(iRow, (Int32)m_iNumRows - 1));
-                CurrPatchMinMaxElev.first  = std::min(CurrPatchMinMaxElev.first, CurrElev);
-                CurrPatchMinMaxElev.second = std::max(CurrPatchMinMaxElev.second, CurrElev);
-            }
-    }
-    else
-    {
-        std::pair<Uint16, Uint16>& CurrPatchMinMaxElev = m_MinMaxElevation[pos];
-        std::pair<Uint16, Uint16>& LBChildMinMaxElev   = m_MinMaxElevation[GetChildLocation(pos, 0)];
-        std::pair<Uint16, Uint16>& RBChildMinMaxElev   = m_MinMaxElevation[GetChildLocation(pos, 1)];
-        std::pair<Uint16, Uint16>& LTChildMinMaxElev   = m_MinMaxElevation[GetChildLocation(pos, 2)];
-        std::pair<Uint16, Uint16>& RTChildMinMaxElev   = m_MinMaxElevation[GetChildLocation(pos, 3)];
-
-        CurrPatchMinMaxElev.first = std::min(LBChildMinMaxElev.first, RBChildMinMaxElev.first);
-        CurrPatchMinMaxElev.first = std::min(CurrPatchMinMaxElev.first, LTChildMinMaxElev.first);
-        CurrPatchMinMaxElev.first = std::min(CurrPatchMinMaxElev.first, RTChildMinMaxElev.first);
-
-        CurrPatchMinMaxElev.second = std::max(LBChildMinMaxElev.second, RBChildMinMaxElev.second);
-        CurrPatchMinMaxElev.second = std::max(CurrPatchMinMaxElev.second, LTChildMinMaxElev.second);
-        CurrPatchMinMaxElev.second = std::max(CurrPatchMinMaxElev.second, RTChildMinMaxElev.second);
-    }
-}
-
-// Calculates min/max elevations for the hierarchy
-void ElevationDataSource::CalculateMinMaxElevations()
-{
-    // Calculate min/max elevations starting from the finest level
-    for (HierarchyReverseIterator it(m_iNumLevels); it.IsValid(); it.Next())
-    {
-        RecomputePatchMinMaxElevations(it);
-    }
 }
 
 void ElevationDataSource::GetDataPtr(const Uint16*& pDataPtr, size_t& Pitch)
