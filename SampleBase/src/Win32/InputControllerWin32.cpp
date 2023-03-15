@@ -99,8 +99,6 @@ const MouseState& InputControllerWin32::GetMouseState()
 
 bool InputControllerWin32::HandleNativeMessage(const void* MsgData)
 {
-    m_MouseState.WheelDelta = 0;
-
     struct WindowMessageData
     {
         HWND   hWnd;
