@@ -96,6 +96,9 @@ private:
 
     std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>          m_Model;
+    GLTF::ModelTransforms                 m_Transforms;
+    BoundBox                              m_ModelAABB;
+    float4x4                              m_ModelTransform;
     RefCntAutoPtr<IBuffer>                m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer>                m_LightAttribsCB;
     RefCntAutoPtr<IPipelineState>         m_EnvMapPSO;
@@ -118,7 +121,7 @@ private:
 
     Uint32 m_CameraId = 0;
 
-    std::vector<const GLTF::Camera*> m_Cameras;
+    std::vector<const GLTF::Node*> m_CameraNodes;
 
     std::string m_InitialModelPath;
 };

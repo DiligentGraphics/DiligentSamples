@@ -89,23 +89,31 @@ void GLTFViewer::LoadModel(const char* Path)
         m_AnimationTimers.clear();
     }
 
-    GLTF::Model::CreateInfo ModelCI;
+    GLTF::ModelCreateInfo ModelCI;
     ModelCI.FileName   = Path;
     ModelCI.pCacheInfo = m_bUseResourceCache ? &m_CacheUseInfo : nullptr;
     m_Model.reset(new GLTF::Model{m_pDevice, m_pImmediateContext, ModelCI});
 
     m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
-    // Center and scale model
-    float3 ModelDim{m_Model->AABBTransform[0][0], m_Model->AABBTransform[1][1], m_Model->AABBTransform[2][2]};
-    float  Scale     = (1.0f / std::max(std::max(ModelDim.x, ModelDim.y), ModelDim.z)) * 0.5f;
-    auto   Translate = -float3(m_Model->AABBTransform[3][0], m_Model->AABBTransform[3][1], m_Model->AABBTransform[3][2]);
-    Translate += -0.5f * ModelDim;
-    float4x4 InvYAxis = float4x4::Identity();
-    InvYAxis._22      = -1;
+    m_Model->ComputeTransforms(m_Transforms);
+    m_ModelAABB = m_Model->ComputeBoundingBox(m_Transforms);
 
-    auto ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
-    m_Model->Transform(ModelTransform);
+    // Center and scale model
+    float  MaxDim = 0;
+    float3 ModelDim{m_ModelAABB.Max - m_ModelAABB.Min};
+    MaxDim = std::max(MaxDim, ModelDim.x);
+    MaxDim = std::max(MaxDim, ModelDim.y);
+    MaxDim = std::max(MaxDim, ModelDim.z);
+
+    float    Scale     = (1.0f / std::max(MaxDim, 0.01f)) * 0.5f;
+    auto     Translate = -m_ModelAABB.Min - 0.5f * ModelDim;
+    float4x4 InvYAxis  = float4x4::Identity();
+    InvYAxis._22       = -1;
+
+    m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+    m_Model->ComputeTransforms(m_Transforms, m_ModelTransform);
+    m_ModelAABB = m_Model->ComputeBoundingBox(m_Transforms);
 
     if (!m_Model->Animations.empty())
     {
@@ -115,11 +123,11 @@ void GLTFViewer::LoadModel(const char* Path)
     }
 
     m_CameraId = 0;
-    m_Cameras.clear();
-    for (const auto* node : m_Model->LinearNodes)
+    m_CameraNodes.clear();
+    for (const auto& node : m_Model->LinearNodes)
     {
-        if (node->pCamera && node->pCamera->Type == GLTF::Camera::Projection::Perspective)
-            m_Cameras.push_back(node->pCamera.get());
+        if (node.pCamera != nullptr && node.pCamera->Type == GLTF::Camera::Projection::Perspective)
+            m_CameraNodes.push_back(&node);
     }
 }
 
@@ -289,14 +297,14 @@ void GLTFViewer::UpdateUI()
             }
         }
 #endif
-        if (!m_Cameras.empty())
+        if (!m_CameraNodes.empty())
         {
             std::vector<std::pair<Uint32, std::string>> CamList;
             CamList.emplace_back(0, "default");
-            for (Uint32 i = 0; i < m_Cameras.size(); ++i)
+            for (Uint32 i = 0; i < m_CameraNodes.size(); ++i)
             {
-                const auto& Cam = m_Cameras[i];
-                CamList.emplace_back(i + 1, Cam->Name.empty() ? std::to_string(i) : Cam->Name);
+                const auto& Cam = *m_CameraNodes[i]->pCamera;
+                CamList.emplace_back(i + 1, Cam.Name.empty() ? std::to_string(i) : Cam.Name);
             }
             ImGui::Combo("Camera", &m_CameraId, CamList.data(), static_cast<int>(CamList.size()));
         }
@@ -482,7 +490,9 @@ void GLTFViewer::Render()
     }
     else
     {
-        const auto* pCamera = m_Cameras[m_CameraId - 1];
+        const auto* pCameraNode           = m_CameraNodes[m_CameraId - 1];
+        const auto* pCamera               = pCameraNode->pCamera;
+        const auto  CameraGlobalTransform = m_Transforms.NodeGlobalMatrices[pCameraNode->Index];
 
         // GLTF camera is defined such that the local +X axis is to the right,
         // the lens looks towards the local -Z axis, and the top of the camera
@@ -492,7 +502,7 @@ void GLTFViewer::Render()
         float4x4 InvZAxis = float4x4::Identity();
         InvZAxis._33      = -1;
 
-        CameraView = pCamera->matrix.Inverse() * InvZAxis;
+        CameraView = CameraGlobalTransform.Inverse() * InvZAxis;
         YFov       = pCamera->Perspective.YFov;
         ZNear      = pCamera->Perspective.ZNear;
         ZFar       = pCamera->Perspective.ZFar;
@@ -523,11 +533,14 @@ void GLTFViewer::Render()
             float4x4 BBTransform;
             if (m_BoundBoxMode == BoundBoxMode::Local)
             {
-                BBTransform = m_Model->AABBTransform * m_RenderParams.ModelTransform;
+                BBTransform =
+                    float4x4::Scale(m_ModelAABB.Max - m_ModelAABB.Min) *
+                    float4x4::Translation(m_ModelAABB.Min) *
+                    m_RenderParams.ModelTransform;
             }
             else if (m_BoundBoxMode == BoundBoxMode::Global)
             {
-                auto TransformedBB = BoundBox{m_Model->dimensions.min, m_Model->dimensions.max}.Transform(m_RenderParams.ModelTransform);
+                auto TransformedBB = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
                 BBTransform        = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
             }
             else
@@ -549,12 +562,12 @@ void GLTFViewer::Render()
     if (m_bUseResourceCache)
     {
         m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams, nullptr, &m_CacheBindings);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
     {
         m_GLTFRenderer->Begin(m_pImmediateContext);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_RenderParams, &m_ModelResourceBindings);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, &m_ModelResourceBindings);
     }
 
     if (m_BoundBoxMode != BoundBoxMode::None)
@@ -648,7 +661,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         float& AnimationTimer = m_AnimationTimers[m_AnimationIndex];
         AnimationTimer += static_cast<float>(ElapsedTime);
         AnimationTimer = std::fmod(AnimationTimer, m_Model->Animations[m_AnimationIndex].End);
-        m_Model->UpdateAnimation(m_AnimationIndex, AnimationTimer);
+        m_Model->ComputeTransforms(m_Transforms, m_ModelTransform, m_AnimationIndex, AnimationTimer);
     }
 }
 
