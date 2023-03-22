@@ -143,6 +143,7 @@ list(APPEND SOURCE
 
 list(APPEND INCLUDE
     include/FirstPersonCamera.hpp
+    include/TrackballCamera.hpp
     include/InputController.hpp
     include/SampleBase.hpp
 )

@@ -80,6 +80,16 @@ const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
 };
 // clang-format on
 
+GLTFViewer::GLTFViewer()
+{
+    m_Camera.SetDefaultSecondaryRotation(QuaternionF::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f));
+    m_Camera.SetDistRange(0.1f, 5.f);
+    m_Camera.SetDefaultDistance(0.9f);
+    m_Camera.ResetDefaults();
+    // Apply extra rotation to adjust the view to match Khronos GLTF viewer
+    m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
+}
+
 void GLTFViewer::LoadModel(const char* Path)
 {
     if (m_Model)
@@ -129,14 +139,6 @@ void GLTFViewer::LoadModel(const char* Path)
         if (node.pCamera != nullptr && node.pCamera->Type == GLTF::Camera::Projection::Perspective)
             m_CameraNodes.push_back(&node);
     }
-}
-
-void GLTFViewer::ResetView()
-{
-    m_CameraYaw      = 0;
-    m_CameraPitch    = 0;
-    m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
-    m_CameraRotation = Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
 }
 
 GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const char* const* argv)
@@ -207,8 +209,6 @@ void GLTFViewer::CreateGLTFResourceCache()
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
-
-    ResetView();
 
     RefCntAutoPtr<ITexture> EnvironmentMap;
     CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
@@ -311,16 +311,20 @@ void GLTFViewer::UpdateUI()
 
         if (m_CameraId == 0)
         {
-            ImGui::gizmo3D("Model Rotation", m_ModelRotation, ImGui::GetTextLineHeight() * 10);
+            auto ModelRotation = m_Camera.GetSecondaryRotation();
+            if (ImGui::gizmo3D("Model Rotation", ModelRotation, ImGui::GetTextLineHeight() * 10))
+                m_Camera.SetSecondaryRotation(ModelRotation);
             ImGui::SameLine();
             ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
 
             if (ImGui::Button("Reset view"))
             {
-                ResetView();
+                m_Camera.ResetDefaults();
             }
 
-            ImGui::SliderFloat("Camera distance", &m_CameraDist, 0.1f, 5.0f);
+            auto CameraDist = m_Camera.GetDist();
+            if (ImGui::SliderFloat("Camera distance", &CameraDist, m_Camera.GetMinDist(), m_Camera.GetMaxDist()))
+                m_Camera.SetDist(CameraDist);
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
@@ -484,9 +488,9 @@ void GLTFViewer::Render()
     float4x4 CameraView;
     if (m_CameraId == 0)
     {
-        CameraView = m_CameraRotation.ToMatrix() * float4x4::Translation(0.f, 0.0f, m_CameraDist);
+        CameraView = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, m_Camera.GetDist());
 
-        m_RenderParams.ModelTransform = m_ModelRotation.ToMatrix();
+        m_RenderParams.ModelTransform = m_Camera.GetSecondaryRotation().ToMatrix();
     }
     else
     {
@@ -603,54 +607,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
     if (m_CameraId == 0)
     {
-        const auto& mouseState = m_InputController.GetMouseState();
-
-        float MouseDeltaX = 0;
-        float MouseDeltaY = 0;
-        if (m_LastMouseState.PosX >= 0 && m_LastMouseState.PosY >= 0 &&
-            m_LastMouseState.ButtonFlags != MouseState::BUTTON_FLAG_NONE)
-        {
-            MouseDeltaX = mouseState.PosX - m_LastMouseState.PosX;
-            MouseDeltaY = mouseState.PosY - m_LastMouseState.PosY;
-        }
-        m_LastMouseState = mouseState;
-
-        constexpr float RotationSpeed = 0.005f;
-
-        float fYawDelta   = MouseDeltaX * RotationSpeed;
-        float fPitchDelta = MouseDeltaY * RotationSpeed;
-        if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
-        {
-            m_CameraYaw += fYawDelta;
-            m_CameraPitch += fPitchDelta;
-            m_CameraPitch = std::max(m_CameraPitch, -PI_F / 2.f);
-            m_CameraPitch = std::min(m_CameraPitch, +PI_F / 2.f);
-        }
-
-        // Apply extra rotations to adjust the view to match Khronos GLTF viewer
-        m_CameraRotation =
-            Quaternion::RotationFromAxisAngle(float3{1, 0, 0}, -m_CameraPitch) *
-            Quaternion::RotationFromAxisAngle(float3{0, 1, 0}, -m_CameraYaw) *
-            Quaternion::RotationFromAxisAngle(float3{0.75f, 0.0f, 0.75f}, PI_F);
-
-        if (mouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT)
-        {
-            auto CameraView  = m_CameraRotation.ToMatrix();
-            auto CameraWorld = CameraView.Transpose();
-
-            float3 CameraRight = float3::MakeVector(CameraWorld[0]);
-            float3 CameraUp    = float3::MakeVector(CameraWorld[1]);
-            m_ModelRotation =
-                Quaternion::RotationFromAxisAngle(CameraRight, -fPitchDelta) *
-                Quaternion::RotationFromAxisAngle(CameraUp, -fYawDelta) *
-                m_ModelRotation;
-        }
-
-        m_CameraDist -= mouseState.WheelDelta * 0.25f;
-        m_CameraDist = clamp(m_CameraDist, 0.1f, 5.f);
-
-        if ((m_InputController.GetKeyState(InputKeys::Reset) & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN) != 0)
-            ResetView();
+        m_Camera.Update(m_InputController);
     }
 
     SampleBase::Update(CurrTime, ElapsedTime);

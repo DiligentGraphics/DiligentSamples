@@ -43,7 +43,7 @@ Diligent::float3 GetPlaneNormal(const ArSession& ar_session,
 {
     float plane_pose_raw[7] = {0.f};
     ArPose_getPoseRaw(&ar_session, &plane_pose, plane_pose_raw);
-    Diligent::Quaternion plane_quaternion //
+    Diligent::QuaternionF plane_quaternion //
         {
             plane_pose_raw[0],
             plane_pose_raw[1],

@@ -33,6 +33,7 @@
 #include "GLTFLoader.hpp"
 #include "GLTF_PBR_Renderer.hpp"
 #include "BasicMath.hpp"
+#include "TrackballCamera.hpp"
 
 namespace Diligent
 {
@@ -40,6 +41,7 @@ namespace Diligent
 class GLTFViewer final : public SampleBase
 {
 public:
+    GLTFViewer();
     ~GLTFViewer();
     virtual CommandLineStatus ProcessCommandLine(int argc, const char* const* argv) override final;
 
@@ -54,7 +56,6 @@ private:
     void CreateEnvMapSRB();
     void CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader);
     void LoadModel(const char* Path);
-    void ResetView();
     void UpdateUI();
     void CreateGLTFResourceCache();
 
@@ -68,11 +69,6 @@ private:
     } m_BackgroundMode = BackgroundMode::PrefilteredEnvMap;
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
-
-    Quaternion m_CameraRotation = {0, 0, 0, 1};
-    Quaternion m_ModelRotation  = Quaternion::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f);
-
-    float m_CameraDist = 0.9f;
 
     float3 m_LightDirection;
     float4 m_LightColor     = float4(1, 1, 1, 1);
@@ -115,9 +111,7 @@ private:
     GLTF_PBR_Renderer::ModelResourceBindings m_ModelResourceBindings;
     GLTF_PBR_Renderer::ResourceCacheBindings m_CacheBindings;
 
-    MouseState m_LastMouseState;
-    float      m_CameraYaw   = 0;
-    float      m_CameraPitch = 0;
+    TrackballCamera<float> m_Camera;
 
     Uint32 m_CameraId = 0;
 

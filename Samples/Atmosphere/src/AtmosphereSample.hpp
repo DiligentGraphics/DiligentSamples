@@ -62,10 +62,10 @@ private:
 
     float3 m_f3LightDir = {-0.554699242f, -0.0599640049f, -0.829887390f};
 
-    Quaternion m_CameraRotation = {0, 0, 0, 1};
-    float3     m_f3CameraPos    = {0, 8000.f, 0};
-    float4x4   m_mCameraView;
-    float4x4   m_mCameraProj;
+    QuaternionF m_CameraRotation = {0, 0, 0, 1};
+    float3      m_f3CameraPos    = {0, 8000.f, 0};
+    float4x4    m_mCameraView;
+    float4x4    m_mCameraProj;
 
     RefCntAutoPtr<IBuffer> m_pcbCameraAttribs;
     RefCntAutoPtr<IBuffer> m_pcbLightAttribs;

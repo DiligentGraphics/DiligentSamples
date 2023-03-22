@@ -791,8 +791,8 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
         m_fCameraPitch += MouseDeltaY * CameraRotationSpeed;
     }
     m_CameraRotation =
-        Quaternion::RotationFromAxisAngle(float3{1, 0, 0}, -m_fCameraPitch) *
-        Quaternion::RotationFromAxisAngle(float3{0, 1, 0}, -m_fCameraYaw);
+        QuaternionF::RotationFromAxisAngle(float3{1, 0, 0}, -m_fCameraPitch) *
+        QuaternionF::RotationFromAxisAngle(float3{0, 1, 0}, -m_fCameraYaw);
     m_f3CameraPos.y += mouseState.WheelDelta * 500.f;
     m_f3CameraPos.y = std::max(m_f3CameraPos.y, 2000.f);
     m_f3CameraPos.y = std::min(m_f3CameraPos.y, 100000.f);
