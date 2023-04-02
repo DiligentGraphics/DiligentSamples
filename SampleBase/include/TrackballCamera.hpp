@@ -57,7 +57,7 @@ public:
         auto fPitchDelta = MouseDeltaY * m_RotationSpeed;
         if (Mouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
         {
-            m_Yaw += fYawDelta;
+            m_Yaw += (m_IsLeftHanded ? -fYawDelta : +fYawDelta);
             m_Pitch += fPitchDelta;
             m_Pitch = std::max(m_Pitch, -static_cast<T>(PI / 2.0));
             m_Pitch = std::min(m_Pitch, +static_cast<T>(PI / 2.0));
@@ -77,7 +77,7 @@ public:
             auto CameraUp    = Vector3<T>::MakeVector(CameraWorld[1]);
             m_SecondaryRotation =
                 Quaternion<T>::RotationFromAxisAngle(CameraRight, -fPitchDelta) *
-                Quaternion<T>::RotationFromAxisAngle(CameraUp, -fYawDelta) *
+                Quaternion<T>::RotationFromAxisAngle(CameraUp, m_IsLeftHanded ? +fYawDelta : -fYawDelta) *
                 m_SecondaryRotation;
         }
 
@@ -168,6 +168,11 @@ public:
         m_ZoomSpeed = ZoomSpeed;
     }
 
+    void SetLeftHanded(bool IsLeftHanded)
+    {
+        m_IsLeftHanded = IsLeftHanded;
+    }
+
     const auto& GetRotation() const
     {
         return m_PrimaryRotation;
@@ -194,6 +199,8 @@ protected:
 
     T m_RotationSpeed = static_cast<T>(0.005);
     T m_ZoomSpeed     = static_cast<T>(0.25);
+
+    bool m_IsLeftHanded = false;
 
     Quaternion<T> m_PrimaryRotation{0, 0, 0, 1};
     Quaternion<T> m_SecondaryRotation{0, 0, 0, 1};
