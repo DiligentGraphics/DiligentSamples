@@ -322,6 +322,8 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
 
     // Try to load the state cache data
     {
+        // Note: there is GetRenderStateCacheFilePath() function that can be used to get the path to the cache file.
+
         // Get local application data directory.
         m_StateCachePath = FileSystem::GetLocalAppDataDirectory("DiligentEngine-Tutorial26");
         if (!FileSystem::PathExists(m_StateCachePath.c_str()))
