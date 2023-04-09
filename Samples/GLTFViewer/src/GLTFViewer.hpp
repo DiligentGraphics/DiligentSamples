@@ -106,7 +106,6 @@ private:
 
     bool                                 m_bUseResourceCache = false;
     RefCntAutoPtr<GLTF::ResourceManager> m_pResourceMgr;
-    GLTF::ResourceCacheUseInfo           m_CacheUseInfo;
 
     GLTF_PBR_Renderer::ModelResourceBindings m_ModelResourceBindings;
     GLTF_PBR_Renderer::ResourceCacheBindings m_CacheBindings;

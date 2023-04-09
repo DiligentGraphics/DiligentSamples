@@ -100,8 +100,8 @@ void GLTFViewer::LoadModel(const char* Path)
     }
 
     GLTF::ModelCreateInfo ModelCI;
-    ModelCI.FileName   = Path;
-    ModelCI.pCacheInfo = m_bUseResourceCache ? &m_CacheUseInfo : nullptr;
+    ModelCI.FileName         = Path;
+    ModelCI.pResourceManager = m_bUseResourceCache ? m_pResourceMgr.RawPtr() : nullptr;
     m_Model.reset(new GLTF::Model{m_pDevice, m_pImmediateContext, ModelCI});
 
     m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
@@ -152,22 +152,21 @@ GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const cha
 
 void GLTFViewer::CreateGLTFResourceCache()
 {
-    std::array<BufferSuballocatorCreateInfo, 3> Buffers = {};
+    std::array<VertexPoolElementDesc, 2> VtxPoolElems = {};
 
-    Buffers[0].Desc.Name      = "GLTF basic vertex attribs buffer";
-    Buffers[0].Desc.BindFlags = BIND_VERTEX_BUFFER;
-    Buffers[0].Desc.Usage     = USAGE_DEFAULT;
-    Buffers[0].Desc.Size      = sizeof(GLTF::Model::VertexBasicAttribs) * 16 << 10;
+    VtxPoolElems[0].BindFlags = BIND_VERTEX_BUFFER;
+    VtxPoolElems[0].Usage     = USAGE_DEFAULT;
+    VtxPoolElems[0].Size      = sizeof(GLTF::Model::VertexBasicAttribs);
 
-    Buffers[1].Desc.Name      = "GLTF skin attribs buffer";
-    Buffers[1].Desc.BindFlags = BIND_VERTEX_BUFFER;
-    Buffers[1].Desc.Usage     = USAGE_DEFAULT;
-    Buffers[1].Desc.Size      = sizeof(GLTF::Model::VertexSkinAttribs) * 16 << 10;
+    VtxPoolElems[1].BindFlags = BIND_VERTEX_BUFFER;
+    VtxPoolElems[1].Usage     = USAGE_DEFAULT;
+    VtxPoolElems[1].Size      = sizeof(GLTF::Model::VertexSkinAttribs);
 
-    Buffers[2].Desc.Name      = "GLTF index buffer";
-    Buffers[2].Desc.BindFlags = BIND_INDEX_BUFFER;
-    Buffers[2].Desc.Usage     = USAGE_DEFAULT;
-    Buffers[2].Desc.Size      = sizeof(Uint32) * 8 << 10;
+    VertexPoolCreateInfo VtxPoolCI;
+    VtxPoolCI.Desc.Name        = "GLTF vertex pool";
+    VtxPoolCI.Desc.VertexCount = 32768;
+    VtxPoolCI.Desc.pElements   = VtxPoolElems.data();
+    VtxPoolCI.Desc.NumElements = static_cast<Uint32>(VtxPoolElems.size());
 
     std::array<DynamicTextureAtlasCreateInfo, 1> Atlases;
     Atlases[0].Desc.Name      = "GLTF texture atlas";
@@ -180,10 +179,14 @@ void GLTFViewer::CreateGLTFResourceCache()
     Atlases[0].Desc.MipLevels = 6;
 
     GLTF::ResourceManager::CreateInfo ResourceMgrCI;
-    ResourceMgrCI.BuffSuballocators    = Buffers.data();
-    ResourceMgrCI.NumBuffSuballocators = static_cast<Uint32>(Buffers.size());
-    ResourceMgrCI.TexAtlases           = Atlases.data();
-    ResourceMgrCI.NumTexAtlases        = static_cast<Uint32>(Atlases.size());
+
+    ResourceMgrCI.IndexAllocatorCI.Desc.Name      = "GLTF index buffer";
+    ResourceMgrCI.IndexAllocatorCI.Desc.BindFlags = BIND_INDEX_BUFFER;
+    ResourceMgrCI.IndexAllocatorCI.Desc.Usage     = USAGE_DEFAULT;
+    ResourceMgrCI.IndexAllocatorCI.Desc.Size      = sizeof(Uint32) * 8 << 10;
+
+    ResourceMgrCI.NumVertexPools = 1;
+    ResourceMgrCI.pVertexPoolCIs = &VtxPoolCI;
 
     ResourceMgrCI.DefaultAtlasDesc.Desc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
     ResourceMgrCI.DefaultAtlasDesc.Desc.Usage     = USAGE_DEFAULT;
@@ -193,17 +196,6 @@ void GLTFViewer::CreateGLTFResourceCache()
     ResourceMgrCI.DefaultAtlasDesc.Desc.MipLevels = 6;
 
     m_pResourceMgr = GLTF::ResourceManager::Create(m_pDevice, ResourceMgrCI);
-
-    m_CacheUseInfo.pResourceMgr       = m_pResourceMgr;
-    m_CacheUseInfo.VertexBufferIdx[0] = 0;
-    m_CacheUseInfo.VertexBufferIdx[1] = 1;
-    m_CacheUseInfo.IndexBufferIdx     = 2;
-
-    m_CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.NormalFormat       = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.OcclusionFormat    = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
 }
 
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
@@ -565,7 +557,20 @@ void GLTFViewer::Render()
 
     if (m_bUseResourceCache)
     {
-        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
+        GLTF_PBR_Renderer::ResourceCacheUseInfo CacheUseInfo;
+        CacheUseInfo.pResourceMgr = m_pResourceMgr;
+
+        CacheUseInfo.VtxLayoutKey.Elements.reserve(2);
+        CacheUseInfo.VtxLayoutKey.Elements.emplace_back(Uint32{sizeof(GLTF::Model::VertexBasicAttribs)}, BIND_VERTEX_BUFFER);
+        CacheUseInfo.VtxLayoutKey.Elements.emplace_back(Uint32{sizeof(GLTF::Model::VertexSkinAttribs)}, BIND_VERTEX_BUFFER);
+
+        CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
+        CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
+        CacheUseInfo.NormalFormat       = TEX_FORMAT_RGBA8_UNORM;
+        CacheUseInfo.OcclusionFormat    = TEX_FORMAT_RGBA8_UNORM;
+        CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
+
+        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
         m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
