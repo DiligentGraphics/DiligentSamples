@@ -33,7 +33,7 @@ if(MSVC)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    if(PLATFORM_EMSCRIPTEN)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13.0")
         set_property(SOURCE
             src/NkDiligent.cpp
         APPEND_STRING PROPERTY
