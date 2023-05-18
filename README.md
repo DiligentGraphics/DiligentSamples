@@ -20,7 +20,6 @@ To build and run the applications in the module, please follow the [instructions
 | <img src="https://github.com/DiligentGraphics/DiligentCore/blob/master/media/emscripten-logo.png" width=24 valign="middle"> Emscripten      | [![Build Status](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/build-emscripten.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/build-emscripten.yml?query=branch%3Amaster) | 
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](License.txt)
-[![Chat on gitter](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/diligent-engine)
 [![Chat on Discord](https://img.shields.io/discord/730091778081947680?logo=discord)](https://discord.gg/t7HGBK7)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
 [![MSVC Code Analysis](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml?query=branch%3Amaster)
