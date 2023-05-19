@@ -56,6 +56,7 @@ private:
     void CreateEnvMapSRB();
     void CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader);
     void LoadModel(const char* Path);
+    void UpdateScene();
     void UpdateUI();
     void CreateGLTFResourceCache();
 

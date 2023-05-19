@@ -106,8 +106,29 @@ void GLTFViewer::LoadModel(const char* Path)
 
     m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
 
-    m_Model->ComputeTransforms(m_Transforms);
-    m_ModelAABB = m_Model->ComputeBoundingBox(m_Transforms);
+    m_RenderParams.SceneIndex = m_Model->DefaultSceneId;
+    UpdateScene();
+
+    if (!m_Model->Animations.empty())
+    {
+        m_AnimationTimers.resize(m_Model->Animations.size());
+        m_AnimationIndex = 0;
+        m_PlayAnimation  = true;
+    }
+
+    m_CameraId = 0;
+    m_CameraNodes.clear();
+    for (const auto* node : m_Model->Scenes[m_RenderParams.SceneIndex].LinearNodes)
+    {
+        if (node->pCamera != nullptr && node->pCamera->Type == GLTF::Camera::Projection::Perspective)
+            m_CameraNodes.push_back(node);
+    }
+}
+
+void GLTFViewer::UpdateScene()
+{
+    m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms);
+    m_ModelAABB = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms);
 
     // Center and scale model
     float  MaxDim = 0;
@@ -122,23 +143,8 @@ void GLTFViewer::LoadModel(const char* Path)
     InvYAxis._22       = -1;
 
     m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
-    m_Model->ComputeTransforms(m_Transforms, m_ModelTransform);
-    m_ModelAABB = m_Model->ComputeBoundingBox(m_Transforms);
-
-    if (!m_Model->Animations.empty())
-    {
-        m_AnimationTimers.resize(m_Model->Animations.size());
-        m_AnimationIndex = 0;
-        m_PlayAnimation  = true;
-    }
-
-    m_CameraId = 0;
-    m_CameraNodes.clear();
-    for (const auto& node : m_Model->LinearNodes)
-    {
-        if (node.pCamera != nullptr && node.pCamera->Type == GLTF::Camera::Projection::Perspective)
-            m_CameraNodes.push_back(&node);
-    }
+    m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms, m_ModelTransform);
+    m_ModelAABB = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms);
 }
 
 GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const char* const* argv)
@@ -289,6 +295,18 @@ void GLTFViewer::UpdateUI()
             }
         }
 #endif
+        if (m_Model->Scenes.size() > 1)
+        {
+            std::vector<std::pair<Uint32, std::string>> SceneList;
+            SceneList.reserve(m_Model->Scenes.size());
+            for (Uint32 i = 0; i < m_Model->Scenes.size(); ++i)
+            {
+                SceneList.emplace_back(i, !m_Model->Scenes[i].Name.empty() ? m_Model->Scenes[i].Name : std::to_string(i));
+            }
+            if (ImGui::Combo("Scene", &m_RenderParams.SceneIndex, SceneList.data(), static_cast<int>(SceneList.size())))
+                UpdateScene();
+        }
+
         if (!m_CameraNodes.empty())
         {
             std::vector<std::pair<Uint32, std::string>> CamList;
@@ -623,7 +641,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
         float& AnimationTimer = m_AnimationTimers[m_AnimationIndex];
         AnimationTimer += static_cast<float>(ElapsedTime);
         AnimationTimer = std::fmod(AnimationTimer, m_Model->Animations[m_AnimationIndex].End);
-        m_Model->ComputeTransforms(m_Transforms, m_ModelTransform, m_AnimationIndex, AnimationTimer);
+        m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms, m_ModelTransform, m_AnimationIndex, AnimationTimer);
     }
 }
 
