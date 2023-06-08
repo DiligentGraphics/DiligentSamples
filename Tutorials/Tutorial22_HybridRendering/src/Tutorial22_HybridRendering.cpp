@@ -434,7 +434,7 @@ void Tutorial22_HybridRendering::UpdateTLAS()
         Name = Mesh.Name + " Instance (" + std::to_string(i) + ")";
 
         Inst.InstanceName = Name.c_str();
-        Inst.pBLAS        = Mesh.BLAS.RawPtr<IBottomLevelAS>();
+        Inst.pBLAS        = Mesh.BLAS;
         Inst.Mask         = 0xFF;
 
         // CustomId will be read in shader by RayQuery::CommittedInstanceID()
