@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,8 @@
 
 #include "ImguiDemo.hpp"
 #include "imgui.h"
+#include "ColorConversion.h"
+#include "GraphicsAccessories.hpp"
 
 namespace Diligent
 {
@@ -88,7 +90,15 @@ void ImguiDemo::UpdateUI()
 void ImguiDemo::Render()
 {
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    m_pImmediateContext->ClearRenderTarget(pRTV, &m_ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    auto ClearColor = m_ClearColor;
+    if (GetTextureFormatAttribs(m_pSwapChain->GetDesc().ColorBufferFormat).ComponentType == COMPONENT_TYPE_UNORM_SRGB)
+    {
+        ClearColor.r = SRGBToLinear(ClearColor.r);
+        ClearColor.g = SRGBToLinear(ClearColor.g);
+        ClearColor.b = SRGBToLinear(ClearColor.b);
+    }
+    m_pImmediateContext->ClearRenderTarget(pRTV, &ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 
