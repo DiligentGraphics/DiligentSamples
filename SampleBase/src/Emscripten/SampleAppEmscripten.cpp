@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public:
             InitializeDiligentEngine(&Window);
 
             const auto& SCDesc = m_pSwapChain->GetDesc();
-            m_pImGui.reset(new ImGuiImplEmscripten(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+            m_pImGui           = ImGuiImplEmscripten::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc});
             InitializeSample();
         }
         catch (...)

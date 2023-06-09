@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -191,7 +191,7 @@ public:
 
             // Initialize Dear ImGUI
             const auto& SCDesc = m_pSwapChain->GetDesc();
-            m_pImGui.reset(new ImGuiImplWin32(m_hWnd, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+            m_pImGui           = ImGuiImplWin32::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc}, m_hWnd);
 
             InitializeSample();
         }

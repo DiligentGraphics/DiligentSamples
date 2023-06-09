@@ -1,4 +1,6 @@
-/*     Copyright 2015-2019 Egor Yusov
+/*
+*  Copyright 2019-2023 Diligent Graphics LLC
+*  Copyright 2015-2019 Egor Yusov
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -63,7 +65,7 @@ public:
         MacOSNativeWindow MacWindow{view};
         InitializeDiligentEngine(&MacWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui.reset(new ImGuiImplMacOS(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat));
+        m_pImGui           = ImGuiImplMacOS::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc});
         InitializeSample();
 
         if (m_DeviceType == RENDER_DEVICE_TYPE_METAL)

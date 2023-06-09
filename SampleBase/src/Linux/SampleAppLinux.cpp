@@ -1,4 +1,6 @@
-/*     Copyright 2015-2018 Egor Yusov
+/*
+*  Copyright 2019-2023 Diligent Graphics LLC
+*  Copyright 2015-2019 Egor Yusov
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -50,7 +52,7 @@ public:
             LinuxWindow.WindowId = window;
             InitializeDiligentEngine(&LinuxWindow);
             const auto& SCDesc = m_pSwapChain->GetDesc();
-            m_pImGui.reset(new ImGuiImplLinuxX11(m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+            m_pImGui           = ImGuiImplLinuxX11::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc}, SCDesc.Width, SCDesc.Height);
             InitializeSample();
             return true;
         }
@@ -82,7 +84,7 @@ public:
             LinuxWindow.pXCBConnection = connection;
             InitializeDiligentEngine(&LinuxWindow);
             const auto& SCDesc = m_pSwapChain->GetDesc();
-            m_pImGui.reset(new ImGuiImplLinuxXCB(connection, m_pDevice, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, SCDesc.Width, SCDesc.Height));
+            m_pImGui           = ImGuiImplLinuxXCB::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc}, connection, SCDesc.Width, SCDesc.Height);
             m_TheSample->GetInputController().InitXCBKeysms(connection);
             InitializeSample();
             return true;
