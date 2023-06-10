@@ -65,7 +65,7 @@ public:
         MacOSNativeWindow MacWindow{view};
         InitializeDiligentEngine(&MacWindow);
         const auto& SCDesc = m_pSwapChain->GetDesc();
-        m_pImGui           = ImGuiImplMacOS::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc});
+        m_pImGui           = ImGuiImplMacOS::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc}, view);
         InitializeSample();
 
         if (m_DeviceType == RENDER_DEVICE_TYPE_METAL)
