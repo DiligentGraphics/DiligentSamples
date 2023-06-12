@@ -173,9 +173,7 @@ void SampleBase::Initialize(const SampleInitInfo& InitInfo)
     for (Uint32 ctx = 0; ctx < InitInfo.NumDeferredCtx; ++ctx)
         m_pDeferredContexts[ctx] = InitInfo.ppContexts[InitInfo.NumImmediateCtx + ctx];
     m_pImGui = InitInfo.pImGui;
-
-    ImGui::ApplyStyleColorsGamma(0.5f);
-    ImGui::GetStyle().Colors[ImGuiCol_WindowBg].w = 0.75f;
+    ImGui::StyleColorsDiligent();
 }
 
 } // namespace Diligent
