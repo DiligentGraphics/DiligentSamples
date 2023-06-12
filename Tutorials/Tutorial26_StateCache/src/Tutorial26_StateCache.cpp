@@ -730,7 +730,7 @@ Tutorial26_StateCache::~Tutorial26_StateCache()
     if (m_pStateCache && !m_StateCachePath.empty())
     {
         RefCntAutoPtr<IDataBlob> pCacheData;
-        if (m_pStateCache->WriteToBlob(&pCacheData))
+        if (m_pStateCache->WriteToBlob(0, &pCacheData))
         {
             if (pCacheData)
             {
