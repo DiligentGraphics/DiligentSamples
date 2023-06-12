@@ -28,6 +28,8 @@
 #include "PlatformDefinitions.h"
 #include "SampleBase.hpp"
 #include "Errors.hpp"
+#include "imgui.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {
@@ -159,6 +161,21 @@ float4x4 SampleBase::GetSurfacePretransformMatrix(const float3& f3CameraViewAxis
         default:
             return float4x4::Identity();
     }
+}
+
+void SampleBase::Initialize(const SampleInitInfo& InitInfo)
+{
+    m_pEngineFactory    = InitInfo.pEngineFactory;
+    m_pDevice           = InitInfo.pDevice;
+    m_pSwapChain        = InitInfo.pSwapChain;
+    m_pImmediateContext = InitInfo.ppContexts[0];
+    m_pDeferredContexts.resize(InitInfo.NumDeferredCtx);
+    for (Uint32 ctx = 0; ctx < InitInfo.NumDeferredCtx; ++ctx)
+        m_pDeferredContexts[ctx] = InitInfo.ppContexts[InitInfo.NumImmediateCtx + ctx];
+    m_pImGui = InitInfo.pImGui;
+
+    ImGui::ApplyStyleColorsGamma(0.5f);
+    ImGui::GetStyle().Colors[ImGuiCol_WindowBg].w = 0.75f;
 }
 
 } // namespace Diligent

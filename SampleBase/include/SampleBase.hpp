@@ -127,18 +127,6 @@ inline void SampleBase::Update(double CurrTime, double ElapsedTime)
     }
 }
 
-inline void SampleBase::Initialize(const SampleInitInfo& InitInfo)
-{
-    m_pEngineFactory    = InitInfo.pEngineFactory;
-    m_pDevice           = InitInfo.pDevice;
-    m_pSwapChain        = InitInfo.pSwapChain;
-    m_pImmediateContext = InitInfo.ppContexts[0];
-    m_pDeferredContexts.resize(InitInfo.NumDeferredCtx);
-    for (Uint32 ctx = 0; ctx < InitInfo.NumDeferredCtx; ++ctx)
-        m_pDeferredContexts[ctx] = InitInfo.ppContexts[InitInfo.NumImmediateCtx + ctx];
-    m_pImGui = InitInfo.pImGui;
-}
-
 extern SampleBase* CreateSample();
 
 } // namespace Diligent

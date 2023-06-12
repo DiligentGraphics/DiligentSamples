@@ -45,6 +45,7 @@ ImguiDemo::~ImguiDemo()
 void ImguiDemo::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
+    ImGui::StyleColorsDark();
 }
 
 void ImguiDemo::UpdateUI()
