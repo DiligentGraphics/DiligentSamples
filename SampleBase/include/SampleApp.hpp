@@ -91,6 +91,7 @@ protected:
     void InitializeDiligentEngine(const NativeWindow* pWindow);
     void InitializeSample();
     void UpdateAdaptersDialog();
+    void UpdateAppSettings(bool IsInitialization);
 
     virtual void SetFullscreenMode(const DisplayModeAttribs& DisplayMode)
     {

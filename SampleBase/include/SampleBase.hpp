@@ -37,6 +37,7 @@
 #include "InputController.hpp"
 #include "BasicMath.hpp"
 #include "AppBase.hpp"
+#include "FlagEnum.h"
 
 namespace Diligent
 {
@@ -54,10 +55,107 @@ struct SampleInitInfo
     ImGuiImplDiligent* pImGui          = nullptr;
 };
 
+struct DesiredApplicationSettings
+{
+    enum SETTING_FLAGS : Uint8
+    {
+        SETTING_FLAG_NONE                 = 0,
+        SETTING_FLAG_VSYNC                = 1u << 0u,
+        SETTING_FLAG_SHOW_UI              = 1u << 1u,
+        SETTING_FLAG_SHOW_ADAPTERS_DIALOG = 1u << 2u,
+        SETTING_FLAG_ADAPTER_ID           = 1u << 3u,
+        SETTING_FLAG_DEVICE_TYPE          = 1u << 4u,
+        SETTING_FLAG_ADAPTER_TYPE         = 1u << 5u,
+        SETTING_FLAG_WINDOW_WIDTH         = 1u << 6u,
+        SETTING_FLAG_WINDOW_HEIGHT        = 1u << 7u,
+    };
+    SETTING_FLAGS Flags = SETTING_FLAG_NONE;
+
+    bool VSync              = false;
+    bool ShowUI             = false;
+    bool ShowAdaptersDialog = false;
+
+    Uint32             AdapterId   = DEFAULT_ADAPTER_ID;
+    ADAPTER_TYPE       AdapterType = ADAPTER_TYPE_UNKNOWN;
+    RENDER_DEVICE_TYPE DeviceType  = RENDER_DEVICE_TYPE_UNDEFINED;
+
+    int WindowWidth  = 0;
+    int WindowHeight = 0;
+
+    inline DesiredApplicationSettings& SetVSync(bool _VSync);
+    inline DesiredApplicationSettings& SetShowUI(bool _ShowUI);
+    inline DesiredApplicationSettings& SetShowAdaptersDialog(bool _ShowAdaptersDialog);
+    inline DesiredApplicationSettings& SetAdapterId(Uint32 _AdapterId);
+    inline DesiredApplicationSettings& SetAdapterType(ADAPTER_TYPE _AdapterType);
+    inline DesiredApplicationSettings& SetDeviceType(RENDER_DEVICE_TYPE _DeviceType);
+    inline DesiredApplicationSettings& SetWindowWidth(int _WindowWidth);
+    inline DesiredApplicationSettings& SetWindowHeight(int _WindowHeight);
+};
+DEFINE_FLAG_ENUM_OPERATORS(DesiredApplicationSettings::SETTING_FLAGS);
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetVSync(bool _VSync)
+{
+    VSync = _VSync;
+    Flags |= SETTING_FLAG_VSYNC;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetShowUI(bool _ShowUI)
+{
+    ShowUI = _ShowUI;
+    Flags |= SETTING_FLAG_SHOW_UI;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetShowAdaptersDialog(bool _ShowAdaptersDialog)
+{
+    ShowAdaptersDialog = _ShowAdaptersDialog;
+    Flags |= SETTING_FLAG_SHOW_ADAPTERS_DIALOG;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetAdapterId(Uint32 _AdapterId)
+{
+    AdapterId = _AdapterId;
+    Flags |= SETTING_FLAG_ADAPTER_ID;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetAdapterType(ADAPTER_TYPE _AdapterType)
+{
+    AdapterType = _AdapterType;
+    Flags |= SETTING_FLAG_ADAPTER_TYPE;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetDeviceType(RENDER_DEVICE_TYPE _DeviceType)
+{
+    DeviceType = _DeviceType;
+    Flags |= SETTING_FLAG_DEVICE_TYPE;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetWindowWidth(int _WindowWidth)
+{
+    WindowWidth = _WindowWidth;
+    Flags |= SETTING_FLAG_WINDOW_WIDTH;
+    return *this;
+}
+
+DesiredApplicationSettings& DesiredApplicationSettings::SetWindowHeight(int _WindowHeight)
+{
+    WindowHeight = _WindowHeight;
+    Flags |= SETTING_FLAG_WINDOW_HEIGHT;
+    return *this;
+}
+
+
 class SampleBase
 {
 public:
     virtual ~SampleBase() {}
+
+    virtual DesiredApplicationSettings GetDesiredApplicationSettings(bool IsInitialization) { return DesiredApplicationSettings{}; }
 
     struct ModifyEngineInitInfoAttribs
     {

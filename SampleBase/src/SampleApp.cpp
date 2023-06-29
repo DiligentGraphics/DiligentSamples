@@ -71,6 +71,7 @@ SampleApp::SampleApp() :
     m_TheSample{CreateSample()},
     m_AppTitle{m_TheSample->GetSampleName()}
 {
+    UpdateAppSettings(true);
 }
 
 SampleApp::~SampleApp()
@@ -89,6 +90,37 @@ SampleApp::~SampleApp()
     m_pDevice.Release();
 }
 
+void SampleApp::UpdateAppSettings(bool IsInitialization)
+{
+    const auto DesiredSettings = m_TheSample->GetDesiredApplicationSettings(IsInitialization);
+
+    if (IsInitialization)
+    {
+        if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_ADAPTER_ID) != 0)
+            m_AdapterId = DesiredSettings.AdapterId;
+
+        if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_ADAPTER_TYPE) != 0)
+            m_AdapterType = DesiredSettings.AdapterType;
+
+        if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_DEVICE_TYPE) != 0)
+            m_DeviceType = DesiredSettings.DeviceType;
+
+        if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_WINDOW_WIDTH) != 0)
+            m_InitialWindowWidth = DesiredSettings.WindowWidth;
+
+        if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_WINDOW_HEIGHT) != 0)
+            m_InitialWindowHeight = DesiredSettings.WindowHeight;
+    }
+
+    if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_VSYNC) != 0)
+        m_bVSync = DesiredSettings.VSync;
+
+    if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_SHOW_UI) != 0)
+        m_bShowUI = DesiredSettings.ShowUI;
+
+    if ((DesiredSettings.Flags & DesiredApplicationSettings::SETTING_FLAG_SHOW_ADAPTERS_DIALOG) != 0)
+        m_bShowAdaptersDialog = DesiredSettings.ShowAdaptersDialog;
+}
 
 void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 {
@@ -769,6 +801,8 @@ void SampleApp::WindowResize(int width, int height)
 void SampleApp::Update(double CurrTime, double ElapsedTime)
 {
     m_CurrentTime = CurrTime;
+
+    UpdateAppSettings(false);
 
     if (m_pImGui)
     {
