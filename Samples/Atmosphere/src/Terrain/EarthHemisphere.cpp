@@ -657,20 +657,20 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
 
     CreateUniformBuffer(pDevice, sizeof(TerrainAttribs), "Terrain Attribs CB", &m_pcbTerrainAttribs);
 
-    ResourceMappingDesc ResMappingDesc;
+    ResourceMappingCreateInfo ResMappingCI;
     // clang-format off
     ResourceMappingEntry pEntries[] = 
     { 
-        { "cbCameraAttribs", pcbCameraAttribs }, 
-        { "cbTerrainAttribs", m_pcbTerrainAttribs}, 
-        { "cbLightAttribs", pcbLightAttribs}, 
-        { "g_tex2DNormalMap", ptex2DNormalMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE) }, 
-        { "cbParticipatingMediaScatteringParams", pcMediaScatteringParams },
-        {} 
+        {"cbCameraAttribs", pcbCameraAttribs}, 
+        {"cbTerrainAttribs", m_pcbTerrainAttribs}, 
+        {"cbLightAttribs", pcbLightAttribs}, 
+        {"g_tex2DNormalMap", ptex2DNormalMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE)}, 
+        {"cbParticipatingMediaScatteringParams", pcMediaScatteringParams}
     };
     // clang-format on
-    ResMappingDesc.pEntries = pEntries;
-    pDevice->CreateResourceMapping(ResMappingDesc, &m_pResMapping);
+    ResMappingCI.pEntries   = pEntries;
+    ResMappingCI.NumEntries = _countof(pEntries);
+    pDevice->CreateResourceMapping(ResMappingCI, &m_pResMapping);
 
     RefCntAutoPtr<ITexture> ptex2DMtrlMask;
     CreateTextureFromFile(MaterialMaskPath, TextureLoadInfo(), pDevice, &ptex2DMtrlMask);
