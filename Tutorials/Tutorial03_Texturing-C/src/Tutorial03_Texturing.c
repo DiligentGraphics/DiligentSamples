@@ -117,7 +117,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
         ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.FilePath        = "cube.vsh";
-        IRenderDevice_CreateShader(pDevice, &ShaderCI, &pVS);
+        IRenderDevice_CreateShader(pDevice, &ShaderCI, &pVS, NULL);
 
         // Create dynamic uniform buffer that will store our transformation matrix
         // Dynamic buffers can be frequently updated by the CPU
@@ -134,7 +134,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.FilePath        = "cube.psh";
-        IRenderDevice_CreateShader(pDevice, &ShaderCI, &pPS);
+        IRenderDevice_CreateShader(pDevice, &ShaderCI, &pPS, NULL);
     }
 
     // Define vertex shader input layout
