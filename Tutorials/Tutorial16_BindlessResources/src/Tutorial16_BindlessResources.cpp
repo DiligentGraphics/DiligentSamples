@@ -128,7 +128,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
             Macros.AddShaderMacro("NUM_TEXTURES", NumTextures);
             ShaderCI.Macros = Macros;
             m_pDevice->CreateShader(ShaderCI, &pBindlessPS);
-            ShaderCI.Macros = nullptr;
+            ShaderCI.Macros = {};
         }
     }
 

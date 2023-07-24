@@ -157,7 +157,7 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainDS";
         ShaderCI.Desc.Name       = "Terrain DS";
         ShaderCI.FilePath        = "terrain.dsh";
-        ShaderCI.Macros          = nullptr;
+        ShaderCI.Macros          = {};
 
         m_pDevice->CreateShader(ShaderCI, &pDS);
     }

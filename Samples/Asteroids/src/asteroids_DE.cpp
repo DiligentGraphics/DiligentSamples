@@ -332,9 +332,11 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
 
-            ShaderMacro Macros[] = {{"BINDLESS", "1"}, {}};
+            ShaderMacro Macros[] = {{"BINDLESS", "1"}};
             if (m_BindingMode == BindingMode::Bindless)
-                attribs.Macros = Macros;
+            {
+                attribs.Macros = {Macros, _countof(Macros)};
+            }
 
             mDevice->CreateShader(attribs, &vs);
         }
@@ -347,9 +349,11 @@ Asteroids::Asteroids(const Settings& settings, AsteroidsSimulation* asteroids, G
             attribs.pShaderSourceStreamFactory = pShaderSourceFactory;
             attribs.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
 
-            ShaderMacro Macros[] = {{"BINDLESS", "1"}, {}};
+            ShaderMacro Macros[] = {{"BINDLESS", "1"}};
             if (m_BindingMode == BindingMode::Bindless)
-                attribs.Macros = Macros;
+            {
+                attribs.Macros = {Macros, _countof(Macros)};
+            }
 
             mDevice->CreateShader(attribs, &ps);
         }

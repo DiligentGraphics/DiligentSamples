@@ -161,7 +161,6 @@ void Tutorial14_ComputeShader::CreateUpdateParticlePSO()
 
     ShaderMacroHelper Macros;
     Macros.AddShaderMacro("THREAD_GROUP_SIZE", m_ThreadGroupSize);
-    Macros.Finalize();
 
     RefCntAutoPtr<IShader> pResetParticleListsCS;
     {
