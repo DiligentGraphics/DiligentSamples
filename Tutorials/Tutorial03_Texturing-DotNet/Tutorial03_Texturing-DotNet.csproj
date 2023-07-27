@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Platforms>x86;x64</Platforms>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <UseWindowsForms>true</UseWindowsForms>
+        <EnableDefaultItems>false</EnableDefaultItems>
+        <TargetFramework>net6.0-windows</TargetFramework>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <!-- Use the latest package version
+             https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#floating-version-resolutions -->
+        <PackageReference Include="DiligentGraphics.DiligentEngine.Core" Version="*-*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="src/*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="assets/**" CopyToOutputDirectory="PreserveNewest" TargetPath="assets/%(Filename)%(Extension)" Visible="false" />
+    </ItemGroup>
+
+</Project>

@@ -14,6 +14,7 @@ jobs:
             # Only build Direct3D11 backend as Core libraries are analysed in the Core module
             cmake_args:      "-DDILIGENT_NO_OPENGL=ON -DDILIGENT_NO_DIRECT3D12=ON -DDILIGENT_NO_VULKAN=ON"
             cmake_generator: "Visual Studio 17 2022"
+            build_args:      "-- -restore"
 
     runs-on: windows-2022
     name: ${{ matrix.host_name }} -> MSVC Analysis, ${{ matrix.toolset }}, ${{ matrix.build_type }}
@@ -48,6 +49,8 @@ jobs:
     - name: Build
       if: success()
       uses: DiligentGraphics/github-action/build@v1
+      with:
+        build-args: ${{ matrix.build_args }}
 
     - name: Run MSVC Code Analysis
       uses: microsoft/msvc-code-analysis-action@v0.1.1
