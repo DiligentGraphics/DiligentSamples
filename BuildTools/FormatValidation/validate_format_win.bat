@@ -3,4 +3,5 @@ python ../../../DiligentCore/BuildTools/FormatValidation/clang-format-validate.p
 -r ../../SampleBase ../../Tutorials ../../Samples ^
 --exclude ../../SampleBase/src/UWP ^
 --exclude ../../SampleBase/src/Win32/resources ^
---exclude ../../Samples/Asteroids
+--exclude ../../Samples/Asteroids ^
+--exclude ../../Tutorials/Tutorial03_Texturing-CSharp
