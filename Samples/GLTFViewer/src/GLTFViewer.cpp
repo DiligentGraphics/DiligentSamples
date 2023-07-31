@@ -506,7 +506,7 @@ void GLTFViewer::Render()
     {
         const auto* pCameraNode           = m_CameraNodes[m_CameraId - 1];
         const auto* pCamera               = pCameraNode->pCamera;
-        const auto  CameraGlobalTransform = m_Transforms.NodeGlobalMatrices[pCameraNode->Index];
+        const auto& CameraGlobalTransform = m_Transforms.NodeGlobalMatrices[pCameraNode->Index];
 
         // GLTF camera is defined such that the local +X axis is to the right,
         // the lens looks towards the local -Z axis, and the top of the camera
