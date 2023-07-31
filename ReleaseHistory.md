@@ -1,3 +1,7 @@
+## v2.5.4
+
+* Added [Tutorial03 - Texturing for DotNet](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial03_Texturing-DotNet)
+
 ## v2.5.1
 
 * Added [Tutorial23 - Command Queues](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues)

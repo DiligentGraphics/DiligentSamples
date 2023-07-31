@@ -32,6 +32,7 @@ To build and run the applications in the module, please follow the [instructions
   - [02 - Cube](https://github.com/DiligentGraphics/DiligentSamples#tutorial-02---cube)
   - [03 - Texturing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-03---texturing)
   - [03 - Texturing-C](https://github.com/DiligentGraphics/DiligentSamples#tutorial-03---texturing-c)
+  - [03 - Texturing-DotNet](https://github.com/DiligentGraphics/DiligentSamples#tutorial-03---texturing-dotnet)
   - [04 - Instancing](https://github.com/DiligentGraphics/DiligentSamples#tutorial-04---instancing)
   - [05 - Texture Array](https://github.com/DiligentGraphics/DiligentSamples#tutorial-05---texture-array)
   - [06 - Multithreading](https://github.com/DiligentGraphics/DiligentSamples#tutorial-06---multithreading)
@@ -93,11 +94,15 @@ index and uniform buffers.
 This tutorial demonstrates how to apply a texture to a 3D object. It shows how to load a texture from file, create shader resource
 binding object and how to sample a texture in the shader.
 
+
 ## [Tutorial 03 - Texturing-C](Tutorials/Tutorial03_Texturing-C)
 
-![](Tutorials/Tutorial03_Texturing/Animation_Large.gif)
+This tutorial is identical to Tutorial03, but is implemented using the C API.
 
-This tutorial is identical to Tutorial03, but is implemented using C API.
+
+## [Tutorial 03 - Texturing-DotNet](Tutorials/Tutorial03_Texturing-DotNet)
+
+This tutorial demonstrates how to use the Diligent Engine API in .NET applications.
 
 
 ## [Tutorial 04 - Instancing](Tutorials/Tutorial04_Instancing)
