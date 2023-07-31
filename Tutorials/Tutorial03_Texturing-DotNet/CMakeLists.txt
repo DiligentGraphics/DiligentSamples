@@ -2,9 +2,9 @@ cmake_minimum_required (VERSION 3.23)
 
 project(Tutorial03_Texturing-DotNet)
 
-if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+if((CMAKE_GENERATOR_PLATFORM STREQUAL "x64") OR (CMAKE_GENERATOR_PLATFORM STREQUAL ""))
     set(DOTNET_GENERATOR_PLATFORM "x64")
-elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_GENERATOR_PLATFORM STREQUAL "")
+elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
     set(DOTNET_GENERATOR_PLATFORM "x86")
 else()
     message(FATAL_ERROR "Generator platform is set to '${CMAKE_GENERATOR_PLATFORM}', which is not supported by managed projects")

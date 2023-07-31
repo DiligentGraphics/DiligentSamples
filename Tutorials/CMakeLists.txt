@@ -10,7 +10,7 @@ add_subdirectory(Tutorial02_Cube)
 add_subdirectory(Tutorial03_Texturing)
 add_subdirectory(Tutorial03_Texturing-C)
 #TODO There is some issue with CMake when running 'cmake --build', but when building the C# project from Visual Studio, `Platform` is set correctly
-if(PLATFORM_WIN32 AND CMAKE_GENERATOR MATCHES "Visual Studio" AND CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+if(PLATFORM_WIN32 AND (CMAKE_GENERATOR MATCHES "Visual Studio") AND ((CMAKE_GENERATOR_PLATFORM STREQUAL "x64") OR (CMAKE_GENERATOR_PLATFORM STREQUAL "")))
     add_subdirectory(Tutorial03_Texturing-DotNet)
 endif()
 add_subdirectory(Tutorial04_Instancing)
