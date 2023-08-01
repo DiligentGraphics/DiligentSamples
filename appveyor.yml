@@ -42,6 +42,7 @@ before_build:
   - echo add_subdirectory(DiligentSamples) >> CMakeLists.txt
   - echo %PLATFORM%
   - cmake -S . -B ./build -G "Visual Studio 16 2019" -A %PLATFORM%
+  - nuget restore c:\projects\build\DiligentSamples_Test.sln
 
 build:
   project: c:\projects\build\DiligentSamples_Test.sln
