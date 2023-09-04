@@ -16,6 +16,10 @@ if(TARGET glfw)
     add_subdirectory(GLFWDemo)
 endif()
 
+if(TARGET Diligent-Hydrogent)
+    add_subdirectory(USDViewer)
+endif()
+
 if(PLATFORM_WIN32 AND D3D11_SUPPORTED AND D3D12_SUPPORTED)
     if(TARGET Diligent-TextureLoader)
 	    add_subdirectory(Asteroids)
