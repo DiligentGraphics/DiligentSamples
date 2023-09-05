@@ -174,6 +174,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
+    VERIFY_EXPR(m_pPSO);
 
     // clang-format off
     // Since we did not explcitly specify the type for 'VSConstants', 'GSConstants', 
