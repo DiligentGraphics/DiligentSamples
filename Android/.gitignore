@@ -1,6 +1,7 @@
-.gradle
-.idea
+*.gradle
+*.idea
+*.hprof
 build
 local.properties
 **/*.iml
-.externalNativeBuild
+*.externalNativeBuild

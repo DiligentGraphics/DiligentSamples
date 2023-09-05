@@ -5,7 +5,10 @@ buildscript {
        google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.1'
+        // WARNING: later versions of gradle (until at least 8.1.1)
+        // produce obscene amount of build cruft that
+        // makes GitHub actions run out of disk space.
+        classpath 'com.android.tools.build:gradle:7.0.4'
     }
 }
 

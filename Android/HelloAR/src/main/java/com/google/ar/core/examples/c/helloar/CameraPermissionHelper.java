@@ -1,5 +1,6 @@
 /*
- * Copyright 2017 Google Inc. All Rights Reserved.
+ * Copyright 2017 Google LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,8 +21,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 /** Helper to ask camera permission. */
 public class CameraPermissionHelper {
@@ -31,13 +32,13 @@ public class CameraPermissionHelper {
   /** Check to see we have the necessary permissions for this app. */
   public static boolean hasCameraPermission(Activity activity) {
     return ContextCompat.checkSelfPermission(activity, CAMERA_PERMISSION)
-        == PackageManager.PERMISSION_GRANTED;
+            == PackageManager.PERMISSION_GRANTED;
   }
 
   /** Check to see we have the necessary permissions for this app, and ask for them if we don't. */
   public static void requestCameraPermission(Activity activity) {
     ActivityCompat.requestPermissions(
-        activity, new String[] {CAMERA_PERMISSION}, CAMERA_PERMISSION_CODE);
+            activity, new String[] {CAMERA_PERMISSION}, CAMERA_PERMISSION_CODE);
   }
 
   /** Check to see if we need to show the rationale for this permission. */

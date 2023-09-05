@@ -23,6 +23,7 @@ android {
         pickFirst "lib/**/lib${project.name}.so"
         exclude 'lib/**/*.so'
     }
+    namespace 'com.diligentengine.imguidemo'
 }
 
 dependencies {

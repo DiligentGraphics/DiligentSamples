@@ -1,6 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-package="com.diligentengine.tutorial23_commandqueues"
-android:versionCode="1"
+    android:versionCode="1"
 android:versionName="1.0" >
 
 <uses-feature android:glEsVersion="0x00030000" android:required="true"/>
@@ -22,7 +21,8 @@ android:versionName="1.0" >
        and screenSize attributes to the activity's configChanges in the Android manifest -->
   <activity android:name="com.diligentengine.tutorial23_commandqueues.Tutorial23NativeActivity"
       android:label="@string/app_name"
-      android:configChanges="orientation|screenSize|keyboardHidden">
+      android:configChanges="orientation|screenSize|keyboardHidden"
+      android:exported="true">
     <!-- Tell NativeActivity the name of our .so -->
     <meta-data android:name="android.app.lib_name"
         android:value="Tutorial23_CommandQueues" />

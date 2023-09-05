@@ -14,14 +14,16 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.google.ar.core.examples.c.helloar">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.CAMERA"/>
   <!-- This tag indicates that this application requires ARCore.  This results in the application
        only being visible in the Google Play Store on devices that support ARCore. -->
   <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
   <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+  <uses-feature
+      android:name="android.hardware.camera"
+      android:required="false" />
 
   <application
     android:allowBackup="true"

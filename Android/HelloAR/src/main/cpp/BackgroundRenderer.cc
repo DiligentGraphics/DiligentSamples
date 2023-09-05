@@ -43,8 +43,7 @@ namespace hello_ar
 namespace
 {
 
-constexpr char kVertexShaderSource[] = R"(
-#version 310 es
+constexpr char kVertexShaderSource[] = R"(#version 310 es
 
 // It is crucial to use the same precision in vertex and fragment shaders because otherwise
 // draw command fails with notorious 1282 error, while debug output prints largely useless
@@ -62,8 +61,7 @@ void main()
 }
 )";
 
-constexpr char kFragmentShaderSource[] = R"(
-#version 310 es
+constexpr char kFragmentShaderSource[] = R"(#version 310 es
 #extension GL_OES_EGL_image_external_essl3 : require
 
 // It is crucial to use the same precision in vertex and fragment shaders because otherwise
