@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +38,8 @@
 namespace Diligent
 {
 
+class EnvMapRenderer;
+
 class GLTFViewer final : public SampleBase
 {
 public:
@@ -52,8 +54,6 @@ public:
     virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
 
 private:
-    void CreateEnvMapPSO(IRenderStateNotationLoader* pRSNLoader);
-    void CreateEnvMapSRB();
     void CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader);
     void LoadModel(const char* Path);
     void UpdateScene();
@@ -98,12 +98,11 @@ private:
     float4x4                              m_ModelTransform;
     RefCntAutoPtr<IBuffer>                m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer>                m_LightAttribsCB;
-    RefCntAutoPtr<IPipelineState>         m_EnvMapPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_EnvMapSRB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
-    RefCntAutoPtr<IBuffer>                m_EnvMapRenderAttribsCB;
     RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;
+
+    std::unique_ptr<EnvMapRenderer> m_EnvMapRenderer;
 
     bool                                 m_bUseResourceCache = false;
     RefCntAutoPtr<GLTF::ResourceManager> m_pResourceMgr;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,32 +41,18 @@
 #include "ImGuiUtils.hpp"
 #include "CallbackWrapper.hpp"
 #include "CommandLineParser.hpp"
+#include "GraphicsAccessories.hpp"
+#include "EnvMapRenderer.hpp"
 
 namespace Diligent
 {
 
 #include "Shaders/Common/public/BasicStructures.fxh"
-#include "Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh"
 
 SampleBase* CreateSample()
 {
     return new GLTFViewer();
 }
-
-namespace
-{
-
-struct EnvMapRenderAttribs
-{
-    ToneMappingAttribs TMAttribs;
-
-    float AverageLogLum;
-    float MipLevel;
-    float Unusued1;
-    float Unusued2;
-};
-
-} // namespace
 
 // clang-format off
 const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
@@ -216,24 +202,23 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
 
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt          = BackBufferFmt;
-    RendererCI.DSVFmt          = DepthBufferFmt;
-    RendererCI.AllowDebugView  = true;
-    RendererCI.UseIBL          = true;
-    RendererCI.FrontCCW        = true;
-    RendererCI.UseTextureAtlas = m_bUseResourceCache;
+    RendererCI.RTVFmt              = BackBufferFmt;
+    RendererCI.DSVFmt              = DepthBufferFmt;
+    RendererCI.AllowDebugView      = true;
+    RendererCI.UseIBL              = true;
+    RendererCI.FrontCCW            = true;
+    RendererCI.UseTextureAtlas     = m_bUseResourceCache;
+    RendererCI.ConvertOutputToSRGB = BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM;
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer{m_pDevice, nullptr, m_pImmediateContext, RendererCI});
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
     CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
-    CreateUniformBuffer(m_pDevice, sizeof(EnvMapRenderAttribs), "Env map render attribs buffer", &m_EnvMapRenderAttribsCB);
     // clang-format off
     StateTransitionDesc Barriers [] =
     {
-        {m_CameraAttribsCB,        RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {m_LightAttribsCB,         RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {m_EnvMapRenderAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {EnvironmentMap,           RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
+        {m_CameraAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        {m_LightAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        {EnvironmentMap,    RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
     };
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
@@ -256,7 +241,17 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &pRSNLoader);
     }
 
-    CreateEnvMapPSO(pRSNLoader);
+
+    {
+        EnvMapRenderer::CreateInfo EnvMapRendererCI;
+        EnvMapRendererCI.pDevice             = m_pDevice;
+        EnvMapRendererCI.pCameraAttribsCB    = m_CameraAttribsCB;
+        EnvMapRendererCI.RTVFormat           = BackBufferFmt;
+        EnvMapRendererCI.DSVFormat           = DepthBufferFmt;
+        EnvMapRendererCI.ConvertOutputToSRGB = RendererCI.ConvertOutputToSRGB;
+
+        m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
+    }
 
     CreateBoundBoxPSO(pRSNLoader);
 
@@ -381,10 +376,7 @@ void GLTFViewer::UpdateUI()
             BackgroundModes[static_cast<size_t>(BackgroundMode::EnvironmentMap)]    = "Environmen Map";
             BackgroundModes[static_cast<size_t>(BackgroundMode::Irradiance)]        = "Irradiance";
             BackgroundModes[static_cast<size_t>(BackgroundMode::PrefilteredEnvMap)] = "PrefilteredEnvMap";
-            if (ImGui::Combo("Background mode", reinterpret_cast<int*>(&m_BackgroundMode), BackgroundModes.data(), static_cast<int>(BackgroundModes.size())))
-            {
-                CreateEnvMapSRB();
-            }
+            ImGui::Combo("Background mode", reinterpret_cast<int*>(&m_BackgroundMode), BackgroundModes.data(), static_cast<int>(BackgroundModes.size()));
         }
 
         ImGui::SliderFloat("Env map mip", &m_EnvMapMipLevel, 0.0f, 7.0f);
@@ -417,50 +409,6 @@ void GLTFViewer::UpdateUI()
                      "Global\0\0");
     }
     ImGui::End();
-}
-
-void GLTFViewer::CreateEnvMapPSO(IRenderStateNotationLoader* pRSNLoader)
-{
-    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
-        auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
-        GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
-        GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
-    });
-
-    pRSNLoader->LoadPipelineState({"EnvMap PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_EnvMapPSO);
-
-    m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbCameraAttribs")->Set(m_CameraAttribsCB);
-    m_EnvMapPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbEnvMapRenderAttribs")->Set(m_EnvMapRenderAttribsCB);
-    CreateEnvMapSRB();
-}
-
-void GLTFViewer::CreateEnvMapSRB()
-{
-    if (m_BackgroundMode != BackgroundMode::None)
-    {
-        m_EnvMapSRB.Release();
-        m_EnvMapPSO->CreateShaderResourceBinding(&m_EnvMapSRB, true);
-        ITextureView* pEnvMapSRV = nullptr;
-        switch (m_BackgroundMode)
-        {
-            case BackgroundMode::EnvironmentMap:
-                pEnvMapSRV = m_EnvironmentMapSRV;
-                break;
-
-            case BackgroundMode::Irradiance:
-                pEnvMapSRV = m_GLTFRenderer->GetIrradianceCubeSRV();
-                break;
-
-            case BackgroundMode::PrefilteredEnvMap:
-                pEnvMapSRV = m_GLTFRenderer->GetPrefilteredEnvMapSRV();
-                break;
-
-            default:
-                UNEXPECTED("Unexpected background mode");
-        }
-        m_EnvMapSRB->GetVariableByName(SHADER_TYPE_PIXEL, "EnvMap")->Set(pEnvMapSRV);
-    }
 }
 
 void GLTFViewer::CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader)
@@ -607,24 +555,42 @@ void GLTFViewer::Render()
 
     if (m_BackgroundMode != BackgroundMode::None)
     {
+        ITextureView* pEnvMapSRV = nullptr;
+        switch (m_BackgroundMode)
         {
-            MapHelper<EnvMapRenderAttribs> EnvMapAttribs(m_pImmediateContext, m_EnvMapRenderAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-            EnvMapAttribs->TMAttribs.iToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
-            EnvMapAttribs->TMAttribs.bAutoExposure        = 0;
-            EnvMapAttribs->TMAttribs.fMiddleGray          = m_RenderParams.MiddleGray;
-            EnvMapAttribs->TMAttribs.bLightAdaptation     = 0;
-            EnvMapAttribs->TMAttribs.fWhitePoint          = m_RenderParams.WhitePoint;
-            EnvMapAttribs->TMAttribs.fLuminanceSaturation = 1.0;
-            EnvMapAttribs->AverageLogLum                  = m_RenderParams.AverageLogLum;
-            EnvMapAttribs->MipLevel                       = m_EnvMapMipLevel;
+            case BackgroundMode::EnvironmentMap:
+                pEnvMapSRV = m_EnvironmentMapSRV;
+                break;
+
+            case BackgroundMode::Irradiance:
+                pEnvMapSRV = m_GLTFRenderer->GetIrradianceCubeSRV();
+                break;
+
+            case BackgroundMode::PrefilteredEnvMap:
+                pEnvMapSRV = m_GLTFRenderer->GetPrefilteredEnvMapSRV();
+                break;
+
+            default:
+                UNEXPECTED("Unexpected background mode");
         }
-        m_pImmediateContext->SetPipelineState(m_EnvMapPSO);
-        m_pImmediateContext->CommitShaderResources(m_EnvMapSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
-        DrawAttribs drawAttribs(3, DRAW_FLAG_VERIFY_ALL);
-        m_pImmediateContext->Draw(drawAttribs);
+
+        HLSL::ToneMappingAttribs TMAttribs;
+        TMAttribs.iToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
+        TMAttribs.bAutoExposure        = 0;
+        TMAttribs.fMiddleGray          = m_RenderParams.MiddleGray;
+        TMAttribs.bLightAdaptation     = 0;
+        TMAttribs.fWhitePoint          = m_RenderParams.WhitePoint;
+        TMAttribs.fLuminanceSaturation = 1.0;
+
+        EnvMapRenderer::RenderAttribs EnvMapAttribs;
+        EnvMapAttribs.pContext      = m_pImmediateContext;
+        EnvMapAttribs.pEnvMap       = pEnvMapSRV;
+        EnvMapAttribs.AverageLogLum = m_RenderParams.AverageLogLum;
+        EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
+
+        m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
     }
 }
-
 
 void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 {
