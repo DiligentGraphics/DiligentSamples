@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 
@@ -70,8 +71,6 @@ void Tutorial08_Tessellation::CreatePipelineStates()
 {
     const bool bWireframeSupported = m_pDevice->GetDeviceInfo().Features.GeometryShaders;
 
-    ShaderMacroHelper MacroHelper;
-
     // Pipeline state object encompasses configuration of all GPU stages
 
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
@@ -109,6 +108,18 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Define shader macros
+    ShaderMacroHelper Macros;
+    Macros.Add("BLOCK_SIZE", m_BlockSize);
+
+    // Presentation engine always expects input in gamma space. Normally, pixel shader output is
+    // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
+    // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application
+    // has to do the conversion manually.
+    Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
+
+    ShaderCI.Macros = Macros;
+
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
@@ -144,8 +155,6 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainHS";
         ShaderCI.Desc.Name       = "Terrain HS";
         ShaderCI.FilePath        = "terrain.hsh";
-        MacroHelper.AddShaderMacro("BLOCK_SIZE", m_BlockSize);
-        ShaderCI.Macros = MacroHelper;
 
         m_pDevice->CreateShader(ShaderCI, &pHS);
     }
@@ -157,7 +166,6 @@ void Tutorial08_Tessellation::CreatePipelineStates()
         ShaderCI.EntryPoint      = "TerrainDS";
         ShaderCI.Desc.Name       = "Terrain DS";
         ShaderCI.FilePath        = "terrain.dsh";
-        ShaderCI.Macros          = {};
 
         m_pDevice->CreateShader(ShaderCI, &pDS);
     }
@@ -325,8 +333,13 @@ void Tutorial08_Tessellation::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     unsigned int NumHorzBlocks = m_HeightMapWidth / m_BlockSize;

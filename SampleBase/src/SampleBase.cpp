@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -174,6 +174,12 @@ void SampleBase::Initialize(const SampleInitInfo& InitInfo)
         m_pDeferredContexts[ctx] = InitInfo.ppContexts[InitInfo.NumImmediateCtx + ctx];
     m_pImGui = InitInfo.pImGui;
     ImGui::StyleColorsDiligent();
+
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+    // If the swap chain color buffer format is a non-sRGB UNORM format,
+    // we need to manually convert pixel shader output to gamma space.
+    m_ConvertPSOutputToGamma = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM ||
+                                SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
 }
 
 } // namespace Diligent

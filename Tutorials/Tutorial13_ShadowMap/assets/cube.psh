@@ -11,5 +11,10 @@ struct CubePSOutput
 void main(in  CubePSInput  PSIn,
           out CubePSOutput PSOut)
 {
-    PSOut.Color = g_Texture.Sample(g_Texture_sampler, PSIn.UV) * (PSIn.NdotL * 0.8 + 0.2);
+    float4 Color = g_Texture.Sample(g_Texture_sampler, PSIn.UV) * (PSIn.NdotL * 0.8 + 0.2);
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    Color.rgb = pow(Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
+    PSOut.Color = Color;
 }

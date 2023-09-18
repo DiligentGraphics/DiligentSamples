@@ -81,40 +81,45 @@ LayoutElement LayoutElems[] =
 ## Loading Texture Array
 
 Texture loading library does not provide a function that loads texture array.
-Instead, every individual texture needs to be loaded and then copied to the 
-appropriate texture array slice, one mip level at a time.
+Instead, we load each individual texture and then prepare texture initialization data
+for all slices.
 
 ```cpp
-RefCntAutoPtr<ITexture> pTexArray;
+std::vector<RefCntAutoPtr<ITextureLoader>> TexLoaders(NumTextures);
+// Load textures
 for (int tex = 0; tex < NumTextures; ++tex)
 {
-    // Load current texture
+    // Create loader for the current texture
     std::stringstream FileNameSS;
     FileNameSS << "DGLogo" << tex << ".png";
-    const auto              FileName = FileNameSS.str();
-    RefCntAutoPtr<ITexture> SrcTex   = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
-    const auto&             TexDesc  = SrcTex->GetDesc();
-    if (pTexArray == nullptr)
+    const auto      FileName = FileNameSS.str();
+    TextureLoadInfo LoadInfo;
+    LoadInfo.IsSRGB = true;
+
+    CreateTextureLoaderFromFile(FileName.c_str(), IMAGE_FILE_FORMAT_UNKNOWN, LoadInfo, &TexLoaders[tex]);
+}
+
+auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
+TexArrDesc.ArraySize = NumTextures;
+TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
+TexArrDesc.Usage     = USAGE_DEFAULT;
+TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+
+// Prepare initialization data
+std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);
+for (Uint32 slice = 0; slice < TexArrDesc.ArraySize; ++slice)
+{
+    for (Uint32 mip = 0; mip < TexArrDesc.MipLevels; ++mip)
     {
-        //	Create texture array
-        auto TexArrDesc      = TexDesc;
-        TexArrDesc.ArraySize = NumTextures;
-        TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-        TexArrDesc.Usage     = USAGE_DEFAULT;
-        TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
-        m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
-    }
-    // Copy current texture into the texture array
-    for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
-    {
-        CopyTextureAttribs CopyAttribs(SrcTex, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        CopyAttribs.SrcMipLevel = mip;
-        CopyAttribs.DstMipLevel = mip;
-        CopyAttribs.DstSlice    = tex;
-        m_pImmediateContext->CopyTexture(CopyAttribs);
+        SubresData[slice * TexArrDesc.MipLevels + mip] = TexLoaders[slice]->GetSubresourceData(mip, 0);
     }
 }
+TextureData InitData{SubresData.data(), TexArrDesc.MipLevels * TexArrDesc.ArraySize};
+
+// Create the texture array
+RefCntAutoPtr<ITexture> pTexArray;
+m_pDevice->CreateTexture(TexArrDesc, &InitData, &pTexArray);
+
 // Get shader resource view from the texture array
 m_TextureSRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 ```

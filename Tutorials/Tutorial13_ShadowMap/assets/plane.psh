@@ -12,6 +12,10 @@ void main(in  PlanePSInput  PSIn,
           out PlanePSOutput PSOut)
 {
     float LightAmount = g_ShadowMap.SampleCmp(g_ShadowMap_sampler, PSIn.ShadowMapPos.xy, max(PSIn.ShadowMapPos.z, 1e-7));
-    PSOut.Color.rgb = float3(1.0, 1.0, 1.0) * (PSIn.NdotL * LightAmount * 0.8 + 0.2);
-    PSOut.Color.a   = 1.0;
+    float3 Color = float3(1.0, 1.0, 1.0) * (PSIn.NdotL * LightAmount * 0.8 + 0.2);
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    Color = pow(Color, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
+    PSOut.Color = float4(Color, 1.0);
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -208,6 +208,9 @@ protected:
     double m_LastFPSTime        = 0;
     Uint32 m_NumFramesRendered  = 0;
     Uint32 m_CurrentFrameNumber = 0;
+
+    // Pixel shader output needs to be manually converted to gamma space
+    bool m_ConvertPSOutputToGamma = false;
 
     InputController m_InputController;
 };

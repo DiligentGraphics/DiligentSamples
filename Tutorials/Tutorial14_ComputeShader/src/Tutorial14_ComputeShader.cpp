@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@
 #include "MapHelper.hpp"
 #include "imgui.h"
 #include "ShaderMacroHelper.hpp"
+#include "ColorConversion.h"
 
 namespace Diligent
 {
@@ -98,6 +99,13 @@ void Tutorial14_ComputeShader::CreateRenderParticlePSO()
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
+
+    // Presentation engine always expects input in gamma space. Normally, pixel shader output is
+    // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
+    // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application
+    // has to do the conversion manually.
+    ShaderMacro Macros[] = {{"CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma ? "1" : "0"}};
+    ShaderCI.Macros      = {Macros, _countof(Macros)};
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -374,9 +382,14 @@ void Tutorial14_ComputeShader::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
+    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
     // Let the engine perform required state transitions
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {

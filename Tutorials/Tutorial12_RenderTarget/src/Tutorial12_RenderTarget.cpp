@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,7 +138,14 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 #endif
 
     ShaderMacroHelper Macros;
-    Macros.AddShaderMacro("TRANSFORM_UV", TransformUVCoords);
+    Macros.Add("TRANSFORM_UV", TransformUVCoords);
+
+    // Presentation engine always expects input in gamma space. Normally, pixel shader output is
+    // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
+    // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application
+    // has to do the conversion manually.
+    Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
+
     ShaderCI.Macros = Macros;
 
     // Create a pixel shader

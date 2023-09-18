@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 
@@ -82,7 +83,7 @@ void Tutorial04_Instancing::CreatePipelineState()
     CubePsoCI.ExtraLayoutElements    = LayoutElems;
     CubePsoCI.NumExtraLayoutElements = _countof(LayoutElems);
 
-    m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI);
+    m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
@@ -191,8 +192,13 @@ void Tutorial04_Instancing::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {

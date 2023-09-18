@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +36,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
 #include "CommandLineParser.hpp"
@@ -220,6 +221,13 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Presentation engine always expects input in gamma space. Normally, pixel shader output is
+    // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
+    // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application
+    // has to do the conversion manually.
+    ShaderMacro Macros[] = {{"CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma ? "1" : "0"}};
+    ShaderCI.Macros      = {Macros, _countof(Macros)};
+
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
@@ -349,43 +357,51 @@ void Tutorial10_DataStreaming::CreatePipelineStates(std::vector<StateTransitionD
 
 void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
 {
-    RefCntAutoPtr<ITexture> pTexArray;
+    std::vector<RefCntAutoPtr<ITextureLoader>> TexLoaders(NumTextures);
+    // Load textures
     for (int tex = 0; tex < NumTextures; ++tex)
     {
-        // Load current texture
-        TextureLoadInfo loadInfo;
-        loadInfo.IsSRGB = true;
-        RefCntAutoPtr<ITexture> SrcTex;
-        std::stringstream       FileNameSS;
+        // Create loader for the current texture
+        std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        auto FileName = FileNameSS.str();
-        CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &SrcTex);
+        const auto      FileName = FileNameSS.str();
+        TextureLoadInfo LoadInfo;
+        LoadInfo.IsSRGB = true;
+
+        CreateTextureLoaderFromFile(FileName.c_str(), IMAGE_FILE_FORMAT_UNKNOWN, LoadInfo, &TexLoaders[tex]);
+        VERIFY_EXPR(TexLoaders[tex]);
+        VERIFY(tex == 0 || TexLoaders[tex]->GetTextureDesc() == TexLoaders[0]->GetTextureDesc(), "All textures must be same size");
+
+        RefCntAutoPtr<ITexture> pTex;
+        TexLoaders[tex]->CreateTexture(m_pDevice, &pTex);
+
         // Get shader resource view from the texture
-        m_TextureSRV[tex] = SrcTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        m_TextureSRV[tex] = pTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-        const auto& TexDesc = SrcTex->GetDesc();
-        if (pTexArray == nullptr)
-        {
-            //	Create texture array
-            auto TexArrDesc      = TexDesc;
-            TexArrDesc.ArraySize = NumTextures;
-            TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-            TexArrDesc.Usage     = USAGE_DEFAULT;
-            TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
-            m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
-        }
-        // Copy current texture into the texture array
-        for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
-        {
-            CopyTextureAttribs CopyAttribs(SrcTex, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            CopyAttribs.SrcMipLevel = mip;
-            CopyAttribs.DstMipLevel = mip;
-            CopyAttribs.DstSlice    = tex;
-            m_pImmediateContext->CopyTexture(CopyAttribs);
-        }
-
-        Barriers.emplace_back(SrcTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
+        // Transition textures to shader resource state
+        Barriers.emplace_back(pTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
+
+    auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
+    TexArrDesc.ArraySize = NumTextures;
+    TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
+    TexArrDesc.Usage     = USAGE_DEFAULT;
+    TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+
+    // Prepare texture array initialization data
+    std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);
+    for (Uint32 slice = 0; slice < TexArrDesc.ArraySize; ++slice)
+    {
+        for (Uint32 mip = 0; mip < TexArrDesc.MipLevels; ++mip)
+        {
+            SubresData[slice * TexArrDesc.MipLevels + mip] = TexLoaders[slice]->GetSubresourceData(mip, 0);
+        }
+    }
+    TextureData InitData{SubresData.data(), TexArrDesc.MipLevels * TexArrDesc.ArraySize};
+
+    // Create texture array
+    RefCntAutoPtr<ITexture> pTexArray;
+    m_pDevice->CreateTexture(TexArrDesc, &InitData, &pTexArray);
     m_TexArraySRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     // Transition texture array to shader resource state
@@ -753,8 +769,13 @@ void Tutorial10_DataStreaming::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_StreamingIB->AllowPersistentMapping(m_bAllowPersistentMap);

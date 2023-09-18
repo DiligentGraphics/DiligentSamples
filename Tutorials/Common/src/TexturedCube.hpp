@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,7 +80,7 @@ struct CreatePSOInfo
     Uint32                           NumExtraLayoutElements = 0;
     Uint8                            SampleCount            = 1;
 };
-RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInfo);
+RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInfo, bool ConvertPSOutputToGamma = false);
 
 static constexpr Uint32 NumVertices = 4 * 6;
 static constexpr Uint32 NumIndices  = 3 * 2 * 6;

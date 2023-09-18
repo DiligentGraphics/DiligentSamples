@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -115,6 +116,14 @@ void Tutorial16_BindlessResources::CreatePipelineState()
     // Create a pixel shader
     RefCntAutoPtr<IShader> pPS, pBindlessPS;
     {
+        ShaderMacroHelper Macros;
+        // Presentation engine always expects input in gamma space. Normally, pixel shader output is
+        // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
+        // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application
+        // has to do the conversion manually.
+        Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
+        ShaderCI.Macros = Macros;
+
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Cube PS";
@@ -123,9 +132,8 @@ void Tutorial16_BindlessResources::CreatePipelineState()
 
         if (m_pDevice->GetDeviceInfo().Features.BindlessResources)
         {
-            ShaderMacroHelper Macros;
-            Macros.AddShaderMacro("BINDLESS", 1);
-            Macros.AddShaderMacro("NUM_TEXTURES", NumTextures);
+            Macros.Add("BINDLESS", 1);
+            Macros.Add("NUM_TEXTURES", NumTextures);
             ShaderCI.Macros = Macros;
             m_pDevice->CreateShader(ShaderCI, &pBindlessPS);
             ShaderCI.Macros = {};
@@ -538,8 +546,13 @@ void Tutorial16_BindlessResources::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {

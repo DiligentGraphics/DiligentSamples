@@ -94,11 +94,10 @@ void ImguiDemo::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
 
     auto ClearColor = m_ClearColor;
-    if (GetTextureFormatAttribs(m_pSwapChain->GetDesc().ColorBufferFormat).ComponentType == COMPONENT_TYPE_UNORM_SRGB)
+    if (!m_ConvertPSOutputToGamma)
     {
-        ClearColor.r = SRGBToLinear(ClearColor.r);
-        ClearColor.g = SRGBToLinear(ClearColor.g);
-        ClearColor.b = SRGBToLinear(ClearColor.b);
+        // ImGui defines color in gamma space, so we need to convert it to linear.
+        ClearColor = SRGBAToLinear(ClearColor);
     }
     m_pImmediateContext->ClearRenderTarget(pRTV, &ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 
@@ -66,7 +67,7 @@ void Tutorial05_TextureArray::CreatePipelineState()
         LayoutElement{0, 0, 3, VT_FLOAT32, False},
         // Attribute 1 - texture coordinates
         LayoutElement{1, 0, 2, VT_FLOAT32, False},
-            
+
         // Per-instance data - second buffer slot
         // We will use four attributes to encode instance-specific 4x4 transformation matrix
         // Attribute 2 - first row
@@ -96,7 +97,7 @@ void Tutorial05_TextureArray::CreatePipelineState()
     CubePsoCI.ExtraLayoutElements    = LayoutElems;
     CubePsoCI.NumExtraLayoutElements = _countof(LayoutElems);
 
-    m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI);
+    m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
 
     // Create dynamic uniform buffer that will store our transformation matrix
     // Dynamic buffers can be frequently updated by the CPU
@@ -127,37 +128,42 @@ void Tutorial05_TextureArray::CreateInstanceBuffer()
 
 void Tutorial05_TextureArray::LoadTextures()
 {
-    // Load a texture array
-    RefCntAutoPtr<ITexture> pTexArray;
+    std::vector<RefCntAutoPtr<ITextureLoader>> TexLoaders(NumTextures);
+    // Load textures
     for (int tex = 0; tex < NumTextures; ++tex)
     {
-        // Load current texture
+        // Create loader for the current texture
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        const auto              FileName = FileNameSS.str();
-        RefCntAutoPtr<ITexture> SrcTex   = TexturedCube::LoadTexture(m_pDevice, FileName.c_str());
-        const auto&             TexDesc  = SrcTex->GetDesc();
-        if (pTexArray == nullptr)
+        const auto      FileName = FileNameSS.str();
+        TextureLoadInfo LoadInfo;
+        LoadInfo.IsSRGB = true;
+
+        CreateTextureLoaderFromFile(FileName.c_str(), IMAGE_FILE_FORMAT_UNKNOWN, LoadInfo, &TexLoaders[tex]);
+        VERIFY_EXPR(TexLoaders[tex]);
+        VERIFY(tex == 0 || TexLoaders[tex]->GetTextureDesc() == TexLoaders[0]->GetTextureDesc(), "All textures must be same size");
+    }
+
+    auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
+    TexArrDesc.ArraySize = NumTextures;
+    TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
+    TexArrDesc.Usage     = USAGE_DEFAULT;
+    TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+
+    // Prepare initialization data
+    std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);
+    for (Uint32 slice = 0; slice < TexArrDesc.ArraySize; ++slice)
+    {
+        for (Uint32 mip = 0; mip < TexArrDesc.MipLevels; ++mip)
         {
-            //	Create texture array
-            auto TexArrDesc      = TexDesc;
-            TexArrDesc.ArraySize = NumTextures;
-            TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-            TexArrDesc.Usage     = USAGE_DEFAULT;
-            TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
-            m_pDevice->CreateTexture(TexArrDesc, nullptr, &pTexArray);
-        }
-        // Copy current texture into the texture array
-        for (Uint32 mip = 0; mip < TexDesc.MipLevels; ++mip)
-        {
-            CopyTextureAttribs CopyAttribs(SrcTex, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                           pTexArray, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            CopyAttribs.SrcMipLevel = mip;
-            CopyAttribs.DstMipLevel = mip;
-            CopyAttribs.DstSlice    = tex;
-            m_pImmediateContext->CopyTexture(CopyAttribs);
+            SubresData[slice * TexArrDesc.MipLevels + mip] = TexLoaders[slice]->GetSubresourceData(mip, 0);
         }
     }
+    TextureData InitData{SubresData.data(), TexArrDesc.MipLevels * TexArrDesc.ArraySize};
+
+    // Create the texture array
+    RefCntAutoPtr<ITexture> pTexArray;
+    m_pDevice->CreateTexture(TexArrDesc, &InitData, &pTexArray);
 
     // Get shader resource view from the texture array
     m_TextureSRV = pTexArray->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -247,8 +253,13 @@ void Tutorial05_TextureArray::Render()
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {

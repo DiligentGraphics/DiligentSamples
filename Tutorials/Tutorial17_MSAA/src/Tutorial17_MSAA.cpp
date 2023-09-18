@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -59,7 +60,7 @@ void Tutorial17_MSAA::CreateCubePSO()
     CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
     CubePsoCI.SampleCount          = m_SampleCount;
 
-    m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI);
+    m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
 
 
     // Since we did not explcitly specify the type for 'Constants' variable, default
@@ -205,7 +206,12 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
 // Render a frame
 void Tutorial17_MSAA::Render()
 {
-    const float ClearColor[] = {0.125f, 0.125f, 0.125f, 1.0f};
+    float4 ClearColor{0.125f, 0.125f, 0.125f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
 
     ITextureView* pRTV = nullptr;
     ITextureView* pDSV = nullptr;
@@ -223,7 +229,7 @@ void Tutorial17_MSAA::Render()
     }
 
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     {

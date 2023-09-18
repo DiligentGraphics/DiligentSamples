@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -181,7 +181,7 @@ RefCntAutoPtr<ITexture> LoadTexture(IRenderDevice* pDevice, const char* Path)
 }
 
 
-RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInfo)
+RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInfo, bool ConvertPSOutputToGamma)
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
     PipelineStateDesc&              PSODesc          = PSOCreateInfo.PSODesc;
@@ -218,6 +218,13 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInf
 
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
+
+    // Presentation engine always expects input in gamma space. Normally, pixel shader output is
+    // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
+    // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application
+    // has to do the conversion manually.
+    ShaderMacro Macros[] = {{"CONVERT_PS_OUTPUT_TO_GAMMA", ConvertPSOutputToGamma ? "1" : "0"}};
+    ShaderCI.Macros      = {Macros, _countof(Macros)};
 
     ShaderCI.pShaderSourceStreamFactory = CreateInfo.pShaderSourceFactory;
     // Create a vertex shader

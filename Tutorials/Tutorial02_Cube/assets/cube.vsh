@@ -13,8 +13,8 @@ struct VSInput
 };
 
 struct PSInput 
-{ 
-    float4 Pos   : SV_POSITION; 
+{
+    float4 Pos   : SV_POSITION;
     float4 Color : COLOR0; 
 };
 
@@ -22,8 +22,8 @@ struct PSInput
 // shader output variable name must match exactly the name of the pixel shader input variable.
 // If the variable has structure type (like in this example), the structure declarations must also be identical.
 void main(in  VSInput VSIn,
-          out PSInput PSIn) 
+          out PSInput PSIn)
 {
-    PSIn.Pos   = mul( float4(VSIn.Pos,1.0), g_WorldViewProj);
+    PSIn.Pos   = mul(float4(VSIn.Pos, 1.0), g_WorldViewProj);
     PSIn.Color = VSIn.Color;
 }

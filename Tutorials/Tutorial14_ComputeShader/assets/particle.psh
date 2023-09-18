@@ -18,6 +18,10 @@ void main(in  PSInput  PSIn,
         discard;
 
     float intensity = sqrt(saturate(1.0 - r));
-    float3 Color = lerp(float3(0.0, 0.63, 0.9), float3(1.0, 0.78, 0.05), PSIn.Temp);
-    PSOut.Color = float4(Color * intensity, sqrt(intensity));
+    float3 Color = lerp(float3(0.0, 0.63, 0.9), float3(1.0, 0.78, 0.05), PSIn.Temp) * intensity;
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    Color = pow(Color, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
+    PSOut.Color = float4(Color, sqrt(intensity));
 }
