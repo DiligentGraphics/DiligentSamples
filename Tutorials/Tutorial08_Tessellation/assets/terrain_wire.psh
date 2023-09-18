@@ -21,6 +21,9 @@ float4 WireTerrainPS(TerrainGSOut ps_in) : SV_TARGET
 
     float3 EdgeColor = float3(0.0, 0.0, 0.0);
     Color.rgb = lerp(Color.rgb, EdgeColor, lineIntensity);
-
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    Color.rgb = pow(Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
     return Color;
 }
