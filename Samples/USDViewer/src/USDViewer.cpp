@@ -81,10 +81,11 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     USD::HnRendererCreateInfo CI;
-    CI.RTVFormat        = SCDesc.ColorBufferFormat;
-    CI.DSVFormat        = SCDesc.DepthBufferFormat;
-    CI.pCameraAttribsCB = m_CameraAttribsCB;
-    CI.pLightAttribsCB  = m_LightAttribsCB;
+    CI.RTVFormat           = SCDesc.ColorBufferFormat;
+    CI.DSVFormat           = SCDesc.DepthBufferFormat;
+    CI.pCameraAttribsCB    = m_CameraAttribsCB;
+    CI.pLightAttribsCB     = m_LightAttribsCB;
+    CI.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
 
     USD::CreateHnRenderer(m_pDevice, m_pImmediateContext, CI, &m_Renderer);
     m_Renderer->SetEnvironmentMap(m_pImmediateContext, m_EnvironmentMapSRV);
