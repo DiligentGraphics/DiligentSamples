@@ -53,6 +53,9 @@ public:
     virtual const Char* GetSampleName() const override final { return "USD Viewer"; }
 
 private:
+    void UpdateUI();
+
+private:
     std::string m_UsdFileName;
     std::string m_UsdPluginRoot;
 
@@ -61,6 +64,8 @@ private:
     RefCntAutoPtr<ITextureView> m_EnvironmentMapSRV;
 
     RefCntAutoPtr<USD::IHnRenderer> m_Renderer;
+
+    USD::HnDrawAttribs m_DrawAttribs;
 
     TrackballCamera<float> m_Camera;
 

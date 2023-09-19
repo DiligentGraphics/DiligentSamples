@@ -25,10 +25,17 @@
  */
 
 #include "USDViewer.hpp"
+
+#include <array>
+
 #include "CommandLineParser.hpp"
 #include "GraphicsUtilities.h"
 #include "MapHelper.hpp"
 #include "TextureUtilities.h"
+#include "PBR_Renderer.hpp"
+
+#include "imgui.h"
+#include "ImGuiUtils.hpp"
 
 namespace Diligent
 {
@@ -137,12 +144,70 @@ void USDViewer::Render()
         LightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
     }
 
-    m_Renderer->Draw(m_pImmediateContext, CameraViewProj);
+    m_Renderer->Draw(m_pImmediateContext, m_DrawAttribs);
 }
+
+
+void USDViewer::UpdateUI()
+{
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Lighting"))
+        {
+            ImGui::ColorEdit3("Light Color", &m_LightColor.r);
+            // clang-format off
+            ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                0.f, 50.f);
+            ImGui::SliderFloat("Occlusion strength", &m_DrawAttribs.OcclusionStrength, 0.f,  1.f);
+            ImGui::SliderFloat("Emission scale",     &m_DrawAttribs.EmissionScale,     0.f,  1.f);
+            ImGui::SliderFloat("IBL scale",          &m_DrawAttribs.IBLScale,          0.f,  1.f);
+            // clang-format on
+            ImGui::TreePop();
+        }
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Tone mapping"))
+        {
+            // clang-format off
+            ImGui::SliderFloat("Average log lum", &m_DrawAttribs.AverageLogLum,     0.01f, 10.0f);
+            ImGui::SliderFloat("Middle gray",     &m_DrawAttribs.MiddleGray,        0.01f,  1.0f);
+            ImGui::SliderFloat("White point",     &m_DrawAttribs.WhitePoint,        0.1f,  20.0f);
+            // clang-format on
+            ImGui::TreePop();
+        }
+
+        {
+            std::array<const char*, static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
+
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::None)]            = "None";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::BaseColor)]       = "Base Color";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transparency)]    = "Transparency";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NormalMap)]       = "Normal Map";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Occlusion)]       = "Occlusion";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Emissive)]        = "Emissive";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Metallic)]        = "Metallic";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Roughness)]       = "Roughness";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseColor)]    = "Diffuse color";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularColor)]   = "Specular color (R0)";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Reflectance90)]   = "Reflectance90";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MeshNormal)]      = "Mesh normal";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::PerturbedNormal)] = "Perturbed normal";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NdotV)]           = "n*v";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
+            ImGui::Combo("Debug view", &m_DrawAttribs.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size()));
+        }
+    }
+
+    ImGui::End();
+}
+
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    UpdateUI();
     m_Renderer->Update();
     m_Camera.Update(m_InputController);
 }
