@@ -88,6 +88,7 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     USD::HnRendererCreateInfo CI;
+    CI.FrontCCW            = true;
     CI.RTVFormat           = SCDesc.ColorBufferFormat;
     CI.DSVFormat           = SCDesc.DepthBufferFormat;
     CI.pCameraAttribsCB    = m_CameraAttribsCB;
@@ -106,6 +107,11 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetDefaultDistance(100);
     m_Camera.SetZoomSpeed(10);
     m_Camera.ResetDefaults();
+    m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
+
+    float4x4 InvYAxis       = float4x4::Identity();
+    InvYAxis._22            = -1;
+    m_DrawAttribs.Transform = InvYAxis;
 }
 
 // Render a frame
