@@ -22,5 +22,9 @@ void main(in  PSInput  PSIn,
         discard;
 
     PSOut.Color.rgb = g_SubpassInputColor.Load(int3(PSIn.Pos.xy, 0)).rgb * 0.2;
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    PSOut.Color.rgb = pow(PSOut.Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
     PSOut.Color.a = 1.0;
 }

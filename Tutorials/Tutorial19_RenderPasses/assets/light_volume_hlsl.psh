@@ -56,5 +56,10 @@ void main(in  PSInput  PSIn,
     if (g_ShowLightVolumes != 0)
         PSOut.Color.rgb += PSIn.LightColor.rgb * 0.05;
 
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    PSOut.Color.rgb = pow(PSOut.Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
+
     PSOut.Color.a = 1.0;
 }

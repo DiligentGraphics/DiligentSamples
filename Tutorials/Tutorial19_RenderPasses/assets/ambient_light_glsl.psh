@@ -16,5 +16,9 @@ void main()
     }
 
     out_Color.rgb = subpassLoad(g_SubpassInputColor).rgb * 0.2;
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    out_Color.rgb = pow(out_Color.rgb, vec3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
     out_Color.a = 1.0;
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2023 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "TextureUtilities.h"
+#include "ColorConversion.h"
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -195,6 +196,11 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // If the device does not support gamma correction, we will have to do it in the shader.
+    // Notice that blending in gamma space is not mathematically correct, but we have no choice.
+    ShaderMacro Macros[] = {{"CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma ? "1" : "0"}};
+    ShaderCI.Macros      = {Macros, _countof(Macros)};
+
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Create a vertex shader
     RefCntAutoPtr<IShader> pVS;
@@ -278,6 +284,11 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
+
+    // If the device does not support gamma correction, we will have to do it in the shader.
+    // Notice that blending in gamma space is not mathematically correct, but we have no choice.
+    ShaderMacro Macros[] = {{"CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma ? "1" : "0"}};
+    ShaderCI.Macros      = {Macros, _countof(Macros)};
 
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Create a vertex shader
@@ -825,7 +836,12 @@ void Tutorial19_RenderPasses::Render()
     ClearValues[3].Color[0] = 0.0625f;
     ClearValues[3].Color[1] = 0.0625f;
     ClearValues[3].Color[2] = 0.0625f;
-    ClearValues[3].Color[3] = 0.f;
+    ClearValues[3].Color[3] = 1.f;
+    if (m_ConvertPSOutputToGamma)
+    {
+        for (size_t i = 0; i < 3; ++i)
+            ClearValues[3].Color[i] = LinearToGamma(ClearValues[3].Color[i]);
+    }
 
     RPBeginInfo.pClearValues        = ClearValues;
     RPBeginInfo.ClearValueCount     = _countof(ClearValues);
