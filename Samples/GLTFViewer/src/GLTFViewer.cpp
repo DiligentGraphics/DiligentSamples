@@ -385,6 +385,7 @@ void GLTFViewer::UpdateUI()
             std::array<const char*, static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
 
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::None)]            = "None";
+            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Texcoord0)]       = "Tex coords";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::BaseColor)]       = "Base Color";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Transparency)]    = "Transparency";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NormalMap)]       = "Normal Map";
@@ -398,6 +399,7 @@ void GLTFViewer::UpdateUI()
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::MeshNormal)]      = "Mesh normal";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::PerturbedNormal)] = "Perturbed normal";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NdotV)]           = "n*v";
+            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DirectLighting)]       = "Direct Lighting";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
             ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size()));
