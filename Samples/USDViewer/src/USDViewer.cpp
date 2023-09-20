@@ -204,7 +204,20 @@ void USDViewer::UpdateUI()
             DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DirectLighting)]  = "Direct Lighting";
             DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
             DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
+            static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
+
             ImGui::Combo("Debug view", &m_DrawAttribs.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size()));
+        }
+
+        {
+            std::array<const char*, static_cast<size_t>(USD::HN_RENDER_MODE_COUNT)> RenderModes;
+            RenderModes[USD::HN_RENDER_MODE_SOLID]      = "Solid";
+            RenderModes[USD::HN_RENDER_MODE_MESH_EDGES] = "Edges";
+            static_assert(USD::HN_RENDER_MODE_COUNT == 2, "Did you add a new render mode? You may want to handle it here");
+
+            int RenderMode = m_DrawAttribs.RenderMode;
+            ImGui::Combo("Render mode", &RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size()));
+            m_DrawAttribs.RenderMode = static_cast<USD::HN_RENDER_MODE>(RenderMode);
         }
     }
 
