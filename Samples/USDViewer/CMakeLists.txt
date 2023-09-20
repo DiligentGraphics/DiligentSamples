@@ -15,7 +15,10 @@ set(SHADERS
     assets/shaders/ps.psh
 )
 
+file(COPY ../GLTFViewer/assets/textures/papermill.ktx DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures)
+
 set(ASSETS
+    assets/textures/papermill.ktx
     assets/cube.usd
 )
 
