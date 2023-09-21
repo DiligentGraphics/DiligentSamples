@@ -32,6 +32,8 @@
 #include "TrackballCamera.hpp"
 #include "HnRenderer.hpp"
 
+#include "pxr/usd/usd/stage.h"
+
 namespace Diligent
 {
 
@@ -54,8 +56,11 @@ public:
 
 private:
     void UpdateUI();
+    void LoadStage();
 
 private:
+    pxr::UsdStageRefPtr m_Stage;
+
     std::string m_UsdFileName;
     std::string m_UsdPluginRoot;
 

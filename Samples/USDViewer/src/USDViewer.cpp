@@ -33,6 +33,7 @@
 #include "MapHelper.hpp"
 #include "TextureUtilities.h"
 #include "PBR_Renderer.hpp"
+#include "FileSystem.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -101,8 +102,6 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     if (m_UsdFileName.empty())
         m_UsdFileName = "cube.usd";
 
-    m_Renderer->LoadUSDStage(m_UsdFileName.c_str());
-
     m_Camera.SetDistRange(1, 1000);
     m_Camera.SetDefaultDistance(100);
     m_Camera.SetZoomSpeed(10);
@@ -112,6 +111,20 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     float4x4 InvYAxis       = float4x4::Identity();
     InvYAxis._22            = -1;
     m_DrawAttribs.Transform = InvYAxis;
+
+    LoadStage();
+}
+
+void USDViewer::LoadStage()
+{
+    m_Stage = pxr::UsdStage::Open(m_UsdFileName.c_str());
+    if (!m_Stage)
+    {
+        LOG_ERROR_MESSAGE("Failed to open USD stage '", m_UsdFileName, "'");
+        return;
+    }
+
+    m_Renderer->LoadUSDStage(m_Stage);
 }
 
 // Render a frame
@@ -159,6 +172,21 @@ void USDViewer::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
+#ifdef PLATFORM_WIN32
+        if (ImGui::Button("Load Stage"))
+        {
+            FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+            OpenDialogAttribs.Title  = "Select USD file";
+            OpenDialogAttribs.Filter = "USD files\0*.usd;*.usdc;*.usdz\0";
+            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+            if (!FileName.empty())
+            {
+                m_UsdFileName = std::move(FileName);
+                LoadStage();
+            }
+        }
+#endif
+
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Lighting"))
         {

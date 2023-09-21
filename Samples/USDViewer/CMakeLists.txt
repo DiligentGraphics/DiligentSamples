@@ -32,6 +32,7 @@ endif()
 
 target_link_libraries(USDViewer
 PRIVATE
+    USD_LIBS
     Diligent-Hydrogent
     DiligentFX
 )
