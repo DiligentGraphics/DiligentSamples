@@ -38,6 +38,9 @@
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
 
+#include "pxr/usd/usd/prim.h"
+#include "pxr/usd/usd/property.h"
+
 namespace Diligent
 {
 
@@ -158,7 +161,7 @@ void USDViewer::Render()
     }
 
     {
-        MapHelper<HLSL::LightAttribs> LightAttribs(m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<HLSL::LightAttribs> LightAttribs{m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
         LightAttribs->f4Direction = m_LightDirection;
         LightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
     }
@@ -166,86 +169,118 @@ void USDViewer::Render()
     m_Renderer->Draw(m_pImmediateContext, m_DrawAttribs);
 }
 
+static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Prim)
+{
+    if (ImGui::TreeNode(Prim.GetName().GetText()))
+    {
+        for (const auto& Prop : Prim.GetProperties())
+        {
+            ImGui::TextDisabled("%s", Prop.GetName().GetText());
+        }
+
+        for (auto Child : Prim.GetAllChildren())
+            PopulateSceneTree(Stage, Child);
+
+        ImGui::TreePop();
+    }
+}
 
 void USDViewer::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-#ifdef PLATFORM_WIN32
-        if (ImGui::Button("Load Stage"))
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::TreeNode("Renderer"))
         {
-            FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
-            OpenDialogAttribs.Title  = "Select USD file";
-            OpenDialogAttribs.Filter = "USD files\0*.usd;*.usdc;*.usdz\0";
-            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
-            if (!FileName.empty())
+#ifdef PLATFORM_WIN32
+            if (ImGui::Button("Load Stage"))
             {
-                m_UsdFileName = std::move(FileName);
-                LoadStage();
+                FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+                OpenDialogAttribs.Title  = "Select USD file";
+                OpenDialogAttribs.Filter = "USD files\0*.usd;*.usdc;*.usdz\0";
+                auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+                if (!FileName.empty())
+                {
+                    m_UsdFileName = std::move(FileName);
+                    LoadStage();
+                }
             }
-        }
 #endif
 
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::TreeNode("Lighting"))
-        {
-            ImGui::ColorEdit3("Light Color", &m_LightColor.r);
-            // clang-format off
-            ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                0.f, 50.f);
-            ImGui::SliderFloat("Occlusion strength", &m_DrawAttribs.OcclusionStrength, 0.f,  1.f);
-            ImGui::SliderFloat("Emission scale",     &m_DrawAttribs.EmissionScale,     0.f,  1.f);
-            ImGui::SliderFloat("IBL scale",          &m_DrawAttribs.IBLScale,          0.f,  1.f);
-            // clang-format on
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+            if (ImGui::TreeNode("Lighting"))
+            {
+                ImGui::ColorEdit3("Light Color", &m_LightColor.r);
+                // clang-format off
+                ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                0.f, 50.f);
+                ImGui::SliderFloat("Occlusion strength", &m_DrawAttribs.OcclusionStrength, 0.f,  1.f);
+                ImGui::SliderFloat("Emission scale",     &m_DrawAttribs.EmissionScale,     0.f,  1.f);
+                ImGui::SliderFloat("IBL scale",          &m_DrawAttribs.IBLScale,          0.f,  1.f);
+                // clang-format on
+                ImGui::TreePop();
+            }
+
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+            if (ImGui::TreeNode("Tone mapping"))
+            {
+                // clang-format off
+                ImGui::SliderFloat("Average log lum", &m_DrawAttribs.AverageLogLum,     0.01f, 10.0f);
+                ImGui::SliderFloat("Middle gray",     &m_DrawAttribs.MiddleGray,        0.01f,  1.0f);
+                ImGui::SliderFloat("White point",     &m_DrawAttribs.WhitePoint,        0.1f,  20.0f);
+                // clang-format on
+                ImGui::TreePop();
+            }
+
+            {
+                std::array<const char*, static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
+
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::None)]            = "None";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord0)]       = "Tex coords";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::BaseColor)]       = "Base Color";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transparency)]    = "Transparency";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NormalMap)]       = "Normal Map";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Occlusion)]       = "Occlusion";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Emissive)]        = "Emissive";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Metallic)]        = "Metallic";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Roughness)]       = "Roughness";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseColor)]    = "Diffuse color";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularColor)]   = "Specular color (R0)";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Reflectance90)]   = "Reflectance90";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MeshNormal)]      = "Mesh normal";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::PerturbedNormal)] = "Perturbed normal";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NdotV)]           = "n*v";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DirectLighting)]  = "Direct Lighting";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
+                DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
+                static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
+
+                ImGui::Combo("Debug view", &m_DrawAttribs.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size()));
+            }
+
+            {
+                std::array<const char*, static_cast<size_t>(USD::HN_RENDER_MODE_COUNT)> RenderModes;
+                RenderModes[USD::HN_RENDER_MODE_SOLID]      = "Solid";
+                RenderModes[USD::HN_RENDER_MODE_MESH_EDGES] = "Edges";
+                static_assert(USD::HN_RENDER_MODE_COUNT == 2, "Did you add a new render mode? You may want to handle it here");
+
+                int RenderMode = m_DrawAttribs.RenderMode;
+                ImGui::Combo("Render mode", &RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size()));
+                m_DrawAttribs.RenderMode = static_cast<USD::HN_RENDER_MODE>(RenderMode);
+            }
             ImGui::TreePop();
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::TreeNode("Tone mapping"))
+        if (ImGui::TreeNode("Scene"))
         {
-            // clang-format off
-            ImGui::SliderFloat("Average log lum", &m_DrawAttribs.AverageLogLum,     0.01f, 10.0f);
-            ImGui::SliderFloat("Middle gray",     &m_DrawAttribs.MiddleGray,        0.01f,  1.0f);
-            ImGui::SliderFloat("White point",     &m_DrawAttribs.WhitePoint,        0.1f,  20.0f);
-            // clang-format on
+            if (m_Stage)
+            {
+                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                for (auto Prim : m_Stage->GetPseudoRoot().GetAllChildren())
+                    PopulateSceneTree(m_Stage, Prim);
+            }
             ImGui::TreePop();
-        }
-
-        {
-            std::array<const char*, static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
-
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::None)]            = "None";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord0)]       = "Tex coords";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::BaseColor)]       = "Base Color";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transparency)]    = "Transparency";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NormalMap)]       = "Normal Map";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Occlusion)]       = "Occlusion";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Emissive)]        = "Emissive";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Metallic)]        = "Metallic";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Roughness)]       = "Roughness";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseColor)]    = "Diffuse color";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularColor)]   = "Specular color (R0)";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Reflectance90)]   = "Reflectance90";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MeshNormal)]      = "Mesh normal";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::PerturbedNormal)] = "Perturbed normal";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NdotV)]           = "n*v";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DirectLighting)]  = "Direct Lighting";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
-            static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
-
-            ImGui::Combo("Debug view", &m_DrawAttribs.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size()));
-        }
-
-        {
-            std::array<const char*, static_cast<size_t>(USD::HN_RENDER_MODE_COUNT)> RenderModes;
-            RenderModes[USD::HN_RENDER_MODE_SOLID]      = "Solid";
-            RenderModes[USD::HN_RENDER_MODE_MESH_EDGES] = "Edges";
-            static_assert(USD::HN_RENDER_MODE_COUNT == 2, "Did you add a new render mode? You may want to handle it here");
-
-            int RenderMode = m_DrawAttribs.RenderMode;
-            ImGui::Combo("Render mode", &RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size()));
-            m_DrawAttribs.RenderMode = static_cast<USD::HN_RENDER_MODE>(RenderMode);
         }
     }
 
