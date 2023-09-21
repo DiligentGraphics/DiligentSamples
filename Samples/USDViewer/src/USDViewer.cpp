@@ -133,6 +133,23 @@ void USDViewer::LoadStage()
 // Render a frame
 void USDViewer::Render()
 {
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const auto& Mouse  = m_InputController.GetMouseState();
+    if (Mouse.PosX >= 0 && Mouse.PosX < static_cast<float>(SCDesc.Width) &&
+        Mouse.PosY >= 0 && Mouse.PosY < static_cast<float>(SCDesc.Height))
+    {
+        auto PosX = static_cast<Uint32>(Mouse.PosX);
+        auto PosY = static_cast<Uint32>(Mouse.PosY);
+        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+            PosY = SCDesc.Height - 1 - PosY;
+        if (const auto* SelectedPrim = m_Renderer->QueryPrimId(m_pImmediateContext, PosX, PosY))
+            m_DrawAttribs.SelectedPrim = SelectedPrim;
+    }
+    else
+    {
+        m_DrawAttribs.SelectedPrim = nullptr;
+    }
+
     // Clear the back buffer
     const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     // Let the engine perform required state transitions
@@ -167,6 +184,7 @@ void USDViewer::Render()
     }
 
     m_Renderer->Draw(m_pImmediateContext, m_DrawAttribs);
+    m_Renderer->RenderPrimId(m_pImmediateContext, pDSV, m_DrawAttribs.Transform);
 }
 
 static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Prim)
