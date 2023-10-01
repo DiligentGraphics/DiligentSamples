@@ -117,6 +117,8 @@ private:
     std::vector<const GLTF::Node*> m_CameraNodes;
 
     std::string m_InitialModelPath;
+
+    bool m_bComputeBoundingBoxes = false;
 };
 
 } // namespace Diligent

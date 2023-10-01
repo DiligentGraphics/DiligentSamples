@@ -86,8 +86,10 @@ void GLTFViewer::LoadModel(const char* Path)
     }
 
     GLTF::ModelCreateInfo ModelCI;
-    ModelCI.FileName         = Path;
-    ModelCI.pResourceManager = m_bUseResourceCache ? m_pResourceMgr.RawPtr() : nullptr;
+    ModelCI.FileName             = Path;
+    ModelCI.pResourceManager     = m_bUseResourceCache ? m_pResourceMgr.RawPtr() : nullptr;
+    ModelCI.ComputeBoundingBoxes = m_bComputeBoundingBoxes;
+
     m_Model.reset(new GLTF::Model{m_pDevice, m_pImmediateContext, ModelCI});
 
     m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
@@ -138,6 +140,7 @@ GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const cha
     CommandLineParser ArgsParser{argc, argv};
     ArgsParser.Parse("use_cache", m_bUseResourceCache);
     ArgsParser.Parse("model", m_InitialModelPath);
+    ArgsParser.Parse("compute_bounds", m_bComputeBoundingBoxes);
 
     return CommandLineStatus::OK;
 }
