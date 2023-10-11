@@ -203,7 +203,7 @@ void Tutorial16_BindlessResources::CreatePipelineState()
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
 
-    // Since we did not explcitly specify the type for 'Constants' variable, default
+    // Since we did not explicitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_VSConstants);

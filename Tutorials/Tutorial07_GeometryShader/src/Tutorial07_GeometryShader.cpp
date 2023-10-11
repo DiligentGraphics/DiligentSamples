@@ -185,7 +185,7 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     VERIFY_EXPR(m_pPSO);
 
     // clang-format off
-    // Since we did not explcitly specify the type for 'VSConstants', 'GSConstants', 
+    // Since we did not explicitly specify the type for 'VSConstants', 'GSConstants', 
     // and 'PSConstants' variables, default type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used.
     // Static variables never change and are bound directly to the pipeline state object.
     m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX,   "VSConstants")->Set(m_ShaderConstants);

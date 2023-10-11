@@ -204,7 +204,7 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
 
     IRenderDevice_CreateGraphicsPipelineState(pDevice, &PSOCreateInfo, &g_pPSO);
 
-    // Since we did not explcitly specify the type for 'Constants' variable, default
+    // Since we did not explicitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables
     // never change and are bound directly through the pipeline state object.
     IShaderResourceVariable* pVar = IPipelineState_GetStaticVariableByName(g_pPSO, SHADER_TYPE_VERTEX, "Constants");

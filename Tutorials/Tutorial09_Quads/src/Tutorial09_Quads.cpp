@@ -222,7 +222,7 @@ void Tutorial09_Quads::CreatePipelineStates(std::vector<StateTransitionDesc>& Ba
         PSOCreateInfo.GraphicsPipeline.BlendDesc = BlendState[state];
         m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO[0][state]);
 
-        // Since we did not explcitly specify the type for 'QuadAttribs' variable, default
+        // Since we did not explicitly specify the type for 'QuadAttribs' variable, default
         // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
         // change and are bound directly to the pipeline state object.
         m_pPSO[0][state]->GetStaticVariableByName(SHADER_TYPE_VERTEX, "QuadAttribs")->Set(m_QuadAttribsCB);

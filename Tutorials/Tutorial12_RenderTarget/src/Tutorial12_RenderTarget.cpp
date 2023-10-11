@@ -71,7 +71,7 @@ void Tutorial12_RenderTarget::CreateCubePSO()
     // Dynamic buffers can be frequently updated by the CPU
     CreateUniformBuffer(m_pDevice, sizeof(float4x4), "VS constants CB", &m_CubeVSConstants);
 
-    // Since we did not explcitly specify the type for 'Constants' variable, default
+    // Since we did not explicitly specify the type for 'Constants' variable, default
     // type (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never
     // change and are bound directly through the pipeline state object.
     m_pCubePSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_CubeVSConstants);
@@ -198,7 +198,7 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
 
     m_pDevice->CreateGraphicsPipelineState(RTPSOCreateInfo, &m_pRTPSO);
 
-    // Since we did not explcitly specify the type for Constants, default type
+    // Since we did not explicitly specify the type for Constants, default type
     // (SHADER_RESOURCE_VARIABLE_TYPE_STATIC) will be used. Static variables never change and are bound directly
     // to the pipeline state object.
     m_pRTPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "Constants")->Set(m_RTPSConstants);
