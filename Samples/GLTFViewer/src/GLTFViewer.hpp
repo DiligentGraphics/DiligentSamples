@@ -104,8 +104,9 @@ private:
 
     std::unique_ptr<EnvMapRenderer> m_EnvMapRenderer;
 
-    bool                                 m_bUseResourceCache = false;
-    RefCntAutoPtr<GLTF::ResourceManager> m_pResourceMgr;
+    bool                                    m_bUseResourceCache = false;
+    RefCntAutoPtr<GLTF::ResourceManager>    m_pResourceMgr;
+    GLTF_PBR_Renderer::ResourceCacheUseInfo m_CacheUseInfo;
 
     GLTF_PBR_Renderer::ModelResourceBindings m_ModelResourceBindings;
     GLTF_PBR_Renderer::ResourceCacheBindings m_CacheBindings;

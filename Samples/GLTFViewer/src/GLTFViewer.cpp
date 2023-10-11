@@ -147,15 +147,17 @@ GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const cha
 
 void GLTFViewer::CreateGLTFResourceCache()
 {
-    std::array<VertexPoolElementDesc, 2> VtxPoolElems = {};
+    auto InputLayout = GLTF::VertexAttributesToInputLayout(GLTF::DefaultVertexAttributes.data(), static_cast<Uint32>(GLTF::DefaultVertexAttributes.size()));
+    auto Strides     = InputLayout.ResolveAutoOffsetsAndStrides();
 
-    VtxPoolElems[0].BindFlags = BIND_VERTEX_BUFFER;
-    VtxPoolElems[0].Usage     = USAGE_DEFAULT;
-    VtxPoolElems[0].Size      = sizeof(GLTF::Model::VertexBasicAttribs);
-
-    VtxPoolElems[1].BindFlags = BIND_VERTEX_BUFFER;
-    VtxPoolElems[1].Usage     = USAGE_DEFAULT;
-    VtxPoolElems[1].Size      = sizeof(GLTF::Model::VertexSkinAttribs);
+    std::vector<VertexPoolElementDesc> VtxPoolElems;
+    VtxPoolElems.reserve(Strides.size());
+    m_CacheUseInfo.VtxLayoutKey.Elements.reserve(Strides.size());
+    for (const auto& Stride : Strides)
+    {
+        VtxPoolElems.emplace_back(Stride, BIND_VERTEX_BUFFER);
+        m_CacheUseInfo.VtxLayoutKey.Elements.emplace_back(Stride, BIND_VERTEX_BUFFER);
+    }
 
     VertexPoolCreateInfo VtxPoolCI;
     VtxPoolCI.Desc.Name        = "GLTF vertex pool";
@@ -191,6 +193,14 @@ void GLTFViewer::CreateGLTFResourceCache()
     ResourceMgrCI.DefaultAtlasDesc.Desc.MipLevels = 6;
 
     m_pResourceMgr = GLTF::ResourceManager::Create(m_pDevice, ResourceMgrCI);
+
+    m_CacheUseInfo.pResourceMgr = m_pResourceMgr;
+
+    m_CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.NormalFormat       = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.OcclusionFormat    = TEX_FORMAT_RGBA8_UNORM;
+    m_CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
 }
 
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
@@ -205,13 +215,15 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
 
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt              = BackBufferFmt;
-    RendererCI.DSVFmt              = DepthBufferFmt;
-    RendererCI.AllowDebugView      = true;
-    RendererCI.UseIBL              = true;
-    RendererCI.FrontCCW            = true;
-    RendererCI.UseTextureAtlas     = m_bUseResourceCache;
-    RendererCI.ConvertOutputToSRGB = BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM;
+    RendererCI.RTVFmt = BackBufferFmt;
+    RendererCI.DSVFmt = DepthBufferFmt;
+
+    m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_FRONT_CCW;
+    if (m_bUseResourceCache)
+        m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
+    if (BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM)
+        m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB;
+
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer{m_pDevice, nullptr, m_pImmediateContext, RendererCI});
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
@@ -226,7 +238,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    m_GLTFRenderer->PrecomputeCubemaps(m_pDevice, nullptr, m_pImmediateContext, m_EnvironmentMapSRV);
+    m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {
@@ -251,14 +263,14 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         EnvMapRendererCI.pCameraAttribsCB    = m_CameraAttribsCB;
         EnvMapRendererCI.RTVFormat           = BackBufferFmt;
         EnvMapRendererCI.DSVFormat           = DepthBufferFmt;
-        EnvMapRendererCI.ConvertOutputToSRGB = RendererCI.ConvertOutputToSRGB;
+        EnvMapRendererCI.ConvertOutputToSRGB = BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM;
 
         m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
     }
 
     CreateBoundBoxPSO(pRSNLoader);
 
-    m_LightDirection = normalize(float3(0.5f, -0.6f, -0.2f));
+    m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 
     if (m_bUseResourceCache)
         CreateGLTFResourceCache();
@@ -407,13 +419,64 @@ void GLTFViewer::UpdateUI()
             DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
             static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
 
-            ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size()));
+            if (ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size())))
+            {
+                if (m_RenderParams.DebugView != GLTF_PBR_Renderer::DebugViewType::None)
+                    m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_ENABLE_DEBUG_VIEW;
+                else
+                    m_RenderParams.Flags &= ~GLTF_PBR_Renderer::PSO_FLAG_ENABLE_DEBUG_VIEW;
+            }
         }
 
         ImGui::Combo("Bound box mode", reinterpret_cast<int*>(&m_BoundBoxMode),
                      "None\0"
                      "Local\0"
                      "Global\0\0");
+
+        ImGui::Checkbox("Wireframe", &m_RenderParams.Wireframe);
+
+        if (ImGui::TreeNode("Renderer Features"))
+        {
+            auto FeatureCheckbox = [&](const char* Name, GLTF_PBR_Renderer::PSO_FLAGS Flag) {
+                bool Enabled = (m_RenderParams.Flags & Flag) != 0;
+                if (ImGui::Checkbox(Name, &Enabled))
+                {
+                    if (Enabled)
+                        m_RenderParams.Flags |= Flag;
+                    else
+                        m_RenderParams.Flags &= ~Flag;
+                }
+            };
+            FeatureCheckbox("Vertex Colors", GLTF_PBR_Renderer::PSO_FLAG_USE_VERTEX_COLORS);
+            FeatureCheckbox("Vertex Normals", GLTF_PBR_Renderer::PSO_FLAG_USE_VERTEX_NORMALS);
+            FeatureCheckbox("Texcoords", GLTF_PBR_Renderer::PSO_FLAG_USE_TEXCOORD0 | GLTF_PBR_Renderer::PSO_FLAG_USE_TEXCOORD1);
+            FeatureCheckbox("Joints", GLTF_PBR_Renderer::PSO_FLAG_USE_JOINTS);
+            FeatureCheckbox("Color map", GLTF_PBR_Renderer::PSO_FLAG_USE_COLOR_MAP);
+            FeatureCheckbox("Normal map", GLTF_PBR_Renderer::PSO_FLAG_USE_NORMAL_MAP);
+            FeatureCheckbox("Phys desc map", GLTF_PBR_Renderer::PSO_FLAG_USE_PHYS_DESC_MAP);
+            FeatureCheckbox("Occlusion", GLTF_PBR_Renderer::PSO_FLAG_USE_AO_MAP);
+            FeatureCheckbox("Emissive", GLTF_PBR_Renderer::PSO_FLAG_USE_EMISSIVE_MAP);
+            FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Alpha Modes"))
+        {
+            auto AlphaModeCheckbox = [&](const char* Name, GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAGS Flag) {
+                bool Enabled = (m_RenderParams.AlphaModes & Flag) != 0;
+                if (ImGui::Checkbox(Name, &Enabled))
+                {
+                    if (Enabled)
+                        m_RenderParams.AlphaModes |= Flag;
+                    else
+                        m_RenderParams.AlphaModes &= ~Flag;
+                }
+            };
+            AlphaModeCheckbox("Opaque", GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_OPAQUE);
+            AlphaModeCheckbox("Mask", GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_MASK);
+            AlphaModeCheckbox("Blend", GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_BLEND);
+            ImGui::TreePop();
+        }
     }
     ImGui::End();
 }
@@ -528,22 +591,9 @@ void GLTFViewer::Render()
         lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
     }
 
-    if (m_bUseResourceCache)
+    if (m_pResourceMgr)
     {
-        GLTF_PBR_Renderer::ResourceCacheUseInfo CacheUseInfo;
-        CacheUseInfo.pResourceMgr = m_pResourceMgr;
-
-        CacheUseInfo.VtxLayoutKey.Elements.reserve(2);
-        CacheUseInfo.VtxLayoutKey.Elements.emplace_back(Uint32{sizeof(GLTF::Model::VertexBasicAttribs)}, BIND_VERTEX_BUFFER);
-        CacheUseInfo.VtxLayoutKey.Elements.emplace_back(Uint32{sizeof(GLTF::Model::VertexSkinAttribs)}, BIND_VERTEX_BUFFER);
-
-        CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
-        CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
-        CacheUseInfo.NormalFormat       = TEX_FORMAT_RGBA8_UNORM;
-        CacheUseInfo.OcclusionFormat    = TEX_FORMAT_RGBA8_UNORM;
-        CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
-
-        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
+        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
         m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
