@@ -207,6 +207,8 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    m_bWireframeSupported = m_pDevice->GetDeviceInfo().Features.WireframeFill;
+
     RefCntAutoPtr<ITexture> EnvironmentMap;
     CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
     m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -433,7 +435,10 @@ void GLTFViewer::UpdateUI()
                      "Local\0"
                      "Global\0\0");
 
-        ImGui::Checkbox("Wireframe", &m_RenderParams.Wireframe);
+        if (m_bWireframeSupported)
+        {
+            ImGui::Checkbox("Wireframe", &m_RenderParams.Wireframe);
+        }
 
         if (ImGui::TreeNode("Renderer Features"))
         {

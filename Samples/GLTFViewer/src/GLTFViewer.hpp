@@ -120,6 +120,7 @@ private:
     std::string m_InitialModelPath;
 
     bool m_bComputeBoundingBoxes = false;
+    bool m_bWireframeSupported   = false;
 };
 
 } // namespace Diligent
