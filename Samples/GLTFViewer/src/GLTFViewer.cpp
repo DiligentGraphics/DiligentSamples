@@ -217,10 +217,10 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
 
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt = BackBufferFmt;
-    RendererCI.DSVFmt = DepthBufferFmt;
+    RendererCI.RTVFmt                = BackBufferFmt;
+    RendererCI.DSVFmt                = DepthBufferFmt;
+    RendererCI.FrontCounterClockwise = true;
 
-    m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_FRONT_CCW;
     if (m_bUseResourceCache)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
     if (BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM)
@@ -263,7 +263,8 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         EnvMapRenderer::CreateInfo EnvMapRendererCI;
         EnvMapRendererCI.pDevice             = m_pDevice;
         EnvMapRendererCI.pCameraAttribsCB    = m_CameraAttribsCB;
-        EnvMapRendererCI.RTVFormat           = BackBufferFmt;
+        EnvMapRendererCI.NumRenderTargets    = 1;
+        EnvMapRendererCI.RTVFormats[0]       = BackBufferFmt;
         EnvMapRendererCI.DSVFormat           = DepthBufferFmt;
         EnvMapRendererCI.ConvertOutputToSRGB = BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM;
 

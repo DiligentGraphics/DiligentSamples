@@ -59,6 +59,13 @@ SampleBase* CreateSample()
     return new USDViewer();
 }
 
+void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
+{
+    SampleBase::ModifyEngineInitInfo(Attribs);
+    // We do not need the swap chain's depth buffer.
+    Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+}
+
 SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char* const* argv)
 {
     CommandLineParser ArgsParser{argc, argv};
@@ -105,7 +112,7 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     if (m_UsdFileName.empty())
         m_UsdFileName = "cube.usd";
 
-    m_Camera.SetDistRange(1, 1000);
+    m_Camera.SetDistRange(1, 10000);
     m_Camera.SetDefaultDistance(100);
     m_Camera.SetZoomSpeed(10);
     m_Camera.ResetDefaults();
@@ -133,6 +140,9 @@ void USDViewer::LoadStage()
 // Render a frame
 void USDViewer::Render()
 {
+    if (!m_Stage)
+        return;
+
     const auto& SCDesc = m_pSwapChain->GetDesc();
     const auto& Mouse  = m_InputController.GetMouseState();
     if (Mouse.PosX >= 0 && Mouse.PosX < static_cast<float>(SCDesc.Width) &&
@@ -150,22 +160,15 @@ void USDViewer::Render()
         m_DrawAttribs.SelectedPrim = nullptr;
     }
 
-    // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    // Let the engine perform required state transitions
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    auto CameraView = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, m_Camera.GetDist());
+    auto CameraDist = m_Camera.GetDist();
+    auto CameraView = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, CameraDist);
     // Apply pretransform matrix that rotates the scene according the surface orientation
     CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     float4x4 CameraWorld = CameraView.Inverse();
 
     // Get projection matrix adjusted to the current screen orientation
-    const auto CameraProj     = GetAdjustedProjectionMatrix(PI_F / 4.0f, 1.f, 1000.f);
+    const auto CameraProj     = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
     const auto CameraViewProj = CameraView * CameraProj;
     const auto CameraWorldPos = float3::MakeVector(CameraWorld[3]);
 
@@ -183,8 +186,8 @@ void USDViewer::Render()
         LightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
     }
 
+    m_DrawAttribs.pDstRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     m_Renderer->Draw(m_pImmediateContext, m_DrawAttribs);
-    m_Renderer->RenderPrimId(m_pImmediateContext, pDSV, m_DrawAttribs.Transform);
 }
 
 static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Prim)

@@ -47,6 +47,8 @@ class USDViewer final : public SampleBase
 public:
     virtual CommandLineStatus ProcessCommandLine(int argc, const char* const* argv) override final;
 
+    virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
+
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
 
     virtual void Render() override final;
