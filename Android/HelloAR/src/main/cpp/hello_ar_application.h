@@ -82,6 +82,7 @@ private:
 
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice>  render_device_;
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> device_context_;
+    Diligent::RefCntAutoPtr<Diligent::ITextureView>   dummy_rtv_;
 
     bool install_requested_ = false;
     int  width_             = 1;

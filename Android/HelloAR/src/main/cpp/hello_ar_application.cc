@@ -47,7 +47,7 @@ const Diligent::float3 kWhite = {1.f, 1.f, 1.f};
 HelloArApplication::HelloArApplication(AAssetManager* asset_manager) :
     asset_manager_(asset_manager)
 {
-    AndroidFileSystem::Init(nullptr, "", asset_manager_);
+    AndroidFileSystem::Init(nullptr, asset_manager_);
 }
 
 HelloArApplication::~HelloArApplication()
@@ -130,12 +130,26 @@ void HelloArApplication::OnSurfaceCreated()
 #endif
     pFactory->AttachToActiveGLContext(EngineCI, &render_device_, &device_context_);
     // Init Android file system so that we can use shader source stream factory to load shaders.
-    pFactory->InitAndroidFileSystem(nullptr, "", asset_manager_);
+    pFactory->InitAndroidFileSystem(nullptr, asset_manager_);
 
     background_renderer_.Initialize(render_device_);
     point_cloud_renderer_.Initialize(render_device_);
     cube_renderer_.Initialize(render_device_);
     plane_renderer_.Initialize(render_device_);
+
+    TextureDesc TexDesc;
+    TexDesc.Name      = "Dummy render target";
+    TexDesc.Type      = RESOURCE_DIM_TEX_2D;
+    TexDesc.Width     = 128;
+    TexDesc.Height    = 128;
+    TexDesc.MipLevels = 1;
+    TexDesc.Format    = TEX_FORMAT_RGBA8_UNORM;
+    TexDesc.BindFlags = BIND_RENDER_TARGET;
+    RefCntAutoPtr<ITexture> dummy_tex;
+    render_device_->CreateTexture(TexDesc, nullptr, &dummy_tex);
+    VERIFY_EXPR(dummy_tex);
+    dummy_rtv_ = dummy_tex->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+    VERIFY_EXPR(dummy_rtv_);
 }
 
 void HelloArApplication::OnDisplayGeometryChanged(int display_rotation,
@@ -216,7 +230,17 @@ void HelloArApplication::OnDrawFrame()
 
     // Invalidate state
     device_context_->InvalidateState();
-    // Restore original framebuffer that was unbound by InvalidateState()
+    // If no framebuffer is bound, Diligent will think that the app is rendering without the
+    // framebuffer, which is not what we want.
+    // We have to trick Diligent by binding a dummy framebuffer and then manually overriding it.
+    ITextureView *pRTVs[] = {dummy_rtv_};
+    device_context_->SetRenderTargets(1, pRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // Set the viewport
+    Viewport VP{static_cast<Uint32>(width_), static_cast<Uint32>(height_)};
+    device_context_->SetViewports(1, &VP, static_cast<Uint32>(width_), static_cast<Uint32>(height_));
+
+    // Restore the original framebuffer
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DrawFramebuffer);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, ReadFramebuffer);
 
