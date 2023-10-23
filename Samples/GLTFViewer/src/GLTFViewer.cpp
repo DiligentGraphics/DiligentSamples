@@ -261,12 +261,11 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     {
         EnvMapRenderer::CreateInfo EnvMapRendererCI;
-        EnvMapRendererCI.pDevice             = m_pDevice;
-        EnvMapRendererCI.pCameraAttribsCB    = m_CameraAttribsCB;
-        EnvMapRendererCI.NumRenderTargets    = 1;
-        EnvMapRendererCI.RTVFormats[0]       = BackBufferFmt;
-        EnvMapRendererCI.DSVFormat           = DepthBufferFmt;
-        EnvMapRendererCI.ConvertOutputToSRGB = BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM;
+        EnvMapRendererCI.pDevice          = m_pDevice;
+        EnvMapRendererCI.pCameraAttribsCB = m_CameraAttribsCB;
+        EnvMapRendererCI.NumRenderTargets = 1;
+        EnvMapRendererCI.RTVFormats[0]    = BackBufferFmt;
+        EnvMapRendererCI.DSVFormat        = DepthBufferFmt;
 
         m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
     }
@@ -463,6 +462,7 @@ void GLTFViewer::UpdateUI()
             FeatureCheckbox("Occlusion", GLTF_PBR_Renderer::PSO_FLAG_USE_AO_MAP);
             FeatureCheckbox("Emissive", GLTF_PBR_Renderer::PSO_FLAG_USE_EMISSIVE_MAP);
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
+            FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
             ImGui::TreePop();
         }
 
@@ -638,7 +638,7 @@ void GLTFViewer::Render()
         }
 
         HLSL::ToneMappingAttribs TMAttribs;
-        TMAttribs.iToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
+        TMAttribs.iToneMappingMode     = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING) ? TONE_MAPPING_MODE_UNCHARTED2 : TONE_MAPPING_MODE_NONE;
         TMAttribs.bAutoExposure        = 0;
         TMAttribs.fMiddleGray          = m_RenderParams.MiddleGray;
         TMAttribs.bLightAdaptation     = 0;
@@ -646,10 +646,11 @@ void GLTFViewer::Render()
         TMAttribs.fLuminanceSaturation = 1.0;
 
         EnvMapRenderer::RenderAttribs EnvMapAttribs;
-        EnvMapAttribs.pContext      = m_pImmediateContext;
-        EnvMapAttribs.pEnvMap       = pEnvMapSRV;
-        EnvMapAttribs.AverageLogLum = m_RenderParams.AverageLogLum;
-        EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
+        EnvMapAttribs.pContext            = m_pImmediateContext;
+        EnvMapAttribs.pEnvMap             = pEnvMapSRV;
+        EnvMapAttribs.AverageLogLum       = m_RenderParams.AverageLogLum;
+        EnvMapAttribs.MipLevel            = m_EnvMapMipLevel;
+        EnvMapAttribs.ConvertOutputToSRGB = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
 
         m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
     }

@@ -412,7 +412,8 @@ void AtmosphereSample::UpdateUI()
                 if (ImGui::BeginTabItem("Tone mapping"))
                 {
                     {
-                        std::array<const char*, 7> ToneMappingMode;
+                        std::array<const char*, 8> ToneMappingMode;
+                        ToneMappingMode[TONE_MAPPING_MODE_NONE]         = "None";
                         ToneMappingMode[TONE_MAPPING_MODE_EXP]          = "Exp";
                         ToneMappingMode[TONE_MAPPING_MODE_REINHARD]     = "Reinhard";
                         ToneMappingMode[TONE_MAPPING_MODE_REINHARD_MOD] = "Reinhard Mod";

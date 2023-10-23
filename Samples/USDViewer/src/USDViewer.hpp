@@ -30,17 +30,21 @@
 
 #include "SampleBase.hpp"
 #include "TrackballCamera.hpp"
-#include "HnRenderer.hpp"
+
+#include "HnRenderDelegate.hpp"
+#include "Tasks/HnTaskManager.hpp"
+#include "Tasks/HnSetupRenderingTask.hpp"
+#include "Tasks/HnPostProcessTask.hpp"
 
 #include "pxr/usd/usd/stage.h"
+#include "pxr/imaging/hd/tokens.h"
+#include "pxr/imaging/hd/renderIndex.h"
+#include "pxr/imaging/hd/engine.h"
+#include "pxr/usdImaging/usdImaging/delegate.h"
+
 
 namespace Diligent
 {
-
-namespace USD
-{
-class HnRenderer;
-} // namespace USD
 
 class USDViewer final : public SampleBase
 {
@@ -61,7 +65,31 @@ private:
     void LoadStage();
 
 private:
-    pxr::UsdStageRefPtr m_Stage;
+    struct StageInfo
+    {
+        pxr::UsdStageRefPtr Stage;
+
+        std::unique_ptr<USD::HnRenderDelegate>   RenderDelegate;
+        std::unique_ptr<pxr::HdRenderIndex>      RenderIndex;
+        std::unique_ptr<pxr::UsdImagingDelegate> ImagingDelegate;
+        std::unique_ptr<USD::HnTaskManager>      TaskManager;
+        pxr::SdfPath                             FinalColorTargetId;
+
+        operator bool() const
+        {
+            return Stage && RenderDelegate && RenderIndex && ImagingDelegate && TaskManager;
+        }
+    };
+    StageInfo m_Stage;
+
+    pxr::HdEngine m_Engine;
+
+    USD::HnSetupRenderingTaskParams m_RenderParams;
+    USD::HnPostProcessTaskParams    m_PostProcessParams;
+
+    static constexpr TEXTURE_FORMAT ColorBufferFormat = TEX_FORMAT_RGBA16_FLOAT;
+    static constexpr TEXTURE_FORMAT MeshIdFormat      = TEX_FORMAT_R32_FLOAT;
+    static constexpr TEXTURE_FORMAT DepthFormat       = TEX_FORMAT_D32_FLOAT;
 
     std::string m_UsdFileName;
     std::string m_UsdPluginRoot;
@@ -69,10 +97,6 @@ private:
     RefCntAutoPtr<IBuffer>      m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer>      m_LightAttribsCB;
     RefCntAutoPtr<ITextureView> m_EnvironmentMapSRV;
-
-    RefCntAutoPtr<USD::IHnRenderer> m_Renderer;
-
-    USD::HnDrawAttribs m_DrawAttribs;
 
     TrackballCamera<float> m_Camera;
 
