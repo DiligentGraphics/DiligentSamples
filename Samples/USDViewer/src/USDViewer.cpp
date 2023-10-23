@@ -376,8 +376,9 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
 
     if (m_Stage)
     {
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        const auto& Mouse  = m_InputController.GetMouseState();
+        const auto&         SCDesc         = m_pSwapChain->GetDesc();
+        const auto&         Mouse          = m_InputController.GetMouseState();
+        const pxr::SdfPath* SelectedPrimId = nullptr;
         if (Mouse.PosX >= 0 && Mouse.PosX < static_cast<float>(SCDesc.Width) &&
             Mouse.PosY >= 0 && Mouse.PosY < static_cast<float>(SCDesc.Height))
         {
@@ -388,7 +389,19 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
 
             USD::HnReadRprimIdTaskParams Params{true, PosX, PosY};
             m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_ReadRprimId, Params);
+
+            SelectedPrimId = m_Stage.TaskManager->GetSelectedRprimId();
         }
+
+        if (SelectedPrimId != m_SelectedPrimId)
+        {
+            m_SelectedPrimId                                   = SelectedPrimId;
+            m_RenderParams.SelectedPrimId                      = m_SelectedPrimId ? *m_SelectedPrimId : pxr::SdfPath{};
+            m_PostProcessParams.NonselectionDesaturationFactor = m_SelectedPrimId != nullptr && !m_SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
+            m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
+            m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
+        }
+
 
         m_Stage.ImagingDelegate->ApplyPendingUpdates();
     }
