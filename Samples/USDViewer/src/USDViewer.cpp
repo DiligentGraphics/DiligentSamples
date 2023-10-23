@@ -36,6 +36,7 @@
 #include "PBR_Renderer.hpp"
 #include "FileSystem.hpp"
 #include "Tasks/HnReadRprimIdTask.hpp"
+#include "Tasks/HnSetupRenderingTask.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -105,14 +106,9 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.ResetDefaults();
     m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
 
-    m_RenderParams.ColorFormat  = ColorBufferFormat;
-    m_RenderParams.MeshIdFormat = MeshIdFormat;
-    m_RenderParams.DepthFormat  = DepthFormat;
-
-    float4x4 InvYAxis           = float4x4::Identity();
-    InvYAxis._22                = -1;
-    m_RenderParams.Transform    = InvYAxis;
-    m_RenderParams.FrontFaceCCW = true;
+    float4x4 InvYAxis        = float4x4::Identity();
+    InvYAxis._22             = -1;
+    m_RenderParams.Transform = InvYAxis;
 
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
@@ -149,11 +145,17 @@ void USDViewer::LoadStage()
     m_Stage.FinalColorTargetId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnFinalColorTarget_"});
     m_Stage.RenderIndex->InsertBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.ImagingDelegate.get(), m_Stage.FinalColorTargetId);
 
-    m_RenderParams.FinalColorTargetId = m_Stage.FinalColorTargetId;
-
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
-    m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_SetupRendering, m_RenderParams);
+    USD::HnSetupRenderingTaskParams SetupRenderingParams;
+    SetupRenderingParams.ColorFormat        = ColorBufferFormat;
+    SetupRenderingParams.MeshIdFormat       = MeshIdFormat;
+    SetupRenderingParams.DepthFormat        = DepthFormat;
+    SetupRenderingParams.FrontFaceCCW       = true;
+    SetupRenderingParams.FinalColorTargetId = m_Stage.FinalColorTargetId;
+    m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_SetupRendering, SetupRenderingParams);
+
+    m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
 }
 
@@ -361,7 +363,7 @@ void USDViewer::UpdateUI()
     ImGui::End();
 
     if (UpdateRenderParams)
-        m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_SetupRendering, m_RenderParams);
+        m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     if (UpdatePostProcessParams)
         m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
 }

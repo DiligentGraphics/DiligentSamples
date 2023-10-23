@@ -33,7 +33,7 @@
 
 #include "HnRenderDelegate.hpp"
 #include "Tasks/HnTaskManager.hpp"
-#include "Tasks/HnSetupRenderingTask.hpp"
+#include "Tasks/HnRenderRprimsTask.hpp"
 #include "Tasks/HnPostProcessTask.hpp"
 
 #include "pxr/usd/usd/stage.h"
@@ -84,8 +84,8 @@ private:
 
     pxr::HdEngine m_Engine;
 
-    USD::HnSetupRenderingTaskParams m_RenderParams;
-    USD::HnPostProcessTaskParams    m_PostProcessParams;
+    USD::HnRenderRprimsTaskParams m_RenderParams;
+    USD::HnPostProcessTaskParams  m_PostProcessParams;
 
     static constexpr TEXTURE_FORMAT ColorBufferFormat = TEX_FORMAT_RGBA16_FLOAT;
     static constexpr TEXTURE_FORMAT MeshIdFormat      = TEX_FORMAT_R32_FLOAT;
