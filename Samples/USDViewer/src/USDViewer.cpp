@@ -262,6 +262,8 @@ void USDViewer::UpdateUI()
 
             if (ImGui::BeginTabItem("Renderer"))
             {
+                ImGui::PushItemWidth(130);
+
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Lighting"))
                 {
@@ -355,6 +357,26 @@ void USDViewer::UpdateUI()
 
                     ImGui::TreePop();
                 }
+
+                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                if (ImGui::TreeNode("Elements"))
+                {
+                    auto ElementCheckbox = [this](const char* Name, USD::HnTaskManager::TaskUID UID) {
+                        bool Enabled = m_Stage.TaskManager->IsTaskEnabled(UID);
+                        if (ImGui::Checkbox(Name, &Enabled))
+                            m_Stage.TaskManager->EnableTask(UID, Enabled);
+                    };
+                    ElementCheckbox("Default Material", USD::HnTaskManager::TaskUID_RenderRprimsDefault);
+                    ElementCheckbox("Masked Material", USD::HnTaskManager::TaskUID_RenderRprimsMasked);
+                    ElementCheckbox("Env map", USD::HnTaskManager::TaskUID_RenderEnvMap);
+                    ElementCheckbox("Additive Material", USD::HnTaskManager::TaskUID_RenderRprimsAdditive);
+                    ElementCheckbox("Translucent Material", USD::HnTaskManager::TaskUID_RenderRprimsTranslucent);
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::PopItemWidth();
+
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
