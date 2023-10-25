@@ -235,7 +235,7 @@ void USDViewer::UpdateUI()
                 {
                     FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
                     OpenDialogAttribs.Title  = "Select USD file";
-                    OpenDialogAttribs.Filter = "USD files\0*.usd;*.usdc;*.usdz\0";
+                    OpenDialogAttribs.Filter = "USD files\0*.usd;*.usdc;*.usdz;*.usda\0";
                     auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
                     if (!FileName.empty())
                     {
@@ -413,7 +413,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
             USD::HnReadRprimIdTaskParams Params{true, PosX, PosY};
             m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_ReadRprimId, Params);
 
-            SelectedPrimId = m_Stage.TaskManager->GetSelectedRprimId();
+            SelectedPrimId = m_Stage.TaskManager->GetSelectedRPrimId();
         }
 
         if (SelectedPrimId != m_SelectedPrimId)
