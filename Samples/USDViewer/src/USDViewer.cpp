@@ -245,6 +245,8 @@ void USDViewer::UpdateUI()
                 }
 #endif
 
+                ImGui::Spacing();
+
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Scene"))
                 {
@@ -322,6 +324,8 @@ void USDViewer::UpdateUI()
                     ImGui::TreePop();
                 }
 
+                ImGui::Spacing();
+
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Tone mapping"))
                 {
@@ -358,6 +362,8 @@ void USDViewer::UpdateUI()
 
                     ImGui::TreePop();
                 }
+
+                ImGui::Spacing();
 
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Elements"))
