@@ -121,6 +121,10 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 void USDViewer::LoadStage()
 {
     {
+        // Note: stage components must be destroyed in the reverse order
+        //       of creation, so we use std::move() to let the destructor
+        //       do the job.
+        //       m_Stage = {}; would not work.
         auto Stage = std::move(m_Stage);
     }
 
@@ -223,7 +227,7 @@ void USDViewer::UpdateUI()
     bool UpdatePostProcessParams = false;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(300, 550), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr))
     {
         if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_None))

@@ -67,6 +67,8 @@ private:
 private:
     struct StageInfo
     {
+        // Declaration order matters as the objects must be destroyed in the specific order!
+
         pxr::UsdStageRefPtr Stage;
 
         std::unique_ptr<USD::HnRenderDelegate>   RenderDelegate;
@@ -75,7 +77,7 @@ private:
         std::unique_ptr<USD::HnTaskManager>      TaskManager;
         pxr::SdfPath                             FinalColorTargetId;
 
-        operator bool() const
+        explicit operator bool() const
         {
             return Stage && RenderDelegate && RenderIndex && ImagingDelegate && TaskManager;
         }
