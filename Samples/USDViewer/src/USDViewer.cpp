@@ -37,6 +37,7 @@
 #include "FileSystem.hpp"
 #include "Tasks/HnReadRprimIdTask.hpp"
 #include "Tasks/HnSetupRenderingTask.hpp"
+#include "HnTokens.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -152,9 +153,6 @@ void USDViewer::LoadStage()
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     USD::HnSetupRenderingTaskParams SetupRenderingParams;
-    SetupRenderingParams.ColorFormat        = ColorBufferFormat;
-    SetupRenderingParams.MeshIdFormat       = MeshIdFormat;
-    SetupRenderingParams.DepthFormat        = DepthFormat;
     SetupRenderingParams.FrontFaceCCW       = true;
     SetupRenderingParams.FinalColorTargetId = m_Stage.FinalColorTargetId;
     m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_SetupRendering, SetupRenderingParams);
@@ -372,16 +370,21 @@ void USDViewer::UpdateUI()
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Elements"))
                 {
-                    auto ElementCheckbox = [this](const char* Name, USD::HnTaskManager::TaskUID UID) {
+                    auto TaskCheckbox = [this](const char* Name, USD::HnTaskManager::TaskUID UID) {
                         bool Enabled = m_Stage.TaskManager->IsTaskEnabled(UID);
                         if (ImGui::Checkbox(Name, &Enabled))
                             m_Stage.TaskManager->EnableTask(UID, Enabled);
                     };
-                    ElementCheckbox("Default Material", USD::HnTaskManager::TaskUID_RenderRprimsDefault);
-                    ElementCheckbox("Masked Material", USD::HnTaskManager::TaskUID_RenderRprimsMasked);
-                    ElementCheckbox("Env map", USD::HnTaskManager::TaskUID_RenderEnvMap);
-                    ElementCheckbox("Additive Material", USD::HnTaskManager::TaskUID_RenderRprimsAdditive);
-                    ElementCheckbox("Translucent Material", USD::HnTaskManager::TaskUID_RenderRprimsTranslucent);
+                    auto MaterialCheckbox = [this](const char* Name, const pxr::TfToken& MaterialTag) {
+                        bool Enabled = m_Stage.TaskManager->IsMaterialEnabled(MaterialTag);
+                        if (ImGui::Checkbox(Name, &Enabled))
+                            m_Stage.TaskManager->EnableMaterial(MaterialTag, Enabled);
+                    };
+                    MaterialCheckbox("Default Material", USD::HnMaterialTagTokens->defaultTag);
+                    MaterialCheckbox("Masked Material", USD::HnMaterialTagTokens->masked);
+                    TaskCheckbox("Env map", USD::HnTaskManager::TaskUID_RenderEnvMap);
+                    MaterialCheckbox("Additive Material", USD::HnMaterialTagTokens->additive);
+                    MaterialCheckbox("Translucent Material", USD::HnMaterialTagTokens->translucent);
 
                     ImGui::TreePop();
                 }

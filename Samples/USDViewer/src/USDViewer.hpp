@@ -89,10 +89,6 @@ private:
     USD::HnRenderRprimsTaskParams m_RenderParams;
     USD::HnPostProcessTaskParams  m_PostProcessParams;
 
-    static constexpr TEXTURE_FORMAT ColorBufferFormat = TEX_FORMAT_RGBA16_FLOAT;
-    static constexpr TEXTURE_FORMAT MeshIdFormat      = TEX_FORMAT_R32_FLOAT;
-    static constexpr TEXTURE_FORMAT DepthFormat       = TEX_FORMAT_D32_FLOAT;
-
     std::string m_UsdFileName;
     std::string m_UsdPluginRoot;
 
