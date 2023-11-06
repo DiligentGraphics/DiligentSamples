@@ -154,10 +154,10 @@ void USDViewer::LoadStage()
     USD::HnSetupRenderingTaskParams SetupRenderingParams;
     SetupRenderingParams.FrontFaceCCW       = true;
     SetupRenderingParams.FinalColorTargetId = m_Stage.FinalColorTargetId;
-    m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_SetupRendering, SetupRenderingParams);
+    m_Stage.TaskManager->SetupRendering(SetupRenderingParams);
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
-    m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
+    m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 }
 
 // Render a frame
@@ -323,7 +323,7 @@ void USDViewer::UpdateUI()
                     }
 
                     if (ImGui::SliderFloat("Selection outline width", &m_PostProcessParams.SelectionOutlineWidth, 1.f, 16.f))
-                        m_Stage.TaskManager->SetSelectionOutlineWidth(m_PostProcessParams.SelectionOutlineWidth);
+                        UpdatePostProcessParams = true;
 
                     ImGui::TreePop();
                 }
@@ -403,7 +403,7 @@ void USDViewer::UpdateUI()
     if (UpdateRenderParams)
         m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     if (UpdatePostProcessParams)
-        m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
+        m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 }
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)
@@ -426,7 +426,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
                 PosY = SCDesc.Height - 1 - PosY;
 
             USD::HnReadRprimIdTaskParams Params{true, PosX, PosY};
-            m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_ReadRprimId, Params);
+            m_Stage.TaskManager->SetReadRprimIdParams(Params);
 
             SelectedPrimId = m_Stage.TaskManager->GetSelectedRPrimId();
         }
@@ -437,7 +437,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
             m_RenderParams.SelectedPrimId                      = m_SelectedPrimId ? *m_SelectedPrimId : pxr::SdfPath{};
             m_PostProcessParams.NonselectionDesaturationFactor = m_SelectedPrimId != nullptr && !m_SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
             m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
-            m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
+            m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
         }
 
         m_Stage.ImagingDelegate->ApplyPendingUpdates();
