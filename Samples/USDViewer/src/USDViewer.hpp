@@ -90,7 +90,6 @@ private:
     USD::HnPostProcessTaskParams  m_PostProcessParams;
 
     std::string m_UsdFileName;
-    std::string m_UsdPluginRoot;
 
     RefCntAutoPtr<IBuffer>      m_CameraAttribsCB;
     RefCntAutoPtr<IBuffer>      m_LightAttribsCB;

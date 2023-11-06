@@ -75,7 +75,6 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
 {
     CommandLineParser ArgsParser{argc, argv};
     ArgsParser.Parse("usd_path", 'u', m_UsdFileName);
-    ArgsParser.Parse("usd_plugin", 'p', m_UsdPluginRoot);
     return CommandLineStatus::OK;
 }
 
@@ -323,6 +322,9 @@ void USDViewer::UpdateUI()
                         }
                     }
 
+                    if (ImGui::SliderFloat("Selection outline width", &m_PostProcessParams.SelectionOutlineWidth, 1.f, 16.f))
+                        m_Stage.TaskManager->SetSelectionOutlineWidth(m_PostProcessParams.SelectionOutlineWidth);
+
                     ImGui::TreePop();
                 }
 
@@ -437,7 +439,6 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
             m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
             m_Stage.TaskManager->SetTaskParams(USD::HnTaskManager::TaskUID_PostProcess, m_PostProcessParams);
         }
-
 
         m_Stage.ImagingDelegate->ApplyPendingUpdates();
     }
