@@ -37,7 +37,10 @@
 #include "FileSystem.hpp"
 #include "Tasks/HnReadRprimIdTask.hpp"
 #include "Tasks/HnSetupRenderingTask.hpp"
+#include "Tasks/HnRenderAxesTask.hpp"
 #include "HnTokens.hpp"
+#include "HnCamera.hpp"
+#include "HnLight.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -82,22 +85,15 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    CreateUniformBuffer(m_pDevice, sizeof(HLSL::CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
-    CreateUniformBuffer(m_pDevice, sizeof(HLSL::LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
-
     RefCntAutoPtr<ITexture> EnvironmentMap;
     CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
     VERIFY_EXPR(EnvironmentMap);
     m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
-    // clang-format off
-    StateTransitionDesc Barriers [] =
-    {
-        {m_CameraAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {m_LightAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {EnvironmentMap,    RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
-    };
-    // clang-format on
+    StateTransitionDesc Barriers[] =
+        {
+            {EnvironmentMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        };
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     m_Camera.SetDistRange(1, 10000);
@@ -135,7 +131,7 @@ void USDViewer::LoadStage()
         return;
     }
 
-    m_Stage.RenderDelegate = USD::HnRenderDelegate::Create({m_pDevice, m_pImmediateContext, nullptr, m_CameraAttribsCB, m_LightAttribsCB});
+    m_Stage.RenderDelegate = USD::HnRenderDelegate::Create({m_pDevice, m_pImmediateContext, nullptr});
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
 
     const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
@@ -149,15 +145,26 @@ void USDViewer::LoadStage()
     m_Stage.FinalColorTargetId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnFinalColorTarget_"});
     m_Stage.RenderIndex->InsertBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.ImagingDelegate.get(), m_Stage.FinalColorTargetId);
 
+    m_Stage.CameraId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
+    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->camera, m_Stage.ImagingDelegate.get(), m_Stage.CameraId);
+
+    m_Stage.LightId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnLight_"});
+    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->light, m_Stage.ImagingDelegate.get(), m_Stage.LightId);
+
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     USD::HnSetupRenderingTaskParams SetupRenderingParams;
     SetupRenderingParams.FrontFaceCCW       = true;
     SetupRenderingParams.FinalColorTargetId = m_Stage.FinalColorTargetId;
+    SetupRenderingParams.CameraId           = m_Stage.CameraId;
     m_Stage.TaskManager->SetupRendering(SetupRenderingParams);
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
+
+    USD::HnRenderAxesTaskParams RenderAxesParams;
+    RenderAxesParams.Transform = float4x4::Scale(300) * m_RenderParams.Transform;
+    m_Stage.TaskManager->SetRenderAxesParams(RenderAxesParams);
 }
 
 // Render a frame
@@ -171,25 +178,21 @@ void USDViewer::Render()
     // Apply pretransform matrix that rotates the scene according the surface orientation
     CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
-    float4x4 CameraWorld = CameraView.Inverse();
-
     // Get projection matrix adjusted to the current screen orientation
-    const auto CameraProj     = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
-    const auto CameraViewProj = CameraView * CameraProj;
-    const auto CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+    const auto CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
 
     {
-        MapHelper<HLSL::CameraAttribs> CamAttribs{m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
-        CamAttribs->mProjT        = CameraProj.Transpose();
-        CamAttribs->mViewProjT    = CameraViewProj.Transpose();
-        CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
-        CamAttribs->f4Position    = float4{CameraWorldPos, 1};
+        auto* HnCamera = static_cast<USD::HnCamera*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->camera, m_Stage.CameraId));
+        VERIFY_EXPR(HnCamera != nullptr);
+        HnCamera->SetViewMatrix(CameraView);
+        HnCamera->SetProjectionMatrix(CameraProj);
     }
 
     {
-        MapHelper<HLSL::LightAttribs> LightAttribs{m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
-        LightAttribs->f4Direction = m_LightDirection;
-        LightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
+        auto* Light = static_cast<USD::HnLight*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->light, m_Stage.LightId));
+        VERIFY_EXPR(Light != nullptr);
+        Light->SetDirection(m_LightDirection);
+        Light->SetIntensity(m_LightColor * m_LightIntensity);
     }
 
     auto* FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.FinalColorTargetId));
@@ -372,11 +375,6 @@ void USDViewer::UpdateUI()
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Elements"))
                 {
-                    auto TaskCheckbox = [this](const char* Name, USD::HnTaskManager::TaskUID UID) {
-                        bool Enabled = m_Stage.TaskManager->IsTaskEnabled(UID);
-                        if (ImGui::Checkbox(Name, &Enabled))
-                            m_Stage.TaskManager->EnableTask(UID, Enabled);
-                    };
                     auto MaterialCheckbox = [this](const char* Name, const pxr::TfToken& MaterialTag) {
                         bool Enabled = m_Stage.TaskManager->IsMaterialEnabled(MaterialTag);
                         if (ImGui::Checkbox(Name, &Enabled))
@@ -384,9 +382,18 @@ void USDViewer::UpdateUI()
                     };
                     MaterialCheckbox("Default Material", USD::HnMaterialTagTokens->defaultTag);
                     MaterialCheckbox("Masked Material", USD::HnMaterialTagTokens->masked);
-                    TaskCheckbox("Env map", USD::HnTaskManager::TaskUID_RenderEnvMap);
                     MaterialCheckbox("Additive Material", USD::HnMaterialTagTokens->additive);
                     MaterialCheckbox("Translucent Material", USD::HnMaterialTagTokens->translucent);
+                    {
+                        bool Enabled = m_Stage.TaskManager->IsEnvironmentMapEnabled();
+                        if (ImGui::Checkbox("Env map", &Enabled))
+                            m_Stage.TaskManager->EnableEnvironmentMap(Enabled);
+                    }
+                    {
+                        bool Enabled = m_Stage.TaskManager->AreAxesEnabled();
+                        if (ImGui::Checkbox("Axes", &Enabled))
+                            m_Stage.TaskManager->EnableAxes(Enabled);
+                    }
 
                     ImGui::TreePop();
                 }

@@ -76,6 +76,8 @@ private:
         std::unique_ptr<pxr::UsdImagingDelegate> ImagingDelegate;
         std::unique_ptr<USD::HnTaskManager>      TaskManager;
         pxr::SdfPath                             FinalColorTargetId;
+        pxr::SdfPath                             CameraId;
+        pxr::SdfPath                             LightId;
 
         explicit operator bool() const
         {
@@ -91,8 +93,6 @@ private:
 
     std::string m_UsdFileName;
 
-    RefCntAutoPtr<IBuffer>      m_CameraAttribsCB;
-    RefCntAutoPtr<IBuffer>      m_LightAttribsCB;
     RefCntAutoPtr<ITextureView> m_EnvironmentMapSRV;
 
     TrackballCamera<float> m_Camera;
