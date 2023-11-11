@@ -142,21 +142,27 @@ void USDViewer::LoadStage()
     const pxr::SdfPath TaskManagerId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnTaskManager_"});
     m_Stage.TaskManager              = std::make_unique<USD::HnTaskManager>(*m_Stage.RenderIndex, TaskManagerId);
 
-    m_Stage.FinalColorTargetId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnFinalColorTarget_"});
-    m_Stage.RenderIndex->InsertBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.ImagingDelegate.get(), m_Stage.FinalColorTargetId);
+    const pxr::SdfPath FinalColorTargetId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnFinalColorTarget_"});
+    m_Stage.RenderIndex->InsertBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.ImagingDelegate.get(), FinalColorTargetId);
+    m_Stage.FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, FinalColorTargetId));
+    VERIFY_EXPR(m_Stage.FinalColorTarget != nullptr);
 
-    m_Stage.CameraId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
-    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->camera, m_Stage.ImagingDelegate.get(), m_Stage.CameraId);
+    const pxr::SdfPath CameraId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
+    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->camera, m_Stage.ImagingDelegate.get(), CameraId);
+    m_Stage.Camera = static_cast<USD::HnCamera*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->camera, CameraId));
+    VERIFY_EXPR(m_Stage.Camera != nullptr);
 
-    m_Stage.LightId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnLight_"});
-    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->light, m_Stage.ImagingDelegate.get(), m_Stage.LightId);
+    const pxr::SdfPath LightId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnLight_"});
+    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->light, m_Stage.ImagingDelegate.get(), LightId);
+    m_Stage.Light = static_cast<USD::HnLight*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->light, LightId));
+    VERIFY_EXPR(m_Stage.Light != nullptr);
 
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     USD::HnSetupRenderingTaskParams SetupRenderingParams;
     SetupRenderingParams.FrontFaceCCW       = true;
-    SetupRenderingParams.FinalColorTargetId = m_Stage.FinalColorTargetId;
-    SetupRenderingParams.CameraId           = m_Stage.CameraId;
+    SetupRenderingParams.FinalColorTargetId = FinalColorTargetId;
+    SetupRenderingParams.CameraId           = CameraId;
     m_Stage.TaskManager->SetupRendering(SetupRenderingParams);
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
@@ -181,28 +187,18 @@ void USDViewer::Render()
     // Get projection matrix adjusted to the current screen orientation
     const auto CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
 
-    {
-        auto* HnCamera = static_cast<USD::HnCamera*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->camera, m_Stage.CameraId));
-        VERIFY_EXPR(HnCamera != nullptr);
-        HnCamera->SetViewMatrix(CameraView);
-        HnCamera->SetProjectionMatrix(CameraProj);
-    }
+    m_Stage.Camera->SetViewMatrix(CameraView);
+    m_Stage.Camera->SetProjectionMatrix(CameraProj);
 
-    {
-        auto* Light = static_cast<USD::HnLight*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->light, m_Stage.LightId));
-        VERIFY_EXPR(Light != nullptr);
-        Light->SetDirection(m_LightDirection);
-        Light->SetIntensity(m_LightColor * m_LightIntensity);
-    }
+    m_Stage.Light->SetDirection(m_LightDirection);
+    m_Stage.Light->SetIntensity(m_LightColor * m_LightIntensity);
 
-    auto* FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.FinalColorTargetId));
-    VERIFY_EXPR(FinalColorTarget != nullptr);
-    FinalColorTarget->SetTarget(m_pSwapChain->GetCurrentBackBufferRTV());
+    m_Stage.FinalColorTarget->SetTarget(m_pSwapChain->GetCurrentBackBufferRTV());
 
     pxr::HdTaskSharedPtrVector tasks = m_Stage.TaskManager->GetTasks();
     m_Engine.Execute(m_Stage.RenderIndex.get(), &tasks);
 
-    FinalColorTarget->ReleaseTarget();
+    m_Stage.FinalColorTarget->ReleaseTarget();
 }
 
 static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Prim)

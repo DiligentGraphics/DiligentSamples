@@ -46,6 +46,13 @@
 namespace Diligent
 {
 
+namespace USD
+{
+class HnRenderBuffer;
+class HnCamera;
+class HnLight;
+} // namespace USD
+
 class USDViewer final : public SampleBase
 {
 public:
@@ -75,9 +82,10 @@ private:
         std::unique_ptr<pxr::HdRenderIndex>      RenderIndex;
         std::unique_ptr<pxr::UsdImagingDelegate> ImagingDelegate;
         std::unique_ptr<USD::HnTaskManager>      TaskManager;
-        pxr::SdfPath                             FinalColorTargetId;
-        pxr::SdfPath                             CameraId;
-        pxr::SdfPath                             LightId;
+
+        USD::HnRenderBuffer* FinalColorTarget = nullptr;
+        USD::HnCamera*       Camera           = nullptr;
+        USD::HnLight*        Light            = nullptr;
 
         explicit operator bool() const
         {
