@@ -71,6 +71,20 @@ private:
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
+    struct ShaderParams
+    {
+        float OcclusionStrength = 1;
+        float EmissionScale     = 1;
+        float IBLScale          = 1;
+        float AverageLogLum     = 0.3f;
+        float MiddleGray        = 0.18f;
+        float WhitePoint        = 3.f;
+
+        float4 HighlightColor = float4{0, 0, 0, 0};
+        float4 WireframeColor = float4{0.8f, 0.7f, 0.5f, 1.0f};
+    };
+    ShaderParams m_ShaderAttribs;
+
     float3 m_LightDirection;
     float4 m_LightColor     = float4(1, 1, 1, 1);
     float  m_LightIntensity = 3.f;
@@ -96,8 +110,7 @@ private:
     GLTF::ModelTransforms                 m_Transforms;
     BoundBox                              m_ModelAABB;
     float4x4                              m_ModelTransform;
-    RefCntAutoPtr<IBuffer>                m_CameraAttribsCB;
-    RefCntAutoPtr<IBuffer>                m_LightAttribsCB;
+    RefCntAutoPtr<IBuffer>                m_FrameAttribsCB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
     RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;

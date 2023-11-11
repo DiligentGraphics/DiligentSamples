@@ -47,7 +47,14 @@
 namespace Diligent
 {
 
+namespace HLSL
+{
+
 #include "Shaders/Common/public/BasicStructures.fxh"
+#include "Shaders/PBR/public/PBR_Structures.fxh"
+#include "Shaders/PBR/private/RenderPBR_Structures.fxh"
+
+} // namespace HLSL
 
 SampleBase* CreateSample()
 {
@@ -92,7 +99,7 @@ void GLTFViewer::LoadModel(const char* Path)
 
     m_Model.reset(new GLTF::Model{m_pDevice, m_pImmediateContext, ModelCI});
 
-    m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_CameraAttribsCB, m_LightAttribsCB);
+    m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_FrameAttribsCB);
 
     m_RenderParams.SceneIndex = m_Model->DefaultSceneId;
     UpdateScene();
@@ -228,14 +235,12 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     m_GLTFRenderer.reset(new GLTF_PBR_Renderer{m_pDevice, nullptr, m_pImmediateContext, RendererCI});
 
-    CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);
-    CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light attribs buffer", &m_LightAttribsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(HLSL::PBRFrameAttribs), "PBR frame attribs buffer", &m_FrameAttribsCB);
     // clang-format off
     StateTransitionDesc Barriers [] =
     {
-        {m_CameraAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {m_LightAttribsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {EnvironmentMap,    RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
+        {m_FrameAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        {EnvironmentMap,   RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
     };
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
@@ -262,7 +267,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     {
         EnvMapRenderer::CreateInfo EnvMapRendererCI;
         EnvMapRendererCI.pDevice          = m_pDevice;
-        EnvMapRendererCI.pCameraAttribsCB = m_CameraAttribsCB;
+        EnvMapRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
         EnvMapRendererCI.NumRenderTargets = 1;
         EnvMapRendererCI.RTVFormats[0]    = BackBufferFmt;
         EnvMapRendererCI.DSVFormat        = DepthBufferFmt;
@@ -354,10 +359,10 @@ void GLTFViewer::UpdateUI()
         {
             ImGui::ColorEdit3("Light Color", &m_LightColor.r);
             // clang-format off
-            ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                 0.f, 50.f);
-            ImGui::SliderFloat("Occlusion strength", &m_RenderParams.OcclusionStrength, 0.f,  1.f);
-            ImGui::SliderFloat("Emission scale",     &m_RenderParams.EmissionScale,     0.f,  1.f);
-            ImGui::SliderFloat("IBL scale",          &m_RenderParams.IBLScale,          0.f,  1.f);
+            ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                  0.f, 50.f);
+            ImGui::SliderFloat("Occlusion strength", &m_ShaderAttribs.OcclusionStrength, 0.f,  1.f);
+            ImGui::SliderFloat("Emission scale",     &m_ShaderAttribs.EmissionScale,     0.f,  1.f);
+            ImGui::SliderFloat("IBL scale",          &m_ShaderAttribs.IBLScale,          0.f,  1.f);
             // clang-format on
             ImGui::TreePop();
         }
@@ -380,9 +385,9 @@ void GLTFViewer::UpdateUI()
         if (ImGui::TreeNode("Tone mapping"))
         {
             // clang-format off
-            ImGui::SliderFloat("Average log lum",    &m_RenderParams.AverageLogLum,     0.01f, 10.0f);
-            ImGui::SliderFloat("Middle gray",        &m_RenderParams.MiddleGray,        0.01f,  1.0f);
-            ImGui::SliderFloat("White point",        &m_RenderParams.WhitePoint,        0.1f,  20.0f);
+            ImGui::SliderFloat("Average log lum", &m_ShaderAttribs.AverageLogLum, 0.01f, 10.0f);
+            ImGui::SliderFloat("Middle gray",     &m_ShaderAttribs.MiddleGray,    0.01f,  1.0f);
+            ImGui::SliderFloat("White point",     &m_ShaderAttribs.WhitePoint,    0.1f,  20.0f);
             // clang-format on
             ImGui::TreePop();
         }
@@ -497,7 +502,7 @@ void GLTFViewer::CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader)
     });
     pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_BoundBoxPSO);
 
-    m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
+    m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_FrameAttribsCB);
     m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);
 }
 
@@ -560,46 +565,63 @@ void GLTFViewer::Render()
     float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
 
     {
-        MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        CamAttribs->mProjT        = CameraProj.Transpose();
-        CamAttribs->mViewProjT    = CameraViewProj.Transpose();
-        CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
-        CamAttribs->f4Position    = float4(CameraWorldPos, 1);
-
-        if (m_BoundBoxMode != BoundBoxMode::None)
+        MapHelper<HLSL::PBRFrameAttribs> FrameAttribs(m_pImmediateContext, m_FrameAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
         {
-            float4x4 BBTransform;
-            if (m_BoundBoxMode == BoundBoxMode::Local)
-            {
-                BBTransform =
-                    float4x4::Scale(m_ModelAABB.Max - m_ModelAABB.Min) *
-                    float4x4::Translation(m_ModelAABB.Min) *
-                    m_RenderParams.ModelTransform;
-            }
-            else if (m_BoundBoxMode == BoundBoxMode::Global)
-            {
-                auto TransformedBB = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
-                BBTransform        = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
-            }
-            else
-            {
-                UNEXPECTED("Unexpected bound box mode");
-            }
+            auto& Camera         = FrameAttribs->Camera;
+            Camera.mProjT        = CameraProj.Transpose();
+            Camera.mViewProjT    = CameraViewProj.Transpose();
+            Camera.mViewProjInvT = CameraViewProj.Inverse().Transpose();
+            Camera.f4Position    = float4(CameraWorldPos, 1);
 
-            for (int row = 0; row < 4; ++row)
-                CamAttribs->f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
+            if (m_BoundBoxMode != BoundBoxMode::None)
+            {
+                float4x4 BBTransform;
+                if (m_BoundBoxMode == BoundBoxMode::Local)
+                {
+                    BBTransform =
+                        float4x4::Scale(m_ModelAABB.Max - m_ModelAABB.Min) *
+                        float4x4::Translation(m_ModelAABB.Min) *
+                        m_RenderParams.ModelTransform;
+                }
+                else if (m_BoundBoxMode == BoundBoxMode::Global)
+                {
+                    auto TransformedBB = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
+                    BBTransform        = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
+                }
+                else
+                {
+                    UNEXPECTED("Unexpected bound box mode");
+                }
+
+                for (int row = 0; row < 4; ++row)
+                    Camera.f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
+            }
         }
-    }
+        {
+            auto& Light     = FrameAttribs->Light;
+            Light.Direction = m_LightDirection;
+            Light.Intensity = m_LightColor * m_LightIntensity;
+        }
+        {
+            auto& Renderer = FrameAttribs->Renderer;
+            m_GLTFRenderer->SetInternalShaderParameters(Renderer);
 
-    {
-        MapHelper<LightAttribs> lightAttribs(m_pImmediateContext, m_LightAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        lightAttribs->f4Direction = m_LightDirection;
-        lightAttribs->f4Intensity = m_LightColor * m_LightIntensity;
+            Renderer.DebugViewType     = static_cast<int>(m_RenderParams.DebugView);
+            Renderer.OcclusionStrength = m_ShaderAttribs.OcclusionStrength;
+            Renderer.EmissionScale     = m_ShaderAttribs.EmissionScale;
+            Renderer.AverageLogLum     = m_ShaderAttribs.AverageLogLum;
+            Renderer.MiddleGray        = m_ShaderAttribs.MiddleGray;
+            Renderer.WhitePoint        = m_ShaderAttribs.WhitePoint;
+            Renderer.IBLScale          = m_ShaderAttribs.IBLScale;
+            Renderer.HighlightColor    = m_ShaderAttribs.HighlightColor;
+            Renderer.UnshadedColor     = m_ShaderAttribs.WireframeColor;
+            Renderer.PointSize         = 1;
+        }
     }
 
     if (m_pResourceMgr)
     {
-        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_CameraAttribsCB, m_LightAttribsCB);
+        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_FrameAttribsCB);
         m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
@@ -640,15 +662,15 @@ void GLTFViewer::Render()
         HLSL::ToneMappingAttribs TMAttribs;
         TMAttribs.iToneMappingMode     = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING) ? TONE_MAPPING_MODE_UNCHARTED2 : TONE_MAPPING_MODE_NONE;
         TMAttribs.bAutoExposure        = 0;
-        TMAttribs.fMiddleGray          = m_RenderParams.MiddleGray;
+        TMAttribs.fMiddleGray          = m_ShaderAttribs.MiddleGray;
         TMAttribs.bLightAdaptation     = 0;
-        TMAttribs.fWhitePoint          = m_RenderParams.WhitePoint;
+        TMAttribs.fWhitePoint          = m_ShaderAttribs.WhitePoint;
         TMAttribs.fLuminanceSaturation = 1.0;
 
         EnvMapRenderer::RenderAttribs EnvMapAttribs;
         EnvMapAttribs.pContext            = m_pImmediateContext;
         EnvMapAttribs.pEnvMap             = pEnvMapSRV;
-        EnvMapAttribs.AverageLogLum       = m_RenderParams.AverageLogLum;
+        EnvMapAttribs.AverageLogLum       = m_ShaderAttribs.AverageLogLum;
         EnvMapAttribs.MipLevel            = m_EnvMapMipLevel;
         EnvMapAttribs.ConvertOutputToSRGB = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
 
