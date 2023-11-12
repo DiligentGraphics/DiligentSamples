@@ -404,35 +404,30 @@ void GLTFViewer::UpdateUI()
         ImGui::SliderFloat("Env map mip", &m_EnvMapMipLevel, 0.0f, 7.0f);
 
         {
-            std::array<const char*, static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
+            std::pair<GLTF_PBR_Renderer::DebugViewType, const char*> DebugViews[] = {
+                {GLTF_PBR_Renderer::DebugViewType::None, "None"},
+                {GLTF_PBR_Renderer::DebugViewType::Texcoord0, "Tex coords 0"},
+                {GLTF_PBR_Renderer::DebugViewType::Texcoord1, "Tex coords 1"},
+                {GLTF_PBR_Renderer::DebugViewType::BaseColor, "Base Color"},
+                {GLTF_PBR_Renderer::DebugViewType::Transparency, "Transparency"},
+                {GLTF_PBR_Renderer::DebugViewType::NormalMap, "Normal Map"},
+                {GLTF_PBR_Renderer::DebugViewType::Occlusion, "Occlusion"},
+                {GLTF_PBR_Renderer::DebugViewType::Emissive, "Emissive"},
+                {GLTF_PBR_Renderer::DebugViewType::Metallic, "Metallic"},
+                {GLTF_PBR_Renderer::DebugViewType::Roughness, "Roughness"},
+                {GLTF_PBR_Renderer::DebugViewType::DiffuseColor, "Diffuse color"},
+                {GLTF_PBR_Renderer::DebugViewType::SpecularColor, "Specular color (R0)"},
+                {GLTF_PBR_Renderer::DebugViewType::Reflectance90, "Reflectance90"},
+                {GLTF_PBR_Renderer::DebugViewType::MeshNormal, "Mesh normal"},
+                {GLTF_PBR_Renderer::DebugViewType::PerturbedNormal, "Perturbed normal"},
+                {GLTF_PBR_Renderer::DebugViewType::NdotV, "n*v"},
+                {PBR_Renderer::DebugViewType::DirectLighting, "Direct Lighting"},
+                {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
+                {GLTF_PBR_Renderer::DebugViewType::SpecularIBL, "Specular IBL"},
+            };
+            static_assert(_countof(DebugViews) == 19, "Did you add a new debug view mode? You may want to handle it here");
 
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::None)]            = "None";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Texcoord0)]       = "Tex coords";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::BaseColor)]       = "Base Color";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Transparency)]    = "Transparency";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NormalMap)]       = "Normal Map";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Occlusion)]       = "Occlusion";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Emissive)]        = "Emissive";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Metallic)]        = "Metallic";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Roughness)]       = "Roughness";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::DiffuseColor)]    = "Diffuse color";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::SpecularColor)]   = "Specular color (R0)";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::Reflectance90)]   = "Reflectance90";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::MeshNormal)]      = "Mesh normal";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::PerturbedNormal)] = "Perturbed normal";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NdotV)]           = "n*v";
-            DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DirectLighting)]       = "Direct Lighting";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
-            DebugViews[static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
-            static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
-
-            if (ImGui::Combo("Debug view", reinterpret_cast<int*>(&m_RenderParams.DebugView), DebugViews.data(), static_cast<int>(DebugViews.size())))
-            {
-                if (m_RenderParams.DebugView != GLTF_PBR_Renderer::DebugViewType::None)
-                    m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_ENABLE_DEBUG_VIEW;
-                else
-                    m_RenderParams.Flags &= ~GLTF_PBR_Renderer::PSO_FLAG_ENABLE_DEBUG_VIEW;
-            }
+            ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews));
         }
 
         ImGui::Combo("Bound box mode", reinterpret_cast<int*>(&m_BoundBoxMode),
@@ -606,7 +601,6 @@ void GLTFViewer::Render()
             auto& Renderer = FrameAttribs->Renderer;
             m_GLTFRenderer->SetInternalShaderParameters(Renderer);
 
-            Renderer.DebugViewType     = static_cast<int>(m_RenderParams.DebugView);
             Renderer.OcclusionStrength = m_ShaderAttribs.OcclusionStrength;
             Renderer.EmissionScale     = m_ShaderAttribs.EmissionScale;
             Renderer.AverageLogLum     = m_ShaderAttribs.AverageLogLum;
