@@ -282,7 +282,8 @@ void USDViewer::UpdateUI()
                         std::array<const char*, static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
 
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::None)]            = "None";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord0)]       = "Tex coords";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord0)]       = "Tex coords 0";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord1)]       = "Tex coords 1";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::BaseColor)]       = "Base Color";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transparency)]    = "Transparency";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NormalMap)]       = "Normal Map";
@@ -299,10 +300,10 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DirectLighting)]  = "Direct Lighting";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]      = "Diffuse IBL";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
-                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
+                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 19, "Did you add a new debug view mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Debug view", &m_FrameParams.Renderer.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size())))
-                            UpdateFrameParams = true;
+                        if (ImGui::Combo("Debug view", &m_RenderParams.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size())))
+                            UpdateRenderParams = true;
                     }
 
                     {
