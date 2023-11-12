@@ -35,6 +35,7 @@
 #include "Tasks/HnTaskManager.hpp"
 #include "Tasks/HnRenderRprimsTask.hpp"
 #include "Tasks/HnPostProcessTask.hpp"
+#include "Tasks/HnBeginFrameTask.hpp"
 
 #include "pxr/usd/usd/stage.h"
 #include "pxr/imaging/hd/tokens.h"
@@ -98,6 +99,7 @@ private:
 
     USD::HnRenderRprimsTaskParams m_RenderParams;
     USD::HnPostProcessTaskParams  m_PostProcessParams;
+    USD::HnBeginFrameTaskParams   m_FrameParams;
 
     std::string m_UsdFileName;
 

@@ -36,7 +36,6 @@
 #include "PBR_Renderer.hpp"
 #include "FileSystem.hpp"
 #include "Tasks/HnReadRprimIdTask.hpp"
-#include "Tasks/HnSetupRenderingTask.hpp"
 #include "Tasks/HnRenderAxesTask.hpp"
 #include "HnTokens.hpp"
 #include "HnCamera.hpp"
@@ -159,11 +158,10 @@ void USDViewer::LoadStage()
 
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
-    USD::HnSetupRenderingTaskParams SetupRenderingParams;
-    SetupRenderingParams.FrontFaceCCW       = true;
-    SetupRenderingParams.FinalColorTargetId = FinalColorTargetId;
-    SetupRenderingParams.CameraId           = CameraId;
-    m_Stage.TaskManager->SetupRendering(SetupRenderingParams);
+    m_FrameParams.State.FrontFaceCCW = true;
+    m_FrameParams.FinalColorTargetId = FinalColorTargetId;
+    m_FrameParams.CameraId           = CameraId;
+    m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
@@ -220,6 +218,7 @@ static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Pr
 void USDViewer::UpdateUI()
 {
     bool UpdateRenderParams      = false;
+    bool UpdateFrameParams       = false;
     bool UpdatePostProcessParams = false;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -272,12 +271,12 @@ void USDViewer::UpdateUI()
                     ImGui::ColorEdit3("Light Color", &m_LightColor.r);
 
                     ImGui::SliderFloat("Light Intensity", &m_LightIntensity, 0.f, 50.f);
-                    if (ImGui::SliderFloat("Occlusion strength", &m_RenderParams.OcclusionStrength, 0.f, 1.f))
-                        UpdateRenderParams = true;
-                    if (ImGui::SliderFloat("Emission scale", &m_RenderParams.EmissionScale, 0.f, 1.f))
-                        UpdateRenderParams = true;
-                    if (ImGui::SliderFloat("IBL scale", &m_RenderParams.IBLScale, 0.f, 1.f))
-                        UpdateRenderParams = true;
+                    if (ImGui::SliderFloat("Occlusion strength", &m_FrameParams.Renderer.OcclusionStrength, 0.f, 1.f))
+                        UpdateFrameParams = true;
+                    if (ImGui::SliderFloat("Emission scale", &m_FrameParams.Renderer.EmissionScale, 0.f, 1.f))
+                        UpdateFrameParams = true;
+                    if (ImGui::SliderFloat("IBL scale", &m_FrameParams.Renderer.IBLScale, 0.f, 1.f))
+                        UpdateFrameParams = true;
 
                     {
                         std::array<const char*, static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
@@ -302,8 +301,8 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]     = "Specular IBL";
                         static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 18, "Did you add a new debug view mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size())))
-                            UpdateRenderParams = true;
+                        if (ImGui::Combo("Debug view", &m_FrameParams.Renderer.DebugView, DebugViews.data(), static_cast<int>(DebugViews.size())))
+                            UpdateFrameParams = true;
                     }
 
                     {
@@ -407,6 +406,8 @@ void USDViewer::UpdateUI()
         m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     if (UpdatePostProcessParams)
         m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
+    if (UpdateFrameParams)
+        m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 }
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)
