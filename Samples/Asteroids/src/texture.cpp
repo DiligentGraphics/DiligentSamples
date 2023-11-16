@@ -132,14 +132,18 @@ void InitializeTexture2D(
     }
 
     ID3D12Resource* uploadBuffer = nullptr;
-    ThrowIfFailed(device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(totalSize),
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&uploadBuffer)
-    ));
+    {
+        CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
+        CD3DX12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Buffer(totalSize);
+        ThrowIfFailed(device->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &resDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&uploadBuffer)
+        ));
+    }
 
     BYTE *baseData = nullptr;
     ThrowIfFailed(uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&baseData)));    
@@ -255,8 +259,9 @@ HRESULT CreateTexture2DFromDDS_XXXX8(
         format, header->dwWidth, header->dwHeight,
         (UINT16)arraySize, (UINT16)mipLevels );
 
+    auto heapType = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     ThrowIfFailed(device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        &heapType,
         D3D12_HEAP_FLAG_NONE,
         &desc,
         D3D12_RESOURCE_STATE_COMMON,

@@ -111,8 +111,9 @@ Asteroids::Asteroids(AsteroidsSimulation* asteroids, GUI *gui, UINT minCmdLsts, 
             CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, TEXTURE_DIM, TEXTURE_DIM, 3, 0);
 
         for (UINT i = 0; i < NUM_UNIQUE_TEXTURES; ++i) {
+            CD3DX12_HEAP_PROPERTIES hepaType(D3D12_HEAP_TYPE_DEFAULT);
             ThrowIfFailed(mDevice->CreateCommittedResource(
-                &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                &hepaType,
                 D3D12_HEAP_FLAG_NONE,
                 &textureDesc,
                 D3D12_RESOURCE_STATE_COMMON,
@@ -371,8 +372,9 @@ void Asteroids::ResizeSwapChain(IDXGIFactory2* dxgiFactory, HWND outputWindow, u
         clearValue.DepthStencil.Depth = 0.0f;
         clearValue.DepthStencil.Stencil = 0;
 
+        CD3DX12_HEAP_PROPERTIES heapType(D3D12_HEAP_TYPE_DEFAULT);
         ThrowIfFailed(mDevice->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+            &heapType,
             D3D12_HEAP_FLAG_NONE,
             &desc,
             D3D12_RESOURCE_STATE_DEPTH_WRITE,
@@ -630,8 +632,9 @@ void Asteroids::CreateGUIResources()
     auto textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(
         DXGI_FORMAT_R8_UNORM, font->BitmapWidth(), font->BitmapHeight(), 1, 1);
     
+    CD3DX12_HEAP_PROPERTIES heapType(D3D12_HEAP_TYPE_DEFAULT);
     ThrowIfFailed(mDevice->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        &heapType,
         D3D12_HEAP_FLAG_NONE,
         &textureDesc,
         D3D12_RESOURCE_STATE_COMMON,
