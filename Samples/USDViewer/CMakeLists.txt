@@ -36,3 +36,4 @@ PRIVATE
     Diligent-Hydrogent
     DiligentFX
 )
+set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)
