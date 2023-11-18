@@ -103,6 +103,9 @@ private:
 
     std::string m_UsdFileName;
 
+    bool m_UseIndexPool  = true;
+    bool m_UseVertexPool = true;
+
     RefCntAutoPtr<ITextureView> m_EnvironmentMapSRV;
 
     TrackballCamera<float> m_Camera;

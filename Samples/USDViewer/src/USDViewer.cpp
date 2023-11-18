@@ -77,6 +77,12 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
 {
     CommandLineParser ArgsParser{argc, argv};
     ArgsParser.Parse("usd_path", 'u', m_UsdFileName);
+    ArgsParser.Parse("vertex_pool", m_UseVertexPool);
+    ArgsParser.Parse("index_pool", m_UseIndexPool);
+    LOG_INFO_MESSAGE("USD Viewer Arguments:",
+                     "\n    USD Path:        ", m_UsdFileName,
+                     "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
+                     "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No");
     return CommandLineStatus::OK;
 }
 
@@ -130,7 +136,13 @@ void USDViewer::LoadStage()
         return;
     }
 
-    m_Stage.RenderDelegate = USD::HnRenderDelegate::Create({m_pDevice, m_pImmediateContext, nullptr});
+    USD::HnRenderDelegate::CreateInfo DelegateCI;
+    DelegateCI.pDevice           = m_pDevice;
+    DelegateCI.pContext          = m_pImmediateContext;
+    DelegateCI.pRenderStateCache = nullptr;
+    DelegateCI.UseVertexPool     = m_UseVertexPool;
+    DelegateCI.UseIndexPool      = m_UseIndexPool;
+    m_Stage.RenderDelegate       = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
 
     const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
