@@ -64,7 +64,11 @@ void InputControllerMacOS::ProcessKeyEvent(int key, bool IsKeyPressed)
         auto& KeyState = m_Keys[static_cast<size_t>(Key)];
         if (IsKeyPressed)
         {
-            KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+            if ((KeyState & INPUT_KEY_STATE_FLAG_KEY_IS_DOWN)) {
+                KeyState |= INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+            } else {
+                KeyState &= ~INPUT_KEY_STATE_FLAG_KEY_WAS_DOWN;
+            }
             KeyState |= INPUT_KEY_STATE_FLAG_KEY_IS_DOWN;
         }
         else
