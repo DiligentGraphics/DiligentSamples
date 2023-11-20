@@ -424,6 +424,7 @@ void USDViewer::UpdateUI()
 
             if (ImGui::BeginTabItem("Stats"))
             {
+                const auto MemoryStats = m_Stage.RenderDelegate->GetMemoryStats();
                 ImGui::TextDisabled("Num draws\n"
                                     "Tris\n"
                                     "Lines\n"
@@ -433,8 +434,16 @@ void USDViewer::UpdateUI()
                                     "  SRB\n"
                                     "  VB\n"
                                     "  IB\n"
-                                    "Buffer maps");
+                                    "Buffer maps\n"
+                                    "Memory Usage\n"
+                                    "  Vertex Pool\n"
+                                    "  Index Pool");
                 ImGui::SameLine();
+
+                const std::string VertPoolCommittedSizeStr = GetMemorySizeString(MemoryStats.VertexPool.CommittedSize);
+                const std::string VertPoolUsedSizeStr      = GetMemorySizeString(MemoryStats.VertexPool.UsedSize);
+                const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
+                const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
                 ImGui::TextDisabled("%d\n"
                                     "%d\n"
                                     "%d\n"
@@ -444,7 +453,10 @@ void USDViewer::UpdateUI()
                                     "%d\n"
                                     "%d\n"
                                     "%d\n"
-                                    "%d",
+                                    "%d\n"
+                                    "\n"
+                                    "%s / %s (%d allocs, %dK verts)\n"
+                                    "%s / %s (%d allocs)\n",
                                     m_Stats.NumDrawCommands,
                                     m_Stats.NumTriangles,
                                     m_Stats.NumLines,
@@ -453,8 +465,9 @@ void USDViewer::UpdateUI()
                                     m_Stats.NumSRBChanges,
                                     m_Stats.NumVBChanges,
                                     m_Stats.NumIBChanges,
-                                    m_Stats.NumBufferMaps);
-
+                                    m_Stats.NumBufferMaps,
+                                    VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(), MemoryStats.VertexPool.AllocationCount, MemoryStats.VertexPool.AllocatedVertexCount / 1000,
+                                    IndPoolCommittedSizeStr.c_str(), IndPoolUsedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount);
                 ImGui::EndTabItem();
             }
 
