@@ -209,6 +209,17 @@ void USDViewer::Render()
     m_Engine.Execute(m_Stage.RenderIndex.get(), &tasks);
 
     m_Stage.FinalColorTarget->ReleaseTarget();
+
+    const auto& CtxStats    = m_pImmediateContext->GetStats();
+    m_Stats.NumDrawCommands = CtxStats.CommandCounters.Draw + CtxStats.CommandCounters.DrawIndexed;
+    m_Stats.NumPSOChanges   = CtxStats.CommandCounters.SetPipelineState;
+    m_Stats.NumSRBChanges   = CtxStats.CommandCounters.CommitShaderResources;
+    m_Stats.NumVBChanges    = CtxStats.CommandCounters.SetVertexBuffers;
+    m_Stats.NumIBChanges    = CtxStats.CommandCounters.SetIndexBuffer;
+    m_Stats.NumBufferMaps   = CtxStats.CommandCounters.MapBuffer;
+    m_Stats.NumTriangles    = CtxStats.GetTotalTriangleCount();
+    m_Stats.NumLines        = CtxStats.GetTotalLineCount();
+    m_Stats.NumPoints       = CtxStats.GetTotalPointCount();
 }
 
 static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Prim)
@@ -410,6 +421,43 @@ void USDViewer::UpdateUI()
 
                 ImGui::EndTabItem();
             }
+
+            if (ImGui::BeginTabItem("Stats"))
+            {
+                ImGui::TextDisabled("Num draws\n"
+                                    "Tris\n"
+                                    "Lines\n"
+                                    "Points\n"
+                                    "State Changes\n"
+                                    "  PSO\n"
+                                    "  SRB\n"
+                                    "  VB\n"
+                                    "  IB\n"
+                                    "Buffer maps");
+                ImGui::SameLine();
+                ImGui::TextDisabled("%d\n"
+                                    "%d\n"
+                                    "%d\n"
+                                    "%d\n"
+                                    "\n"
+                                    "%d\n"
+                                    "%d\n"
+                                    "%d\n"
+                                    "%d\n"
+                                    "%d",
+                                    m_Stats.NumDrawCommands,
+                                    m_Stats.NumTriangles,
+                                    m_Stats.NumLines,
+                                    m_Stats.NumPoints,
+                                    m_Stats.NumPSOChanges,
+                                    m_Stats.NumSRBChanges,
+                                    m_Stats.NumVBChanges,
+                                    m_Stats.NumIBChanges,
+                                    m_Stats.NumBufferMaps);
+
+                ImGui::EndTabItem();
+            }
+
             ImGui::EndTabBar();
         }
     }
