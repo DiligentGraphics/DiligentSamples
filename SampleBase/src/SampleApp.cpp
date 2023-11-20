@@ -826,6 +826,8 @@ void SampleApp::Render()
         return;
 
     auto* pCtx = GetImmediateContext();
+    pCtx->ClearStats();
+
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
     pCtx->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
