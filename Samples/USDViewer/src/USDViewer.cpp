@@ -496,11 +496,11 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
             SelectedPrimId = m_Stage.TaskManager->GetSelectedRPrimId();
         }
 
-        if (SelectedPrimId != m_SelectedPrimId)
+        if (SelectedPrimId != nullptr && SelectedPrimId != m_SelectedPrimId)
         {
             m_SelectedPrimId                                   = SelectedPrimId;
-            m_RenderParams.SelectedPrimId                      = m_SelectedPrimId ? *m_SelectedPrimId : pxr::SdfPath{};
-            m_PostProcessParams.NonselectionDesaturationFactor = m_SelectedPrimId != nullptr && !m_SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
+            m_RenderParams.SelectedPrimId                      = *m_SelectedPrimId;
+            m_PostProcessParams.NonselectionDesaturationFactor = !m_SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
             m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
             m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
         }
