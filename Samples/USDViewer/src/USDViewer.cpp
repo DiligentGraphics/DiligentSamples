@@ -79,10 +79,12 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
     ArgsParser.Parse("usd_path", 'u', m_UsdFileName);
     ArgsParser.Parse("vertex_pool", m_UseVertexPool);
     ArgsParser.Parse("index_pool", m_UseIndexPool);
+    ArgsParser.Parse("texture_atlas", m_UseTextureAtlas);
     LOG_INFO_MESSAGE("USD Viewer Arguments:",
                      "\n    USD Path:        ", m_UsdFileName,
                      "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
-                     "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No");
+                     "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No",
+                     "\n    Use tex atlas:   ", m_UseTextureAtlas ? "Yes" : "No");
     return CommandLineStatus::OK;
 }
 
@@ -142,6 +144,7 @@ void USDViewer::LoadStage()
     DelegateCI.pRenderStateCache = nullptr;
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
+    DelegateCI.UseTextureAtlas   = m_UseTextureAtlas;
     m_Stage.RenderDelegate       = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
 
@@ -437,13 +440,15 @@ void USDViewer::UpdateUI()
                                     "Buffer maps\n"
                                     "Memory Usage\n"
                                     "  Vertex Pool\n"
-                                    "  Index Pool");
+                                    "  Index Pool\n"
+                                    "  Atlas");
                 ImGui::SameLine();
 
                 const std::string VertPoolCommittedSizeStr = GetMemorySizeString(MemoryStats.VertexPool.CommittedSize);
                 const std::string VertPoolUsedSizeStr      = GetMemorySizeString(MemoryStats.VertexPool.UsedSize);
-                const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
-                const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
+                const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
+                const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
+                const std::string AtlasCommittedSizeStr    = GetMemorySizeString(MemoryStats.Atlas.CommittedSize).c_str();
                 ImGui::TextDisabled("%d\n"
                                     "%d\n"
                                     "%d\n"
@@ -456,7 +461,8 @@ void USDViewer::UpdateUI()
                                     "%d\n"
                                     "\n"
                                     "%s / %s (%d allocs, %dK verts)\n"
-                                    "%s / %s (%d allocs)\n",
+                                    "%s / %s (%d allocs)\n"
+                                    "%s / (%.1lf%%, %d allocs)",
                                     m_Stats.NumDrawCommands,
                                     m_Stats.NumTriangles,
                                     m_Stats.NumLines,
@@ -467,7 +473,8 @@ void USDViewer::UpdateUI()
                                     m_Stats.NumIBChanges,
                                     m_Stats.NumBufferMaps,
                                     VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(), MemoryStats.VertexPool.AllocationCount, MemoryStats.VertexPool.AllocatedVertexCount / 1000,
-                                    IndPoolCommittedSizeStr.c_str(), IndPoolUsedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount);
+                                    IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
+                                    AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(MemoryStats.Atlas.TotalTexels) * 100.0, MemoryStats.Atlas.AllocationCount);
                 ImGui::EndTabItem();
             }
 
