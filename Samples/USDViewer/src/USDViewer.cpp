@@ -144,7 +144,7 @@ void USDViewer::LoadStage()
     DelegateCI.pRenderStateCache = nullptr;
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
-    DelegateCI.UseTextureAtlas   = m_UseTextureAtlas;
+    DelegateCI.TextureAtlasDim   = m_UseTextureAtlas ? 2048 : 0;
     m_Stage.RenderDelegate       = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
 
@@ -462,7 +462,7 @@ void USDViewer::UpdateUI()
                                     "\n"
                                     "%s / %s (%d allocs, %dK verts)\n"
                                     "%s / %s (%d allocs)\n"
-                                    "%s / (%.1lf%%, %d allocs)",
+                                    "%s (%.1lf%%, %d allocs)",
                                     m_Stats.NumDrawCommands,
                                     m_Stats.NumTriangles,
                                     m_Stats.NumLines,
