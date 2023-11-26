@@ -228,6 +228,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     RendererCI.DSVFmt                = DepthBufferFmt;
     RendererCI.FrontCounterClockwise = true;
 
+    m_RenderParams.Flags = GLTF_PBR_Renderer::PSO_FLAG_DEFAULT | GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM;
     if (m_bUseResourceCache)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
     if (BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM)
@@ -463,6 +464,7 @@ void GLTFViewer::UpdateUI()
             FeatureCheckbox("Emissive", GLTF_PBR_Renderer::PSO_FLAG_USE_EMISSIVE_MAP);
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
             FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
+            FeatureCheckbox("UV transform", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM);
             ImGui::TreePop();
         }
 
