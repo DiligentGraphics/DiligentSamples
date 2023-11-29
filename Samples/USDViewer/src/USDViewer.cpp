@@ -130,6 +130,8 @@ void USDViewer::LoadStage()
         //       m_Stage = {}; would not work.
         auto Stage = std::move(m_Stage);
     }
+    // It is important to clear raw pointers (FinalColorTarget, SelectedPrimId, etc.)
+    m_Stage = {};
 
     m_Stage.Stage = pxr::UsdStage::Open(m_UsdFileName.c_str());
     if (!m_Stage.Stage)
@@ -282,7 +284,7 @@ void USDViewer::UpdateUI()
                             PopulateSceneTree(m_Stage.Stage, Prim);
                     }
 
-                    ImGui::TextDisabled("Selected Prim: %s", m_SelectedPrimId != nullptr ? m_SelectedPrimId->GetText() : "");
+                    ImGui::TextDisabled("Selected Prim: %s", m_Stage.SelectedPrimId != nullptr ? m_Stage.SelectedPrimId->GetText() : "");
 
                     ImGui::TreePop();
                 }
@@ -519,11 +521,11 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
             SelectedPrimId = m_Stage.TaskManager->GetSelectedRPrimId();
         }
 
-        if (SelectedPrimId != nullptr && SelectedPrimId != m_SelectedPrimId)
+        if (SelectedPrimId != nullptr && SelectedPrimId != m_Stage.SelectedPrimId)
         {
-            m_SelectedPrimId                                   = SelectedPrimId;
-            m_RenderParams.SelectedPrimId                      = *m_SelectedPrimId;
-            m_PostProcessParams.NonselectionDesaturationFactor = !m_SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
+            m_Stage.SelectedPrimId                             = SelectedPrimId;
+            m_RenderParams.SelectedPrimId                      = *m_Stage.SelectedPrimId;
+            m_PostProcessParams.NonselectionDesaturationFactor = !m_Stage.SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
             m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
             m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
         }
