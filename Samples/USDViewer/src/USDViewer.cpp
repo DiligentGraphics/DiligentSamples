@@ -281,6 +281,9 @@ void USDViewer::UpdateUI()
                         for (auto Prim : m_Stage.Stage->GetPseudoRoot().GetAllChildren())
                             PopulateSceneTree(m_Stage.Stage, Prim);
                     }
+
+                    ImGui::TextDisabled("Selected Prim: %s", m_SelectedPrimId != nullptr ? m_SelectedPrimId->GetText() : "");
+
                     ImGui::TreePop();
                 }
 
