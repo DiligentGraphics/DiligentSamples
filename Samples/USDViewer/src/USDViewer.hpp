@@ -130,6 +130,16 @@ private:
         Uint32 NumPoints       = 0;
     };
     RenderStats m_Stats;
+
+    enum class SelectionMode
+    {
+        OnClick,
+        OnHover,
+        Count
+    };
+    SelectionMode m_SelectMode = SelectionMode::OnClick;
+    MouseState    m_PrevMouse;
+    bool          m_IsSelecting = false;
 };
 
 } // namespace Diligent

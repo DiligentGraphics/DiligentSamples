@@ -272,6 +272,19 @@ void USDViewer::UpdateUI()
                 }
 #endif
 
+                {
+                    std::array<const char*, static_cast<size_t>(2)> SelectModes;
+                    SelectModes[static_cast<size_t>(SelectionMode::OnClick)] = "On click";
+                    SelectModes[static_cast<size_t>(SelectionMode::OnHover)] = "On Hover";
+                    static_assert(static_cast<size_t>(SelectionMode::Count) == 2, "Did you add a new select mode? You may want to handle it here");
+
+                    int SelectMode = static_cast<int>(m_SelectMode);
+                    if (ImGui::Combo("Select mode", &SelectMode, SelectModes.data(), static_cast<int>(SelectModes.size())))
+                    {
+                        m_SelectMode = static_cast<SelectionMode>(SelectMode);
+                    }
+                }
+
                 ImGui::Spacing();
 
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
@@ -502,36 +515,72 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     UpdateUI();
     m_Camera.Update(m_InputController);
 
-    if (m_Stage)
+    if (!m_Stage)
+        return;
+
+    const auto&         SCDesc         = m_pSwapChain->GetDesc();
+    const auto&         Mouse          = m_InputController.GetMouseState();
+    const pxr::SdfPath* SelectedPrimId = nullptr;
+    if (Mouse.PosX >= 0 && Mouse.PosX < static_cast<float>(SCDesc.Width) &&
+        Mouse.PosY >= 0 && Mouse.PosY < static_cast<float>(SCDesc.Height))
     {
-        const auto&         SCDesc         = m_pSwapChain->GetDesc();
-        const auto&         Mouse          = m_InputController.GetMouseState();
-        const pxr::SdfPath* SelectedPrimId = nullptr;
-        if (Mouse.PosX >= 0 && Mouse.PosX < static_cast<float>(SCDesc.Width) &&
-            Mouse.PosY >= 0 && Mouse.PosY < static_cast<float>(SCDesc.Height))
-        {
-            auto PosX = static_cast<Uint32>(Mouse.PosX);
-            auto PosY = static_cast<Uint32>(Mouse.PosY);
-            if (m_pDevice->GetDeviceInfo().IsGLDevice())
-                PosY = SCDesc.Height - 1 - PosY;
+        auto PosX = static_cast<Uint32>(Mouse.PosX);
+        auto PosY = static_cast<Uint32>(Mouse.PosY);
+        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+            PosY = SCDesc.Height - 1 - PosY;
 
-            USD::HnReadRprimIdTaskParams Params{true, PosX, PosY};
-            m_Stage.TaskManager->SetReadRprimIdParams(Params);
+        USD::HnReadRprimIdTaskParams Params{true, PosX, PosY};
+        m_Stage.TaskManager->SetReadRprimIdParams(Params);
 
-            SelectedPrimId = m_Stage.TaskManager->GetSelectedRPrimId();
-        }
-
-        if (SelectedPrimId != nullptr && SelectedPrimId != m_Stage.SelectedPrimId)
-        {
-            m_Stage.SelectedPrimId                             = SelectedPrimId;
-            m_RenderParams.SelectedPrimId                      = *m_Stage.SelectedPrimId;
-            m_PostProcessParams.NonselectionDesaturationFactor = !m_Stage.SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
-            m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
-            m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
-        }
-
-        m_Stage.ImagingDelegate->ApplyPendingUpdates();
+        SelectedPrimId = m_Stage.TaskManager->GetSelectedRPrimId();
     }
+
+    bool SelectPrim = false;
+    if (m_SelectMode == SelectionMode::OnClick)
+    {
+        if (!m_IsSelecting)
+        {
+
+            if ((m_PrevMouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) == 0 &&
+                (Mouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
+                m_IsSelecting = true; // LMB was pressed
+        }
+        else
+        {
+            if ((Mouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) == 0)
+            {
+                // LMB was released
+                SelectPrim = true;
+            }
+            else if (m_PrevMouse.PosX != Mouse.PosX ||
+                     m_PrevMouse.PosY != Mouse.PosY)
+            {
+                // Mouse was moved while LMB was pressed
+                m_IsSelecting = false;
+            }
+        }
+    }
+    else if (m_SelectMode == SelectionMode::OnHover)
+    {
+        SelectPrim    = true;
+        m_IsSelecting = false;
+    }
+
+    if ((Mouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) == 0)
+        m_IsSelecting = false;
+
+    if (SelectPrim && SelectedPrimId != nullptr && SelectedPrimId != m_Stage.SelectedPrimId)
+    {
+        m_Stage.SelectedPrimId                             = SelectedPrimId;
+        m_RenderParams.SelectedPrimId                      = *m_Stage.SelectedPrimId;
+        m_PostProcessParams.NonselectionDesaturationFactor = !m_Stage.SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
+        m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
+        m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
+    }
+
+    m_PrevMouse = Mouse;
+
+    m_Stage.ImagingDelegate->ApplyPendingUpdates();
 }
 
 } // namespace Diligent
