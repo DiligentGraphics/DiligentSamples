@@ -74,6 +74,7 @@ private:
     void LoadStage();
     void PopulateSceneTree(const pxr::UsdPrim& Prim);
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
+    void EditSelectePrimTransform();
 
     float4x4 ComputeStageTransform();
     BoundBox ComputeSceneBounds(const pxr::UsdPrim& Prim) const;
@@ -118,6 +119,8 @@ private:
     RefCntAutoPtr<ITextureView> m_EnvironmentMapSRV;
 
     TrackballCamera<float> m_Camera;
+    float4x4               m_CameraView;
+    float4x4               m_CameraProj;
 
     float3 m_LightDirection = normalize(float3{0.5f, 0.6f, -0.2f});
     float4 m_LightColor     = {1, 1, 1, 1};

@@ -43,6 +43,7 @@
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
+#include "ImGuizmo.h"
 
 #include "pxr/usd/usd/prim.h"
 #include "pxr/usd/usd/property.h"
@@ -278,16 +279,8 @@ void USDViewer::Render()
     if (!m_Stage)
         return;
 
-    auto CameraDist = m_Camera.GetDist();
-    auto CameraView = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, CameraDist);
-    // Apply pretransform matrix that rotates the scene according the surface orientation
-    CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
-
-    // Get projection matrix adjusted to the current screen orientation
-    const auto CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
-
-    m_Stage.Camera->SetViewMatrix(CameraView);
-    m_Stage.Camera->SetProjectionMatrix(CameraProj);
+    m_Stage.Camera->SetViewMatrix(m_CameraView);
+    m_Stage.Camera->SetProjectionMatrix(m_CameraProj);
 
     m_Stage.Light->SetDirection(m_LightDirection);
     m_Stage.Light->SetIntensity(m_LightColor * m_LightIntensity);
@@ -344,11 +337,70 @@ void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
     }
 }
 
+static pxr::GfMatrix4d GetPrimGlobalTransform(pxr::UsdPrim Prim)
+{
+    pxr::GfMatrix4d GlobalXForm{1};
+    while (Prim)
+    {
+        if (pxr::UsdGeomXformable XFormable{Prim})
+        {
+            pxr::GfMatrix4d LocalXform{1.0};
+            bool            ResetsXformStack = false;
+            if (XFormable.GetLocalTransformation(&LocalXform, &ResetsXformStack))
+            {
+                GlobalXForm = GlobalXForm * LocalXform;
+            }
+        }
+
+        Prim = Prim.GetParent();
+    }
+
+    return GlobalXForm;
+}
+
+void USDViewer::EditSelectePrimTransform()
+{
+    pxr::UsdPrim Prim = m_Stage.Stage->GetPrimAtPath(m_Stage.SelectedPrimId);
+    if (!Prim)
+        return;
+
+    pxr::UsdGeomXformable XFormable{Prim};
+    if (!XFormable)
+        return;
+
+    pxr::GfMatrix4d ParentGlobalXForm  = GetPrimGlobalTransform(Prim.GetParent());
+    float4x4        ParentGlobalMatrix = float4x4::MakeMatrix(ParentGlobalXForm.data());
+
+    ParentGlobalMatrix = ParentGlobalMatrix * m_RenderParams.Transform;
+
+    pxr::GfMatrix4d LocalXform       = pxr::GfMatrix4d{1.0};
+    bool            ResetsXformStack = false;
+    XFormable.GetLocalTransformation(&LocalXform, &ResetsXformStack);
+
+    float4x4 NewGlobalMatrix = float4x4::MakeMatrix(LocalXform.data()) * ParentGlobalMatrix;
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+    ImGuizmo::OPERATION mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+    ImGuizmo::MODE      mCurrentGizmoMode      = ImGuizmo::WORLD;
+    if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), mCurrentGizmoOperation, mCurrentGizmoMode, NewGlobalMatrix.Data(), NULL, NULL))
+    {
+        Diligent::float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
+        XFormable.MakeMatrixXform().Set(pxr::GfMatrix4d{
+            NewLocalMatrix.m00, NewLocalMatrix.m01, NewLocalMatrix.m02, NewLocalMatrix.m03,
+            NewLocalMatrix.m10, NewLocalMatrix.m11, NewLocalMatrix.m12, NewLocalMatrix.m13,
+            NewLocalMatrix.m20, NewLocalMatrix.m21, NewLocalMatrix.m22, NewLocalMatrix.m23,
+            NewLocalMatrix.m30, NewLocalMatrix.m31, NewLocalMatrix.m32, NewLocalMatrix.m33});
+    }
+}
+
 void USDViewer::UpdateUI()
 {
     bool UpdateRenderParams      = false;
     bool UpdateFrameParams       = false;
     bool UpdatePostProcessParams = false;
+
+    ImGuizmo::BeginFrame();
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(300, 550), ImGuiCond_FirstUseEver);
@@ -600,6 +652,11 @@ void USDViewer::UpdateUI()
     }
     ImGui::End();
 
+    if (!m_Stage.SelectedPrimId.IsEmpty())
+    {
+        EditSelectePrimTransform();
+    }
+
     if (UpdateRenderParams)
         m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     if (UpdatePostProcessParams)
@@ -611,9 +668,17 @@ void USDViewer::UpdateUI()
 void USDViewer::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
-    UpdateUI();
     m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
+    auto CameraDist = m_Camera.GetDist();
+    m_CameraView    = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, CameraDist);
+    // Apply pretransform matrix that rotates the scene according the surface orientation
+    m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    // Get projection matrix adjusted to the current screen orientation
+    m_CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
+
+    UpdateUI();
 
     if (!m_Stage)
         return;
