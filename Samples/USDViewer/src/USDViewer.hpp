@@ -74,6 +74,8 @@ private:
     void PopulateSceneTree(const pxr::UsdPrim& Prim);
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
 
+    float4x4 ComputeStageTransform() const;
+
 private:
     struct StageInfo
     {

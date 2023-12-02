@@ -46,6 +46,8 @@
 
 #include "pxr/usd/usd/prim.h"
 #include "pxr/usd/usd/property.h"
+#include "pxr/usd/usdGeom/metrics.h"
+
 
 namespace Diligent
 {
@@ -109,16 +111,47 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.ResetDefaults();
     m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
 
-    float4x4 InvYAxis        = float4x4::Identity();
-    InvYAxis._22             = -1;
-    m_RenderParams.Transform = InvYAxis;
-
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
 
     if (m_UsdFileName.empty())
         m_UsdFileName = "cube.usd";
     LoadStage();
+}
+
+float4x4 USDViewer::ComputeStageTransform() const
+{
+    float4x4 Transform = float4x4::Identity();
+
+    const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
+    if (UpAxis == pxr::UsdGeomTokens->x)
+    {
+        Transform *= Diligent::float4x4{
+            // clang-format off
+            0, -1,  0,  0,
+           -1,  0,  0,  0,
+            0,  0,  1,  0,
+            0,  0,  0,  1
+            // clang-format on
+        };
+    }
+    else if (UpAxis == pxr::UsdGeomTokens->y)
+    {
+        Transform *= float4x4::Scale(1, -1, 1);
+    }
+    else if (UpAxis == pxr::UsdGeomTokens->z)
+    {
+        Transform *= Diligent::float4x4{
+            // clang-format off
+            1,  0,  0,  0,
+            0,  0, -1,  0,
+            0, -1,  0,  0,
+            0,  0,  0,  1
+            // clang-format on
+        };
+    }
+
+    return Transform;
 }
 
 void USDViewer::LoadStage()
@@ -175,12 +208,17 @@ void USDViewer::LoadStage()
 
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
+    m_FrameParams                    = {};
     m_FrameParams.State.FrontFaceCCW = true;
     m_FrameParams.FinalColorTargetId = FinalColorTargetId;
     m_FrameParams.CameraId           = CameraId;
     m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
+    m_RenderParams.SelectedPrimId = {};
+    m_RenderParams.Transform      = ComputeStageTransform();
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
+
+    m_PostProcessParams = {};
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
     USD::HnRenderAxesTaskParams RenderAxesParams;

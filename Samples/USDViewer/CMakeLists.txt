@@ -35,5 +35,6 @@ PRIVATE
     USD-Libraries
     Diligent-Hydrogent
     DiligentFX
+    usd_usdGeom
 )
 set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)
