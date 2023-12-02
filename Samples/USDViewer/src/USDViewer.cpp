@@ -105,9 +105,8 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
         };
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    m_Camera.SetDistRange(1, 10000);
-    m_Camera.SetDefaultDistance(100);
-    m_Camera.SetZoomSpeed(10);
+    m_Camera.SetDistRange(0.1, 10000);
+    m_Camera.SetDefaultRotation(-PI_F / 3.f, PI_F / 6.f);
     m_Camera.ResetDefaults();
     m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
 
@@ -119,9 +118,56 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     LoadStage();
 }
 
-float4x4 USDViewer::ComputeStageTransform() const
+BoundBox USDViewer::ComputeSceneBounds(const pxr::UsdPrim& Prim) const
+{
+    BoundBox BB{float3{+FLT_MAX}, float3{-FLT_MAX}};
+
+    pxr::UsdGeomBoundable Boundable{Prim};
+    if (Boundable)
+    {
+        pxr::GfRange3d Extent = m_Stage.ImagingDelegate->GetExtent(Prim.GetPath());
+        if (Extent.IsEmpty())
+            return BB;
+
+        BB.Min = float3::MakeVector(Extent.GetMin().data());
+        BB.Max = float3::MakeVector(Extent.GetMax().data());
+
+        pxr::UsdGeomXformable XFormable{Prim};
+        if (XFormable)
+        {
+            const pxr::GfMatrix4d Transform = m_Stage.ImagingDelegate->GetTransform(Prim.GetPath());
+
+            BB = BB.Transform(float4x4::MakeMatrix(Transform.data()));
+        }
+
+        return BB;
+    }
+
+    for (auto Child : Prim.GetAllChildren())
+    {
+        BB = BB.Combine(ComputeSceneBounds(Child));
+    }
+
+    return BB;
+}
+
+float4x4 USDViewer::ComputeStageTransform()
 {
     float4x4 Transform = float4x4::Identity();
+    if (BoundBox SceneBB = ComputeSceneBounds(m_Stage.Stage->GetPseudoRoot()))
+    {
+        float CameraDist = 0;
+        for (size_t i = 0; i < 8; ++i)
+        {
+            float3 BBCorner = {
+                (i & 0x1) ? SceneBB.Max.x : SceneBB.Min.x,
+                (i & 0x2) ? SceneBB.Max.y : SceneBB.Min.y,
+                (i & 0x4) ? SceneBB.Max.z : SceneBB.Min.z,
+            };
+            CameraDist = std::max(CameraDist, length(BBCorner));
+        }
+        m_Camera.SetDist(CameraDist * 2.f);
+    }
 
     const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
     if (UpAxis == pxr::UsdGeomTokens->x)
@@ -566,6 +612,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
+    m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
 
     if (!m_Stage)

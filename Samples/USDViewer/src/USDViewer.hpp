@@ -30,6 +30,7 @@
 
 #include "SampleBase.hpp"
 #include "TrackballCamera.hpp"
+#include "AdvancedMath.hpp"
 
 #include "HnRenderDelegate.hpp"
 #include "Tasks/HnTaskManager.hpp"
@@ -74,7 +75,8 @@ private:
     void PopulateSceneTree(const pxr::UsdPrim& Prim);
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
 
-    float4x4 ComputeStageTransform() const;
+    float4x4 ComputeStageTransform();
+    BoundBox ComputeSceneBounds(const pxr::UsdPrim& Prim) const;
 
 private:
     struct StageInfo
