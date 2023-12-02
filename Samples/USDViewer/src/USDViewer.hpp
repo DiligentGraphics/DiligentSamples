@@ -141,7 +141,8 @@ private:
     };
     SelectionMode m_SelectMode = SelectionMode::OnClick;
     MouseState    m_PrevMouse;
-    bool          m_IsSelecting = false;
+    bool          m_IsSelecting               = false;
+    bool          m_ScrolllToSelectedTreeItem = false;
 };
 
 } // namespace Diligent

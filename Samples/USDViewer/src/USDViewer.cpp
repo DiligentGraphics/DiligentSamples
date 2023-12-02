@@ -250,6 +250,14 @@ void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
 
         ImGui::TreePop();
     }
+    else
+    {
+        if (m_ScrolllToSelectedTreeItem && (Flags & ImGuiTreeNodeFlags_Selected))
+        {
+            ImGui::SetScrollHereY();
+            m_ScrolllToSelectedTreeItem = false;
+        }
+    }
 }
 
 void USDViewer::UpdateUI()
@@ -579,6 +587,8 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     if (SelectPrim && SelectedPrimId != nullptr)
     {
         SetSelectedPrim(*SelectedPrimId);
+        if (!SelectedPrimId->IsEmpty())
+            m_ScrolllToSelectedTreeItem = true;
     }
 
     m_PrevMouse = Mouse;
