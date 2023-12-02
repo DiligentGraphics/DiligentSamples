@@ -71,6 +71,8 @@ public:
 private:
     void UpdateUI();
     void LoadStage();
+    void PopulateSceneTree(const pxr::UsdPrim& Prim);
+    void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
 
 private:
     struct StageInfo
@@ -88,7 +90,7 @@ private:
         USD::HnCamera*       Camera           = nullptr;
         USD::HnLight*        Light            = nullptr;
 
-        const pxr::SdfPath* SelectedPrimId = nullptr;
+        pxr::SdfPath SelectedPrimId;
 
         explicit operator bool() const
         {

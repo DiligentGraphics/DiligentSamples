@@ -227,9 +227,18 @@ void USDViewer::Render()
     m_Stats.NumPoints       = CtxStats.GetTotalPointCount();
 }
 
-static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Prim)
+void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
 {
-    if (ImGui::TreeNode(Prim.GetName().GetText()))
+    ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (m_Stage.SelectedPrimId.HasPrefix(Prim.GetPath()))
+        Flags |= ImGuiTreeNodeFlags_Selected;
+
+    const bool NodeOpen = ImGui::TreeNodeEx(Prim.GetName().GetText(), Flags);
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+    {
+        SetSelectedPrim(Prim.GetPath());
+    }
+    if (NodeOpen)
     {
         for (const auto& Prop : Prim.GetProperties())
         {
@@ -237,7 +246,7 @@ static void PopulateSceneTree(pxr::UsdStageRefPtr& Stage, const pxr::UsdPrim& Pr
         }
 
         for (auto Child : Prim.GetAllChildren())
-            PopulateSceneTree(Stage, Child);
+            PopulateSceneTree(Child);
 
         ImGui::TreePop();
     }
@@ -294,10 +303,8 @@ void USDViewer::UpdateUI()
                     {
                         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                         for (auto Prim : m_Stage.Stage->GetPseudoRoot().GetAllChildren())
-                            PopulateSceneTree(m_Stage.Stage, Prim);
+                            PopulateSceneTree(Prim);
                     }
-
-                    ImGui::TextDisabled("Selected Prim: %s", m_Stage.SelectedPrimId != nullptr ? m_Stage.SelectedPrimId->GetText() : "");
 
                     ImGui::TreePop();
                 }
@@ -569,18 +576,26 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     if ((Mouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) == 0)
         m_IsSelecting = false;
 
-    if (SelectPrim && SelectedPrimId != nullptr && SelectedPrimId != m_Stage.SelectedPrimId)
+    if (SelectPrim && SelectedPrimId != nullptr)
     {
-        m_Stage.SelectedPrimId                             = SelectedPrimId;
-        m_RenderParams.SelectedPrimId                      = *m_Stage.SelectedPrimId;
-        m_PostProcessParams.NonselectionDesaturationFactor = !m_Stage.SelectedPrimId->IsEmpty() ? 0.5f : 0.f;
-        m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
-        m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
+        SetSelectedPrim(*SelectedPrimId);
     }
 
     m_PrevMouse = Mouse;
 
     m_Stage.ImagingDelegate->ApplyPendingUpdates();
+}
+
+void USDViewer::SetSelectedPrim(const pxr::SdfPath& SelectedPrimId)
+{
+    if (SelectedPrimId == m_Stage.SelectedPrimId)
+        return;
+
+    m_Stage.SelectedPrimId                             = SelectedPrimId;
+    m_RenderParams.SelectedPrimId                      = m_Stage.SelectedPrimId;
+    m_PostProcessParams.NonselectionDesaturationFactor = !m_Stage.SelectedPrimId.IsEmpty() ? 0.5f : 0.f;
+    m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
+    m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 }
 
 } // namespace Diligent
