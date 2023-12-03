@@ -33,6 +33,7 @@
 #include "GraphicsUtilities.h"
 #include "MapHelper.hpp"
 #include "TextureUtilities.h"
+#include "AdvancedMath.hpp"
 #include "PBR_Renderer.hpp"
 #include "FileSystem.hpp"
 #include "Tasks/HnReadRprimIdTask.hpp"
@@ -119,14 +120,14 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     LoadStage();
 }
 
-BoundBox USDViewer::ComputeSceneBounds(const pxr::UsdPrim& Prim) const
+static BoundBox ComputeSceneBounds(pxr::HdSceneDelegate& SceneDelegate, const pxr::UsdPrim& Prim)
 {
     BoundBox BB{float3{+FLT_MAX}, float3{-FLT_MAX}};
 
     pxr::UsdGeomBoundable Boundable{Prim};
     if (Boundable)
     {
-        pxr::GfRange3d Extent = m_Stage.ImagingDelegate->GetExtent(Prim.GetPath());
+        pxr::GfRange3d Extent = SceneDelegate.GetExtent(Prim.GetPath());
         if (Extent.IsEmpty())
             return BB;
 
@@ -136,9 +137,10 @@ BoundBox USDViewer::ComputeSceneBounds(const pxr::UsdPrim& Prim) const
         pxr::UsdGeomXformable XFormable{Prim};
         if (XFormable)
         {
-            const pxr::GfMatrix4d Transform = m_Stage.ImagingDelegate->GetTransform(Prim.GetPath());
+            // Scene delegate returns global transform
+            const pxr::GfMatrix4d GlobalTransform = SceneDelegate.GetTransform(Prim.GetPath());
 
-            BB = BB.Transform(float4x4::MakeMatrix(Transform.data()));
+            BB = BB.Transform(USD::ToFloat4x4(GlobalTransform));
         }
 
         return BB;
@@ -146,7 +148,7 @@ BoundBox USDViewer::ComputeSceneBounds(const pxr::UsdPrim& Prim) const
 
     for (auto Child : Prim.GetAllChildren())
     {
-        BB = BB.Combine(ComputeSceneBounds(Child));
+        BB = BB.Combine(ComputeSceneBounds(SceneDelegate, Child));
     }
 
     return BB;
@@ -267,7 +269,7 @@ void USDViewer::LoadStage()
     m_Stage.ImagingDelegate->SetRootTransform(USD::ToGfMatrix4d(m_Stage.RootTransform));
 
     float SceneExtent = 100;
-    if (BoundBox SceneBB = ComputeSceneBounds(m_Stage.Stage->GetPseudoRoot()))
+    if (BoundBox SceneBB = ComputeSceneBounds(*m_Stage.ImagingDelegate, m_Stage.Stage->GetPseudoRoot()))
     {
         SceneExtent = 0;
         for (size_t i = 0; i < 8; ++i)
@@ -385,7 +387,7 @@ static pxr::GfMatrix4d GetPrimGlobalTransform(pxr::UsdPrim Prim)
     return GlobalXForm;
 }
 
-void USDViewer::EditSelectePrimTransform()
+void USDViewer::EditSelectedPrimTransform()
 {
     pxr::UsdPrim Prim = m_Stage.Stage->GetPrimAtPath(m_Stage.SelectedPrimId);
     if (!Prim)
@@ -396,7 +398,7 @@ void USDViewer::EditSelectePrimTransform()
         return;
 
     pxr::GfMatrix4d ParentGlobalXForm  = GetPrimGlobalTransform(Prim.GetParent());
-    float4x4        ParentGlobalMatrix = float4x4::MakeMatrix(ParentGlobalXForm.data());
+    float4x4        ParentGlobalMatrix = USD::ToFloat4x4(ParentGlobalXForm);
 
     ParentGlobalMatrix = ParentGlobalMatrix * m_Stage.RootTransform;
 
@@ -410,14 +412,13 @@ void USDViewer::EditSelectePrimTransform()
     ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
     ImGuizmo::OPERATION GizmoOperation = static_cast<ImGuizmo::OPERATION>(static_cast<int>(ImGuizmo::UNIVERSAL) & ~static_cast<int>(ImGuizmo::ROTATE_SCREEN));
     ImGuizmo::MODE      GizmoMode      = ImGuizmo::LOCAL;
+    // NOTE: it is important that ImGuizmo operates on a matrix without reflections, otherwise
+    //       rotation will be flipped.
     if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), GizmoOperation, GizmoMode, NewGlobalMatrix.Data(), NULL, NULL))
     {
-        Diligent::float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
-        XFormable.MakeMatrixXform().Set(pxr::GfMatrix4d{
-            NewLocalMatrix.m00, NewLocalMatrix.m01, NewLocalMatrix.m02, NewLocalMatrix.m03,
-            NewLocalMatrix.m10, NewLocalMatrix.m11, NewLocalMatrix.m12, NewLocalMatrix.m13,
-            NewLocalMatrix.m20, NewLocalMatrix.m21, NewLocalMatrix.m22, NewLocalMatrix.m23,
-            NewLocalMatrix.m30, NewLocalMatrix.m31, NewLocalMatrix.m32, NewLocalMatrix.m33});
+        // New local matrix is the delta between new global matrix and parent global matrix
+        float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
+        XFormable.MakeMatrixXform().Set(USD::ToGfMatrix4d(NewLocalMatrix));
     }
 }
 
@@ -681,7 +682,7 @@ void USDViewer::UpdateUI()
 
     if (!m_Stage.SelectedPrimId.IsEmpty())
     {
-        EditSelectePrimTransform();
+        EditSelectedPrimTransform();
     }
 
     if (UpdateRenderParams)
@@ -698,7 +699,8 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
     auto CameraDist = m_Camera.GetDist();
-    m_CameraView    = float4x4::Scale(1, -1, 1) * m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0, 0, CameraDist);
+    // Flip Y axis
+    m_CameraView = float4x4::Scale(1, -1, 1) * m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0, 0, CameraDist);
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
