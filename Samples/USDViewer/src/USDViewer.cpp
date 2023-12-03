@@ -95,6 +95,8 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    ImGuizmo::SetGizmoSizeClipSpace(0.15f);
+
     RefCntAutoPtr<ITexture> EnvironmentMap;
     CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
     VERIFY_EXPR(EnvironmentMap);
@@ -381,8 +383,8 @@ void USDViewer::EditSelectePrimTransform()
 
     ImGuiIO& io = ImGui::GetIO();
     ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-    ImGuizmo::OPERATION mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-    ImGuizmo::MODE      mCurrentGizmoMode      = ImGuizmo::WORLD;
+    ImGuizmo::OPERATION mCurrentGizmoOperation = ImGuizmo::UNIVERSAL;
+    ImGuizmo::MODE      mCurrentGizmoMode      = ImGuizmo::LOCAL;
     if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), mCurrentGizmoOperation, mCurrentGizmoMode, NewGlobalMatrix.Data(), NULL, NULL))
     {
         Diligent::float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
