@@ -110,8 +110,6 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
         };
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    m_Camera.SetDistRange(0.1, 10000);
-
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
 
@@ -282,6 +280,11 @@ void USDViewer::LoadStage()
             SceneExtent = std::max(SceneExtent, length(BBCorner));
         }
         m_Camera.SetDist(SceneExtent * 2.f);
+        m_Camera.SetDistRange(0.1f, SceneExtent * 10.f);
+    }
+    else
+    {
+        m_Camera.SetDistRange(0.1f, 10000.f);
     }
 
     USD::HnRenderAxesTaskParams RenderAxesParams;
