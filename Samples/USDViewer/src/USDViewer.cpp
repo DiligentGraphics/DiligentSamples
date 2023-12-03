@@ -268,6 +268,7 @@ void USDViewer::LoadStage()
         m_Camera.SetDist(300.f);
         m_Camera.SetDistRange(0.1f, 10000.f);
     }
+    UpdateCamera();
 
     USD::HnRenderAxesTaskParams RenderAxesParams;
     RenderAxesParams.Transform = float4x4::Scale(SceneExtent * 2.f) * m_Stage.RootTransform;
@@ -678,11 +679,8 @@ void USDViewer::UpdateUI()
         m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 }
 
-void USDViewer::Update(double CurrTime, double ElapsedTime)
+void USDViewer::UpdateCamera()
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
-    m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
-    m_Camera.Update(m_InputController);
     auto CameraDist = m_Camera.GetDist();
     // Flip Y axis
     m_CameraView = float4x4::Scale(1, -1, 1) * m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0, 0, CameraDist);
@@ -691,7 +689,15 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
 
     // Get projection matrix adjusted to the current screen orientation
     m_CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
+}
 
+void USDViewer::Update(double CurrTime, double ElapsedTime)
+{
+    SampleBase::Update(CurrTime, ElapsedTime);
+    m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
+    m_Camera.Update(m_InputController);
+    UpdateCamera();
+    // Update camera first as TRS widget needs camera view/proj matrices.
     UpdateUI();
 
     if (!m_Stage)

@@ -75,6 +75,7 @@ private:
     void PopulateSceneTree(const pxr::UsdPrim& Prim);
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
     void EditSelectedPrimTransform();
+    void UpdateCamera();
 
 private:
     struct StageInfo
