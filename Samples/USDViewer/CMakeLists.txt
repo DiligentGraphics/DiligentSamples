@@ -58,5 +58,6 @@ PRIVATE
     Diligent-Hydrogent
     DiligentFX
     usd_usdGeom
+    usd_work
 )
 set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)

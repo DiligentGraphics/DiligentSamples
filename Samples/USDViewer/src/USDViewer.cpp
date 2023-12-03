@@ -118,38 +118,18 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     LoadStage();
 }
 
-static BoundBox ComputeSceneBounds(pxr::HdSceneDelegate& SceneDelegate, const pxr::UsdPrim& Prim)
+static pxr::GfRange3d ComputeStageAABB(const pxr::UsdStage& Stage)
 {
-    BoundBox BB{float3{+FLT_MAX}, float3{-FLT_MAX}};
+    pxr::TfTokenVector Purposes{{pxr::UsdGeomTokens->default_}};
 
-    pxr::UsdGeomBoundable Boundable{Prim};
-    if (Boundable)
-    {
-        pxr::GfRange3d Extent = SceneDelegate.GetExtent(Prim.GetPath());
-        if (Extent.IsEmpty())
-            return BB;
+    // Extent hints are sometimes authored as an optimization to avoid
+    // computing bounds, they are particularly useful for some tests where
+    // there is no bound on the first frame.
+    constexpr bool        UseExtentHints = true;
+    pxr::UsdGeomBBoxCache BBoxCache(pxr::UsdTimeCode::Default(), Purposes, UseExtentHints);
 
-        BB.Min = float3::MakeVector(Extent.GetMin().data());
-        BB.Max = float3::MakeVector(Extent.GetMax().data());
-
-        pxr::UsdGeomXformable XFormable{Prim};
-        if (XFormable)
-        {
-            // Scene delegate returns global transform
-            const pxr::GfMatrix4d GlobalTransform = SceneDelegate.GetTransform(Prim.GetPath());
-
-            BB = BB.Transform(USD::ToFloat4x4(GlobalTransform));
-        }
-
-        return BB;
-    }
-
-    for (auto Child : Prim.GetAllChildren())
-    {
-        BB = BB.Combine(ComputeSceneBounds(SceneDelegate, Child));
-    }
-
-    return BB;
+    const pxr::GfBBox3d BBox = BBoxCache.ComputeWorldBound(Stage.GetPseudoRoot());
+    return BBox.ComputeAlignedRange();
 }
 
 static float4x4 GetUpAxisTransform(const pxr::TfToken UpAxis)
@@ -266,24 +246,26 @@ void USDViewer::LoadStage()
     m_Stage.RootTransform     = GetUpAxisTransform(UpAxis);
     m_Stage.ImagingDelegate->SetRootTransform(USD::ToGfMatrix4d(m_Stage.RootTransform));
 
-    float SceneExtent = 100;
-    if (BoundBox SceneBB = ComputeSceneBounds(*m_Stage.ImagingDelegate, m_Stage.Stage->GetPseudoRoot()))
+    float                SceneExtent = 100;
+    const pxr::GfRange3d SceneAABB   = ComputeStageAABB(*m_Stage.Stage);
+    if (!SceneAABB.IsEmpty())
     {
         SceneExtent = 0;
         for (size_t i = 0; i < 8; ++i)
         {
             float3 BBCorner = {
-                (i & 0x1) ? SceneBB.Max.x : SceneBB.Min.x,
-                (i & 0x2) ? SceneBB.Max.y : SceneBB.Min.y,
-                (i & 0x4) ? SceneBB.Max.z : SceneBB.Min.z,
+                static_cast<float>((i & 0x1) ? SceneAABB.GetMax()[0] : SceneAABB.GetMin()[0]),
+                static_cast<float>((i & 0x2) ? SceneAABB.GetMax()[1] : SceneAABB.GetMin()[1]),
+                static_cast<float>((i & 0x4) ? SceneAABB.GetMax()[2] : SceneAABB.GetMin()[2]),
             };
             SceneExtent = std::max(SceneExtent, length(BBCorner));
         }
         m_Camera.SetDist(SceneExtent * 2.f);
-        m_Camera.SetDistRange(0.1f, SceneExtent * 10.f);
+        m_Camera.SetDistRange(SceneExtent * 0.01f, SceneExtent * 10.f);
     }
     else
     {
+        m_Camera.SetDist(300.f);
         m_Camera.SetDistRange(0.1f, 10000.f);
     }
 
