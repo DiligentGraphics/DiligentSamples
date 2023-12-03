@@ -76,7 +76,6 @@ private:
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
     void EditSelectePrimTransform();
 
-    float4x4 ComputeStageTransform();
     BoundBox ComputeSceneBounds(const pxr::UsdPrim& Prim) const;
 
 private:
@@ -96,6 +95,8 @@ private:
         USD::HnLight*        Light            = nullptr;
 
         pxr::SdfPath SelectedPrimId;
+
+        float4x4 RootTransform = float4x4::Identity();
 
         explicit operator bool() const
         {

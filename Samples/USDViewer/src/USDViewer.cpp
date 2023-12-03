@@ -40,6 +40,7 @@
 #include "HnTokens.hpp"
 #include "HnCamera.hpp"
 #include "HnLight.hpp"
+#include "GfTypeConversions.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -109,9 +110,6 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     m_Camera.SetDistRange(0.1, 10000);
-    m_Camera.SetDefaultRotation(-PI_F / 3.f, PI_F / 6.f);
-    m_Camera.ResetDefaults();
-    m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
 
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
@@ -154,53 +152,48 @@ BoundBox USDViewer::ComputeSceneBounds(const pxr::UsdPrim& Prim) const
     return BB;
 }
 
-float4x4 USDViewer::ComputeStageTransform()
+static float4x4 GetUpAxisTransform(const pxr::TfToken UpAxis)
 {
-    float4x4 Transform = float4x4::Identity();
-    if (BoundBox SceneBB = ComputeSceneBounds(m_Stage.Stage->GetPseudoRoot()))
-    {
-        float CameraDist = 0;
-        for (size_t i = 0; i < 8; ++i)
-        {
-            float3 BBCorner = {
-                (i & 0x1) ? SceneBB.Max.x : SceneBB.Min.x,
-                (i & 0x2) ? SceneBB.Max.y : SceneBB.Min.y,
-                (i & 0x4) ? SceneBB.Max.z : SceneBB.Min.z,
-            };
-            CameraDist = std::max(CameraDist, length(BBCorner));
-        }
-        m_Camera.SetDist(CameraDist * 2.f);
-    }
-
-    const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
+    // NOTE: transform must not contain reflection as otherwise
+    //       rotation in TRS widget will work incorrectly.
     if (UpAxis == pxr::UsdGeomTokens->x)
     {
-        Transform *= Diligent::float4x4{
+        return float4x4{
             // clang-format off
             0, -1,  0,  0,
            -1,  0,  0,  0,
-            0,  0,  1,  0,
+            0,  0, -1,  0,
             0,  0,  0,  1
             // clang-format on
         };
     }
     else if (UpAxis == pxr::UsdGeomTokens->y)
     {
-        Transform *= float4x4::Scale(1, -1, 1);
+        return float4x4{
+            // clang-format off
+            1,  0,  0,  0,
+            0, -1,  0,  0,
+            0,  0, -1,  0,
+            0,  0,  0,  1
+            // clang-format on
+        };
     }
     else if (UpAxis == pxr::UsdGeomTokens->z)
     {
-        Transform *= Diligent::float4x4{
+        return float4x4{
             // clang-format off
-            1,  0,  0,  0,
+           -1,  0,  0,  0,
             0,  0, -1,  0,
             0, -1,  0,  0,
             0,  0,  0,  1
             // clang-format on
         };
     }
-
-    return Transform;
+    else
+    {
+        LOG_WARNING_MESSAGE("Unknown up axis '", UpAxis, "'. Using identity transform");
+        return float4x4::Identity();
+    }
 }
 
 void USDViewer::LoadStage()
@@ -264,15 +257,47 @@ void USDViewer::LoadStage()
     m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
     m_RenderParams.SelectedPrimId = {};
-    m_RenderParams.Transform      = ComputeStageTransform();
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
     m_PostProcessParams = {};
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
+    const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
+    m_Stage.RootTransform     = GetUpAxisTransform(UpAxis);
+    m_Stage.ImagingDelegate->SetRootTransform(USD::ToGfMatrix4d(m_Stage.RootTransform));
+
+    float SceneExtent = 100;
+    if (BoundBox SceneBB = ComputeSceneBounds(m_Stage.Stage->GetPseudoRoot()))
+    {
+        SceneExtent = 0;
+        for (size_t i = 0; i < 8; ++i)
+        {
+            float3 BBCorner = {
+                (i & 0x1) ? SceneBB.Max.x : SceneBB.Min.x,
+                (i & 0x2) ? SceneBB.Max.y : SceneBB.Min.y,
+                (i & 0x4) ? SceneBB.Max.z : SceneBB.Min.z,
+            };
+            SceneExtent = std::max(SceneExtent, length(BBCorner));
+        }
+        m_Camera.SetDist(SceneExtent * 2.f);
+    }
+
     USD::HnRenderAxesTaskParams RenderAxesParams;
-    RenderAxesParams.Transform = float4x4::Scale(300) * m_RenderParams.Transform;
+    RenderAxesParams.Transform = float4x4::Scale(SceneExtent * 2.f) * m_Stage.RootTransform;
     m_Stage.TaskManager->SetRenderAxesParams(RenderAxesParams);
+
+    if (UpAxis == pxr::UsdGeomTokens->x)
+    {
+        m_Camera.SetRotation(PI_F / 4.f, PI_F / 6.f);
+    }
+    else if (UpAxis == pxr::UsdGeomTokens->y)
+    {
+        m_Camera.SetRotation(-PI_F / 4.f, PI_F / 6.f);
+    }
+    else if (UpAxis == pxr::UsdGeomTokens->z)
+    {
+        m_Camera.SetRotation(PI_F * 3.f / 4.f, PI_F / 6.f);
+    }
 }
 
 // Render a frame
@@ -373,7 +398,7 @@ void USDViewer::EditSelectePrimTransform()
     pxr::GfMatrix4d ParentGlobalXForm  = GetPrimGlobalTransform(Prim.GetParent());
     float4x4        ParentGlobalMatrix = float4x4::MakeMatrix(ParentGlobalXForm.data());
 
-    ParentGlobalMatrix = ParentGlobalMatrix * m_RenderParams.Transform;
+    ParentGlobalMatrix = ParentGlobalMatrix * m_Stage.RootTransform;
 
     pxr::GfMatrix4d LocalXform       = pxr::GfMatrix4d{1.0};
     bool            ResetsXformStack = false;
@@ -383,9 +408,9 @@ void USDViewer::EditSelectePrimTransform()
 
     ImGuiIO& io = ImGui::GetIO();
     ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-    ImGuizmo::OPERATION mCurrentGizmoOperation = ImGuizmo::UNIVERSAL;
-    ImGuizmo::MODE      mCurrentGizmoMode      = ImGuizmo::LOCAL;
-    if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), mCurrentGizmoOperation, mCurrentGizmoMode, NewGlobalMatrix.Data(), NULL, NULL))
+    ImGuizmo::OPERATION GizmoOperation = static_cast<ImGuizmo::OPERATION>(static_cast<int>(ImGuizmo::UNIVERSAL) & ~static_cast<int>(ImGuizmo::ROTATE_SCREEN));
+    ImGuizmo::MODE      GizmoMode      = ImGuizmo::LOCAL;
+    if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), GizmoOperation, GizmoMode, NewGlobalMatrix.Data(), NULL, NULL))
     {
         Diligent::float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
         XFormable.MakeMatrixXform().Set(pxr::GfMatrix4d{
@@ -673,7 +698,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
     auto CameraDist = m_Camera.GetDist();
-    m_CameraView    = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, CameraDist);
+    m_CameraView    = float4x4::Scale(1, -1, 1) * m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0, 0, CameraDist);
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
