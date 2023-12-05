@@ -77,24 +77,27 @@ public:
 
     virtual void Initialize() override final
     {
-        std::string ExternalFilesDir = JNIMiniHelper::GetExternalFilesDir(app_->activity, native_activity_class_name_.c_str());
+        JNIMiniHelper JNIHelper{app_->activity, native_activity_class_name_};
+
+        std::string ExternalFilesDir = JNIHelper.GetFilesDir(JNIMiniHelper::FILES_DIR_TYPE_EXTERNAL);
+        std::string OutputFilesDir   = JNIHelper.GetFilesDir(JNIMiniHelper::FILES_DIR_TYPE_OUTPUT);
         switch (m_DeviceType)
         {
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
-                GetEngineFactoryVk()->InitAndroidFileSystem(ExternalFilesDir.c_str(), app_->activity->assetManager);
+                GetEngineFactoryVk()->InitAndroidFileSystem(app_->activity->assetManager, ExternalFilesDir.c_str(), OutputFilesDir.c_str());
                 break;
 #endif
 
             case RENDER_DEVICE_TYPE_GLES:
-                GetEngineFactoryOpenGL()->InitAndroidFileSystem(ExternalFilesDir.c_str(), app_->activity->assetManager);
+                GetEngineFactoryOpenGL()->InitAndroidFileSystem(app_->activity->assetManager, ExternalFilesDir.c_str(), OutputFilesDir.c_str());
                 break;
 
             default:
                 UNEXPECTED("Unexpected device type");
         }
 
-        AndroidFileSystem::Init(ExternalFilesDir.c_str(), app_->activity->assetManager);
+        AndroidFileSystem::Init(app_->activity->assetManager, ExternalFilesDir.c_str(), OutputFilesDir.c_str());
 
         SampleApp::Initialize();
 

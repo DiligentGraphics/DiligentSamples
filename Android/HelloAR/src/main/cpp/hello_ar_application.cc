@@ -47,7 +47,7 @@ const Diligent::float3 kWhite = {1.f, 1.f, 1.f};
 HelloArApplication::HelloArApplication(AAssetManager* asset_manager) :
     asset_manager_(asset_manager)
 {
-    AndroidFileSystem::Init(nullptr, asset_manager_);
+    AndroidFileSystem::Init(asset_manager_);
 }
 
 HelloArApplication::~HelloArApplication()
@@ -130,7 +130,7 @@ void HelloArApplication::OnSurfaceCreated()
 #endif
     pFactory->AttachToActiveGLContext(EngineCI, &render_device_, &device_context_);
     // Init Android file system so that we can use shader source stream factory to load shaders.
-    pFactory->InitAndroidFileSystem(nullptr, asset_manager_);
+    pFactory->InitAndroidFileSystem(asset_manager_);
 
     background_renderer_.Initialize(render_device_);
     point_cloud_renderer_.Initialize(render_device_);
