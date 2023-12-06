@@ -7,6 +7,7 @@ endif()
 if(TARGET Diligent-AssetLoader AND TARGET DiligentFX)
     add_subdirectory(GLTFViewer)
     add_subdirectory(Shadows)
+    add_subdirectory(PostProcessDemo)
 endif()
 
 add_subdirectory(ImguiDemo)
