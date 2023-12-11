@@ -14,6 +14,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ImGuizmo)
 
+# Fetch assets
+message("Fetching USD assets...")
+FetchContent_Declare(
+    USDAssets
+    GIT_REPOSITORY https://github.com/DiligentGraphics/USDAssets
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets/usd
+)
+FetchContent_MakeAvailable(USDAssets)
 
 set(SOURCE
     src/USDViewer.cpp
@@ -29,10 +37,12 @@ set(SHADERS
 )
 
 file(COPY ../GLTFViewer/assets/textures/papermill.ktx DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures)
+file(GLOB USD_ASSETS LIST_DIRECTORIES false assets/usd/*.usd*)
 
 set(ASSETS
     assets/textures/papermill.ktx
     assets/cube.usd
+    ${USD_ASSETS}
 )
 
 add_sample_app("USDViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
@@ -61,3 +71,5 @@ PRIVATE
     usd_work
 )
 set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS})

@@ -70,6 +70,10 @@ namespace
 // clang-format off
 const std::pair<const char*, const char*> DefaultUSDModels[] =
 {
+    {"Apple Vision Pro", "usd/AppleVisionPro.usdz"},
+    {"Carbon Frame Bike", "usd/CarbonBike.usdz"},
+    {"Kitchen", "usd/Kitchen.usd"},
+    {"Porsche", "usd/Porsche.usdz"},
     {"Cube", "cube.usd"}
 };
 // clang-format on
@@ -147,7 +151,7 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
 
     if (m_UsdFileName.empty())
-        m_UsdFileName = "cube.usd";
+        m_UsdFileName = "usd/AppleVisionPro.usdz";
     LoadStage();
 }
 
