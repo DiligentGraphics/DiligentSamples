@@ -76,6 +76,7 @@ private:
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
     void EditSelectedPrimTransform();
     void UpdateCamera();
+    void UpdateModelsList(const std::string& Dir);
 
 private:
     struct StageInfo
@@ -109,6 +110,16 @@ private:
     USD::HnRenderRprimsTaskParams m_RenderParams;
     USD::HnPostProcessTaskParams  m_PostProcessParams;
     USD::HnBeginFrameTaskParams   m_FrameParams;
+
+    struct ModelInfo
+    {
+        std::string Name;
+        std::string Path;
+    };
+    std::vector<ModelInfo>   m_Models;
+    std::vector<const char*> m_ModelNames;
+
+    int m_SelectedModel = 0;
 
     std::string m_UsdFileName;
 

@@ -62,7 +62,7 @@ SampleBase* CreateSample()
 }
 
 // clang-format off
-const std::pair<const char*, const char*> GLTFModels[] =
+const std::pair<const char*, const char*> DefaultGLTFModels[] =
 {
     {"Damaged Helmet",      "models/DamagedHelmet/DamagedHelmet.gltf"},
     {"Metal Rough Spheres", "models/MetalRoughSpheres/MetalRoughSpheres.gltf"},
@@ -146,9 +146,9 @@ void GLTFViewer::UpdateScene()
 void GLTFViewer::UpdateModelsList(const std::string& Dir)
 {
     m_Models.clear();
-    for (size_t i = 0; i < _countof(GLTFModels); ++i)
+    for (size_t i = 0; i < _countof(DefaultGLTFModels); ++i)
     {
-        m_Models.push_back(ModelInfo{GLTFModels[i].first, GLTFModels[i].second});
+        m_Models.push_back(ModelInfo{DefaultGLTFModels[i].first, DefaultGLTFModels[i].second});
     }
 
 #if PLATFORM_WIN32 || PLATFORM_LINUX || PLATFORM_MACOS
@@ -321,7 +321,7 @@ void GLTFViewer::UpdateUI()
             for (size_t i = 0; i < m_Models.size(); ++i)
                 m_ModelNames[i] = m_Models[i].Name.c_str();
 
-            if (ImGui::Combo("Model", &m_SelectedModel, m_ModelNames.data(), static_cast<int>(m_ModelNames.size())))
+            if (ImGui::Combo("Model", &m_SelectedModel, m_ModelNames.data(), static_cast<int>(m_ModelNames.size()), 20))
             {
                 LoadModel(m_Models[m_SelectedModel].Path.c_str());
             }

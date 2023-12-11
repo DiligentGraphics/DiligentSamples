@@ -66,6 +66,14 @@ namespace
 
 } // namespace HLSL
 
+
+// clang-format off
+const std::pair<const char*, const char*> DefaultUSDModels[] =
+{
+    {"Cube", "cube.usd"}
+};
+// clang-format on
+
 SampleBase* CreateSample()
 {
     return new USDViewer();
@@ -76,6 +84,26 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     SampleBase::ModifyEngineInitInfo(Attribs);
     // We do not need the swap chain's depth buffer.
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+}
+
+void USDViewer::UpdateModelsList(const std::string& Dir)
+{
+    m_Models.clear();
+    for (size_t i = 0; i < _countof(DefaultUSDModels); ++i)
+    {
+        m_Models.push_back(ModelInfo{DefaultUSDModels[i].first, DefaultUSDModels[i].second});
+    }
+
+#if PLATFORM_WIN32 || PLATFORM_LINUX || PLATFORM_MACOS
+    if (!Dir.empty())
+    {
+        auto SearchRes = FileSystem::SearchRecursive(Dir.c_str(), "*.usd*");
+        for (const auto& File : SearchRes)
+        {
+            m_Models.push_back(ModelInfo{File.Name, Dir + FileSystem::SlashSymbol + File.Name});
+        }
+    }
+#endif
 }
 
 SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char* const* argv)
@@ -90,6 +118,11 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
                      "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
                      "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No",
                      "\n    Use tex atlas:   ", m_UseTextureAtlas ? "Yes" : "No");
+
+    std::string ModelsDir;
+    ArgsParser.Parse("usd_dir", 'd', ModelsDir);
+    UpdateModelsList(ModelsDir);
+
     return CommandLineStatus::OK;
 }
 
@@ -424,8 +457,20 @@ void USDViewer::UpdateUI()
         {
             if (ImGui::BeginTabItem("Stage"))
             {
+                {
+                    m_ModelNames.resize(m_Models.size());
+                    for (size_t i = 0; i < m_Models.size(); ++i)
+                        m_ModelNames[i] = m_Models[i].Name.c_str();
+
+                    if (ImGui::Combo("Model", &m_SelectedModel, m_ModelNames.data(), static_cast<int>(m_ModelNames.size()), 20))
+                    {
+                        m_UsdFileName = m_Models[m_SelectedModel].Path;
+                        LoadStage();
+                    }
+                }
+
 #ifdef PLATFORM_WIN32
-                if (ImGui::Button("Load"))
+                if (ImGui::Button("Load model"))
                 {
                     FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
                     OpenDialogAttribs.Title  = "Select USD file";
@@ -435,6 +480,15 @@ void USDViewer::UpdateUI()
                     {
                         m_UsdFileName = std::move(FileName);
                         LoadStage();
+                    }
+                }
+
+                if (ImGui::Button("Open directory"))
+                {
+                    auto DirName = FileSystem::OpenFolderDialog("Select folder with USD assets");
+                    if (!DirName.empty())
+                    {
+                        UpdateModelsList(DirName.c_str());
                     }
                 }
 #endif
