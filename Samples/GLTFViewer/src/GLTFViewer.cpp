@@ -62,7 +62,7 @@ SampleBase* CreateSample()
 }
 
 // clang-format off
-const std::pair<const char*, const char*> GLTFViewer::GLTFModels[] =
+const std::pair<const char*, const char*> GLTFModels[] =
 {
     {"Damaged Helmet",      "models/DamagedHelmet/DamagedHelmet.gltf"},
     {"Metal Rough Spheres", "models/MetalRoughSpheres/MetalRoughSpheres.gltf"},
@@ -142,12 +142,37 @@ void GLTFViewer::UpdateScene()
     m_ModelAABB = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms);
 }
 
+
+void GLTFViewer::UpdateModelsList(const std::string& Dir)
+{
+    m_Models.clear();
+    for (size_t i = 0; i < _countof(GLTFModels); ++i)
+    {
+        m_Models.push_back(ModelInfo{GLTFModels[i].first, GLTFModels[i].second});
+    }
+
+#if PLATFORM_WIN32 || PLATFORM_LINUX || PLATFORM_MACOS
+    if (!Dir.empty())
+    {
+        auto SearchRes = FileSystem::SearchRecursive(Dir.c_str(), "*.gltf");
+        for (const auto& File : SearchRes)
+        {
+            m_Models.push_back(ModelInfo{File.Name, Dir + FileSystem::SlashSymbol + File.Name});
+        }
+    }
+#endif
+}
+
 GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const char* const* argv)
 {
     CommandLineParser ArgsParser{argc, argv};
     ArgsParser.Parse("use_cache", m_bUseResourceCache);
     ArgsParser.Parse("model", m_InitialModelPath);
     ArgsParser.Parse("compute_bounds", m_bComputeBoundingBoxes);
+
+    std::string ExtraModelsDir;
+    ArgsParser.Parse("dir", 'd', ExtraModelsDir);
+    UpdateModelsList(ExtraModelsDir.c_str());
 
     return CommandLineStatus::OK;
 }
@@ -283,7 +308,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     if (m_bUseResourceCache)
         CreateGLTFResourceCache();
 
-    LoadModel(!m_InitialModelPath.empty() ? m_InitialModelPath.c_str() : GLTFModels[m_SelectedModel].second);
+    LoadModel(!m_InitialModelPath.empty() ? m_InitialModelPath.c_str() : m_Models[m_SelectedModel].Path.c_str());
 }
 
 void GLTFViewer::UpdateUI()
@@ -292,12 +317,13 @@ void GLTFViewer::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         {
-            const char* Models[_countof(GLTFModels)];
-            for (size_t i = 0; i < _countof(GLTFModels); ++i)
-                Models[i] = GLTFModels[i].first;
-            if (ImGui::Combo("Model", &m_SelectedModel, Models, _countof(GLTFModels)))
+            m_ModelNames.resize(m_Models.size());
+            for (size_t i = 0; i < m_Models.size(); ++i)
+                m_ModelNames[i] = m_Models[i].Name.c_str();
+
+            if (ImGui::Combo("Model", &m_SelectedModel, m_ModelNames.data(), static_cast<int>(m_ModelNames.size())))
             {
-                LoadModel(GLTFModels[m_SelectedModel].second);
+                LoadModel(m_Models[m_SelectedModel].Path.c_str());
             }
         }
 #ifdef PLATFORM_WIN32

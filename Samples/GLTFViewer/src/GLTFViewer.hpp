@@ -59,6 +59,7 @@ private:
     void UpdateScene();
     void UpdateUI();
     void CreateGLTFResourceCache();
+    void UpdateModelsList(const std::string& Dir);
 
     enum class BackgroundMode : int
     {
@@ -91,7 +92,13 @@ private:
     float  m_EnvMapMipLevel = 1.f;
     int    m_SelectedModel  = 0;
 
-    static const std::pair<const char*, const char*> GLTFModels[];
+    struct ModelInfo
+    {
+        std::string Name;
+        std::string Path;
+    };
+    std::vector<ModelInfo>   m_Models;
+    std::vector<const char*> m_ModelNames;
 
     enum class BoundBoxMode : int
     {
