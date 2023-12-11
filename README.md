@@ -60,6 +60,7 @@ To build and run the applications in the module, please follow the [instructions
   - [Atmospheric Light Scattering](https://github.com/DiligentGraphics/DiligentSamples#atmospheric-light-scattering-sample)
   - [GLFW Demo](https://github.com/DiligentGraphics/DiligentSamples#glfw-demo)
   - [GLTF Viewer](https://github.com/DiligentGraphics/DiligentSamples#gltf-viewer)
+  - [USD Viewer](https://github.com/DiligentGraphics/DiligentSamples#usd-viewer)
   - [Shadows](https://github.com/DiligentGraphics/DiligentSamples#shadows)
   - [Dear ImGui Demo](https://github.com/DiligentGraphics/DiligentSamples#dear-imgui-demo)
   - [Nuklear Demo](https://github.com/DiligentGraphics/DiligentSamples#nuklear-demo)
@@ -307,6 +308,14 @@ This simple maze mini-game demonstrates how to use GLFW to create window and han
 
 This sample demonstrates how to use the [Asset Loader](https://github.com/DiligentGraphics/DiligentTools/tree/master/AssetLoader)
 and [GLTF PBR Renderer](https://github.com/DiligentGraphics/DiligentFX/tree/master/PBR) to load and render GLTF models.
+
+
+## [USD Viewer](Samples/USDViewer)
+
+![](Samples/USDViewer/Screenshot.jpg)
+
+This sample demonstrates how to render USD files using [Hydrogent](https://github.com/DiligentGraphics/DiligentFX/tree/master/Hydrogent),
+an implementation of the Hydra rendering API in Diligent Engine.
 
 
 ## [Shadows](Samples/Shadows)
