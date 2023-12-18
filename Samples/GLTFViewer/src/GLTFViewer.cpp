@@ -97,7 +97,7 @@ void GLTFViewer::LoadModel(const char* Path)
     ModelCI.pResourceManager     = m_bUseResourceCache ? m_pResourceMgr.RawPtr() : nullptr;
     ModelCI.ComputeBoundingBoxes = m_bComputeBoundingBoxes;
 
-    m_Model.reset(new GLTF::Model{m_pDevice, m_pImmediateContext, ModelCI});
+    m_Model = std::make_unique<GLTF::Model>(m_pDevice, m_pImmediateContext, ModelCI);
 
     m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_FrameAttribsCB);
 
@@ -251,9 +251,22 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     GLTF_PBR_Renderer::CreateInfo RendererCI;
     RendererCI.RTVFmt                = BackBufferFmt;
     RendererCI.DSVFmt                = DepthBufferFmt;
+    RendererCI.EnableClearCoat       = true;
+    RendererCI.EnableSheen           = true;
+    RendererCI.EnableIridescence     = true;
+    RendererCI.EnableTransmission    = true;
     RendererCI.FrontCounterClockwise = true;
 
-    m_RenderParams.Flags = GLTF_PBR_Renderer::PSO_FLAG_DEFAULT | GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM;
+    m_RenderParams.Flags =
+        GLTF_PBR_Renderer::PSO_FLAG_DEFAULT |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_CLEAR_COAT |
+        GLTF_PBR_Renderer::PSO_FLAG_ALL_TEXTURES |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_SHEEN |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_ANISOTROPY |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_IRIDESCENCE |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TRANSMISSION |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_VOLUME |
+        GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM;
     if (m_bUseResourceCache)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
     if (BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM)
@@ -442,6 +455,17 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Emissive, "Emissive"},
                 {GLTF_PBR_Renderer::DebugViewType::Metallic, "Metallic"},
                 {GLTF_PBR_Renderer::DebugViewType::Roughness, "Roughness"},
+                {GLTF_PBR_Renderer::DebugViewType::ClearCoat, "Clear Coat"},
+                {GLTF_PBR_Renderer::DebugViewType::ClearCoatFactor, "Clear Coat Factor"},
+                {GLTF_PBR_Renderer::DebugViewType::ClearCoatRoughness, "Clear Coat Roughness"},
+                {GLTF_PBR_Renderer::DebugViewType::ClearCoatNormal, "Clear Coat Normal"},
+                {GLTF_PBR_Renderer::DebugViewType::SheenColor, "Sheen Color"},
+                {GLTF_PBR_Renderer::DebugViewType::SheenRoughness, "Sheen Roughness"},
+                {GLTF_PBR_Renderer::DebugViewType::Anisotropy, "Anisotropy"},
+                {GLTF_PBR_Renderer::DebugViewType::Iridescence, "Iridescence"},
+                {GLTF_PBR_Renderer::DebugViewType::IridescenceThickness, "Iridescence Thickness"},
+                {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
+                {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
                 {GLTF_PBR_Renderer::DebugViewType::DiffuseColor, "Diffuse color"},
                 {GLTF_PBR_Renderer::DebugViewType::SpecularColor, "Specular color (R0)"},
                 {GLTF_PBR_Renderer::DebugViewType::Reflectance90, "Reflectance90"},
@@ -452,9 +476,9 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
                 {GLTF_PBR_Renderer::DebugViewType::SpecularIBL, "Specular IBL"},
             };
-            static_assert(_countof(DebugViews) == 19, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(_countof(DebugViews) == 30, "Did you add a new debug view mode? You may want to handle it here");
 
-            ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews));
+            ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }
 
         ImGui::Combo("Bound box mode", reinterpret_cast<int*>(&m_BoundBoxMode),
@@ -483,11 +507,27 @@ void GLTFViewer::UpdateUI()
             FeatureCheckbox("Vertex Normals", GLTF_PBR_Renderer::PSO_FLAG_USE_VERTEX_NORMALS);
             FeatureCheckbox("Texcoords", GLTF_PBR_Renderer::PSO_FLAG_USE_TEXCOORD0 | GLTF_PBR_Renderer::PSO_FLAG_USE_TEXCOORD1);
             FeatureCheckbox("Joints", GLTF_PBR_Renderer::PSO_FLAG_USE_JOINTS);
+            FeatureCheckbox("Clear coat", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_CLEAR_COAT);
+            FeatureCheckbox("Sheen", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_SHEEN);
+            FeatureCheckbox("Anisotropy", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_ANISOTROPY);
+            FeatureCheckbox("Iridescence", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_IRIDESCENCE);
+            FeatureCheckbox("Transmission", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TRANSMISSION);
+            FeatureCheckbox("Volume", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_VOLUME);
             FeatureCheckbox("Color map", GLTF_PBR_Renderer::PSO_FLAG_USE_COLOR_MAP);
             FeatureCheckbox("Normal map", GLTF_PBR_Renderer::PSO_FLAG_USE_NORMAL_MAP);
             FeatureCheckbox("Phys desc map", GLTF_PBR_Renderer::PSO_FLAG_USE_PHYS_DESC_MAP);
             FeatureCheckbox("Occlusion", GLTF_PBR_Renderer::PSO_FLAG_USE_AO_MAP);
             FeatureCheckbox("Emissive", GLTF_PBR_Renderer::PSO_FLAG_USE_EMISSIVE_MAP);
+            FeatureCheckbox("Clear coat map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_MAP);
+            FeatureCheckbox("Clear coat roughness map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_ROUGHNESS_MAP);
+            FeatureCheckbox("Clear coat normal map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_NORMAL_MAP);
+            FeatureCheckbox("Sheen color map", GLTF_PBR_Renderer::PSO_FLAG_USE_SHEEN_COLOR_MAP);
+            FeatureCheckbox("Sheen roughness map", GLTF_PBR_Renderer::PSO_FLAG_USE_SHEEN_ROUGHNESS_MAP);
+            FeatureCheckbox("Anisotropy map", GLTF_PBR_Renderer::PSO_FLAG_USE_ANISOTROPY_MAP);
+            FeatureCheckbox("Iridescence map", GLTF_PBR_Renderer::PSO_FLAG_USE_IRIDESCENCE_MAP);
+            FeatureCheckbox("Iridescence thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_IRIDESCENCE_THICKNESS_MAP);
+            FeatureCheckbox("Transmission map", GLTF_PBR_Renderer::PSO_FLAG_USE_TRANSMISSION_MAP);
+            FeatureCheckbox("Thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_THICKNESS_MAP);
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
             FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
             FeatureCheckbox("UV transform", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM);
