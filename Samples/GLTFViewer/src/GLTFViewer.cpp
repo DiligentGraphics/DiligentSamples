@@ -450,11 +450,19 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Texcoord1, "Tex coords 1"},
                 {GLTF_PBR_Renderer::DebugViewType::BaseColor, "Base Color"},
                 {GLTF_PBR_Renderer::DebugViewType::Transparency, "Transparency"},
-                {GLTF_PBR_Renderer::DebugViewType::NormalMap, "Normal Map"},
                 {GLTF_PBR_Renderer::DebugViewType::Occlusion, "Occlusion"},
                 {GLTF_PBR_Renderer::DebugViewType::Emissive, "Emissive"},
                 {GLTF_PBR_Renderer::DebugViewType::Metallic, "Metallic"},
                 {GLTF_PBR_Renderer::DebugViewType::Roughness, "Roughness"},
+                {GLTF_PBR_Renderer::DebugViewType::DiffuseColor, "Diffuse color"},
+                {GLTF_PBR_Renderer::DebugViewType::SpecularColor, "Specular color (R0)"},
+                {GLTF_PBR_Renderer::DebugViewType::Reflectance90, "Reflectance90"},
+                {GLTF_PBR_Renderer::DebugViewType::MeshNormal, "Mesh normal"},
+                {GLTF_PBR_Renderer::DebugViewType::ShadingNormal, "Shading normal"},
+                {GLTF_PBR_Renderer::DebugViewType::NdotV, "n*v"},
+                {PBR_Renderer::DebugViewType::PunctualLighting, "Punctual Lighting"},
+                {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
+                {GLTF_PBR_Renderer::DebugViewType::SpecularIBL, "Specular IBL"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoat, "Clear Coat"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatFactor, "Clear Coat Factor"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatRoughness, "Clear Coat Roughness"},
@@ -466,17 +474,8 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::IridescenceThickness, "Iridescence Thickness"},
                 {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
                 {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
-                {GLTF_PBR_Renderer::DebugViewType::DiffuseColor, "Diffuse color"},
-                {GLTF_PBR_Renderer::DebugViewType::SpecularColor, "Specular color (R0)"},
-                {GLTF_PBR_Renderer::DebugViewType::Reflectance90, "Reflectance90"},
-                {GLTF_PBR_Renderer::DebugViewType::MeshNormal, "Mesh normal"},
-                {GLTF_PBR_Renderer::DebugViewType::PerturbedNormal, "Perturbed normal"},
-                {GLTF_PBR_Renderer::DebugViewType::NdotV, "n*v"},
-                {PBR_Renderer::DebugViewType::DirectLighting, "Direct Lighting"},
-                {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
-                {GLTF_PBR_Renderer::DebugViewType::SpecularIBL, "Specular IBL"},
             };
-            static_assert(_countof(DebugViews) == 30, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(_countof(DebugViews) == 29, "Did you add a new debug view mode? You may want to handle it here");
 
             ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }
