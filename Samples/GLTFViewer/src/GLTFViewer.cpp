@@ -64,12 +64,31 @@ SampleBase* CreateSample()
 // clang-format off
 const std::pair<const char*, const char*> DefaultGLTFModels[] =
 {
-    {"Damaged Helmet",      "models/DamagedHelmet/DamagedHelmet.gltf"},
-    {"Metal Rough Spheres", "models/MetalRoughSpheres/MetalRoughSpheres.gltf"},
-    {"Flight Helmet",       "models/FlightHelmet/FlightHelmet.gltf"},
-    {"Cesium Man",          "models/CesiumMan/CesiumMan.gltf"},
-    {"Boom Box",            "models/BoomBoxWithAxes/BoomBoxWithAxes.gltf"},
-    {"Normal Tangent Test", "models/NormalTangentTest/NormalTangentTest.gltf"}
+    {"Damaged Helmet",               "models/DamagedHelmet/DamagedHelmet.gltf"},
+    {"Flight Helmet",                "models/FlightHelmet/gltf/FlightHelmet.gltf"},
+    {"Cesium Man",                   "models/CesiumMan/gltf/CesiumMan.gltf"},
+    {"Boom Box",                     "models/BoomBoxWithAxes/gltf/BoomBoxWithAxes.gltf"},
+    {"Clearcoat Ring",               "models/ClearcoatRing/gltf/ClearcoatRing.gltf"},
+    {"Glam Velvet Sofa",             "models/GlamVelvetSofa/gltf/GlamVelvetSofa.gltf"},
+    {"Iridescence Abalone",          "models/IridescenceAbalone/gltf/IridescenceAbalone.gltf"},
+    {"IridescentDish With Olives",   "models/IridescentDishWithOlives/gltf/IridescentDishWithOlives.gltf"},
+    {"Toy Car",                      "models/ToyCar/gltf/ToyCar.gltf"},
+    {"White Furnace Test",           "models/EnvironmentTest/gltf/EnvironmentTest.gltf"},
+    {"Metal Rough Spheres",          "models/MetalRoughSpheres/gltf/MetalRoughSpheres.gltf"},
+    {"Normal Tangent Test",          "models/NormalTangentTest/gltf/NormalTangentTest.gltf"},
+    {"Emissive Strength Test",       "models/EmissiveStrengthTest/gltf/EmissiveStrengthTest.gltf"},
+    {"Clear Coat Test",              "models/ClearCoatTest/glTF/ClearCoatTest.gltf"},
+    {"Anisotropy Disc Test",         "models/AnisotropyDiscTest/glTF/AnisotropyDiscTest.gltf"},
+    {"Anisotropy Strength Test",     "models/AnisotropyStrengthTest/glTF/AnisotropyStrengthTest.gltf"},
+    {"Iridescence Metallic Spheres", "models/IridescenceMetallicSpheres/glTF/IridescenceMetallicSpheres.gltf"},
+    {"Interpolation Test",           "models/InterpolationTest/gltf/InterpolationTest.gltf"},
+    {"Multi UV Test",                "models/MultiUVTest/gltf/MultiUVTest.gltf"},
+    {"Orientation Test",             "models/OrientationTest/gltf/OrientationTest.gltf"},
+    {"Sheen Test Grid",              "models/SheenTestGrid/gltf/SheenTestGrid.gltf"},
+    {"Texture Coordinate Test",      "models/TextureCoordinateTest/gltf/TextureCoordinateTest.gltf"},
+    {"Texture Transform Multi Test", "models/TextureTransformMultiTest/gltf/TextureTransformMultiTest.gltf"},
+    {"Unlit Test",                   "models/UnlitTest/gltf/UnlitTest.gltf"},
+    {"Vertex Color Test",            "models/VertexColorTest/gltf/VertexColorTest.gltf"},
 };
 // clang-format on
 
