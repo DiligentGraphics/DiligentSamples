@@ -85,35 +85,14 @@ set_source_files_properties(${TEXTURES} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources/textures"
 )
 
-set_source_files_properties(${BOOM_BOX_MODEL} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "models/BoomBoxWithAxes"
-    MACOSX_PACKAGE_LOCATION "Resources/models/BoomBoxWithAxes"
-)
-
-set_source_files_properties(${CESIUM_MAN_MODEL} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "models/CesiumMan"
-    MACOSX_PACKAGE_LOCATION "Resources/models/CesiumMan"
-)
-
-set_source_files_properties(${DAMAGED_HELMENT_MODEL} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "models/DamagedHelmet"
-    MACOSX_PACKAGE_LOCATION "Resources/models/DamagedHelmet"
-)
-
-set_source_files_properties(${FLIGHT_HELMENT_MODEL} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "models/FlightHelmet"
-    MACOSX_PACKAGE_LOCATION "Resources/models/FlightHelmet"
-)
-
-set_source_files_properties(${METAL_ROUGH_SPHERES_MODEL} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "models/MetalRoughSpheres"
-    MACOSX_PACKAGE_LOCATION "Resources/models/MetalRoughSpheres"
-)
-
-set_source_files_properties(${NORMAL_TANGENT_TEST_MODEL} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "models/NormalTangentTest"
-    MACOSX_PACKAGE_LOCATION "Resources/models/NormalTangentTest"
-)
+foreach(FILE ${MODELS})
+    file(RELATIVE_PATH REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${FILE}")
+    get_filename_component(REL_DIR "${REL_PATH}" DIRECTORY)
+    set_source_files_properties(${FILE} PROPERTIES
+        VS_DEPLOYMENT_LOCATION "${REL_DIR}"
+        MACOSX_PACKAGE_LOCATION "Resources/${REL_DIR}"
+    )
+endforeach(FILE)
 
 # We have to use a different group name (Assets with capital A) to override grouping that was set by add_sample_app
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS})
