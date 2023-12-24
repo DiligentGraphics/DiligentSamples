@@ -255,7 +255,11 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     RendererCI.EnableSheen           = true;
     RendererCI.EnableIridescence     = true;
     RendererCI.EnableTransmission    = true;
+    RendererCI.EnableAnisotropy      = true;
     RendererCI.FrontCounterClockwise = true;
+
+    RendererCI.SheenAlbedoScalingLUTPath    = "textures/sheen_albedo_scaling.jpg";
+    RendererCI.PreintegratedCharlieBRDFPath = "textures/charlie_preintegrated.jpg";
 
     m_RenderParams.Flags =
         GLTF_PBR_Renderer::PSO_FLAG_DEFAULT |
@@ -467,15 +471,18 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatFactor, "Clear Coat Factor"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatRoughness, "Clear Coat Roughness"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatNormal, "Clear Coat Normal"},
+                {GLTF_PBR_Renderer::DebugViewType::Sheen, "Sheen"},
                 {GLTF_PBR_Renderer::DebugViewType::SheenColor, "Sheen Color"},
                 {GLTF_PBR_Renderer::DebugViewType::SheenRoughness, "Sheen Roughness"},
-                {GLTF_PBR_Renderer::DebugViewType::Anisotropy, "Anisotropy"},
+                {GLTF_PBR_Renderer::DebugViewType::AnisotropyStrength, "Anisotropy Strength"},
+                {GLTF_PBR_Renderer::DebugViewType::AnisotropyDirection, "Anisotropy Direction"},
                 {GLTF_PBR_Renderer::DebugViewType::Iridescence, "Iridescence"},
+                {GLTF_PBR_Renderer::DebugViewType::IridescenceFactor, "Iridescence Factor"},
                 {GLTF_PBR_Renderer::DebugViewType::IridescenceThickness, "Iridescence Thickness"},
                 {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
                 {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
             };
-            static_assert(_countof(DebugViews) == 29, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(_countof(DebugViews) == 32, "Did you add a new debug view mode? You may want to handle it here");
 
             ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }

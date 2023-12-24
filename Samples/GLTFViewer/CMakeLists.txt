@@ -33,7 +33,11 @@ file(GLOB NORMAL_TANGENT_TEST_MODEL LIST_DIRECTORIES false assets/models/NormalT
 
 set(MODELS ${BOOM_BOX_MODEL} ${CESIUM_MAN_MODEL} ${DAMAGED_HELMENT_MODEL}
            ${FLIGHT_HELMENT_MODEL} ${METAL_ROUGH_SPHERES_MODEL} ${NORMAL_TANGENT_TEST_MODEL})
-set(TEXTURES assets/textures/papermill.ktx)
+set(TEXTURES
+    assets/textures/papermill.ktx
+    assets/textures/sheen_albedo_scaling.jpg
+    assets/textures/charlie_preintegrated.jpg
+)
 
 set(RENDER_STATES assets/render_states/RenderStates.json)
 
