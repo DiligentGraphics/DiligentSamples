@@ -570,14 +570,16 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatFactor)]      = "Clear Coat Factor";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatRoughness)]   = "Clear Coat Roughness";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatNormal)]      = "Clear Coat Normal";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Sheen)]                = "Sheen";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SheenColor)]           = "Sheen Color";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SheenRoughness)]       = "Sheen Roughness";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Anisotropy)]           = "Anisotropy";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::AnisotropyStrength)]   = "Anisotropy Strength";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::AnisotropyDirection)]  = "Anisotropy Direction";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Iridescence)]          = "Iridescence";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceThickness)] = "Iridescence Thickness";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transmission)]         = "Transmission";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
-                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 29, "Did you add a new debug view mode? You may want to handle it here");
+                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 32, "Did you add a new debug view mode? You may want to handle it here");
 
                         if (ImGui::Combo("Debug view", &m_RenderParams.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size())))
                             UpdateRenderParams = true;
