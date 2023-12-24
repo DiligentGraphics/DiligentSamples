@@ -397,6 +397,11 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     if (m_bUseResourceCache)
         CreateGLTFResourceCache();
 
+    if (m_Models.empty())
+    {
+        // ProcessCommandLine is not called on all platforms, so we need to initialize the models list.
+        UpdateModelsList("");
+    }
     LoadModel(!m_InitialModelPath.empty() ? m_InitialModelPath.c_str() : m_Models[m_SelectedModel].Path.c_str());
 }
 
