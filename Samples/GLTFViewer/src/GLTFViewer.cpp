@@ -75,6 +75,7 @@ const std::pair<const char*, const char*> DefaultGLTFModels[] =
     {"Toy Car",                      "models/ToyCar/gltf/ToyCar.gltf"},
     {"Anisotropy Barn Lamp",         "models/AnisotropyBarnLamp/gltf/AnisotropyBarnLamp.gltf"},
     {"White Furnace Test",           "models/EnvironmentTest/gltf/EnvironmentTest.gltf"},
+    {"Alpha Blend Mode Test",        "models/AlphaBlendModeTest/gltf/AlphaBlendModeTest.gltf"},
     {"Metal Rough Spheres",          "models/MetalRoughSpheres/gltf/MetalRoughSpheres.gltf"},
     {"Normal Tangent Test",          "models/NormalTangentTest/gltf/NormalTangentTest.gltf"},
     {"Emissive Strength Test",       "models/EmissiveStrengthTest/gltf/EmissiveStrengthTest.gltf"},
