@@ -5,6 +5,22 @@
 #    define PI 3.141592653589793
 #endif
 
+float dot_sat(float3 a, float3 b)
+{
+    return saturate(dot(a, b));
+}
+
+float pow5(float x)
+{
+    float x2 = x * x;
+    return x2 * x2 * x;
+}
+
+float3 pow5(float3 x)
+{
+    float3 x2 = x * x;
+    return x2 * x2 * x;
+}
 
 // Returns a random cosine-weighted direction on the hemisphere around z = 1.
 void SampleDirectionCosineHemisphere(in  float2 UV,  // Normal random variables
@@ -62,7 +78,7 @@ float3 LambertianDiffuse(float3 DiffuseColor)
 //
 //      Rf(Theta) = 0.5 * (sin^2(Theta - Phi) / sin^2(Theta + Phi) + tan^2(Theta - Phi) / tan^2(Theta + Phi))
 //
-#define SCHLICK_REFLECTION(VdotH, Reflectance0, Reflectance90) ((Reflectance0) + ((Reflectance90) - (Reflectance0)) * pow(clamp(1.0 - (VdotH), 0.0, 1.0), 5.0))
+#define SCHLICK_REFLECTION(VdotH, Reflectance0, Reflectance90) ((Reflectance0) + ((Reflectance90) - (Reflectance0)) * pow5(clamp(1.0 - (VdotH), 0.0, 1.0)))
 float SchlickReflection(float VdotH, float Reflectance0, float Reflectance90)
 {
     return SCHLICK_REFLECTION(VdotH, Reflectance0, Reflectance90);
@@ -70,6 +86,20 @@ float SchlickReflection(float VdotH, float Reflectance0, float Reflectance90)
 float3 SchlickReflection(float VdotH, float3 Reflectance0, float3 Reflectance90)
 {
     return SCHLICK_REFLECTION(VdotH, Reflectance0, Reflectance90);
+}
+
+float SchlickToF0(float VdotH, float f, float f90)
+{
+    float x  = clamp(1.0 - VdotH, 0.0, 1.0);
+    float x5 = clamp(pow5(x), 0.0, 0.9999);
+    return (f - f90 * x5) / (1.0 - x5);
+}
+
+float3 SchlickToF0(float VdotH, float3 f, float3 f90)
+{
+    float x  = clamp(1.0 - VdotH, 0.0, 1.0);
+    float x5 = clamp(pow5(x), 0.0, 0.9999);
+    return (f - f90 * x5) / (1.0 - x5);
 }
 
 // Visibility = G2(v,l,a) / (4 * (n,v) * (n,l))
@@ -90,6 +120,21 @@ float SmithGGXVisibilityCorrelated(float NdotL, float NdotV, float AlphaRoughnes
     float GGXL = NdotV * sqrt(max(NdotL * NdotL * (1.0 - a2) + a2, 1e-7));
 
     return 0.5 / (GGXV + GGXL);
+}
+
+// https://google.github.io/filament/Filament.md.html#materialsystem/anisotropicmodel
+float SmithGGXVisibilityCorrelated_Anisotropic(float NdotL,
+                                               float NdotV,
+                                               float TdotL,
+                                               float TdotV,
+                                               float BdotL,
+                                               float BdotV,
+                                               float AlphaRoughnessT,
+                                               float AlphaRoughnessB)
+{
+    float LambdaV = NdotL * max(length(float3(AlphaRoughnessT * TdotV, AlphaRoughnessB * BdotV, NdotV)), 1e-3);
+    float LambdaL = NdotV * max(length(float3(AlphaRoughnessT * TdotL, AlphaRoughnessB * BdotL, NdotL)), 1e-3);
+    return 0.5 / (LambdaV + LambdaL);
 }
 
 // Smith GGX shadow-masking function G2(v,l,a)
@@ -146,6 +191,20 @@ float NormalDistribution_GGX(float NdotH, float AlphaRoughness)
     float nh2 = NdotH * NdotH;
     float f   = nh2 * a2 + (1.0 - nh2);
     return a2 / (PI * f * f);
+}
+
+// https://google.github.io/filament/Filament.md.html#materialsystem/anisotropicmodel
+float NormalDistribution_GGX_Anisotropic(float  NdotH,
+                                         float  TdotH,
+                                         float  BdotH,
+                                         float  AlphaRoughnessT,
+                                         float  AlphaRoughnessB)
+{
+    float  a2 = AlphaRoughnessT * AlphaRoughnessB;
+    float3 v  = float3(AlphaRoughnessB * TdotH, AlphaRoughnessT * BdotH, a2 * NdotH);
+    float  v2 = dot(v, v);
+    float  w2 = a2 / max(v2, 1e-6);
+    return a2 * w2 * w2 * (1.0 / PI);
 }
 
 
@@ -240,6 +299,11 @@ float SmithGGXSampleDirectionPDF(float3 V, float3 N, float3 L, float AlphaRoughn
 
 struct AngularInfo
 {
+    float3 N;
+    float3 V;
+    float3 L;
+    float3 H;
+    
     float NdotL; // cos angle between normal and light direction
     float NdotV; // cos angle between normal and view direction
     float NdotH; // cos angle between normal and half vector
@@ -255,11 +319,16 @@ AngularInfo GetAngularInfo(float3 PointToLight, float3 Normal, float3 View)
     float3 h = normalize(l + v);        // Direction of the vector between l and v
 
     AngularInfo info;
-    info.NdotL = clamp(dot(n, l), 0.0, 1.0);
-    info.NdotV = clamp(dot(n, v), 0.0, 1.0);
-    info.NdotH = clamp(dot(n, h), 0.0, 1.0);
-    info.LdotH = clamp(dot(l, h), 0.0, 1.0);
-    info.VdotH = clamp(dot(v, h), 0.0, 1.0);
+    info.N = n;
+    info.V = v;
+    info.L = l;
+    info.H = h;
+
+    info.NdotL = dot_sat(n, l);
+    info.NdotV = dot_sat(n, v);
+    info.NdotH = dot_sat(n, h);
+    info.LdotH = dot_sat(l, h);
+    info.VdotH = dot_sat(v, h);
 
     return info;
 }
@@ -303,6 +372,56 @@ void SmithGGX_BRDF(in float3                 PointToLight,
         float  D   = NormalDistribution_GGX(angularInfo.NdotH, AlphaRoughness);
         float  Vis = SmithGGXVisibilityCorrelated(angularInfo.NdotL, angularInfo.NdotV, AlphaRoughness);
         float3 F   = SchlickReflection(angularInfo.VdotH, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
+
+        DiffuseContrib = (1.0 - F) * LambertianDiffuse(SrfInfo.DiffuseColor);
+        SpecContrib    = F * Vis * D;
+    }
+}
+
+void SmithGGX_BRDF_Anisotropic(in float3                 PointToLight,
+                               in float3                 Normal,
+                               in float3                 View,
+                               in float3                 Tangent,
+                               in float3                 Bitangent,
+                               in SurfaceReflectanceInfo SrfInfo,
+                               in float                  AlphaRoughnessT,
+                               in float                  AlphaRoughnessB,
+                               out float3                DiffuseContrib,
+                               out float3                SpecContrib,
+                               out float                 NdotL)
+{
+    AngularInfo angularInfo = GetAngularInfo(PointToLight, Normal, View);
+
+    DiffuseContrib = float3(0.0, 0.0, 0.0);
+    SpecContrib    = float3(0.0, 0.0, 0.0);
+    NdotL          = angularInfo.NdotL;
+    if (angularInfo.NdotL > 0.0 || angularInfo.NdotV > 0.0)
+    {
+        float TdotH = dot(Tangent, angularInfo.H);
+        float BdotH = dot(Bitangent, angularInfo.H);
+        float TdotL = dot(Tangent, angularInfo.L);
+        float TdotV = dot(Tangent, angularInfo.V);
+        float BdotL = dot(Bitangent, angularInfo.L);
+        float BdotV = dot(Bitangent, angularInfo.V);
+        
+        float D = NormalDistribution_GGX_Anisotropic(
+            angularInfo.NdotH,
+            TdotH,
+            BdotH,
+            AlphaRoughnessT,
+            AlphaRoughnessB);
+
+        float Vis = SmithGGXVisibilityCorrelated_Anisotropic(
+            angularInfo.NdotL,
+            angularInfo.NdotV,
+            TdotL,
+            TdotV,
+            BdotL,
+            BdotV,
+            AlphaRoughnessT,
+            AlphaRoughnessB);
+        
+        float3 F = SchlickReflection(angularInfo.VdotH, SrfInfo.Reflectance0, SrfInfo.Reflectance90);
 
         DiffuseContrib = (1.0 - F) * LambertianDiffuse(SrfInfo.DiffuseColor);
         SpecContrib    = F * Vis * D;
