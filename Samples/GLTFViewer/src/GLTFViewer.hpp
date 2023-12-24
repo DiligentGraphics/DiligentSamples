@@ -60,6 +60,7 @@ private:
     void UpdateUI();
     void CreateGLTFResourceCache();
     void UpdateModelsList(const std::string& Dir);
+    bool SetEnvironmentMap(ITextureView* pEnvMap);
 
     enum class BackgroundMode : int
     {
@@ -119,8 +120,11 @@ private:
     float4x4                              m_ModelTransform;
     RefCntAutoPtr<IBuffer>                m_FrameAttribsCB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
+    RefCntAutoPtr<ITextureView>           m_WhiteFurnaceEnvMapSRV;
     RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;
+
+    ITextureView* m_pCurrentEnvMapSRV = nullptr;
 
     std::unique_ptr<EnvMapRenderer> m_EnvMapRenderer;
 

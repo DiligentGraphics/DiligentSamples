@@ -137,6 +137,17 @@ void GLTFViewer::LoadModel(const char* Path)
         if (node->pCamera != nullptr && node->pCamera->Type == GLTF::Camera::Projection::Perspective)
             m_CameraNodes.push_back(node);
     }
+
+    if (strstr(Path, "EnvironmentTest") != nullptr)
+    {
+        SetEnvironmentMap(m_WhiteFurnaceEnvMapSRV);
+        m_LightIntensity = 0.0f;
+    }
+    else
+    {
+        if (SetEnvironmentMap(m_EnvironmentMapSRV))
+            m_LightIntensity = 3.f;
+    }
 }
 
 void GLTFViewer::UpdateScene()
@@ -254,6 +265,46 @@ void GLTFViewer::CreateGLTFResourceCache()
     m_CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
 }
 
+static RefCntAutoPtr<ITextureView> CreateWhiteFurnaceEnvMap(IRenderDevice* pDevice)
+{
+    TextureDesc TexDesc;
+    TexDesc.Name      = "White Furnace Env Map";
+    TexDesc.Type      = RESOURCE_DIM_TEX_CUBE;
+    TexDesc.Usage     = USAGE_IMMUTABLE;
+    TexDesc.BindFlags = BIND_SHADER_RESOURCE;
+    TexDesc.Format    = TEX_FORMAT_RGBA32_FLOAT;
+    TexDesc.Width     = 16;
+    TexDesc.Height    = 16;
+    TexDesc.MipLevels = 1;
+    TexDesc.ArraySize = 6;
+
+    std::vector<float4>            Data(6 * TexDesc.Width * TexDesc.Height, float4{1});
+    std::vector<TextureSubResData> SubResData(6);
+    for (auto& Subres : SubResData)
+    {
+        Subres.pData  = Data.data();
+        Subres.Stride = TexDesc.Width * sizeof(float4);
+    }
+    TextureData InitData{SubResData.data(), static_cast<Uint32>(SubResData.size())};
+
+    RefCntAutoPtr<ITexture> pEnvMap;
+    pDevice->CreateTexture(TexDesc, &InitData, &pEnvMap);
+    VERIFY_EXPR(pEnvMap);
+
+    return RefCntAutoPtr<ITextureView>{pEnvMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE)};
+}
+
+bool GLTFViewer::SetEnvironmentMap(ITextureView* pEnvMap)
+{
+    if (m_pCurrentEnvMapSRV == pEnvMap)
+        return false;
+
+    m_pCurrentEnvMapSRV = pEnvMap;
+    m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, m_pCurrentEnvMapSRV);
+
+    return true;
+}
+
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
@@ -263,6 +314,8 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     RefCntAutoPtr<ITexture> EnvironmentMap;
     CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
     m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+    m_WhiteFurnaceEnvMapSRV = CreateWhiteFurnaceEnvMap(m_pDevice);
 
     auto BackBufferFmt  = m_pSwapChain->GetDesc().ColorBufferFormat;
     auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
@@ -306,8 +359,6 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     };
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
-
-    m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {
@@ -731,7 +782,7 @@ void GLTFViewer::Render()
         switch (m_BackgroundMode)
         {
             case BackgroundMode::EnvironmentMap:
-                pEnvMapSRV = m_EnvironmentMapSRV;
+                pEnvMapSRV = m_pCurrentEnvMapSRV;
                 break;
 
             case BackgroundMode::Irradiance:
