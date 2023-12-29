@@ -61,6 +61,7 @@ private:
     void CreateGLTFResourceCache();
     void UpdateModelsList(const std::string& Dir);
     bool SetEnvironmentMap(ITextureView* pEnvMap);
+    void CreateGLTFRenderer();
 
     enum class BackgroundMode : int
     {
@@ -141,7 +142,7 @@ private:
 
     std::vector<const GLTF::Node*> m_CameraNodes;
 
-    std::string m_InitialModelPath;
+    std::string m_ModelPath;
 
     bool m_bComputeBoundingBoxes = false;
     bool m_bWireframeSupported   = false;

@@ -150,6 +150,8 @@ void GLTFViewer::LoadModel(const char* Path)
         if (SetEnvironmentMap(m_EnvironmentMapSRV))
             m_LightIntensity = 3.f;
     }
+
+    m_ModelPath = Path;
 }
 
 void GLTFViewer::UpdateScene()
@@ -199,7 +201,7 @@ GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const cha
 {
     CommandLineParser ArgsParser{argc, argv};
     ArgsParser.Parse("use_cache", m_bUseResourceCache);
-    ArgsParser.Parse("model", m_InitialModelPath);
+    ArgsParser.Parse("model", m_ModelPath);
     ArgsParser.Parse("compute_bounds", m_bComputeBoundingBoxes);
 
     std::string ExtraModelsDir;
@@ -307,24 +309,12 @@ bool GLTFViewer::SetEnvironmentMap(ITextureView* pEnvMap)
     return true;
 }
 
-void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
+
+void GLTFViewer::CreateGLTFRenderer()
 {
-    SampleBase::Initialize(InitInfo);
-
-    m_bWireframeSupported = m_pDevice->GetDeviceInfo().Features.WireframeFill;
-
-    RefCntAutoPtr<ITexture> EnvironmentMap;
-    CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
-    m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-
-    m_WhiteFurnaceEnvMapSRV = CreateWhiteFurnaceEnvMap(m_pDevice);
-
-    auto BackBufferFmt  = m_pSwapChain->GetDesc().ColorBufferFormat;
-    auto DepthBufferFmt = m_pSwapChain->GetDesc().DepthBufferFormat;
-
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt                = BackBufferFmt;
-    RendererCI.DSVFmt                = DepthBufferFmt;
+    RendererCI.RTVFmt                = m_pSwapChain->GetDesc().ColorBufferFormat;
+    RendererCI.DSVFmt                = m_pSwapChain->GetDesc().DepthBufferFormat;
     RendererCI.EnableClearCoat       = true;
     RendererCI.EnableSheen           = true;
     RendererCI.EnableIridescence     = true;
@@ -347,10 +337,46 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM;
     if (m_bUseResourceCache)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
-    if (BackBufferFmt == TEX_FORMAT_RGBA8_UNORM || BackBufferFmt == TEX_FORMAT_BGRA8_UNORM)
+    if (RendererCI.RTVFmt == TEX_FORMAT_RGBA8_UNORM || RendererCI.RTVFmt == TEX_FORMAT_BGRA8_UNORM)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB;
 
-    m_GLTFRenderer.reset(new GLTF_PBR_Renderer{m_pDevice, nullptr, m_pImmediateContext, RendererCI});
+    m_GLTFRenderer = std::make_unique<GLTF_PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, RendererCI);
+
+    if (m_bUseResourceCache)
+    {
+        if (!m_pResourceMgr)
+        {
+            CreateGLTFResourceCache();
+        }
+    }
+    else
+    {
+        m_pResourceMgr.Release();
+        m_CacheUseInfo = {};
+    }
+
+    // Reset environment map in GLTF renderer
+    if (m_pCurrentEnvMapSRV != nullptr)
+    {
+        auto* pEnvMap       = m_pCurrentEnvMapSRV;
+        m_pCurrentEnvMapSRV = nullptr;
+        SetEnvironmentMap(pEnvMap);
+    }
+}
+
+void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
+{
+    SampleBase::Initialize(InitInfo);
+
+    m_bWireframeSupported = m_pDevice->GetDeviceInfo().Features.WireframeFill;
+
+    RefCntAutoPtr<ITexture> EnvironmentMap;
+    CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
+    m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+    m_WhiteFurnaceEnvMapSRV = CreateWhiteFurnaceEnvMap(m_pDevice);
+
+    CreateGLTFRenderer();
 
     CreateUniformBuffer(m_pDevice, sizeof(HLSL::PBRFrameAttribs), "PBR frame attribs buffer", &m_FrameAttribsCB);
     // clang-format off
@@ -378,14 +404,13 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &pRSNLoader);
     }
 
-
     {
         EnvMapRenderer::CreateInfo EnvMapRendererCI;
         EnvMapRendererCI.pDevice          = m_pDevice;
         EnvMapRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
         EnvMapRendererCI.NumRenderTargets = 1;
-        EnvMapRendererCI.RTVFormats[0]    = BackBufferFmt;
-        EnvMapRendererCI.DSVFormat        = DepthBufferFmt;
+        EnvMapRendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        EnvMapRendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
 
         m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
     }
@@ -394,15 +419,12 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 
-    if (m_bUseResourceCache)
-        CreateGLTFResourceCache();
-
     if (m_Models.empty())
     {
         // ProcessCommandLine is not called on all platforms, so we need to initialize the models list.
         UpdateModelsList("");
     }
-    LoadModel(!m_InitialModelPath.empty() ? m_InitialModelPath.c_str() : m_Models[m_SelectedModel].Path.c_str());
+    LoadModel(!m_ModelPath.empty() ? m_ModelPath.c_str() : m_Models[m_SelectedModel].Path.c_str());
 }
 
 void GLTFViewer::UpdateUI()
@@ -601,19 +623,46 @@ void GLTFViewer::UpdateUI()
             FeatureCheckbox("Phys desc map", GLTF_PBR_Renderer::PSO_FLAG_USE_PHYS_DESC_MAP);
             FeatureCheckbox("Occlusion", GLTF_PBR_Renderer::PSO_FLAG_USE_AO_MAP);
             FeatureCheckbox("Emissive", GLTF_PBR_Renderer::PSO_FLAG_USE_EMISSIVE_MAP);
-            FeatureCheckbox("Clear coat map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_MAP);
-            FeatureCheckbox("Clear coat roughness map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_ROUGHNESS_MAP);
-            FeatureCheckbox("Clear coat normal map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_NORMAL_MAP);
-            FeatureCheckbox("Sheen color map", GLTF_PBR_Renderer::PSO_FLAG_USE_SHEEN_COLOR_MAP);
-            FeatureCheckbox("Sheen roughness map", GLTF_PBR_Renderer::PSO_FLAG_USE_SHEEN_ROUGHNESS_MAP);
-            FeatureCheckbox("Anisotropy map", GLTF_PBR_Renderer::PSO_FLAG_USE_ANISOTROPY_MAP);
-            FeatureCheckbox("Iridescence map", GLTF_PBR_Renderer::PSO_FLAG_USE_IRIDESCENCE_MAP);
-            FeatureCheckbox("Iridescence thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_IRIDESCENCE_THICKNESS_MAP);
-            FeatureCheckbox("Transmission map", GLTF_PBR_Renderer::PSO_FLAG_USE_TRANSMISSION_MAP);
-            FeatureCheckbox("Thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_THICKNESS_MAP);
+            {
+                ImGui::ScopedDisabler Disable{(m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_CLEAR_COAT) == 0, 0.5f};
+                FeatureCheckbox("Clear coat map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_MAP);
+                FeatureCheckbox("Clear coat roughness map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_ROUGHNESS_MAP);
+                FeatureCheckbox("Clear coat normal map", GLTF_PBR_Renderer::PSO_FLAG_USE_CLEAR_COAT_NORMAL_MAP);
+            }
+            {
+                ImGui::ScopedDisabler Disable{(m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_SHEEN) == 0, 0.5f};
+                FeatureCheckbox("Sheen color map", GLTF_PBR_Renderer::PSO_FLAG_USE_SHEEN_COLOR_MAP);
+                FeatureCheckbox("Sheen roughness map", GLTF_PBR_Renderer::PSO_FLAG_USE_SHEEN_ROUGHNESS_MAP);
+            }
+            {
+                ImGui::ScopedDisabler Disable{(m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_ANISOTROPY) == 0, 0.5f};
+                FeatureCheckbox("Anisotropy map", GLTF_PBR_Renderer::PSO_FLAG_USE_ANISOTROPY_MAP);
+            }
+            {
+                ImGui::ScopedDisabler Disable{(m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_IRIDESCENCE) == 0, 0.5f};
+                FeatureCheckbox("Iridescence map", GLTF_PBR_Renderer::PSO_FLAG_USE_IRIDESCENCE_MAP);
+                FeatureCheckbox("Iridescence thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_IRIDESCENCE_THICKNESS_MAP);
+            }
+            {
+                ImGui::ScopedDisabler Disable{(m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TRANSMISSION) == 0, 0.5f};
+                FeatureCheckbox("Transmission map", GLTF_PBR_Renderer::PSO_FLAG_USE_TRANSMISSION_MAP);
+            }
+            {
+                ImGui::ScopedDisabler Disable{(m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_ENABLE_VOLUME) == 0, 0.5f};
+                FeatureCheckbox("Thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_THICKNESS_MAP);
+            }
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
             FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
             FeatureCheckbox("UV transform", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM);
+
+            ImGui::Separator();
+
+            if (ImGui::Checkbox("Resource cache", &m_bUseResourceCache))
+            {
+                CreateGLTFRenderer();
+                LoadModel(m_ModelPath.c_str());
+            }
+
             ImGui::TreePop();
         }
 
