@@ -576,6 +576,7 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::AnisotropyStrength)]   = "Anisotropy Strength";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::AnisotropyDirection)]  = "Anisotropy Direction";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Iridescence)]          = "Iridescence";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceFactor)]    = "Iridescence Factor";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceThickness)] = "Iridescence Thickness";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transmission)]         = "Transmission";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
