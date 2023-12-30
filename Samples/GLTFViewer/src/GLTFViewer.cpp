@@ -43,6 +43,8 @@
 #include "CommandLineParser.hpp"
 #include "GraphicsAccessories.hpp"
 #include "EnvMapRenderer.hpp"
+#include "Utilities/include/DiligentFXShaderSourceStreamFactory.hpp"
+#include "ShaderSourceFactoryUtils.h"
 
 namespace Diligent
 {
@@ -535,14 +537,27 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     LoadModel(!m_ModelPath.empty() ? m_ModelPath.c_str() : m_Models[m_SelectedModel].Path.c_str());
 }
 
+RefCntAutoPtr<IShaderSourceInputStreamFactory> CreateCompoundShaderSourceFactory(IRenderDevice* pDevice)
+{
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
+
+    IShaderSourceInputStreamFactory*               ppShaderSourceFactories[] = {&DiligentFXShaderSourceStreamFactory::GetInstance(), pShaderSourceFactory};
+    CompoundShaderSourceFactoryCreateInfo          CompoundSourceFactoryCI{ppShaderSourceFactories, _countof(ppShaderSourceFactories)};
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pCompoundSourceFactory;
+    CreateCompoundShaderSourceFactory(CompoundSourceFactoryCI, &pCompoundSourceFactory);
+
+    return pCompoundSourceFactory;
+}
+
 void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat)
 {
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+
+    auto pCompoundSourceFactory         = CreateCompoundShaderSourceFactory(pDevice);
+    ShaderCI.pShaderSourceStreamFactory = pCompoundSourceFactory;
 
     ShaderMacroHelper Macros;
     Macros.Add("CONVERT_OUTPUT_TO_SRGB", RTVFormat == TEX_FORMAT_RGBA8_UNORM || RTVFormat == TEX_FORMAT_BGRA8_UNORM);
@@ -558,7 +573,6 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
         pDevice->CreateShader(ShaderCI, &pVS);
         VERIFY_EXPR(pVS);
     }
-
 
     RefCntAutoPtr<IShader> pPS;
     {
@@ -867,13 +881,19 @@ void GLTFViewer::UpdateUI()
 
 void GLTFViewer::CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader)
 {
-    auto ModifyCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
+    auto pCompoundSourceFactory = CreateCompoundShaderSourceFactory(m_pDevice);
+    auto ModifyShaderCI         = MakeCallback([&pCompoundSourceFactory](ShaderCreateInfo& ShaderCI, SHADER_TYPE, bool& CacheShader) {
+        ShaderCI.pShaderSourceStreamFactory = pCompoundSourceFactory;
+        CacheShader                         = true;
+    });
+
+    auto ModifyPsoCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
         auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
         GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
         GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
         GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });
-    pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyCI, ModifyCI}, &m_BoundBoxPSO);
+    pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyPsoCI, ModifyPsoCI, ModifyShaderCI, ModifyShaderCI}, &m_BoundBoxPSO);
 
     m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_FrameAttribsCB);
     m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);
