@@ -71,6 +71,7 @@ private:
     void UpdateModelsList(const std::string& Dir);
     bool SetEnvironmentMap(ITextureView* pEnvMap);
     void CreateGLTFRenderer();
+    void CrateEnvMapRenderer();
 
     enum class BackgroundMode : int
     {

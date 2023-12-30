@@ -404,6 +404,8 @@ void GLTFViewer::CreateGLTFRenderer()
 
     if (m_bEnablePostProcessing)
     {
+        m_RenderParams.Flags &= ~GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING;
+
         RendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
         for (Uint32 i = 0; i < RendererCI.NumRenderTargets; ++i)
             RendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
@@ -443,6 +445,28 @@ void GLTFViewer::CreateGLTFRenderer()
     }
 }
 
+void GLTFViewer::CrateEnvMapRenderer()
+{
+    EnvMapRenderer::CreateInfo EnvMapRendererCI;
+    EnvMapRendererCI.pDevice          = m_pDevice;
+    EnvMapRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
+    if (m_bEnablePostProcessing)
+    {
+        EnvMapRendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        for (Uint32 i = 0; i < EnvMapRendererCI.NumRenderTargets; ++i)
+            EnvMapRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
+        EnvMapRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+    }
+    else
+    {
+        EnvMapRendererCI.NumRenderTargets = 1;
+        EnvMapRendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        EnvMapRendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+    }
+
+    m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
+}
+
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
@@ -467,8 +491,6 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
     }
 
-    CreateGLTFRenderer();
-
     CreateUniformBuffer(m_pDevice, sizeof(HLSL::PBRFrameAttribs), "PBR frame attribs buffer", &m_FrameAttribsCB);
     // clang-format off
     StateTransitionDesc Barriers [] =
@@ -478,6 +500,9 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     };
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+
+    CreateGLTFRenderer();
+    CrateEnvMapRenderer();
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {
@@ -493,17 +518,6 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
         m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pStreamFactory);
         CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &pRSNLoader);
-    }
-
-    {
-        EnvMapRenderer::CreateInfo EnvMapRendererCI;
-        EnvMapRendererCI.pDevice          = m_pDevice;
-        EnvMapRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
-        EnvMapRendererCI.NumRenderTargets = 1;
-        EnvMapRendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        EnvMapRendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
-
-        m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
     }
 
     CreateBoundBoxPSO(pRSNLoader);
@@ -804,7 +818,10 @@ void GLTFViewer::UpdateUI()
                 FeatureCheckbox("Thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_THICKNESS_MAP);
             }
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
-            FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
+            {
+                ImGui::ScopedDisabler Disable{m_bEnablePostProcessing, 0.5f};
+                FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
+            }
             FeatureCheckbox("UV transform", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM);
             FeatureCheckbox("Motion Vectors", GLTF_PBR_Renderer::PSO_FLAG_COMPUTE_MOTION_VECTORS);
 
@@ -818,6 +835,7 @@ void GLTFViewer::UpdateUI()
             if (ImGui::Checkbox("Post processing", &m_bEnablePostProcessing))
             {
                 CreateGLTFRenderer();
+                CrateEnvMapRenderer();
             }
 
             ImGui::TreePop();
