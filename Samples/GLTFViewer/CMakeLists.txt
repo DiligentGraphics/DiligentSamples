@@ -13,6 +13,7 @@ set(INCLUDE
 set(SHADERS
     assets/shaders/BoundBox.vsh
     assets/shaders/BoundBox.psh
+    assets/shaders/ApplyPostEffects.psh
 )
 
 set(EXTERNAL_SHADERS
@@ -20,6 +21,8 @@ set(EXTERNAL_SHADERS
     ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMapping.fxh
     ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
     ../../../DiligentFX/Shaders/Common/public/ShaderUtilities.fxh
+    ../../../DiligentFX/Shaders/Common/private/FullScreenTriangleVSOutput.fxh
+    ../../../DiligentFX/Shaders/Common/private/FullScreenTriangleVS.fx
 )
 
 set(ALL_SHADERS ${SHADERS} ${EXTERNAL_SHADERS})

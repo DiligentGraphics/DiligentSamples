@@ -1,0 +1,8 @@
+#include "FullScreenTriangleVSOutput.fxh"
+
+Texture2D<float4> g_tex2DColor;
+
+float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
+{
+    return g_tex2DColor.Load(int3(VSOut.f4PixelPos.xy, 0));
+}

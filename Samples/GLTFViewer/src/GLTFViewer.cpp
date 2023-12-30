@@ -376,19 +376,7 @@ struct PSOutput
 void GLTFViewer::CreateGLTFRenderer()
 {
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    if (m_bEnablePostProcessing)
-    {
-        RendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
-        for (Uint32 i = 0; i < RendererCI.NumRenderTargets; ++i)
-            RendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
-        RendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
-    }
-    else
-    {
-        RendererCI.NumRenderTargets = 1;
-        RendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        RendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
-    }
+
     RendererCI.EnableClearCoat       = true;
     RendererCI.EnableSheen           = true;
     RendererCI.EnableIridescence     = true;
@@ -413,8 +401,23 @@ void GLTFViewer::CreateGLTFRenderer()
         GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM;
     if (m_bUseResourceCache)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
-    if (RendererCI.RTVFormats[0] == TEX_FORMAT_RGBA8_UNORM || RendererCI.RTVFormats[0] == TEX_FORMAT_BGRA8_UNORM)
-        m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB;
+
+    if (m_bEnablePostProcessing)
+    {
+        RendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        for (Uint32 i = 0; i < RendererCI.NumRenderTargets; ++i)
+            RendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
+        RendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+    }
+    else
+    {
+        RendererCI.NumRenderTargets = 1;
+        RendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        RendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+
+        if (RendererCI.RTVFormats[0] == TEX_FORMAT_RGBA8_UNORM || RendererCI.RTVFormats[0] == TEX_FORMAT_BGRA8_UNORM)
+            m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB;
+    }
 
     m_GLTFRenderer = std::make_unique<GLTF_PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, RendererCI);
 
@@ -451,6 +454,18 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
     m_WhiteFurnaceEnvMapSRV = CreateWhiteFurnaceEnvMap(m_pDevice);
+
+    {
+        GBuffer::ElementDesc GBufferElems[GBUFFER_RT_COUNT];
+        GBufferElems[GBUFFER_RT_COLOR]          = {TEX_FORMAT_RGBA16_FLOAT};
+        GBufferElems[GBUFFER_RT_NORMAL]         = {TEX_FORMAT_RGBA16_FLOAT};
+        GBufferElems[GBUFFER_RT_MATERIAL_DATA]  = {TEX_FORMAT_RG8_UNORM};
+        GBufferElems[GBUFFER_RT_MOTION_VECTORS] = {TEX_FORMAT_RG16_FLOAT};
+        GBufferElems[GBUFFER_RT_DEPTH]          = {TEX_FORMAT_D32_FLOAT};
+        static_assert(GBUFFER_RT_COUNT == 5, "Not all G-buffer elements are initialized");
+
+        m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
+    }
 
     CreateGLTFRenderer();
 
@@ -493,18 +508,6 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     CreateBoundBoxPSO(pRSNLoader);
 
-    {
-        GBuffer::ElementDesc GBufferElems[GBUFFER_RT_COUNT];
-        GBufferElems[GBUFFER_RT_COLOR]          = {TEX_FORMAT_RGBA16_FLOAT};
-        GBufferElems[GBUFFER_RT_NORMAL]         = {TEX_FORMAT_RGBA16_FLOAT};
-        GBufferElems[GBUFFER_RT_MATERIAL_DATA]  = {TEX_FORMAT_RG8_UNORM};
-        GBufferElems[GBUFFER_RT_MOTION_VECTORS] = {TEX_FORMAT_RG16_FLOAT};
-        GBufferElems[GBUFFER_RT_DEPTH]          = {TEX_FORMAT_D32_FLOAT};
-        static_assert(GBUFFER_RT_COUNT == 5, "Not all G-buffer elements are initialized");
-
-        m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
-    }
-
     m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 
     if (m_Models.empty())
@@ -513,6 +516,64 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         UpdateModelsList("");
     }
     LoadModel(!m_ModelPath.empty() ? m_ModelPath.c_str() : m_Models[m_SelectedModel].Path.c_str());
+}
+
+void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat)
+{
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+
+    ShaderMacroHelper Macros;
+    Macros.Add("CONVERT_OUTPUT_TO_SRGB", RTVFormat == TEX_FORMAT_RGBA8_UNORM || RTVFormat == TEX_FORMAT_BGRA8_UNORM);
+    //Macros.Add("TONE_MAPPING_MODE", m_Params.ToneMappingMode);
+    ShaderCI.Macros = Macros;
+
+    RefCntAutoPtr<IShader> pVS;
+    {
+        ShaderCI.Desc       = {"Full Screen Triangle VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "FullScreenTriangleVS";
+        ShaderCI.FilePath   = "FullScreenTriangleVS.fx";
+
+        pDevice->CreateShader(ShaderCI, &pVS);
+        VERIFY_EXPR(pVS);
+    }
+
+
+    RefCntAutoPtr<IShader> pPS;
+    {
+        ShaderCI.Desc       = {"Apply Post Effects PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "ApplyPostEffects.psh";
+
+        pDevice->CreateShader(ShaderCI, &pPS);
+        VERIFY_EXPR(pPS);
+    }
+
+    PipelineResourceLayoutDescX ResourceLauout;
+    ResourceLauout
+        .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
+    //    .AddVariable(SHADER_TYPE_PIXEL, "cbPostProcessAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
+
+    GraphicsPipelineStateCreateInfoX PsoCI{"Apply Post Effects"};
+    PsoCI
+        .AddRenderTarget(RTVFormat)
+        .AddShader(pVS)
+        .AddShader(pPS)
+        .SetDepthStencilDesc(DSS_DisableDepth)
+        .SetRasterizerDesc(RS_SolidFillNoCull)
+        .SetResourceLayout(ResourceLauout)
+        .SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+    pDevice->CreatePipelineState(PsoCI, &pPSO);
+    VERIFY_EXPR(pPSO);
+    pPSO->CreateShaderResourceBinding(&pSRB, true);
+    ptex2DColorVar = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DColor");
+    VERIFY_EXPR(ptex2DColorVar != nullptr);
+    //m_PSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbPostProcessAttribs")->Set(m_PostProcessAttribsCB);
 }
 
 void GLTFViewer::UpdateUI()
@@ -809,6 +870,11 @@ void GLTFViewer::Render()
 
     if (m_bEnablePostProcessing)
     {
+        if (!m_ApplyPostFX)
+        {
+            m_ApplyPostFX.Initialize(m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat);
+        }
+
         const auto& SCDesc = m_pSwapChain->GetDesc();
         m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
         m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);
@@ -938,6 +1004,11 @@ void GLTFViewer::Render()
         // Clear the back buffer
         const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        m_pImmediateContext->SetPipelineState(m_ApplyPostFX.pPSO);
+        m_ApplyPostFX.ptex2DColorVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_pImmediateContext->CommitShaderResources(m_ApplyPostFX.pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
     }
 }
 

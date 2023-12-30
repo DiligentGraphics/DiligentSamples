@@ -138,6 +138,18 @@ private:
 
     std::unique_ptr<GBuffer> m_GBuffer;
 
+    struct ApplyPosteffects
+    {
+        RefCntAutoPtr<IPipelineState>         pPSO;
+        RefCntAutoPtr<IShaderResourceBinding> pSRB;
+
+        IShaderResourceVariable* ptex2DColorVar = nullptr;
+
+        void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat);
+        operator bool() const { return pPSO != nullptr; }
+    };
+    ApplyPosteffects m_ApplyPostFX;
+
     std::unique_ptr<EnvMapRenderer> m_EnvMapRenderer;
 
     bool                                    m_bUseResourceCache = false;
