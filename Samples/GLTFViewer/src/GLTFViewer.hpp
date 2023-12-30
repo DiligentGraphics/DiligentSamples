@@ -146,7 +146,7 @@ private:
 
         IShaderResourceVariable* ptex2DColorVar = nullptr;
 
-        void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat);
+        void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB);
         operator bool() const { return pPSO != nullptr; }
     };
     ApplyPosteffects m_ApplyPostFX;

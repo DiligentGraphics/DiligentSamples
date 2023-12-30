@@ -1,8 +1,40 @@
 #include "FullScreenTriangleVSOutput.fxh"
 
+#include "BasicStructures.fxh"
+#include "PBR_Structures.fxh"
+#include "RenderPBR_Structures.fxh"
+#include "ToneMapping.fxh"
+#include "SRGBUtilities.fxh"
+
+cbuffer cbFrameAttribs
+{
+    PBRFrameAttribs g_Frame;
+}
+
 Texture2D<float4> g_tex2DColor;
 
 float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
 {
-    return g_tex2DColor.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float4 Color = g_tex2DColor.Load(int3(VSOut.f4PixelPos.xy, 0));
+    
+    {
+        // Perform tone mapping
+        ToneMappingAttribs TMAttribs;
+        TMAttribs.iToneMappingMode     = TONE_MAPPING_MODE;
+        TMAttribs.bAutoExposure        = false;
+        TMAttribs.fMiddleGray          = g_Frame.Renderer.MiddleGray;
+        TMAttribs.bLightAdaptation     = false;
+        TMAttribs.fWhitePoint          = g_Frame.Renderer.WhitePoint;
+        TMAttribs.fLuminanceSaturation = 1.0;
+        Color.rgb = ToneMap(Color.rgb, TMAttribs, g_Frame.Renderer.AverageLogLum);
+    }
+    
+#if CONVERT_OUTPUT_TO_SRGB
+    {
+        Color.rgb = FastLinearToSRGB(Color.rgb);
+    }
+#endif
+
+    Color.a = 1.0;
+    return Color;
 }

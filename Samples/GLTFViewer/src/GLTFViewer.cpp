@@ -550,7 +550,7 @@ RefCntAutoPtr<IShaderSourceInputStreamFactory> CreateCompoundShaderSourceFactory
     return pCompoundSourceFactory;
 }
 
-void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat)
+void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB)
 {
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -561,7 +561,7 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
 
     ShaderMacroHelper Macros;
     Macros.Add("CONVERT_OUTPUT_TO_SRGB", RTVFormat == TEX_FORMAT_RGBA8_UNORM || RTVFormat == TEX_FORMAT_BGRA8_UNORM);
-    //Macros.Add("TONE_MAPPING_MODE", m_Params.ToneMappingMode);
+    Macros.Add("TONE_MAPPING_MODE", TONE_MAPPING_MODE_UNCHARTED2);
     ShaderCI.Macros = Macros;
 
     RefCntAutoPtr<IShader> pVS;
@@ -586,8 +586,8 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
 
     PipelineResourceLayoutDescX ResourceLauout;
     ResourceLauout
-        .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
-    //    .AddVariable(SHADER_TYPE_PIXEL, "cbPostProcessAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
+        .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
+        .AddVariable(SHADER_TYPE_PIXEL, "cbFrameAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
 
     GraphicsPipelineStateCreateInfoX PsoCI{"Apply Post Effects"};
     PsoCI
@@ -601,10 +601,11 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
 
     pDevice->CreatePipelineState(PsoCI, &pPSO);
     VERIFY_EXPR(pPSO);
+    pPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbFrameAttribs")->Set(pFrameAttribsCB);
+
     pPSO->CreateShaderResourceBinding(&pSRB, true);
     ptex2DColorVar = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DColor");
     VERIFY_EXPR(ptex2DColorVar != nullptr);
-    //m_PSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbPostProcessAttribs")->Set(m_PostProcessAttribsCB);
 }
 
 void GLTFViewer::UpdateUI()
@@ -913,7 +914,7 @@ void GLTFViewer::Render()
     {
         if (!m_ApplyPostFX)
         {
-            m_ApplyPostFX.Initialize(m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat);
+            m_ApplyPostFX.Initialize(m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat, m_FrameAttribsCB);
         }
 
         const auto& SCDesc = m_pSwapChain->GetDesc();
