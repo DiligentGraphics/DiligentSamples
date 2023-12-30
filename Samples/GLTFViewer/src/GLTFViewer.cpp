@@ -313,8 +313,9 @@ bool GLTFViewer::SetEnvironmentMap(ITextureView* pEnvMap)
 void GLTFViewer::CreateGLTFRenderer()
 {
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.RTVFmt                = m_pSwapChain->GetDesc().ColorBufferFormat;
-    RendererCI.DSVFmt                = m_pSwapChain->GetDesc().DepthBufferFormat;
+    RendererCI.NumRenderTargets      = 1;
+    RendererCI.RTVFormats[0]         = m_pSwapChain->GetDesc().ColorBufferFormat;
+    RendererCI.DSVFormat             = m_pSwapChain->GetDesc().DepthBufferFormat;
     RendererCI.EnableClearCoat       = true;
     RendererCI.EnableSheen           = true;
     RendererCI.EnableIridescence     = true;
@@ -337,7 +338,7 @@ void GLTFViewer::CreateGLTFRenderer()
         GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM;
     if (m_bUseResourceCache)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_USE_TEXTURE_ATLAS;
-    if (RendererCI.RTVFmt == TEX_FORMAT_RGBA8_UNORM || RendererCI.RTVFmt == TEX_FORMAT_BGRA8_UNORM)
+    if (RendererCI.RTVFormats[0] == TEX_FORMAT_RGBA8_UNORM || RendererCI.RTVFormats[0] == TEX_FORMAT_BGRA8_UNORM)
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB;
 
     m_GLTFRenderer = std::make_unique<GLTF_PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, RendererCI);
