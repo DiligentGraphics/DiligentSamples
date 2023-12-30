@@ -375,6 +375,23 @@ struct PSOutput
     return PSMainInfo;
 }
 
+static constexpr char EnvMapPSMain[] = R"(
+void main(in  float4 Pos          : SV_Position,
+          in  float4 ClipPos      : CLIP_POS,
+          out float4 Color        : SV_Target0,
+          out float4 Normal       : SV_Target1,
+          out float4 MaterialData : SV_Target2,
+          out float4 MotionVec    : SV_Target3)
+{
+    Color.rgb = SampleEnvMap(ClipPos);
+    Color.a = 1.0;
+
+    Normal       = float4(0.0, 0.0, 0.0, 0.0);
+    MaterialData = float4(0.0, 0.0, 0.0, 0.0);
+    MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
+}
+)";
+
 void GLTFViewer::CreateGLTFRenderer()
 {
     GLTF_PBR_Renderer::CreateInfo RendererCI;
@@ -461,6 +478,13 @@ void GLTFViewer::CrateEnvMapRenderer()
         for (Uint32 i = 0; i < EnvMapRendererCI.NumRenderTargets; ++i)
             EnvMapRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
         EnvMapRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+
+        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+        {
+            // Normally, environment map shader does not need to write to other targets.
+            // However, on WebGL this results in errors.
+            EnvMapRendererCI.PSMainSource = EnvMapPSMain;
+        }
     }
     else
     {
