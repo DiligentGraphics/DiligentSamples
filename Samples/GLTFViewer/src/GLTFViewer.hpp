@@ -37,6 +37,7 @@
 #include "GLTF_PBR_Renderer.hpp"
 #include "BasicMath.hpp"
 #include "TrackballCamera.hpp"
+#include "GBuffer.hpp"
 
 namespace Diligent
 {
@@ -135,6 +136,8 @@ private:
 
     ITextureView* m_pCurrentEnvMapSRV = nullptr;
 
+    std::unique_ptr<GBuffer> m_GBuffer;
+
     std::unique_ptr<EnvMapRenderer> m_EnvMapRenderer;
 
     bool                                    m_bUseResourceCache = false;
@@ -156,6 +159,7 @@ private:
 
     bool m_bComputeBoundingBoxes = false;
     bool m_bWireframeSupported   = false;
+    bool m_bEnablePostProcessing = false;
 };
 
 } // namespace Diligent

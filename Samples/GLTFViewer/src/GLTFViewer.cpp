@@ -94,6 +94,28 @@ const std::pair<const char*, const char*> DefaultGLTFModels[] =
 };
 // clang-format on
 
+enum GBUFFER_RT : Uint32
+{
+    GBUFFER_RT_COLOR,
+    GBUFFER_RT_NORMAL,
+    GBUFFER_RT_MATERIAL_DATA,
+    GBUFFER_RT_MOTION_VECTORS,
+    GBUFFER_RT_DEPTH,
+    GBUFFER_RT_COUNT
+};
+
+enum GBUFFER_RT_FLAG : Uint32
+{
+    GBUFFER_RT_FLAG_COLOR          = 1u << GBUFFER_RT_COLOR,
+    GBUFFER_RT_FLAG_NORMAL         = 1u << GBUFFER_RT_NORMAL,
+    GBUFFER_RT_FLAG_MATERIAL_DATA  = 1u << GBUFFER_RT_MATERIAL_DATA,
+    GBUFFER_RT_FLAG_MOTION_VECTORS = 1u << GBUFFER_RT_MOTION_VECTORS,
+    GBUFFER_RT_FLAG_DEPTH          = 1u << GBUFFER_RT_DEPTH,
+    GBUFFER_RT_FLAG_LAST           = GBUFFER_RT_FLAG_DEPTH,
+    GBUFFER_RT_FLAG_ALL            = (GBUFFER_RT_FLAG_LAST << 1u) - 1u,
+};
+DEFINE_FLAG_ENUM_OPERATORS(GBUFFER_RT_FLAG);
+
 GLTFViewer::GLTFViewer() :
     m_CameraAttribs{std::make_unique<HLSL::CameraAttribs[]>(2)}
 {
@@ -312,19 +334,69 @@ bool GLTFViewer::SetEnvironmentMap(ITextureView* pEnvMap)
     return true;
 }
 
+static PBR_Renderer::CreateInfo::PSMainSourceInfo GetPbrPSMainSource(PBR_Renderer::PSO_FLAGS PSOFlags)
+{
+    PBR_Renderer::CreateInfo::PSMainSourceInfo PSMainInfo;
+
+    PSMainInfo.OutputStruct = R"(
+struct PSOutput
+{
+    float4 Color        : SV_Target0;
+    float4 Normal       : SV_Target1;
+    float4 MaterialData : SV_Target2;
+    float4 MotionVec    : SV_Target3;
+};
+)";
+
+    PSMainInfo.Footer = R"(
+    PSOutput PSOut;
+#if UNSHADED
+    PSOut.Color = g_Frame.Renderer.UnshadedColor + g_Frame.Renderer.HighlightColor;
+#else
+    PSOut.Color = OutColor;
+#endif
+    
+    PSOut.Normal       = float4(Shading.BaseLayer.Normal, 1.0);
+    PSOut.MaterialData = float4(Shading.BaseLayer.Metallic, Shading.BaseLayer.Srf.PerceptualRoughness, 0.0, 1.0);
+
+#   if ENABLE_CLEAR_COAT
+	{
+        PSOut.Normal.xyz      = lerp(PSOut.Normal.xyz, Shading.Clearcoat.Normal, Shading.Clearcoat.Factor);
+        PSOut.MaterialData.xy = lerp(PSOut.MaterialData.xy, float2(0.0, Shading.Clearcoat.Srf.PerceptualRoughness), Shading.Clearcoat.Factor);
+	}
+#   endif
+
+    PSOut.MotionVec = float4(0.0, 0.0, 0.0, 1.0);
+    return PSOut;
+)";
+
+    return PSMainInfo;
+}
 
 void GLTFViewer::CreateGLTFRenderer()
 {
     GLTF_PBR_Renderer::CreateInfo RendererCI;
-    RendererCI.NumRenderTargets      = 1;
-    RendererCI.RTVFormats[0]         = m_pSwapChain->GetDesc().ColorBufferFormat;
-    RendererCI.DSVFormat             = m_pSwapChain->GetDesc().DepthBufferFormat;
+    if (m_bEnablePostProcessing)
+    {
+        RendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        for (Uint32 i = 0; i < RendererCI.NumRenderTargets; ++i)
+            RendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
+        RendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+    }
+    else
+    {
+        RendererCI.NumRenderTargets = 1;
+        RendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        RendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+    }
     RendererCI.EnableClearCoat       = true;
     RendererCI.EnableSheen           = true;
     RendererCI.EnableIridescence     = true;
     RendererCI.EnableTransmission    = true;
     RendererCI.EnableAnisotropy      = true;
     RendererCI.FrontCounterClockwise = true;
+    if (m_bEnablePostProcessing)
+        RendererCI.GetPSMainSource = GetPbrPSMainSource;
 
     RendererCI.SheenAlbedoScalingLUTPath    = "textures/sheen_albedo_scaling.jpg";
     RendererCI.PreintegratedCharlieBRDFPath = "textures/charlie_preintegrated.jpg";
@@ -420,6 +492,18 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     }
 
     CreateBoundBoxPSO(pRSNLoader);
+
+    {
+        GBuffer::ElementDesc GBufferElems[GBUFFER_RT_COUNT];
+        GBufferElems[GBUFFER_RT_COLOR]          = {TEX_FORMAT_RGBA16_FLOAT};
+        GBufferElems[GBUFFER_RT_NORMAL]         = {TEX_FORMAT_RGBA16_FLOAT};
+        GBufferElems[GBUFFER_RT_MATERIAL_DATA]  = {TEX_FORMAT_RG8_UNORM};
+        GBufferElems[GBUFFER_RT_MOTION_VECTORS] = {TEX_FORMAT_RG16_FLOAT};
+        GBufferElems[GBUFFER_RT_DEPTH]          = {TEX_FORMAT_D32_FLOAT};
+        static_assert(GBUFFER_RT_COUNT == 5, "Not all G-buffer elements are initialized");
+
+        m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
+    }
 
     m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 
@@ -670,6 +754,10 @@ void GLTFViewer::UpdateUI()
                 CreateGLTFRenderer();
                 LoadModel(m_ModelPath.c_str());
             }
+            if (ImGui::Checkbox("Post processing", &m_bEnablePostProcessing))
+            {
+                CreateGLTFRenderer();
+            }
 
             ImGui::TreePop();
         }
@@ -718,10 +806,20 @@ void GLTFViewer::Render()
 {
     auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
-    // Clear the back buffer
-    const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    if (m_bEnablePostProcessing)
+    {
+        const auto& SCDesc = m_pSwapChain->GetDesc();
+        m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
+        m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);
+    }
+    else
+    {
+        // Clear the back buffer
+        const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
+        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }
 
 
 
@@ -832,6 +930,14 @@ void GLTFViewer::Render()
         EnvMapAttribs.ConvertOutputToSRGB = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
 
         m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
+    }
+
+    if (m_bEnablePostProcessing)
+    {
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        // Clear the back buffer
+        const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
+        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 }
 
