@@ -424,6 +424,7 @@ void GLTFViewer::CreateGLTFRenderer()
     if (m_bEnablePostProcessing)
     {
         m_RenderParams.Flags &= ~GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING;
+        m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_COMPUTE_MOTION_VECTORS;
 
         RendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
         for (Uint32 i = 0; i < RendererCI.NumRenderTargets; ++i)
