@@ -28,6 +28,9 @@
 #pragma once
 
 #include <vector>
+#include <memory>
+#include <array>
+
 #include "SampleBase.hpp"
 #include "RenderStateNotationLoader.h"
 #include "GLTFLoader.hpp"
@@ -37,6 +40,11 @@
 
 namespace Diligent
 {
+
+namespace HLSL
+{
+struct CameraAttribs;
+}
 
 class EnvMapRenderer;
 
@@ -116,7 +124,7 @@ private:
 
     std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>          m_Model;
-    GLTF::ModelTransforms                 m_Transforms;
+    std::array<GLTF::ModelTransforms, 2>  m_Transforms; // [0] - current frame, [1] - previous frame
     BoundBox                              m_ModelAABB;
     float4x4                              m_ModelTransform;
     RefCntAutoPtr<IBuffer>                m_FrameAttribsCB;
@@ -136,7 +144,9 @@ private:
     GLTF_PBR_Renderer::ModelResourceBindings m_ModelResourceBindings;
     GLTF_PBR_Renderer::ResourceCacheBindings m_CacheBindings;
 
-    TrackballCamera<float> m_Camera;
+    TrackballCamera<float>                 m_Camera;
+    std::unique_ptr<HLSL::CameraAttribs[]> m_CameraAttribs; // [0] - current frame, [1] - previous frame
+    bool                                   m_bResetPrevCamera = true;
 
     Uint32 m_CameraId = 0;
 

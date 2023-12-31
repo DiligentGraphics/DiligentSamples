@@ -94,7 +94,8 @@ const std::pair<const char*, const char*> DefaultGLTFModels[] =
 };
 // clang-format on
 
-GLTFViewer::GLTFViewer()
+GLTFViewer::GLTFViewer() :
+    m_CameraAttribs{std::make_unique<HLSL::CameraAttribs[]>(2)}
 {
     m_Camera.SetDefaultSecondaryRotation(QuaternionF::RotationFromAxisAngle(float3{0.f, 1.0f, 0.0f}, -PI_F / 2.f));
     m_Camera.SetDistRange(0.1f, 5.f);
@@ -111,6 +112,7 @@ void GLTFViewer::LoadModel(const char* Path)
         m_PlayAnimation  = false;
         m_AnimationIndex = 0;
         m_AnimationTimers.clear();
+        m_bResetPrevCamera = true;
     }
 
     GLTF::ModelCreateInfo ModelCI;
@@ -156,8 +158,8 @@ void GLTFViewer::LoadModel(const char* Path)
 
 void GLTFViewer::UpdateScene()
 {
-    m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms);
-    m_ModelAABB = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms);
+    m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms[0]);
+    m_ModelAABB = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms[0]);
 
     // Center and scale model
     float  MaxDim = 0;
@@ -172,8 +174,9 @@ void GLTFViewer::UpdateScene()
     InvYAxis._22       = -1;
 
     m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
-    m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms, m_ModelTransform);
-    m_ModelAABB = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms);
+    m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms[0], m_ModelTransform);
+    m_ModelAABB     = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms[0]);
+    m_Transforms[1] = m_Transforms[0];
 }
 
 
@@ -477,7 +480,9 @@ void GLTFViewer::UpdateUI()
                 const auto& Cam = *m_CameraNodes[i]->pCamera;
                 CamList.emplace_back(i + 1, Cam.Name.empty() ? std::to_string(i) : Cam.Name);
             }
-            ImGui::Combo("Camera", &m_CameraId, CamList.data(), static_cast<int>(CamList.size()));
+
+            if (ImGui::Combo("Camera", &m_CameraId, CamList.data(), static_cast<int>(CamList.size())))
+                m_bResetPrevCamera = true;
         }
 
         if (m_CameraId == 0)
@@ -563,6 +568,7 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Reflectance90, "Reflectance90"},
                 {GLTF_PBR_Renderer::DebugViewType::MeshNormal, "Mesh normal"},
                 {GLTF_PBR_Renderer::DebugViewType::ShadingNormal, "Shading normal"},
+                {GLTF_PBR_Renderer::DebugViewType::MotionVectors, "Motion Vectors"},
                 {GLTF_PBR_Renderer::DebugViewType::NdotV, "n*v"},
                 {PBR_Renderer::DebugViewType::PunctualLighting, "Punctual Lighting"},
                 {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
@@ -582,7 +588,7 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
                 {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
             };
-            static_assert(_countof(DebugViews) == 32, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(_countof(DebugViews) == 33, "Did you add a new debug view mode? You may want to handle it here");
 
             ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }
@@ -655,6 +661,7 @@ void GLTFViewer::UpdateUI()
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
             FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
             FeatureCheckbox("UV transform", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TEXCOORD_TRANSFORM);
+            FeatureCheckbox("Motion Vectors", GLTF_PBR_Renderer::PSO_FLAG_COMPUTE_MOTION_VECTORS);
 
             ImGui::Separator();
 
@@ -716,59 +723,14 @@ void GLTFViewer::Render()
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    float YFov  = PI_F / 4.0f;
-    float ZNear = 0.1f;
-    float ZFar  = 100.f;
 
-    float4x4 CameraView;
-    if (m_CameraId == 0)
-    {
-        CameraView = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, m_Camera.GetDist());
-
-        m_RenderParams.ModelTransform = m_Camera.GetSecondaryRotation().ToMatrix();
-    }
-    else
-    {
-        const auto* pCameraNode           = m_CameraNodes[m_CameraId - 1];
-        const auto* pCamera               = pCameraNode->pCamera;
-        const auto& CameraGlobalTransform = m_Transforms.NodeGlobalMatrices[pCameraNode->Index];
-
-        // GLTF camera is defined such that the local +X axis is to the right,
-        // the lens looks towards the local -Z axis, and the top of the camera
-        // is aligned with the local +Y axis.
-        // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#cameras
-        // We need to inverse the Z axis as our camera looks towards +Z.
-        float4x4 InvZAxis = float4x4::Identity();
-        InvZAxis._33      = -1;
-
-        CameraView = CameraGlobalTransform.Inverse() * InvZAxis;
-        YFov       = pCamera->Perspective.YFov;
-        ZNear      = pCamera->Perspective.ZNear;
-        ZFar       = pCamera->Perspective.ZFar;
-
-        m_RenderParams.ModelTransform = float4x4::Identity();
-    }
-
-    // Apply pretransform matrix that rotates the scene according the surface orientation
-    CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
-
-    float4x4 CameraWorld = CameraView.Inverse();
-
-    // Get projection matrix adjusted to the current screen orientation
-    const auto CameraProj     = GetAdjustedProjectionMatrix(YFov, ZNear, ZFar);
-    const auto CameraViewProj = CameraView * CameraProj;
-
-    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
 
     {
-        MapHelper<HLSL::PBRFrameAttribs> FrameAttribs(m_pImmediateContext, m_FrameAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        MapHelper<HLSL::PBRFrameAttribs> FrameAttribs{m_pImmediateContext, m_FrameAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
+        FrameAttribs->Camera     = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
+        FrameAttribs->PrevCamera = m_CameraAttribs[(m_CurrentFrameNumber + 1) & 0x01];
+
         {
-            auto& Camera         = FrameAttribs->Camera;
-            Camera.mProjT        = CameraProj.Transpose();
-            Camera.mViewProjT    = CameraViewProj.Transpose();
-            Camera.mViewProjInvT = CameraViewProj.Inverse().Transpose();
-            Camera.f4Position    = float4(CameraWorldPos, 1);
-
             if (m_BoundBoxMode != BoundBoxMode::None)
             {
                 float4x4 BBTransform;
@@ -790,7 +752,7 @@ void GLTFViewer::Render()
                 }
 
                 for (int row = 0; row < 4; ++row)
-                    Camera.f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
+                    FrameAttribs->Camera.f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
             }
         }
         {
@@ -817,12 +779,12 @@ void GLTFViewer::Render()
     if (m_pResourceMgr)
     {
         m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_FrameAttribsCB);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, nullptr, &m_CacheBindings);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms[m_CurrentFrameNumber & 0x01], &m_Transforms[(m_CurrentFrameNumber + 1) & 0x01], m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
     {
         m_GLTFRenderer->Begin(m_pImmediateContext);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms, m_RenderParams, &m_ModelResourceBindings);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms[m_CurrentFrameNumber & 0x01], &m_Transforms[(m_CurrentFrameNumber + 1) & 0x01], m_RenderParams, &m_ModelResourceBindings);
     }
 
     if (m_BoundBoxMode != BoundBoxMode::None)
@@ -883,13 +845,80 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
+    float YFov  = PI_F / 4.0f;
+    float ZNear = 0.1f;
+    float ZFar  = 100.f;
+
+    float4x4 CameraView;
+    if (m_CameraId == 0)
+    {
+        CameraView = m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0.f, 0.0f, m_Camera.GetDist());
+
+        m_RenderParams.ModelTransform = m_Camera.GetSecondaryRotation().ToMatrix();
+    }
+    else
+    {
+        const auto* pCameraNode           = m_CameraNodes[m_CameraId - 1];
+        const auto* pCamera               = pCameraNode->pCamera;
+        const auto& CameraGlobalTransform = m_Transforms[m_CurrentFrameNumber & 0x01].NodeGlobalMatrices[pCameraNode->Index];
+
+        // GLTF camera is defined such that the local +X axis is to the right,
+        // the lens looks towards the local -Z axis, and the top of the camera
+        // is aligned with the local +Y axis.
+        // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#cameras
+        // We need to inverse the Z axis as our camera looks towards +Z.
+        float4x4 InvZAxis = float4x4::Identity();
+        InvZAxis._33      = -1;
+
+        CameraView = CameraGlobalTransform.Inverse() * InvZAxis;
+        YFov       = pCamera->Perspective.YFov;
+        ZNear      = pCamera->Perspective.ZNear;
+        ZFar       = pCamera->Perspective.ZFar;
+
+        m_RenderParams.ModelTransform = float4x4::Identity();
+    }
+
+    // Apply pretransform matrix that rotates the scene according the surface orientation
+    CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
+
+    float4x4 CameraWorld = CameraView.Inverse();
+
+    // Get projection matrix adjusted to the current screen orientation
+    const auto CameraProj     = GetAdjustedProjectionMatrix(YFov, ZNear, ZFar);
+    const auto CameraViewProj = CameraView * CameraProj;
+
+    float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+
+    auto& CurrCamAttribs = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
+
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+
+    CurrCamAttribs.f4ViewportSize = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
+    CurrCamAttribs.mViewT         = CameraView.Transpose();
+    CurrCamAttribs.mProjT         = CameraProj.Transpose();
+    CurrCamAttribs.mViewProjT     = CameraViewProj.Transpose();
+    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse().Transpose();
+    CurrCamAttribs.f4Position     = float4(CameraWorldPos, 1);
+
+    if (m_bResetPrevCamera)
+    {
+        m_CameraAttribs[(m_CurrentFrameNumber + 1) & 0x01] = CurrCamAttribs;
+    }
+
     if (!m_Model->Animations.empty() && m_PlayAnimation)
     {
         float& AnimationTimer = m_AnimationTimers[m_AnimationIndex];
         AnimationTimer += static_cast<float>(ElapsedTime);
         AnimationTimer = std::fmod(AnimationTimer, m_Model->Animations[m_AnimationIndex].End);
-        m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms, m_ModelTransform, m_AnimationIndex, AnimationTimer);
+
+        m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms[m_CurrentFrameNumber & 0x01], m_ModelTransform, m_AnimationIndex, AnimationTimer);
+        if (m_bResetPrevCamera)
+        {
+            m_Transforms[(m_CurrentFrameNumber + 1) & 0x01] = m_Transforms[m_CurrentFrameNumber & 0x01];
+        }
     }
+
+    m_bResetPrevCamera = false;
 }
 
 } // namespace Diligent

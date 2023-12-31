@@ -562,6 +562,7 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Reflectance90)]        = "Reflectance90";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MeshNormal)]           = "Mesh normal";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ShadingNormal)]        = "Shading normal";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MotionVectors)]        = "Motion vectors";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NdotV)]                = "n*v";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::PunctualLighting)]     = "Punctual Lighting";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]           = "Diffuse IBL";
@@ -580,7 +581,7 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceThickness)] = "Iridescence Thickness";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transmission)]         = "Transmission";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
-                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 32, "Did you add a new debug view mode? You may want to handle it here");
+                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 33, "Did you add a new debug view mode? You may want to handle it here");
 
                         if (ImGui::Combo("Debug view", &m_RenderParams.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size())))
                             UpdateRenderParams = true;
