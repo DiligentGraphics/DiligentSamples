@@ -48,6 +48,7 @@ struct CameraAttribs;
 }
 
 class EnvMapRenderer;
+class VectorFieldRenderer;
 
 class GLTFViewer final : public SampleBase
 {
@@ -72,6 +73,7 @@ private:
     bool SetEnvironmentMap(ITextureView* pEnvMap);
     void CreateGLTFRenderer();
     void CrateEnvMapRenderer();
+    void CreateVectorFieldRenderer();
 
     enum class BackgroundMode : int
     {
@@ -123,6 +125,7 @@ private:
     bool               m_PlayAnimation  = false;
     int                m_AnimationIndex = 0;
     std::vector<float> m_AnimationTimers;
+    float              m_ElapsedTime = 0.f;
 
     std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
     std::unique_ptr<GLTF::Model>          m_Model;
@@ -151,7 +154,8 @@ private:
     };
     ApplyPosteffects m_ApplyPostFX;
 
-    std::unique_ptr<EnvMapRenderer> m_EnvMapRenderer;
+    std::unique_ptr<EnvMapRenderer>      m_EnvMapRenderer;
+    std::unique_ptr<VectorFieldRenderer> m_VectorFieldRenderer;
 
     bool                                    m_bUseResourceCache = false;
     RefCntAutoPtr<GLTF::ResourceManager>    m_pResourceMgr;

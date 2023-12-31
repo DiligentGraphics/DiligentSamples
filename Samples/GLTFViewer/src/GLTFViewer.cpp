@@ -43,6 +43,7 @@
 #include "CommandLineParser.hpp"
 #include "GraphicsAccessories.hpp"
 #include "EnvMapRenderer.hpp"
+#include "VectorFieldRenderer.hpp"
 #include "Utilities/include/DiligentFXShaderSourceStreamFactory.hpp"
 #include "ShaderSourceFactoryUtils.h"
 
@@ -368,7 +369,7 @@ struct PSOutput
 	}
 #   endif
 
-    PSOut.MotionVec = float4(0.0, 0.0, 0.0, 1.0);
+    PSOut.MotionVec = float4(MotionVector, 0.0, 1.0);
     return PSOut;
 )";
 
@@ -498,6 +499,16 @@ void GLTFViewer::CrateEnvMapRenderer()
     m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
 }
 
+void GLTFViewer::CreateVectorFieldRenderer()
+{
+    VectorFieldRenderer::CreateInfo CI;
+    CI.pDevice          = m_pDevice;
+    CI.NumRenderTargets = 1;
+    CI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+
+    m_VectorFieldRenderer = std::make_unique<VectorFieldRenderer>(CI);
+}
+
 void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
@@ -534,6 +545,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     CreateGLTFRenderer();
     CrateEnvMapRenderer();
+    CreateVectorFieldRenderer();
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {
@@ -724,7 +736,13 @@ void GLTFViewer::UpdateUI()
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             if (ImGui::TreeNode("Animation"))
             {
-                ImGui::Checkbox("Play", &m_PlayAnimation);
+                if (ImGui::Checkbox("Play", &m_PlayAnimation))
+                {
+                    if (!m_PlayAnimation)
+                    {
+                        m_Transforms[(m_CurrentFrameNumber + 1) & 0x01] = m_Transforms[m_CurrentFrameNumber & 0x01];
+                    }
+                }
                 std::vector<const char*> Animations(m_Model->Animations.size());
                 for (size_t i = 0; i < m_Model->Animations.size(); ++i)
                     Animations[i] = m_Model->Animations[i].Name.c_str();
@@ -773,7 +791,7 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::ShadingNormal, "Shading normal"},
                 {GLTF_PBR_Renderer::DebugViewType::MotionVectors, "Motion Vectors"},
                 {GLTF_PBR_Renderer::DebugViewType::NdotV, "n*v"},
-                {PBR_Renderer::DebugViewType::PunctualLighting, "Punctual Lighting"},
+                {GLTF_PBR_Renderer::DebugViewType::PunctualLighting, "Punctual Lighting"},
                 {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
                 {GLTF_PBR_Renderer::DebugViewType::SpecularIBL, "Specular IBL"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoat, "Clear Coat"},
@@ -933,8 +951,9 @@ GLTFViewer::~GLTFViewer()
 // Render a frame
 void GLTFViewer::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView*        pRTV   = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView*        pDSV   = m_pSwapChain->GetDepthBufferDSV();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     if (m_bEnablePostProcessing)
     {
@@ -943,7 +962,6 @@ void GLTFViewer::Render()
             m_ApplyPostFX.Initialize(m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat, m_FrameAttribsCB);
         }
 
-        const auto& SCDesc = m_pSwapChain->GetDesc();
         m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
         m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);
     }
@@ -1077,6 +1095,26 @@ void GLTFViewer::Render()
         m_ApplyPostFX.ptex2DColorVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_pImmediateContext->CommitShaderResources(m_ApplyPostFX.pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
+
+        if (m_VectorFieldRenderer &&
+            (m_RenderParams.DebugView == GLTF_PBR_Renderer::DebugViewType::MotionVectors) &&
+            (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_COMPUTE_MOTION_VECTORS) != 0)
+        {
+            VectorFieldRenderer::RenderAttribs Attribs;
+            Attribs.pContext = m_pImmediateContext;
+            Attribs.GridSize = {SCDesc.Width / 20, SCDesc.Height / 20};
+            // Render motion vectors in the opposite direction
+            Attribs.Scale               = float2{-0.05f} / std::max(m_ElapsedTime, 0.001f);
+            Attribs.StartColor          = float4{1};
+            Attribs.EndColor            = float4{0.5};
+            Attribs.ConvertOutputToSRGB = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
+
+            StateTransitionDesc Barrier{m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
+            m_pImmediateContext->TransitionResourceStates(1, &Barrier);
+
+            Attribs.pVectorField = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+            m_VectorFieldRenderer->Render(Attribs);
+        }
     }
 }
 
@@ -1089,6 +1127,8 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
+
+    m_ElapsedTime = static_cast<float>(ElapsedTime);
 
     float YFov  = PI_F / 4.0f;
     float ZNear = 0.1f;
