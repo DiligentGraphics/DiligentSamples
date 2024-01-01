@@ -44,6 +44,7 @@
 #include "GraphicsAccessories.hpp"
 #include "EnvMapRenderer.hpp"
 #include "VectorFieldRenderer.hpp"
+#include "ScreenSpaceReflection.hpp"
 #include "Utilities/include/DiligentFXShaderSourceStreamFactory.hpp"
 #include "ShaderSourceFactoryUtils.h"
 
@@ -360,7 +361,7 @@ struct PSOutput
 #endif
     
     PSOut.Normal       = float4(Shading.BaseLayer.Normal, 1.0);
-    PSOut.MaterialData = float4(Shading.BaseLayer.Metallic, Shading.BaseLayer.Srf.PerceptualRoughness, 0.0, 1.0);
+    PSOut.MaterialData = float4(Shading.BaseLayer.Srf.PerceptualRoughness, Shading.BaseLayer.Metallic, 0.0, 1.0);
 
 #   if ENABLE_CLEAR_COAT
 	{
@@ -546,6 +547,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     CreateGLTFRenderer();
     CrateEnvMapRenderer();
     CreateVectorFieldRenderer();
+    m_SSR = std::make_unique<ScreenSpaceReflection>(m_pDevice);
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {
@@ -644,6 +646,8 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
     pPSO->CreateShaderResourceBinding(&pSRB, true);
     ptex2DColorVar = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DColor");
     VERIFY_EXPR(ptex2DColorVar != nullptr);
+    ptex2DSSR = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DSSR");
+    VERIFY_EXPR(ptex2DSSR != nullptr);
 }
 
 void GLTFViewer::UpdateUI()
@@ -962,6 +966,8 @@ void GLTFViewer::Render()
             m_ApplyPostFX.Initialize(m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat, m_FrameAttribsCB);
         }
 
+        m_SSR->SetBackBufferSize(m_pDevice, m_pImmediateContext, SCDesc.Width, SCDesc.Height);
+
         m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
         m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);
     }
@@ -974,11 +980,15 @@ void GLTFViewer::Render()
     }
 
 
+    const auto& CurrCamAttribs = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
+    const auto& PrevCamAttribs = m_CameraAttribs[(m_CurrentFrameNumber + 1) & 0x01];
+    const auto& CurrTransforms = m_Transforms[m_CurrentFrameNumber & 0x01];
+    const auto& PrevTransforms = m_Transforms[(m_CurrentFrameNumber + 1) & 0x01];
 
     {
         MapHelper<HLSL::PBRFrameAttribs> FrameAttribs{m_pImmediateContext, m_FrameAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
-        FrameAttribs->Camera     = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
-        FrameAttribs->PrevCamera = m_CameraAttribs[(m_CurrentFrameNumber + 1) & 0x01];
+        FrameAttribs->Camera     = CurrCamAttribs;
+        FrameAttribs->PrevCamera = PrevCamAttribs;
 
         {
             if (m_BoundBoxMode != BoundBoxMode::None)
@@ -1029,12 +1039,12 @@ void GLTFViewer::Render()
     if (m_pResourceMgr)
     {
         m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_FrameAttribsCB);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms[m_CurrentFrameNumber & 0x01], &m_Transforms[(m_CurrentFrameNumber + 1) & 0x01], m_RenderParams, nullptr, &m_CacheBindings);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, CurrTransforms, &PrevTransforms, m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
     {
         m_GLTFRenderer->Begin(m_pImmediateContext);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, m_Transforms[m_CurrentFrameNumber & 0x01], &m_Transforms[(m_CurrentFrameNumber + 1) & 0x01], m_RenderParams, &m_ModelResourceBindings);
+        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, CurrTransforms, &PrevTransforms, m_RenderParams, &m_ModelResourceBindings);
     }
 
     if (m_BoundBoxMode != BoundBoxMode::None)
@@ -1086,6 +1096,46 @@ void GLTFViewer::Render()
 
     if (m_bEnablePostProcessing)
     {
+        {
+            m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+            StateTransitionDesc Barriers[GBUFFER_RT_COUNT];
+            for (Uint32 i = 0; i < GBUFFER_RT_COUNT; ++i)
+                Barriers[i] = StateTransitionDesc{m_GBuffer->GetBuffer(i), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
+            m_pImmediateContext->TransitionResourceStates(GBUFFER_RT_COUNT, Barriers);
+        }
+
+        {
+            ScreenSpaceReflection::RenderAttributes SSRRenderAttribs{};
+            SSRRenderAttribs.pDevice            = m_pDevice;
+            SSRRenderAttribs.pDeviceContext     = m_pImmediateContext;
+            SSRRenderAttribs.pColorBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+            SSRRenderAttribs.pDepthBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_DEPTH)->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+            SSRRenderAttribs.pNormalBufferSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+            SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+            SSRRenderAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+            SSRRenderAttribs.SSRAttribs.ProjMatrix            = CurrCamAttribs.mProjT;
+            SSRRenderAttribs.SSRAttribs.ViewMatrix            = CurrCamAttribs.mViewT;
+            SSRRenderAttribs.SSRAttribs.ViewProjMatrix        = CurrCamAttribs.mViewProjT;
+            SSRRenderAttribs.SSRAttribs.InvProjMatrix         = CurrCamAttribs.mProjInvT;
+            SSRRenderAttribs.SSRAttribs.InvViewMatrix         = CurrCamAttribs.mViewInvT;
+            SSRRenderAttribs.SSRAttribs.InvViewProjMatrix     = CurrCamAttribs.mViewProjInvT;
+            SSRRenderAttribs.SSRAttribs.PrevViewProjMatrix    = PrevCamAttribs.mViewProjT;
+            SSRRenderAttribs.SSRAttribs.InvPrevViewProjMatrix = PrevCamAttribs.mViewProjInvT;
+            SSRRenderAttribs.SSRAttribs.CameraPosition        = CurrCamAttribs.f4Position;
+
+            SSRRenderAttribs.SSRAttribs.RenderSize.x          = SCDesc.Width;
+            SSRRenderAttribs.SSRAttribs.RenderSize.y          = SCDesc.Height;
+            SSRRenderAttribs.SSRAttribs.InverseRenderSize.x   = 1.0f / static_cast<float>(SCDesc.Width);
+            SSRRenderAttribs.SSRAttribs.InverseRenderSize.y   = 1.0f / static_cast<float>(SCDesc.Height);
+            SSRRenderAttribs.SSRAttribs.FrameIndex            = m_CurrentFrameNumber;
+            SSRRenderAttribs.SSRAttribs.IBLFactor             = m_ShaderAttribs.IBLScale;
+            SSRRenderAttribs.SSRAttribs.RoughnessChannel      = 0;
+            SSRRenderAttribs.SSRAttribs.IsRoughnessPerceptual = true;
+            m_SSR->Execute(SSRRenderAttribs);
+        }
+
         m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         // Clear the back buffer
         const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
@@ -1093,6 +1143,7 @@ void GLTFViewer::Render()
 
         m_pImmediateContext->SetPipelineState(m_ApplyPostFX.pPSO);
         m_ApplyPostFX.ptex2DColorVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_ApplyPostFX.ptex2DSSR->Set(m_SSR->GetSSRRadianceSRV());
         m_pImmediateContext->CommitShaderResources(m_ApplyPostFX.pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 
@@ -1108,9 +1159,6 @@ void GLTFViewer::Render()
             Attribs.StartColor          = float4{1};
             Attribs.EndColor            = float4{0.5};
             Attribs.ConvertOutputToSRGB = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
-
-            StateTransitionDesc Barrier{m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
-            m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 
             Attribs.pVectorField = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             m_VectorFieldRenderer->Render(Attribs);
@@ -1182,6 +1230,8 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     CurrCamAttribs.mViewT         = CameraView.Transpose();
     CurrCamAttribs.mProjT         = CameraProj.Transpose();
     CurrCamAttribs.mViewProjT     = CameraViewProj.Transpose();
+    CurrCamAttribs.mViewInvT      = CameraView.Inverse().Transpose();
+    CurrCamAttribs.mProjInvT      = CameraProj.Inverse().Transpose();
     CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse().Transpose();
     CurrCamAttribs.f4Position     = float4(CameraWorldPos, 1);
 

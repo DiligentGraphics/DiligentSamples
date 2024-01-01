@@ -49,6 +49,7 @@ struct CameraAttribs;
 
 class EnvMapRenderer;
 class VectorFieldRenderer;
+class ScreenSpaceReflection;
 
 class GLTFViewer final : public SampleBase
 {
@@ -148,14 +149,16 @@ private:
         RefCntAutoPtr<IShaderResourceBinding> pSRB;
 
         IShaderResourceVariable* ptex2DColorVar = nullptr;
+        IShaderResourceVariable* ptex2DSSR      = nullptr;
 
         void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB);
         operator bool() const { return pPSO != nullptr; }
     };
     ApplyPosteffects m_ApplyPostFX;
 
-    std::unique_ptr<EnvMapRenderer>      m_EnvMapRenderer;
-    std::unique_ptr<VectorFieldRenderer> m_VectorFieldRenderer;
+    std::unique_ptr<EnvMapRenderer>        m_EnvMapRenderer;
+    std::unique_ptr<VectorFieldRenderer>   m_VectorFieldRenderer;
+    std::unique_ptr<ScreenSpaceReflection> m_SSR;
 
     bool                                    m_bUseResourceCache = false;
     RefCntAutoPtr<GLTF::ResourceManager>    m_pResourceMgr;
