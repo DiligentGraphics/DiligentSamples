@@ -1039,21 +1039,31 @@ void GLTFViewer::Render()
     if (m_pResourceMgr)
     {
         m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_FrameAttribsCB);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, CurrTransforms, &PrevTransforms, m_RenderParams, nullptr, &m_CacheBindings);
     }
     else
     {
         m_GLTFRenderer->Begin(m_pImmediateContext);
-        m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, CurrTransforms, &PrevTransforms, m_RenderParams, &m_ModelResourceBindings);
     }
 
-    if (m_BoundBoxMode != BoundBoxMode::None)
-    {
-        m_pImmediateContext->SetPipelineState(m_BoundBoxPSO);
-        m_pImmediateContext->CommitShaderResources(m_BoundBoxSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
-        DrawAttribs DrawAttrs{24, DRAW_FLAG_VERIFY_ALL};
-        m_pImmediateContext->Draw(DrawAttrs);
-    }
+    auto RenderModel = [&](GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAGS AlphaModes) {
+        const auto OrigAlphaModes = m_RenderParams.AlphaModes;
+
+        m_RenderParams.AlphaModes &= AlphaModes;
+        if (m_RenderParams.AlphaModes != GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_NONE)
+        {
+            if (m_pResourceMgr)
+            {
+                m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, CurrTransforms, &PrevTransforms, m_RenderParams, nullptr, &m_CacheBindings);
+            }
+            else
+            {
+                m_GLTFRenderer->Render(m_pImmediateContext, *m_Model, CurrTransforms, &PrevTransforms, m_RenderParams, &m_ModelResourceBindings);
+            }
+        }
+
+        m_RenderParams.AlphaModes = OrigAlphaModes;
+    };
+    RenderModel(GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_OPAQUE | GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_MASK);
 
     if (m_BackgroundMode != BackgroundMode::None)
     {
@@ -1092,6 +1102,16 @@ void GLTFViewer::Render()
         EnvMapAttribs.ConvertOutputToSRGB = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
 
         m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
+    }
+
+    RenderModel(GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_BLEND);
+
+    if (m_BoundBoxMode != BoundBoxMode::None)
+    {
+        m_pImmediateContext->SetPipelineState(m_BoundBoxPSO);
+        m_pImmediateContext->CommitShaderResources(m_BoundBoxSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+        DrawAttribs DrawAttrs{24, DRAW_FLAG_VERIFY_ALL};
+        m_pImmediateContext->Draw(DrawAttrs);
     }
 
     if (m_bEnablePostProcessing)
