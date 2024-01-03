@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,6 +87,13 @@ private:
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
+    enum class SSRDebugViewMode : int
+    {
+        None,
+        SSR,
+        Confidence
+    };
+
     struct ShaderParams
     {
         float OcclusionStrength = 1;
@@ -99,7 +106,8 @@ private:
         float4 HighlightColor = float4{0, 0, 0, 0};
         float4 WireframeColor = float4{0.8f, 0.7f, 0.5f, 1.0f};
 
-        float SSRScale = 1;
+        float            SSRScale     = 1;
+        SSRDebugViewMode SSRDebugMode = SSRDebugViewMode::None;
     };
     ShaderParams m_ShaderAttribs;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -961,6 +961,11 @@ void GLTFViewer::UpdateUI()
 
             ImGui::SliderFloat("SSR scale", &m_ShaderAttribs.SSRScale, 0.f, 1.f);
 
+            ImGui::Combo("SSR Debug View", reinterpret_cast<int*>(&m_ShaderAttribs.SSRDebugMode),
+                         "None\0"
+                         "SSR\0"
+                         "Confidence\0\0");
+
             ImGui::TreePop();
         }
     }
@@ -1029,10 +1034,19 @@ void GLTFViewer::Render()
         FrameAttribs->Camera     = CurrCamAttribs;
         FrameAttribs->PrevCamera = PrevCamAttribs;
 
-        FrameAttribs->PrevCamera.f4ExtraData[0].x =
-            (m_RenderParams.DebugView == GLTF_PBR_Renderer::DebugViewType::None) ?
-            m_ShaderAttribs.SSRScale :
-            0;
+        if (m_RenderParams.DebugView == GLTF_PBR_Renderer::DebugViewType::None)
+        {
+            FrameAttribs->PrevCamera.f4ExtraData[0] = float4{
+                m_ShaderAttribs.SSRScale,
+                static_cast<float>(m_ShaderAttribs.SSRDebugMode),
+                0,
+                0,
+            };
+        }
+        else
+        {
+            FrameAttribs->PrevCamera.f4ExtraData[0] = float4{0};
+        }
 
         {
             if (m_BoundBoxMode != BoundBoxMode::None)
