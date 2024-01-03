@@ -148,8 +148,9 @@ private:
         RefCntAutoPtr<IPipelineState>         pPSO;
         RefCntAutoPtr<IShaderResourceBinding> pSRB;
 
-        IShaderResourceVariable* ptex2DColorVar = nullptr;
-        IShaderResourceVariable* ptex2DSSR      = nullptr;
+        IShaderResourceVariable* ptex2DColorVar   = nullptr;
+        IShaderResourceVariable* ptex2DSSR        = nullptr;
+        IShaderResourceVariable* ptex2DPecularIBL = nullptr;
 
         void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB);
         operator bool() const { return pPSO != nullptr; }

@@ -13,13 +13,15 @@ cbuffer cbFrameAttribs
 
 Texture2D<float4> g_tex2DColor;
 Texture2D<float4> g_tex2DSSR;
-
+Texture2D<float4> g_tex2DIBL;
 
 float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
 {
     float4 Color = g_tex2DColor.Load(int3(VSOut.f4PixelPos.xy, 0));
     float4 SSR   = g_tex2DSSR.Load(int3(VSOut.f4PixelPos.xy, 0));
-    Color.rgb += SSR.rgb * SSR.w;
+    float4 IBL   = g_tex2DIBL.Load(int3(VSOut.f4PixelPos.xy, 0));
+    
+    Color.rgb += (SSR.rgb - IBL.rgb) * SSR.w;
     
     {
         // Perform tone mapping

@@ -104,6 +104,7 @@ enum GBUFFER_RT : Uint32
     GBUFFER_RT_NORMAL,
     GBUFFER_RT_MATERIAL_DATA,
     GBUFFER_RT_MOTION_VECTORS,
+    GBUFFER_RT_SPECULAR_IBL,
     GBUFFER_RT_DEPTH,
     GBUFFER_RT_COUNT
 };
@@ -114,6 +115,7 @@ enum GBUFFER_RT_FLAG : Uint32
     GBUFFER_RT_FLAG_NORMAL         = 1u << GBUFFER_RT_NORMAL,
     GBUFFER_RT_FLAG_MATERIAL_DATA  = 1u << GBUFFER_RT_MATERIAL_DATA,
     GBUFFER_RT_FLAG_MOTION_VECTORS = 1u << GBUFFER_RT_MOTION_VECTORS,
+    GBUFFER_RT_FLAG_SPECULAR_IBL   = 1u << GBUFFER_RT_SPECULAR_IBL,
     GBUFFER_RT_FLAG_DEPTH          = 1u << GBUFFER_RT_DEPTH,
     GBUFFER_RT_FLAG_LAST           = GBUFFER_RT_FLAG_DEPTH,
     GBUFFER_RT_FLAG_ALL            = (GBUFFER_RT_FLAG_LAST << 1u) - 1u,
@@ -349,6 +351,7 @@ struct PSOutput
     float4 Normal       : SV_Target1;
     float4 MaterialData : SV_Target2;
     float4 MotionVec    : SV_Target3;
+    float4 IBL          : SV_Target4;
 };
 )";
 
@@ -360,17 +363,40 @@ struct PSOutput
     PSOut.Color = OutColor;
 #endif
     
-    PSOut.Normal       = float4(Shading.BaseLayer.Normal, 1.0);
-    PSOut.MaterialData = float4(Shading.BaseLayer.Srf.PerceptualRoughness, Shading.BaseLayer.Metallic, 0.0, 1.0);
+    PSOut.Normal.xyz       = Shading.BaseLayer.Normal.xyz;
+    PSOut.MaterialData.xyz = float3(Shading.BaseLayer.Srf.PerceptualRoughness, Shading.BaseLayer.Metallic, 0.0);
+    PSOut.IBL.xyz          = GetBaseLayerIBL(Shading, SrfLighting);
 
 #   if ENABLE_CLEAR_COAT
 	{
-        PSOut.Normal.xyz      = lerp(PSOut.Normal.xyz, Shading.Clearcoat.Normal, Shading.Clearcoat.Factor);
-        PSOut.MaterialData.xy = lerp(PSOut.MaterialData.xy, float2(0.0, Shading.Clearcoat.Srf.PerceptualRoughness), Shading.Clearcoat.Factor);
-	}
-#   endif
+        // We clearly can't do SSR for both base layer and clear coat, so we
+        // blend the base layer properties with the clearcoat using the clearcoat factor.
+        // This way when the factor is 0.0, we get the base layer, when it is 1.0,
+        // we get the clear coat, and something in between otherwise.
 
+        PSOut.Normal.xyz      = lerp(PSOut.Normal.xyz, Shading.Clearcoat.Normal, Shading.Clearcoat.Factor);
+        PSOut.MaterialData.xy = lerp(PSOut.MaterialData.xy, float2(Shading.Clearcoat.Srf.PerceptualRoughness, 0.0), Shading.Clearcoat.Factor);
+
+        // Note that the base layer IBL is weighted by (1.0 - Shading.Clearcoat.Factor * ClearcoatFresnel).
+        // Here we are weighting it by (1.0 - Shading.Clearcoat.Factor), which is always smaller,
+        // so when we subtract the IBL, it can never be negative.
+        PSOut.IBL.xyz = lerp(
+            PSOut.IBL.xyz,
+            GetClearcoatIBL(Shading, SrfLighting),
+            Shading.Clearcoat.Factor);
+    }
+#   endif
+    
+    // Blend material data and IBL with background
+    PSOut.MaterialData = float4(PSOut.MaterialData.xyz * BaseColor.a, BaseColor.a);
+    PSOut.IBL          = float4(PSOut.IBL.xyz          * BaseColor.a, BaseColor.a);
+    
+    // Do not blend motion vectors as it does not make sense
     PSOut.MotionVec = float4(MotionVector, 0.0, 1.0);
+
+    // Also do not blend normal - we want normal of the top layer
+    PSOut.Normal.a = 1.0;
+
     return PSOut;
 )";
 
@@ -383,7 +409,8 @@ void main(in  float4 Pos          : SV_Position,
           out float4 Color        : SV_Target0,
           out float4 Normal       : SV_Target1,
           out float4 MaterialData : SV_Target2,
-          out float4 MotionVec    : SV_Target3)
+          out float4 MotionVec    : SV_Target3,
+          out float4 IBL          : SV_Target4)
 {
     Color.rgb = SampleEnvMap(ClipPos);
     Color.a = 1.0;
@@ -391,6 +418,7 @@ void main(in  float4 Pos          : SV_Position,
     Normal       = float4(0.0, 0.0, 0.0, 0.0);
     MaterialData = float4(0.0, 0.0, 0.0, 0.0);
     MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
+    IBL          = float4(0.0, 0.0, 0.0, 0.0);
 }
 )";
 
@@ -528,8 +556,9 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         GBufferElems[GBUFFER_RT_NORMAL]         = {TEX_FORMAT_RGBA16_FLOAT};
         GBufferElems[GBUFFER_RT_MATERIAL_DATA]  = {TEX_FORMAT_RG8_UNORM};
         GBufferElems[GBUFFER_RT_MOTION_VECTORS] = {TEX_FORMAT_RG16_FLOAT};
+        GBufferElems[GBUFFER_RT_SPECULAR_IBL]   = {TEX_FORMAT_RGBA16_FLOAT};
         GBufferElems[GBUFFER_RT_DEPTH]          = {TEX_FORMAT_D32_FLOAT};
-        static_assert(GBUFFER_RT_COUNT == 5, "Not all G-buffer elements are initialized");
+        static_assert(GBUFFER_RT_COUNT == 6, "Not all G-buffer elements are initialized");
 
         m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
     }
@@ -648,6 +677,8 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
     VERIFY_EXPR(ptex2DColorVar != nullptr);
     ptex2DSSR = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DSSR");
     VERIFY_EXPR(ptex2DSSR != nullptr);
+    ptex2DPecularIBL = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DIBL");
+    VERIFY_EXPR(ptex2DPecularIBL != nullptr);
 }
 
 void GLTFViewer::UpdateUI()
@@ -1164,6 +1195,7 @@ void GLTFViewer::Render()
         m_pImmediateContext->SetPipelineState(m_ApplyPostFX.pPSO);
         m_ApplyPostFX.ptex2DColorVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_ApplyPostFX.ptex2DSSR->Set(m_SSR->GetSSRRadianceSRV());
+        m_ApplyPostFX.ptex2DPecularIBL->Set(m_GBuffer->GetBuffer(GBUFFER_RT_SPECULAR_IBL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_pImmediateContext->CommitShaderResources(m_ApplyPostFX.pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 
