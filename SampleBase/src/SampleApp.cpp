@@ -344,6 +344,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineCI.Window = *pWindow;
 
 #    if PLATFORM_EMSCRIPTEN
+            EngineCI.WebGLAttribs.Alpha           = false;
             EngineCI.WebGLAttribs.PowerPreference = WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
 #    endif
             if (m_ValidationLevel >= 0)
