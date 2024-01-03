@@ -413,8 +413,7 @@ void main(in  float4 Pos          : SV_Position,
           out float4 MotionVec    : SV_Target3,
           out float4 IBL          : SV_Target4)
 {
-    Color.rgb = SampleEnvMap(ClipPos);
-    Color.a = 1.0;
+    Color = SampleEnvMap(ClipPos);
 
     Normal       = float4(0.0, 0.0, 0.0, 0.0);
     MaterialData = float4(0.0, 0.0, 0.0, 0.0);
@@ -1127,10 +1126,13 @@ void GLTFViewer::Render()
         TMAttribs.fLuminanceSaturation = 1.0;
 
         EnvMapRenderer::RenderAttribs EnvMapAttribs;
-        EnvMapAttribs.pContext            = m_pImmediateContext;
-        EnvMapAttribs.pEnvMap             = pEnvMapSRV;
-        EnvMapAttribs.AverageLogLum       = m_ShaderAttribs.AverageLogLum;
-        EnvMapAttribs.MipLevel            = m_EnvMapMipLevel;
+        EnvMapAttribs.pContext      = m_pImmediateContext;
+        EnvMapAttribs.pEnvMap       = pEnvMapSRV;
+        EnvMapAttribs.AverageLogLum = m_ShaderAttribs.AverageLogLum;
+        EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
+        // It is essential to write zero alpha because we use alpha channel
+        // to attenuate SSR for transparent surfaces.
+        EnvMapAttribs.Alpha               = 0.0;
         EnvMapAttribs.ConvertOutputToSRGB = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
 
         m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
@@ -1210,7 +1212,7 @@ void GLTFViewer::Render()
             // Render motion vectors in the opposite direction
             Attribs.Scale               = float2{-0.05f} / std::max(m_ElapsedTime, 0.001f);
             Attribs.StartColor          = float4{1};
-            Attribs.EndColor            = float4{0.5};
+            Attribs.EndColor            = float4{0.5, 0.5, 0.5, 1.0};
             Attribs.ConvertOutputToSRGB = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
 
             Attribs.pVectorField = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
