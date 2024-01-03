@@ -69,6 +69,7 @@ SampleBase* CreateSample()
 const std::pair<const char*, const char*> DefaultGLTFModels[] =
 {
     {"Damaged Helmet",               "models/DamagedHelmet/DamagedHelmet.gltf"},
+    {"Barbie Dodge Pickup",          "models/BarbieDodgePickup/scene.gltf"},
     {"Flight Helmet",                "models/FlightHelmet/glTF/FlightHelmet.gltf"},
     {"Cesium Man",                   "models/CesiumMan/glTF/CesiumMan.gltf"},
     {"Boom Box",                     "models/BoomBoxWithAxes/glTF/BoomBoxWithAxes.gltf"},
