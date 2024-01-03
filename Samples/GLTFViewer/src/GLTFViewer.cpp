@@ -929,11 +929,6 @@ void GLTFViewer::UpdateUI()
                 CreateGLTFRenderer();
                 LoadModel(m_ModelPath.c_str());
             }
-            if (ImGui::Checkbox("Post processing", &m_bEnablePostProcessing))
-            {
-                CreateGLTFRenderer();
-                CrateEnvMapRenderer();
-            }
 
             ImGui::TreePop();
         }
@@ -953,6 +948,19 @@ void GLTFViewer::UpdateUI()
             AlphaModeCheckbox("Opaque", GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_OPAQUE);
             AlphaModeCheckbox("Mask", GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_MASK);
             AlphaModeCheckbox("Blend", GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_BLEND);
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Post Processing"))
+        {
+            if (ImGui::Checkbox("Enable", &m_bEnablePostProcessing))
+            {
+                CreateGLTFRenderer();
+                CrateEnvMapRenderer();
+            }
+
+            ImGui::SliderFloat("SSR scale", &m_ShaderAttribs.SSRScale, 0.f, 1.f);
+
             ImGui::TreePop();
         }
     }
@@ -1020,6 +1028,11 @@ void GLTFViewer::Render()
         MapHelper<HLSL::PBRFrameAttribs> FrameAttribs{m_pImmediateContext, m_FrameAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
         FrameAttribs->Camera     = CurrCamAttribs;
         FrameAttribs->PrevCamera = PrevCamAttribs;
+
+        FrameAttribs->PrevCamera.f4ExtraData[0].x =
+            (m_RenderParams.DebugView == GLTF_PBR_Renderer::DebugViewType::None) ?
+            m_ShaderAttribs.SSRScale :
+            0;
 
         {
             if (m_BoundBoxMode != BoundBoxMode::None)

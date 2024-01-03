@@ -21,7 +21,8 @@ float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
     float4 SSR   = g_tex2DSSR.Load(int3(VSOut.f4PixelPos.xy, 0));
     float4 IBL   = g_tex2DIBL.Load(int3(VSOut.f4PixelPos.xy, 0));
     
-    Color.rgb += (SSR.rgb - IBL.rgb) * SSR.w * Color.a;
+    float SSRScale = g_Frame.PrevCamera.f4ExtraData[0].x;
+    Color.rgb += (SSR.rgb - IBL.rgb) * SSR.w * Color.a * SSRScale;
  
     {
         // Perform tone mapping

@@ -98,6 +98,8 @@ private:
 
         float4 HighlightColor = float4{0, 0, 0, 0};
         float4 WireframeColor = float4{0.8f, 0.7f, 0.5f, 1.0f};
+
+        float SSRScale = 1;
     };
     ShaderParams m_ShaderAttribs;
 
