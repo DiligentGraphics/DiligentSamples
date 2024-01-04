@@ -87,13 +87,6 @@ private:
 
     GLTF_PBR_Renderer::RenderInfo m_RenderParams;
 
-    enum class SSRDebugViewMode : int
-    {
-        None,
-        SSR,
-        Confidence
-    };
-
     struct ShaderParams
     {
         float OcclusionStrength = 1;
@@ -106,8 +99,8 @@ private:
         float4 HighlightColor = float4{0, 0, 0, 0};
         float4 WireframeColor = float4{0.8f, 0.7f, 0.5f, 1.0f};
 
-        float            SSRScale     = 1;
-        SSRDebugViewMode SSRDebugMode = SSRDebugViewMode::None;
+        float SSRScale     = 1;
+        int   SSRDebugMode = 0;
     };
     ShaderParams m_ShaderAttribs;
 
@@ -158,9 +151,13 @@ private:
         RefCntAutoPtr<IPipelineState>         pPSO;
         RefCntAutoPtr<IShaderResourceBinding> pSRB;
 
-        IShaderResourceVariable* ptex2DColorVar   = nullptr;
-        IShaderResourceVariable* ptex2DSSR        = nullptr;
-        IShaderResourceVariable* ptex2DPecularIBL = nullptr;
+        IShaderResourceVariable* ptex2DRadianceVar         = nullptr;
+        IShaderResourceVariable* ptex2DNormalVar           = nullptr;
+        IShaderResourceVariable* ptex2DSSR                 = nullptr;
+        IShaderResourceVariable* ptex2DPecularIBL          = nullptr;
+        IShaderResourceVariable* ptex2DBaseColorVar        = nullptr;
+        IShaderResourceVariable* ptex2DMaterialDataVar     = nullptr;
+        IShaderResourceVariable* ptex2DPreintegratedGGXVar = nullptr;
 
         void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB);
         operator bool() const { return pPSO != nullptr; }

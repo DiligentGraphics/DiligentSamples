@@ -101,8 +101,9 @@ const std::pair<const char*, const char*> DefaultGLTFModels[] =
 
 enum GBUFFER_RT : Uint32
 {
-    GBUFFER_RT_COLOR,
+    GBUFFER_RT_RADIANCE,
     GBUFFER_RT_NORMAL,
+    GBUFFER_RT_BASE_COLOR,
     GBUFFER_RT_MATERIAL_DATA,
     GBUFFER_RT_MOTION_VECTORS,
     GBUFFER_RT_SPECULAR_IBL,
@@ -112,8 +113,9 @@ enum GBUFFER_RT : Uint32
 
 enum GBUFFER_RT_FLAG : Uint32
 {
-    GBUFFER_RT_FLAG_COLOR          = 1u << GBUFFER_RT_COLOR,
+    GBUFFER_RT_FLAG_COLOR          = 1u << GBUFFER_RT_RADIANCE,
     GBUFFER_RT_FLAG_NORMAL         = 1u << GBUFFER_RT_NORMAL,
+    GBUFFER_RT_FLAG_BASE_COLOR     = 1u << GBUFFER_RT_BASE_COLOR,
     GBUFFER_RT_FLAG_MATERIAL_DATA  = 1u << GBUFFER_RT_MATERIAL_DATA,
     GBUFFER_RT_FLAG_MOTION_VECTORS = 1u << GBUFFER_RT_MOTION_VECTORS,
     GBUFFER_RT_FLAG_SPECULAR_IBL   = 1u << GBUFFER_RT_SPECULAR_IBL,
@@ -350,9 +352,10 @@ struct PSOutput
 {
     float4 Color        : SV_Target0;
     float4 Normal       : SV_Target1;
-    float4 MaterialData : SV_Target2;
-    float4 MotionVec    : SV_Target3;
-    float4 IBL          : SV_Target4;
+    float4 BaseColor    : SV_Target2;
+    float4 MaterialData : SV_Target3;
+    float4 MotionVec    : SV_Target4;
+    float4 IBL          : SV_Target5;
 };
 )";
 
@@ -366,6 +369,7 @@ struct PSOutput
     
     PSOut.Normal.xyz       = Shading.BaseLayer.Normal.xyz;
     PSOut.MaterialData.xyz = float3(Shading.BaseLayer.Srf.PerceptualRoughness, Shading.BaseLayer.Metallic, 0.0);
+    PSOut.BaseColor.xyz    = BaseColor.xyz;
     PSOut.IBL.xyz          = GetBaseLayerIBL(Shading, SrfLighting);
 
 #   if ENABLE_CLEAR_COAT
@@ -377,6 +381,7 @@ struct PSOutput
 
         PSOut.Normal.xyz      = lerp(PSOut.Normal.xyz, Shading.Clearcoat.Normal, Shading.Clearcoat.Factor);
         PSOut.MaterialData.xy = lerp(PSOut.MaterialData.xy, float2(Shading.Clearcoat.Srf.PerceptualRoughness, 0.0), Shading.Clearcoat.Factor);
+        PSOut.BaseColor.xyz   = lerp(PSOut.BaseColor.xyz, float3(1.0, 1.0, 1.0), Shading.Clearcoat.Factor);
 
         // Note that the base layer IBL is weighted by (1.0 - Shading.Clearcoat.Factor * ClearcoatFresnel).
         // Here we are weighting it by (1.0 - Shading.Clearcoat.Factor), which is always smaller,
@@ -389,6 +394,7 @@ struct PSOutput
 #   endif
     
     // Blend material data and IBL with background
+	PSOut.BaseColor    = float4(PSOut.BaseColor.xyz    * BaseColor.a, BaseColor.a);
     PSOut.MaterialData = float4(PSOut.MaterialData.xyz * BaseColor.a, BaseColor.a);
     PSOut.IBL          = float4(PSOut.IBL.xyz          * BaseColor.a, BaseColor.a);
     
@@ -409,13 +415,15 @@ void main(in  float4 Pos          : SV_Position,
           in  float4 ClipPos      : CLIP_POS,
           out float4 Color        : SV_Target0,
           out float4 Normal       : SV_Target1,
-          out float4 MaterialData : SV_Target2,
-          out float4 MotionVec    : SV_Target3,
-          out float4 IBL          : SV_Target4)
+          out float4 BaseColor    : SV_Target2,
+          out float4 MaterialData : SV_Target3,
+          out float4 MotionVec    : SV_Target4,
+          out float4 IBL          : SV_Target5)
 {
     Color = SampleEnvMap(ClipPos);
 
     Normal       = float4(0.0, 0.0, 0.0, 0.0);
+	BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
     MaterialData = float4(0.0, 0.0, 0.0, 0.0);
     MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
     IBL          = float4(0.0, 0.0, 0.0, 0.0);
@@ -552,13 +560,14 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     {
         GBuffer::ElementDesc GBufferElems[GBUFFER_RT_COUNT];
-        GBufferElems[GBUFFER_RT_COLOR]          = {TEX_FORMAT_RGBA16_FLOAT};
+        GBufferElems[GBUFFER_RT_RADIANCE]       = {TEX_FORMAT_RGBA16_FLOAT};
         GBufferElems[GBUFFER_RT_NORMAL]         = {TEX_FORMAT_RGBA16_FLOAT};
+        GBufferElems[GBUFFER_RT_BASE_COLOR]     = {TEX_FORMAT_RGBA8_UNORM};
         GBufferElems[GBUFFER_RT_MATERIAL_DATA]  = {TEX_FORMAT_RG8_UNORM};
         GBufferElems[GBUFFER_RT_MOTION_VECTORS] = {TEX_FORMAT_RG16_FLOAT};
         GBufferElems[GBUFFER_RT_SPECULAR_IBL]   = {TEX_FORMAT_RGBA16_FLOAT};
         GBufferElems[GBUFFER_RT_DEPTH]          = {TEX_FORMAT_D32_FLOAT};
-        static_assert(GBUFFER_RT_COUNT == 6, "Not all G-buffer elements are initialized");
+        static_assert(GBUFFER_RT_COUNT == 7, "Not all G-buffer elements are initialized");
 
         m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
     }
@@ -656,7 +665,8 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
     PipelineResourceLayoutDescX ResourceLauout;
     ResourceLauout
         .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
-        .AddVariable(SHADER_TYPE_PIXEL, "cbFrameAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
+        .AddVariable(SHADER_TYPE_PIXEL, "cbFrameAttribs", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
+        .AddImmutableSampler(SHADER_TYPE_PIXEL, "g_tex2DPreintegratedGGX", Sam_LinearClamp);
 
     GraphicsPipelineStateCreateInfoX PsoCI{"Apply Post Effects"};
     PsoCI
@@ -673,12 +683,19 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
     pPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbFrameAttribs")->Set(pFrameAttribsCB);
 
     pPSO->CreateShaderResourceBinding(&pSRB, true);
-    ptex2DColorVar = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DColor");
-    VERIFY_EXPR(ptex2DColorVar != nullptr);
-    ptex2DSSR = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DSSR");
-    VERIFY_EXPR(ptex2DSSR != nullptr);
-    ptex2DPecularIBL = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_tex2DIBL");
-    VERIFY_EXPR(ptex2DPecularIBL != nullptr);
+
+    auto GetVariable = [&](const char* Name) {
+        IShaderResourceVariable* pVar = pSRB->GetVariableByName(SHADER_TYPE_PIXEL, Name);
+        VERIFY_EXPR(pVar != nullptr);
+        return pVar;
+    };
+    ptex2DRadianceVar         = GetVariable("g_tex2DRadiance");
+    ptex2DNormalVar           = GetVariable("g_tex2DNormal");
+    ptex2DSSR                 = GetVariable("g_tex2DSSR");
+    ptex2DPecularIBL          = GetVariable("g_tex2DIBL");
+    ptex2DBaseColorVar        = GetVariable("g_tex2DBaseColor");
+    ptex2DMaterialDataVar     = GetVariable("g_tex2DMaterialData");
+    ptex2DPreintegratedGGXVar = GetVariable("g_tex2DPreintegratedGGX");
 }
 
 void GLTFViewer::UpdateUI()
@@ -961,9 +978,10 @@ void GLTFViewer::UpdateUI()
 
             ImGui::SliderFloat("SSR scale", &m_ShaderAttribs.SSRScale, 0.f, 1.f);
 
-            ImGui::Combo("SSR Debug View", reinterpret_cast<int*>(&m_ShaderAttribs.SSRDebugMode),
+            ImGui::Combo("SSR Debug View", &m_ShaderAttribs.SSRDebugMode,
                          "None\0"
-                         "SSR\0"
+                         "Radiance\0"
+                         "Reflection\0"
                          "Confidence\0\0");
 
             ImGui::TreePop();
@@ -1190,7 +1208,7 @@ void GLTFViewer::Render()
             ScreenSpaceReflection::RenderAttributes SSRRenderAttribs{};
             SSRRenderAttribs.pDevice            = m_pDevice;
             SSRRenderAttribs.pDeviceContext     = m_pImmediateContext;
-            SSRRenderAttribs.pColorBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+            SSRRenderAttribs.pColorBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_RADIANCE)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pDepthBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_DEPTH)->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
             SSRRenderAttribs.pNormalBufferSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -1223,9 +1241,13 @@ void GLTFViewer::Render()
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_ApplyPostFX.pPSO);
-        m_ApplyPostFX.ptex2DColorVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_ApplyPostFX.ptex2DRadianceVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_RADIANCE)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_ApplyPostFX.ptex2DNormalVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         m_ApplyPostFX.ptex2DSSR->Set(m_SSR->GetSSRRadianceSRV());
         m_ApplyPostFX.ptex2DPecularIBL->Set(m_GBuffer->GetBuffer(GBUFFER_RT_SPECULAR_IBL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_ApplyPostFX.ptex2DBaseColorVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_BASE_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_ApplyPostFX.ptex2DMaterialDataVar->Set(m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        m_ApplyPostFX.ptex2DPreintegratedGGXVar->Set(m_GLTFRenderer->GetPreintegratedGGX_SRV());
         m_pImmediateContext->CommitShaderResources(m_ApplyPostFX.pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 

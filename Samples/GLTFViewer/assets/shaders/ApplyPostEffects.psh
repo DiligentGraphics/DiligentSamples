@@ -3,6 +3,7 @@
 #include "BasicStructures.fxh"
 #include "PBR_Structures.fxh"
 #include "RenderPBR_Structures.fxh"
+#include "PBR_Shading.fxh"
 #include "ToneMapping.fxh"
 #include "SRGBUtilities.fxh"
 
@@ -11,31 +12,60 @@ cbuffer cbFrameAttribs
     PBRFrameAttribs g_Frame;
 }
 
-Texture2D<float4> g_tex2DColor;
+Texture2D<float4> g_tex2DRadiance;
+Texture2D<float4> g_tex2DNormal;
 Texture2D<float4> g_tex2DSSR;
 Texture2D<float4> g_tex2DIBL;
+Texture2D<float4> g_tex2DMaterialData;
+Texture2D<float4> g_tex2DBaseColor;
+
+Texture2D<float4> g_tex2DPreintegratedGGX;
+SamplerState      g_tex2DPreintegratedGGX_sampler;
 
 float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
 {
-    float4 Color = g_tex2DColor.Load(int3(VSOut.f4PixelPos.xy, 0));
-    float4 SSR   = g_tex2DSSR.Load(int3(VSOut.f4PixelPos.xy, 0));
-    float4 IBL   = g_tex2DIBL.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float4 OutColor    = g_tex2DRadiance.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float3 Normal      = g_tex2DNormal.Load(int3(VSOut.f4PixelPos.xy, 0)).xyz;
+    float4 SSRRadiance = g_tex2DSSR.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float4 IBL         = g_tex2DIBL.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float4 BaseColor   = g_tex2DBaseColor.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float4 Material    = g_tex2DMaterialData.Load(int3(VSOut.f4PixelPos.xy, 0));
     
     float SSRScale  = g_Frame.PrevCamera.f4ExtraData[0].x;
     float DebugMode = g_Frame.PrevCamera.f4ExtraData[0].y;
+
+    float Roughness = Material.x;
+    float Metallic  = Material.y;
+    SurfaceReflectanceInfo SrfInfo = GetSurfaceReflectanceMR(BaseColor.rgb, Metallic, Roughness);
+
+    float4 WorldPos = mul(float4(VSOut.f2NormalizedXY, DepthToNormalizedDeviceZ(0.5), 1.0), g_Frame.Camera.mViewProjInv);
+    float3 ViewDir = normalize(WorldPos.xyz / WorldPos.w - g_Frame.Camera.f4Position.xyz);
+    
+    IBLSamplingInfo IBLInfo = GetIBLSamplingInfo(SrfInfo,
+                                                 g_tex2DPreintegratedGGX,
+                                                 g_tex2DPreintegratedGGX_sampler,
+                                                 Normal,
+                                                 ViewDir);
+    
+    float3 SSR = GetSpecularIBL_GGX(SrfInfo, IBLInfo, SSRRadiance.rgb);
+
     if (DebugMode == 0.0)
     {
-        Color.rgb += (SSR.rgb - IBL.rgb) * SSR.w * Color.a * SSRScale;
+        OutColor.rgb += (SSR.rgb - IBL.rgb) * SSRRadiance.w * OutColor.a * SSRScale;
     }
     else if (DebugMode == 1.0)
     {
-        Color.rgb = SSR.rgb;
+        OutColor.rgb = SSRRadiance.rgb;
     }
     else if (DebugMode == 2.0)
     {
-        Color.rgb = float3(SSR.w, SSR.w, SSR.w);
+        OutColor.rgb = SSR.rgb;
     }
-    
+    else if (DebugMode == 3.0)
+    {
+        OutColor.rgb = float3(SSRRadiance.w, SSRRadiance.w, SSRRadiance.w);
+    }
+        
     {
         // Perform tone mapping
         ToneMappingAttribs TMAttribs;
@@ -45,15 +75,15 @@ float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
         TMAttribs.bLightAdaptation     = false;
         TMAttribs.fWhitePoint          = g_Frame.Renderer.WhitePoint;
         TMAttribs.fLuminanceSaturation = 1.0;
-        Color.rgb = ToneMap(Color.rgb, TMAttribs, g_Frame.Renderer.AverageLogLum);
+        OutColor.rgb = ToneMap(OutColor.rgb, TMAttribs, g_Frame.Renderer.AverageLogLum);
     }
     
 #if CONVERT_OUTPUT_TO_SRGB
     {
-        Color.rgb = FastLinearToSRGB(Color.rgb);
+        OutColor.rgb = FastLinearToSRGB(OutColor.rgb);
     }
 #endif
 
-    Color.a = 1.0;
-    return Color;
+    OutColor.a = 1.0;
+    return OutColor;
 }
