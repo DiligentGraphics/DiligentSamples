@@ -39,7 +39,7 @@ float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
     SurfaceReflectanceInfo SrfInfo = GetSurfaceReflectanceMR(BaseColor.rgb, Metallic, Roughness);
 
     float4 WorldPos = mul(float4(VSOut.f2NormalizedXY, DepthToNormalizedDeviceZ(0.5), 1.0), g_Frame.Camera.mViewProjInv);
-    float3 ViewDir = normalize(WorldPos.xyz / WorldPos.w - g_Frame.Camera.f4Position.xyz);
+    float3 ViewDir = normalize(g_Frame.Camera.f4Position.xyz - WorldPos.xyz / WorldPos.w);
     
     IBLSamplingInfo IBLInfo = GetIBLSamplingInfo(SrfInfo,
                                                  g_tex2DPreintegratedGGX,
