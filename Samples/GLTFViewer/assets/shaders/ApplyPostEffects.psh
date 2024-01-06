@@ -15,7 +15,7 @@ cbuffer cbFrameAttribs
 Texture2D<float4> g_tex2DRadiance;
 Texture2D<float4> g_tex2DNormal;
 Texture2D<float4> g_tex2DSSR;
-Texture2D<float4> g_tex2DIBL;
+Texture2D<float4> g_tex2DSpecularIBL;
 Texture2D<float4> g_tex2DMaterialData;
 Texture2D<float4> g_tex2DBaseColor;
 
@@ -27,7 +27,7 @@ float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
     float4 OutColor    = g_tex2DRadiance.Load(int3(VSOut.f4PixelPos.xy, 0));
     float3 Normal      = g_tex2DNormal.Load(int3(VSOut.f4PixelPos.xy, 0)).xyz;
     float4 SSRRadiance = g_tex2DSSR.Load(int3(VSOut.f4PixelPos.xy, 0));
-    float4 IBL         = g_tex2DIBL.Load(int3(VSOut.f4PixelPos.xy, 0));
+    float4 SpecularIBL = g_tex2DSpecularIBL.Load(int3(VSOut.f4PixelPos.xy, 0));
     float4 BaseColor   = g_tex2DBaseColor.Load(int3(VSOut.f4PixelPos.xy, 0));
     float4 Material    = g_tex2DMaterialData.Load(int3(VSOut.f4PixelPos.xy, 0));
     
@@ -51,7 +51,7 @@ float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
 
     if (DebugMode == 0.0)
     {
-        OutColor.rgb += (SSR.rgb - IBL.rgb) * SSRRadiance.w * OutColor.a * SSRScale;
+        OutColor.rgb += (SSR.rgb - SpecularIBL.rgb) * SSRRadiance.w * OutColor.a * SSRScale;
     }
     else if (DebugMode == 1.0)
     {

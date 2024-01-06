@@ -355,7 +355,7 @@ struct PSOutput
     float4 BaseColor    : SV_Target2;
     float4 MaterialData : SV_Target3;
     float4 MotionVec    : SV_Target4;
-    float4 IBL          : SV_Target5;
+    float4 SpecularIBL  : SV_Target5;
 };
 )";
 
@@ -367,7 +367,7 @@ struct PSOutput
         PSOut.Normal       = float4(0.0, 0.0, 0.0, 0.0);
         PSOut.MaterialData = float4(0.0, 0.0, 0.0, 0.0);
         PSOut.BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
-        PSOut.IBL          = float4(0.0, 0.0, 0.0, 0.0);
+        PSOut.SpecularIBL  = float4(0.0, 0.0, 0.0, 0.0);
     }
 #   else
     {
@@ -375,7 +375,7 @@ struct PSOutput
         PSOut.Normal.xyz       = Shading.BaseLayer.Normal.xyz;
         PSOut.MaterialData.xyz = float3(Shading.BaseLayer.Srf.PerceptualRoughness, Shading.BaseLayer.Metallic, 0.0);
         PSOut.BaseColor.xyz    = BaseColor.xyz;
-        PSOut.IBL.xyz          = GetBaseLayerIBL(Shading, SrfLighting);
+        PSOut.SpecularIBL.xyz  = GetBaseLayerSpecularIBL(Shading, SrfLighting);
 
 #       if ENABLE_CLEAR_COAT
 	    {
@@ -391,8 +391,8 @@ struct PSOutput
             // Note that the base layer IBL is weighted by (1.0 - Shading.Clearcoat.Factor * ClearcoatFresnel).
             // Here we are weighting it by (1.0 - Shading.Clearcoat.Factor), which is always smaller,
             // so when we subtract the IBL, it can never be negative.
-            PSOut.IBL.xyz = lerp(
-                PSOut.IBL.xyz,
+            PSOut.SpecularIBL.xyz = lerp(
+                PSOut.SpecularIBL.xyz,
                 GetClearcoatIBL(Shading, SrfLighting),
                 Shading.Clearcoat.Factor);
         }
@@ -401,7 +401,7 @@ struct PSOutput
         // Blend material data and IBL with background
 	    PSOut.BaseColor    = float4(PSOut.BaseColor.xyz    * BaseColor.a, BaseColor.a);
         PSOut.MaterialData = float4(PSOut.MaterialData.xyz * BaseColor.a, BaseColor.a);
-        PSOut.IBL          = float4(PSOut.IBL.xyz          * BaseColor.a, BaseColor.a);
+        PSOut.SpecularIBL  = float4(PSOut.SpecularIBL.xyz  * BaseColor.a, BaseColor.a);
     
         // Do not blend motion vectors as it does not make sense
         PSOut.MotionVec = float4(MotionVector, 0.0, 1.0);
@@ -425,7 +425,7 @@ void main(in  float4 Pos          : SV_Position,
           out float4 BaseColor    : SV_Target2,
           out float4 MaterialData : SV_Target3,
           out float4 MotionVec    : SV_Target4,
-          out float4 IBL          : SV_Target5)
+          out float4 SpecularIBL  : SV_Target5)
 {
     Color = SampleEnvMap(ClipPos);
 
@@ -433,7 +433,7 @@ void main(in  float4 Pos          : SV_Position,
 	BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
     MaterialData = float4(0.0, 0.0, 0.0, 0.0);
     MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
-    IBL          = float4(0.0, 0.0, 0.0, 0.0);
+    SpecularIBL  = float4(0.0, 0.0, 0.0, 0.0);
 }
 )";
 
@@ -699,7 +699,7 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
     ptex2DRadianceVar         = GetVariable("g_tex2DRadiance");
     ptex2DNormalVar           = GetVariable("g_tex2DNormal");
     ptex2DSSR                 = GetVariable("g_tex2DSSR");
-    ptex2DPecularIBL          = GetVariable("g_tex2DIBL");
+    ptex2DPecularIBL          = GetVariable("g_tex2DSpecularIBL");
     ptex2DBaseColorVar        = GetVariable("g_tex2DBaseColor");
     ptex2DMaterialDataVar     = GetVariable("g_tex2DMaterialData");
     ptex2DPreintegratedGGXVar = GetVariable("g_tex2DPreintegratedGGX");
