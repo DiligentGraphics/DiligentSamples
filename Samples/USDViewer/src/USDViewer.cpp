@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Diligent Graphics LLC
+ *  Copyright 2023-2024 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -583,8 +583,10 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
                         static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 33, "Did you add a new debug view mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Debug view", &m_RenderParams.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size())))
-                            UpdateRenderParams = true;
+                        if (ImGui::Combo("Debug view", &m_DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size())))
+                        {
+                            m_Stage.RenderDelegate->SetDebugView(static_cast<PBR_Renderer::DebugViewType>(m_DebugViewMode));
+                        }
                     }
 
                     {
