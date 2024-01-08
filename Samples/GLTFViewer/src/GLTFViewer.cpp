@@ -48,6 +48,22 @@
 #include "Utilities/include/DiligentFXShaderSourceStreamFactory.hpp"
 #include "ShaderSourceFactoryUtils.h"
 
+// https://stackoverflow.com/questions/16823372/forcing-machine-to-use-dedicated-graphics-card
+#if PLATFORM_WIN32 || PLATFORM_UNIVERSAL_WINDOWS
+#    define DILIGENT_INTERFACE_EXPORT __declspec(dllexport)
+#elif PLATFORM_LINUX
+#    define DILIGENT_INTERFACE_EXPORT __attribute__((visibility("default")))
+#else
+#    define DILIGENT_INTERFACE_EXPORT
+#endif
+
+extern "C"
+{
+    DILIGENT_INTERFACE_EXPORT uint64_t AmdPowerXpressRequestHighPerformance = 0x00000001;
+
+    DILIGENT_INTERFACE_EXPORT uint64_t NvOptimusEnablement = 0x00000001;
+}
+
 namespace Diligent
 {
 
