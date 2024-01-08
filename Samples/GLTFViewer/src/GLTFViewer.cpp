@@ -384,7 +384,7 @@ struct PSOutput
             // This way when the factor is 0.0, we get the base layer, when it is 1.0,
             // we get the clear coat, and something in between otherwise.
 
-            PSOut.Normal.xyz      = lerp(PSOut.Normal.xyz, Shading.Clearcoat.Normal, Shading.Clearcoat.Factor);
+            PSOut.Normal.xyz      = normalize(lerp(PSOut.Normal.xyz, Shading.Clearcoat.Normal, Shading.Clearcoat.Factor));
             PSOut.MaterialData.xy = lerp(PSOut.MaterialData.xy, float2(Shading.Clearcoat.Srf.PerceptualRoughness, 0.0), Shading.Clearcoat.Factor);
             PSOut.BaseColor.xyz   = lerp(PSOut.BaseColor.xyz, float3(1.0, 1.0, 1.0), Shading.Clearcoat.Factor);
 
