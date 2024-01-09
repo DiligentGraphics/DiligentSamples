@@ -44,6 +44,7 @@
 #include "GraphicsAccessories.hpp"
 #include "EnvMapRenderer.hpp"
 #include "VectorFieldRenderer.hpp"
+#include "PostFXContext.hpp"
 #include "ScreenSpaceReflection.hpp"
 #include "Utilities/include/DiligentFXShaderSourceStreamFactory.hpp"
 #include "ShaderSourceFactoryUtils.h"
@@ -57,6 +58,7 @@ namespace HLSL
 #include "Shaders/Common/public/BasicStructures.fxh"
 #include "Shaders/PBR/public/PBR_Structures.fxh"
 #include "Shaders/PBR/private/RenderPBR_Structures.fxh"
+#include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
 
 } // namespace HLSL
 
@@ -592,7 +594,8 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     CreateGLTFRenderer();
     CrateEnvMapRenderer();
     CreateVectorFieldRenderer();
-    m_SSR = std::make_unique<ScreenSpaceReflection>(m_pDevice);
+    m_PostFXContext = std::make_unique<PostFXContext>(m_pDevice);
+    m_SSR           = std::make_unique<ScreenSpaceReflection>(m_pDevice);
 
     RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
     {
@@ -983,13 +986,14 @@ void GLTFViewer::UpdateUI()
                 CrateEnvMapRenderer();
             }
 
+            ImGui::SliderFloat("SSAO scale", &m_ShaderAttribs.SSAOScale, 0.f, 1.f);
             ImGui::SliderFloat("SSR scale", &m_ShaderAttribs.SSRScale, 0.f, 1.f);
 
-            ImGui::Combo("SSR Debug View", &m_ShaderAttribs.SSRDebugMode,
+            ImGui::Combo("Debug View", &m_ShaderAttribs.PostFXDebugMode,
                          "None\0"
-                         "Radiance\0"
-                         "Reflection\0"
-                         "Confidence\0\0");
+                         "SSR: Radiance\0"
+                         "SSR: Reflection\0"
+                         "SSR: Confidence\0\0");
 
             ImGui::TreePop();
         }
@@ -1063,7 +1067,7 @@ void GLTFViewer::Render()
         {
             FrameAttribs->PrevCamera.f4ExtraData[0] = float4{
                 m_ShaderAttribs.SSRScale,
-                static_cast<float>(m_ShaderAttribs.SSRDebugMode),
+                static_cast<float>(m_ShaderAttribs.PostFXDebugMode),
                 0,
                 0,
             };
@@ -1212,33 +1216,30 @@ void GLTFViewer::Render()
         }
 
         {
+            PostFXContext::RenderAttributes PostFXAttibs;
+            PostFXAttibs.pDevice          = m_pDevice;
+            PostFXAttibs.pDeviceContext   = m_pImmediateContext;
+            PostFXAttibs.pCameraAttribsCB = m_FrameAttribsCB;
+            PostFXAttibs.FrameIndex       = m_CurrentFrameNumber;
+            m_PostFXContext->PrepareResources(PostFXAttibs);
+        }
+
+        {
+            HLSL::ScreenSpaceReflectionAttribs SSRAttribs{};
+            SSRAttribs.IBLFactor             = m_ShaderAttribs.IBLScale;
+            SSRAttribs.RoughnessChannel      = 0;
+            SSRAttribs.IsRoughnessPerceptual = true;
+
             ScreenSpaceReflection::RenderAttributes SSRRenderAttribs{};
             SSRRenderAttribs.pDevice            = m_pDevice;
             SSRRenderAttribs.pDeviceContext     = m_pImmediateContext;
+            SSRRenderAttribs.pPostFXContext     = m_PostFXContext.get();
             SSRRenderAttribs.pColorBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_RADIANCE)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pDepthBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_DEPTH)->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
             SSRRenderAttribs.pNormalBufferSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-
-            SSRRenderAttribs.SSRAttribs.ProjMatrix            = CurrCamAttribs.mProjT;
-            SSRRenderAttribs.SSRAttribs.ViewMatrix            = CurrCamAttribs.mViewT;
-            SSRRenderAttribs.SSRAttribs.ViewProjMatrix        = CurrCamAttribs.mViewProjT;
-            SSRRenderAttribs.SSRAttribs.InvProjMatrix         = CurrCamAttribs.mProjInvT;
-            SSRRenderAttribs.SSRAttribs.InvViewMatrix         = CurrCamAttribs.mViewInvT;
-            SSRRenderAttribs.SSRAttribs.InvViewProjMatrix     = CurrCamAttribs.mViewProjInvT;
-            SSRRenderAttribs.SSRAttribs.PrevViewProjMatrix    = PrevCamAttribs.mViewProjT;
-            SSRRenderAttribs.SSRAttribs.InvPrevViewProjMatrix = PrevCamAttribs.mViewProjInvT;
-            SSRRenderAttribs.SSRAttribs.CameraPosition        = CurrCamAttribs.f4Position;
-
-            SSRRenderAttribs.SSRAttribs.RenderSize.x          = SCDesc.Width;
-            SSRRenderAttribs.SSRAttribs.RenderSize.y          = SCDesc.Height;
-            SSRRenderAttribs.SSRAttribs.InverseRenderSize.x   = 1.0f / static_cast<float>(SCDesc.Width);
-            SSRRenderAttribs.SSRAttribs.InverseRenderSize.y   = 1.0f / static_cast<float>(SCDesc.Height);
-            SSRRenderAttribs.SSRAttribs.FrameIndex            = m_CurrentFrameNumber;
-            SSRRenderAttribs.SSRAttribs.IBLFactor             = m_ShaderAttribs.IBLScale;
-            SSRRenderAttribs.SSRAttribs.RoughnessChannel      = 0;
-            SSRRenderAttribs.SSRAttribs.IsRoughnessPerceptual = true;
+            SSRRenderAttribs.pSSRAttribs        = &SSRAttribs;
             m_SSR->Execute(SSRRenderAttribs);
         }
 

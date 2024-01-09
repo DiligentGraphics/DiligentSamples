@@ -49,6 +49,7 @@ struct CameraAttribs;
 
 class EnvMapRenderer;
 class VectorFieldRenderer;
+class PostFXContext;
 class ScreenSpaceReflection;
 
 class GLTFViewer final : public SampleBase
@@ -99,8 +100,9 @@ private:
         float4 HighlightColor = float4{0, 0, 0, 0};
         float4 WireframeColor = float4{0.8f, 0.7f, 0.5f, 1.0f};
 
-        float SSRScale     = 1;
-        int   SSRDebugMode = 0;
+        float SSRScale        = 1;
+        float SSAOScale       = 1;
+        int   PostFXDebugMode = 0;
     };
     ShaderParams m_ShaderAttribs;
 
@@ -166,6 +168,7 @@ private:
 
     std::unique_ptr<EnvMapRenderer>        m_EnvMapRenderer;
     std::unique_ptr<VectorFieldRenderer>   m_VectorFieldRenderer;
+    std::unique_ptr<PostFXContext>         m_PostFXContext;
     std::unique_ptr<ScreenSpaceReflection> m_SSR;
 
     bool                                    m_bUseResourceCache = false;
