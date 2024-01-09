@@ -147,9 +147,6 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
         };
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
-    m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
-
     if (m_UsdFileName.empty())
         m_UsdFileName = "usd/AppleVisionPro.usdz";
     LoadStage();
@@ -276,7 +273,9 @@ void USDViewer::LoadStage()
     m_RenderParams.SelectedPrimId = {};
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
-    m_PostProcessParams = {};
+    m_PostProcessParams                     = {};
+    m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
+    m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
     const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
