@@ -42,6 +42,7 @@
 #include "HnCamera.hpp"
 #include "HnLight.hpp"
 #include "GfTypeConversions.hpp"
+#include "ScopedDebugGroup.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -338,8 +339,12 @@ void USDViewer::Render()
 
     m_Stage.FinalColorTarget->SetTarget(m_pSwapChain->GetCurrentBackBufferRTV());
 
-    pxr::HdTaskSharedPtrVector tasks = m_Stage.TaskManager->GetTasks();
-    m_Engine.Execute(m_Stage.RenderIndex.get(), &tasks);
+    {
+        ScopedDebugGroup DebugGroup{m_pImmediateContext, "Hydrogent"};
+
+        pxr::HdTaskSharedPtrVector tasks = m_Stage.TaskManager->GetTasks();
+        m_Engine.Execute(m_Stage.RenderIndex.get(), &tasks);
+    }
 
     m_Stage.FinalColorTarget->ReleaseTarget();
 
