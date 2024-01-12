@@ -138,12 +138,7 @@ struct CameraAttribs
     matrix mViewProjInv;
 #endif
 
-    uint iFrameIndex;
-    float fDummy0;
-    float fDummy1;
-    float fDummy2;
-
-    float4 f4ExtraData[4]; // Any appliation-specific data
+    float4 f4ExtraData[5]; // Any appliation-specific data
     // Sizeof(CameraAttribs) == 256*2
 };
 #ifdef CHECK_STRUCT_ALIGNMENT
