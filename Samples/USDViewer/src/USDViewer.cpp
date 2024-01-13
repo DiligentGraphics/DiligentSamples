@@ -271,7 +271,6 @@ void USDViewer::LoadStage()
     m_FrameParams.CameraId           = CameraId;
     m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
-    m_RenderParams.SelectedPrimId = {};
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
     m_PostProcessParams                     = {};
@@ -600,11 +599,9 @@ void USDViewer::UpdateUI()
                         RenderModes[USD::HN_RENDER_MODE_POINTS]     = "Points";
                         static_assert(USD::HN_RENDER_MODE_COUNT == 3, "Did you add a new render mode? You may want to handle it here");
 
-                        int RenderMode = m_RenderParams.RenderMode;
-                        if (ImGui::Combo("Render mode", &RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size())))
+                        if (ImGui::Combo("Render mode", &m_RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size())))
                         {
-                            m_RenderParams.RenderMode = static_cast<USD::HN_RENDER_MODE>(RenderMode);
-                            UpdateRenderParams        = true;
+                            m_Stage.RenderDelegate->SetRenderMode(static_cast<USD::HN_RENDER_MODE>(m_RenderMode));
                         }
                     }
 
@@ -849,10 +846,9 @@ void USDViewer::SetSelectedPrim(const pxr::SdfPath& SelectedPrimId)
     if (SelectedPrimId == m_Stage.SelectedPrimId)
         return;
 
-    m_Stage.SelectedPrimId                             = SelectedPrimId;
-    m_RenderParams.SelectedPrimId                      = m_Stage.SelectedPrimId;
+    m_Stage.SelectedPrimId = SelectedPrimId;
+    m_Stage.RenderDelegate->SetSelectedRPrimId(m_Stage.SelectedPrimId);
     m_PostProcessParams.NonselectionDesaturationFactor = !m_Stage.SelectedPrimId.IsEmpty() ? 0.5f : 0.f;
-    m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 }
 

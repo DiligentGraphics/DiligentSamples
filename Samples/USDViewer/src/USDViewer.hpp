@@ -112,6 +112,7 @@ private:
     USD::HnBeginFrameTaskParams   m_FrameParams;
 
     int m_DebugViewMode = 0;
+    int m_RenderMode    = 0;
 
     struct ModelInfo
     {
