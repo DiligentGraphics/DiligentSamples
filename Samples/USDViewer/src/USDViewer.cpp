@@ -347,16 +347,17 @@ void USDViewer::Render()
 
     m_Stage.FinalColorTarget->ReleaseTarget();
 
-    const auto& CtxStats    = m_pImmediateContext->GetStats();
-    m_Stats.NumDrawCommands = CtxStats.CommandCounters.Draw + CtxStats.CommandCounters.DrawIndexed;
-    m_Stats.NumPSOChanges   = CtxStats.CommandCounters.SetPipelineState;
-    m_Stats.NumSRBChanges   = CtxStats.CommandCounters.CommitShaderResources;
-    m_Stats.NumVBChanges    = CtxStats.CommandCounters.SetVertexBuffers;
-    m_Stats.NumIBChanges    = CtxStats.CommandCounters.SetIndexBuffer;
-    m_Stats.NumBufferMaps   = CtxStats.CommandCounters.MapBuffer;
-    m_Stats.NumTriangles    = CtxStats.GetTotalTriangleCount();
-    m_Stats.NumLines        = CtxStats.GetTotalLineCount();
-    m_Stats.NumPoints       = CtxStats.GetTotalPointCount();
+    const auto& CtxStats     = m_pImmediateContext->GetStats();
+    m_Stats.NumDrawCommands  = CtxStats.CommandCounters.Draw + CtxStats.CommandCounters.DrawIndexed;
+    m_Stats.NumPSOChanges    = CtxStats.CommandCounters.SetPipelineState;
+    m_Stats.NumSRBChanges    = CtxStats.CommandCounters.CommitShaderResources;
+    m_Stats.NumVBChanges     = CtxStats.CommandCounters.SetVertexBuffers;
+    m_Stats.NumIBChanges     = CtxStats.CommandCounters.SetIndexBuffer;
+    m_Stats.NumBufferMaps    = CtxStats.CommandCounters.MapBuffer;
+    m_Stats.NumBufferUpdates = CtxStats.CommandCounters.UpdateBuffer;
+    m_Stats.NumTriangles     = CtxStats.GetTotalTriangleCount();
+    m_Stats.NumLines         = CtxStats.GetTotalLineCount();
+    m_Stats.NumPoints        = CtxStats.GetTotalPointCount();
 }
 
 void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
@@ -695,7 +696,7 @@ void USDViewer::UpdateUI()
                                     "  SRB\n"
                                     "  VB\n"
                                     "  IB\n"
-                                    "Buffer maps\n"
+                                    "Buffer M + U\n"
                                     "Memory Usage\n"
                                     "  Vertex Pool\n"
                                     "  Index Pool\n"
@@ -716,7 +717,7 @@ void USDViewer::UpdateUI()
                                     "%d\n"
                                     "%d\n"
                                     "%d\n"
-                                    "%d\n"
+                                    "%d + %d\n"
                                     "\n"
                                     "%s / %s (%d allocs, %dK verts)\n"
                                     "%s / %s (%d allocs)\n"
@@ -729,7 +730,7 @@ void USDViewer::UpdateUI()
                                     m_Stats.NumSRBChanges,
                                     m_Stats.NumVBChanges,
                                     m_Stats.NumIBChanges,
-                                    m_Stats.NumBufferMaps,
+                                    m_Stats.NumBufferMaps, m_Stats.NumBufferUpdates,
                                     VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(), MemoryStats.VertexPool.AllocationCount, MemoryStats.VertexPool.AllocatedVertexCount / 1000,
                                     IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
                                     AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount);
