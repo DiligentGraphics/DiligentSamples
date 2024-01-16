@@ -36,6 +36,8 @@
 #include "AdvancedMath.hpp"
 #include "PBR_Renderer.hpp"
 #include "FileSystem.hpp"
+#include "Timer.hpp"
+
 #include "Tasks/HnReadRprimIdTask.hpp"
 #include "Tasks/HnRenderAxesTask.hpp"
 #include "HnTokens.hpp"
@@ -330,6 +332,8 @@ void USDViewer::Render()
     if (!m_Stage)
         return;
 
+    Timer Stowatch;
+
     m_Stage.Camera->SetViewMatrix(m_CameraView);
     m_Stage.Camera->SetProjectionMatrix(m_CameraProj);
 
@@ -358,6 +362,8 @@ void USDViewer::Render()
     m_Stats.NumTriangles     = CtxStats.GetTotalTriangleCount();
     m_Stats.NumLines         = CtxStats.GetTotalLineCount();
     m_Stats.NumPoints        = CtxStats.GetTotalPointCount();
+
+    m_Stats.TaskRunTime = static_cast<float>(Stowatch.GetElapsedTime()) * 0.05f + m_Stats.TaskRunTime * 0.95f;
 }
 
 void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
@@ -687,7 +693,8 @@ void USDViewer::UpdateUI()
             if (ImGui::BeginTabItem("Stats"))
             {
                 const auto MemoryStats = m_Stage.RenderDelegate->GetMemoryStats();
-                ImGui::TextDisabled("Num draws\n"
+                ImGui::TextDisabled("Task time\n"
+                                    "Num draws\n"
                                     "Tris\n"
                                     "Lines\n"
                                     "Points\n"
@@ -708,7 +715,8 @@ void USDViewer::UpdateUI()
                 const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
                 const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
                 const std::string AtlasCommittedSizeStr    = GetMemorySizeString(MemoryStats.Atlas.CommittedSize).c_str();
-                ImGui::TextDisabled("%d\n"
+                ImGui::TextDisabled("%.1f ms\n"
+                                    "%d\n"
                                     "%d\n"
                                     "%d\n"
                                     "%d\n"
@@ -722,6 +730,7 @@ void USDViewer::UpdateUI()
                                     "%s / %s (%d allocs, %dK verts)\n"
                                     "%s / %s (%d allocs)\n"
                                     "%s (%.1lf%%, %d allocs)",
+                                    m_Stats.TaskRunTime * 1000.f,
                                     m_Stats.NumDrawCommands,
                                     m_Stats.NumTriangles,
                                     m_Stats.NumLines,

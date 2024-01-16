@@ -152,6 +152,8 @@ private:
         Uint32 NumTriangles     = 0;
         Uint32 NumLines         = 0;
         Uint32 NumPoints        = 0;
+
+        float TaskRunTime = 0;
     };
     RenderStats m_Stats;
 
