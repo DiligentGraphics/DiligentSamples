@@ -1039,7 +1039,13 @@ void GLTFViewer::Render()
             m_ApplyPostFX.Initialize(m_pDevice, m_pSwapChain->GetDesc().ColorBufferFormat, m_FrameAttribsCB);
         }
 
-        m_SSR->SetBackBufferSize(m_pDevice, m_pImmediateContext, SCDesc.Width, SCDesc.Height);
+        PostFXContext::FrameDesc FrameDesc;
+        FrameDesc.Index  = m_CurrentFrameNumber;
+        FrameDesc.Width  = SCDesc.Width;
+        FrameDesc.Height = SCDesc.Height;
+        m_PostFXContext->PrepareResources(FrameDesc);
+
+        m_SSR->PrepareResources(m_pDevice, m_PostFXContext.get());
 
         m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
         m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);
@@ -1220,8 +1226,7 @@ void GLTFViewer::Render()
             PostFXAttibs.pDevice          = m_pDevice;
             PostFXAttibs.pDeviceContext   = m_pImmediateContext;
             PostFXAttibs.pCameraAttribsCB = m_FrameAttribsCB;
-            PostFXAttibs.FrameIndex       = m_CurrentFrameNumber;
-            m_PostFXContext->PrepareResources(PostFXAttibs);
+            m_PostFXContext->Execute(PostFXAttibs);
         }
 
         {
