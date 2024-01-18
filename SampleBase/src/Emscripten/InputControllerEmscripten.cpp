@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
  */
 
 #include <emscripten/key_codes.h>
+#include <emscripten/emscripten.h>
 #include "InputController.hpp"
 
 namespace Diligent
@@ -30,8 +31,10 @@ namespace Diligent
 
 void InputControllerEmscripten::OnMouseMove(int32_t MouseX, int32_t MouseY)
 {
-    m_MouseState.PosX = static_cast<float>(MouseX);
-    m_MouseState.PosY = static_cast<float>(MouseY);
+    auto DevicePixelRatio = emscripten_get_device_pixel_ratio();
+
+    m_MouseState.PosX = DevicePixelRatio * static_cast<float>(MouseX);
+    m_MouseState.PosY = DevicePixelRatio * static_cast<float>(MouseY);
 }
 
 void InputControllerEmscripten::OnMouseButtonEvent(MouseButton Button, bool IsPressed)
