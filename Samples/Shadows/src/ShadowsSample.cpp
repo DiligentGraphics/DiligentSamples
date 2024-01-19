@@ -37,6 +37,8 @@
 #include "imGuIZMO.h"
 #include "ImGuiUtils.hpp"
 #include "CallbackWrapper.hpp"
+#include "Utilities/interface/DiligentFXShaderSourceStreamFactory.hpp"
+#include "ShaderSourceFactoryUtils.hpp"
 
 namespace Diligent
 {
@@ -103,7 +105,11 @@ void ShadowsSample::Initialize(const SampleInitInfo& InitInfo)
     {
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
         m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pStreamFactory);
-        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &m_pRSNLoader);
+
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pCompoundFactory =
+            CreateCompoundShaderSourceFactory({&DiligentFXShaderSourceStreamFactory::GetInstance(), pStreamFactory});
+
+        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pCompoundFactory}, &m_pRSNLoader);
     }
 
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera attribs buffer", &m_CameraAttribsCB);

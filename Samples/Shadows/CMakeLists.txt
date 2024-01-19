@@ -14,11 +14,7 @@ set(SHADERS
     assets/shaders/MeshVS.vsh
     assets/shaders/MeshPS.psh
 )
-set(EXTERNAL_SHADERS
-    ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
-    ../../../DiligentFX/Shaders/Common/public/Shadows.fxh
-)
-set(ALL_SHADERS ${SHADERS} ${EXTERNAL_SHADERS})
+set(ALL_SHADERS ${SHADERS})
 
 set(RENDER_STATES 
     assets/render_states/RenderStates.json
@@ -44,11 +40,6 @@ PRIVATE
     ../../../DiligentFX/Shaders/Common/public/
 )
 
-add_custom_command(TARGET Shadows PRE_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/Shadows.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-)
-
 set_source_files_properties(${POWERPLANT_FILES} PROPERTIES
     VS_DEPLOYMENT_LOCATION "Powerplant"
     MACOSX_PACKAGE_LOCATION "Resources/Powerplant"
@@ -66,4 +57,3 @@ set_source_files_properties(${RENDER_STATES} PROPERTIES
 
 # We have to use a different group name (Assets with capital A) to override grouping that was set by add_sample_app
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS})
-source_group("Assets\\shaders" FILES ${EXTERNAL_SHADERS})
