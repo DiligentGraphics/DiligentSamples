@@ -46,8 +46,8 @@
 #include "VectorFieldRenderer.hpp"
 #include "PostFXContext.hpp"
 #include "ScreenSpaceReflection.hpp"
-#include "Utilities/include/DiligentFXShaderSourceStreamFactory.hpp"
-#include "ShaderSourceFactoryUtils.h"
+#include "Utilities/interface/DiligentFXShaderSourceStreamFactory.hpp"
+#include "ShaderSourceFactoryUtils.hpp"
 
 namespace Diligent
 {
@@ -629,13 +629,7 @@ RefCntAutoPtr<IShaderSourceInputStreamFactory> CreateCompoundShaderSourceFactory
 {
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders", &pShaderSourceFactory);
-
-    IShaderSourceInputStreamFactory*               ppShaderSourceFactories[] = {&DiligentFXShaderSourceStreamFactory::GetInstance(), pShaderSourceFactory};
-    CompoundShaderSourceFactoryCreateInfo          CompoundSourceFactoryCI{ppShaderSourceFactories, _countof(ppShaderSourceFactories)};
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pCompoundSourceFactory;
-    CreateCompoundShaderSourceFactory(CompoundSourceFactoryCI, &pCompoundSourceFactory);
-
-    return pCompoundSourceFactory;
+    return CreateCompoundShaderSourceFactory({&DiligentFXShaderSourceStreamFactory::GetInstance(), pShaderSourceFactory});
 }
 
 void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB)

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,6 +66,8 @@ namespace Diligent
 #include "TextureUtilities.h"
 #include "CommonlyUsedStates.h"
 #include "CallbackWrapper.hpp"
+#include "Utilities/interface/DiligentFXShaderSourceStreamFactory.hpp"
+#include "ShaderSourceFactoryUtils.hpp"
 
 namespace Diligent
 {
@@ -632,7 +634,11 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
     {
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
         m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory("shaders;shaders\\terrain;", &pStreamFactory);
-        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &m_pRSNLoader);
+
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pCompoundFactory =
+            CreateCompoundShaderSourceFactory({&DiligentFXShaderSourceStreamFactory::GetInstance(), pStreamFactory});
+
+        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pCompoundFactory}, &m_pRSNLoader);
     }
 
     const Uint16* pHeightMap;

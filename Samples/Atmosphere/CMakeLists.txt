@@ -26,13 +26,6 @@ set(TERRAIN_SHADERS
 set(SHADERS
     assets/shaders/HostSharedTerrainStructs.fxh
 )
-set(EXTERNAL_SHADERS
-    ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh
-    ../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringFunctions.fxh
-    ../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh
-    ../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh
-    ../../../DiligentFX/Shaders/Common/public/Shadows.fxh
-)
 
 set(RENDER_STATES
     assets/render_states/RenderStates.json
@@ -55,7 +48,7 @@ set(TERRAIN_TILES
     assets/Terrain/Tiles/Snow_NM.jpg
 )
 
-set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS} ${EXTERNAL_SHADERS})
+set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES} ${RENDER_STATES})
 add_sample_app("Atmosphere" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
@@ -63,7 +56,7 @@ set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/terrain"
     MACOSX_PACKAGE_LOCATION "Resources/shaders/terrain"
 )
-set_source_files_properties(${SHADERS} ${EXTERNAL_SHADERS} PROPERTIES
+set_source_files_properties(${SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION "Resources/shaders"
 )
@@ -97,15 +90,5 @@ PRIVATE
     DiligentFX
 )
 
-add_custom_command(TARGET Atmosphere PRE_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/EpipolarLightScattering/public/EpipolarLightScatteringFunctions.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/BasicStructures.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/Shadows.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
-)
-
-
 # We have to use a different group name (Assets with capital A) to override grouping that was set by add_sample_app
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS} ${TERRAIN_SHADERS})
-source_group("Assets\\shaders" FILES ${EXTERNAL_SHADERS})
