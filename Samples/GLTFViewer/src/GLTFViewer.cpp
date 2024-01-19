@@ -1344,6 +1344,7 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
     CurrCamAttribs.f4ViewportSize = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
+    CurrCamAttribs.fHandness      = CameraView.Determinant() > 0 ? 1.f : -1.f;
     CurrCamAttribs.mViewT         = CameraView.Transpose();
     CurrCamAttribs.mProjT         = CameraProj.Transpose();
     CurrCamAttribs.mViewProjT     = CameraViewProj.Transpose();
