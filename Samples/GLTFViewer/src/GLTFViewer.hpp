@@ -191,6 +191,8 @@ private:
     bool m_bComputeBoundingBoxes = false;
     bool m_bWireframeSupported   = false;
     bool m_bEnablePostProcessing = false;
+
+    PBR_Renderer::SHADER_TEXTURE_ARRAY_MODE m_TextureArrayMode = PBR_Renderer::SHADER_TEXTURE_ARRAY_MODE_NONE;
 };
 
 } // namespace Diligent

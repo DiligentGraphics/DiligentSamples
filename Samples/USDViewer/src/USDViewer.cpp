@@ -119,12 +119,12 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
     ArgsParser.Parse("usd_path", 'u', m_UsdFileName);
     ArgsParser.Parse("vertex_pool", m_UseVertexPool);
     ArgsParser.Parse("index_pool", m_UseIndexPool);
-    ArgsParser.Parse("texture_atlas", m_UseTextureAtlas);
+    ArgsParser.Parse("atlas_dim", m_TextureAtlasDim);
     LOG_INFO_MESSAGE("USD Viewer Arguments:",
                      "\n    USD Path:        ", m_UsdFileName,
                      "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
                      "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No",
-                     "\n    Use tex atlas:   ", m_UseTextureAtlas ? "Yes" : "No");
+                     "\n    Tex atlas dim:   ", m_TextureAtlasDim);
 
     std::string ModelsDir;
     ArgsParser.Parse("usd_dir", 'd', ModelsDir);
@@ -238,8 +238,23 @@ void USDViewer::LoadStage()
     DelegateCI.pRenderStateCache = nullptr;
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
-    DelegateCI.TextureAtlasDim   = m_UseTextureAtlas ? 2048 : 0;
-    m_Stage.RenderDelegate       = USD::HnRenderDelegate::Create(DelegateCI);
+    if (m_pDevice->GetDeviceInfo().Features.BindlessResources)
+    {
+        m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC;
+
+        DelegateCI.TexturesArraySize = 256;
+    }
+    else
+    {
+        m_BindingMode = m_TextureAtlasDim != 0 ?
+            USD::HN_MATERIAL_TEXTURES_BINDING_MODE_ATLAS :
+            USD::HN_MATERIAL_TEXTURES_BINDING_MODE_LEGACY;
+
+        DelegateCI.TextureAtlasDim = m_TextureAtlasDim;
+    }
+    DelegateCI.TextureBindingMode = m_BindingMode;
+
+    m_Stage.RenderDelegate = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
 
     const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
@@ -694,6 +709,7 @@ void USDViewer::UpdateUI()
             {
                 const auto MemoryStats = m_Stage.RenderDelegate->GetMemoryStats();
                 ImGui::TextDisabled("Task time\n"
+                                    "Binding\n"
                                     "Num draws\n"
                                     "Tris\n"
                                     "Lines\n"
@@ -715,7 +731,17 @@ void USDViewer::UpdateUI()
                 const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
                 const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
                 const std::string AtlasCommittedSizeStr    = GetMemorySizeString(MemoryStats.Atlas.CommittedSize).c_str();
+
+                const char* TextureBindingModeStr = "";
+                switch (m_BindingMode)
+                {
+                    case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_LEGACY: TextureBindingModeStr = "Legacy"; break;
+                    case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_ATLAS: TextureBindingModeStr = "Atlas"; break;
+                    case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC: TextureBindingModeStr = "Dynamic"; break;
+                }
+
                 ImGui::TextDisabled("%.1f ms\n"
+                                    "%s\n"
                                     "%d\n"
                                     "%d\n"
                                     "%d\n"
@@ -731,6 +757,7 @@ void USDViewer::UpdateUI()
                                     "%s / %s (%d allocs)\n"
                                     "%s (%.1lf%%, %d allocs)",
                                     m_Stats.TaskRunTime * 1000.f,
+                                    TextureBindingModeStr,
                                     m_Stats.NumDrawCommands,
                                     m_Stats.NumTriangles,
                                     m_Stats.NumLines,

@@ -239,6 +239,13 @@ GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const cha
     ArgsParser.Parse("use_cache", m_bUseResourceCache);
     ArgsParser.Parse("model", m_ModelPath);
     ArgsParser.Parse("compute_bounds", m_bComputeBoundingBoxes);
+    ArgsParser.ParseEnum<PBR_Renderer::SHADER_TEXTURE_ARRAY_MODE>(
+        "tex_array", 0,
+        {
+            {"none", PBR_Renderer::SHADER_TEXTURE_ARRAY_MODE_NONE},
+            {"static", PBR_Renderer::SHADER_TEXTURE_ARRAY_MODE_STATIC},
+        },
+        m_TextureArrayMode);
 
     std::string ExtraModelsDir;
     ArgsParser.Parse("dir", 'd', ExtraModelsDir);
@@ -454,6 +461,8 @@ void GLTFViewer::CreateGLTFRenderer()
 
     RendererCI.SheenAlbedoScalingLUTPath    = "textures/sheen_albedo_scaling.jpg";
     RendererCI.PreintegratedCharlieBRDFPath = "textures/charlie_preintegrated.jpg";
+
+    RendererCI.ShaderTexturesArrayMode = m_TextureArrayMode;
 
     m_RenderParams.Flags =
         GLTF_PBR_Renderer::PSO_FLAG_DEFAULT |
@@ -1225,7 +1234,6 @@ void GLTFViewer::Render()
 
         {
             HLSL::ScreenSpaceReflectionAttribs SSRAttribs{};
-            SSRAttribs.IBLFactor             = m_ShaderAttribs.IBLScale;
             SSRAttribs.RoughnessChannel      = 0;
             SSRAttribs.IsRoughnessPerceptual = true;
 

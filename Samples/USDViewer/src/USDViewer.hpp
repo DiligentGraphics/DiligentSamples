@@ -126,9 +126,11 @@ private:
 
     std::string m_UsdFileName;
 
-    bool m_UseIndexPool    = true;
-    bool m_UseVertexPool   = true;
-    bool m_UseTextureAtlas = true;
+    bool   m_UseIndexPool    = true;
+    bool   m_UseVertexPool   = true;
+    Uint32 m_TextureAtlasDim = 2048;
+
+    USD::HN_MATERIAL_TEXTURES_BINDING_MODE m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_LEGACY;
 
     RefCntAutoPtr<ITextureView> m_EnvironmentMapSRV;
 
