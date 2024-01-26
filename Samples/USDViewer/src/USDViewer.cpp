@@ -630,6 +630,15 @@ void USDViewer::UpdateUI()
                     if (ImGui::SliderFloat("Selection outline width", &m_PostProcessParams.SelectionOutlineWidth, 1.f, 16.f))
                         UpdatePostProcessParams = true;
 
+                    {
+                        bool EnableSSR = m_PostProcessParams.SSRScale != 0;
+                        if (ImGui::Checkbox("Reflections", &EnableSSR))
+                        {
+                            m_PostProcessParams.SSRScale = EnableSSR ? 1.f : 0.f;
+                            UpdatePostProcessParams      = true;
+                        }
+                    }
+
                     ImGui::TreePop();
                 }
 
