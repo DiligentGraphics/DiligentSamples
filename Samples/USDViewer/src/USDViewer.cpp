@@ -53,6 +53,7 @@
 #include "pxr/usd/usd/prim.h"
 #include "pxr/usd/usd/property.h"
 #include "pxr/usd/usdGeom/metrics.h"
+#include "pxr/usd/usdGeom/camera.h"
 
 
 namespace Diligent
@@ -254,10 +255,12 @@ void USDViewer::LoadStage()
     }
     DelegateCI.TextureBindingMode = m_BindingMode;
 
+    const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
+    const pxr::SdfPath CameraId        = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
+    pxr::UsdGeomCamera::Define(m_Stage.Stage, CameraId);
+
     m_Stage.RenderDelegate = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
-
-    const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
 
     m_Stage.ImagingDelegate = std::make_unique<pxr::UsdImagingDelegate>(m_Stage.RenderIndex.get(), SceneDelegateId);
     m_Stage.ImagingDelegate->Populate(m_Stage.Stage->GetPseudoRoot());
@@ -270,8 +273,6 @@ void USDViewer::LoadStage()
     m_Stage.FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, FinalColorTargetId));
     VERIFY_EXPR(m_Stage.FinalColorTarget != nullptr);
 
-    const pxr::SdfPath CameraId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
-    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->camera, m_Stage.ImagingDelegate.get(), CameraId);
     m_Stage.Camera = static_cast<USD::HnCamera*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->camera, CameraId));
     VERIFY_EXPR(m_Stage.Camera != nullptr);
 
