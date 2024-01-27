@@ -28,6 +28,7 @@
 #include "ImGuiImplEmscripten.hpp"
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include "imgui.h"
 
 namespace Diligent
 {
@@ -49,6 +50,11 @@ public:
 
             const auto& SCDesc = m_pSwapChain->GetDesc();
             m_pImGui           = ImGuiImplEmscripten::Create(ImGuiDiligentCreateInfo{m_pDevice, SCDesc});
+
+            auto& io                   = ImGui::GetIO();
+            auto  DevicePixelRatio     = static_cast<float>(emscripten_get_device_pixel_ratio());
+            io.DisplayFramebufferScale = ImVec2{DevicePixelRatio, DevicePixelRatio};
+
             InitializeSample();
         }
         catch (...)
