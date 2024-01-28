@@ -1,0 +1,205 @@
+#include "BasicStructures.fxh"
+#include "GeometryStructures.fxh"
+
+#define M_EPSILON   1e-3
+#define FLT_MAX     3.402823466e+38
+
+cbuffer cbCameraAttribs
+{
+    CameraAttribs g_CurrCamera;
+    CameraAttribs g_PrevCamera;
+}
+
+cbuffer cbObjectAttribs
+{
+    ObjectAttribs g_ObjectAttribs;
+}
+
+cbuffer cbObjectMaterial
+{
+    MaterialAttribs g_MaterialAttribs[MAX_MATERIAL_COUNT];
+}
+
+struct PSInput
+{
+    float4 PixelPosition : SV_POSITION;
+};
+
+struct GBuffer
+{
+    float4 BaseColor    : SV_Target0;
+    float2 MaterialData : SV_Target1; 
+    float4 Normal       : SV_Target2;
+    float2 Motion       : SV_Target3;
+    float  Depth        : SV_Depth;
+};
+
+struct Ray
+{
+    float3 Origin;
+    float3 Direction;
+    float  Min;
+    float  Max;
+};
+
+struct Intersection
+{
+    float  Distance;
+    float3 Normal;
+};
+
+Ray CreateCameraRay(float2 NormalizedXY)
+{
+    float4 RayStart = mul(float4(NormalizedXY, DepthToNormalizedDeviceZ(0.0), 1.0f), g_CurrCamera.mViewProjInv);
+    float4 RayEnd   = mul(float4(NormalizedXY, DepthToNormalizedDeviceZ(1.0), 1.0f), g_CurrCamera.mViewProjInv);
+
+    RayStart.xyz /= RayStart.w;
+    RayEnd.xyz   /= RayEnd.w;
+
+    Ray ray;
+    ray.Direction = normalize(RayEnd.xyz - RayStart.xyz);
+    ray.Origin = RayStart.xyz;
+    ray.Min = 0.0;
+    ray.Max = distance(RayStart.xyz, RayEnd.xyz);
+    return ray;
+}
+
+float ComputeDepth(float3 Position)
+{
+    float4 NDC = mul(float4(Position, 1.0), g_CurrCamera.mViewProj);
+    NDC.xyz /= NDC.w;
+    return NormalizedDeviceZToDepth(NDC.z);
+}
+
+Ray TransformRayToLocalSpace(Ray InputRay)
+{
+    float4 Position  = mul(float4(InputRay.Origin, 1.0), g_ObjectAttribs.CurrInvWorldMatrix);
+    float3 Direction = mul(float4(InputRay.Direction, 0.0), g_ObjectAttribs.CurrInvWorldMatrix).xyz;
+
+    Ray Result;
+    Result.Origin = Position.xyz;
+    Result.Direction = Direction;
+    Result.Min = InputRay.Min;
+    Result.Max = InputRay.Max;
+    return Result;
+}
+
+float2 ComputeMotion(float2 NDC1, float3 PositionLS)
+{
+    float4 PositionWS = mul(float4(PositionLS, 1.0), g_ObjectAttribs.PrevWorldTransform);
+    float4 NDC0 = mul(PositionWS, g_PrevCamera.mViewProj);
+    NDC0.xy = NDC0.xy / NDC0.w;
+
+    float2 Motion = NDC1.xy - NDC0.xy;
+    return Motion;
+}
+
+float3 ComputeNormal(float3 Normal)
+{
+    return normalize(mul(float4(Normal, 0.0), g_ObjectAttribs.CurrNormalMatrix).xyz);
+}
+
+Intersection IntersectSphere(Ray InputRay, float3 Center, float Radius)
+{
+    Intersection Result;
+    Result.Normal = float3(0.0, 0.0, 0.0);
+    Result.Distance = -FLT_MAX;
+
+    float3 Orig = InputRay.Origin - Center;
+    float A = dot(InputRay.Direction, InputRay.Direction);
+    float B = 2.0 * dot(Orig, InputRay.Direction);
+    float C = dot(Orig, Orig) - Radius * Radius;
+    float D = B * B - 4.0 * A * C;
+    // If discriminant is negative, there are no real roots hence the ray misses the
+    // sphere
+    if (D < 0.0)
+        return Result;
+
+    D = sqrt(D);
+    float TNear = (-B - D) / (2.0 * A);
+    float TFear = (-B + D) / (2.0 * A);
+    
+    float T = TNear > M_EPSILON ? TNear : TFear;
+    if (T < M_EPSILON)
+        return Result;
+
+    float3 HitPos = InputRay.Origin + T * InputRay.Direction;
+    Result.Normal = normalize(HitPos - Center);
+    Result.Distance = T;
+    return Result;
+}
+
+Intersection IntersectAABB(Ray InputRay, float3 Center, float3 Size)
+{
+    Intersection Result;
+    Result.Normal = float3(0.0, 0.0, 0.0);
+    Result.Distance = -FLT_MAX;
+
+    float3 T1 = (Center - Size - InputRay.Origin) / (InputRay.Direction + M_EPSILON);
+    float3 T2 = (Center + Size - InputRay.Origin) / (InputRay.Direction + M_EPSILON);
+
+    float3 TMin = min(T1, T2);
+    float3 TMax = max(T1, T2);
+    float TNear = max(max(TMin.x, TMin.y), TMin.z);
+    float TFar  = min(min(TMax.x, TMax.y), TMax.z);
+    if (TNear >= TFar)
+        return Result;
+
+    // Use far intersection if t_near > EPSILON.
+    // This is important to avoid light leaks.
+    float T = TNear > M_EPSILON ? TNear : TFar;
+    if (T < M_EPSILON )
+        return Result;
+
+    // Compute normal for the entry point. We only use internal intersection for shadows.
+    Result.Normal = -sign(InputRay.Direction) * step(TMin.yzx, TMin.xyz) * step(TMin.zxy, TMin.xyz);
+    Result.Distance = T;
+    return Result;
+}
+
+MaterialAttribs ComputeMaterial(float3 Position)
+{
+    uint Index = uint(abs(fmod(floor(g_ObjectAttribs.ObjectMaterialFrequency.x * Position[g_ObjectAttribs.ObjectMaterialDim.x])
+                             + floor(g_ObjectAttribs.ObjectMaterialFrequency.y * Position[g_ObjectAttribs.ObjectMaterialDim.y]), 2.0)));
+    uint MaterialIndex = g_ObjectAttribs.ObjectMaterialIdx[Index];
+    return g_MaterialAttribs[MaterialIndex];
+}
+
+GBuffer GenerateGeometryPS(PSInput VSOut)
+{
+    float2 NormalizedXY = TexUVToNormalizedDeviceXY(VSOut.PixelPosition.xy * g_CurrCamera.f4ViewportSize.zw);
+    Ray RayWS = CreateCameraRay(NormalizedXY);
+    Ray RayLS = TransformRayToLocalSpace(RayWS);
+
+    Intersection Intersect;
+    Intersect.Distance = -FLT_MAX;
+    Intersect.Normal = float3(0.0, 0.0, 0.0);
+
+    switch (g_ObjectAttribs.ObjectType)
+    {
+        case GEOMETRY_TYPE_SPHERE:
+            Intersect = IntersectSphere(RayLS, float3(0.0, 0.0, 0.0), 1.0);
+            break;
+        case GEOMETRY_TYPE_AABB:
+            Intersect = IntersectAABB(RayLS, float3(0.0, 0.0, 0.0), float3(1.0, 1.0, 1.0));
+            break;
+        default:
+            break;
+    }
+
+    if (Intersect.Distance < RayWS.Min || Intersect.Distance > RayWS.Max)
+        discard;
+
+    float3 PositionLS = RayLS.Origin + Intersect.Distance * RayLS.Direction;
+    float3 PositionWS = RayWS.Origin + Intersect.Distance * RayWS.Direction;
+    float3 NormalWS = ComputeNormal(Intersect.Normal);
+    MaterialAttribs ObjectMaterial = ComputeMaterial(PositionWS);
+
+    GBuffer Output;
+    Output.BaseColor = ObjectMaterial.BaseColor;
+    Output.MaterialData = float2(ObjectMaterial.Roughness, ObjectMaterial.Metalness);
+    Output.Normal = float4(NormalWS, 1.0);
+    Output.Motion = ComputeMotion(NormalizedXY, PositionLS);
+    Output.Depth = ComputeDepth(PositionWS);
+    return Output;
+}
