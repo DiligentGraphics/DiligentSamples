@@ -32,11 +32,15 @@
     </style>
 </head>
 <body>
-    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     <script type='text/javascript'>
         var Module = {
             preRun: [],
-            postRun: [],
+            postRun: function() {
+                var canvas = document.getElementById('canvas');
+                if (canvas)
+                    canvas.focus();
+            },
             print: (function () {
                 return function (text) {
                     text = Array.prototype.slice.call(arguments).join(' ');
