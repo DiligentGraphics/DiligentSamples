@@ -34,7 +34,7 @@
 #include "GraphicsUtilities.h"
 #include "AdvancedMath.hpp"
 #include "imgui.h"
-#include "imGuIZMO.h"
+#include "../imGuIZMO.quat/imGuIZMO.h"
 #include "ImGuiUtils.hpp"
 #include "CallbackWrapper.hpp"
 #include "Utilities/interface/DiligentFXShaderSourceStreamFactory.hpp"

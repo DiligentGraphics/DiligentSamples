@@ -37,7 +37,7 @@
 #include "ShaderMacroHelper.hpp"
 #include "FileSystem.hpp"
 #include "imgui.h"
-#include "imGuIZMO.h"
+#include "../imGuIZMO.quat/imGuIZMO.h"
 #include "ImGuiUtils.hpp"
 #include "CallbackWrapper.hpp"
 #include "CommandLineParser.hpp"

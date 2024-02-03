@@ -35,7 +35,7 @@
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
-#include "imGuIZMO.h"
+#include "../imGuIZMO.quat/imGuIZMO.h"
 
 namespace Diligent
 {

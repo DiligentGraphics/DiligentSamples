@@ -32,7 +32,7 @@
 #include "ShaderMacroHelper.hpp"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
-#include "imGuIZMO.h"
+#include "../imGuIZMO.quat/imGuIZMO.h"
 #include "Align.hpp"
 #include "../../Common/src/TexturedCube.hpp"
 

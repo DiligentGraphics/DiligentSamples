@@ -33,7 +33,7 @@
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "imgui.h"
-#include "imGuIZMO.h"
+#include "../imGuIZMO.quat/imGuIZMO.h"
 #include "PlatformMisc.hpp"
 #include "ImGuiUtils.hpp"
 
