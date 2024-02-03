@@ -294,6 +294,7 @@ void USDViewer::LoadStage()
     m_PostProcessParams                     = {};
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
+    m_PostProcessParams.EnableTAA           = true;
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
     const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
@@ -638,6 +639,11 @@ void USDViewer::UpdateUI()
                             m_PostProcessParams.SSRScale = EnableSSR ? 1.f : 0.f;
                             UpdatePostProcessParams      = true;
                         }
+                    }
+
+                    if (ImGui::Checkbox("Enable TAA", &m_PostProcessParams.EnableTAA))
+                    {
+                        UpdatePostProcessParams = true;
                     }
 
                     ImGui::TreePop();
