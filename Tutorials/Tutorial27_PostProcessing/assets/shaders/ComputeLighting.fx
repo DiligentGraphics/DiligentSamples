@@ -77,7 +77,7 @@ float3 ComputeSpecularIBL(float2 Location, float3 F0, float3 N, float3 V, float 
     float3 R = reflect(-V, N);
     float2 BRDF_LUT = SampleBRDFIntegrationMap(float2(NdotV, Roughness));
     float4 SSR = g_TextureSSR.Load(int3(Location, 0));
-    float3 T1 = SamplePrefilteredEnvironmentMap(R, Roughness * g_PBRRendererAttibs.PrefilteredCubeMipLevels);
+    float3 T1 = SamplePrefilteredEnvironmentMap(R, Roughness * g_PBRRendererAttibs.PrefilteredCubeLastMip);
     float3 T2 = (F0 * BRDF_LUT.x + BRDF_LUT.yyy);
     return lerp(T1, SSR.rgb, SSR.w * g_Camera.f4ExtraData[0].w) * T2;
 }

@@ -193,12 +193,12 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ScreenSpaceReflection = std::make_unique<ScreenSpaceReflection>(m_pDevice);
     m_ShaderParams          = std::make_unique<ShaderParams>();
 
-    m_ShaderParams->PBRRenderParams.OcclusionStrength        = 1.0f;
-    m_ShaderParams->PBRRenderParams.IBLScale                 = 1.0f;
-    m_ShaderParams->PBRRenderParams.AverageLogLum            = 0.2f;
-    m_ShaderParams->PBRRenderParams.WhitePoint               = HLSL::ToneMappingAttribs{}.fWhitePoint;
-    m_ShaderParams->PBRRenderParams.MiddleGray               = HLSL::ToneMappingAttribs{}.fMiddleGray;
-    m_ShaderParams->PBRRenderParams.PrefilteredCubeMipLevels = static_cast<float>(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].AsTexture()->GetDesc().MipLevels - 1.0);
+    m_ShaderParams->PBRRenderParams.OcclusionStrength      = 1.0f;
+    m_ShaderParams->PBRRenderParams.IBLScale               = 1.0f;
+    m_ShaderParams->PBRRenderParams.AverageLogLum          = 0.2f;
+    m_ShaderParams->PBRRenderParams.WhitePoint             = HLSL::ToneMappingAttribs{}.fWhitePoint;
+    m_ShaderParams->PBRRenderParams.MiddleGray             = HLSL::ToneMappingAttribs{}.fMiddleGray;
+    m_ShaderParams->PBRRenderParams.PrefilteredCubeLastMip = static_cast<float>(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].AsTexture()->GetDesc().MipLevels - 1);
 
     m_ShaderParams->SSRSettings.MaxTraversalIntersections = 64;
     m_ShaderParams->SSRSettings.DepthBufferThickness      = 0.15f;
