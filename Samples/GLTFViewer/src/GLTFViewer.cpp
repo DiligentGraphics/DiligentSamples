@@ -430,18 +430,30 @@ static constexpr char EnvMapPSMain[] = R"(
 void main(in  float4 Pos          : SV_Position,
           in  float4 ClipPos      : CLIP_POS,
           out float4 Color        : SV_Target0,
+          out float4 MotionVec    : SV_Target4)
+{
+    SampleEnvMapOutput EnvMap = SampleEnvMap(ClipPos);
+    Color     = EnvMap.Color;
+    MotionVec = float4(EnvMap.MotionVector, 0.0, 1.0);
+}
+)";
+
+static constexpr char EnvMapPSMainGL[] = R"(
+void main(in  float4 Pos          : SV_Position,
+          in  float4 ClipPos      : CLIP_POS,
+          out float4 Color        : SV_Target0,
           out float4 Normal       : SV_Target1,
           out float4 BaseColor    : SV_Target2,
           out float4 MaterialData : SV_Target3,
           out float4 MotionVec    : SV_Target4,
           out float4 SpecularIBL  : SV_Target5)
 {
-    Color = SampleEnvMap(ClipPos);
-
+    SampleEnvMapOutput EnvMap = SampleEnvMap(ClipPos);
+    Color        = EnvMap.Color;
     Normal       = float4(0.0, 0.0, 0.0, 0.0);
 	BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
     MaterialData = float4(0.0, 0.0, 0.0, 0.0);
-    MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
+    MotionVec    = float4(EnvMap.MotionVector, 0.0, 1.0);
     SpecularIBL  = float4(0.0, 0.0, 0.0, 0.0);
 }
 )";
@@ -539,8 +551,12 @@ void GLTFViewer::CrateEnvMapRenderer()
 
         if (m_pDevice->GetDeviceInfo().IsGLDevice())
         {
-            // Normally, environment map shader does not need to write to other targets.
+            // Normally, environment map shader only needs to write color and motion vector.
             // However, on WebGL this results in errors.
+            EnvMapRendererCI.PSMainSource = EnvMapPSMainGL;
+        }
+        else
+        {
             EnvMapRendererCI.PSMainSource = EnvMapPSMain;
         }
     }
@@ -1197,8 +1213,9 @@ void GLTFViewer::Render()
         EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
         // It is essential to write zero alpha because we use alpha channel
         // to attenuate SSR for transparent surfaces.
-        EnvMapAttribs.Alpha               = 0.0;
-        EnvMapAttribs.ConvertOutputToSRGB = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
+        EnvMapAttribs.Alpha                = 0.0;
+        EnvMapAttribs.ConvertOutputToSRGB  = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
+        EnvMapAttribs.ComputeMotionVectors = m_bEnablePostProcessing;
 
         m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
     }
@@ -1274,7 +1291,7 @@ void GLTFViewer::Render()
             Attribs.pContext = m_pImmediateContext;
             Attribs.GridSize = {SCDesc.Width / 20, SCDesc.Height / 20};
             // Render motion vectors in the opposite direction
-            Attribs.Scale               = float2{-0.05f} / std::max(m_ElapsedTime, 0.001f);
+            Attribs.Scale               = float2{-0.01f} / std::max(m_ElapsedTime, 0.001f);
             Attribs.StartColor          = float4{1};
             Attribs.EndColor            = float4{0.5, 0.5, 0.5, 1.0};
             Attribs.ConvertOutputToSRGB = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
