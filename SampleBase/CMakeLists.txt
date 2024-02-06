@@ -190,7 +190,7 @@ elseif(PLATFORM_ANDROID)
     target_link_libraries(Diligent-SampleBase PRIVATE GLESv3 PUBLIC native_app_glue)
 elseif(PLATFORM_LINUX)
     find_package(X11 REQUIRED)
-    target_link_libraries(Diligent-SampleBase PRIVATE XCBKeySyms ${OPENGL_LIBRARY} X11::X11)
+    target_link_libraries(Diligent-SampleBase PRIVATE XCBKeySyms ${OPENGL_LIBRARY} ${X11_LIBRARIES})
 elseif(PLATFORM_MACOS OR PLATFORM_IOS)
 
 endif()
