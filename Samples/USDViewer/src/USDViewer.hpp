@@ -98,6 +98,17 @@ private:
 
         float4x4 RootTransform = float4x4::Identity();
 
+        struct AnimationInfo
+        {
+            double TimeCodesPerSecond = 0;
+
+            float Time      = 0;
+            float StartTime = 0;
+            float EndTime   = 0;
+
+            bool Play = false;
+        } Animation;
+
         explicit operator bool() const
         {
             return Stage && RenderDelegate && RenderIndex && ImagingDelegate && TaskManager;

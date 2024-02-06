@@ -341,6 +341,11 @@ void USDViewer::LoadStage()
     {
         m_Camera.SetRotation(PI_F * 3.f / 4.f, PI_F / 6.f);
     }
+
+    m_Stage.Animation.TimeCodesPerSecond = m_Stage.Stage->GetTimeCodesPerSecond();
+    m_Stage.Animation.StartTime          = static_cast<float>(m_Stage.Stage->GetStartTimeCode() / m_Stage.Animation.TimeCodesPerSecond);
+    m_Stage.Animation.EndTime            = static_cast<float>(m_Stage.Stage->GetEndTimeCode() / m_Stage.Animation.TimeCodesPerSecond);
+    m_Stage.Animation.Time               = m_Stage.Animation.StartTime;
 }
 
 // Render a frame
@@ -536,6 +541,19 @@ void USDViewer::UpdateUI()
                     if (ImGui::Combo("Select mode", &SelectMode, SelectModes.data(), static_cast<int>(SelectModes.size())))
                     {
                         m_SelectMode = static_cast<SelectionMode>(SelectMode);
+                    }
+                }
+
+                if (m_Stage.Animation.EndTime > m_Stage.Animation.StartTime)
+                {
+                    ImGui::Spacing();
+
+                    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                    if (ImGui::TreeNode("Animation"))
+                    {
+                        ImGui::Checkbox("Play", &m_Stage.Animation.Play);
+                        ImGui::SliderFloat("Time", &m_Stage.Animation.Time, m_Stage.Animation.StartTime, m_Stage.Animation.EndTime);
+                        ImGui::TreePop();
                     }
                 }
 
@@ -827,8 +845,22 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
     UpdateCamera();
+
+    const float LastAnimationTime = m_Stage.Animation.Time;
+    if (m_Stage.Animation.Play)
+    {
+        m_Stage.Animation.Time += static_cast<float>(ElapsedTime);
+        if (m_Stage.Animation.Time > m_Stage.Animation.EndTime)
+            m_Stage.Animation.Time = m_Stage.Animation.StartTime;
+    }
+
     // Update camera first as TRS widget needs camera view/proj matrices.
     UpdateUI();
+
+    if (LastAnimationTime != m_Stage.Animation.Time)
+    {
+        m_Stage.ImagingDelegate->SetTime(m_Stage.Animation.Time * m_Stage.Animation.TimeCodesPerSecond);
+    }
 
     if (!m_Stage)
         return;
