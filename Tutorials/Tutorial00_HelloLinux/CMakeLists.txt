@@ -25,7 +25,8 @@ target_link_libraries(Tutorial00_HelloLinux PRIVATE Diligent-BuildSettings)
 
 if(GL_SUPPORTED)
     find_package(X11 REQUIRED)
-    target_link_libraries(Tutorial00_HelloLinux PRIVATE Diligent-GraphicsEngineOpenGL-shared ${OPENGL_LIBRARY} X11::X11)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(Tutorial00_HelloLinux PRIVATE Diligent-GraphicsEngineOpenGL-shared OpenGL::GL X11::X11)
 endif()
 
 if(VULKAN_SUPPORTED)
