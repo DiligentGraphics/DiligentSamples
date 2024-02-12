@@ -90,7 +90,10 @@ float2 ComputeMotion(float2 NDC1, float3 PositionLS)
     float4 NDC0 = mul(PositionWS, g_PrevCamera.mViewProj);
     NDC0.xy = NDC0.xy / NDC0.w;
 
-    float2 Motion = NDC1.xy - NDC0.xy;
+    float2 Jitter0 = g_PrevCamera.f2Jitter;
+    float2 Jitter1 = g_CurrCamera.f2Jitter;
+    
+    float2 Motion = (NDC1.xy - NDC0.xy) - (Jitter1 - Jitter0);
     return Motion;
 }
 

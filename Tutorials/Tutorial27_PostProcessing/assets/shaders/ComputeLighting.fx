@@ -107,10 +107,13 @@ float3 CreateViewDir(float2 NormalizedXY)
 float4 ComputeLightingPS(FullScreenTriangleVSOutput VSOut) : SV_Target0
 {
     float Depth = g_TextureDepth.Load(int3(VSOut.f4PixelPos.xy, 0));
-    float3 ViewDir = CreateViewDir(VSOut.f2NormalizedXY);
     if (Depth >= 1.0 - FLT_EPS)
-        return float4(SampleEnvironmentMap(-ViewDir), 1.0);
-
+    {
+        float3 ViewDirBackground = CreateViewDir(VSOut.f2NormalizedXY + g_Camera.f2Jitter);
+        return float4(SampleEnvironmentMap(-ViewDirBackground), 1.0);
+    }
+      
+    float3 ViewDir = CreateViewDir(VSOut.f2NormalizedXY);
     SurfaceInformation SurfInfo = ExtractGBuffer(VSOut);
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), SurfInfo.BaseColor, SurfInfo.Metalness);
     float3 F = FresnelSchlickRoughness(saturate(dot(SurfInfo.Normal, ViewDir)), F0, SurfInfo.Roughness);

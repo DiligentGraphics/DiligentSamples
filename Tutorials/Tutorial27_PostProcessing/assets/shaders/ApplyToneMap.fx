@@ -24,7 +24,7 @@ float4 ApplyToneMapPS(FullScreenTriangleVSOutput VSOut) : SV_Target0
     float3 SDRColor = ToneMap(HDRColor, TMAttribs, g_PBRRendererAttibs.AverageLogLum);
 
 #if CONVERT_OUTPUT_TO_SRGB
-    SDRColor = FastLinearToSRGB(SDRColor);
+    SDRColor = LinearToSRGB(SDRColor);
 #endif
     return float4(SDRColor, 1.0);
 }

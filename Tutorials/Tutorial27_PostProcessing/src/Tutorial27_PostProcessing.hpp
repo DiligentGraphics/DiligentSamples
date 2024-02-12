@@ -48,6 +48,7 @@ struct ObjectAttribs;
 class EnvMapRenderer;
 class PostFXContext;
 class ScreenSpaceReflection;
+class TemporalAntiAliasing;
 class GBuffer;
 
 class Tutorial27_PostProcessing final : public SampleBase
@@ -66,11 +67,15 @@ public:
     const Char* GetSampleName() const override final { return "Tutorial27: Post Processing"; }
 
 private:
+    void PreparePostFXContext();
+
     void GenerateGeometry();
 
     void ComputeSSR();
 
     void ComputeLighting();
+
+    void ComputeTAA();
 
     void ApplyToneMap();
 
@@ -81,7 +86,7 @@ private:
 private:
     using RenderTechnique  = PostFXRenderTechnique;
     using ResourceInternal = RefCntAutoPtr<IDeviceObject>;
-    struct ShaderParams;
+    struct ShaderSettings;
 
     enum RENDER_TECH : Uint32
     {
@@ -102,6 +107,8 @@ private:
         RESOURCE_IDENTIFIER_OBJECT_AABB_INDEX_BUFFER,
         RESOURCE_IDENTIFIER_RADIANCE0,
         RESOURCE_IDENTIFIER_RADIANCE1,
+        RESOURCE_IDENTIFIER_DEPTH0,
+        RESOURCE_IDENTIFIER_DEPTH1,
         RESOURCE_IDENTIFIER_ENVIRONMENT_MAP,
         RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP,
         RESOURCE_IDENTIFIER_IRRADIANCE_MAP,
@@ -117,7 +124,8 @@ private:
     std::unique_ptr<EnvMapRenderer>        m_EnvironmentMapRenderer;
     std::unique_ptr<PostFXContext>         m_PostFXContext;
     std::unique_ptr<ScreenSpaceReflection> m_ScreenSpaceReflection;
-    std::unique_ptr<ShaderParams>          m_ShaderParams;
+    std::unique_ptr<TemporalAntiAliasing>  m_TemporalAntiAliasing;
+    std::unique_ptr<ShaderSettings>        m_ShaderSettings;
 
     FirstPersonCamera                        m_Camera;
     std::unique_ptr<HLSL::CameraAttribs[]>   m_CameraAttribs;
