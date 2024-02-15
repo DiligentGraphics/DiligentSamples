@@ -351,7 +351,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
         Uint32 Material4 = CreateMaterial(float3(0.87f, 0.07f, 0.17f), 0.50f, 0.1f);
         Uint32 Material5 = CreateMaterial(float3(0.07f, 0.80f, 0.17f), 0.00f, 0.1f);
 
-        float4x4 Transform0 = float4x4::Scale(50.0f, 0.01f, 50.0f) * float4x4::Translation(0.0f, -1.0f, 0.0f);
+        float4x4 Transform0 = float4x4::Scale(20.0f, 0.01f, 20.0f) * float4x4::Translation(0.0f, -1.0f, 0.0f);
         float4x4 Transform1 = float4x4::Scale(1.0f, 1.0f, 0.1f) * float4x4::RotationX(m_AnimationTime) * float4x4::Translation(+3.0f, 0.0f, 0.0f);
         float4x4 Transform2 = float4x4::Scale(1.0f, 1.0f, 0.1f) * float4x4::RotationY(m_AnimationTime) * float4x4::Translation(-3.0f, 0.0f, 0.0f);
         float4x4 Transform3 = float4x4::Translation(0.0f, ::abs(sinf(m_AnimationTime)), 0.0f);
