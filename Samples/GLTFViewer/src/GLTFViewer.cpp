@@ -290,6 +290,7 @@ void GLTFViewer::CreateGLTFResourceCache()
     ResourceMgrCI.IndexAllocatorCI.Desc.BindFlags = BIND_INDEX_BUFFER;
     ResourceMgrCI.IndexAllocatorCI.Desc.Usage     = USAGE_DEFAULT;
     ResourceMgrCI.IndexAllocatorCI.Desc.Size      = sizeof(Uint32) * 8 << 10;
+    ResourceMgrCI.IndexAllocatorCI.MaxSize        = 1u << 30u;
 
     ResourceMgrCI.NumVertexPools = 1;
     ResourceMgrCI.pVertexPoolCIs = &VtxPoolCI;
