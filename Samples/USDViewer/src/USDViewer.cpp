@@ -474,8 +474,6 @@ void USDViewer::EditSelectedPrimTransform()
         // New local matrix is the delta between new global matrix and parent global matrix
         float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
         XFormable.MakeMatrixXform().Set(USD::ToGfMatrix4d(NewLocalMatrix));
-        // For now, reset TAA when the transform changes
-        m_Stage.TaskManager->ResetTAA();
     }
 }
 
