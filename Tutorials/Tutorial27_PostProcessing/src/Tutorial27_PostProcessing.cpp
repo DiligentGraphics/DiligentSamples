@@ -117,6 +117,7 @@ struct Tutorial27_PostProcessing::ShaderSettings
     HLSL::ScreenSpaceReflectionAttribs SSRSettings                = {};
     HLSL::TemporalAntiAliasingAttribs  TAASettings                = {};
     float                              SSRStrength                = 1.0;
+    bool                               SSRFeatureHalfRes          = false;
     bool                               TAAEnabled                 = false;
     bool                               TAAFeatureBicubicFiltering = true;
     bool                               TAAFeatureGaussWeighting   = false;
@@ -514,7 +515,12 @@ void Tutorial27_PostProcessing::ComputeSSR()
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
     const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
 
-    m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_PostFXContext.get());
+    auto FeatureFlags = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+
+    if (m_ShaderSettings->SSRFeatureHalfRes)
+        FeatureFlags |= ScreenSpaceReflection::FEATURE_FLAG_HALF_RESOLUTION;
+
+    m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_PostFXContext.get(), FeatureFlags);
 
     ScreenSpaceReflection::RenderAttributes SSRRenderAttribs{};
     SSRRenderAttribs.pDevice            = m_pDevice;
@@ -526,7 +532,6 @@ void Tutorial27_PostProcessing::ComputeSSR()
     SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     SSRRenderAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     SSRRenderAttribs.pSSRAttribs        = &m_ShaderSettings->SSRSettings;
-    SSRRenderAttribs.FeatureFlag        = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
     m_ScreenSpaceReflection->Execute(SSRRenderAttribs);
 }
 
@@ -691,6 +696,7 @@ void Tutorial27_PostProcessing::UpdateUI()
             if (ImGui::TreeNode("Screen Space Reflections"))
             {
                 m_ScreenSpaceReflection->UpdateUI(m_ShaderSettings->SSRSettings);
+                ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSRFeatureHalfRes);
                 ImGui::TreePop();
             }
 
