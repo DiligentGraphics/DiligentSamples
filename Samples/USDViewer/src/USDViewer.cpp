@@ -37,6 +37,7 @@
 #include "PBR_Renderer.hpp"
 #include "FileSystem.hpp"
 #include "Timer.hpp"
+#include "RenderStateCache.h"
 
 #include "Tasks/HnReadRprimIdTask.hpp"
 #include "Tasks/HnRenderAxesTask.hpp"
@@ -138,6 +139,13 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    // Create render state cache
+    {
+        RenderStateCacheCreateInfo CacheCI{m_pDevice};
+        CreateRenderStateCache(CacheCI, &m_pStateCache);
+        VERIFY(m_pStateCache, "Failed to create render state cache");
+    }
+
     ImGuizmo::SetGizmoSizeClipSpace(0.15f);
 
     RefCntAutoPtr<ITexture> EnvironmentMap;
@@ -236,7 +244,7 @@ void USDViewer::LoadStage()
     USD::HnRenderDelegate::CreateInfo DelegateCI;
     DelegateCI.pDevice           = m_pDevice;
     DelegateCI.pContext          = m_pImmediateContext;
-    DelegateCI.pRenderStateCache = nullptr;
+    DelegateCI.pRenderStateCache = m_pStateCache;
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
     if (m_pDevice->GetDeviceInfo().Features.BindlessResources)

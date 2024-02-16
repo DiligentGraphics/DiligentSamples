@@ -48,6 +48,8 @@
 namespace Diligent
 {
 
+struct IRenderStateCache;
+
 namespace USD
 {
 class HnRenderBuffer;
@@ -79,6 +81,8 @@ private:
     void UpdateModelsList(const std::string& Dir);
 
 private:
+    RefCntAutoPtr<IRenderStateCache> m_pStateCache;
+
     struct StageInfo
     {
         // Declaration order matters as the objects must be destroyed in the specific order!
