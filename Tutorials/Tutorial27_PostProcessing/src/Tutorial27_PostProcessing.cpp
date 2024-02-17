@@ -203,6 +203,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ShaderSettings->PBRRenderParams.WhitePoint             = HLSL::ToneMappingAttribs{}.fWhitePoint;
     m_ShaderSettings->PBRRenderParams.MiddleGray             = HLSL::ToneMappingAttribs{}.fMiddleGray;
     m_ShaderSettings->PBRRenderParams.PrefilteredCubeLastMip = static_cast<float>(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].AsTexture()->GetDesc().MipLevels - 1);
+    m_ShaderSettings->PBRRenderParams.MipBias                = 0;
 
     m_ShaderSettings->SSRSettings.MaxTraversalIntersections = 64;
     m_ShaderSettings->SSRSettings.RoughnessThreshold        = 1.0f;

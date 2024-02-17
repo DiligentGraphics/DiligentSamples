@@ -1146,6 +1146,7 @@ void GLTFViewer::Render()
             Renderer.HighlightColor    = m_ShaderAttribs.HighlightColor;
             Renderer.UnshadedColor     = m_ShaderAttribs.WireframeColor;
             Renderer.PointSize         = 1;
+            Renderer.MipBias           = 0;
         }
     }
 
