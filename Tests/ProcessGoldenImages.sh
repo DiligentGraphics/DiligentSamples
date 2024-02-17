@@ -104,7 +104,7 @@ declare -a TestApps=(
      # On the second run the states should be loaded from the cache
     "Tutorials/Tutorial26_StateCache --show_ui 0"
     "Samples/Atmosphere --show_ui 0"
-    "Samples/GLTFViewer --show_ui 0"
+    "Samples/GLTFViewer --show_ui 0 --use_cache 1"
     "Samples/NuklearDemo --show_ui 0"
     "Samples/Shadows --show_ui 0"
     # "Samples/ImguiDemo" has fps counter in the UI, so we have to skip it
