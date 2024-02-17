@@ -205,7 +205,6 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ShaderSettings->PBRRenderParams.PrefilteredCubeLastMip = static_cast<float>(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].AsTexture()->GetDesc().MipLevels - 1);
 
     m_ShaderSettings->SSRSettings.MaxTraversalIntersections = 64;
-    m_ShaderSettings->SSRSettings.DepthBufferThickness      = 0.15f;
     m_ShaderSettings->SSRSettings.RoughnessThreshold        = 1.0f;
     m_ShaderSettings->SSRSettings.IsRoughnessPerceptual     = true;
     m_ShaderSettings->SSRSettings.RoughnessChannel          = 0;
