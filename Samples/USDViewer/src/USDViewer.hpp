@@ -159,16 +159,17 @@ private:
 
     struct RenderStats
     {
-        Uint32 NumDrawCommands  = 0;
-        Uint32 NumPSOChanges    = 0;
-        Uint32 NumSRBChanges    = 0;
-        Uint32 NumVBChanges     = 0;
-        Uint32 NumIBChanges     = 0;
-        Uint32 NumBufferMaps    = 0;
-        Uint32 NumBufferUpdates = 0;
-        Uint32 NumTriangles     = 0;
-        Uint32 NumLines         = 0;
-        Uint32 NumPoints        = 0;
+        Uint32 NumDrawCommands      = 0;
+        Uint32 NumMultiDrawCommands = 0;
+        Uint32 NumPSOChanges        = 0;
+        Uint32 NumSRBChanges        = 0;
+        Uint32 NumVBChanges         = 0;
+        Uint32 NumIBChanges         = 0;
+        Uint32 NumBufferMaps        = 0;
+        Uint32 NumBufferUpdates     = 0;
+        Uint32 NumTriangles         = 0;
+        Uint32 NumLines             = 0;
+        Uint32 NumPoints            = 0;
 
         float TaskRunTime = 0;
     };

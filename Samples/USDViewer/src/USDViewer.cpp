@@ -381,17 +381,18 @@ void USDViewer::Render()
 
     m_Stage.FinalColorTarget->ReleaseTarget();
 
-    const auto& CtxStats     = m_pImmediateContext->GetStats();
-    m_Stats.NumDrawCommands  = CtxStats.CommandCounters.Draw + CtxStats.CommandCounters.DrawIndexed;
-    m_Stats.NumPSOChanges    = CtxStats.CommandCounters.SetPipelineState;
-    m_Stats.NumSRBChanges    = CtxStats.CommandCounters.CommitShaderResources;
-    m_Stats.NumVBChanges     = CtxStats.CommandCounters.SetVertexBuffers;
-    m_Stats.NumIBChanges     = CtxStats.CommandCounters.SetIndexBuffer;
-    m_Stats.NumBufferMaps    = CtxStats.CommandCounters.MapBuffer;
-    m_Stats.NumBufferUpdates = CtxStats.CommandCounters.UpdateBuffer;
-    m_Stats.NumTriangles     = CtxStats.GetTotalTriangleCount();
-    m_Stats.NumLines         = CtxStats.GetTotalLineCount();
-    m_Stats.NumPoints        = CtxStats.GetTotalPointCount();
+    const auto& CtxStats         = m_pImmediateContext->GetStats();
+    m_Stats.NumDrawCommands      = CtxStats.CommandCounters.Draw + CtxStats.CommandCounters.DrawIndexed;
+    m_Stats.NumMultiDrawCommands = CtxStats.CommandCounters.MultiDraw + CtxStats.CommandCounters.MultiDrawIndexed;
+    m_Stats.NumPSOChanges        = CtxStats.CommandCounters.SetPipelineState;
+    m_Stats.NumSRBChanges        = CtxStats.CommandCounters.CommitShaderResources;
+    m_Stats.NumVBChanges         = CtxStats.CommandCounters.SetVertexBuffers;
+    m_Stats.NumIBChanges         = CtxStats.CommandCounters.SetIndexBuffer;
+    m_Stats.NumBufferMaps        = CtxStats.CommandCounters.MapBuffer;
+    m_Stats.NumBufferUpdates     = CtxStats.CommandCounters.UpdateBuffer;
+    m_Stats.NumTriangles         = CtxStats.GetTotalTriangleCount();
+    m_Stats.NumLines             = CtxStats.GetTotalLineCount();
+    m_Stats.NumPoints            = CtxStats.GetTotalPointCount();
 
     m_Stats.TaskRunTime = static_cast<float>(Stowatch.GetElapsedTime()) * 0.05f + m_Stats.TaskRunTime * 0.95f;
 }
@@ -752,7 +753,7 @@ void USDViewer::UpdateUI()
                 const auto MemoryStats = m_Stage.RenderDelegate->GetMemoryStats();
                 ImGui::TextDisabled("Task time\n"
                                     "Binding\n"
-                                    "Num draws\n"
+                                    "Draws + MDraws\n"
                                     "Tris\n"
                                     "Lines\n"
                                     "Points\n"
@@ -784,7 +785,7 @@ void USDViewer::UpdateUI()
 
                 ImGui::TextDisabled("%.1f ms\n"
                                     "%s\n"
-                                    "%d\n"
+                                    "%d + %d\n"
                                     "%d\n"
                                     "%d\n"
                                     "%d\n"
@@ -800,7 +801,7 @@ void USDViewer::UpdateUI()
                                     "%s (%.1lf%%, %d allocs)",
                                     m_Stats.TaskRunTime * 1000.f,
                                     TextureBindingModeStr,
-                                    m_Stats.NumDrawCommands,
+                                    m_Stats.NumDrawCommands, m_Stats.NumMultiDrawCommands,
                                     m_Stats.NumTriangles,
                                     m_Stats.NumLines,
                                     m_Stats.NumPoints,
