@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -337,8 +337,15 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
         {SHADER_TYPE_PIXEL, "g_ShadowMap", SamLinearClampDesc}
     };
     // clang-format on
-    PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
-    PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+
+    // Sampling depth textures is not supported on all GLES devices.
+    // Setting non-comparison sampler for shadow map makes the Load() function
+    // always return 0.
+    if (m_pDevice->GetDeviceInfo().Type != RENDER_DEVICE_TYPE_GLES)
+    {
+        PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+        PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+    }
 
     m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pShadowMapVisPSO);
 }

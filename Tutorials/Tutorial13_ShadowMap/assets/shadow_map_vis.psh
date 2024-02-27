@@ -11,7 +11,17 @@ struct ShadowMapVisPSOutput
 void main(in  ShadowMapVisPSInput  PSIn,
           out ShadowMapVisPSOutput PSOut)
 {
-    float3 Color = float3(1.0, 1.0, 1.0) * g_ShadowMap.Sample(g_ShadowMap_sampler, PSIn.UV).r;
+#if defined(GL_ES) && !defined(VULKAN)
+    // Sampling depth textures may not be supported in GLES, so we use Load()
+    float2 ShadowMapDim;
+    g_ShadowMap.GetDimensions(ShadowMapDim.x, ShadowMapDim.y);
+    float ShadowDepth = g_ShadowMap.Load(int3(PSIn.UV * ShadowMapDim.xy, 0)).r;
+#else
+    float ShadowDepth = g_ShadowMap.Sample(g_ShadowMap_sampler, PSIn.UV).r;
+#endif
+    
+    float3 Color = float3(1.0, 1.0, 1.0) * ShadowDepth;
+    
 #if CONVERT_PS_OUTPUT_TO_GAMMA
     // Use fast approximation for gamma correction.
     Color = pow(Color, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
