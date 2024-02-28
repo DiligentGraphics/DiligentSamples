@@ -668,6 +668,15 @@ void USDViewer::UpdateUI()
                         }
                     }
 
+                    {
+                        bool EnableSSAO = m_PostProcessParams.SSAOScale != 0;
+                        if (ImGui::Checkbox("Ambient Occlusion", &EnableSSAO))
+                        {
+                            m_PostProcessParams.SSAOScale = EnableSSAO ? 1.f : 0.f;
+                            UpdatePostProcessParams       = true;
+                        }
+                    }
+
                     if (ImGui::Checkbox("Enable TAA", &m_PostProcessParams.EnableTAA))
                     {
                         UpdatePostProcessParams = true;
