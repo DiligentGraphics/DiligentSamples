@@ -19,6 +19,7 @@ Texture2D<float2> g_TextureMaterialData;
 Texture2D<float4> g_TextureNormal;
 Texture2D<float>  g_TextureDepth;
 Texture2D<float4> g_TextureSSR;
+Texture2D<float>  g_TextureSSAO;
 
 TextureCube<float3> g_TextureEnvironmentMap;
 SamplerState        g_TextureEnvironmentMap_sampler;
@@ -79,7 +80,7 @@ float3 ComputeSpecularIBL(float2 Location, float3 F0, float3 N, float3 V, float 
     float4 SSR = g_TextureSSR.Load(int3(Location, 0));
     float3 T1 = SamplePrefilteredEnvironmentMap(R, Roughness * g_PBRRendererAttibs.PrefilteredCubeLastMip);
     float3 T2 = (F0 * BRDF_LUT.x + BRDF_LUT.yyy);
-    return lerp(T1, SSR.rgb, SSR.w * g_Camera.f4ExtraData[0].w) * T2;
+    return lerp(T1, SSR.rgb, SSR.w * g_Camera.f4ExtraData[0].x) * T2;
 }
 
 SurfaceInformation ExtractGBuffer(FullScreenTriangleVSOutput VSOut)
@@ -123,6 +124,10 @@ float4 ComputeLightingPS(FullScreenTriangleVSOutput VSOut) : SV_Target0
 
     float3 Diffuse = SurfInfo.BaseColor * ComputeDiffuseIBL(SurfInfo.Normal);
     float3 Specular = ComputeSpecularIBL(VSOut.f4PixelPos.xy, F0, SurfInfo.Normal, ViewDir, SurfInfo.Roughness);
+    float Occlusion = lerp(1.0, g_TextureSSAO.Load(int3(VSOut.f4PixelPos.xy, 0)), g_Camera.f4ExtraData[0].y);
 
-    return float4(kD * Diffuse + Specular, 1.0);
+    // It's noteworthy that we apply ambient occlusion to the entire sum (Diffuse + Specular), which is not physically accurate, as
+    // ambient occlusion should only be applied to the diffuse component. Currently, we do not compute a visibility function for the specular component,
+    // so multiplying the entire sum by ambient occlusion is better than nothing
+    return float4((kD * Diffuse + Specular) * Occlusion, 1.0);
 }

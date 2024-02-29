@@ -48,6 +48,7 @@ struct ObjectAttribs;
 class EnvMapRenderer;
 class PostFXContext;
 class ScreenSpaceReflection;
+class ScreenSpaceAmbientOcclusion;
 class TemporalAntiAliasing;
 class GBuffer;
 
@@ -72,6 +73,8 @@ private:
     void GenerateGeometry();
 
     void ComputeSSR();
+
+    void ComputeSSAO();
 
     void ComputeLighting();
 
@@ -99,7 +102,7 @@ private:
 
     enum RESOURCE_IDENTIFIER : Uint32
     {
-        RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER,
+        RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER = 0,
         RESOURCE_IDENTIFIER_PBR_ATTRIBS_CONSTANT_BUFFER,
         RESOURCE_IDENTIFIER_OBJECT_ATTRIBS_CONSTANT_BUFFER,
         RESOURCE_IDENTIFIER_MATERIAL_ATTRIBS_CONSTANT_BUFFER,
@@ -120,12 +123,13 @@ private:
     std::array<RenderTechnique, RENDER_TECH_COUNT> m_RenderTech{};
     ResourceRegistry                               m_Resources{};
 
-    std::unique_ptr<GBuffer>               m_GBuffer;
-    std::unique_ptr<EnvMapRenderer>        m_EnvironmentMapRenderer;
-    std::unique_ptr<PostFXContext>         m_PostFXContext;
-    std::unique_ptr<ScreenSpaceReflection> m_ScreenSpaceReflection;
-    std::unique_ptr<TemporalAntiAliasing>  m_TemporalAntiAliasing;
-    std::unique_ptr<ShaderSettings>        m_ShaderSettings;
+    std::unique_ptr<GBuffer>                     m_GBuffer;
+    std::unique_ptr<EnvMapRenderer>              m_EnvironmentMapRenderer;
+    std::unique_ptr<PostFXContext>               m_PostFXContext;
+    std::unique_ptr<ScreenSpaceReflection>       m_ScreenSpaceReflection;
+    std::unique_ptr<ScreenSpaceAmbientOcclusion> m_ScreenSpaceAmbientOcclusion;
+    std::unique_ptr<TemporalAntiAliasing>        m_TemporalAntiAliasing;
+    std::unique_ptr<ShaderSettings>              m_ShaderSettings;
 
     FirstPersonCamera                        m_Camera;
     std::unique_ptr<HLSL::CameraAttribs[]>   m_CameraAttribs;

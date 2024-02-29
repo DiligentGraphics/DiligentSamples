@@ -38,8 +38,9 @@
 #include "MapHelper.hpp"
 #include "PostFXContext.hpp"
 #include "ScopedDebugGroup.hpp"
-#include "ScreenSpaceReflection.hpp"
 #include "TemporalAntiAliasing.hpp"
+#include "ScreenSpaceReflection.hpp"
+#include "ScreenSpaceAmbientOcclusion.hpp"
 #include "ShaderMacroHelper.hpp"
 #include "ShaderSourceFactoryUtils.hpp"
 #include "TextureUtilities.h"
@@ -79,8 +80,9 @@ namespace HLSL
 {
 
 #include "Shaders/Common/public/BasicStructures.fxh"
-#include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
 #include "Shaders/PostProcess/TemporalAntiAliasing/public/TemporalAntiAliasingStructures.fxh"
+#include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
+#include "Shaders/PostProcess/ScreenSpaceAmbientOcclusion/public/ScreenSpaceAmbientOcclusionStructures.fxh"
 #include "Shaders/PBR/public/PBR_Structures.fxh"
 #include "../assets/shaders/GeometryStructures.fxh"
 
@@ -113,14 +115,20 @@ SampleBase* CreateSample()
 
 struct Tutorial27_PostProcessing::ShaderSettings
 {
-    HLSL::PBRRendererShaderParameters  PBRRenderParams            = {};
-    HLSL::ScreenSpaceReflectionAttribs SSRSettings                = {};
-    HLSL::TemporalAntiAliasingAttribs  TAASettings                = {};
-    float                              SSRStrength                = 1.0;
-    bool                               SSRFeatureHalfRes          = false;
-    bool                               TAAEnabled                 = false;
-    bool                               TAAFeatureBicubicFiltering = true;
-    bool                               TAAFeatureGaussWeighting   = false;
+    HLSL::PBRRendererShaderParameters        PBRRenderParams = {};
+    HLSL::ScreenSpaceReflectionAttribs       SSRSettings     = {};
+    HLSL::ScreenSpaceAmbientOcclusionAttribs SSAOSettings    = {};
+    HLSL::TemporalAntiAliasingAttribs        TAASettings     = {};
+
+    float SSRStrength                   = 1.0;
+    bool  SSRFeatureHalfRes             = false;
+    float SSAOStrength                  = 1.0;
+    bool  SSAOFeatureHalfPrecisionDepth = true;
+    Int32 SSAOAlgorithmType             = 0;
+    Int32 SSAOReconstructionFilterType  = 0;
+    bool  TAAEnabled                    = true;
+    bool  TAAFeatureBicubicFiltering    = true;
+    bool  TAAFeatureGaussWeighting      = false;
 };
 
 Tutorial27_PostProcessing::Tutorial27_PostProcessing() :
@@ -193,10 +201,11 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
         m_Resources.Insert(RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP, pIBLGenerator->GetPreintegratedGGX_SRV()->GetTexture());
     }
 
-    m_PostFXContext         = std::make_unique<PostFXContext>(m_pDevice);
-    m_ScreenSpaceReflection = std::make_unique<ScreenSpaceReflection>(m_pDevice);
-    m_TemporalAntiAliasing  = std::make_unique<TemporalAntiAliasing>(m_pDevice);
-    m_ShaderSettings        = std::make_unique<ShaderSettings>();
+    m_PostFXContext               = std::make_unique<PostFXContext>(m_pDevice);
+    m_TemporalAntiAliasing        = std::make_unique<TemporalAntiAliasing>(m_pDevice);
+    m_ScreenSpaceReflection       = std::make_unique<ScreenSpaceReflection>(m_pDevice);
+    m_ScreenSpaceAmbientOcclusion = std::make_unique<ScreenSpaceAmbientOcclusion>(m_pDevice);
+    m_ShaderSettings              = std::make_unique<ShaderSettings>();
 
     m_ShaderSettings->PBRRenderParams.OcclusionStrength      = 1.0f;
     m_ShaderSettings->PBRRenderParams.IBLScale               = 1.0f;
@@ -233,6 +242,7 @@ void Tutorial27_PostProcessing::Render()
     PreparePostFXContext();
     GenerateGeometry();
     ComputeSSR();
+    ComputeSSAO();
     ComputeLighting();
     ComputeTAA();
     ApplyToneMap();
@@ -279,7 +289,8 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
 
     CurrCamAttribs.f2Jitter.x       = Jitter.x;
     CurrCamAttribs.f2Jitter.y       = Jitter.y;
-    CurrCamAttribs.f4ExtraData[0].w = m_ShaderSettings->SSRStrength;
+    CurrCamAttribs.f4ExtraData[0].x = m_ShaderSettings->SSRStrength;
+    CurrCamAttribs.f4ExtraData[0].y = m_ShaderSettings->SSAOStrength;
     {
         m_ObjectCount   = 0;
         m_MaterialCount = 0;
@@ -535,6 +546,36 @@ void Tutorial27_PostProcessing::ComputeSSR()
     m_ScreenSpaceReflection->Execute(SSRRenderAttribs);
 }
 
+void Tutorial27_PostProcessing::ComputeSSAO()
+{
+    const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+    const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
+
+    auto FeatureFlags = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+
+    if (m_ShaderSettings->SSAOFeatureHalfPrecisionDepth)
+        FeatureFlags |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_HALF_PRECISION_DEPTH;
+
+    if (m_ShaderSettings->SSAOAlgorithmType)
+        FeatureFlags |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_UNIFORM_WEIGHTING;
+
+    if (m_ShaderSettings->SSAOReconstructionFilterType)
+        FeatureFlags |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_GUIDED_FILTER;
+
+    m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_PostFXContext.get(), FeatureFlags);
+
+    ScreenSpaceAmbientOcclusion::RenderAttributes SSAORenderAttribs{};
+    SSAORenderAttribs.pDevice             = m_pDevice;
+    SSAORenderAttribs.pDeviceContext      = m_pImmediateContext;
+    SSAORenderAttribs.pPostFXContext      = m_PostFXContext.get();
+    SSAORenderAttribs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+    SSAORenderAttribs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
+    SSAORenderAttribs.pNormalBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    SSAORenderAttribs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    SSAORenderAttribs.pSSAOAttribs        = &m_ShaderSettings->SSAOSettings;
+    m_ScreenSpaceAmbientOcclusion->Execute(SSAORenderAttribs);
+}
+
 void Tutorial27_PostProcessing::ComputeLighting()
 {
     auto& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_LIGHTING];
@@ -552,6 +593,7 @@ void Tutorial27_PostProcessing::ComputeLighting()
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureNormal", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureDepth", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureSSR", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
+            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureSSAO", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureIrradianceMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TexturePrefilteredEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
@@ -587,6 +629,7 @@ void Tutorial27_PostProcessing::ComputeLighting()
     ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureNormal"}.Set(m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureDepth"}.Set(m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV());
     ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureSSR"}.Set(m_ScreenSpaceReflection->GetSSRRadianceSRV());
+    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureSSAO"}.Set(m_ScreenSpaceAmbientOcclusion->GetAmbientOcclusionSRV());
 
     ScopedDebugGroup DebugGroup{m_pImmediateContext, "ComputeLighting"};
 
@@ -685,6 +728,7 @@ void Tutorial27_PostProcessing::UpdateUI()
         if (ImGui::TreeNode("Rendering"))
         {
             ImGui::SliderFloat("Screen Space Reflection Strength", &m_ShaderSettings->SSRStrength, 0.0f, 1.0f);
+            ImGui::SliderFloat("Screen Space Ambient Occlusion Strength", &m_ShaderSettings->SSAOStrength, 0.0f, 1.0f);
             ImGui::Checkbox("Enable Animation", &m_IsAnimationActive);
             ImGui::Checkbox("Enable TAA", &m_ShaderSettings->TAAEnabled);
             ImGui::TreePop();
@@ -697,6 +741,18 @@ void Tutorial27_PostProcessing::UpdateUI()
             {
                 m_ScreenSpaceReflection->UpdateUI(m_ShaderSettings->SSRSettings);
                 ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSRFeatureHalfRes);
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Screen Space Ambient Occlusion"))
+            {
+                const char* AlgorithmType[] = {"GTAO", "HBAO"};
+                const char* FilterType[]    = {"Bilateral", "Guided"};
+
+                m_ScreenSpaceAmbientOcclusion->UpdateUI(m_ShaderSettings->SSAOSettings);
+                ImGui::Checkbox("Enable Half Precision Depth", &m_ShaderSettings->SSAOFeatureHalfPrecisionDepth);
+                ImGui::Combo("Algorithm", &m_ShaderSettings->SSAOAlgorithmType, AlgorithmType, _countof(AlgorithmType));
+                ImGui::Combo("Filter", &m_ShaderSettings->SSAOReconstructionFilterType, FilterType, _countof(FilterType));
                 ImGui::TreePop();
             }
 
