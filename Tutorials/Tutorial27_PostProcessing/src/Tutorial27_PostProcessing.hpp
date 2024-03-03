@@ -68,7 +68,7 @@ public:
     const Char* GetSampleName() const override final { return "Tutorial27: Post Processing"; }
 
 private:
-    void PreparePostFXContext();
+    void PreparePostFXResources();
 
     void GenerateGeometry();
 

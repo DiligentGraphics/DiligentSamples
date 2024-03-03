@@ -239,7 +239,7 @@ void Tutorial27_PostProcessing::Render()
     m_pImmediateContext->UpdateBuffer(m_Resources[RESOURCE_IDENTIFIER_OBJECT_ATTRIBS_CONSTANT_BUFFER].AsBuffer(), 0, sizeof(HLSL::ObjectAttribs) * m_MaxObjectCount, m_ObjectAttribs.get(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->UpdateBuffer(m_Resources[RESOURCE_IDENTIFIER_MATERIAL_ATTRIBS_CONSTANT_BUFFER].AsBuffer(), 0, sizeof(HLSL::MaterialAttribs) * m_MaxMaterialCount, m_MaterialAttribs.get(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    PreparePostFXContext();
+    PreparePostFXResources();
     GenerateGeometry();
     ComputeSSR();
     ComputeSSAO();
@@ -427,7 +427,7 @@ void Tutorial27_PostProcessing::WindowResize(Uint32 Width, Uint32 Height)
     }
 }
 
-void Tutorial27_PostProcessing::PreparePostFXContext()
+void Tutorial27_PostProcessing::PreparePostFXResources()
 {
     {
         PostFXContext::FrameDesc FrameDesc;
@@ -443,6 +443,44 @@ void Tutorial27_PostProcessing::PreparePostFXContext()
         PostFXAttibs.pDeviceContext   = m_pImmediateContext;
         PostFXAttibs.pCameraAttribsCB = m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer();
         m_PostFXContext->Execute(PostFXAttibs);
+    }
+
+    if (m_ShaderSettings->SSRStrength > 0.0)
+    {
+        auto ActiveFeatures = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+
+        if (m_ShaderSettings->SSRFeatureHalfRes)
+            ActiveFeatures |= ScreenSpaceReflection::FEATURE_FLAG_HALF_RESOLUTION;
+
+        m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_PostFXContext.get(), ActiveFeatures);
+    }
+
+    if (m_ShaderSettings->SSAOStrength > 0.0)
+    {
+        auto ActiveFeatures = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+
+        if (m_ShaderSettings->SSAOFeatureHalfPrecisionDepth)
+            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_HALF_PRECISION_DEPTH;
+
+        if (m_ShaderSettings->SSAOAlgorithmType)
+            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_UNIFORM_WEIGHTING;
+
+        if (m_ShaderSettings->SSAOReconstructionFilterType)
+            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_GUIDED_FILTER;
+
+        m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_PostFXContext.get(), ActiveFeatures);
+    }
+
+    if (m_ShaderSettings->TAAEnabled)
+    {
+        auto ActiveFeatures = TemporalAntiAliasing::FEATURE_FLAG_NONE;
+        if (m_ShaderSettings->TAAFeatureBicubicFiltering)
+            ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
+
+        if (m_ShaderSettings->TAAFeatureGaussWeighting)
+            ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_GAUSSIAN_WEIGHTING;
+
+        m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_PostFXContext.get(), ActiveFeatures);
     }
 }
 
@@ -523,57 +561,43 @@ void Tutorial27_PostProcessing::GenerateGeometry()
 
 void Tutorial27_PostProcessing::ComputeSSR()
 {
-    const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
-    const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
+    if (m_ShaderSettings->SSRStrength > 0.0)
+    {
+        const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+        const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
 
-    auto FeatureFlags = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
-
-    if (m_ShaderSettings->SSRFeatureHalfRes)
-        FeatureFlags |= ScreenSpaceReflection::FEATURE_FLAG_HALF_RESOLUTION;
-
-    m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_PostFXContext.get(), FeatureFlags);
-
-    ScreenSpaceReflection::RenderAttributes SSRRenderAttribs{};
-    SSRRenderAttribs.pDevice            = m_pDevice;
-    SSRRenderAttribs.pDeviceContext     = m_pImmediateContext;
-    SSRRenderAttribs.pPostFXContext     = m_PostFXContext.get();
-    SSRRenderAttribs.pColorBufferSRV    = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + PrevFrameIdx].GetTextureSRV();
-    SSRRenderAttribs.pDepthBufferSRV    = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
-    SSRRenderAttribs.pNormalBufferSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    SSRRenderAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    SSRRenderAttribs.pSSRAttribs        = &m_ShaderSettings->SSRSettings;
-    m_ScreenSpaceReflection->Execute(SSRRenderAttribs);
+        ScreenSpaceReflection::RenderAttributes SSRRenderAttribs{};
+        SSRRenderAttribs.pDevice            = m_pDevice;
+        SSRRenderAttribs.pDeviceContext     = m_pImmediateContext;
+        SSRRenderAttribs.pPostFXContext     = m_PostFXContext.get();
+        SSRRenderAttribs.pColorBufferSRV    = m_ShaderSettings->TAAEnabled ? m_TemporalAntiAliasing->GetAccumulatedFrameSRV(true) : m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + PrevFrameIdx].GetTextureSRV();
+        SSRRenderAttribs.pDepthBufferSRV    = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+        SSRRenderAttribs.pNormalBufferSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        SSRRenderAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        SSRRenderAttribs.pSSRAttribs        = &m_ShaderSettings->SSRSettings;
+        m_ScreenSpaceReflection->Execute(SSRRenderAttribs);
+    }
 }
 
 void Tutorial27_PostProcessing::ComputeSSAO()
 {
-    const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
-    const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
+    if (m_ShaderSettings->SSAOStrength > 0.0)
+    {
+        const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+        const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
 
-    auto FeatureFlags = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
-
-    if (m_ShaderSettings->SSAOFeatureHalfPrecisionDepth)
-        FeatureFlags |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_HALF_PRECISION_DEPTH;
-
-    if (m_ShaderSettings->SSAOAlgorithmType)
-        FeatureFlags |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_UNIFORM_WEIGHTING;
-
-    if (m_ShaderSettings->SSAOReconstructionFilterType)
-        FeatureFlags |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_GUIDED_FILTER;
-
-    m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_PostFXContext.get(), FeatureFlags);
-
-    ScreenSpaceAmbientOcclusion::RenderAttributes SSAORenderAttribs{};
-    SSAORenderAttribs.pDevice             = m_pDevice;
-    SSAORenderAttribs.pDeviceContext      = m_pImmediateContext;
-    SSAORenderAttribs.pPostFXContext      = m_PostFXContext.get();
-    SSAORenderAttribs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
-    SSAORenderAttribs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
-    SSAORenderAttribs.pNormalBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    SSAORenderAttribs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    SSAORenderAttribs.pSSAOAttribs        = &m_ShaderSettings->SSAOSettings;
-    m_ScreenSpaceAmbientOcclusion->Execute(SSAORenderAttribs);
+        ScreenSpaceAmbientOcclusion::RenderAttributes SSAORenderAttribs{};
+        SSAORenderAttribs.pDevice             = m_pDevice;
+        SSAORenderAttribs.pDeviceContext      = m_pImmediateContext;
+        SSAORenderAttribs.pPostFXContext      = m_PostFXContext.get();
+        SSAORenderAttribs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+        SSAORenderAttribs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
+        SSAORenderAttribs.pNormalBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        SSAORenderAttribs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        SSAORenderAttribs.pSSAOAttribs        = &m_ShaderSettings->SSAOSettings;
+        m_ScreenSpaceAmbientOcclusion->Execute(SSAORenderAttribs);
+    }
 }
 
 void Tutorial27_PostProcessing::ComputeLighting()
@@ -651,23 +675,14 @@ void Tutorial27_PostProcessing::ComputeTAA()
         const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
         const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
 
-        m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_PostFXContext.get(), {TEX_FORMAT_RGBA16_FLOAT});
-        TemporalAntiAliasing::FEATURE_FLAGS ActiveFeatures = TemporalAntiAliasing::FEATURE_FLAG_DEPTH_DISOCCLUSION;
-        if (m_ShaderSettings->TAAFeatureBicubicFiltering)
-            ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
-
-        if (m_ShaderSettings->TAAFeatureGaussWeighting)
-            ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_GAUSSIAN_WEIGHTING;
-
         TemporalAntiAliasing::RenderAttributes TAARenderAttribs{};
         TAARenderAttribs.pDevice             = m_pDevice;
         TAARenderAttribs.pDeviceContext      = m_pImmediateContext;
         TAARenderAttribs.pPostFXContext      = m_PostFXContext.get();
         TAARenderAttribs.pColorBufferSRV     = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
-        TAARenderAttribs.pDepthBufferSRV     = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+        TAARenderAttribs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
         TAARenderAttribs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
         TAARenderAttribs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        TAARenderAttribs.FeatureFlag         = ActiveFeatures;
         TAARenderAttribs.pTAAAttribs         = &m_ShaderSettings->TAASettings;
         m_TemporalAntiAliasing->Execute(TAARenderAttribs);
     }
