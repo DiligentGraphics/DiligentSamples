@@ -607,7 +607,9 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
     }
 
-    CreateUniformBuffer(m_pDevice, sizeof(HLSL::PBRFrameAttribs), "PBR frame attribs buffer", &m_FrameAttribsCB);
+    CreateGLTFRenderer();
+
+    CreateUniformBuffer(m_pDevice, m_GLTFRenderer->GetPRBFrameAttribsSize(), "PBR frame attribs buffer", &m_FrameAttribsCB);
     // clang-format off
     StateTransitionDesc Barriers [] =
     {
@@ -617,7 +619,6 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
-    CreateGLTFRenderer();
     CrateEnvMapRenderer();
     CreateVectorFieldRenderer();
     m_PostFXContext = std::make_unique<PostFXContext>(m_pDevice);
@@ -1129,9 +1130,14 @@ void GLTFViewer::Render()
             }
         }
         {
-            auto& Light     = FrameAttribs->Light;
-            Light.Direction = m_LightDirection;
-            Light.Intensity = m_LightColor * m_LightIntensity;
+#ifdef PBR_MAX_LIGHTS
+#    error PBR_MAX_LIGHTS should not be defined here
+#endif
+            // Light data follows the render attributes
+            auto* Lights        = reinterpret_cast<HLSL::PBRLightAttribs*>(FrameAttribs + 1);
+            Lights[0].Type      = static_cast<int>(GLTF::Light::TYPE::DIRECTIONAL);
+            Lights[0].Direction = m_LightDirection;
+            Lights[0].Intensity = m_LightColor * m_LightIntensity;
         }
         {
             auto& Renderer = FrameAttribs->Renderer;
@@ -1147,6 +1153,7 @@ void GLTFViewer::Render()
             Renderer.UnshadedColor     = m_ShaderAttribs.WireframeColor;
             Renderer.PointSize         = 1;
             Renderer.MipBias           = 0;
+            Renderer.LightCount        = 1;
         }
     }
 
