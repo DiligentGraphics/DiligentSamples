@@ -138,6 +138,7 @@ private:
     std::array<GLTF::ModelTransforms, 2>  m_Transforms; // [0] - current frame, [1] - previous frame
     BoundBox                              m_ModelAABB;
     float4x4                              m_ModelTransform;
+    float                                 m_SceneScale = 1.f;
     RefCntAutoPtr<IBuffer>                m_FrameAttribsCB;
     RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
     RefCntAutoPtr<ITextureView>           m_WhiteFurnaceEnvMapSRV;
@@ -185,6 +186,7 @@ private:
     Uint32 m_CameraId = 0;
 
     std::vector<const GLTF::Node*> m_CameraNodes;
+    std::vector<const GLTF::Node*> m_LightNodes;
 
     std::string m_ModelPath;
 

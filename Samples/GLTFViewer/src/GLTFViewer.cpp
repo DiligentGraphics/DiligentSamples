@@ -169,10 +169,13 @@ void GLTFViewer::LoadModel(const char* Path)
 
     m_CameraId = 0;
     m_CameraNodes.clear();
+    m_LightNodes.clear();
     for (const auto* node : m_Model->Scenes[m_RenderParams.SceneIndex].LinearNodes)
     {
         if (node->pCamera != nullptr && node->pCamera->Type == GLTF::Camera::Projection::Perspective)
             m_CameraNodes.push_back(node);
+        if (node->pLight != nullptr)
+            m_LightNodes.push_back(node);
     }
 
     if (strstr(Path, "EnvironmentTest") != nullptr)
@@ -201,12 +204,12 @@ void GLTFViewer::UpdateScene()
     MaxDim = std::max(MaxDim, ModelDim.y);
     MaxDim = std::max(MaxDim, ModelDim.z);
 
-    float    Scale     = (1.0f / std::max(MaxDim, 0.01f)) * 0.5f;
+    m_SceneScale       = (1.0f / std::max(MaxDim, 0.01f)) * 0.5f;
     auto     Translate = -m_ModelAABB.Min - 0.5f * ModelDim;
     float4x4 InvYAxis  = float4x4::Identity();
     InvYAxis._22       = -1;
 
-    m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(Scale) * InvYAxis;
+    m_ModelTransform = float4x4::Translation(Translate) * float4x4::Scale(m_SceneScale) * InvYAxis;
     m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms[0], m_ModelTransform);
     m_ModelAABB     = m_Model->ComputeBoundingBox(m_RenderParams.SceneIndex, m_Transforms[0]);
     m_Transforms[1] = m_Transforms[0];
@@ -789,7 +792,10 @@ void GLTFViewer::UpdateUI()
             if (ImGui::gizmo3D("Model Rotation", ModelRotation, ImGui::GetTextLineHeight() * 10))
                 m_Camera.SetSecondaryRotation(ModelRotation);
             ImGui::SameLine();
-            ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
+            if (m_LightNodes.empty())
+            {
+                ImGui::gizmo3D("Light direction", m_LightDirection, ImGui::GetTextLineHeight() * 10);
+            }
 
             if (ImGui::Button("Reset view"))
             {
@@ -804,13 +810,16 @@ void GLTFViewer::UpdateUI()
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::TreeNode("Lighting"))
         {
-            ImGui::ColorEdit3("Light Color", &m_LightColor.r);
-            // clang-format off
-            ImGui::SliderFloat("Light Intensity",    &m_LightIntensity,                  0.f, 50.f);
-            ImGui::SliderFloat("Occlusion strength", &m_ShaderAttribs.OcclusionStrength, 0.f,  1.f);
-            ImGui::SliderFloat("Emission scale",     &m_ShaderAttribs.EmissionScale,     0.f,  1.f);
-            ImGui::SliderFloat("IBL scale",          &m_ShaderAttribs.IBLScale,          0.f,  1.f);
-            // clang-format on
+            if (m_LightNodes.empty())
+            {
+                ImGui::ColorEdit3("Light Color", &m_LightColor.r);
+                ImGui::SliderFloat("Light Intensity", &m_LightIntensity, 0.f, 50.f);
+            }
+
+            ImGui::SliderFloat("Occlusion strength", &m_ShaderAttribs.OcclusionStrength, 0.f, 1.f);
+            ImGui::SliderFloat("Emission scale", &m_ShaderAttribs.EmissionScale, 0.f, 1.f);
+            ImGui::SliderFloat("IBL scale", &m_ShaderAttribs.IBLScale, 0.f, 1.f);
+
             ImGui::TreePop();
         }
 
@@ -1129,15 +1138,37 @@ void GLTFViewer::Render()
                     FrameAttribs->Camera.f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
             }
         }
+
+        int LightCount = 0;
         {
 #ifdef PBR_MAX_LIGHTS
 #    error PBR_MAX_LIGHTS should not be defined here
 #endif
             // Light data follows the render attributes
-            auto* Lights        = reinterpret_cast<HLSL::PBRLightAttribs*>(FrameAttribs + 1);
-            Lights[0].Type      = static_cast<int>(GLTF::Light::TYPE::DIRECTIONAL);
-            Lights[0].Direction = m_LightDirection;
-            Lights[0].Intensity = m_LightColor * m_LightIntensity;
+            auto* Lights = reinterpret_cast<HLSL::PBRLightAttribs*>(FrameAttribs + 1);
+            if (!m_LightNodes.empty())
+            {
+                LightCount = std::min(static_cast<Uint32>(m_LightNodes.size()), m_GLTFRenderer->GetSettings().MaxLightCount);
+                for (int i = 0; i < LightCount; ++i)
+                {
+                    const auto& LightNode            = *m_LightNodes[i];
+                    const auto  LightGlobalTransform = m_Transforms[m_CurrentFrameNumber & 0x01].NodeGlobalMatrices[LightNode.Index] * m_RenderParams.ModelTransform;
+
+                    // The light direction is along the negative Z axis of the light's local space.
+                    // https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_lights_punctual#adding-light-instances-to-nodes
+                    float3 Direction = -normalize(float3{LightGlobalTransform._31, LightGlobalTransform._32, LightGlobalTransform._33});
+                    float3 Position  = float3{LightGlobalTransform._41, LightGlobalTransform._42, LightGlobalTransform._43};
+
+                    GLTF_PBR_Renderer::WritePBRLightShaderAttribs({LightNode.pLight, &Position, &Direction, m_SceneScale}, Lights + i);
+                }
+            }
+            else
+            {
+                Lights[0].Type      = static_cast<int>(GLTF::Light::TYPE::DIRECTIONAL);
+                Lights[0].Direction = m_LightDirection;
+                Lights[0].Intensity = m_LightColor * m_LightIntensity;
+                LightCount          = 1;
+            }
         }
         {
             auto& Renderer = FrameAttribs->Renderer;
@@ -1153,7 +1184,7 @@ void GLTFViewer::Render()
             Renderer.UnshadedColor     = m_ShaderAttribs.WireframeColor;
             Renderer.PointSize         = 1;
             Renderer.MipBias           = 0;
-            Renderer.LightCount        = 1;
+            Renderer.LightCount        = LightCount;
         }
     }
 
