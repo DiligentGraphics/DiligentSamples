@@ -96,7 +96,6 @@ private:
 
         USD::HnRenderBuffer* FinalColorTarget = nullptr;
         USD::HnCamera*       Camera           = nullptr;
-        USD::HnLight*        Light            = nullptr;
 
         pxr::SdfPath SelectedPrimId;
 
@@ -152,10 +151,6 @@ private:
     TrackballCamera<float> m_Camera;
     float4x4               m_CameraView;
     float4x4               m_CameraProj;
-
-    float3 m_LightDirection = normalize(float3{0.5f, 0.6f, -0.2f});
-    float4 m_LightColor     = {1, 1, 1, 1};
-    float  m_LightIntensity = 3.f;
 
     struct RenderStats
     {

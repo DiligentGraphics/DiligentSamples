@@ -69,6 +69,7 @@ PRIVATE
     DiligentFX
     usd_usdGeom
     usd_work
+    usd_usdLux
 )
 set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)
 

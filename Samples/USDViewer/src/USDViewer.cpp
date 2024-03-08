@@ -55,6 +55,10 @@
 #include "pxr/usd/usd/property.h"
 #include "pxr/usd/usdGeom/metrics.h"
 #include "pxr/usd/usdGeom/camera.h"
+#include "pxr/usd/usdLux/distantLight.h"
+#include "pxr/usd/usdLux/sphereLight.h"
+#include "pxr/base/gf/rotation.h"
+
 
 
 namespace Diligent
@@ -267,6 +271,12 @@ void USDViewer::LoadStage()
     const pxr::SdfPath CameraId        = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
     pxr::UsdGeomCamera::Define(m_Stage.Stage, CameraId);
 
+    const pxr::SdfPath      LightId   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnLight_"});
+    pxr::UsdLuxDistantLight LightPrim = pxr::UsdLuxDistantLight::Define(m_Stage.Stage, LightId);
+    LightPrim.CreateIntensityAttr().Set(1.f);
+    LightPrim.CreateColorAttr().Set(pxr::GfVec3f{1.0f, 1.0f, 1.0f});
+    LightPrim.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, pxr::GfVec3d{0, 0, 0}});
+
     m_Stage.RenderDelegate = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
 
@@ -283,11 +293,6 @@ void USDViewer::LoadStage()
 
     m_Stage.Camera = static_cast<USD::HnCamera*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->camera, CameraId));
     VERIFY_EXPR(m_Stage.Camera != nullptr);
-
-    const pxr::SdfPath LightId = SceneDelegateId.AppendChild(pxr::TfToken{"_HnLight_"});
-    m_Stage.RenderIndex->InsertSprim(pxr::HdPrimTypeTokens->light, m_Stage.ImagingDelegate.get(), LightId);
-    m_Stage.Light = static_cast<USD::HnLight*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->light, LightId));
-    VERIFY_EXPR(m_Stage.Light != nullptr);
 
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
@@ -366,9 +371,6 @@ void USDViewer::Render()
 
     m_Stage.Camera->SetViewMatrix(m_CameraView);
     m_Stage.Camera->SetProjectionMatrix(m_CameraProj);
-
-    m_Stage.Light->SetDirection(m_LightDirection);
-    m_Stage.Light->SetIntensity(m_LightColor * m_LightIntensity);
 
     m_Stage.FinalColorTarget->SetTarget(m_pSwapChain->GetCurrentBackBufferRTV());
 
@@ -589,9 +591,6 @@ void USDViewer::UpdateUI()
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Lighting"))
                 {
-                    ImGui::ColorEdit3("Light Color", &m_LightColor.r);
-
-                    ImGui::SliderFloat("Light Intensity", &m_LightIntensity, 0.f, 50.f);
                     if (ImGui::SliderFloat("Occlusion strength", &m_FrameParams.Renderer.OcclusionStrength, 0.f, 1.f))
                         UpdateFrameParams = true;
                     if (ImGui::SliderFloat("Emission scale", &m_FrameParams.Renderer.EmissionScale, 0.f, 1.f))
