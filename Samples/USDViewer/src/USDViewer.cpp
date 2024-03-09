@@ -267,15 +267,37 @@ void USDViewer::LoadStage()
     }
     DelegateCI.TextureBindingMode = m_BindingMode;
 
+    const pxr::GfRange3d SceneAABB = ComputeStageAABB(*m_Stage.Stage);
+
+    const float MetersPerUnit = pxr::UsdGeomGetStageMetersPerUnit(m_Stage.Stage);
+    DelegateCI.MetersPerUnit  = MetersPerUnit;
+
     const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
     const pxr::SdfPath CameraId        = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
     pxr::UsdGeomCamera::Define(m_Stage.Stage, CameraId);
 
-    const pxr::SdfPath      LightId   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnLight_"});
-    pxr::UsdLuxDistantLight LightPrim = pxr::UsdLuxDistantLight::Define(m_Stage.Stage, LightId);
-    LightPrim.CreateIntensityAttr().Set(1.f);
-    LightPrim.CreateColorAttr().Set(pxr::GfVec3f{1.0f, 1.0f, 1.0f});
-    LightPrim.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, pxr::GfVec3d{0, 0, 0}});
+    // Directional light
+    {
+        const pxr::SdfPath      LightId   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDirectLight_"});
+        pxr::UsdLuxDistantLight LightPrim = pxr::UsdLuxDistantLight::Define(m_Stage.Stage, LightId);
+        LightPrim.CreateIntensityAttr().Set(5000.f);
+        LightPrim.CreateAngleAttr().Set(1.f);
+        LightPrim.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, pxr::GfVec3d{0, 0, 0}});
+    }
+
+#if 0
+    // Point light
+    {
+        const pxr::SdfPath     LightId   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnPointLight_"});
+        pxr::UsdLuxSphereLight LightPrim = pxr::UsdLuxSphereLight::Define(m_Stage.Stage, LightId);
+        LightPrim.CreateIntensityAttr().Set(0.1f * static_cast<float>(SceneAABB.GetSize().GetLengthSq()));
+        LightPrim.CreateColorAttr().Set(pxr::GfVec3f{1.0f, 0.6f, 0.4f});
+        LightPrim.CreateEnableColorTemperatureAttr().Set(true);
+        LightPrim.CreateColorTemperatureAttr().Set(6200.f);
+        LightPrim.CreateRadiusAttr().Set(0.01f / MetersPerUnit);
+        LightPrim.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0, 0}, 0}, SceneAABB.GetMidpoint()});
+    }
+#endif
 
     m_Stage.RenderDelegate = USD::HnRenderDelegate::Create(DelegateCI);
     m_Stage.RenderIndex.reset(pxr::HdRenderIndex::New(m_Stage.RenderDelegate.get(), pxr::HdDriverVector{}));
@@ -304,18 +326,11 @@ void USDViewer::LoadStage()
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
-    m_PostProcessParams                     = {};
-    m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
-    m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
-    m_PostProcessParams.EnableTAA           = true;
-    m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
-
     const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
-    m_Stage.RootTransform     = GetUpAxisTransform(UpAxis);
+    m_Stage.RootTransform     = Diligent::float4x4::Scale(MetersPerUnit) * GetUpAxisTransform(UpAxis);
     m_Stage.ImagingDelegate->SetRootTransform(USD::ToGfMatrix4d(m_Stage.RootTransform));
 
-    float                SceneExtent = 100;
-    const pxr::GfRange3d SceneAABB   = ComputeStageAABB(*m_Stage.Stage);
+    float SceneExtent = 1;
     if (!SceneAABB.IsEmpty())
     {
         SceneExtent = 0;
@@ -328,15 +343,25 @@ void USDViewer::LoadStage()
             };
             SceneExtent = std::max(SceneExtent, length(BBCorner));
         }
-        m_Camera.SetDist(SceneExtent * 2.f);
+
+        SceneExtent *= MetersPerUnit;
         m_Camera.SetDistRange(SceneExtent * 0.01f, SceneExtent * 10.f);
     }
     else
     {
-        m_Camera.SetDist(300.f);
-        m_Camera.SetDistRange(0.1f, 10000.f);
+        SceneExtent = 1;
+        m_Camera.SetDistRange(0.01f, 100.f);
     }
+    m_Camera.SetDist(SceneExtent * 2.f);
+
     UpdateCamera();
+
+    m_PostProcessParams                     = {};
+    m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
+    m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
+    m_PostProcessParams.EnableTAA           = true;
+    m_PostProcessParams.SSAORadius          = std::min(SceneExtent * 0.1f, 5.f);
+    m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
     USD::HnRenderAxesTaskParams RenderAxesParams;
     RenderAxesParams.Transform = float4x4::Scale(SceneExtent * 2.f) * m_Stage.RootTransform;
