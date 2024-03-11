@@ -288,6 +288,15 @@ void USDViewer::LoadStage()
         // Enable shadows
         pxr::UsdLuxShadowAPI ShadowAPI = pxr::UsdLuxShadowAPI::Apply(DirectLight.GetPrim());
         ShadowAPI.CreateShadowEnableAttr().Set(true);
+
+        // Create the shadow resolution attribute
+        pxr::UsdAttribute ShadowResolutionAttr = ShadowAPI.GetPrim().CreateAttribute(
+            pxr::TfToken("inputs:shadow:resolution"), // Attribute name
+            pxr::SdfValueTypeNames->Int,              // Attribute type
+            false                                     // Not custom
+        );
+        // Set the shadow resolution value
+        ShadowResolutionAttr.Set(2048);
     }
 
 #if 0
