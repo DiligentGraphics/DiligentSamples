@@ -57,6 +57,7 @@
 #include "pxr/usd/usdGeom/camera.h"
 #include "pxr/usd/usdLux/distantLight.h"
 #include "pxr/usd/usdLux/sphereLight.h"
+#include <pxr/usd/usdLux/shadowAPI.h>
 #include "pxr/base/gf/rotation.h"
 
 
@@ -278,24 +279,28 @@ void USDViewer::LoadStage()
 
     // Directional light
     {
-        const pxr::SdfPath      LightId   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDirectLight_"});
-        pxr::UsdLuxDistantLight LightPrim = pxr::UsdLuxDistantLight::Define(m_Stage.Stage, LightId);
-        LightPrim.CreateIntensityAttr().Set(5000.f);
-        LightPrim.CreateAngleAttr().Set(1.f);
-        LightPrim.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, pxr::GfVec3d{0, 0, 0}});
+        const pxr::SdfPath      LightId     = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDirectLight_"});
+        pxr::UsdLuxDistantLight DirectLight = pxr::UsdLuxDistantLight::Define(m_Stage.Stage, LightId);
+        DirectLight.CreateIntensityAttr().Set(5000.f);
+        DirectLight.CreateAngleAttr().Set(1.f);
+        DirectLight.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, pxr::GfVec3d{0, 0, 0}});
+
+        // Enable shadows
+        pxr::UsdLuxShadowAPI ShadowAPI = pxr::UsdLuxShadowAPI::Apply(DirectLight.GetPrim());
+        ShadowAPI.CreateShadowEnableAttr().Set(true);
     }
 
 #if 0
     // Point light
     {
-        const pxr::SdfPath     LightId   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnPointLight_"});
-        pxr::UsdLuxSphereLight LightPrim = pxr::UsdLuxSphereLight::Define(m_Stage.Stage, LightId);
-        LightPrim.CreateIntensityAttr().Set(0.1f * static_cast<float>(SceneAABB.GetSize().GetLengthSq()));
-        LightPrim.CreateColorAttr().Set(pxr::GfVec3f{1.0f, 0.6f, 0.4f});
-        LightPrim.CreateEnableColorTemperatureAttr().Set(true);
-        LightPrim.CreateColorTemperatureAttr().Set(6200.f);
-        LightPrim.CreateRadiusAttr().Set(0.01f / MetersPerUnit);
-        LightPrim.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0, 0}, 0}, SceneAABB.GetMidpoint()});
+        const pxr::SdfPath     LightId    = SceneDelegateId.AppendChild(pxr::TfToken{"_HnPointLight_"});
+        pxr::UsdLuxSphereLight PointLight = pxr::UsdLuxSphereLight::Define(m_Stage.Stage, LightId);
+        PointLight.CreateIntensityAttr().Set(0.1f * static_cast<float>(SceneAABB.GetSize().GetLengthSq()));
+        PointLight.CreateColorAttr().Set(pxr::GfVec3f{1.0f, 0.6f, 0.4f});
+        PointLight.CreateEnableColorTemperatureAttr().Set(true);
+        PointLight.CreateColorTemperatureAttr().Set(6200.f);
+        PointLight.CreateRadiusAttr().Set(0.01f / MetersPerUnit);
+        PointLight.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0, 0}, 0}, SceneAABB.GetMidpoint()});
     }
 #endif
 
@@ -364,7 +369,7 @@ void USDViewer::LoadStage()
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
     USD::HnRenderAxesTaskParams RenderAxesParams;
-    RenderAxesParams.Transform = float4x4::Scale(SceneExtent * 2.f) * m_Stage.RootTransform;
+    RenderAxesParams.Transform = float4x4::Scale(SceneExtent / MetersPerUnit * 2.f) * m_Stage.RootTransform;
     m_Stage.TaskManager->SetRenderAxesParams(RenderAxesParams);
 
     if (UpAxis == pxr::UsdGeomTokens->x)
