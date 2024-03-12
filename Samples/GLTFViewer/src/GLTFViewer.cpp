@@ -136,6 +136,9 @@ GLTFViewer::GLTFViewer() :
     m_Camera.ResetDefaults();
     // Apply extra rotation to adjust the view to match Khronos GLTF viewer
     m_Camera.SetExtraRotation(QuaternionF::RotationFromAxisAngle(float3{0.75, 0.0, 0.75}, PI_F));
+
+    m_DefaultLight.Type      = GLTF::Light::TYPE::DIRECTIONAL;
+    m_DefaultLight.Intensity = 3.f;
 }
 
 void GLTFViewer::LoadModel(const char* Path)
@@ -181,12 +184,12 @@ void GLTFViewer::LoadModel(const char* Path)
     if (strstr(Path, "EnvironmentTest") != nullptr)
     {
         SetEnvironmentMap(m_WhiteFurnaceEnvMapSRV);
-        m_LightIntensity = 0.0f;
+        m_DefaultLight.Intensity = 0.0f;
     }
     else
     {
         if (SetEnvironmentMap(m_EnvironmentMapSRV))
-            m_LightIntensity = 3.f;
+            m_DefaultLight.Intensity = 3.f;
     }
 
     m_ModelPath = Path;
@@ -812,8 +815,8 @@ void GLTFViewer::UpdateUI()
         {
             if (m_LightNodes.empty())
             {
-                ImGui::ColorEdit3("Light Color", &m_LightColor.r);
-                ImGui::SliderFloat("Light Intensity", &m_LightIntensity, 0.f, 50.f);
+                ImGui::ColorEdit3("Light Color", m_DefaultLight.Color.Data());
+                ImGui::SliderFloat("Light Intensity", &m_DefaultLight.Intensity, 0.f, 50.f);
             }
 
             ImGui::SliderFloat("Occlusion strength", &m_ShaderAttribs.OcclusionStrength, 0.f, 1.f);
@@ -1164,10 +1167,8 @@ void GLTFViewer::Render()
             }
             else
             {
-                Lights[0].Type      = static_cast<int>(GLTF::Light::TYPE::DIRECTIONAL);
-                Lights[0].Direction = m_LightDirection;
-                Lights[0].Intensity = m_LightColor * m_LightIntensity;
-                LightCount          = 1;
+                GLTF_PBR_Renderer::WritePBRLightShaderAttribs({&m_DefaultLight, nullptr, &m_LightDirection, m_SceneScale}, Lights);
+                LightCount = 1;
             }
         }
         {

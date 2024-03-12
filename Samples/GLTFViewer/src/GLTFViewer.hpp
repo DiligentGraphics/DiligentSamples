@@ -106,11 +106,10 @@ private:
     };
     ShaderParams m_ShaderAttribs;
 
-    float3 m_LightDirection;
-    float4 m_LightColor     = float4(1, 1, 1, 1);
-    float  m_LightIntensity = 3.f;
-    float  m_EnvMapMipLevel = 1.f;
-    int    m_SelectedModel  = 0;
+    GLTF::Light m_DefaultLight;
+    float3      m_LightDirection;
+    float       m_EnvMapMipLevel = 1.f;
+    int         m_SelectedModel  = 0;
 
     struct ModelInfo
     {
