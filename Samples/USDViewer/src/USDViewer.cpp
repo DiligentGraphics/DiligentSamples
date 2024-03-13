@@ -252,6 +252,7 @@ void USDViewer::LoadStage()
     DelegateCI.pRenderStateCache = m_pStateCache;
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
+    DelegateCI.EnableShadows     = true;
     if (m_pDevice->GetDeviceInfo().Features.BindlessResources)
     {
         m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC;
