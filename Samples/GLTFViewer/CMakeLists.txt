@@ -11,8 +11,6 @@ set(INCLUDE
 )
 
 set(SHADERS
-    assets/shaders/BoundBox.vsh
-    assets/shaders/BoundBox.psh
     assets/shaders/ApplyPostEffects.psh
 )
 
@@ -37,19 +35,15 @@ set(TEXTURES
     assets/textures/charlie_preintegrated.jpg
 )
 
-set(RENDER_STATES assets/render_states/RenderStates.json)
-
 set(ASSETS
     ${MODELS}
     ${TEXTURES}
-    ${RENDER_STATES}
 )
 
 add_sample_app("GLTFViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 target_link_libraries(GLTFViewer 
 PRIVATE
     Diligent-AssetLoader 
-    Diligent-RenderStateNotation 
     DiligentFX
 )
 
@@ -60,11 +54,6 @@ target_include_directories(GLTFViewer PRIVATE
 set_source_files_properties(${ALL_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION Resources/shaders
-)
-
-set_source_files_properties(${RENDER_STATES} PROPERTIES
-    VS_DEPLOYMENT_LOCATION "render_states"
-    MACOSX_PACKAGE_LOCATION "Resources/render_states"
 )
 
 set_source_files_properties(${TEXTURES} PROPERTIES

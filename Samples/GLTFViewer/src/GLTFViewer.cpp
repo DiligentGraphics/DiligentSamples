@@ -43,6 +43,7 @@
 #include "CommandLineParser.hpp"
 #include "GraphicsAccessories.hpp"
 #include "EnvMapRenderer.hpp"
+#include "BoundBoxRenderer.hpp"
 #include "VectorFieldRenderer.hpp"
 #include "PostFXContext.hpp"
 #include "ScreenSpaceReflection.hpp"
@@ -578,6 +579,53 @@ void GLTFViewer::CrateEnvMapRenderer()
     m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
 }
 
+static constexpr char BoundBoxPSMainGL[] = R"(
+void main(in BoundBoxVSOutput VSOut,
+          out float4 Color        : SV_Target0,
+          out float4 Normal       : SV_Target1,
+          out float4 BaseColor    : SV_Target2,
+          out float4 MaterialData : SV_Target3,
+          out float4 MotionVec    : SV_Target4,
+          out float4 SpecularIBL  : SV_Target5)
+{
+    Color        = GetBoundBoxColor(VSOut);
+    Normal       = float4(0.0, 0.0, 0.0, 0.0);
+	BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
+    MaterialData = float4(0.0, 0.0, 0.0, 0.0);
+    MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
+    SpecularIBL  = float4(0.0, 0.0, 0.0, 0.0);
+}
+)";
+
+void GLTFViewer::CrateBoundBoxRenderer()
+{
+    BoundBoxRenderer::CreateInfo BoundBoxRendererCI;
+    BoundBoxRendererCI.pDevice          = m_pDevice;
+    BoundBoxRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
+    if (m_bEnablePostProcessing)
+    {
+        BoundBoxRendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        for (Uint32 i = 0; i < BoundBoxRendererCI.NumRenderTargets; ++i)
+            BoundBoxRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
+        BoundBoxRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+
+        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+        {
+            // Normally, environment map shader only needs to write color and motion vector.
+            // However, on WebGL this results in errors.
+            BoundBoxRendererCI.PSMainSource = BoundBoxPSMainGL;
+        }
+    }
+    else
+    {
+        BoundBoxRendererCI.NumRenderTargets = 1;
+        BoundBoxRendererCI.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        BoundBoxRendererCI.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
+    }
+
+    m_BoundBoxRenderer = std::make_unique<BoundBoxRenderer>(BoundBoxRendererCI);
+}
+
 void GLTFViewer::CreateVectorFieldRenderer()
 {
     VectorFieldRenderer::CreateInfo CI;
@@ -627,27 +675,10 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     CrateEnvMapRenderer();
+    CrateBoundBoxRenderer();
     CreateVectorFieldRenderer();
     m_PostFXContext = std::make_unique<PostFXContext>(m_pDevice);
     m_SSR           = std::make_unique<ScreenSpaceReflection>(m_pDevice);
-
-    RefCntAutoPtr<IRenderStateNotationParser> pRSNParser;
-    {
-        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
-        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("render_states", &pStreamFactory);
-
-        CreateRenderStateNotationParser({}, &pRSNParser);
-        pRSNParser->ParseFile("RenderStates.json", pStreamFactory);
-    }
-
-    RefCntAutoPtr<IRenderStateNotationLoader> pRSNLoader;
-    {
-        RefCntAutoPtr<IShaderSourceInputStreamFactory> pStreamFactory;
-        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("shaders", &pStreamFactory);
-        CreateRenderStateNotationLoader({m_pDevice, pRSNParser, pStreamFactory}, &pRSNLoader);
-    }
-
-    CreateBoundBoxPSO(pRSNLoader);
 
     m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 
@@ -1019,6 +1050,7 @@ void GLTFViewer::UpdateUI()
             {
                 CreateGLTFRenderer();
                 CrateEnvMapRenderer();
+                CrateBoundBoxRenderer();
             }
 
             ImGui::SliderFloat("SSAO scale", &m_ShaderAttribs.SSAOScale, 0.f, 1.f);
@@ -1034,26 +1066,6 @@ void GLTFViewer::UpdateUI()
         }
     }
     ImGui::End();
-}
-
-void GLTFViewer::CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader)
-{
-    auto pCompoundSourceFactory = CreateCompoundShaderSourceFactory(m_pDevice);
-    auto ModifyShaderCI         = MakeCallback([&pCompoundSourceFactory](ShaderCreateInfo& ShaderCI, SHADER_TYPE, bool& CacheShader) {
-        ShaderCI.pShaderSourceStreamFactory = pCompoundSourceFactory;
-        CacheShader                         = true;
-    });
-
-    auto ModifyPsoCI = MakeCallback([this](PipelineStateCreateInfo& PipelineCI) {
-        auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
-        GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = m_pSwapChain->GetDesc().DepthBufferFormat;
-        GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
-    });
-    pRSNLoader->LoadPipelineState({"BoundBox PSO", PIPELINE_TYPE_GRAPHICS, true, ModifyPsoCI, ModifyPsoCI, ModifyShaderCI, ModifyShaderCI}, &m_BoundBoxPSO);
-
-    m_BoundBoxPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_FrameAttribsCB);
-    m_BoundBoxPSO->CreateShaderResourceBinding(&m_BoundBoxSRB, true);
 }
 
 GLTFViewer::~GLTFViewer()
@@ -1121,26 +1133,22 @@ void GLTFViewer::Render()
         {
             if (m_BoundBoxMode != BoundBoxMode::None)
             {
-                float4x4 BBTransform;
                 if (m_BoundBoxMode == BoundBoxMode::Local)
                 {
-                    BBTransform =
+                    m_BoundBoxTransform =
                         float4x4::Scale(m_ModelAABB.Max - m_ModelAABB.Min) *
                         float4x4::Translation(m_ModelAABB.Min) *
                         m_RenderParams.ModelTransform;
                 }
                 else if (m_BoundBoxMode == BoundBoxMode::Global)
                 {
-                    auto TransformedBB = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
-                    BBTransform        = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
+                    auto TransformedBB  = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
+                    m_BoundBoxTransform = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
                 }
                 else
                 {
                     UNEXPECTED("Unexpected bound box mode");
                 }
-
-                for (int row = 0; row < 4; ++row)
-                    FrameAttribs->Camera.f4ExtraData[row] = float4::MakeVector(BBTransform[row]);
             }
         }
 
@@ -1267,10 +1275,13 @@ void GLTFViewer::Render()
 
     if (m_BoundBoxMode != BoundBoxMode::None)
     {
-        m_pImmediateContext->SetPipelineState(m_BoundBoxPSO);
-        m_pImmediateContext->CommitShaderResources(m_BoundBoxSRB, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
-        DrawAttribs DrawAttrs{24, DRAW_FLAG_VERIFY_ALL};
-        m_pImmediateContext->Draw(DrawAttrs);
+        BoundBoxRenderer::RenderAttribs Attribs;
+        Attribs.ConvertOutputToSRGB = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
+        constexpr float4 BBColor    = float4{0.5, 0.0, 0.0, 1.0};
+        Attribs.Color               = &BBColor;
+        Attribs.BoundBoxTransform   = &m_BoundBoxTransform;
+        m_BoundBoxRenderer->Prepare(m_pImmediateContext, Attribs);
+        m_BoundBoxRenderer->Render(m_pImmediateContext);
     }
 
     if (m_bEnablePostProcessing)

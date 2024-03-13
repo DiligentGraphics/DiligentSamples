@@ -32,7 +32,6 @@
 #include <array>
 
 #include "SampleBase.hpp"
-#include "RenderStateNotationLoader.h"
 #include "GLTFLoader.hpp"
 #include "GLTF_PBR_Renderer.hpp"
 #include "BasicMath.hpp"
@@ -51,6 +50,7 @@ class EnvMapRenderer;
 class VectorFieldRenderer;
 class PostFXContext;
 class ScreenSpaceReflection;
+class BoundBoxRenderer;
 
 class GLTFViewer final : public SampleBase
 {
@@ -66,7 +66,6 @@ public:
     virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
 
 private:
-    void CreateBoundBoxPSO(IRenderStateNotationLoader* pRSNLoader);
     void LoadModel(const char* Path);
     void UpdateScene();
     void UpdateUI();
@@ -75,6 +74,7 @@ private:
     bool SetEnvironmentMap(ITextureView* pEnvMap);
     void CreateGLTFRenderer();
     void CrateEnvMapRenderer();
+    void CrateBoundBoxRenderer();
     void CreateVectorFieldRenderer();
 
     enum class BackgroundMode : int
@@ -111,6 +111,8 @@ private:
     float       m_EnvMapMipLevel = 1.f;
     int         m_SelectedModel  = 0;
 
+    float4x4 m_BoundBoxTransform;
+
     struct ModelInfo
     {
         std::string Name;
@@ -132,17 +134,15 @@ private:
     std::vector<float> m_AnimationTimers;
     float              m_ElapsedTime = 0.f;
 
-    std::unique_ptr<GLTF_PBR_Renderer>    m_GLTFRenderer;
-    std::unique_ptr<GLTF::Model>          m_Model;
-    std::array<GLTF::ModelTransforms, 2>  m_Transforms; // [0] - current frame, [1] - previous frame
-    BoundBox                              m_ModelAABB;
-    float4x4                              m_ModelTransform;
-    float                                 m_SceneScale = 1.f;
-    RefCntAutoPtr<IBuffer>                m_FrameAttribsCB;
-    RefCntAutoPtr<ITextureView>           m_EnvironmentMapSRV;
-    RefCntAutoPtr<ITextureView>           m_WhiteFurnaceEnvMapSRV;
-    RefCntAutoPtr<IPipelineState>         m_BoundBoxPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_BoundBoxSRB;
+    std::unique_ptr<GLTF_PBR_Renderer>   m_GLTFRenderer;
+    std::unique_ptr<GLTF::Model>         m_Model;
+    std::array<GLTF::ModelTransforms, 2> m_Transforms; // [0] - current frame, [1] - previous frame
+    BoundBox                             m_ModelAABB;
+    float4x4                             m_ModelTransform;
+    float                                m_SceneScale = 1.f;
+    RefCntAutoPtr<IBuffer>               m_FrameAttribsCB;
+    RefCntAutoPtr<ITextureView>          m_EnvironmentMapSRV;
+    RefCntAutoPtr<ITextureView>          m_WhiteFurnaceEnvMapSRV;
 
     ITextureView* m_pCurrentEnvMapSRV = nullptr;
 
@@ -167,6 +167,7 @@ private:
     ApplyPosteffects m_ApplyPostFX;
 
     std::unique_ptr<EnvMapRenderer>        m_EnvMapRenderer;
+    std::unique_ptr<BoundBoxRenderer>      m_BoundBoxRenderer;
     std::unique_ptr<VectorFieldRenderer>   m_VectorFieldRenderer;
     std::unique_ptr<PostFXContext>         m_PostFXContext;
     std::unique_ptr<ScreenSpaceReflection> m_SSR;
