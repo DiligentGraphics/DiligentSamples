@@ -1108,7 +1108,7 @@ void GLTFViewer::Render()
         FrameDesc.Height = SCDesc.Height;
         m_PostFXContext->PrepareResources(FrameDesc);
 
-        m_SSR->PrepareResources(m_pDevice, m_PostFXContext.get(), ScreenSpaceReflection::FEATURE_FLAG_NONE);
+        m_SSR->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ScreenSpaceReflection::FEATURE_FLAG_NONE);
 
         m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
         m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);

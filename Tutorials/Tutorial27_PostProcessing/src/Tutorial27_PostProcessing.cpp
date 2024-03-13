@@ -452,7 +452,7 @@ void Tutorial27_PostProcessing::PreparePostFXResources()
         if (m_ShaderSettings->SSRFeatureHalfRes)
             ActiveFeatures |= ScreenSpaceReflection::FEATURE_FLAG_HALF_RESOLUTION;
 
-        m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_PostFXContext.get(), ActiveFeatures);
+        m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->SSAOStrength > 0.0)
@@ -468,7 +468,7 @@ void Tutorial27_PostProcessing::PreparePostFXResources()
         if (m_ShaderSettings->SSAOReconstructionFilterType)
             ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_GUIDED_FILTER;
 
-        m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_PostFXContext.get(), ActiveFeatures);
+        m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->TAAEnabled)
@@ -480,7 +480,7 @@ void Tutorial27_PostProcessing::PreparePostFXResources()
         if (m_ShaderSettings->TAAFeatureGaussWeighting)
             ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_GAUSSIAN_WEIGHTING;
 
-        m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_PostFXContext.get(), ActiveFeatures);
+        m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 }
 
