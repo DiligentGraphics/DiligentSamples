@@ -659,6 +659,7 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NdotV)]                = "n*v";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::PunctualLighting)]     = "Punctual Lighting";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]           = "Diffuse IBL";
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::WhiteBaseColor)]       = "White Base Color";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]          = "Specular IBL";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoat)]            = "Clear Coat";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatFactor)]      = "Clear Coat Factor";
@@ -674,9 +675,9 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceThickness)] = "Iridescence Thickness";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transmission)]         = "Transmission";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
-                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 33, "Did you add a new debug view mode? You may want to handle it here");
+                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 34, "Did you add a new debug view mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Debug view", &m_DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size())))
+                        if (ImGui::Combo("Debug view", &m_DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size()), 15))
                         {
                             m_Stage.RenderDelegate->SetDebugView(static_cast<PBR_Renderer::DebugViewType>(m_DebugViewMode));
                         }

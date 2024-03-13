@@ -890,6 +890,7 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::PunctualLighting, "Punctual Lighting"},
                 {GLTF_PBR_Renderer::DebugViewType::DiffuseIBL, "Diffuse IBL"},
                 {GLTF_PBR_Renderer::DebugViewType::SpecularIBL, "Specular IBL"},
+                {GLTF_PBR_Renderer::DebugViewType::WhiteBaseColor, "White Base Color"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoat, "Clear Coat"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatFactor, "Clear Coat Factor"},
                 {GLTF_PBR_Renderer::DebugViewType::ClearCoatRoughness, "Clear Coat Roughness"},
@@ -905,7 +906,7 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
                 {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
             };
-            static_assert(_countof(DebugViews) == 33, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(_countof(DebugViews) == 34, "Did you add a new debug view mode? You may want to handle it here");
 
             ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }
