@@ -44,7 +44,6 @@
 #include "ShaderMacroHelper.hpp"
 #include "ShaderSourceFactoryUtils.hpp"
 #include "TextureUtilities.h"
-#include "Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh"
 #include "Utilities/interface/DiligentFXShaderSourceStreamFactory.hpp"
 #include "../../Common/src/TexturedCube.hpp"
 
@@ -80,6 +79,7 @@ namespace HLSL
 {
 
 #include "Shaders/Common/public/BasicStructures.fxh"
+#include "Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh"
 #include "Shaders/PostProcess/TemporalAntiAliasing/public/TemporalAntiAliasingStructures.fxh"
 #include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
 #include "Shaders/PostProcess/ScreenSpaceAmbientOcclusion/public/ScreenSpaceAmbientOcclusionStructures.fxh"
