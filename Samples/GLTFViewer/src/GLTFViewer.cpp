@@ -1250,7 +1250,6 @@ void GLTFViewer::Render()
         TMAttribs.fLuminanceSaturation = 1.0;
 
         EnvMapRenderer::RenderAttribs EnvMapAttribs;
-        EnvMapAttribs.pContext      = m_pImmediateContext;
         EnvMapAttribs.pEnvMap       = pEnvMapSRV;
         EnvMapAttribs.AverageLogLum = m_ShaderAttribs.AverageLogLum;
         EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
@@ -1260,7 +1259,8 @@ void GLTFViewer::Render()
         EnvMapAttribs.ConvertOutputToSRGB  = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
         EnvMapAttribs.ComputeMotionVectors = m_bEnablePostProcessing;
 
-        m_EnvMapRenderer->Render(EnvMapAttribs, TMAttribs);
+        m_EnvMapRenderer->Prepare(m_pImmediateContext, EnvMapAttribs, TMAttribs);
+        m_EnvMapRenderer->Render(m_pImmediateContext);
     }
 
     RenderModel(GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_BLEND);
