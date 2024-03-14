@@ -384,7 +384,8 @@ void USDViewer::LoadStage()
     m_Stage.TaskManager->SetRenderAxesParams(RenderAxesParams);
 
     USD::HnRenderBoundBoxTaskParams RenderBoundBoxParams;
-    RenderBoundBoxParams.Color = float4{0.5, 0.0, 0.0, 1.0};
+    RenderBoundBoxParams.Color       = float4{1.0, 1.0, 1.0, 1.0};
+    RenderBoundBoxParams.PatternMask = 0x0000FFFFu;
     m_Stage.TaskManager->SetRenderBoundBoxParams(RenderBoundBoxParams);
 
     if (UpAxis == pxr::UsdGeomTokens->x)
