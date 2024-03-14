@@ -579,6 +579,17 @@ void GLTFViewer::CrateEnvMapRenderer()
     m_EnvMapRenderer = std::make_unique<EnvMapRenderer>(EnvMapRendererCI);
 }
 
+static constexpr char BoundBoxPSMain[] = R"(
+void main(in BoundBoxVSOutput VSOut,
+          out float4 Color        : SV_Target0,
+          out float4 MotionVec    : SV_Target4)
+{
+    BoundBoxOutput BBOutput = GetBoundBoxOutput(VSOut);
+    Color     = BBOutput.Color;
+    MotionVec = float4(BBOutput.MotionVector, 0.0, 1.0);
+}
+)";
+
 static constexpr char BoundBoxPSMainGL[] = R"(
 void main(in BoundBoxVSOutput VSOut,
           out float4 Color        : SV_Target0,
@@ -588,11 +599,12 @@ void main(in BoundBoxVSOutput VSOut,
           out float4 MotionVec    : SV_Target4,
           out float4 SpecularIBL  : SV_Target5)
 {
-    Color        = GetBoundBoxColor(VSOut);
+    BoundBoxOutput BBOutput = GetBoundBoxOutput(VSOut);
+    Color        = BBOutput.Color;
     Normal       = float4(0.0, 0.0, 0.0, 0.0);
 	BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
     MaterialData = float4(0.0, 0.0, 0.0, 0.0);
-    MotionVec    = float4(0.0, 0.0, 0.0, 0.0);
+    MotionVec    = float4(BBOutput.MotionVector, 0.0, 1.0);
     SpecularIBL  = float4(0.0, 0.0, 0.0, 0.0);
 }
 )";
@@ -614,6 +626,10 @@ void GLTFViewer::CrateBoundBoxRenderer()
             // Normally, environment map shader only needs to write color and motion vector.
             // However, on WebGL this results in errors.
             BoundBoxRendererCI.PSMainSource = BoundBoxPSMainGL;
+        }
+        else
+        {
+            BoundBoxRendererCI.PSMainSource = BoundBoxPSMain;
         }
     }
     else
@@ -1276,10 +1292,11 @@ void GLTFViewer::Render()
     if (m_BoundBoxMode != BoundBoxMode::None)
     {
         BoundBoxRenderer::RenderAttribs Attribs;
-        Attribs.ConvertOutputToSRGB = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
-        constexpr float4 BBColor    = float4{0.5, 0.0, 0.0, 1.0};
-        Attribs.Color               = &BBColor;
-        Attribs.BoundBoxTransform   = &m_BoundBoxTransform;
+        Attribs.ConvertOutputToSRGB  = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
+        constexpr float4 BBColor     = float4{0.5, 0.0, 0.0, 1.0};
+        Attribs.Color                = &BBColor;
+        Attribs.BoundBoxTransform    = &m_BoundBoxTransform;
+        Attribs.ComputeMotionVectors = m_bEnablePostProcessing;
         m_BoundBoxRenderer->Prepare(m_pImmediateContext, Attribs);
         m_BoundBoxRenderer->Render(m_pImmediateContext);
     }
