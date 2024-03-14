@@ -41,6 +41,7 @@
 
 #include "Tasks/HnReadRprimIdTask.hpp"
 #include "Tasks/HnRenderAxesTask.hpp"
+#include "Tasks/HnRenderBoundBoxTask.hpp"
 #include "HnTokens.hpp"
 #include "HnCamera.hpp"
 #include "HnLight.hpp"
@@ -381,6 +382,10 @@ void USDViewer::LoadStage()
     USD::HnRenderAxesTaskParams RenderAxesParams;
     RenderAxesParams.Transform = float4x4::Scale(SceneExtent / MetersPerUnit * 2.f) * m_Stage.RootTransform;
     m_Stage.TaskManager->SetRenderAxesParams(RenderAxesParams);
+
+    USD::HnRenderBoundBoxTaskParams RenderBoundBoxParams;
+    RenderBoundBoxParams.Color = float4{0.5, 0.0, 0.0, 1.0};
+    m_Stage.TaskManager->SetRenderBoundBoxParams(RenderBoundBoxParams);
 
     if (UpAxis == pxr::UsdGeomTokens->x)
     {
@@ -787,6 +792,11 @@ void USDViewer::UpdateUI()
                         bool Enabled = m_Stage.TaskManager->AreAxesEnabled();
                         if (ImGui::Checkbox("Axes", &Enabled))
                             m_Stage.TaskManager->EnableAxes(Enabled);
+                    }
+                    {
+                        bool Enabled = m_Stage.TaskManager->IsSelectedPrimBoundBoxEnabled();
+                        if (ImGui::Checkbox("Selected prim bound box", &Enabled))
+                            m_Stage.TaskManager->EnableSelectedPrimBoundBox(Enabled);
                     }
 
                     ImGui::TreePop();
