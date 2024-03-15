@@ -144,6 +144,8 @@ private:
 
     static constexpr Uint32 m_MaxObjectCount   = 32;
     static constexpr Uint32 m_MaxMaterialCount = 24;
+
+    Uint32 m_SSRSettingsDisplayMode = 0;
 };
 
 } // namespace Diligent

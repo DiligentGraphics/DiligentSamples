@@ -125,6 +125,8 @@ private:
     USD::HnPostProcessTaskParams  m_PostProcessParams;
     USD::HnBeginFrameTaskParams   m_FrameParams;
 
+    Uint32 m_SSRSettingsDisplayMode = 0;
+
     int m_DebugViewMode = 0;
     int m_RenderMode    = 0;
 

@@ -47,6 +47,9 @@
 #include "HnLight.hpp"
 #include "GfTypeConversions.hpp"
 #include "ScopedDebugGroup.hpp"
+#include "ScreenSpaceReflection.hpp"
+#include "ScreenSpaceAmbientOcclusion.hpp"
+#include "TemporalAntialiasing.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -376,7 +379,7 @@ void USDViewer::LoadStage()
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
     m_PostProcessParams.EnableTAA           = true;
-    m_PostProcessParams.SSAORadius          = std::min(SceneExtent * 0.1f, 5.f);
+    m_PostProcessParams.SSAO.EffectRadius   = std::min(SceneExtent * 0.1f, 5.f);
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
     USD::HnRenderAxesTaskParams RenderAxesParams;
@@ -543,7 +546,7 @@ void USDViewer::UpdateUI()
     ImGuizmo::BeginFrame();
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 550), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr))
     {
         if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_None))
@@ -733,7 +736,60 @@ void USDViewer::UpdateUI()
 
                 ImGui::Spacing();
 
-                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                {
+                    ImGui::ScopedDisabler Disabler{m_PostProcessParams.SSRScale == 0};
+                    if (ImGui::TreeNode("Screen Space Reflections"))
+                    {
+                        if (ScreenSpaceReflection::UpdateUI(m_PostProcessParams.SSR, m_SSRSettingsDisplayMode))
+                            UpdatePostProcessParams = true;
+
+                        ImGui::Spacing();
+                        if (ImGui::Button("Reset"))
+                        {
+                            m_PostProcessParams.SSR = USD::HnPostProcessTaskParams{}.SSR;
+                            UpdatePostProcessParams = true;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+
+                {
+                    ImGui::ScopedDisabler Disabler{m_PostProcessParams.SSAOScale == 0};
+                    if (ImGui::TreeNode("Screen Space Ambient Occlusion"))
+                    {
+                        if (ScreenSpaceAmbientOcclusion::UpdateUI(m_PostProcessParams.SSAO))
+                            UpdatePostProcessParams = true;
+
+                        ImGui::Spacing();
+                        if (ImGui::Button("Reset"))
+                        {
+                            m_PostProcessParams.SSAO = USD::HnPostProcessTaskParams{}.SSAO;
+                            UpdatePostProcessParams  = true;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+
+                {
+                    ImGui::ScopedDisabler Disabler{!m_PostProcessParams.EnableTAA};
+                    if (ImGui::TreeNode("Temporal Anti Aliasing"))
+                    {
+                        if (TemporalAntiAliasing::UpdateUI(m_PostProcessParams.TAA))
+                            UpdatePostProcessParams = true;
+
+                        ImGui::Spacing();
+                        if (ImGui::Button("Reset"))
+                        {
+                            m_PostProcessParams.TAA = USD::HnPostProcessTaskParams{}.TAA;
+                            UpdatePostProcessParams = true;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+
                 if (ImGui::TreeNode("Tone mapping"))
                 {
                     {

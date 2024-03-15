@@ -754,7 +754,7 @@ void Tutorial27_PostProcessing::UpdateUI()
         {
             if (ImGui::TreeNode("Screen Space Reflections"))
             {
-                m_ScreenSpaceReflection->UpdateUI(m_ShaderSettings->SSRSettings);
+                ScreenSpaceReflection::UpdateUI(m_ShaderSettings->SSRSettings, m_SSRSettingsDisplayMode);
                 ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSRFeatureHalfRes);
                 ImGui::TreePop();
             }
@@ -764,7 +764,7 @@ void Tutorial27_PostProcessing::UpdateUI()
                 const char* AlgorithmType[] = {"GTAO", "HBAO"};
                 const char* FilterType[]    = {"Bilateral", "Guided"};
 
-                m_ScreenSpaceAmbientOcclusion->UpdateUI(m_ShaderSettings->SSAOSettings);
+                ScreenSpaceAmbientOcclusion::UpdateUI(m_ShaderSettings->SSAOSettings);
                 ImGui::Checkbox("Enable Half Precision Depth", &m_ShaderSettings->SSAOFeatureHalfPrecisionDepth);
                 ImGui::Combo("Algorithm", &m_ShaderSettings->SSAOAlgorithmType, AlgorithmType, _countof(AlgorithmType));
                 ImGui::Combo("Filter", &m_ShaderSettings->SSAOReconstructionFilterType, FilterType, _countof(FilterType));
@@ -783,7 +783,7 @@ void Tutorial27_PostProcessing::UpdateUI()
 
             if (ImGui::TreeNode("Temporal Anti Aliasing"))
             {
-                m_TemporalAntiAliasing->UpdateUI(m_ShaderSettings->TAASettings);
+                TemporalAntiAliasing::UpdateUI(m_ShaderSettings->TAASettings);
                 ImGui::Checkbox("Enable Bicubic Filtering", &m_ShaderSettings->TAAFeatureBicubicFiltering);
                 ImGui::Checkbox("Enable Gauss Weighting", &m_ShaderSettings->TAAFeatureGaussWeighting);
                 ImGui::TreePop();
