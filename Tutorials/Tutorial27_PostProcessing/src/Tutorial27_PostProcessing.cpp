@@ -121,8 +121,9 @@ struct Tutorial27_PostProcessing::ShaderSettings
     HLSL::TemporalAntiAliasingAttribs        TAASettings     = {};
 
     float SSRStrength                   = 1.0;
-    bool  SSRFeatureHalfRes             = false;
+    bool  SSRFeatureHalfResosution      = false;
     float SSAOStrength                  = 1.0;
+    bool  SSAOFeatureHalfResolution     = false;
     bool  SSAOFeatureHalfPrecisionDepth = true;
     Int32 SSAOAlgorithmType             = 0;
     Int32 SSAOReconstructionFilterType  = 0;
@@ -239,8 +240,9 @@ void Tutorial27_PostProcessing::Render()
     m_pImmediateContext->UpdateBuffer(m_Resources[RESOURCE_IDENTIFIER_OBJECT_ATTRIBS_CONSTANT_BUFFER].AsBuffer(), 0, sizeof(HLSL::ObjectAttribs) * m_MaxObjectCount, m_ObjectAttribs.get(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->UpdateBuffer(m_Resources[RESOURCE_IDENTIFIER_MATERIAL_ATTRIBS_CONSTANT_BUFFER].AsBuffer(), 0, sizeof(HLSL::MaterialAttribs) * m_MaxMaterialCount, m_MaterialAttribs.get(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    PreparePostFXResources();
+    PrepareResources();
     GenerateGeometry();
+    ComputePostFX();
     ComputeSSR();
     ComputeSSAO();
     ComputeLighting();
@@ -427,29 +429,23 @@ void Tutorial27_PostProcessing::WindowResize(Uint32 Width, Uint32 Height)
     }
 }
 
-void Tutorial27_PostProcessing::PreparePostFXResources()
+void Tutorial27_PostProcessing::PrepareResources()
 {
     {
+        auto ActiveFeatures = PostFXContext::FEATURE_FLAG_NONE;
+
         PostFXContext::FrameDesc FrameDesc;
         FrameDesc.Width  = m_pSwapChain->GetDesc().Width;
         FrameDesc.Height = m_pSwapChain->GetDesc().Height;
         FrameDesc.Index  = m_CurrentFrameNumber;
-        m_PostFXContext->PrepareResources(FrameDesc);
-    }
-
-    {
-        PostFXContext::RenderAttributes PostFXAttibs;
-        PostFXAttibs.pDevice          = m_pDevice;
-        PostFXAttibs.pDeviceContext   = m_pImmediateContext;
-        PostFXAttibs.pCameraAttribsCB = m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer();
-        m_PostFXContext->Execute(PostFXAttibs);
+        m_PostFXContext->PrepareResources(m_pDevice, FrameDesc, ActiveFeatures);
     }
 
     if (m_ShaderSettings->SSRStrength > 0.0)
     {
         auto ActiveFeatures = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
 
-        if (m_ShaderSettings->SSRFeatureHalfRes)
+        if (m_ShaderSettings->SSRFeatureHalfResosution)
             ActiveFeatures |= ScreenSpaceReflection::FEATURE_FLAG_HALF_RESOLUTION;
 
         m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
@@ -467,6 +463,9 @@ void Tutorial27_PostProcessing::PreparePostFXResources()
 
         if (m_ShaderSettings->SSAOReconstructionFilterType)
             ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_GUIDED_FILTER;
+
+        if (m_ShaderSettings->SSAOFeatureHalfResolution)
+            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_HALF_RESOLUTION;
 
         m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
@@ -490,7 +489,7 @@ void Tutorial27_PostProcessing::GenerateGeometry()
     m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
 
     auto& RenderTech = m_RenderTech[RENDER_TECH_GENERATE_GEOMETRY];
-    if (!RenderTech.IsInitialized())
+    if (!RenderTech.IsInitializedPSO())
     {
         ShaderMacroHelper Macros;
         Macros.Add("MAX_MATERIAL_COUNT", m_MaxMaterialCount);
@@ -559,6 +558,23 @@ void Tutorial27_PostProcessing::GenerateGeometry()
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
 }
 
+void Tutorial27_PostProcessing::ComputePostFX()
+{
+    const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+    const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
+
+    {
+        PostFXContext::RenderAttributes PostFXAttibs;
+        PostFXAttibs.pDevice             = m_pDevice;
+        PostFXAttibs.pDeviceContext      = m_pImmediateContext;
+        PostFXAttibs.pCameraAttribsCB    = m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer();
+        PostFXAttibs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+        PostFXAttibs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
+        PostFXAttibs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        m_PostFXContext->Execute(PostFXAttibs);
+    }
+}
+
 void Tutorial27_PostProcessing::ComputeSSR()
 {
     if (m_ShaderSettings->SSRStrength > 0.0)
@@ -594,7 +610,6 @@ void Tutorial27_PostProcessing::ComputeSSAO()
         SSAORenderAttribs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
         SSAORenderAttribs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
         SSAORenderAttribs.pNormalBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        SSAORenderAttribs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         SSAORenderAttribs.pSSAOAttribs        = &m_ShaderSettings->SSAOSettings;
         m_ScreenSpaceAmbientOcclusion->Execute(SSAORenderAttribs);
     }
@@ -603,7 +618,7 @@ void Tutorial27_PostProcessing::ComputeSSAO()
 void Tutorial27_PostProcessing::ComputeLighting()
 {
     auto& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_LIGHTING];
-    if (!RenderTech.IsInitialized())
+    if (!RenderTech.IsInitializedPSO())
     {
         const auto VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
         const auto PS = CreateShader(m_pDevice, nullptr, "ComputeLighting.fx", "ComputeLightingPS", SHADER_TYPE_PIXEL);
@@ -682,7 +697,6 @@ void Tutorial27_PostProcessing::ComputeTAA()
         TAARenderAttribs.pColorBufferSRV     = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
         TAARenderAttribs.pCurrDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
         TAARenderAttribs.pPrevDepthBufferSRV = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + PrevFrameIdx].GetTextureSRV();
-        TAARenderAttribs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         TAARenderAttribs.pTAAAttribs         = &m_ShaderSettings->TAASettings;
         m_TemporalAntiAliasing->Execute(TAARenderAttribs);
     }
@@ -691,7 +705,7 @@ void Tutorial27_PostProcessing::ComputeTAA()
 void Tutorial27_PostProcessing::ApplyToneMap()
 {
     auto& RenderTech = m_RenderTech[RENDER_TECH_APPLY_TONE_MAP];
-    if (!RenderTech.IsInitialized())
+    if (!RenderTech.IsInitializedPSO())
     {
         const bool ConvertOutputToGamma = (m_pSwapChain->GetDesc().ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM ||
                                            m_pSwapChain->GetDesc().ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
@@ -739,6 +753,7 @@ void Tutorial27_PostProcessing::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::Text("FPS: %f", m_fSmoothFPS);
 
         if (ImGui::TreeNode("Rendering"))
         {
@@ -755,7 +770,7 @@ void Tutorial27_PostProcessing::UpdateUI()
             if (ImGui::TreeNode("Screen Space Reflections"))
             {
                 ScreenSpaceReflection::UpdateUI(m_ShaderSettings->SSRSettings, m_SSRSettingsDisplayMode);
-                ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSRFeatureHalfRes);
+                ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSRFeatureHalfResosution);
                 ImGui::TreePop();
             }
 
@@ -765,6 +780,7 @@ void Tutorial27_PostProcessing::UpdateUI()
                 const char* FilterType[]    = {"Bilateral", "Guided"};
 
                 ScreenSpaceAmbientOcclusion::UpdateUI(m_ShaderSettings->SSAOSettings);
+                ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSAOFeatureHalfResolution);
                 ImGui::Checkbox("Enable Half Precision Depth", &m_ShaderSettings->SSAOFeatureHalfPrecisionDepth);
                 ImGui::Combo("Algorithm", &m_ShaderSettings->SSAOAlgorithmType, AlgorithmType, _countof(AlgorithmType));
                 ImGui::Combo("Filter", &m_ShaderSettings->SSAOReconstructionFilterType, FilterType, _countof(FilterType));

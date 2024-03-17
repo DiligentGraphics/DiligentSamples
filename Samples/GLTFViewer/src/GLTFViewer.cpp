@@ -1106,7 +1106,7 @@ void GLTFViewer::Render()
         FrameDesc.Index  = m_CurrentFrameNumber;
         FrameDesc.Width  = SCDesc.Width;
         FrameDesc.Height = SCDesc.Height;
-        m_PostFXContext->PrepareResources(FrameDesc);
+        m_PostFXContext->PrepareResources(m_pDevice, FrameDesc, PostFXContext::FEATURE_FLAG_NONE);
 
         m_SSR->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ScreenSpaceReflection::FEATURE_FLAG_NONE);
 

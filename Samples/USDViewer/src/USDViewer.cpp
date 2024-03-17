@@ -49,7 +49,7 @@
 #include "ScopedDebugGroup.hpp"
 #include "ScreenSpaceReflection.hpp"
 #include "ScreenSpaceAmbientOcclusion.hpp"
-#include "TemporalAntialiasing.hpp"
+#include "TemporalAntiAliasing.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -1001,7 +1001,9 @@ void USDViewer::UpdateUI()
                                     m_Stats.NumVBChanges,
                                     m_Stats.NumIBChanges,
                                     m_Stats.NumBufferMaps, m_Stats.NumBufferUpdates,
-                                    VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(), MemoryStats.VertexPool.AllocationCount, MemoryStats.VertexPool.AllocatedVertexCount / 1000,
+                                    VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(),
+                                    MemoryStats.VertexPool.AllocationCount,
+                                    static_cast<Uint32>(MemoryStats.VertexPool.AllocatedVertexCount / 1000ull),
                                     IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
                                     AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount);
                 ImGui::EndTabItem();
