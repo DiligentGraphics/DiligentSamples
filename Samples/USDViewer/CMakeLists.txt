@@ -61,6 +61,8 @@ target_sources(USDViewer PRIVATE ${IMGUIZMO_SOURCE})
 target_include_directories(USDViewer PRIVATE ${imguizmo_SOURCE_DIR})
 source_group("ImGuizmo" FILES ${IMGUIZMO_SOURCE})
 
+get_target_property(DILIGENT_FX_SOURCE_DIR DiligentFX SOURCE_DIR)
+get_target_property(HYDROGENT_SOURCE_DIR Diligent-Hydrogent SOURCE_DIR)
 
 target_link_libraries(USDViewer
 PRIVATE
@@ -72,5 +74,6 @@ PRIVATE
     usd_usdLux
 )
 set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)
+target_compile_definitions(USDViewer PRIVATE DILIGENT_FX_SHADERS_DIR="${DILIGENT_FX_SOURCE_DIR}/Shaders" HYDROGENT_SHADERS_DIR="${HYDROGENT_SHADER_DIR}/shaders")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS})

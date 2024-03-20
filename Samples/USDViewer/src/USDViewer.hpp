@@ -82,6 +82,8 @@ private:
 private:
     RenderDeviceWithCache_N m_DeviceWithCache;
 
+    bool m_EnableHotShaderReload = false;
+
     struct StageInfo
     {
         // Declaration order matters as the objects must be destroyed in the specific order!

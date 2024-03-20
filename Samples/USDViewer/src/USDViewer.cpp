@@ -141,6 +141,11 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
     ArgsParser.Parse("usd_dir", 'd', ModelsDir);
     UpdateModelsList(ModelsDir);
 
+#ifdef DILIGENT_DEVELOPMENT
+    m_EnableHotShaderReload = true;
+#endif
+    ArgsParser.Parse("shader_reload", 'r', m_EnableHotShaderReload);
+
     return CommandLineStatus::OK;
 }
 
@@ -152,9 +157,30 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     {
         RenderStateCacheCreateInfo StateCacheCI;
         StateCacheCI.LogLevel = RENDER_STATE_CACHE_LOG_LEVEL_NORMAL;
-#ifdef DILIGENT_DEBUG
-        StateCacheCI.EnableHotReload = true;
-#endif
+
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pReloadFactory;
+        if (m_EnableHotShaderReload)
+        {
+            const auto  FXShaderPaths = FileSystem::SearchRecursive(DILIGENT_FX_SHADERS_DIR, "*");
+            std::string ShaderPaths;
+            for (const auto& Shader : FXShaderPaths)
+            {
+                if (!Shader.IsDirectory)
+                    continue;
+
+                if (!ShaderPaths.empty())
+                    ShaderPaths += ";";
+
+                ShaderPaths += DILIGENT_FX_SHADERS_DIR;
+                ShaderPaths += '/';
+                ShaderPaths += Shader.Name;
+            }
+            ShaderPaths += ";";
+            ShaderPaths += HYDROGENT_SHADERS_DIR;
+            m_pDevice->GetEngineFactory()->CreateDefaultShaderSourceStreamFactory(ShaderPaths.c_str(), &pReloadFactory);
+            StateCacheCI.pReloadSource   = pReloadFactory;
+            StateCacheCI.EnableHotReload = true;
+        }
 
         m_DeviceWithCache = RenderDeviceWithCache<false>{m_pDevice, StateCacheCI};
 
@@ -265,6 +291,9 @@ void USDViewer::LoadStage()
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
     DelegateCI.EnableShadows     = true;
+
+    DelegateCI.AllowHotShaderReload = m_EnableHotShaderReload;
+
     if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
         m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC;
@@ -876,6 +905,13 @@ void USDViewer::UpdateUI()
                 }
 
                 ImGui::PopItemWidth();
+
+                if (m_EnableHotShaderReload)
+                {
+                    ImGui::Spacing();
+                    if (ImGui::Button("Reload shaders") && m_DeviceWithCache.GetCache())
+                        m_DeviceWithCache.GetCache()->Reload();
+                }
 
                 ImGui::EndTabItem();
             }
