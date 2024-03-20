@@ -150,9 +150,17 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 
     // Create render state cache
     {
-        RenderStateCacheCreateInfo CacheCI{m_pDevice};
-        CreateRenderStateCache(CacheCI, &m_pStateCache);
-        VERIFY(m_pStateCache, "Failed to create render state cache");
+        RenderStateCacheCreateInfo StateCacheCI;
+        StateCacheCI.LogLevel = RENDER_STATE_CACHE_LOG_LEVEL_NORMAL;
+#ifdef DILIGENT_DEBUG
+        StateCacheCI.EnableHotReload = true;
+#endif
+
+        m_DeviceWithCache = RenderDeviceWithCache<false>{m_pDevice, StateCacheCI};
+
+        const std::string CachePath  = GetRenderStateCacheFilePath(RenderStateCacheLocationAppData, "USDViewer", m_pDevice->GetDeviceInfo().Type);
+        const bool        SaveOnExit = !m_pDevice->GetDeviceInfo().IsGLDevice();
+        m_DeviceWithCache.LoadCacheFromFile(CachePath.c_str(), SaveOnExit);
     }
 
     ImGuizmo::SetGizmoSizeClipSpace(0.15f);
@@ -251,13 +259,13 @@ void USDViewer::LoadStage()
     }
 
     USD::HnRenderDelegate::CreateInfo DelegateCI;
-    DelegateCI.pDevice           = m_pDevice;
+    DelegateCI.pDevice           = m_DeviceWithCache;
     DelegateCI.pContext          = m_pImmediateContext;
-    DelegateCI.pRenderStateCache = m_pStateCache;
+    DelegateCI.pRenderStateCache = m_DeviceWithCache;
     DelegateCI.UseVertexPool     = m_UseVertexPool;
     DelegateCI.UseIndexPool      = m_UseIndexPool;
     DelegateCI.EnableShadows     = true;
-    if (m_pDevice->GetDeviceInfo().Features.BindlessResources)
+    if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
         m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC;
 
@@ -1004,7 +1012,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     {
         auto PosX = static_cast<Uint32>(Mouse.PosX);
         auto PosY = static_cast<Uint32>(Mouse.PosY);
-        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+        if (m_DeviceWithCache.GetDeviceInfo().IsGLDevice())
             PosY = SCDesc.Height - 1 - PosY;
 
         USD::HnReadRprimIdTaskParams Params{true, PosX, PosY};

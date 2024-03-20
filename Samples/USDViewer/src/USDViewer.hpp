@@ -31,6 +31,7 @@
 #include "SampleBase.hpp"
 #include "TrackballCamera.hpp"
 #include "BasicMath.hpp"
+#include "RenderStateCache.hpp"
 
 #include "HnRenderDelegate.hpp"
 #include "Tasks/HnTaskManager.hpp"
@@ -47,8 +48,6 @@
 
 namespace Diligent
 {
-
-struct IRenderStateCache;
 
 namespace USD
 {
@@ -81,7 +80,7 @@ private:
     void UpdateModelsList(const std::string& Dir);
 
 private:
-    RefCntAutoPtr<IRenderStateCache> m_pStateCache;
+    RenderDeviceWithCache_N m_DeviceWithCache;
 
     struct StageInfo
     {
