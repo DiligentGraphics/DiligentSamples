@@ -691,9 +691,9 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
                         static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 34, "Did you add a new debug view mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Debug view", &m_DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size()), 15))
+                        if (ImGui::Combo("Debug view", &m_Stage.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size()), 15))
                         {
-                            m_Stage.RenderDelegate->SetDebugView(static_cast<PBR_Renderer::DebugViewType>(m_DebugViewMode));
+                            m_Stage.RenderDelegate->SetDebugView(static_cast<PBR_Renderer::DebugViewType>(m_Stage.DebugViewMode));
                         }
                     }
 
@@ -704,9 +704,9 @@ void USDViewer::UpdateUI()
                         RenderModes[USD::HN_RENDER_MODE_POINTS]     = "Points";
                         static_assert(USD::HN_RENDER_MODE_COUNT == 3, "Did you add a new render mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Render mode", &m_RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size())))
+                        if (ImGui::Combo("Render mode", &m_Stage.RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size())))
                         {
-                            m_Stage.RenderDelegate->SetRenderMode(static_cast<USD::HN_RENDER_MODE>(m_RenderMode));
+                            m_Stage.RenderDelegate->SetRenderMode(static_cast<USD::HN_RENDER_MODE>(m_Stage.RenderMode));
                         }
                     }
 
@@ -736,8 +736,8 @@ void USDViewer::UpdateUI()
                         UpdatePostProcessParams = true;
                     }
 
-                    if (ImGui::Checkbox("Shadows", &m_UseShadows))
-                        m_Stage.RenderDelegate->SetUseShadows(m_UseShadows);
+                    if (ImGui::Checkbox("Shadows", &m_Stage.UseShadows))
+                        m_Stage.RenderDelegate->SetUseShadows(m_Stage.UseShadows);
 
                     ImGui::TreePop();
                 }

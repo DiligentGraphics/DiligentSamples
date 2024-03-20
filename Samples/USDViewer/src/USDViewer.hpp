@@ -101,6 +101,10 @@ private:
 
         float4x4 RootTransform = float4x4::Identity();
 
+        int  DebugViewMode = 0;
+        int  RenderMode    = 0;
+        bool UseShadows    = true;
+
         struct AnimationInfo
         {
             double TimeCodesPerSecond = 0;
@@ -126,9 +130,6 @@ private:
     USD::HnBeginFrameTaskParams   m_FrameParams;
 
     Uint32 m_SSRSettingsDisplayMode = 0;
-
-    int m_DebugViewMode = 0;
-    int m_RenderMode    = 0;
 
     struct ModelInfo
     {
@@ -182,7 +183,6 @@ private:
     MouseState    m_PrevMouse;
     bool          m_IsSelecting               = false;
     bool          m_ScrolllToSelectedTreeItem = false;
-    bool          m_UseShadows                = true;
 };
 
 } // namespace Diligent
