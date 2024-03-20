@@ -771,7 +771,7 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         Macros.AddShaderMacro("NUM_TILE_TEXTURES", NUM_TILE_TEXTURES);
         Macros.AddShaderMacro("NUM_SHADOW_CASCADES", m_Params.m_iNumShadowCascades);
         Macros.AddShaderMacro("BEST_CASCADE_SEARCH", m_Params.m_bBestCascadeSearch ? true : false);
-        Macros.AddShaderMacro("SHADOW_FILTER_SIZE", m_Params.m_FixedShadowFilterSize);
+        Macros.AddShaderMacro("PCF_FILTER_SIZE", m_Params.m_FixedShadowFilterSize);
         Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_Params.m_FilterAcrossShadowCascades);
 
         auto ShaderCallback = MakeCallback([&](ShaderCreateInfo& pShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {

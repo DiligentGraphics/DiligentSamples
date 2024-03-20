@@ -329,7 +329,7 @@ void ShadowsSample::CreatePipelineStates()
 {
     ShaderMacroHelper Macros;
     Macros.AddShaderMacro("SHADOW_MODE", m_ShadowSettings.iShadowMode);
-    Macros.AddShaderMacro("SHADOW_FILTER_SIZE", m_LightAttribs.ShadowAttribs.iFixedFilterSize);
+    Macros.AddShaderMacro("PCF_FILTER_SIZE", m_LightAttribs.ShadowAttribs.iFixedFilterSize);
     Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_ShadowSettings.FilterAcrossCascades);
     Macros.AddShaderMacro("BEST_CASCADE_SEARCH", m_ShadowSettings.SearchBestCascade);
 

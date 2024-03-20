@@ -282,27 +282,32 @@ void USDViewer::LoadStage()
     const pxr::SdfPath CameraId        = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
     pxr::UsdGeomCamera::Define(m_Stage.Stage, CameraId);
 
-    // Directional light
-    {
-        const pxr::SdfPath      LightId     = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDirectLight_"});
+    auto AddDirectionalLight = [&SceneDelegateId, this](const char* Name, float Intensity, const pxr::GfRotation& Rotation, int ShadowMapRes) {
+        const pxr::SdfPath      LightId     = SceneDelegateId.AppendChild(pxr::TfToken{Name});
         pxr::UsdLuxDistantLight DirectLight = pxr::UsdLuxDistantLight::Define(m_Stage.Stage, LightId);
-        DirectLight.CreateIntensityAttr().Set(5000.f);
+        DirectLight.CreateIntensityAttr().Set(Intensity);
         DirectLight.CreateAngleAttr().Set(1.f);
-        DirectLight.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, pxr::GfVec3d{0, 0, 0}});
+        DirectLight.MakeMatrixXform().Set(pxr::GfMatrix4d{Rotation, pxr::GfVec3d{0, 0, 0}});
 
-        // Enable shadows
-        pxr::UsdLuxShadowAPI ShadowAPI = pxr::UsdLuxShadowAPI::Apply(DirectLight.GetPrim());
-        ShadowAPI.CreateShadowEnableAttr().Set(true);
+        if (ShadowMapRes > 0)
+        {
+            // Enable shadows
+            pxr::UsdLuxShadowAPI ShadowAPI = pxr::UsdLuxShadowAPI::Apply(DirectLight.GetPrim());
+            ShadowAPI.CreateShadowEnableAttr().Set(true);
 
-        // Create the shadow resolution attribute
-        pxr::UsdAttribute ShadowResolutionAttr = ShadowAPI.GetPrim().CreateAttribute(
-            pxr::TfToken("inputs:shadow:resolution"), // Attribute name
-            pxr::SdfValueTypeNames->Int,              // Attribute type
-            false                                     // Not custom
-        );
-        // Set the shadow resolution value
-        ShadowResolutionAttr.Set(2048);
-    }
+            // Create the shadow resolution attribute
+            pxr::UsdAttribute ShadowResolutionAttr = ShadowAPI.GetPrim().CreateAttribute(
+                pxr::TfToken("inputs:shadow:resolution"), // Attribute name
+                pxr::SdfValueTypeNames->Int,              // Attribute type
+                false                                     // Not custom
+            );
+            // Set the shadow resolution value
+            ShadowResolutionAttr.Set(ShadowMapRes);
+        }
+    };
+    AddDirectionalLight("_HnDirectionalLight1_", 10000.f, pxr::GfRotation{pxr::GfVec3d{1, 0.5, 0.0}, -60}, 2048);
+    AddDirectionalLight("_HnDirectionalLight2_", 5000.f, pxr::GfRotation{pxr::GfVec3d{1, -0.5, 0.0}, -50}, 1024);
+    AddDirectionalLight("_HnDirectionalLight3_", 5000.f, pxr::GfRotation{pxr::GfVec3d{1, 0.0, 0.5}, -40}, 1024);
 
 #if 0
     // Point light
@@ -730,6 +735,9 @@ void USDViewer::UpdateUI()
                     {
                         UpdatePostProcessParams = true;
                     }
+
+                    if (ImGui::Checkbox("Shadows", &m_UseShadows))
+                        m_Stage.RenderDelegate->SetUseShadows(m_UseShadows);
 
                     ImGui::TreePop();
                 }

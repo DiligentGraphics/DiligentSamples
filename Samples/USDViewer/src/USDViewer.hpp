@@ -182,6 +182,7 @@ private:
     MouseState    m_PrevMouse;
     bool          m_IsSelecting               = false;
     bool          m_ScrolllToSelectedTreeItem = false;
+    bool          m_UseShadows                = true;
 };
 
 } // namespace Diligent
