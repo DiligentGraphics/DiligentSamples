@@ -59,6 +59,7 @@
 #include "pxr/usd/usd/property.h"
 #include "pxr/usd/usdGeom/metrics.h"
 #include "pxr/usd/usdGeom/camera.h"
+#include "pxr/usd/usdGeom/imageable.h"
 #include "pxr/usd/usdLux/distantLight.h"
 #include "pxr/usd/usdLux/sphereLight.h"
 #include <pxr/usd/usdLux/shadowAPI.h>
@@ -501,6 +502,28 @@ void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
     {
         SetSelectedPrim(Prim.GetPath());
     }
+
+    if (ImGui::BeginPopupContextItem())
+    {
+        // For some reason toggling camera visibility makes USD destroy existing camera
+        // and create a new one.
+        if (m_Stage.Camera->GetId() != Prim.GetPath())
+        {
+            bool IsVisible = m_Stage.ImagingDelegate->GetVisible(Prim.GetPath());
+            if (ImGui::Selectable(IsVisible ? "Hide" : "Show"))
+            {
+                if (pxr::UsdGeomImageable Imageable{Prim})
+                {
+                    if (IsVisible)
+                        Imageable.MakeInvisible();
+                    else
+                        Imageable.MakeVisible();
+                }
+            }
+        }
+        ImGui::EndPopup();
+    }
+
     if (NodeOpen)
     {
         for (const auto& Prop : Prim.GetProperties())
