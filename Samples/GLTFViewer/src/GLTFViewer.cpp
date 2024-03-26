@@ -111,21 +111,24 @@ enum GBUFFER_RT : Uint32
     GBUFFER_RT_MATERIAL_DATA,
     GBUFFER_RT_MOTION_VECTORS,
     GBUFFER_RT_SPECULAR_IBL,
-    GBUFFER_RT_DEPTH,
-    GBUFFER_RT_COUNT
+    GBUFFER_RT_DEPTH0,
+    GBUFFER_RT_DEPTH1,
+    GBUFFER_RT_COUNT,
+    GBUFFER_RT_NUM_COLOR_TARGETS = GBUFFER_RT_SPECULAR_IBL + 1,
 };
 
 enum GBUFFER_RT_FLAG : Uint32
 {
-    GBUFFER_RT_FLAG_COLOR          = 1u << GBUFFER_RT_RADIANCE,
-    GBUFFER_RT_FLAG_NORMAL         = 1u << GBUFFER_RT_NORMAL,
-    GBUFFER_RT_FLAG_BASE_COLOR     = 1u << GBUFFER_RT_BASE_COLOR,
-    GBUFFER_RT_FLAG_MATERIAL_DATA  = 1u << GBUFFER_RT_MATERIAL_DATA,
-    GBUFFER_RT_FLAG_MOTION_VECTORS = 1u << GBUFFER_RT_MOTION_VECTORS,
-    GBUFFER_RT_FLAG_SPECULAR_IBL   = 1u << GBUFFER_RT_SPECULAR_IBL,
-    GBUFFER_RT_FLAG_DEPTH          = 1u << GBUFFER_RT_DEPTH,
-    GBUFFER_RT_FLAG_LAST           = GBUFFER_RT_FLAG_DEPTH,
-    GBUFFER_RT_FLAG_ALL            = (GBUFFER_RT_FLAG_LAST << 1u) - 1u,
+    GBUFFER_RT_FLAG_COLOR             = 1u << GBUFFER_RT_RADIANCE,
+    GBUFFER_RT_FLAG_NORMAL            = 1u << GBUFFER_RT_NORMAL,
+    GBUFFER_RT_FLAG_BASE_COLOR        = 1u << GBUFFER_RT_BASE_COLOR,
+    GBUFFER_RT_FLAG_MATERIAL_DATA     = 1u << GBUFFER_RT_MATERIAL_DATA,
+    GBUFFER_RT_FLAG_MOTION_VECTORS    = 1u << GBUFFER_RT_MOTION_VECTORS,
+    GBUFFER_RT_FLAG_SPECULAR_IBL      = 1u << GBUFFER_RT_SPECULAR_IBL,
+    GBUFFER_RT_FLAG_LAST_COLOR_TARGET = GBUFFER_RT_FLAG_SPECULAR_IBL,
+    GBUFFER_RT_FLAG_ALL_COLOR_TARGETS = (GBUFFER_RT_FLAG_LAST_COLOR_TARGET << 1u) - 1u,
+    GBUFFER_RT_FLAG_DEPTH0            = 1u << GBUFFER_RT_DEPTH0,
+    GBUFFER_RT_FLAG_DEPTH1            = 1u << GBUFFER_RT_DEPTH1
 };
 DEFINE_FLAG_ENUM_OPERATORS(GBUFFER_RT_FLAG);
 
@@ -503,10 +506,10 @@ void GLTFViewer::CreateGLTFRenderer()
         m_RenderParams.Flags &= ~GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING;
         m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_COMPUTE_MOTION_VECTORS;
 
-        RendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        RendererCI.NumRenderTargets = GBUFFER_RT_NUM_COLOR_TARGETS;
         for (Uint32 i = 0; i < RendererCI.NumRenderTargets; ++i)
             RendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
-        RendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+        RendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH0).Format;
     }
     else
     {
@@ -553,10 +556,10 @@ void GLTFViewer::CrateEnvMapRenderer()
     EnvMapRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
     if (m_bEnablePostProcessing)
     {
-        EnvMapRendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        EnvMapRendererCI.NumRenderTargets = GBUFFER_RT_NUM_COLOR_TARGETS;
         for (Uint32 i = 0; i < EnvMapRendererCI.NumRenderTargets; ++i)
             EnvMapRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
-        EnvMapRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+        EnvMapRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH0).Format;
 
         if (m_pDevice->GetDeviceInfo().IsGLDevice())
         {
@@ -616,10 +619,10 @@ void GLTFViewer::CrateBoundBoxRenderer()
     BoundBoxRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
     if (m_bEnablePostProcessing)
     {
-        BoundBoxRendererCI.NumRenderTargets = GBUFFER_RT_DEPTH;
+        BoundBoxRendererCI.NumRenderTargets = GBUFFER_RT_NUM_COLOR_TARGETS;
         for (Uint32 i = 0; i < BoundBoxRendererCI.NumRenderTargets; ++i)
             BoundBoxRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
-        BoundBoxRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH).Format;
+        BoundBoxRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH0).Format;
 
         if (m_pDevice->GetDeviceInfo().IsGLDevice())
         {
@@ -672,8 +675,9 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
         GBufferElems[GBUFFER_RT_MATERIAL_DATA]  = {TEX_FORMAT_RG8_UNORM};
         GBufferElems[GBUFFER_RT_MOTION_VECTORS] = {TEX_FORMAT_RG16_FLOAT};
         GBufferElems[GBUFFER_RT_SPECULAR_IBL]   = {TEX_FORMAT_RGBA16_FLOAT};
-        GBufferElems[GBUFFER_RT_DEPTH]          = {TEX_FORMAT_D32_FLOAT};
-        static_assert(GBUFFER_RT_COUNT == 7, "Not all G-buffer elements are initialized");
+        GBufferElems[GBUFFER_RT_DEPTH0]         = {TEX_FORMAT_D32_FLOAT};
+        GBufferElems[GBUFFER_RT_DEPTH1]         = {TEX_FORMAT_D32_FLOAT};
+        static_assert(GBUFFER_RT_COUNT == 8, "Not all G-buffer elements are initialized");
 
         m_GBuffer = std::make_unique<GBuffer>(GBufferElems, _countof(GBufferElems));
     }
@@ -1111,7 +1115,9 @@ void GLTFViewer::Render()
         m_SSR->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ScreenSpaceReflection::FEATURE_FLAG_NONE);
 
         m_GBuffer->Resize(m_pDevice, SCDesc.Width, SCDesc.Height);
-        m_GBuffer->Bind(m_pImmediateContext, GBUFFER_RT_FLAG_ALL, nullptr, GBUFFER_RT_FLAG_ALL);
+
+        Uint32 BuffersMask = GBUFFER_RT_FLAG_ALL_COLOR_TARGETS | ((m_CurrentFrameNumber & 0x01) ? GBUFFER_RT_FLAG_DEPTH1 : GBUFFER_RT_FLAG_DEPTH0);
+        m_GBuffer->Bind(m_pImmediateContext, BuffersMask, nullptr, BuffersMask);
     }
     else
     {
@@ -1312,11 +1318,16 @@ void GLTFViewer::Render()
             m_pImmediateContext->TransitionResourceStates(GBUFFER_RT_COUNT, Barriers);
         }
 
+        ITextureView* pCurrDepthSRV = m_GBuffer->GetBuffer((m_CurrentFrameNumber & 0x01) ? GBUFFER_RT_DEPTH1 : GBUFFER_RT_DEPTH0)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        ITextureView* pPrevDepthSRV = m_GBuffer->GetBuffer((m_CurrentFrameNumber & 0x01) ? GBUFFER_RT_DEPTH0 : GBUFFER_RT_DEPTH1)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
         {
             PostFXContext::RenderAttributes PostFXAttibs;
-            PostFXAttibs.pDevice          = m_pDevice;
-            PostFXAttibs.pDeviceContext   = m_pImmediateContext;
-            PostFXAttibs.pCameraAttribsCB = m_FrameAttribsCB;
+            PostFXAttibs.pDevice             = m_pDevice;
+            PostFXAttibs.pDeviceContext      = m_pImmediateContext;
+            PostFXAttibs.pCameraAttribsCB    = m_FrameAttribsCB;
+            PostFXAttibs.pCurrDepthBufferSRV = pCurrDepthSRV;
+            PostFXAttibs.pPrevDepthBufferSRV = pPrevDepthSRV;
+            PostFXAttibs.pMotionVectorsSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             m_PostFXContext->Execute(PostFXAttibs);
         }
 
@@ -1330,7 +1341,7 @@ void GLTFViewer::Render()
             SSRRenderAttribs.pDeviceContext     = m_pImmediateContext;
             SSRRenderAttribs.pPostFXContext     = m_PostFXContext.get();
             SSRRenderAttribs.pColorBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_RADIANCE)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-            SSRRenderAttribs.pDepthBufferSRV    = m_GBuffer->GetBuffer(GBUFFER_RT_DEPTH)->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+            SSRRenderAttribs.pDepthBufferSRV    = pCurrDepthSRV;
             SSRRenderAttribs.pNormalBufferSRV   = m_GBuffer->GetBuffer(GBUFFER_RT_NORMAL)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pMaterialBufferSRV = m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
             SSRRenderAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
