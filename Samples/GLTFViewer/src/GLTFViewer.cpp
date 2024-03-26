@@ -1028,6 +1028,7 @@ void GLTFViewer::UpdateUI()
                 FeatureCheckbox("Thickness map", GLTF_PBR_Renderer::PSO_FLAG_USE_THICKNESS_MAP);
             }
             FeatureCheckbox("IBL", GLTF_PBR_Renderer::PSO_FLAG_USE_IBL);
+            FeatureCheckbox("Lights", GLTF_PBR_Renderer::PSO_FLAG_USE_LIGHTS);
             {
                 ImGui::ScopedDisabler Disable{m_bEnablePostProcessing, 0.5f};
                 FeatureCheckbox("Tone Mapping", GLTF_PBR_Renderer::PSO_FLAG_ENABLE_TONE_MAPPING);
