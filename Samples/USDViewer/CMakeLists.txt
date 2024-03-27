@@ -45,6 +45,15 @@ set(ASSETS
 
 add_sample_app("USDViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
+set_source_files_properties(${USD_ASSETS} PROPERTIES
+    VS_DEPLOYMENT_LOCATION "usd"
+    MACOSX_PACKAGE_LOCATION Resources/usd
+)
+set_source_files_properties(assets/textures/papermill.ktx PROPERTIES
+    VS_DEPLOYMENT_LOCATION "textures"
+    MACOSX_PACKAGE_LOCATION "Resources/textures"
+)
+
 if(${CMAKE_GENERATOR} MATCHES "Visual Studio")
     set_target_properties(USDViewer PROPERTIES
         VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${DILIGENT_USD_PATH}/$<CONFIG>/lib;${DILIGENT_USD_PATH}/$<CONFIG>/bin"
