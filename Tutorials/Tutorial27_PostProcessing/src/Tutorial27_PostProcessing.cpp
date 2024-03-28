@@ -120,16 +120,13 @@ struct Tutorial27_PostProcessing::ShaderSettings
     HLSL::ScreenSpaceAmbientOcclusionAttribs SSAOSettings    = {};
     HLSL::TemporalAntiAliasingAttribs        TAASettings     = {};
 
-    float SSRStrength                   = 1.0;
-    bool  SSRFeatureHalfResosution      = false;
-    float SSAOStrength                  = 1.0;
-    bool  SSAOFeatureHalfResolution     = false;
-    bool  SSAOFeatureHalfPrecisionDepth = true;
-    Int32 SSAOAlgorithmType             = 0;
-    Int32 SSAOReconstructionFilterType  = 0;
-    bool  TAAEnabled                    = true;
-    bool  TAAFeatureBicubicFiltering    = true;
-    bool  TAAFeatureGaussWeighting      = false;
+    bool  TAAEnabled   = true;
+    float SSAOStrength = 1.0;
+    float SSRStrength  = 1.0;
+
+    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags  = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags  = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
 };
 
 Tutorial27_PostProcessing::Tutorial27_PostProcessing() :
@@ -432,53 +429,28 @@ void Tutorial27_PostProcessing::WindowResize(Uint32 Width, Uint32 Height)
 void Tutorial27_PostProcessing::PrepareResources()
 {
     {
-        auto ActiveFeatures = PostFXContext::FEATURE_FLAG_NONE;
-
         PostFXContext::FrameDesc FrameDesc;
         FrameDesc.Width  = m_pSwapChain->GetDesc().Width;
         FrameDesc.Height = m_pSwapChain->GetDesc().Height;
         FrameDesc.Index  = m_CurrentFrameNumber;
-        m_PostFXContext->PrepareResources(m_pDevice, FrameDesc, ActiveFeatures);
+        m_PostFXContext->PrepareResources(m_pDevice, FrameDesc, PostFXContext::FEATURE_FLAG_NONE);
     }
 
     if (m_ShaderSettings->SSRStrength > 0.0)
     {
-        auto ActiveFeatures = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
-
-        if (m_ShaderSettings->SSRFeatureHalfResosution)
-            ActiveFeatures |= ScreenSpaceReflection::FEATURE_FLAG_HALF_RESOLUTION;
-
+        auto ActiveFeatures = m_ShaderSettings->SSRFeatureFlags;
         m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->SSAOStrength > 0.0)
     {
-        auto ActiveFeatures = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
-
-        if (m_ShaderSettings->SSAOFeatureHalfPrecisionDepth)
-            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_HALF_PRECISION_DEPTH;
-
-        if (m_ShaderSettings->SSAOAlgorithmType)
-            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_UNIFORM_WEIGHTING;
-
-        if (m_ShaderSettings->SSAOReconstructionFilterType)
-            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_GUIDED_FILTER;
-
-        if (m_ShaderSettings->SSAOFeatureHalfResolution)
-            ActiveFeatures |= ScreenSpaceAmbientOcclusion::FEATURE_FLAG_HALF_RESOLUTION;
-
+        auto ActiveFeatures = m_ShaderSettings->SSAOFeatureFlags;
         m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->TAAEnabled)
     {
-        auto ActiveFeatures = TemporalAntiAliasing::FEATURE_FLAG_NONE;
-        if (m_ShaderSettings->TAAFeatureBicubicFiltering)
-            ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
-
-        if (m_ShaderSettings->TAAFeatureGaussWeighting)
-            ActiveFeatures |= TemporalAntiAliasing::FEATURE_FLAG_GAUSSIAN_WEIGHTING;
-
+        auto ActiveFeatures = m_ShaderSettings->TAAFeatureFlags;
         m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 }
@@ -764,21 +736,13 @@ void Tutorial27_PostProcessing::UpdateUI()
         {
             if (ImGui::TreeNode("Screen Space Reflections"))
             {
-                ScreenSpaceReflection::UpdateUI(m_ShaderSettings->SSRSettings, m_SSRSettingsDisplayMode);
-                ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSRFeatureHalfResosution);
+                ScreenSpaceReflection::UpdateUI(m_ShaderSettings->SSRSettings, m_ShaderSettings->SSRFeatureFlags, m_SSRSettingsDisplayMode);
                 ImGui::TreePop();
             }
 
             if (ImGui::TreeNode("Screen Space Ambient Occlusion"))
             {
-                const char* AlgorithmType[] = {"GTAO", "HBAO"};
-                const char* FilterType[]    = {"Bilateral", "Guided"};
-
-                ScreenSpaceAmbientOcclusion::UpdateUI(m_ShaderSettings->SSAOSettings);
-                ImGui::Checkbox("Enable Half Resolution", &m_ShaderSettings->SSAOFeatureHalfResolution);
-                ImGui::Checkbox("Enable Half Precision Depth", &m_ShaderSettings->SSAOFeatureHalfPrecisionDepth);
-                ImGui::Combo("Algorithm", &m_ShaderSettings->SSAOAlgorithmType, AlgorithmType, _countof(AlgorithmType));
-                ImGui::Combo("Filter", &m_ShaderSettings->SSAOReconstructionFilterType, FilterType, _countof(FilterType));
+                ScreenSpaceAmbientOcclusion::UpdateUI(m_ShaderSettings->SSAOSettings, m_ShaderSettings->SSAOFeatureFlags);
                 ImGui::TreePop();
             }
 
@@ -794,9 +758,7 @@ void Tutorial27_PostProcessing::UpdateUI()
 
             if (ImGui::TreeNode("Temporal Anti Aliasing"))
             {
-                TemporalAntiAliasing::UpdateUI(m_ShaderSettings->TAASettings);
-                ImGui::Checkbox("Enable Bicubic Filtering", &m_ShaderSettings->TAAFeatureBicubicFiltering);
-                ImGui::Checkbox("Enable Gauss Weighting", &m_ShaderSettings->TAAFeatureGaussWeighting);
+                TemporalAntiAliasing::UpdateUI(m_ShaderSettings->TAASettings, m_ShaderSettings->TAAFeatureFlags);
                 ImGui::TreePop();
             }
 
