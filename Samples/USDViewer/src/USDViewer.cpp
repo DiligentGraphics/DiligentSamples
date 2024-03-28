@@ -278,7 +278,13 @@ void USDViewer::LoadStage()
     // It is important to clear raw pointers (FinalColorTarget, SelectedPrimId, etc.)
     m_Stage = {};
 
-    m_Stage.Stage = pxr::UsdStage::Open(m_UsdFileName.c_str());
+    std::string FilePath = m_UsdFileName;
+#if PLATFORM_APPLE
+    if (!FileSystem::IsPathAbsolute(FilePath.c_str()))
+        FilePath = FileSystem::FindResource(m_UsdFileName);
+#endif
+
+    m_Stage.Stage = pxr::UsdStage::Open(FilePath);
     if (!m_Stage.Stage)
     {
         LOG_ERROR_MESSAGE("Failed to open USD stage '", m_UsdFileName, "'");
@@ -299,7 +305,11 @@ void USDViewer::LoadStage()
     {
         m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC;
 
+#if PLATFORM_APPLE
+        DelegateCI.TexturesArraySize = 96;
+#else
         DelegateCI.TexturesArraySize = 256;
+#endif
     }
     else
     {

@@ -73,12 +73,8 @@ get_target_property(HYDROGENT_SOURCE_DIR Diligent-Hydrogent SOURCE_DIR)
 
 target_link_libraries(USDViewer
 PRIVATE
-    USD-Libraries
     Diligent-Hydrogent
     DiligentFX
-    usd_usdGeom
-    usd_work
-    usd_usdLux
 )
 set_target_properties(USDViewer PROPERTIES CXX_STANDARD 17)
 target_compile_definitions(USDViewer PRIVATE DILIGENT_FX_SHADERS_DIR="${DILIGENT_FX_SOURCE_DIR}/Shaders" HYDROGENT_SHADERS_DIR="${HYDROGENT_SHADER_DIR}/shaders")
