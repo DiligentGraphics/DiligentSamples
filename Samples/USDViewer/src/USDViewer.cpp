@@ -808,7 +808,7 @@ void USDViewer::UpdateUI()
                     ImGui::ScopedDisabler Disabler{m_PostProcessParams.SSRScale == 0};
                     if (ImGui::TreeNode("Screen Space Reflections"))
                     {
-                        if (ScreenSpaceReflection::UpdateUI(m_PostProcessParams.SSR, m_SSRSettingsDisplayMode))
+                        if (ScreenSpaceReflection::UpdateUI(m_PostProcessParams.SSR, m_PostProcessParams.SSRFeatureFlags, m_SSRSettingsDisplayMode))
                             UpdatePostProcessParams = true;
 
                         ImGui::Spacing();
@@ -826,7 +826,7 @@ void USDViewer::UpdateUI()
                     ImGui::ScopedDisabler Disabler{m_PostProcessParams.SSAOScale == 0};
                     if (ImGui::TreeNode("Screen Space Ambient Occlusion"))
                     {
-                        if (ScreenSpaceAmbientOcclusion::UpdateUI(m_PostProcessParams.SSAO))
+                        if (ScreenSpaceAmbientOcclusion::UpdateUI(m_PostProcessParams.SSAO, m_PostProcessParams.SSAOFeatureFlags))
                             UpdatePostProcessParams = true;
 
                         ImGui::Spacing();
@@ -844,7 +844,7 @@ void USDViewer::UpdateUI()
                     ImGui::ScopedDisabler Disabler{!m_PostProcessParams.EnableTAA};
                     if (ImGui::TreeNode("Temporal Anti Aliasing"))
                     {
-                        if (TemporalAntiAliasing::UpdateUI(m_PostProcessParams.TAA))
+                        if (TemporalAntiAliasing::UpdateUI(m_PostProcessParams.TAA, m_PostProcessParams.TAAFeatureFlags))
                             UpdatePostProcessParams = true;
 
                         ImGui::Spacing();
