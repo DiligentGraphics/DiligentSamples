@@ -645,7 +645,7 @@ void USDViewer::UpdateUI()
                 {
                     FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
                     OpenDialogAttribs.Title  = "Select USD file";
-                    OpenDialogAttribs.Filter = "USD files\0*.usd;*.usdc;*.usdz;*.usda\0";
+                    OpenDialogAttribs.Filter = "USD files (*.usd;*.usdc;*.usdz;*.usda)\0*.usd;*.usdc;*.usdz;*.usda\0All files\0*.*\0\0";
                     auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
                     if (!FileName.empty())
                     {
