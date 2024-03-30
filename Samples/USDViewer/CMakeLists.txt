@@ -55,9 +55,15 @@ set_source_files_properties(assets/textures/papermill.ktx PROPERTIES
 )
 
 if(${CMAKE_GENERATOR} MATCHES "Visual Studio")
-    set_target_properties(USDViewer PROPERTIES
-        VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${DILIGENT_USD_PATH}/$<CONFIG>/lib;${DILIGENT_USD_PATH}/$<CONFIG>/bin"
-    )
+    if (DILIGENT_USD_FILEFORMAT_PLUGINS_PATH)
+        set_target_properties(USDViewer PROPERTIES
+            VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${DILIGENT_USD_PATH}/$<CONFIG>/lib;${DILIGENT_USD_PATH}/$<CONFIG>/bin;${DILIGENT_USD_FILEFORMAT_PLUGINS_PATH}/$<CONFIG>/bin;${DILIGENT_USD_FILEFORMAT_PLUGINS_PATH}/$<CONFIG>/plugin/usd\nPXR_PLUGINPATH_NAME=%PXR_PLUGINPATH_NAME%;${DILIGENT_USD_FILEFORMAT_PLUGINS_PATH}/$<CONFIG>/plugin/usd"
+        )
+    else()
+        set_target_properties(USDViewer PROPERTIES
+            VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${DILIGENT_USD_PATH}/$<CONFIG>/lib;${DILIGENT_USD_PATH}/$<CONFIG>/bin"
+        )
+    endif()
 endif()
 
 set(IMGUIZMO_SOURCE
