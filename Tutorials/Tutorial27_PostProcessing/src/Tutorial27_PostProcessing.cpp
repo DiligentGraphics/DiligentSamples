@@ -41,6 +41,7 @@
 #include "TemporalAntiAliasing.hpp"
 #include "ScreenSpaceReflection.hpp"
 #include "ScreenSpaceAmbientOcclusion.hpp"
+#include "Bloom.hpp"
 #include "ShaderMacroHelper.hpp"
 #include "ShaderSourceFactoryUtils.hpp"
 #include "TextureUtilities.h"
@@ -83,6 +84,7 @@ namespace HLSL
 #include "Shaders/PostProcess/TemporalAntiAliasing/public/TemporalAntiAliasingStructures.fxh"
 #include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
 #include "Shaders/PostProcess/ScreenSpaceAmbientOcclusion/public/ScreenSpaceAmbientOcclusionStructures.fxh"
+#include "Shaders/PostProcess/Bloom/public/BloomStructures.fxh"
 #include "Shaders/PBR/public/PBR_Structures.fxh"
 #include "../assets/shaders/GeometryStructures.fxh"
 
@@ -119,14 +121,17 @@ struct Tutorial27_PostProcessing::ShaderSettings
     HLSL::ScreenSpaceReflectionAttribs       SSRSettings     = {};
     HLSL::ScreenSpaceAmbientOcclusionAttribs SSAOSettings    = {};
     HLSL::TemporalAntiAliasingAttribs        TAASettings     = {};
+    HLSL::BloomAttribs                       BloomSettings   = {};
 
     bool  TAAEnabled   = true;
+    bool  BloomEnabled = true;
     float SSAOStrength = 1.0;
     float SSRStrength  = 1.0;
 
-    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
-    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags  = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
-    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags  = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
+    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags  = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags   = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags   = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
+    Bloom::FEATURE_FLAGS                       BloomFeatureFlags = Bloom::FEATURE_FLAG_NONE;
 };
 
 Tutorial27_PostProcessing::Tutorial27_PostProcessing() :
@@ -203,6 +208,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_TemporalAntiAliasing        = std::make_unique<TemporalAntiAliasing>(m_pDevice);
     m_ScreenSpaceReflection       = std::make_unique<ScreenSpaceReflection>(m_pDevice);
     m_ScreenSpaceAmbientOcclusion = std::make_unique<ScreenSpaceAmbientOcclusion>(m_pDevice);
+    m_Bloom                       = std::make_unique<Bloom>(m_pDevice);
     m_ShaderSettings              = std::make_unique<ShaderSettings>();
 
     m_ShaderSettings->PBRRenderParams.OcclusionStrength      = 1.0f;
@@ -244,6 +250,7 @@ void Tutorial27_PostProcessing::Render()
     ComputeSSAO();
     ComputeLighting();
     ComputeTAA();
+    ComputeBloom();
     ApplyToneMap();
 }
 
@@ -452,6 +459,12 @@ void Tutorial27_PostProcessing::PrepareResources()
     {
         auto ActiveFeatures = m_ShaderSettings->TAAFeatureFlags;
         m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
+    }
+
+    if (m_ShaderSettings->BloomEnabled)
+    {
+        auto ActiveFeatures = m_ShaderSettings->BloomFeatureFlags;
+        m_Bloom->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 }
 
@@ -669,6 +682,22 @@ void Tutorial27_PostProcessing::ComputeTAA()
     }
 }
 
+void Tutorial27_PostProcessing::ComputeBloom()
+{
+    if (m_ShaderSettings->BloomEnabled)
+    {
+        const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+
+        Bloom::RenderAttributes BloomRenderAttribs{};
+        BloomRenderAttribs.pDevice         = m_pDevice;
+        BloomRenderAttribs.pDeviceContext  = m_pImmediateContext;
+        BloomRenderAttribs.pPostFXContext  = m_PostFXContext.get();
+        BloomRenderAttribs.pColorBufferSRV = m_ShaderSettings->TAAEnabled ? m_TemporalAntiAliasing->GetAccumulatedFrameSRV() : m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
+        BloomRenderAttribs.pBloomAttribs   = &m_ShaderSettings->BloomSettings;
+        m_Bloom->Execute(BloomRenderAttribs);
+    }
+}
+
 void Tutorial27_PostProcessing::ApplyToneMap()
 {
     auto& RenderTech = m_RenderTech[RENDER_TECH_APPLY_TONE_MAP];
@@ -701,8 +730,15 @@ void Tutorial27_PostProcessing::ApplyToneMap()
 
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
 
-    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureHDR"}.Set(
-        m_ShaderSettings->TAAEnabled ? m_TemporalAntiAliasing->GetAccumulatedFrameSRV() : m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV());
+
+    ITextureView* HDRTextureSRV = nullptr;
+    if (m_ShaderSettings->BloomEnabled)
+        HDRTextureSRV = m_Bloom->GetBloomTextureSRV();
+    else if (m_ShaderSettings->TAAEnabled)
+        HDRTextureSRV = m_TemporalAntiAliasing->GetAccumulatedFrameSRV();
+    else
+        HDRTextureSRV = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
+    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureHDR"}.Set(HDRTextureSRV);
 
     ScopedDebugGroup DebugGroup{m_pImmediateContext, "ApplyToneMap"};
 
@@ -728,6 +764,7 @@ void Tutorial27_PostProcessing::UpdateUI()
             ImGui::SliderFloat("Screen Space Ambient Occlusion Strength", &m_ShaderSettings->SSAOStrength, 0.0f, 1.0f);
             ImGui::Checkbox("Enable Animation", &m_IsAnimationActive);
             ImGui::Checkbox("Enable TAA", &m_ShaderSettings->TAAEnabled);
+            ImGui::Checkbox("Enable Bloom", &m_ShaderSettings->BloomEnabled);
             ImGui::TreePop();
         }
 
@@ -759,6 +796,12 @@ void Tutorial27_PostProcessing::UpdateUI()
             if (ImGui::TreeNode("Temporal Anti Aliasing"))
             {
                 TemporalAntiAliasing::UpdateUI(m_ShaderSettings->TAASettings, m_ShaderSettings->TAAFeatureFlags);
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Bloom"))
+            {
+                Bloom::UpdateUI(m_ShaderSettings->BloomSettings, m_ShaderSettings->BloomFeatureFlags);
                 ImGui::TreePop();
             }
 

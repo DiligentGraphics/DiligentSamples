@@ -50,6 +50,7 @@ class PostFXContext;
 class ScreenSpaceReflection;
 class ScreenSpaceAmbientOcclusion;
 class TemporalAntiAliasing;
+class Bloom;
 class GBuffer;
 
 class Tutorial27_PostProcessing final : public SampleBase
@@ -81,6 +82,8 @@ private:
     void ComputeLighting();
 
     void ComputeTAA();
+
+    void ComputeBloom();
 
     void ApplyToneMap();
 
@@ -131,6 +134,7 @@ private:
     std::unique_ptr<ScreenSpaceReflection>       m_ScreenSpaceReflection;
     std::unique_ptr<ScreenSpaceAmbientOcclusion> m_ScreenSpaceAmbientOcclusion;
     std::unique_ptr<TemporalAntiAliasing>        m_TemporalAntiAliasing;
+    std::unique_ptr<Bloom>                       m_Bloom;
     std::unique_ptr<ShaderSettings>              m_ShaderSettings;
 
     FirstPersonCamera                        m_Camera;
