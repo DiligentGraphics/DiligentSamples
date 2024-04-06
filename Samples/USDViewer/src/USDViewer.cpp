@@ -62,9 +62,8 @@
 #include "pxr/usd/usdGeom/imageable.h"
 #include "pxr/usd/usdLux/distantLight.h"
 #include "pxr/usd/usdLux/sphereLight.h"
-#include <pxr/usd/usdLux/shadowAPI.h>
+#include "pxr/usd/usdLux/shadowAPI.h"
 #include "pxr/base/gf/rotation.h"
-
 
 
 namespace Diligent
@@ -327,8 +326,9 @@ void USDViewer::LoadStage()
     DelegateCI.MetersPerUnit  = MetersPerUnit;
 
     const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
-    const pxr::SdfPath CameraId        = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
-    pxr::UsdGeomCamera::Define(m_Stage.Stage, CameraId);
+    m_Stage.CameraId                   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
+    m_Stage.Camera                     = pxr::UsdGeomCamera{pxr::UsdGeomCamera::Define(m_Stage.Stage, m_Stage.CameraId)};
+    VERIFY_EXPR(m_Stage.Camera);
 
     auto AddDirectionalLight = [&SceneDelegateId, this](const char* Name, float Intensity, const pxr::GfRotation& Rotation, int ShadowMapRes) {
         const pxr::SdfPath      LightId     = SceneDelegateId.AppendChild(pxr::TfToken{Name});
@@ -385,15 +385,12 @@ void USDViewer::LoadStage()
     m_Stage.FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, FinalColorTargetId));
     VERIFY_EXPR(m_Stage.FinalColorTarget != nullptr);
 
-    m_Stage.Camera = static_cast<USD::HnCamera*>(m_Stage.RenderIndex->GetSprim(pxr::HdPrimTypeTokens->camera, CameraId));
-    VERIFY_EXPR(m_Stage.Camera != nullptr);
-
     m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     m_FrameParams                    = {};
     m_FrameParams.State.FrontFaceCCW = true;
     m_FrameParams.FinalColorTargetId = FinalColorTargetId;
-    m_FrameParams.CameraId           = CameraId;
+    m_FrameParams.CameraId           = m_Stage.CameraId;
     m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
@@ -471,9 +468,6 @@ void USDViewer::Render()
 
     Timer Stowatch;
 
-    m_Stage.Camera->SetViewMatrix(m_CameraView);
-    m_Stage.Camera->SetProjectionMatrix(m_CameraProj);
-
     m_Stage.FinalColorTarget->SetTarget(m_pSwapChain->GetCurrentBackBufferRTV());
 
     {
@@ -515,20 +509,15 @@ void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
 
     if (ImGui::BeginPopupContextItem())
     {
-        // For some reason toggling camera visibility makes USD destroy existing camera
-        // and create a new one.
-        if (m_Stage.Camera->GetId() != Prim.GetPath())
+        bool IsVisible = m_Stage.ImagingDelegate->GetVisible(Prim.GetPath());
+        if (ImGui::Selectable(IsVisible ? "Hide" : "Show"))
         {
-            bool IsVisible = m_Stage.ImagingDelegate->GetVisible(Prim.GetPath());
-            if (ImGui::Selectable(IsVisible ? "Hide" : "Show"))
+            if (pxr::UsdGeomImageable Imageable{Prim})
             {
-                if (pxr::UsdGeomImageable Imageable{Prim})
-                {
-                    if (IsVisible)
-                        Imageable.MakeInvisible();
-                    else
-                        Imageable.MakeVisible();
-                }
+                if (IsVisible)
+                    Imageable.MakeInvisible();
+                else
+                    Imageable.MakeVisible();
             }
         }
         ImGui::EndPopup();
@@ -1045,8 +1034,20 @@ void USDViewer::UpdateCamera()
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
+    const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
     // Get projection matrix adjusted to the current screen orientation
-    m_CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, CameraDist / 100.f, CameraDist * 3.f);
+    m_CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, ClippingRange[0], ClippingRange[1]);
+
+    m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * m_CameraView).Inverse()));
+
+    const float FocalDist          = 0.125f;
+    const float HorizontalAperture = 2.f * FocalDist / m_CameraProj._11;
+    const float VerticalAperture   = 2.f * FocalDist / m_CameraProj._22;
+
+    m_Stage.Camera.GetFocalLengthAttr().Set(FocalDist);
+    m_Stage.Camera.GetVerticalApertureAttr().Set(VerticalAperture);
+    m_Stage.Camera.GetHorizontalApertureAttr().Set(HorizontalAperture);
+    m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRange);
 }
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)

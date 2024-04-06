@@ -40,6 +40,7 @@
 #include "Tasks/HnBeginFrameTask.hpp"
 
 #include "pxr/usd/usd/stage.h"
+#include "pxr/usd/usdGeom/camera.h"
 #include "pxr/imaging/hd/tokens.h"
 #include "pxr/imaging/hd/renderIndex.h"
 #include "pxr/imaging/hd/engine.h"
@@ -95,8 +96,10 @@ private:
         std::unique_ptr<pxr::UsdImagingDelegate> ImagingDelegate;
         std::unique_ptr<USD::HnTaskManager>      TaskManager;
 
+        pxr::SdfPath       CameraId;
+        pxr::UsdGeomCamera Camera{};
+
         USD::HnRenderBuffer* FinalColorTarget = nullptr;
-        USD::HnCamera*       Camera           = nullptr;
 
         pxr::SdfPath SelectedPrimId;
 
