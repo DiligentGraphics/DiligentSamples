@@ -790,7 +790,12 @@ void USDViewer::UpdateUI()
                         }
                     }
 
-                    if (ImGui::Checkbox("Enable TAA", &m_PostProcessParams.EnableTAA))
+                    if (ImGui::Checkbox("TAA", &m_PostProcessParams.EnableTAA))
+                    {
+                        UpdatePostProcessParams = true;
+                    }
+
+                    if (ImGui::Checkbox("Bloom", &m_PostProcessParams.EnableBloom))
                     {
                         UpdatePostProcessParams = true;
                     }
@@ -851,6 +856,24 @@ void USDViewer::UpdateUI()
                         {
                             m_PostProcessParams.TAA = USD::HnPostProcessTaskParams{}.TAA;
                             UpdatePostProcessParams = true;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+
+                {
+                    ImGui::ScopedDisabler Disabler{!m_PostProcessParams.EnableBloom};
+                    if (ImGui::TreeNode("Bloom"))
+                    {
+                        if (Bloom::UpdateUI(m_PostProcessParams.Bloom, m_PostProcessParams.BloomFeatureFlags))
+                            UpdatePostProcessParams = true;
+
+                        ImGui::Spacing();
+                        if (ImGui::Button("Reset"))
+                        {
+                            m_PostProcessParams.Bloom = USD::HnPostProcessTaskParams{}.Bloom;
+                            UpdatePostProcessParams   = true;
                         }
 
                         ImGui::TreePop();
