@@ -860,7 +860,7 @@ void USDViewer::UpdateUI()
                 if (ImGui::TreeNode("Tone mapping"))
                 {
                     {
-                        std::array<const char*, 8> ToneMappingMode;
+                        std::array<const char*, 10> ToneMappingMode;
                         ToneMappingMode[TONE_MAPPING_MODE_NONE]         = "None";
                         ToneMappingMode[TONE_MAPPING_MODE_EXP]          = "Exp";
                         ToneMappingMode[TONE_MAPPING_MODE_REINHARD]     = "Reinhard";
@@ -869,6 +869,8 @@ void USDViewer::UpdateUI()
                         ToneMappingMode[TONE_MAPPING_FILMIC_ALU]        = "Filmic ALU";
                         ToneMappingMode[TONE_MAPPING_LOGARITHMIC]       = "Logarithmic";
                         ToneMappingMode[TONE_MAPPING_ADAPTIVE_LOG]      = "Adaptive log";
+                        ToneMappingMode[TONE_MAPPING_AGX]               = "AgX";
+                        ToneMappingMode[TONE_MAPPING_AGX_PUNCHY]        = "AgX Punchy";
                         if (ImGui::Combo("Tone Mapping Mode", &m_PostProcessParams.ToneMappingMode, ToneMappingMode.data(), static_cast<int>(ToneMappingMode.size())))
                             UpdatePostProcessParams = true;
                     }
