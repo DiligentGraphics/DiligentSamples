@@ -185,7 +185,7 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
         m_DeviceWithCache = RenderDeviceWithCache<false>{m_pDevice, StateCacheCI};
 
         const std::string CachePath  = GetRenderStateCacheFilePath(RenderStateCacheLocationAppData, "USDViewer", m_pDevice->GetDeviceInfo().Type);
-        const bool        SaveOnExit = !m_pDevice->GetDeviceInfo().IsGLDevice();
+        const bool        SaveOnExit = true;
         m_DeviceWithCache.LoadCacheFromFile(CachePath.c_str(), SaveOnExit);
     }
 
