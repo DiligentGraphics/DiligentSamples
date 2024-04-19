@@ -42,6 +42,7 @@
 #include "ScreenSpaceReflection.hpp"
 #include "ScreenSpaceAmbientOcclusion.hpp"
 #include "Bloom.hpp"
+#include "CoordinateGridRenderer.hpp"
 #include "ShaderMacroHelper.hpp"
 #include "ShaderSourceFactoryUtils.hpp"
 #include "TextureUtilities.h"
@@ -80,6 +81,7 @@ namespace HLSL
 {
 
 #include "Shaders/Common/public/BasicStructures.fxh"
+#include "Shaders/Common/public/CoordinateGridStructures.fxh"
 #include "Shaders/PostProcess/ToneMapping/public/ToneMappingStructures.fxh"
 #include "Shaders/PostProcess/TemporalAntiAliasing/public/TemporalAntiAliasingStructures.fxh"
 #include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
@@ -117,21 +119,24 @@ SampleBase* CreateSample()
 
 struct Tutorial27_PostProcessing::ShaderSettings
 {
-    HLSL::PBRRendererShaderParameters        PBRRenderParams = {};
-    HLSL::ScreenSpaceReflectionAttribs       SSRSettings     = {};
-    HLSL::ScreenSpaceAmbientOcclusionAttribs SSAOSettings    = {};
-    HLSL::TemporalAntiAliasingAttribs        TAASettings     = {};
-    HLSL::BloomAttribs                       BloomSettings   = {};
+    HLSL::PBRRendererShaderParameters        PBRRenderParams  = {};
+    HLSL::ScreenSpaceReflectionAttribs       SSRSettings      = {};
+    HLSL::ScreenSpaceAmbientOcclusionAttribs SSAOSettings     = {};
+    HLSL::TemporalAntiAliasingAttribs        TAASettings      = {};
+    HLSL::BloomAttribs                       BloomSettings    = {};
+    HLSL::CoordinateGridAttribs              GridAxesSettings = {};
 
-    bool  TAAEnabled   = true;
-    bool  BloomEnabled = true;
-    float SSAOStrength = 1.0;
-    float SSRStrength  = 1.0;
+    bool  GridAxesEnabled = true;
+    bool  TAAEnabled      = true;
+    bool  BloomEnabled    = true;
+    float SSAOStrength    = 1.0;
+    float SSRStrength     = 1.0;
 
-    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags  = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
-    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags   = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
-    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags   = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
-    Bloom::FEATURE_FLAGS                       BloomFeatureFlags = Bloom::FEATURE_FLAG_NONE;
+    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags     = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags      = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags      = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
+    Bloom::FEATURE_FLAGS                       BloomFeatureFlags    = Bloom::FEATURE_FLAG_NONE;
+    CoordinateGridRenderer::FEATURE_FLAGS      GridAxesFeatureFlags = CoordinateGridRenderer::FEATURE_FLAG_RENDER_PLANE_XZ;
 };
 
 Tutorial27_PostProcessing::Tutorial27_PostProcessing() :
@@ -209,6 +214,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ScreenSpaceReflection       = std::make_unique<ScreenSpaceReflection>(m_pDevice);
     m_ScreenSpaceAmbientOcclusion = std::make_unique<ScreenSpaceAmbientOcclusion>(m_pDevice);
     m_Bloom                       = std::make_unique<Bloom>(m_pDevice);
+    m_CoordinateGridRenderer      = std::make_unique<CoordinateGridRenderer>(m_pDevice);
     m_ShaderSettings              = std::make_unique<ShaderSettings>();
 
     m_ShaderSettings->PBRRenderParams.OcclusionStrength      = 1.0f;
@@ -252,6 +258,7 @@ void Tutorial27_PostProcessing::Render()
     ComputeTAA();
     ComputeBloom();
     ApplyToneMap();
+    DrawGridAxes();
 }
 
 void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
@@ -292,6 +299,8 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
     CurrCamAttribs.mProjInvT      = CameraProj.Inverse().Transpose();
     CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse().Transpose();
     CurrCamAttribs.f4Position     = float4(float3::MakeVector(CameraWorld[3]), 1);
+    CurrCamAttribs.fNearPlaneZ    = ZNear;
+    CurrCamAttribs.fFarPlaneZ     = ZFar;
 
     CurrCamAttribs.f2Jitter.x       = Jitter.x;
     CurrCamAttribs.f2Jitter.y       = Jitter.y;
@@ -750,6 +759,24 @@ void Tutorial27_PostProcessing::ApplyToneMap()
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
 }
 
+void Tutorial27_PostProcessing::DrawGridAxes()
+{
+    if (m_ShaderSettings->GridAxesEnabled)
+    {
+        const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+
+        CoordinateGridRenderer::RenderAttributes RenderAttribs{};
+        RenderAttribs.pDevice          = m_pDevice;
+        RenderAttribs.pDeviceContext   = m_pImmediateContext;
+        RenderAttribs.pCameraAttribsCB = m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer();
+        RenderAttribs.pAttribs         = &m_ShaderSettings->GridAxesSettings;
+        RenderAttribs.FeatureFlags     = m_ShaderSettings->GridAxesFeatureFlags;
+        RenderAttribs.pColorRTV        = m_pSwapChain->GetCurrentBackBufferRTV();
+        RenderAttribs.pDepthSRV        = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+        m_CoordinateGridRenderer->Render(RenderAttribs);
+    }
+}
+
 void Tutorial27_PostProcessing::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -762,6 +789,7 @@ void Tutorial27_PostProcessing::UpdateUI()
         {
             ImGui::SliderFloat("Screen Space Reflection Strength", &m_ShaderSettings->SSRStrength, 0.0f, 1.0f);
             ImGui::SliderFloat("Screen Space Ambient Occlusion Strength", &m_ShaderSettings->SSAOStrength, 0.0f, 1.0f);
+            ImGui::Checkbox("Enable Grid Axes", &m_ShaderSettings->GridAxesEnabled);
             ImGui::Checkbox("Enable Animation", &m_IsAnimationActive);
             ImGui::Checkbox("Enable TAA", &m_ShaderSettings->TAAEnabled);
             ImGui::Checkbox("Enable Bloom", &m_ShaderSettings->BloomEnabled);
@@ -802,6 +830,12 @@ void Tutorial27_PostProcessing::UpdateUI()
             if (ImGui::TreeNode("Bloom"))
             {
                 Bloom::UpdateUI(m_ShaderSettings->BloomSettings, m_ShaderSettings->BloomFeatureFlags);
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Grid Axes"))
+            {
+                CoordinateGridRenderer::UpdateUI(m_ShaderSettings->GridAxesSettings, m_ShaderSettings->GridAxesFeatureFlags);
                 ImGui::TreePop();
             }
 

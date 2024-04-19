@@ -46,6 +46,7 @@ struct ObjectAttribs;
 } // namespace HLSL
 
 class EnvMapRenderer;
+class CoordinateGridRenderer;
 class PostFXContext;
 class ScreenSpaceReflection;
 class ScreenSpaceAmbientOcclusion;
@@ -86,6 +87,8 @@ private:
     void ComputeBloom();
 
     void ApplyToneMap();
+
+    void DrawGridAxes();
 
     void UpdateUI();
 
@@ -135,6 +138,7 @@ private:
     std::unique_ptr<ScreenSpaceAmbientOcclusion> m_ScreenSpaceAmbientOcclusion;
     std::unique_ptr<TemporalAntiAliasing>        m_TemporalAntiAliasing;
     std::unique_ptr<Bloom>                       m_Bloom;
+    std::unique_ptr<CoordinateGridRenderer>      m_CoordinateGridRenderer;
     std::unique_ptr<ShaderSettings>              m_ShaderSettings;
 
     FirstPersonCamera                        m_Camera;
