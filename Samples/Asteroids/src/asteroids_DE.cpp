@@ -163,7 +163,8 @@ void Asteroids::InitDevice(HWND hWnd, RENDER_DEVICE_TYPE DevType)
                 {
                     // Validation Performance Warning: [ UNASSIGNED-CoreValidation-Shader-OutputNotConsumed ]
                     // Vertex attribute at location 1 not consumed by vertex shader
-                    "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed" //
+                    "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed",
+                    "WARNING-Shader-OutputNotConsumed",
                 };
             EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
             EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -387,7 +387,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 {
                     // Validation Performance Warning: [ UNASSIGNED-CoreValidation-Shader-OutputNotConsumed ]
                     // vertex shader writes to output location 1.0 which is not consumed by fragment shader
-                    "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed" //
+                    "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed",
+                    "WARNING-Shader-OutputNotConsumed",
                 };
             EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
             EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
