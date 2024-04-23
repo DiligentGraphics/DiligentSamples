@@ -429,6 +429,7 @@ void USDViewer::LoadStage()
     m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
     m_PostProcessParams.EnableTAA           = true;
+    m_PostProcessParams.EnableBloom         = true;
     m_PostProcessParams.SSAO.EffectRadius   = std::min(SceneExtent * 0.1f, 5.f);
     m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
