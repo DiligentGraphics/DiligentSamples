@@ -40,7 +40,6 @@
 #include "RenderStateCache.h"
 
 #include "Tasks/HnReadRprimIdTask.hpp"
-#include "Tasks/HnRenderAxesTask.hpp"
 #include "Tasks/HnRenderBoundBoxTask.hpp"
 #include "HnTokens.hpp"
 #include "HnCamera.hpp"
@@ -431,17 +430,12 @@ void USDViewer::LoadStage()
     m_PostProcessParams.EnableTAA           = true;
     m_PostProcessParams.EnableBloom         = true;
     m_PostProcessParams.SSAO.EffectRadius   = std::min(SceneExtent * 0.1f, 5.f);
-    m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
 
-    USD::HnRenderAxesTaskParams RenderAxesParams;
-    RenderAxesParams.Transform = float4x4::Scale(SceneExtent / MetersPerUnit * 2.f) * m_Stage.RootTransform;
-    m_Stage.TaskManager->SetRenderAxesParams(RenderAxesParams);
-
-    USD::HnRenderBoundBoxTaskParams RenderBoundBoxParams;
-    RenderBoundBoxParams.Color       = float4{1.0, 1.0, 1.0, 1.0};
-    RenderBoundBoxParams.PatternMask = 0x0000FFFFu;
-    m_Stage.TaskManager->SetRenderBoundBoxParams(RenderBoundBoxParams);
-
+    const float GridScale                = 1.f / std::pow(10.f, std::floor(std::log10(std::max(SceneExtent, 0.01f))));
+    m_PostProcessParams.Grid.GridScale   = float4{GridScale};
+    m_PostProcessParams.GridFeatureFlags = (CoordinateGridRenderer::FEATURE_FLAG_RENDER_PLANE_XZ |
+                                            CoordinateGridRenderer::FEATURE_FLAG_RENDER_AXIS_X |
+                                            CoordinateGridRenderer::FEATURE_FLAG_RENDER_AXIS_Z);
     if (UpAxis == pxr::UsdGeomTokens->x)
     {
         m_Camera.SetRotation(PI_F / 4.f, PI_F / 6.f);
@@ -454,6 +448,13 @@ void USDViewer::LoadStage()
     {
         m_Camera.SetRotation(PI_F * 3.f / 4.f, PI_F / 6.f);
     }
+
+    m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
+
+    USD::HnRenderBoundBoxTaskParams RenderBoundBoxParams;
+    RenderBoundBoxParams.Color       = float4{1.0, 1.0, 1.0, 1.0};
+    RenderBoundBoxParams.PatternMask = 0x0000FFFFu;
+    m_Stage.TaskManager->SetRenderBoundBoxParams(RenderBoundBoxParams);
 
     m_Stage.Animation.TimeCodesPerSecond = m_Stage.Stage->GetTimeCodesPerSecond();
     m_Stage.Animation.StartTime          = static_cast<float>(m_Stage.Stage->GetStartTimeCode() / m_Stage.Animation.TimeCodesPerSecond);
@@ -919,6 +920,21 @@ void USDViewer::UpdateUI()
                     ImGui::TreePop();
                 }
 
+                if (ImGui::TreeNode("Grid"))
+                {
+                    if (CoordinateGridRenderer::UpdateUI(m_PostProcessParams.Grid, m_PostProcessParams.GridFeatureFlags))
+                        UpdatePostProcessParams = true;
+
+                    ImGui::Spacing();
+                    if (ImGui::Button("Reset"))
+                    {
+                        m_PostProcessParams.Grid = USD::HnPostProcessTaskParams{}.Grid;
+                        UpdatePostProcessParams  = true;
+                    }
+
+                    ImGui::TreePop();
+                }
+
                 ImGui::Spacing();
 
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
@@ -937,11 +953,6 @@ void USDViewer::UpdateUI()
                         bool Enabled = m_Stage.TaskManager->IsEnvironmentMapEnabled();
                         if (ImGui::Checkbox("Env map", &Enabled))
                             m_Stage.TaskManager->EnableEnvironmentMap(Enabled);
-                    }
-                    {
-                        bool Enabled = m_Stage.TaskManager->AreAxesEnabled();
-                        if (ImGui::Checkbox("Axes", &Enabled))
-                            m_Stage.TaskManager->EnableAxes(Enabled);
                     }
                     {
                         bool Enabled = m_Stage.TaskManager->IsSelectedPrimBoundBoxEnabled();
