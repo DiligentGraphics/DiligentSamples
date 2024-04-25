@@ -797,6 +797,11 @@ void USDViewer::UpdateUI()
                         UpdatePostProcessParams = true;
                     }
 
+                    if (ImGui::Checkbox("Depth of Field", &m_PostProcessParams.EnableDOF))
+                    {
+                        UpdatePostProcessParams = true;
+                    }
+
                     if (ImGui::Checkbox("Bloom", &m_PostProcessParams.EnableBloom))
                     {
                         UpdatePostProcessParams = true;
@@ -857,6 +862,24 @@ void USDViewer::UpdateUI()
                         if (ImGui::Button("Reset"))
                         {
                             m_PostProcessParams.TAA = USD::HnPostProcessTaskParams{}.TAA;
+                            UpdatePostProcessParams = true;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+
+                {
+                    ImGui::ScopedDisabler Disabler{!m_PostProcessParams.EnableDOF};
+                    if (ImGui::TreeNode("Depth of Field"))
+                    {
+                        if (DepthOfField::UpdateUI(m_PostProcessParams.DOF, m_PostProcessParams.DOFFeatureFlags))
+                            UpdatePostProcessParams = true;
+
+                        ImGui::Spacing();
+                        if (ImGui::Button("Reset"))
+                        {
+                            m_PostProcessParams.DOF = USD::HnPostProcessTaskParams{}.DOF;
                             UpdatePostProcessParams = true;
                         }
 
