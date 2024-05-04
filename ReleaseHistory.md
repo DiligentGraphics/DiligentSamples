@@ -1,6 +1,16 @@
+## v2.5.5
+
+* Added [Tutorial27 - Post Processing](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial27_PostProcessing)
+* Added [USD Viewer](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Samples/USDViewer)
+
 ## v2.5.4
 
 * Added [Tutorial03 - Texturing for DotNet](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial03_Texturing-DotNet)
+
+## v2.5.3
+
+* Added [Tutorial25 - Render State Packager](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial25_StatePackager)
+* Added [Tutorial26 - Render State Cache](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial26_StateCache)
 
 ## v2.5.1
 
