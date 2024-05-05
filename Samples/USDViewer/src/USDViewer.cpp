@@ -49,6 +49,7 @@
 #include "ScreenSpaceReflection.hpp"
 #include "ScreenSpaceAmbientOcclusion.hpp"
 #include "TemporalAntiAliasing.hpp"
+#include "ToneMapping.hpp"
 
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
@@ -424,12 +425,12 @@ void USDViewer::LoadStage()
 
     UpdateCamera();
 
-    m_PostProcessParams                     = {};
-    m_PostProcessParams.ToneMappingMode     = TONE_MAPPING_MODE_UNCHARTED2;
-    m_PostProcessParams.ConvertOutputToSRGB = m_ConvertPSOutputToGamma;
-    m_PostProcessParams.EnableTAA           = true;
-    m_PostProcessParams.EnableBloom         = true;
-    m_PostProcessParams.SSAO.EffectRadius   = std::min(SceneExtent * 0.1f, 5.f);
+    m_PostProcessParams                              = {};
+    m_PostProcessParams.ToneMapping.iToneMappingMode = TONE_MAPPING_MODE_UNCHARTED2;
+    m_PostProcessParams.ConvertOutputToSRGB          = m_ConvertPSOutputToGamma;
+    m_PostProcessParams.EnableTAA                    = true;
+    m_PostProcessParams.EnableBloom                  = true;
+    m_PostProcessParams.SSAO.EffectRadius            = std::min(SceneExtent * 0.1f, 5.f);
 
     const float GridScale                = 1.f / std::pow(10.f, std::floor(std::log10(std::max(SceneExtent, 0.01f))));
     m_PostProcessParams.Grid.GridScale   = float4{GridScale};
@@ -907,37 +908,17 @@ void USDViewer::UpdateUI()
 
                 if (ImGui::TreeNode("Tone mapping"))
                 {
-                    {
-                        std::array<const char*, 10> ToneMappingMode;
-                        ToneMappingMode[TONE_MAPPING_MODE_NONE]         = "None";
-                        ToneMappingMode[TONE_MAPPING_MODE_EXP]          = "Exp";
-                        ToneMappingMode[TONE_MAPPING_MODE_REINHARD]     = "Reinhard";
-                        ToneMappingMode[TONE_MAPPING_MODE_REINHARD_MOD] = "Reinhard Mod";
-                        ToneMappingMode[TONE_MAPPING_MODE_UNCHARTED2]   = "Uncharted 2";
-                        ToneMappingMode[TONE_MAPPING_FILMIC_ALU]        = "Filmic ALU";
-                        ToneMappingMode[TONE_MAPPING_LOGARITHMIC]       = "Logarithmic";
-                        ToneMappingMode[TONE_MAPPING_ADAPTIVE_LOG]      = "Adaptive log";
-                        ToneMappingMode[TONE_MAPPING_AGX]               = "AgX";
-                        ToneMappingMode[TONE_MAPPING_AGX_PUNCHY]        = "AgX Punchy";
-                        if (ImGui::Combo("Tone Mapping Mode", &m_PostProcessParams.ToneMappingMode, ToneMappingMode.data(), static_cast<int>(ToneMappingMode.size())))
-                            UpdatePostProcessParams = true;
-                    }
-
-                    if (ImGui::SliderFloat("Average log lum", &m_PostProcessParams.AverageLogLum, 0.01f, 10.0f))
-                        UpdatePostProcessParams = true;
-                    if (ImGui::SliderFloat("Middle gray", &m_PostProcessParams.MiddleGray, 0.01f, 1.0f))
-                        UpdatePostProcessParams = true;
-                    if (ImGui::SliderFloat("White point", &m_PostProcessParams.WhitePoint, 0.1f, 20.0f))
+                    if (ToneMappingUpdateUI(m_PostProcessParams.ToneMapping, &m_PostProcessParams.AverageLogLum))
                         UpdatePostProcessParams = true;
 
+                    ImGui::Spacing();
                     if (ImGui::Button("Reset"))
                     {
                         static constexpr USD::HnPostProcessTaskParams DefaultParams;
-                        m_PostProcessParams.ToneMappingMode = TONE_MAPPING_MODE_UNCHARTED2;
-                        m_PostProcessParams.AverageLogLum   = DefaultParams.AverageLogLum;
-                        m_PostProcessParams.MiddleGray      = DefaultParams.MiddleGray;
-                        m_PostProcessParams.WhitePoint      = DefaultParams.WhitePoint;
-                        UpdatePostProcessParams             = true;
+
+                        m_PostProcessParams.ToneMapping   = DefaultParams.ToneMapping;
+                        m_PostProcessParams.AverageLogLum = DefaultParams.AverageLogLum;
+                        UpdatePostProcessParams           = true;
                     }
 
                     ImGui::TreePop();
