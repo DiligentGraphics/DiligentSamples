@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -355,7 +355,20 @@ void Tutorial19_RenderPasses::CreateRenderPass()
     Attachments[0].LoadOp       = ATTACHMENT_LOAD_OP_CLEAR;
     Attachments[0].StoreOp      = ATTACHMENT_STORE_OP_DISCARD; // We will not need the result after the end of the render pass
 
-    Attachments[1].Format       = TEX_FORMAT_R32_FLOAT;
+    for (TEXTURE_FORMAT Fmt : {TEX_FORMAT_R32_FLOAT, TEX_FORMAT_R16_UNORM, TEX_FORMAT_R16_FLOAT})
+    {
+        if (m_pDevice->GetTextureFormatInfoExt(Fmt).BindFlags & BIND_RENDER_TARGET)
+        {
+            Attachments[1].Format = Fmt;
+            break;
+        }
+    }
+    if (Attachments[1].Format == TEX_FORMAT_UNKNOWN)
+    {
+        LOG_WARNING_MESSAGE("This device does not support rendering to any of R32_FLOAT, R16_UNORM or R16_FLOAT formats. Using R8 as fallback.");
+        Attachments[1].Format = TEX_FORMAT_R8_UNORM;
+    }
+
     Attachments[1].InitialState = RESOURCE_STATE_RENDER_TARGET;
     Attachments[1].FinalState   = RESOURCE_STATE_INPUT_ATTACHMENT;
     Attachments[1].LoadOp       = ATTACHMENT_LOAD_OP_CLEAR;
