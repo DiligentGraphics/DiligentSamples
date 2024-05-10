@@ -196,7 +196,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
 
         RefCntAutoPtr<ITexture> pEnvironmentMap;
         CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Tutorial27_PostProcessing::EnvironmentMap"}, m_pDevice, &pEnvironmentMap);
-        pIBLGenerator->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE), 128, 64);
+        pIBLGenerator->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
         m_Resources.Insert(RESOURCE_IDENTIFIER_ENVIRONMENT_MAP, pEnvironmentMap);
         m_Resources.Insert(RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP, pIBLGenerator->GetPrefilteredEnvMapSRV()->GetTexture());
