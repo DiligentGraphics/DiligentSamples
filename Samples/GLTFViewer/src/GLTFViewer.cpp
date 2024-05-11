@@ -331,18 +331,20 @@ static RefCntAutoPtr<ITextureView> CreateWhiteFurnaceEnvMap(IRenderDevice* pDevi
     TexDesc.Type      = RESOURCE_DIM_TEX_CUBE;
     TexDesc.Usage     = USAGE_IMMUTABLE;
     TexDesc.BindFlags = BIND_SHADER_RESOURCE;
-    TexDesc.Format    = TEX_FORMAT_RGBA32_FLOAT;
+    // R32 float is not supported on some low-end devices.
+    // Since we simply need environment map to be 1.0, RGBA8 is sufficient.
+    TexDesc.Format    = TEX_FORMAT_RGBA8_UNORM;
     TexDesc.Width     = 16;
     TexDesc.Height    = 16;
     TexDesc.MipLevels = 1;
     TexDesc.ArraySize = 6;
 
-    std::vector<float4>            Data(6 * TexDesc.Width * TexDesc.Height, float4{1});
+    std::vector<Uint32>            Data(6 * TexDesc.Width * TexDesc.Height, 0xFFFFFFFFu);
     std::vector<TextureSubResData> SubResData(6);
     for (auto& Subres : SubResData)
     {
         Subres.pData  = Data.data();
-        Subres.Stride = TexDesc.Width * sizeof(float4);
+        Subres.Stride = TexDesc.Width * sizeof(Uint32);
     }
     TextureData InitData{SubResData.data(), static_cast<Uint32>(SubResData.size())};
 
