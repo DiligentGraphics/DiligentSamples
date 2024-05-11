@@ -67,6 +67,7 @@ public:
 
 private:
     void LoadModel(const char* Path);
+    void LoadEnvironmentMap(const char* Path);
     void UpdateScene();
     void UpdateUI();
     void CreateGLTFResourceCache();

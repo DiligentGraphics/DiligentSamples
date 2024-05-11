@@ -200,6 +200,24 @@ void GLTFViewer::LoadModel(const char* Path)
     m_ModelPath = Path;
 }
 
+void GLTFViewer::LoadEnvironmentMap(const char* Path)
+{
+    RefCntAutoPtr<ITexture> pEnvironmentMap;
+    CreateTextureFromFile(Path, TextureLoadInfo{"Environment map"}, m_pDevice, &pEnvironmentMap);
+    VERIFY_EXPR(pEnvironmentMap);
+
+    if (m_GLTFRenderer)
+        m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+
+    StateTransitionDesc Barriers[] = {
+        {pEnvironmentMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+    };
+    m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+
+    m_EnvironmentMapSRV = pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_pCurrentEnvMapSRV = m_EnvironmentMapSRV;
+}
+
 void GLTFViewer::UpdateScene()
 {
     m_Model->ComputeTransforms(m_RenderParams.SceneIndex, m_Transforms[0]);
@@ -663,9 +681,7 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
 
     m_bWireframeSupported = m_pDevice->GetDeviceInfo().Features.WireframeFill;
 
-    RefCntAutoPtr<ITexture> EnvironmentMap;
-    CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
-    m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    LoadEnvironmentMap("textures/papermill.ktx");
 
     m_WhiteFurnaceEnvMapSRV = CreateWhiteFurnaceEnvMap(m_pDevice);
 
@@ -687,13 +703,10 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     CreateGLTFRenderer();
 
     CreateUniformBuffer(m_pDevice, m_GLTFRenderer->GetPRBFrameAttribsSize(), "PBR frame attribs buffer", &m_FrameAttribsCB);
-    // clang-format off
-    StateTransitionDesc Barriers [] =
-    {
+
+    StateTransitionDesc Barriers[] = {
         {m_FrameAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        {EnvironmentMap,   RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
     };
-    // clang-format on
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     CrateEnvMapRenderer();
@@ -816,6 +829,17 @@ void GLTFViewer::UpdateUI()
                 LoadModel(FileName.c_str());
             }
         }
+
+        if (ImGui::Button("Load Environment Map"))
+        {
+            FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+            OpenDialogAttribs.Title  = "Select HDR file";
+            OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
+            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+            if (!FileName.empty())
+                LoadEnvironmentMap(FileName.data());
+        }
+
 #endif
         if (m_Model->Scenes.size() > 1)
         {

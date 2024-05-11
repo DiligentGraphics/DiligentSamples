@@ -49,7 +49,7 @@ float3 FresnelSchlickRoughness(float CosTheta, float3 F0, float roughness)
 
 float3 SampleEnvironmentMap(float3 Coord)
 {
-    return g_PBRRendererAttibs.IBLScale * g_TextureEnvironmentMap.SampleLevel(g_TextureEnvironmentMap_sampler, float3(+1.0, -1.0, +1.0) * Coord, 0.5);
+    return g_PBRRendererAttibs.IBLScale * g_TextureEnvironmentMap.SampleLevel(g_TextureEnvironmentMap_sampler, float3(+1.0, -1.0, +1.0) * Coord, 0.0);
 }
 
 float3 SampleIrradianceMap(float3 Coord)

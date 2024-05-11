@@ -74,6 +74,7 @@ public:
 private:
     void UpdateUI();
     void LoadStage();
+    void LoadEnvironmentMap(const char* Path);
     void PopulateSceneTree(const pxr::UsdPrim& Prim);
     void SetSelectedPrim(const pxr::SdfPath& SelectedPrimId);
     void EditSelectedPrimTransform();

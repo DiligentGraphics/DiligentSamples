@@ -191,17 +191,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
 
     // Create necessary textures for IBL
     {
-        // We only need PBR renderer to precompute environment maps
-        const auto pIBLGenerator = std::make_unique<PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, PBR_Renderer::CreateInfo{});
-
-        RefCntAutoPtr<ITexture> pEnvironmentMap;
-        CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Tutorial27_PostProcessing::EnvironmentMap"}, m_pDevice, &pEnvironmentMap);
-        pIBLGenerator->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-
-        m_Resources.Insert(RESOURCE_IDENTIFIER_ENVIRONMENT_MAP, pEnvironmentMap);
-        m_Resources.Insert(RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP, pIBLGenerator->GetPrefilteredEnvMapSRV()->GetTexture());
-        m_Resources.Insert(RESOURCE_IDENTIFIER_IRRADIANCE_MAP, pIBLGenerator->GetIrradianceCubeSRV()->GetTexture());
-        m_Resources.Insert(RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP, pIBLGenerator->GetPreintegratedGGX_SRV()->GetTexture());
+        LoadEnvironmentMap("textures/papermill.ktx");
     }
 
     m_PostFXContext               = std::make_unique<PostFXContext>(m_pDevice);
@@ -616,10 +606,10 @@ void Tutorial27_PostProcessing::ComputeLighting()
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureDepth", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureSSR", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureSSAO", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
-            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
-            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureIrradianceMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
-            .AddVariable(SHADER_TYPE_PIXEL, "g_TexturePrefilteredEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC)
-            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureBRDFIntegrationMap", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
+            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
+            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureIrradianceMap", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
+            .AddVariable(SHADER_TYPE_PIXEL, "g_TexturePrefilteredEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
+            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureBRDFIntegrationMap", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
 
         ResourceLayout
             .AddImmutableSampler(SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap", Sam_Aniso16xClamp)
@@ -637,14 +627,15 @@ void Tutorial27_PostProcessing::ComputeLighting()
                                  DSS_DisableDepth, BS_Default, false);
         ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "cbCameraAttribs"}.Set(m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer());
         ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "cbPBRRendererAttibs"}.Set(m_Resources[RESOURCE_IDENTIFIER_PBR_ATTRIBS_CONSTANT_BUFFER].AsBuffer());
-        ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_ENVIRONMENT_MAP].GetTextureSRV());
-        ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "g_TextureIrradianceMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_IRRADIANCE_MAP].GetTextureSRV());
-        ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "g_TexturePrefilteredEnvironmentMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].GetTextureSRV());
-        ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "g_TextureBRDFIntegrationMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP].GetTextureSRV());
         RenderTech.InitializeSRB(true);
     }
 
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+
+    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_ENVIRONMENT_MAP].GetTextureSRV());
+    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureIrradianceMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_IRRADIANCE_MAP].GetTextureSRV());
+    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TexturePrefilteredEnvironmentMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].GetTextureSRV());
+    ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureBRDFIntegrationMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP].GetTextureSRV());
 
     ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureBaseColor"}.Set(m_GBuffer->GetBuffer(GBUFFER_RT_BASE_COLOR)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureMaterialData"}.Set(m_GBuffer->GetBuffer(GBUFFER_RT_MATERIAL_DATA)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
@@ -758,6 +749,18 @@ void Tutorial27_PostProcessing::UpdateUI()
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         ImGui::Text("FPS: %f", m_fSmoothFPS);
 
+#ifdef PLATFORM_WIN32
+        if (ImGui::Button("Load Environment Map"))
+        {
+            FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+            OpenDialogAttribs.Title  = "Select HDR file";
+            OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
+            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+            if (!FileName.empty())
+                LoadEnvironmentMap(FileName.data());
+        }
+#endif
+
         if (ImGui::TreeNode("Rendering"))
         {
             ImGui::SliderFloat("Screen Space Reflection Strength", &m_ShaderSettings->SSRStrength, 0.0f, 1.0f);
@@ -821,6 +824,26 @@ void Tutorial27_PostProcessing::ModifyEngineInitInfo(const ModifyEngineInitInfoA
         pEngineCI->PreferredAdapterType = ADAPTER_TYPE_DISCRETE;
 #endif
     }
+}
+
+void Tutorial27_PostProcessing::LoadEnvironmentMap(const char* FileName)
+{
+    // We only need PBR renderer to precompute environment maps
+    if (!m_IBLBacker)
+        m_IBLBacker = std::make_unique<PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, PBR_Renderer::CreateInfo{});
+
+    for (Uint32 TextureIdx = RESOURCE_IDENTIFIER_ENVIRONMENT_MAP; TextureIdx <= RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP; TextureIdx++)
+        m_Resources[TextureIdx].Release();
+
+    RefCntAutoPtr<ITexture> pEnvironmentMap;
+    CreateTextureFromFile(FileName, TextureLoadInfo{"Tutorial27_PostProcessing::EnvironmentMap"}, m_pDevice, &pEnvironmentMap);
+    DEV_CHECK_ERR(pEnvironmentMap, "Failed to load environment map");
+    m_IBLBacker->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+
+    m_Resources.Insert(RESOURCE_IDENTIFIER_ENVIRONMENT_MAP, m_IBLBacker->GetPrefilteredEnvMapSRV()->GetTexture());
+    m_Resources.Insert(RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP, m_IBLBacker->GetPrefilteredEnvMapSRV()->GetTexture());
+    m_Resources.Insert(RESOURCE_IDENTIFIER_IRRADIANCE_MAP, m_IBLBacker->GetIrradianceCubeSRV()->GetTexture());
+    m_Resources.Insert(RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP, m_IBLBacker->GetPreintegratedGGX_SRV()->GetTexture());
 }
 
 } // namespace Diligent

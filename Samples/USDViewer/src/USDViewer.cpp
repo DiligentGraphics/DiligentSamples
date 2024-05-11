@@ -191,16 +191,7 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 
     ImGuizmo::SetGizmoSizeClipSpace(0.15f);
 
-    RefCntAutoPtr<ITexture> EnvironmentMap;
-    CreateTextureFromFile("textures/papermill.ktx", TextureLoadInfo{"Environment map"}, m_pDevice, &EnvironmentMap);
-    VERIFY_EXPR(EnvironmentMap);
-    m_EnvironmentMapSRV = EnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-
-    StateTransitionDesc Barriers[] =
-        {
-            {EnvironmentMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
-        };
-    m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+    LoadEnvironmentMap("textures/papermill.ktx");
 
     if (m_UsdFileName.empty())
         m_UsdFileName = "usd/AppleVisionPro.usdz";
@@ -463,6 +454,26 @@ void USDViewer::LoadStage()
     m_Stage.Animation.Time               = m_Stage.Animation.StartTime;
 }
 
+void USDViewer::LoadEnvironmentMap(const char* Path)
+{
+    RefCntAutoPtr<ITexture> pEnvironmentMap;
+    CreateTextureFromFile(Path, TextureLoadInfo{"Environment map"}, m_pDevice, &pEnvironmentMap);
+    VERIFY_EXPR(pEnvironmentMap);
+
+    if (m_Stage && m_Stage.RenderDelegate)
+    {
+        auto pIBLBacker = m_Stage.RenderDelegate->GetUSDRenderer();
+        pIBLBacker->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
+
+    StateTransitionDesc Barriers[] = {
+        {pEnvironmentMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+    };
+    m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+
+    m_EnvironmentMapSRV = pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+}
+
 // Render a frame
 void USDViewer::Render()
 {
@@ -644,6 +655,16 @@ void USDViewer::UpdateUI()
                         m_UsdFileName = std::move(FileName);
                         LoadStage();
                     }
+                }
+
+                if (ImGui::Button("Load Environment Map"))
+                {
+                    FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+                    OpenDialogAttribs.Title  = "Select HDR file";
+                    OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
+                    auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+                    if (!FileName.empty())
+                        LoadEnvironmentMap(FileName.data());
                 }
 
                 if (ImGui::Button("Open directory"))

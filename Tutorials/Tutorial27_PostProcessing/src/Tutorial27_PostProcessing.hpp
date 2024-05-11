@@ -52,6 +52,7 @@ class ScreenSpaceAmbientOcclusion;
 class TemporalAntiAliasing;
 class Bloom;
 class GBuffer;
+class PBR_Renderer;
 
 class Tutorial27_PostProcessing final : public SampleBase
 {
@@ -91,6 +92,8 @@ private:
 
     void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override;
 
+    void LoadEnvironmentMap(const char* FileName);
+
 private:
     using RenderTechnique  = PostFXRenderTechnique;
     using ResourceInternal = RefCntAutoPtr<IDeviceObject>;
@@ -129,6 +132,7 @@ private:
     ResourceRegistry                               m_Resources{};
 
     std::unique_ptr<GBuffer>                     m_GBuffer;
+    std::unique_ptr<PBR_Renderer>                m_IBLBacker;
     std::unique_ptr<EnvMapRenderer>              m_EnvironmentMapRenderer;
     std::unique_ptr<PostFXContext>               m_PostFXContext;
     std::unique_ptr<ScreenSpaceReflection>       m_ScreenSpaceReflection;
