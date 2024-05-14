@@ -102,6 +102,7 @@ private:
 
         USD::HnRenderBuffer* FinalColorTarget = nullptr;
 
+        pxr::SdfPath DomeLightId;
         pxr::SdfPath SelectedPrimId;
 
         float4x4 RootTransform = float4x4::Identity();

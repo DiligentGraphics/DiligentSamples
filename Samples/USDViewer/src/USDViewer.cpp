@@ -62,6 +62,7 @@
 #include "pxr/usd/usdGeom/imageable.h"
 #include "pxr/usd/usdLux/distantLight.h"
 #include "pxr/usd/usdLux/sphereLight.h"
+#include "pxr/usd/usdLux/domeLight.h"
 #include "pxr/usd/usdLux/shadowAPI.h"
 #include "pxr/base/gf/rotation.h"
 
@@ -190,8 +191,6 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     }
 
     ImGuizmo::SetGizmoSizeClipSpace(0.15f);
-
-    LoadEnvironmentMap("textures/papermill.ktx");
 
     if (m_UsdFileName.empty())
         m_UsdFileName = "usd/AppleVisionPro.usdz";
@@ -348,6 +347,13 @@ void USDViewer::LoadStage()
     AddDirectionalLight("_HnDirectionalLight2_", 5000.f, pxr::GfRotation{pxr::GfVec3d{1, -0.5, 0.0}, -50}, 1024);
     AddDirectionalLight("_HnDirectionalLight3_", 5000.f, pxr::GfRotation{pxr::GfVec3d{1, 0.0, 0.5}, -40}, 1024);
 
+    // Environment map
+    {
+        m_Stage.DomeLightId            = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDomeLight_"});
+        pxr::UsdLuxDomeLight DomeLight = pxr::UsdLuxDomeLight::Define(m_Stage.Stage, m_Stage.DomeLightId);
+        DomeLight.CreateTextureFileAttr().Set(pxr::SdfAssetPath{"textures/papermill.ktx"});
+    }
+
 #if 0
     // Point light
     {
@@ -375,8 +381,6 @@ void USDViewer::LoadStage()
     m_Stage.RenderIndex->InsertBprim(pxr::HdPrimTypeTokens->renderBuffer, m_Stage.ImagingDelegate.get(), FinalColorTargetId);
     m_Stage.FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, FinalColorTargetId));
     VERIFY_EXPR(m_Stage.FinalColorTarget != nullptr);
-
-    m_Stage.RenderDelegate->GetUSDRenderer()->PrecomputeCubemaps(m_pImmediateContext, m_EnvironmentMapSRV);
 
     m_FrameParams                    = {};
     m_FrameParams.State.FrontFaceCCW = true;
@@ -456,22 +460,18 @@ void USDViewer::LoadStage()
 
 void USDViewer::LoadEnvironmentMap(const char* Path)
 {
-    RefCntAutoPtr<ITexture> pEnvironmentMap;
-    CreateTextureFromFile(Path, TextureLoadInfo{"Environment map"}, m_pDevice, &pEnvironmentMap);
-    VERIFY_EXPR(pEnvironmentMap);
+    if (m_Stage.DomeLightId.IsEmpty())
+        return;
 
-    if (m_Stage && m_Stage.RenderDelegate)
-    {
-        auto pIBLBacker = m_Stage.RenderDelegate->GetUSDRenderer();
-        pIBLBacker->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-    }
+    pxr::UsdPrim Prim = m_Stage.Stage->GetPrimAtPath(m_Stage.DomeLightId);
+    if (!Prim)
+        return;
 
-    StateTransitionDesc Barriers[] = {
-        {pEnvironmentMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
-    };
-    m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
+    pxr::UsdLuxDomeLight DomeLight{Prim};
+    if (!DomeLight)
+        return;
 
-    m_EnvironmentMapSRV = pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    DomeLight.GetTextureFileAttr().Set(pxr::SdfAssetPath{Path});
 }
 
 // Render a frame
