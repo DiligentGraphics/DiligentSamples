@@ -202,7 +202,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ShaderSettings              = std::make_unique<ShaderSettings>();
 
     m_ShaderSettings->PBRRenderParams.OcclusionStrength      = 1.0f;
-    m_ShaderSettings->PBRRenderParams.IBLScale               = 1.0f;
+    m_ShaderSettings->PBRRenderParams.IBLScale               = float4{1.0f};
     m_ShaderSettings->PBRRenderParams.AverageLogLum          = 0.2f;
     m_ShaderSettings->PBRRenderParams.WhitePoint             = HLSL::ToneMappingAttribs{}.fWhitePoint;
     m_ShaderSettings->PBRRenderParams.MiddleGray             = HLSL::ToneMappingAttribs{}.fMiddleGray;

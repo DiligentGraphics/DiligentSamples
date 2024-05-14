@@ -1239,7 +1239,7 @@ void GLTFViewer::Render()
             Renderer.AverageLogLum     = m_ShaderAttribs.AverageLogLum;
             Renderer.MiddleGray        = m_ShaderAttribs.MiddleGray;
             Renderer.WhitePoint        = m_ShaderAttribs.WhitePoint;
-            Renderer.IBLScale          = m_ShaderAttribs.IBLScale;
+            Renderer.IBLScale          = float4{m_ShaderAttribs.IBLScale};
             Renderer.HighlightColor    = m_ShaderAttribs.HighlightColor;
             Renderer.UnshadedColor     = m_ShaderAttribs.WireframeColor;
             Renderer.PointSize         = 1;
