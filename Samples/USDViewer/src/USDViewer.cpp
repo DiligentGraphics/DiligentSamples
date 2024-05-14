@@ -255,6 +255,16 @@ static float4x4 GetUpAxisTransform(const pxr::TfToken UpAxis)
     }
 }
 
+static bool HasDomeLight(pxr::UsdStage& Stage)
+{
+    for (const auto& Prim : Stage.Traverse())
+    {
+        if (Prim.IsA<pxr::UsdLuxDomeLight>())
+            return true;
+    }
+    return false;
+}
+
 void USDViewer::LoadStage()
 {
     {
@@ -348,6 +358,7 @@ void USDViewer::LoadStage()
     AddDirectionalLight("_HnDirectionalLight3_", 5000.f, pxr::GfRotation{pxr::GfVec3d{1, 0.0, 0.5}, -40}, 1024);
 
     // Environment map
+    if (!HasDomeLight(*m_Stage.Stage))
     {
         m_Stage.DomeLightId            = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDomeLight_"});
         pxr::UsdLuxDomeLight DomeLight = pxr::UsdLuxDomeLight::Define(m_Stage.Stage, m_Stage.DomeLightId);
@@ -657,14 +668,17 @@ void USDViewer::UpdateUI()
                     }
                 }
 
-                if (ImGui::Button("Load Environment Map"))
+                if (!m_Stage.DomeLightId.IsEmpty())
                 {
-                    FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
-                    OpenDialogAttribs.Title  = "Select HDR file";
-                    OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
-                    auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
-                    if (!FileName.empty())
-                        LoadEnvironmentMap(FileName.data());
+                    if (ImGui::Button("Load Environment Map"))
+                    {
+                        FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
+                        OpenDialogAttribs.Title  = "Select HDR file";
+                        OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
+                        auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+                        if (!FileName.empty())
+                            LoadEnvironmentMap(FileName.data());
+                    }
                 }
 
                 if (ImGui::Button("Open directory"))
