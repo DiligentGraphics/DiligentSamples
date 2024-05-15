@@ -54,12 +54,11 @@
             canvas: (function () {
                 var dpr = window.devicePixelRatio;
                 var canvas = document.getElementById('canvas');
-                canvas.width = Math.ceil(dpr * window.innerWidth);
-                canvas.height = Math.ceil(dpr * window.innerHeight);
-                window.addEventListener("resize", function () {
+               
+                window.onload =  function () {
                     canvas.width = Math.ceil(dpr * window.innerWidth);
                     canvas.height = Math.ceil(dpr * window.innerHeight);
-                });
+                };
                 canvas.addEventListener("webglcontextlost", function(e) { alert('FIXME: WebGL context lost, please reload the page'); e.preventDefault(); }, false);
                 return canvas;
             })(),
