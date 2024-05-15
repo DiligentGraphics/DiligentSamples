@@ -49,17 +49,17 @@ float3 FresnelSchlickRoughness(float CosTheta, float3 F0, float roughness)
 
 float3 SampleEnvironmentMap(float3 Coord)
 {
-    return g_PBRRendererAttibs.IBLScale * g_TextureEnvironmentMap.SampleLevel(g_TextureEnvironmentMap_sampler, float3(+1.0, -1.0, +1.0) * Coord, 0.0);
+    return g_PBRRendererAttibs.IBLScale.xyz * g_TextureEnvironmentMap.SampleLevel(g_TextureEnvironmentMap_sampler, float3(+1.0, -1.0, +1.0) * Coord, 0.0);
 }
 
 float3 SampleIrradianceMap(float3 Coord)
 {
-    return g_PBRRendererAttibs.IBLScale * g_TextureIrradianceMap.Sample(g_TextureIrradianceMap_sampler, float3(+1.0, -1.0, +1.0) * Coord);
+    return g_PBRRendererAttibs.IBLScale.xyz * g_TextureIrradianceMap.Sample(g_TextureIrradianceMap_sampler, float3(+1.0, -1.0, +1.0) * Coord);
 }
 
 float3 SamplePrefilteredEnvironmentMap(float3 Coord, float MipLevel)
 {
-    return g_PBRRendererAttibs.IBLScale * g_TexturePrefilteredEnvironmentMap.SampleLevel(g_TexturePrefilteredEnvironmentMap_sampler, float3(+1.0, -1.0, +1.0) * Coord, MipLevel);
+    return g_PBRRendererAttibs.IBLScale.xyz * g_TexturePrefilteredEnvironmentMap.SampleLevel(g_TexturePrefilteredEnvironmentMap_sampler, float3(+1.0, -1.0, +1.0) * Coord, MipLevel);
 }
 
 float2 SampleBRDFIntegrationMap(float2 Coord)
