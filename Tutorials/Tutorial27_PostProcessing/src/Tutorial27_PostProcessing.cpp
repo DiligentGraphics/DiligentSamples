@@ -624,7 +624,7 @@ void Tutorial27_PostProcessing::ComputeLighting()
                                      m_Resources[RESOURCE_IDENTIFIER_RADIANCE0].AsTexture()->GetDesc().Format,
                                  },
                                  TEX_FORMAT_UNKNOWN,
-                                 DSS_DisableDepth, BS_Default, false);
+                                 DSS_DisableDepth, BS_Default, false, false);
         ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "cbCameraAttribs"}.Set(m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer());
         ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "cbPBRRendererAttibs"}.Set(m_Resources[RESOURCE_IDENTIFIER_PBR_ATTRIBS_CONSTANT_BUFFER].AsBuffer());
         RenderTech.InitializeSRB(true);
@@ -714,7 +714,7 @@ void Tutorial27_PostProcessing::ApplyToneMap()
                                  VS, PS, ResourceLayout,
                                  {m_pSwapChain->GetDesc().ColorBufferFormat},
                                  TEX_FORMAT_UNKNOWN,
-                                 DSS_DisableDepth, BS_Default, false);
+                                 DSS_DisableDepth, BS_Default, false, false);
         ShaderResourceVariableX{RenderTech.PSO, SHADER_TYPE_PIXEL, "cbPBRRendererAttibs"}.Set(m_Resources[RESOURCE_IDENTIFIER_PBR_ATTRIBS_CONSTANT_BUFFER].AsBuffer());
         RenderTech.InitializeSRB(true);
     }
@@ -824,6 +824,8 @@ void Tutorial27_PostProcessing::ModifyEngineInitInfo(const ModifyEngineInitInfoA
         pEngineCI->PreferredAdapterType = ADAPTER_TYPE_DISCRETE;
 #endif
     }
+
+    Attribs.EngineCI.Features.AsyncShaderCompilation = DEVICE_FEATURE_STATE_ENABLED;
 }
 
 void Tutorial27_PostProcessing::LoadEnvironmentMap(const char* FileName)
