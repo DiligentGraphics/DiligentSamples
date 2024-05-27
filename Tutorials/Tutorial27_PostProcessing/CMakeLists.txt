@@ -20,6 +20,7 @@ set(SHADERS
     assets/shaders/GenerateGeometry.psh
     assets/shaders/ComputeLighting.fx
     assets/shaders/ApplyToneMap.fx 
+    assets/shaders/GammaCorrection.fx 
 )
 
 set(TEXTURES

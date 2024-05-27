@@ -41,9 +41,9 @@ struct SurfaceInformation
     float3 Normal;
 };
 
-float3 FresnelSchlickRoughness(float CosTheta, float3 F0, float roughness)
+float3 FresnelSchlickRoughness(float CosTheta, float3 F0, float Roughness)
 {
-    float Alpha = 1.0 - roughness;
+    float Alpha = 1.0 - Roughness;
     return F0 + (max(float3(Alpha, Alpha, Alpha), F0) - F0) * pow(clamp(1.0 - CosTheta, 0.0, 1.0), 5.0);
 }
 

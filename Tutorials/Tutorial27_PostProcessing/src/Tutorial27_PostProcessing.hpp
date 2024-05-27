@@ -34,6 +34,7 @@
 #include "PostFXRenderTechnique.hpp"
 #include "ResourceRegistry.hpp"
 #include "PBR_Renderer.hpp"
+#include "PostFXContext.hpp"
 
 namespace Diligent
 {
@@ -51,6 +52,7 @@ class ScreenSpaceReflection;
 class ScreenSpaceAmbientOcclusion;
 class TemporalAntiAliasing;
 class Bloom;
+class SuperResolution;
 class GBuffer;
 class PBR_Renderer;
 
@@ -86,7 +88,11 @@ private:
 
     void ComputeBloom();
 
-    void ApplyToneMap();
+    void ComputeToneMapping();
+
+    void ComputeFSR();
+
+    void ComputeGammaCorrection();
 
     void UpdateUI();
 
@@ -104,7 +110,8 @@ private:
         RENDER_TECH_GENERATE_GEOMETRY = 0,
         RENDER_TECH_COMPUTE_MOTION_VECTORS,
         RENDER_TECH_COMPUTE_LIGHTING,
-        RENDER_TECH_APPLY_TONE_MAP,
+        RENDER_TECH_COMPUTE_TONE_MAPPING,
+        RENDER_TECH_COMPUTE_GAMMA_CORRECTION,
         RENDER_TECH_COUNT
     };
 
@@ -124,7 +131,7 @@ private:
         RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP,
         RESOURCE_IDENTIFIER_IRRADIANCE_MAP,
         RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP,
-        RESOURCE_IDENTIFIER_OUTPUT,
+        RESOURCE_IDENTIFIER_TONE_MAPPING,
         RESOURCE_IDENTIFIER_COUNT
     };
 
@@ -139,6 +146,7 @@ private:
     std::unique_ptr<ScreenSpaceAmbientOcclusion> m_ScreenSpaceAmbientOcclusion;
     std::unique_ptr<TemporalAntiAliasing>        m_TemporalAntiAliasing;
     std::unique_ptr<Bloom>                       m_Bloom;
+    std::unique_ptr<SuperResolution>             m_SuperResolution;
     std::unique_ptr<ShaderSettings>              m_ShaderSettings;
 
     FirstPersonCamera                        m_Camera;
@@ -155,7 +163,8 @@ private:
     static constexpr Uint32 m_MaxObjectCount   = 32;
     static constexpr Uint32 m_MaxMaterialCount = 24;
 
-    Uint32 m_SSRSettingsDisplayMode = 0;
+    Uint32                   m_SSRSettingsDisplayMode = 0;
+    PostFXContext::FrameDesc m_PostFXFrameDesc;
 };
 
 } // namespace Diligent
