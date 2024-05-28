@@ -739,6 +739,24 @@ void USDViewer::UpdateUI()
             {
                 ImGui::PushItemWidth(130);
 
+                if (ImGui::TreeNode("Camera Settings"))
+                {
+                    const auto         CameraDist = m_Camera.GetDist();
+                    const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
+
+                    ImGui::SliderFloat("Focal Length (mm)", &m_CameraSettings.FocalLength, 24.0, 300.0);
+                    ImGui::SliderFloat("Aperture (f-stop)", &m_CameraSettings.FStop, 1.0, 64.0);
+                    ImGui::SliderFloat("Focus Distance", &m_CameraSettings.FocusDistance, ClippingRange[0], ClippingRange[1], "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                    ImGui::SliderFloat("Sensor Width", &m_CameraSettings.SensorWidth, 0.01f, 100);
+
+                    ImGui::ScopedDisabler Disabler{true};
+                    ImGui::SliderFloat("Sensor Height", &m_CameraSettings.SensorHeight, 0.01f, 100);
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::Spacing();
+
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode("Lighting"))
                 {
@@ -1110,19 +1128,23 @@ void USDViewer::UpdateCamera()
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
+    const float        FOV = 2.0f * atanf(m_CameraSettings.SensorWidth / (2.0 * m_CameraSettings.FocalLength));
     const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
     // Get projection matrix adjusted to the current screen orientation
-    m_CameraProj = GetAdjustedProjectionMatrix(PI_F / 4.0f, ClippingRange[0], ClippingRange[1]);
+    m_CameraProj = GetAdjustedProjectionMatrix(FOV, ClippingRange[0], ClippingRange[1]);
+
+    // TODO: We need crop image if screen size doesn't match the aspect ratio of the sensor
+    const auto& SCDesc             = m_pSwapChain->GetDesc();
+    const float AspectRatio        = static_cast<float>(SCDesc.Width) / static_cast<float>(SCDesc.Height);
+    m_CameraSettings.SensorHeight  = m_CameraSettings.SensorWidth / AspectRatio;
+    m_CameraSettings.FocusDistance = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength * 0.001f, ClippingRange[1]);
 
     m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * m_CameraView).Inverse()));
-
-    const float FocalDist          = 0.125f;
-    const float HorizontalAperture = 2.f * FocalDist / m_CameraProj._11;
-    const float VerticalAperture   = 2.f * FocalDist / m_CameraProj._22;
-
-    m_Stage.Camera.GetFocalLengthAttr().Set(FocalDist);
-    m_Stage.Camera.GetVerticalApertureAttr().Set(VerticalAperture);
-    m_Stage.Camera.GetHorizontalApertureAttr().Set(HorizontalAperture);
+    m_Stage.Camera.GetFocusDistanceAttr().Set(m_CameraSettings.FocusDistance);
+    m_Stage.Camera.GetFocalLengthAttr().Set(m_CameraSettings.FocalLength);
+    m_Stage.Camera.GetFStopAttr().Set(m_CameraSettings.FStop);
+    m_Stage.Camera.GetHorizontalApertureAttr().Set(m_CameraSettings.SensorWidth);
+    m_Stage.Camera.GetVerticalApertureAttr().Set(m_CameraSettings.SensorHeight);
     m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRange);
 }
 
