@@ -98,7 +98,7 @@ m_pImmediateContext->TransitionResourceStates(2, Barriers);
 ```
 
 When resources are explicitly transitioned to correct states, the engine does not need to check
-the states at every draw command which greately reduces the overhead. 
+the states at every draw command which greatly reduces the overhead. 
 
 ## Multithreaded Rendering
 
