@@ -84,6 +84,7 @@ private:
 private:
     RenderDeviceWithCache_N m_DeviceWithCache;
 
+    bool m_EnableShaderCache     = false;
     bool m_EnableHotShaderReload = false;
 
     struct StageInfo

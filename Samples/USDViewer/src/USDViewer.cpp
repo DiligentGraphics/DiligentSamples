@@ -132,6 +132,7 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
     ArgsParser.Parse("vertex_pool", m_UseVertexPool);
     ArgsParser.Parse("index_pool", m_UseIndexPool);
     ArgsParser.Parse("atlas_dim", m_TextureAtlasDim);
+    ArgsParser.Parse("shader_cache", m_EnableShaderCache);
     LOG_INFO_MESSAGE("USD Viewer Arguments:",
                      "\n    USD Path:        ", m_UsdFileName,
                      "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
@@ -154,8 +155,9 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    // Create render state cache
+    if (m_EnableShaderCache)
     {
+        // Create render state cache
         RenderStateCacheCreateInfo StateCacheCI;
         StateCacheCI.LogLevel = RENDER_STATE_CACHE_LOG_LEVEL_NORMAL;
 
@@ -188,6 +190,10 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
         const std::string CachePath  = GetRenderStateCacheFilePath(RenderStateCacheLocationAppData, "USDViewer", m_pDevice->GetDeviceInfo().Type);
         const bool        SaveOnExit = true;
         m_DeviceWithCache.LoadCacheFromFile(CachePath.c_str(), SaveOnExit);
+    }
+    else
+    {
+        m_DeviceWithCache = RenderDeviceWithCache<false>{m_pDevice};
     }
 
     ImGuizmo::SetGizmoSizeClipSpace(0.15f);
@@ -298,7 +304,8 @@ void USDViewer::LoadStage()
     DelegateCI.UseIndexPool      = m_UseIndexPool;
     DelegateCI.EnableShadows     = true;
 
-    DelegateCI.AllowHotShaderReload = m_EnableHotShaderReload;
+    DelegateCI.AllowHotShaderReload   = m_EnableHotShaderReload;
+    DelegateCI.AsyncShaderCompilation = !m_EnableShaderCache;
 
     if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
