@@ -817,7 +817,7 @@ void GLTFViewer::UpdateUI()
                 LoadModel(m_Models[m_SelectedModel].Path.c_str());
             }
         }
-#ifdef PLATFORM_WIN32
+#if FILE_DIALOG_SUPPORTED
         if (ImGui::Button("Load model"))
         {
             FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
@@ -839,8 +839,8 @@ void GLTFViewer::UpdateUI()
             if (!FileName.empty())
                 LoadEnvironmentMap(FileName.data());
         }
-
 #endif
+
         if (m_Model->Scenes.size() > 1)
         {
             std::vector<std::pair<Uint32, std::string>> SceneList;

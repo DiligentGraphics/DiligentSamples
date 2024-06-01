@@ -661,7 +661,7 @@ void USDViewer::UpdateUI()
                     }
                 }
 
-#ifdef PLATFORM_WIN32
+#if FILE_DIALOG_SUPPORTED
                 if (ImGui::Button("Load model"))
                 {
                     FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
