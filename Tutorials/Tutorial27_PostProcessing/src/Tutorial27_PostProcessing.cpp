@@ -749,12 +749,12 @@ void Tutorial27_PostProcessing::UpdateUI()
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         ImGui::Text("FPS: %f", m_fSmoothFPS);
 
-#ifdef PLATFORM_WIN32
+#if PLATFORM_WIN32 || PLATFORM_MACOS
         if (ImGui::Button("Load Environment Map"))
         {
             FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
             OpenDialogAttribs.Title  = "Select HDR file";
-            OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
+            OpenDialogAttribs.Filter = "*.hdr";//"HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
             auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
             if (!FileName.empty())
                 LoadEnvironmentMap(FileName.data());

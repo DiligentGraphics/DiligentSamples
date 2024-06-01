@@ -438,9 +438,9 @@ void USDViewer::LoadStage()
     m_PostProcessParams.EnableBloom                  = true;
     m_PostProcessParams.SSAO.EffectRadius            = std::min(SceneExtent * 0.1f, 5.f);
 
-    const float GridScale                = 1.f / std::pow(10.f, std::floor(std::log10(std::max(SceneExtent, 0.01f))));
-    m_PostProcessParams.Grid.GridScale   = float4{GridScale};
-    m_PostProcessParams.GridFeatureFlags = (CoordinateGridRenderer::FEATURE_FLAG_RENDER_PLANE_XZ |
+    const float GridScale                    = std::max(SceneExtent, 0.01f) / 10.0;
+    m_PostProcessParams.Grid.GridMinCellSize = float4{GridScale};
+    m_PostProcessParams.GridFeatureFlags     = (CoordinateGridRenderer::FEATURE_FLAG_RENDER_PLANE_XZ |
                                             CoordinateGridRenderer::FEATURE_FLAG_RENDER_AXIS_X |
                                             CoordinateGridRenderer::FEATURE_FLAG_RENDER_AXIS_Z);
     if (UpAxis == pxr::UsdGeomTokens->x)
