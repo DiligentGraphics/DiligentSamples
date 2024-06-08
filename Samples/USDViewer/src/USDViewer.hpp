@@ -162,6 +162,15 @@ private:
     float4x4               m_CameraView;
     float4x4               m_CameraProj;
 
+    struct
+    {
+        float FocalLength   = 30.0f;
+        float FocusDistance = 2.0f;
+        float FStop         = 2.8f;
+        float SensorWidth   = 36.0f;
+        float SensorHeight  = 24.0f;
+    } m_CameraSettings;
+
     struct RenderStats
     {
         Uint32 NumDrawCommands      = 0;
