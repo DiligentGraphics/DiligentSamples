@@ -887,7 +887,9 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
     pCtx->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
     auto CapturedPixels = Image::ConvertImageData(TexDesc.Width, TexDesc.Height,
                                                   reinterpret_cast<const Uint8*>(TexData.pData), static_cast<Uint32>(TexData.Stride),
-                                                  TexDesc.Format, TEX_FORMAT_RGBA8_UNORM, false /*Keep alpha*/);
+                                                  TexDesc.Format, TEX_FORMAT_RGBA8_UNORM,
+                                                  /*KeepAlpha = */ false,
+                                                  /*FlipY = */ m_pDevice->GetDeviceInfo().IsGLDevice());
     pCtx->UnmapTextureSubresource(Capture.pTexture, 0, 0);
 
     auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
@@ -955,6 +957,7 @@ void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::Ca
     Info.Height      = TexDesc.Height;
     Info.TexFormat   = TexDesc.Format;
     Info.KeepAlpha   = m_ScreenCaptureInfo.KeepAlpha;
+    Info.FlipY       = m_pDevice->GetDeviceInfo().IsGLDevice();
     Info.pData       = TexData.pData;
     Info.Stride      = static_cast<Uint32>(TexData.Stride);
     Info.FileFormat  = m_ScreenCaptureInfo.FileFormat;
