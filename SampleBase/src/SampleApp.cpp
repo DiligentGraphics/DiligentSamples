@@ -60,6 +60,10 @@
 #    include "EngineFactoryMtl.h"
 #endif
 
+#if WEBGPU_SUPPORTED
+#    include "EngineFactoryWebGPU.h"
+#endif
+
 #include "imgui.h"
 #include "ImGuiImplDiligent.hpp"
 #include "ImGuiUtils.hpp"
@@ -136,7 +140,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 
     Uint32 NumImmediateContexts = 0;
 
-#if D3D11_SUPPORTED || D3D12_SUPPORTED || VULKAN_SUPPORTED
+#if D3D11_SUPPORTED || D3D12_SUPPORTED || VULKAN_SUPPORTED || WEBGPU_SUPPORTED
     auto FindAdapter = [this](auto* pFactory, Version GraphicsAPIVersion, GraphicsAdapterInfo& AdapterAttribs) {
         Uint32 NumAdapters = 0;
         pFactory->EnumerateAdapters(GraphicsAPIVersion, NumAdapters, nullptr);
@@ -414,7 +418,6 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         break;
 #endif
 
-
 #if METAL_SUPPORTED
         case RENDER_DEVICE_TYPE_METAL:
         {
@@ -442,6 +445,35 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         break;
 #endif
 
+#if WEBGPU_SUPPORTED
+        case RENDER_DEVICE_TYPE_WEBGPU:
+        {
+#    if EXPLICITLY_LOAD_ENGINE_WEBGPU_DLL
+            // Load the dll and import LoadGraphicsEngineWebGPU() function
+            auto GetEngineFactoryWebGPU = LoadGraphicsEngineWebGPU();
+#    endif
+            EngineWebGPUCreateInfo EngineCI;
+            if (m_ValidationLevel >= 0)
+                EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
+
+            auto* pFactoryWebGPU = GetEngineFactoryWebGPU();
+            m_pEngineFactory     = pFactoryWebGPU;
+            m_TheSample->ModifyEngineInitInfo({pFactoryWebGPU, m_DeviceType, EngineCI, m_SwapChainInitDesc});
+
+            NumImmediateContexts = std::max(1u, EngineCI.NumImmediateContexts);
+            ppContexts.resize(NumImmediateContexts + EngineCI.NumDeferredContexts);
+            pFactoryWebGPU->CreateDeviceAndContextsWebGPU(EngineCI, &m_pDevice, ppContexts.data());
+            if (!m_pDevice)
+            {
+                LOG_ERROR_AND_THROW("Unable to initialize Diligent Engine in WebGPU mode. The API may not be available, "
+                                    "or required features may not be supported by this GPU/driver/OS version.");
+            }
+
+            if (!m_pSwapChain && pWindow != nullptr)
+                pFactoryWebGPU->CreateSwapChainWebGPU(m_pDevice, ppContexts[0], m_SwapChainInitDesc, *pWindow, &m_pSwapChain);
+        }
+        break;
+#endif
         default:
             LOG_ERROR_AND_THROW("Unknown device type");
             break;

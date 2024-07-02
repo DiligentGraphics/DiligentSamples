@@ -18,6 +18,7 @@ if(PLATFORM_WIN32)
         src/Win32/resources/directx12-logo.bmp
         src/Win32/resources/vulkan-logo.bmp
         src/Win32/resources/opengl-logo.bmp
+        src/Win32/resources/webgpu-logo.bmp
         src/Win32/resources/Win32AppResource.rc
     )
 

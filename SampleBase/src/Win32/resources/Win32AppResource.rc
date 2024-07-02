@@ -52,7 +52,7 @@ END
 // Dialog
 //
 
-IDD_DEVICE_TYPE_SELECTION_DIALOG DIALOGEX 0, 0, 198, 213
+IDD_DEVICE_TYPE_SELECTION_DIALOG DIALOGEX 0, 0, 198, 265
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
 CAPTION "Please select rendering backend"
 FONT 12, "MS Shell Dlg", 400, 0, 0xCC
@@ -61,6 +61,7 @@ BEGIN
     DEFPUSHBUTTON   "Direct3D12",ID_DIRECT3D12,47,61,103,43,BS_BITMAP,WS_EX_CLIENTEDGE
     DEFPUSHBUTTON   "OpenGL",ID_OPENGL,47,109,103,43,BS_BITMAP,WS_EX_CLIENTEDGE
     DEFPUSHBUTTON   "Vulkan",ID_VULKAN,47,157,103,43,BS_BITMAP,WS_EX_CLIENTEDGE
+    DEFPUSHBUTTON   "WebGPU",ID_WEBGPU,47,205,104,43,BS_BITMAP,WS_EX_CLIENTEDGE
 END
 
 
@@ -77,7 +78,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 187
         TOPMARGIN, 7
-        BOTTOMMARGIN, 201
+        BOTTOMMARGIN, 253
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -106,6 +107,8 @@ IDB_VULKAN_LOGO         BITMAP                  "vulkan-logo.bmp"
 IDB_DIRECTX11_LOGO      BITMAP                  "directx11-logo.bmp"
 
 IDB_DIRECTX12_LOGO      BITMAP                  "directx12-logo.bmp"
+
+IDB_WEBGPU_LOGO         BITMAP                  "webgpu-logo.bmp"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
