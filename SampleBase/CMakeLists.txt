@@ -18,6 +18,7 @@ if(PLATFORM_WIN32)
         src/Win32/resources/directx12-logo.bmp
         src/Win32/resources/vulkan-logo.bmp
         src/Win32/resources/opengl-logo.bmp
+        src/Win32/resources/webgpu-logo.bmp
         src/Win32/resources/Win32AppResource.rc
     )
 
@@ -129,7 +130,11 @@ elseif(PLATFORM_EMSCRIPTEN)
         set(HTML_TEMPLATE_FILE 
             ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/emscripten_template.html
         )          
-        target_link_options(${TARGET_NAME} PRIVATE "SHELL: --shell-file '${HTML_TEMPLATE_FILE}'")   
+
+        target_link_options(${TARGET_NAME} PRIVATE "SHELL: --shell-file '${HTML_TEMPLATE_FILE}' -s WASM_BIGINT")
+        if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND DILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO)
+            target_link_options(${TARGET_NAME} PRIVATE "SHELL: -gseparate-dwarf -g0")
+        endif()
     endfunction()
     
 else()

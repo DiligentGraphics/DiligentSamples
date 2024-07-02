@@ -73,6 +73,10 @@ INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND   hwndDlg,
                     g_DeviceType = Diligent::RENDER_DEVICE_TYPE_VULKAN;
                     EndDialog(hwndDlg, wParam);
                     return TRUE;
+                case ID_WEBGPU:
+                    g_DeviceType = Diligent::RENDER_DEVICE_TYPE_WEBGPU;
+                    EndDialog(hwndDlg, wParam);
+                    return TRUE;
             }
             break;
 
@@ -105,6 +109,13 @@ INT_PTR CALLBACK SelectDeviceTypeDialogProc(HWND   hwndDlg,
             BOOL VulkanSupported = FALSE;
 #endif
             SetButtonImage(hwndDlg, ID_VULKAN, IDB_VULKAN_LOGO, VulkanSupported);
+
+#if WEBGPU_SUPPORTED
+            BOOL WebGPUSupported = TRUE;
+#else
+            BOOL WebGPUSupported = FALSE;
+#endif
+            SetButtonImage(hwndDlg, ID_WEBGPU, IDB_WEBGPU_LOGO, WebGPUSupported);
         }
         break;
     }

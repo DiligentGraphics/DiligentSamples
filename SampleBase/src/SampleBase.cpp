@@ -95,6 +95,13 @@ void SampleBase::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs
         break;
 #endif
 
+#if WEBGPU_SUPPORTED
+        case RENDER_DEVICE_TYPE_WEBGPU:
+        {
+            // Nothing to do
+        }
+        break;
+#endif
         default:
             LOG_ERROR_AND_THROW("Unknown device type");
             break;

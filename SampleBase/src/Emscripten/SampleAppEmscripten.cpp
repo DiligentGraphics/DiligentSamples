@@ -24,7 +24,6 @@
 
 
 #include "SampleApp.hpp"
-#include "RenderDeviceGLES.h"
 #include "ImGuiImplEmscripten.hpp"
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -38,7 +37,11 @@ class SampleAppEmscripten : public SampleApp
 public:
     SampleAppEmscripten()
     {
+#if WEBGPU_SUPPORTED
+        m_DeviceType = RENDER_DEVICE_TYPE_WEBGPU;
+#else
         m_DeviceType = RENDER_DEVICE_TYPE_GLES;
+#endif
     }
 
     void OnWindowCreated(const char* CanvasID, int32_t WindowWidth, int32_t WindowHeight) override

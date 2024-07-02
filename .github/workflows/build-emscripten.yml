@@ -8,6 +8,7 @@ jobs:
       matrix:
         os:         ["windows-latest", "ubuntu-20.04", "macos-14"]
         build_type: ["Debug", "Release"]
+        cmake_args: ["-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"]
         exclude:
           # Exclude MacOS-Release
           - os:         "macos-14"
@@ -41,6 +42,7 @@ jobs:
       uses: DiligentGraphics/github-action/configure-cmake@v1
       with:
         build-type: ${{ matrix.build_type }}
+        cmake-args: ${{ matrix.cmake_args }}
 
     - name: Build
       if:   success()
