@@ -25,6 +25,8 @@ is almost pass-through. The only thing it does is computing the offset of the cu
 the instance Id.
 
 ```hlsl
+#pragma pack_matrix(row_major)
+
 #include "structures.fxh"
 
 cbuffer VSConstants

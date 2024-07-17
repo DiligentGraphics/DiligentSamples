@@ -356,8 +356,8 @@ void Tutorial08_Tessellation::Render()
         Consts->LengthScale = 10.f;
         Consts->HeightScale = Consts->LengthScale / 25.f;
 
-        Consts->WorldView     = m_WorldViewMatrix.Transpose();
-        Consts->WorldViewProj = m_WorldViewProjMatrix.Transpose();
+        Consts->WorldView     = m_WorldViewMatrix;
+        Consts->WorldViewProj = m_WorldViewProjMatrix;
 
         Consts->TessDensity          = m_TessDensity;
         Consts->AdaptiveTessellation = m_AdaptiveTessellation ? 1 : 0;

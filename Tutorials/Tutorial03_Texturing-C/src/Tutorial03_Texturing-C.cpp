@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,7 +82,7 @@ void Tutorial03_Texturing::Update(double CurrTime, double ElapsedTime)
     // Compute world-view-projection matrix
     float4x4 WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;
 
-    ::Update(WorldViewProjMatrix.Transpose().Data());
+    ::Update(WorldViewProjMatrix.Data());
 }
 
 } // namespace Diligent

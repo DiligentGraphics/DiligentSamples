@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -423,7 +423,7 @@ namespace Tutorial03_Texturing
                 var worldMatrix = Matrix4x4.CreateRotationY(clock.ElapsedMilliseconds / 1000.0f) * Matrix4x4.CreateRotationX(-MathF.PI * 0.1f);
                 var viewMatrix = Matrix4x4.CreateTranslation(0.0f, 0.0f, 5.0f);
                 var projMatrix = CreatePerspectiveFieldOfView(MathF.PI / 4.0f, swapChain.GetDesc().Width / (float)swapChain.GetDesc().Height, 0.01f, 100.0f, isOpenGL);
-                var wvpMatrix = Matrix4x4.Transpose(worldMatrix * viewMatrix * projMatrix);
+                var wvpMatrix = worldMatrix * viewMatrix * projMatrix;
 
                 var mapUniformBuffer = deviceContext.MapBuffer<Matrix4x4>(uniformBuffer, MapType.Write, MapFlags.Discard);
                 mapUniformBuffer[0] = wvpMatrix;

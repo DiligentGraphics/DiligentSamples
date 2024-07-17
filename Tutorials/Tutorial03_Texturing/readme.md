@@ -11,6 +11,8 @@ The vertex shader is very similar to the one we used in Tutorial02. The only dif
 the shader inputs texture UV coordinates and passes them to the pixel shader:
 
 ```hlsl
+#pragma pack_matrix(row_major)
+
 cbuffer Constants
 {
     float4x4 g_WorldViewProj;

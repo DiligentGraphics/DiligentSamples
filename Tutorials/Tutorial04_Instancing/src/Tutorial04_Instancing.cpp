@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -204,8 +204,8 @@ void Tutorial04_Instancing::Render()
     {
         // Map the buffer and write current world-view-projection matrix
         MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants[0] = m_ViewProjMatrix.Transpose();
-        CBConstants[1] = m_RotationMatrix.Transpose();
+        CBConstants[0] = m_ViewProjMatrix;
+        CBConstants[1] = m_RotationMatrix;
     }
 
     // Bind vertex, instance and index buffers

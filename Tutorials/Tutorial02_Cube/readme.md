@@ -36,9 +36,16 @@ cbuffer Constants
 };
 ```
 
+Notice the `#pragma pack_matrix(row_major)` directive, which tells the shader compiler to use the row-major matrix layout
+(e.g. matrices are laid out in memory row by row) as opposed to the default column-major layout. The row-major layout
+is consistent with how matrices are defined in C++ code. Note also that column-major matrices are not currently supported
+in WebGPU backend.
+
 The full vertex shader source code is as follows:
 
 ```hlsl
+#pragma pack_matrix(row_major)
+
 cbuffer Constants
 {
     float4x4 g_WorldViewProj;
@@ -245,7 +252,7 @@ that facilitates buffer mapping:
 {
     // Map the buffer and write current world-view-projection matrix
     MapHelper<float4x4> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-    *CBConstants = transposeMatrix(m_WorldViewProjMatrix);
+    *CBConstants = m_WorldViewProjMatrix;
 }
 ```
 

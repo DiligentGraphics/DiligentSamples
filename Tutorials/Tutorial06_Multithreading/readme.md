@@ -18,6 +18,8 @@ instance transform matrix resides in its own constant buffer that is updated eve
 rendered.
 
 ```hlsl
+#pragma pack_matrix(row_major)
+
 cbuffer Constants
 {
     float4x4 g_ViewProj;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -301,8 +301,8 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext* pCtx, Uint32 Subset
         // Since this is a dynamic buffer, it must be mapped in every context before
         // it can be used even though the matrices are the same.
         MapHelper<float4x4> CBConstants(pCtx, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants[0] = m_ViewProjMatrix.Transpose();
-        CBConstants[1] = m_RotationMatrix.Transpose();
+        CBConstants[0] = m_ViewProjMatrix;
+        CBConstants[1] = m_RotationMatrix;
     }
 
     // Bind vertex and index buffers. This must be done for every context
@@ -340,7 +340,7 @@ void Tutorial06_Multithreading::RenderSubset(IDeviceContext* pCtx, Uint32 Subset
                 LOG_ERROR_MESSAGE("Failed to map instance data buffer");
                 break;
             }
-            *InstData = CurrInstData.Matrix.Transpose();
+            *InstData = CurrInstData.Matrix;
         }
 
         pCtx->DrawIndexed(DrawAttrs);

@@ -16,6 +16,8 @@ Vertex shader is mostly similar to the one from Tutorial04, but uses one more pe
 array index that it passes to the pixel shader:
 
 ```hlsl
+#pragma pack_matrix(row_major)
+
 struct PSInput 
 { 
     float4 Pos     : SV_POSITION; 
