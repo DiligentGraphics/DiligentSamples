@@ -63,6 +63,7 @@ void Tutorial21_RayTracing::CreateGraphicsPSO()
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
+    ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     // Create a shader source stream factory to load shaders from files.
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
@@ -125,6 +126,9 @@ void Tutorial21_RayTracing::CreateRayTracingPSO()
 
     // Only new DXC compiler can compile HLSL ray tracing shaders.
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
+
+    // Use row-major matrices.
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     // Shader model 6.3 is required for DXR 1.0, shader model 6.5 is required for DXR 1.1 and enables additional features.
     // Use 6.3 for compatibility with DXR 1.0 and VK_NV_ray_tracing.
@@ -788,7 +792,7 @@ void Tutorial21_RayTracing::Render()
         auto   CameraViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
 
         m_Constants.CameraPos   = float4{CameraWorldPos, 1.0f};
-        m_Constants.InvViewProj = CameraViewProj.Inverse().Transpose();
+        m_Constants.InvViewProj = CameraViewProj.Inverse();
 
         m_pImmediateContext->UpdateBuffer(m_ConstantsCB, 0, sizeof(m_Constants), &m_Constants, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }

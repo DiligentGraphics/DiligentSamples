@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -235,6 +235,7 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
         ShaderCI.Desc                       = {"Generate terrain height and normal map CS", SHADER_TYPE_COMPUTE, true};
         ShaderCI.pShaderSourceStreamFactory = Attr.pShaderSourceFactory;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+        ShaderCI.CompileFlags               = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
         ShaderCI.Macros                     = Macros;
         ShaderCI.FilePath                   = "GenerateTerrain.csh";
         ShaderCI.EntryPoint                 = "CSMain";
@@ -270,6 +271,7 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
 
         ShaderCreateInfo ShaderCI;
         ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+        ShaderCI.CompileFlags               = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
         ShaderCI.pShaderSourceStreamFactory = Attr.pShaderSourceFactory;
 
         RefCntAutoPtr<IShader> pVS;
@@ -397,7 +399,7 @@ void Terrain::BeforeDraw(IDeviceContext* pContext, const SceneDrawAttribs& Attr)
         const float Center = -m_XZScale * 0.5f;
 
         MapHelper<HLSL::DrawConstants> ConstData(pContext, m_DrawConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        ConstData->ModelViewProj = (float4x4::Translation(Center, 0.f, Center) * Attr.ViewProj).Transpose();
+        ConstData->ModelViewProj = float4x4::Translation(Center, 0.f, Center) * Attr.ViewProj;
         ConstData->NormalMat     = float4x4::Identity();
         ConstData->LightDir      = Attr.LightDir;
         ConstData->AmbientLight  = Attr.AmbientLight;

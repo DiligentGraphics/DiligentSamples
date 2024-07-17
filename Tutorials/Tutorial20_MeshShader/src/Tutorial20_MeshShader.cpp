@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -236,6 +236,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
 
     // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
+    ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
@@ -370,8 +371,8 @@ void Tutorial20_MeshShader::Render()
     {
         // Map the buffer and write current view, view-projection matrix and other constants.
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->ViewMat        = m_ViewMatrix.Transpose();
-        CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
+        CBConstants->ViewMat        = m_ViewMatrix;
+        CBConstants->ViewProjMat    = m_ViewProjMatrix;
         CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
         CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
         CBConstants->CurrTime       = static_cast<float>(m_CurrTime);

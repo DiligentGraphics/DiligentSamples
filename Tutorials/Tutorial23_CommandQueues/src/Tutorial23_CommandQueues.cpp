@@ -92,6 +92,7 @@ void Tutorial23_CommandQueues::CreatePostProcessPSO(IShaderSourceInputStreamFact
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.CompileFlags               = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
     RefCntAutoPtr<IShader> pVS;
@@ -189,7 +190,7 @@ void Tutorial23_CommandQueues::PostProcess()
     const auto ViewProjInv = ViewProj.Inverse();
 
     HLSL::PostProcessConstants ConstData;
-    ConstData.ViewProjInv = ViewProjInv.Transpose();
+    ConstData.ViewProjInv = ViewProjInv;
     ConstData.CameraPos   = m_Camera.GetPos();
     ConstData.FogColor    = m_FogColor;
 

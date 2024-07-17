@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -342,8 +342,8 @@ void Tutorial25_StatePackager::Render()
         ShaderData->iNumBounces         = m_NumBounces;
         ShaderData->iNumSamplesPerFrame = m_NumSamplesPerFrame;
 
-        ShaderData->ViewProjMat    = ViewProj.Transpose();
-        ShaderData->ViewProjInvMat = ViewProj.Inverse().Transpose();
+        ShaderData->ViewProjMat    = ViewProj;
+        ShaderData->ViewProjInvMat = ViewProj.Inverse();
         ShaderData->CameraPos      = m_Camera.GetPos();
     }
 
