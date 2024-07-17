@@ -1,5 +1,3 @@
-#pragma pack_matrix(row_major)
-
 cbuffer ShaderConstants
 {
     float4x4 g_CameraViewProj;

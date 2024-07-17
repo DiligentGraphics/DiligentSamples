@@ -92,6 +92,9 @@ void Tutorial07_GeometryShader::CreatePipelineState()
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Pack matrices in row-major order
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
     // Presentation engine always expects input in gamma space. Normally, pixel shader output is
     // converted from linear to gamma space by the GPU. However, some platforms (e.g. Android in GLES mode,
     // or Emscripten in WebGL mode) do not support gamma-correction. In this case the application

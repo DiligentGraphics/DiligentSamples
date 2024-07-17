@@ -102,6 +102,9 @@ void CreatePipelineState(IRenderDevice* pDevice, ISwapChain* pSwapChain)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
     ShaderCI.Desc.CombinedSamplerSuffix      = "_sampler";
 
+    // Pack matrices in row-major order
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
     // Create a shader source stream factory to load shaders from files.
     IEngineFactory* pEngineFactory = IRenderDevice_GetEngineFactory(pDevice);
 

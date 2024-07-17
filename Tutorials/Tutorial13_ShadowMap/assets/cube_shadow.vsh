@@ -1,5 +1,3 @@
-#pragma pack_matrix(row_major)
-
 #include "structures.fxh"
 
 cbuffer Constants

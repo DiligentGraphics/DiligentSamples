@@ -113,6 +113,9 @@ void Tutorial12_RenderTarget::CreateRenderTargetPSO()
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Pack matrices in row-major order
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
     // In this tutorial, we will load shaders from file. To be able to do that,
     // we need to create a shader source stream factory
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;

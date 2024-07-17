@@ -92,6 +92,9 @@ void Tutorial19_RenderPasses::CreateCubePSO(IShaderSourceInputStreamFactory* pSh
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Pack matrices in row-major order
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     // Create cube vertex shader
     RefCntAutoPtr<IShader> pVS;
@@ -196,6 +199,9 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Pack matrices in row-major order
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
     // If the device does not support gamma correction, we will have to do it in the shader.
     // Notice that blending in gamma space is not mathematically correct, but we have no choice.
     ShaderMacro Macros[] = {{"CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma ? "1" : "0"}};
@@ -284,6 +290,8 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
+
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     // If the device does not support gamma correction, we will have to do it in the shader.
     // Notice that blending in gamma space is not mathematically correct, but we have no choice.

@@ -36,16 +36,9 @@ cbuffer Constants
 };
 ```
 
-Notice the `#pragma pack_matrix(row_major)` directive, which tells the shader compiler to use the row-major matrix layout
-(e.g. matrices are laid out in memory row by row) as opposed to the default column-major layout. The row-major layout
-is consistent with how matrices are defined in C++ code. Note also that column-major matrices are not currently supported
-in WebGPU backend.
-
 The full vertex shader source code is as follows:
 
 ```hlsl
-#pragma pack_matrix(row_major)
-
 cbuffer Constants
 {
     float4x4 g_WorldViewProj;
@@ -104,8 +97,20 @@ ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 `CreateDefaultShaderSourceStreamFactory` method optionally takes a semicolon-separated list of
 directories where source files will be looked up. 
 
-Other than using the shader source factory instead of the source code string, vertex shader
-initialization is the same as in Tutorial01:
+Notice the use of the `SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR` flag:
+
+```cpp
+ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+```
+
+By default, matrices are laid out in GPU memory in column-major order, which means that the first
+four values of a 4x4 matrix represent the first column, the next four values represent
+the second column, and so on. Using row-major layout is more intuitive as it matches the way matrices
+are defined in C++ code. The `SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR` flag tells the shader compiler
+to use the row-major layout for matrices.
+Note that only row-major matrices are supported in WebGPU backend.
+
+Other than a couple of differences mentioned above, vertex shader initialization is the same as in Tutorial01:
 
 ```cpp
 ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;

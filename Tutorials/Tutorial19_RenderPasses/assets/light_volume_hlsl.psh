@@ -1,5 +1,3 @@
-#pragma pack_matrix(row_major)
-
 Texture2D<float4> g_SubpassInputColor;
 SamplerState      g_SubpassInputColor_sampler;
 

@@ -16,8 +16,6 @@ attributes are the same for all vertices in one object instance. In this example
 four attributes to encode rows of an instance-specific transform matrix:
 
 ```hlsl
-#pragma pack_matrix(row_major)
-
 cbuffer Constants
 {
     float4x4 g_ViewProj;

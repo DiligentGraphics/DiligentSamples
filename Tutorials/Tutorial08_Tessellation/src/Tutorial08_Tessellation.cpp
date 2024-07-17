@@ -108,6 +108,9 @@ void Tutorial08_Tessellation::CreatePipelineStates()
     // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
+    // Pack matrices in row-major order
+    ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
     // Define shader macros
     ShaderMacroHelper Macros;
     Macros.Add("BLOCK_SIZE", m_BlockSize);

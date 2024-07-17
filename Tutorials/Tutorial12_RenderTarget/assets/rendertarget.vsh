@@ -1,5 +1,3 @@
-#pragma pack_matrix(row_major)
-
 struct VSInput
 {
     uint VertexID : SV_VertexID;
