@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -235,7 +235,7 @@ void Tutorial17_MSAA::Render()
     {
         // Map the cube's constant buffer and fill it in with its view-projection matrix
         MapHelper<float4x4> CBConstants(m_pImmediateContext, m_CubeVSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        *CBConstants = m_WorldViewProjMatrix.Transpose();
+        *CBConstants = m_WorldViewProjMatrix;
     }
 
     // Bind vertex and index buffers

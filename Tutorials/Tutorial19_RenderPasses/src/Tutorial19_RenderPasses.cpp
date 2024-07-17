@@ -812,8 +812,8 @@ void Tutorial19_RenderPasses::Render()
     {
         // Update constant buffer
         MapHelper<ShaderConstants> Constants(m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        Constants->ViewProjMatrix    = m_CameraViewProjMatrix.Transpose();
-        Constants->ViewProjInvMatrix = m_CameraViewProjInvMatrix.Transpose();
+        Constants->ViewProjMatrix    = m_CameraViewProjMatrix;
+        Constants->ViewProjInvMatrix = m_CameraViewProjInvMatrix;
         Constants->ViewportSize      = float4{
             static_cast<float>(SCDesc.Width),
             static_cast<float>(SCDesc.Height),

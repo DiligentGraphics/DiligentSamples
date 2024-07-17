@@ -9,7 +9,7 @@ layout(location = 1) in  vec3 in_LightColor;
 
 layout(location = 0) out vec4 out_Color;
 
-uniform ShaderConstants
+layout(row_major) uniform ShaderConstants
 {
     mat4 g_ViewProj;
     mat4 g_ViewProjInv;
