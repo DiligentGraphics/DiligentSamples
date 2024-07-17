@@ -1,3 +1,5 @@
+#pragma pack_matrix(row_major)
+
 #include "structures.fxh"
 
 void main(in  uint    VertId : SV_VertexID,

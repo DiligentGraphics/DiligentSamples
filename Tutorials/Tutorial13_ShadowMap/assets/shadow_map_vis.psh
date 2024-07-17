@@ -11,8 +11,8 @@ struct ShadowMapVisPSOutput
 void main(in  ShadowMapVisPSInput  PSIn,
           out ShadowMapVisPSOutput PSOut)
 {
-#if defined(GL_ES) && !defined(VULKAN)
-    // Sampling depth textures may not be supported in GLES, so we use Load()
+#if defined(GL_ES) && !defined(VULKAN) || defined(WEBGPU)
+    // Sampling depth textures may not be supported in GLES and WebGPU, so we use Load()
     float2 ShadowMapDim;
     g_ShadowMap.GetDimensions(ShadowMapDim.x, ShadowMapDim.y);
     float ShadowDepth = g_ShadowMap.Load(int3(PSIn.UV * ShadowMapDim.xy, 0)).r;

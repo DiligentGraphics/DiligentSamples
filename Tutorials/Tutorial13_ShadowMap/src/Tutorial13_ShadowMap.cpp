@@ -326,6 +326,13 @@ void Tutorial13_ShadowMap::CreateShadowMapVisPSO()
     // Define variable type that will be used by default
     PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
 
+    ShaderResourceVariableDesc Variables[] =
+        {
+            {SHADER_TYPE_PIXEL, "g_ShadowMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE, SHADER_VARIABLE_FLAG_UNFILTERABLE_FLOAT_TEXTURE_WEBGPU},
+        };
+    PSOCreateInfo.PSODesc.ResourceLayout.Variables    = Variables;
+    PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Variables);
+
     // clang-format off
     SamplerDesc SamLinearClampDesc
     {
@@ -502,8 +509,8 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
         };
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->WorldViewProj = (m_CubeWorldMatrix * CameraViewProj).Transpose();
-        auto NormalMatrix          = m_CubeWorldMatrix.RemoveTranslation().Inverse();
+        CBConstants->WorldViewProj = (m_CubeWorldMatrix * CameraViewProj);
+        auto NormalMatrix          = m_CubeWorldMatrix.RemoveTranslation().Inverse().Transpose();
         // We need to do inverse-transpose, but we also need to transpose the matrix
         // before writing it to the buffer
         CBConstants->NormalTranform = NormalMatrix;
@@ -542,8 +549,8 @@ void Tutorial13_ShadowMap::RenderPlane()
             float4   LightDirection;
         };
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->CameraViewProj          = m_CameraViewProjMatrix.Transpose();
-        CBConstants->WorldToShadowMapUVDepth = m_WorldToShadowMapUVDepthMatr.Transpose();
+        CBConstants->CameraViewProj          = m_CameraViewProjMatrix;
+        CBConstants->WorldToShadowMapUVDepth = m_WorldToShadowMapUVDepthMatr;
         CBConstants->LightDirection          = m_LightDirection;
     }
 

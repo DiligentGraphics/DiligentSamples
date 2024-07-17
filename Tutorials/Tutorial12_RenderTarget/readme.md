@@ -24,6 +24,8 @@ The render target's vertex shader generates the geometry procedurally using an a
 vertex positions and UV coordinates.
 
 ```hlsl
+#pragma pack_matrix(row_major)
+
 struct VSInput
 {
     uint VertexID : SV_VertexID;
