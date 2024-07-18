@@ -23,7 +23,7 @@ To build and run the applications in the module, please follow the [instructions
 [![Chat on Discord](https://img.shields.io/discord/730091778081947680?logo=discord)](https://discord.gg/t7HGBK7)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
 [![MSVC Code Analysis](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml?query=branch%3Amaster)
-[![Lines of Code](https://tokei.rs/b1/github.com/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
+[![Lines of code](https://sloc.xyz/github/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
 
 # Table of Contents
 
