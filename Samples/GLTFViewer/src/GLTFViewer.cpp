@@ -712,8 +712,8 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     CrateEnvMapRenderer();
     CrateBoundBoxRenderer();
     CreateVectorFieldRenderer();
-    m_PostFXContext = std::make_unique<PostFXContext>(m_pDevice);
-    m_SSR           = std::make_unique<ScreenSpaceReflection>(m_pDevice);
+    m_PostFXContext = std::make_unique<PostFXContext>(m_pDevice, PostFXContext::CreateInfo{});
+    m_SSR           = std::make_unique<ScreenSpaceReflection>(m_pDevice, ScreenSpaceReflection::CreateInfo{});
 
     m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 

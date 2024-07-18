@@ -74,6 +74,7 @@ static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
     ShaderCI.Desc.Name                       = EntryPoint;
     ShaderCI.pShaderSourceStreamFactory      = pCompoundShaderSourceFactory;
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
+    ShaderCI.CompileFlags                    = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
     return RenderDeviceWithCache<false>{pDevice, pStateCache}.CreateShader(ShaderCI);
 }
 
@@ -139,12 +140,12 @@ struct Tutorial27_PostProcessing::ShaderSettings
     float SSRStrength  = 1.0;
 
     UPSAMPLING_MODE                            UpsamplingMode       = UPSAMPLING_MODE_FSR;
-    PostFXContext::FEATURE_FLAGS               PostFXFeatureFlags   = PostFXContext::FEATURE_FLAG_ASYNC_CREATION;
-    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags     = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_ASYNC_CREATION;
-    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags      = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME | ScreenSpaceReflection::FEATURE_FLAG_ASYNC_CREATION;
-    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags      = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER | TemporalAntiAliasing::FEATURE_FLAG_ASYNC_CREATION;
-    Bloom::FEATURE_FLAGS                       BloomFeatureFlags    = Bloom::FEATURE_FLAG_ASYNC_CREATION;
-    SuperResolution::FEATURE_FLAGS             SuperResolutionFlags = SuperResolution::FEATURE_FLAG_ASYNC_CREATION;
+    PostFXContext::FEATURE_FLAGS               PostFXFeatureFlags   = PostFXContext::FEATURE_FLAG_NONE;
+    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags     = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags      = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags      = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
+    Bloom::FEATURE_FLAGS                       BloomFeatureFlags    = Bloom::FEATURE_FLAG_NONE;
+    SuperResolution::FEATURE_FLAGS             SuperResolutionFlags = SuperResolution::FEATURE_FLAG_NONE;
 };
 
 Tutorial27_PostProcessing::Tutorial27_PostProcessing() :
@@ -207,12 +208,12 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
         LoadEnvironmentMap("textures/papermill.ktx");
     }
 
-    m_PostFXContext               = std::make_unique<PostFXContext>(m_pDevice);
-    m_TemporalAntiAliasing        = std::make_unique<TemporalAntiAliasing>(m_pDevice);
-    m_ScreenSpaceReflection       = std::make_unique<ScreenSpaceReflection>(m_pDevice);
-    m_ScreenSpaceAmbientOcclusion = std::make_unique<ScreenSpaceAmbientOcclusion>(m_pDevice);
-    m_Bloom                       = std::make_unique<Bloom>(m_pDevice);
-    m_SuperResolution             = std::make_unique<SuperResolution>(m_pDevice);
+    m_PostFXContext               = std::make_unique<PostFXContext>(m_pDevice, PostFXContext::CreateInfo{true, true});
+    m_TemporalAntiAliasing        = std::make_unique<TemporalAntiAliasing>(m_pDevice, TemporalAntiAliasing::CreateInfo{true});
+    m_ScreenSpaceReflection       = std::make_unique<ScreenSpaceReflection>(m_pDevice, ScreenSpaceReflection::CreateInfo{true});
+    m_ScreenSpaceAmbientOcclusion = std::make_unique<ScreenSpaceAmbientOcclusion>(m_pDevice, ScreenSpaceAmbientOcclusion::CreateInfo{true});
+    m_Bloom                       = std::make_unique<Bloom>(m_pDevice, Bloom::CreateInfo{true});
+    m_SuperResolution             = std::make_unique<SuperResolution>(m_pDevice, SuperResolution::CreateInfo{true});
     m_ShaderSettings              = std::make_unique<ShaderSettings>();
 
     m_ShaderSettings->PBRRenderParams.OcclusionStrength      = 1.0f;
@@ -300,12 +301,12 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
 
     auto& CurrCamAttribs          = m_CameraAttribs[CurrFrameIdx];
     CurrCamAttribs.f4ViewportSize = float4{Resolution.x, Resolution.y, 1.f / Resolution.x, 1.f / Resolution.y};
-    CurrCamAttribs.mViewT         = CameraView.Transpose();
-    CurrCamAttribs.mProjT         = CameraProj.Transpose();
-    CurrCamAttribs.mViewProjT     = CameraViewProj.Transpose();
-    CurrCamAttribs.mViewInvT      = CameraView.Inverse().Transpose();
-    CurrCamAttribs.mProjInvT      = CameraProj.Inverse().Transpose();
-    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse().Transpose();
+    CurrCamAttribs.mViewT         = CameraView;
+    CurrCamAttribs.mProjT         = CameraProj;
+    CurrCamAttribs.mViewProjT     = CameraViewProj;
+    CurrCamAttribs.mViewInvT      = CameraView.Inverse();
+    CurrCamAttribs.mProjInvT      = CameraProj.Inverse();
+    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse();
     CurrCamAttribs.f4Position     = float4(float3::MakeVector(CameraWorld[3]), 1);
 
     CurrCamAttribs.f2Jitter.x       = Jitter.x;
@@ -334,7 +335,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
                                                      Uint32          Dim1,
                                                      float           Frequency0,
                                                      float           Frequency1) -> Uint32 {
-            m_ObjectTransforms[CurrFrameIdx][m_ObjectCount] = Transform.Transpose();
+            m_ObjectTransforms[CurrFrameIdx][m_ObjectCount] = Transform;
 
             const float4x4 CurrWorldMatrix = m_ObjectTransforms[CurrFrameIdx][m_ObjectCount];
             const float4x4 PrevWorldMatrix = m_ObjectTransforms[PrevFrameIdx][m_ObjectCount];
@@ -343,7 +344,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
             ObjectAttribs.ObjectType                 = ObjectType;
             ObjectAttribs.CurrInvWorldMatrix         = CurrWorldMatrix.Inverse();
             ObjectAttribs.PrevWorldTransform         = PrevWorldMatrix;
-            ObjectAttribs.CurrWorldViewProjectMatrix = CurrCamAttribs.mViewProjT * CurrWorldMatrix;
+            ObjectAttribs.CurrWorldViewProjectMatrix = CurrWorldMatrix * CurrCamAttribs.mViewProjT;
             ObjectAttribs.CurrNormalMatrix           = ObjectAttribs.CurrInvWorldMatrix.Transpose();
 
             ObjectAttribs.ObjectMaterialIdx0       = MaterialIdx0;
@@ -655,7 +656,7 @@ void Tutorial27_PostProcessing::ComputeLighting()
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureBaseColor", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureMaterialData", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureNormal", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
-            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureDepth", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
+            .AddVariable(SHADER_TYPE_PIXEL, "g_TextureDepth", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC, SHADER_VARIABLE_FLAG_UNFILTERABLE_FLOAT_TEXTURE_WEBGPU)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureSSR", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureSSAO", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
             .AddVariable(SHADER_TYPE_PIXEL, "g_TextureEnvironmentMap", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC)
