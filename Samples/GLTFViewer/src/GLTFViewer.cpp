@@ -494,12 +494,14 @@ void GLTFViewer::CreateGLTFRenderer()
 {
     GLTF_PBR_Renderer::CreateInfo RendererCI;
 
-    RendererCI.EnableClearCoat       = true;
-    RendererCI.EnableSheen           = true;
-    RendererCI.EnableIridescence     = true;
-    RendererCI.EnableTransmission    = true;
+    RendererCI.EnableClearCoat = true;
+    RendererCI.EnableSheen     = true;
+    // Dawn only allows 16 textures in a shader, so disable iridescence and transmission.
+    RendererCI.EnableIridescence     = !m_pDevice->GetDeviceInfo().IsWebGPUDevice();
+    RendererCI.EnableTransmission    = !m_pDevice->GetDeviceInfo().IsWebGPUDevice();
     RendererCI.EnableAnisotropy      = true;
     RendererCI.FrontCounterClockwise = true;
+    RendererCI.PackMatrixRowMajor    = true;
     if (m_bEnablePostProcessing)
         RendererCI.GetPSMainSource = GetPbrPSMainSource;
 
@@ -572,8 +574,9 @@ void GLTFViewer::CreateGLTFRenderer()
 void GLTFViewer::CrateEnvMapRenderer()
 {
     EnvMapRenderer::CreateInfo EnvMapRendererCI;
-    EnvMapRendererCI.pDevice          = m_pDevice;
-    EnvMapRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
+    EnvMapRendererCI.pDevice            = m_pDevice;
+    EnvMapRendererCI.pCameraAttribsCB   = m_FrameAttribsCB;
+    EnvMapRendererCI.PackMatrixRowMajor = true;
     if (m_bEnablePostProcessing)
     {
         EnvMapRendererCI.NumRenderTargets = GBUFFER_RT_NUM_COLOR_TARGETS;
@@ -581,10 +584,10 @@ void GLTFViewer::CrateEnvMapRenderer()
             EnvMapRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
         EnvMapRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH0).Format;
 
-        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+        if (m_pDevice->GetDeviceInfo().IsGLDevice() || m_pDevice->GetDeviceInfo().IsWebGPUDevice())
         {
             // Normally, environment map shader only needs to write color and motion vector.
-            // However, on WebGL this results in errors.
+            // However, on WebGL and WebGPU this results in errors.
             EnvMapRendererCI.PSMainSource = EnvMapPSMainGL;
         }
         else
@@ -635,8 +638,9 @@ void main(in BoundBoxVSOutput VSOut,
 void GLTFViewer::CrateBoundBoxRenderer()
 {
     BoundBoxRenderer::CreateInfo BoundBoxRendererCI;
-    BoundBoxRendererCI.pDevice          = m_pDevice;
-    BoundBoxRendererCI.pCameraAttribsCB = m_FrameAttribsCB;
+    BoundBoxRendererCI.pDevice            = m_pDevice;
+    BoundBoxRendererCI.pCameraAttribsCB   = m_FrameAttribsCB;
+    BoundBoxRendererCI.PackMatrixRowMajor = true;
     if (m_bEnablePostProcessing)
     {
         BoundBoxRendererCI.NumRenderTargets = GBUFFER_RT_NUM_COLOR_TARGETS;
@@ -644,10 +648,10 @@ void GLTFViewer::CrateBoundBoxRenderer()
             BoundBoxRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
         BoundBoxRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH0).Format;
 
-        if (m_pDevice->GetDeviceInfo().IsGLDevice())
+        if (m_pDevice->GetDeviceInfo().IsGLDevice() || m_pDevice->GetDeviceInfo().IsWebGPUDevice())
         {
             // Normally, environment map shader only needs to write color and motion vector.
-            // However, on WebGL this results in errors.
+            // However, on WebGL and WebGPU this results in errors.
             BoundBoxRendererCI.PSMainSource = BoundBoxPSMainGL;
         }
         else
@@ -712,8 +716,10 @@ void GLTFViewer::Initialize(const SampleInitInfo& InitInfo)
     CrateEnvMapRenderer();
     CrateBoundBoxRenderer();
     CreateVectorFieldRenderer();
-    m_PostFXContext = std::make_unique<PostFXContext>(m_pDevice, PostFXContext::CreateInfo{});
-    m_SSR           = std::make_unique<ScreenSpaceReflection>(m_pDevice, ScreenSpaceReflection::CreateInfo{});
+    PostFXContext::CreateInfo PostFXCtxCI;
+    PostFXCtxCI.PackMatrixRowMajor = true;
+    m_PostFXContext                = std::make_unique<PostFXContext>(m_pDevice, PostFXCtxCI);
+    m_SSR                          = std::make_unique<ScreenSpaceReflection>(m_pDevice, ScreenSpaceReflection::CreateInfo{});
 
     m_LightDirection = normalize(float3(0.5f, 0.6f, -0.2f));
 
@@ -736,7 +742,7 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
 {
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-
+    ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     auto pCompoundSourceFactory         = CreateCompoundShaderSourceFactory(pDevice);
     ShaderCI.pShaderSourceStreamFactory = pCompoundSourceFactory;
@@ -1473,12 +1479,12 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
     CurrCamAttribs.f4ViewportSize = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
     CurrCamAttribs.fHandness      = CameraView.Determinant() > 0 ? 1.f : -1.f;
-    CurrCamAttribs.mViewT         = CameraView.Transpose();
-    CurrCamAttribs.mProjT         = CameraProj.Transpose();
-    CurrCamAttribs.mViewProjT     = CameraViewProj.Transpose();
-    CurrCamAttribs.mViewInvT      = CameraView.Inverse().Transpose();
-    CurrCamAttribs.mProjInvT      = CameraProj.Inverse().Transpose();
-    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse().Transpose();
+    CurrCamAttribs.mViewT         = CameraView;
+    CurrCamAttribs.mProjT         = CameraProj;
+    CurrCamAttribs.mViewProjT     = CameraViewProj;
+    CurrCamAttribs.mViewInvT      = CameraView.Inverse();
+    CurrCamAttribs.mProjInvT      = CameraProj.Inverse();
+    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse();
     CurrCamAttribs.f4Position     = float4(CameraWorldPos, 1);
 
     if (m_bResetPrevCamera)
