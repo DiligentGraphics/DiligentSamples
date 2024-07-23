@@ -329,8 +329,8 @@ void USDViewer::LoadStage()
 
     const pxr::GfRange3d SceneAABB = ComputeStageAABB(*m_Stage.Stage);
 
-    const float MetersPerUnit = pxr::UsdGeomGetStageMetersPerUnit(m_Stage.Stage);
-    DelegateCI.MetersPerUnit  = MetersPerUnit;
+    m_Stage.MetersPerUnit    = pxr::UsdGeomGetStageMetersPerUnit(m_Stage.Stage);
+    DelegateCI.MetersPerUnit = m_Stage.MetersPerUnit;
 
     const pxr::SdfPath SceneDelegateId = pxr::SdfPath::AbsoluteRootPath();
     m_Stage.CameraId                   = SceneDelegateId.AppendChild(pxr::TfToken{"_HnCamera_"});
@@ -381,7 +381,7 @@ void USDViewer::LoadStage()
         PointLight.CreateColorAttr().Set(pxr::GfVec3f{1.0f, 0.6f, 0.4f});
         PointLight.CreateEnableColorTemperatureAttr().Set(true);
         PointLight.CreateColorTemperatureAttr().Set(6200.f);
-        PointLight.CreateRadiusAttr().Set(0.01f / MetersPerUnit);
+        PointLight.CreateRadiusAttr().Set(0.01f / m_Stage.MetersPerUnit);
         PointLight.MakeMatrixXform().Set(pxr::GfMatrix4d{pxr::GfRotation{pxr::GfVec3d{1, 0, 0}, 0}, SceneAABB.GetMidpoint()});
     }
 #endif
@@ -409,7 +409,7 @@ void USDViewer::LoadStage()
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
     const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
-    m_Stage.RootTransform     = Diligent::float4x4::Scale(MetersPerUnit) * GetUpAxisTransform(UpAxis);
+    m_Stage.RootTransform     = Diligent::float4x4::Scale(m_Stage.MetersPerUnit) * GetUpAxisTransform(UpAxis);
     m_Stage.ImagingDelegate->SetRootTransform(USD::ToGfMatrix4d(m_Stage.RootTransform));
 
     float SceneExtent = 1;
@@ -426,7 +426,7 @@ void USDViewer::LoadStage()
             SceneExtent = std::max(SceneExtent, length(BBCorner));
         }
 
-        SceneExtent *= MetersPerUnit;
+        SceneExtent *= m_Stage.MetersPerUnit;
         m_Camera.SetDistRange(SceneExtent * 0.01f, SceneExtent * 10.f);
     }
     else
@@ -751,13 +751,13 @@ void USDViewer::UpdateUI()
                     const auto         CameraDist = m_Camera.GetDist();
                     const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
 
-                    ImGui::SliderFloat("Focal Length (mm)", &m_CameraSettings.FocalLength, 24.0, 300.0);
+                    ImGui::SliderFloat("Focal Length (mm)", &m_CameraSettings.FocalLength_mm, 24.0, 300.0);
                     ImGui::SliderFloat("Aperture (f-stop)", &m_CameraSettings.FStop, 1.0, 64.0, "%.3f", ImGuiSliderFlags_Logarithmic);
                     ImGui::SliderFloat("Focus Distance", &m_CameraSettings.FocusDistance, ClippingRange[0], ClippingRange[1], "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                    ImGui::SliderFloat("Sensor Width", &m_CameraSettings.SensorWidth, 1, 100);
+                    ImGui::SliderFloat("Sensor Width", &m_CameraSettings.SensorWidth_mm, 1, 100);
 
                     ImGui::ScopedDisabler Disabler{true, 0.5f};
-                    ImGui::SliderFloat("Sensor Height", &m_CameraSettings.SensorHeight, 1, 100);
+                    ImGui::SliderFloat("Sensor Height", &m_CameraSettings.SensorHeight_mm, 1, 100);
 
                     ImGui::TreePop();
                 }
@@ -1135,28 +1135,39 @@ void USDViewer::UpdateCamera()
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
-    const float        FOV = 2.0f * atanf(m_CameraSettings.SensorWidth / (2.0 * m_CameraSettings.FocalLength));
+    const float        FOV = 2.0f * atanf(m_CameraSettings.SensorWidth_mm / (2.0 * m_CameraSettings.FocalLength_mm));
     const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
     // Get projection matrix adjusted to the current screen orientation
     m_CameraProj = GetAdjustedProjectionMatrix(FOV, ClippingRange[0], ClippingRange[1]);
 
     // TODO: We need crop image if screen size doesn't match the aspect ratio of the sensor
-    const auto& SCDesc             = m_pSwapChain->GetDesc();
-    const float AspectRatio        = static_cast<float>(SCDesc.Width) / static_cast<float>(SCDesc.Height);
-    m_CameraSettings.SensorHeight  = m_CameraSettings.SensorWidth / AspectRatio;
-    m_CameraSettings.FocusDistance = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength * 0.001f, ClippingRange[1]);
+    const auto& SCDesc               = m_pSwapChain->GetDesc();
+    const float AspectRatio          = static_cast<float>(SCDesc.Width) / static_cast<float>(SCDesc.Height);
+    m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm / AspectRatio;
+    m_CameraSettings.FocusDistance   = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength_mm * 0.001f, ClippingRange[1]);
 
     m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * m_CameraView).Inverse()));
-    m_Stage.Camera.GetFocusDistanceAttr().Set(m_CameraSettings.FocusDistance);
     m_Stage.Camera.GetFStopAttr().Set(m_CameraSettings.FStop);
-    m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRange);
 
-    // By strange convention, lens and filmback properties are measured in tenths of a scene unit rather than "raw" scene units.
+    // USD camera properties are measured in scene units
+    m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRange / m_Stage.MetersPerUnit);
+    m_Stage.Camera.GetFocusDistanceAttr().Set(m_CameraSettings.FocusDistance / m_Stage.MetersPerUnit);
+
+    // By an odd convention, lens and filmback properties are measured in tenths of a scene unit rather than "raw" scene units.
     // https://openusd.org/dev/api/class_usd_geom_camera.html#UsdGeom_CameraUnits
-    // As a result, e.g. SceneDelegate->GetCameraParamValue(id, HdCameraTokens->horizontalAperture) will return 0.1 * m_CameraSettings.SensorWidth.
-    m_Stage.Camera.GetFocalLengthAttr().Set(m_CameraSettings.FocalLength * 10.f);
-    m_Stage.Camera.GetHorizontalApertureAttr().Set(m_CameraSettings.SensorWidth * 10.f);
-    m_Stage.Camera.GetVerticalApertureAttr().Set(m_CameraSettings.SensorHeight * 10.f);
+    // So, for example after
+    //      UsdCamera.GetFocalLengthAttr().Set(30.f)
+    // Reading the attribute will return same value:
+    //      float focalLength;
+    //      UsdCamera.GetFocalLengthAttr().Get(&focalLength); // focalLength == 30
+    // However
+    //      focalLength = SceneDelegate->GetCameraParamValue(id, HdCameraTokens->focalLength).Get<float>(); //  focalLength == 3
+
+    constexpr float UsdCamLensUnitScale = 10;
+    const float     MillimetersPerUnit  = m_Stage.MetersPerUnit * 1000.f;
+    m_Stage.Camera.GetFocalLengthAttr().Set(m_CameraSettings.FocalLength_mm * UsdCamLensUnitScale / MillimetersPerUnit);
+    m_Stage.Camera.GetHorizontalApertureAttr().Set(m_CameraSettings.SensorWidth_mm * UsdCamLensUnitScale / MillimetersPerUnit);
+    m_Stage.Camera.GetVerticalApertureAttr().Set(m_CameraSettings.SensorHeight_mm * UsdCamLensUnitScale / MillimetersPerUnit);
 }
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)

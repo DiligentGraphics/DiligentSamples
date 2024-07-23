@@ -106,6 +106,7 @@ private:
         pxr::SdfPath DomeLightId;
         pxr::SdfPath SelectedPrimId;
 
+        float    MetersPerUnit = 0.01f;
         float4x4 RootTransform = float4x4::Identity();
 
         int  DebugViewMode = 0;
@@ -165,7 +166,7 @@ private:
     struct
     {
         // Focal length in millimeters
-        float FocalLength = 30.0f;
+        float FocalLength_mm = 30.0f;
 
         // Focus distance in meters
         float FocusDistance = 2.0f;
@@ -173,8 +174,8 @@ private:
         float FStop = 2.8f;
 
         // Sensor width and height in millimeters
-        float SensorWidth  = 36.0f;
-        float SensorHeight = 24.0f;
+        float SensorWidth_mm  = 36.0f;
+        float SensorHeight_mm = 24.0f;
     } m_CameraSettings;
 
     struct RenderStats
