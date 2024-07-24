@@ -599,19 +599,20 @@ m_pImmediateContext->SetPipelineState(m_pGBufferPSO);
 m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 ```
 
-Next, perform the path tracing using the compute pass:
+Next, perform the path tracing using the full-screen render pass:
 
 ```cpp
-static constexpr Uint32 ThreadGroupSize = 8;
+const Uint32 SRBIndex = m_CurrentFrameNumber & 0x01;
 
-m_pImmediateContext->SetPipelineState(m_pPathTracePSO);
-m_pImmediateContext->CommitShaderResources(m_pPathTraceSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-DispatchComputeAttribs DispatchArgs{
-    (SCDesc.Width  + ThreadGroupSize - 1) / ThreadGroupSize,
-    (SCDesc.Height + ThreadGroupSize - 1) / ThreadGroupSize
+ITextureView* ppRTVs[] = {
+    m_pRadianceAccumulationBuffer[SRBIndex]->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) //
 };
-m_pImmediateContext->DispatchCompute(DispatchArgs);
+
+m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+m_pImmediateContext->CommitShaderResources(m_pPathTraceSRB[SRBIndex], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->SetPipelineState(m_pPathTracePSO);
+m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 ```
 
 Finally, resolve radiance:
@@ -621,7 +622,7 @@ ITextureView* ppRTVs[] = {m_pSwapChain->GetCurrentBackBufferRTV()};
 m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 m_pImmediateContext->SetPipelineState(m_pResolvePSO);
-m_pImmediateContext->CommitShaderResources(m_pResolveSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+m_pImmediateContext->CommitShaderResources(m_pResolveSRB[SRBIndex], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
 ```

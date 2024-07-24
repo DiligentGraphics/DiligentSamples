@@ -5,13 +5,19 @@
 #include "hash.fxh"
 #include "PBR_Common.fxh"
 
+struct PSInput
+{
+    float4 Pos : SV_POSITION;
+    float2 ClipXY : ClipPos;
+};
+
 Texture2D g_BaseColor;
 Texture2D g_Normal;
 Texture2D g_Emittance;
 Texture2D g_PhysDesc;
 Texture2D g_Depth;
 
-RWTexture2D<float4 /*format = rgba32f*/> g_Radiance;
+Texture2D<float4> g_Radiance;
 
 cbuffer cbConstants
 {
@@ -429,22 +435,16 @@ float GetMISWeight(float Prob1, float Prob2)
     return W > 0 ? W1 / W : 0.0;
 }
 
-[numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
-void main(uint3 ThreadId : SV_DispatchThreadID)
+float4 main(in PSInput PSIn) : SV_TARGET0
 {
-    if (ThreadId.x >= g_Constants.u2ScreenSize.x ||
-        ThreadId.y >= g_Constants.u2ScreenSize.y)
-        return; // Outside of the screen
-
     HitInfo Hit0;
     RayInfo Ray0;
-    GetPrimaryRay(ThreadId.xy, Hit0, Ray0);
+    GetPrimaryRay(uint2(PSIn.Pos.xy), Hit0, Ray0);
 
     if (Hit0.Mat.Type == MAT_TYPE_NONE)
     {
         // Background
-        g_Radiance[ThreadId.xy] = float4(0.0, 0.0, 0.0, 0.0);
-        return;
+        return float4(0.0, 0.0, 0.0, 0.0);
     }
 
     float3 f3Radiance = float3(0.0, 0.0, 0.0);
@@ -481,7 +481,7 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
     //      Ti = Ti-1 * BRDF(xi, vi, wi) * (ni, wi) / p(wi)     (5)
 
     // Make sure the seed is unique for each sample
-    uint2 Seed = ThreadId.xy * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
+    uint2 Seed = uint2(PSIn.Pos.xy) * uint2(11417, 7801) + uint2(g_Constants.uFrameSeed1, g_Constants.uFrameSeed2);
     for (int i = 0; i < g_Constants.iNumSamplesPerFrame; ++i)
     {
         // Each path starts with the primary camera ray
@@ -658,6 +658,6 @@ void main(uint3 ThreadId : SV_DispatchThreadID)
 
     // Add the total radiance to the accumulation buffer
     if (g_Constants.fLastSampleCount > 0)
-        f3Radiance += g_Radiance[ThreadId.xy].rgb;
-    g_Radiance[ThreadId.xy] = float4(f3Radiance, 0.0);
+        f3Radiance += g_Radiance.Load(int3(PSIn.Pos.xy, 0)).rgb;
+    return float4(f3Radiance, 0.0);
 }

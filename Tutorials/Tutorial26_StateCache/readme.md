@@ -169,17 +169,19 @@ Macros.AddShaderMacro("BRDF_SAMPLING_MODE", m_BRDFSamplingMode);
 
 auto ModifyShaderCI = MakeCallback(
     [&](ShaderCreateInfo& ShaderCI, SHADER_TYPE Type, bool& AddToLoaderCache) {
-        VERIFY_EXPR(Type == SHADER_TYPE_COMPUTE);
-        ShaderCI.Macros = Macros;
-        // Do not add the shader to the loader's cache as
-        // we may be recreating the shader at run-time.
-        AddToLoaderCache = false;
+        if (Type == SHADER_TYPE_PIXEL)
+        {
+            ShaderCI.Macros = Macros;
+            // Do not add the shader to the loader's cache as
+            // we may be recreating the shader at run-time.
+            AddToLoaderCache = false;
+        }
     });
 
 LoadPipelineStateInfo LoadInfo;
 LoadInfo.ModifyShader      = ModifyShaderCI;
 LoadInfo.pModifyShaderData = ModifyShaderCI;
-LoadInfo.PipelineType      = PIPELINE_TYPE_COMPUTE;
+LoadInfo.PipelineType      = PIPELINE_TYPE_GRAPHICS;
 LoadInfo.Name              = "Path Trace PSO";
 // Do not add the PSO to the loader's cache as we may be
 // recreating the pipeline.

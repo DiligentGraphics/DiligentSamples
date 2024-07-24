@@ -14,7 +14,7 @@ set(SHADERS
     assets/screen_tri.vsh
     assets/g_buffer.psh
     assets/resolve.psh
-    assets/path_trace.csh
+    assets/path_trace.psh
     assets/RenderStates.json
     assets/structures.fxh
     assets/scene.fxh
