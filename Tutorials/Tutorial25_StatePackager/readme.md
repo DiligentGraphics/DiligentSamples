@@ -57,7 +57,7 @@ At the first stage, the scene is rendered into a G-buffer consisting of the foll
 - Emittance (`R11G11B10_FLOAT`)
 - Depth (`R32_FLOAT`)
 
-At the second state, a compute shader is executed that for each pixel of the G-buffer reconstructs its
+At the second stage, a screen-size quad is rendered that for each pixel of the G-buffer reconstructs its
 world-space position, traces a light path through the scene and adds the contribution to the radiance accumulation
 buffer. Each frame, a set number of new paths are traced and their contributions are accumulated. If camera moves
 or light attributes change, the accumulation buffer is cleard and the process starts over.
@@ -196,23 +196,22 @@ PSOut.Depth        = min(HitClipPos.z / HitClipPos.w, 1.0);
 
 ### Path Tracing
 
-Path tracing is the core part of the rendering process and is implemented by a compute shader that
-runs one thread for each screen pixel. It starts from positions defined by the G-buffer
+Path tracing is the core part of the rendering process and is implemented by a pixel shader
+that is executed for each screen pixel. The shader starts from positions defined by the G-buffer
 and traces a given number of light paths through the scene, each path performing a given number of bounces.
 For each bounce, the shader traces a ray towards the light source and computes its contribution. It then selects
 a random direction at the shading point using the cosine-weighted hemispherical distribution, casts
 a ray in this direction and repeats the process at the new location.
 
-The shader starts by reading the G-buffer and reconstructing the
-attributes of the primary camera ray:
+The shader starts by reading the G-buffer and reconstructing the attributes of the primary camera ray:
 
 ```hlsl
 HitInfo Hit0;
 RayInfo Ray0;
-GetPrimaryRay(ThreadId.xy, Hit0, Ray0);
+GetPrimaryRay(uint2(PSIn.Pos.xy), Hit0, Ray0);
 ```
 
-Where `ThreadId` is the compute shader thread index in a two-dimensional grid and matches the screen coordinates.
+Where `PSIn.Pos.xy` are the pixel's screen coordinates.
 
 The shader then prepares a two-dimensional hash seed that will be used for pseudo-random number generation:
 

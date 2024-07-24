@@ -60,8 +60,6 @@ void Tutorial25_StatePackager::ModifyEngineInitInfo(const ModifyEngineInitInfoAt
 {
     SampleBase::ModifyEngineInitInfo(Attribs);
 
-    Attribs.EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
-
     // We do not need the depth buffer from the swap chain in this sample
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 }
@@ -173,12 +171,25 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
     {
         PipelineStateUnpackInfo UnpackInfo;
         UnpackInfo.pDevice      = m_pDevice;
-        UnpackInfo.PipelineType = PIPELINE_TYPE_COMPUTE;
+        UnpackInfo.PipelineType = PIPELINE_TYPE_GRAPHICS;
         UnpackInfo.Name         = "Path Trace PSO";
+
+        auto ModifyPathTracePSODesc = MakeCallback(
+            [](PipelineStateCreateInfo& PSODesc) {
+                auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
+                auto& GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
+
+                GraphicsPipeline.NumRenderTargets = 1;
+                GraphicsPipeline.RTVFormats[0]    = RadianceAccumulationFormat;
+                GraphicsPipeline.DSVFormat        = TEX_FORMAT_UNKNOWN;
+            });
+
+        UnpackInfo.ModifyPipelineStateCreateInfo = ModifyPathTracePSODesc;
+        UnpackInfo.pUserData                     = ModifyPathTracePSODesc;
         pDearchiver->UnpackPipelineState(UnpackInfo, &m_pPathTracePSO);
         VERIFY_EXPR(m_pPathTracePSO);
 
-        m_pPathTracePSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "cbConstants")->Set(m_pShaderConstantsCB);
+        m_pPathTracePSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbConstants")->Set(m_pShaderConstantsCB);
     }
 
     // Unpack the resolve PSO
@@ -218,9 +229,13 @@ void Tutorial25_StatePackager::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial25_StatePackager::WindowResize(Uint32 Width, Uint32 Height)
 {
     m_GBuffer = {};
-    m_pPathTraceSRB.Release();
-    m_pResolveSRB.Release();
-    m_pRadianceAccumulationBuffer.Release();
+
+    for (Uint32 Idx = 0; Idx < 2; ++Idx)
+    {
+        m_pPathTraceSRB[Idx].Release();
+        m_pResolveSRB[Idx].Release();
+        m_pRadianceAccumulationBuffer[Idx].Release();
+    }
 
     float NearPlane   = 0.1f;
     float FarPlane    = 50.f;
@@ -267,24 +282,34 @@ void Tutorial25_StatePackager::CreateGBuffer()
     // Create the radiance accumulation buffer
     TexDesc.Name      = "Radiance accumulation buffer";
     TexDesc.Format    = RadianceAccumulationFormat;
-    TexDesc.BindFlags = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
-    m_pDevice->CreateTexture(TexDesc, nullptr, &m_pRadianceAccumulationBuffer);
-    VERIFY_EXPR(m_pRadianceAccumulationBuffer);
-
-    m_pPathTraceSRB.Release();
-    m_pPathTracePSO->CreateShaderResourceBinding(&m_pPathTraceSRB, true);
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Albedo")->Set(m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Normal")->Set(m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Emittance")->Set(m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Depth")->Set(m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-    m_pPathTraceSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Radiance")->Set(m_pRadianceAccumulationBuffer->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
-
-    m_pResolveSRB.Release();
-    m_pResolvePSO->CreateShaderResourceBinding(&m_pResolveSRB, true);
-    m_pResolveSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Radiance")->Set(m_pRadianceAccumulationBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    TexDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_pRadianceAccumulationBuffer[0]);
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_pRadianceAccumulationBuffer[1]);
+    VERIFY_EXPR(m_pRadianceAccumulationBuffer[0]);
+    VERIFY_EXPR(m_pRadianceAccumulationBuffer[1]);
 
     m_SampleCount       = 0;
     m_LastFrameViewProj = {};
+
+    for (Uint32 Idx = 0; Idx < 2; ++Idx)
+    {
+        const Uint32 CurrFrameIdx = (Idx + 0) & 0x01;
+        const Uint32 PrevFrameIdx = (Idx + 1) & 0x01;
+
+        auto& pPathTraceSRB = m_pPathTraceSRB[CurrFrameIdx];
+        pPathTraceSRB.Release();
+        m_pPathTracePSO->CreateShaderResourceBinding(&pPathTraceSRB, true);
+        pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Albedo")->Set(m_GBuffer.pAlbedo->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Normal")->Set(m_GBuffer.pNormal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Emittance")->Set(m_GBuffer.pEmittance->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Depth")->Set(m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+        pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Radiance")->Set(m_pRadianceAccumulationBuffer[PrevFrameIdx]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+
+        auto& pResolveSRB = m_pResolveSRB[CurrFrameIdx];
+        pResolveSRB.Release();
+        m_pResolvePSO->CreateShaderResourceBinding(&pResolveSRB, true);
+        pResolveSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Radiance")->Set(m_pRadianceAccumulationBuffer[CurrFrameIdx]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
 }
 
 // Render a frame
@@ -363,16 +388,18 @@ void Tutorial25_StatePackager::Render()
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
     }
 
+    const Uint32 SRBIndex = m_CurrentFrameNumber & 0x01;
+
     // Path trace
     {
-        // Matches the THREAD_GROUP_SIZE in the render state notation file
-        static constexpr Uint32 ThreadGroupSize = 8;
+        ITextureView* ppRTVs[] = {
+            m_pRadianceAccumulationBuffer[SRBIndex]->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) //
+        };
+        m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_pPathTracePSO);
-        m_pImmediateContext->CommitShaderResources(m_pPathTraceSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        DispatchComputeAttribs DispatchArgs{(SCDesc.Width + ThreadGroupSize - 1) / ThreadGroupSize, (SCDesc.Height + ThreadGroupSize - 1) / ThreadGroupSize};
-        m_pImmediateContext->DispatchCompute(DispatchArgs);
+        m_pImmediateContext->CommitShaderResources(m_pPathTraceSRB[SRBIndex], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
     }
 
     // Resolve
@@ -381,7 +408,7 @@ void Tutorial25_StatePackager::Render()
         m_pImmediateContext->SetRenderTargets(_countof(ppRTVs), ppRTVs, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_pResolvePSO);
-        m_pImmediateContext->CommitShaderResources(m_pResolveSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->CommitShaderResources(m_pResolveSRB[SRBIndex], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
     }

@@ -19,7 +19,7 @@ set(SHADERS
     assets/screen_tri.vsh
     assets/g_buffer.psh
     assets/resolve.psh
-    assets/path_trace.csh
+    assets/path_trace.psh
     assets/RenderStates.json
     assets/structures.fxh
     assets/scene.fxh
@@ -30,7 +30,7 @@ set(ASSETS ${PSO_ARCHIVE})
 
 add_sample_app("Tutorial25_StatePackager" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
-set(DEVICE_FLAGS --dx11 --dx12)
+set(DEVICE_FLAGS --dx11 --dx12 --webgpu)
 # Compute shaders are not supported in OpenGL on MacOS
 if (NOT ${DILIGENT_NO_HLSL} AND NOT PLATFORM_MACOS)
     list(APPEND DEVICE_FLAGS --opengl)
@@ -47,7 +47,7 @@ add_custom_command(OUTPUT ${PSO_ARCHIVE} # We must use full path here!
                    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/screen_tri.vsh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/g_buffer.psh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/resolve.psh"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/assets/path_trace.csh"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/assets/path_trace.psh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/structures.fxh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/scene.fxh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/hash.fxh"

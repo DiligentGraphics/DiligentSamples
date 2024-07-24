@@ -53,12 +53,13 @@ private:
 
     RefCntAutoPtr<IBuffer> m_pShaderConstantsCB;
 
-    RefCntAutoPtr<IPipelineState>         m_pGBufferPSO;
+    RefCntAutoPtr<IPipelineState> m_pGBufferPSO;
+    RefCntAutoPtr<IPipelineState> m_pPathTracePSO;
+    RefCntAutoPtr<IPipelineState> m_pResolvePSO;
+
     RefCntAutoPtr<IShaderResourceBinding> m_pGBufferSRB;
-    RefCntAutoPtr<IPipelineState>         m_pPathTracePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pPathTraceSRB;
-    RefCntAutoPtr<IPipelineState>         m_pResolvePSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_pResolveSRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_pPathTraceSRB[2];
+    RefCntAutoPtr<IShaderResourceBinding> m_pResolveSRB[2];
 
     struct GBuffer
     {
@@ -80,7 +81,7 @@ private:
     GBuffer m_GBuffer;
 
     static constexpr auto   RadianceAccumulationFormat = TEX_FORMAT_RGBA32_FLOAT;
-    RefCntAutoPtr<ITexture> m_pRadianceAccumulationBuffer;
+    RefCntAutoPtr<ITexture> m_pRadianceAccumulationBuffer[2];
 
     int    m_NumBounces         = 3;
     int    m_NumSamplesPerFrame = 8;

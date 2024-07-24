@@ -61,24 +61,34 @@
                     "Variables": [
                         {
                             "Name": "cbConstants",
-                            "ShaderStages": "COMPUTE",
+                            "ShaderStages": "PIXEL",
                             "Type": "STATIC"
                         }
                     ]
                 }
             },
-            "pCS": {
-                "Desc": {
-                    "Name": "Path Trace CS"
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
                 },
-                "FilePath": "path_trace.csh",
-                "EntryPoint": "main",
-                "Macros": [
-                    {
-                        "Name": "THREAD_GROUP_SIZE",
-                        "Definition": "8"
-                    }
-                ]
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "Screen Triangle VS"
+                },
+                "FilePath": "screen_tri.vsh",
+                "EntryPoint": "main"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "Path Trace PS"
+                },
+                "FilePath": "path_trace.psh",
+                "EntryPoint": "main"
             }
         },
 
