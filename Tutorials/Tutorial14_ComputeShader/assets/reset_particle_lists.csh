@@ -9,7 +9,7 @@ cbuffer Constants
 #   define THREAD_GROUP_SIZE 64
 #endif
 
-RWBuffer<int /*format=r32i*/> g_ParticleListHead;
+RWStructuredBuffer<int> g_ParticleListHead;
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main(uint3 Gid  : SV_GroupID,

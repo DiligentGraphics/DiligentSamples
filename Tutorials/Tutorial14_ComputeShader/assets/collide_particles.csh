@@ -15,8 +15,8 @@ cbuffer Constants
 #endif
 
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-Buffer<int>                         g_ParticleListHead;
-Buffer<int>                         g_ParticleLists;
+StructuredBuffer<int>               g_ParticleListHead;
+StructuredBuffer<int>               g_ParticleLists;
 
 // https://en.wikipedia.org/wiki/Elastic_collision
 void CollideParticles(inout ParticleAttribs P0, in ParticleAttribs P1)
@@ -82,7 +82,7 @@ void main(uint3 Gid  : SV_GroupID,
         {
             for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
             {
-                int AnotherParticleIdx = g_ParticleListHead.Load(x + y * GridWidth);
+                int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth];
                 while (AnotherParticleIdx >= 0)
                 {
                     if (iParticleIdx != AnotherParticleIdx)
@@ -91,7 +91,7 @@ void main(uint3 Gid  : SV_GroupID,
                         CollideParticles(Particle, AnotherParticle);
                     }
 
-                    AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
+                    AnotherParticleIdx = g_ParticleLists[AnotherParticleIdx];
                 }
             }
         }

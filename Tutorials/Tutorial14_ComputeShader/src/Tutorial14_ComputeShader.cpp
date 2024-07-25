@@ -290,7 +290,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     IBufferView* pParticleAttribsBufferUAV = m_pParticleAttribsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
 
     BuffDesc.ElementByteStride = sizeof(int);
-    BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
     BuffDesc.Size              = Uint64{BuffDesc.ElementByteStride} * static_cast<Uint64>(m_NumParticles);
     BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
@@ -301,9 +301,7 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     RefCntAutoPtr<IBufferView> pParticleListsBufferSRV;
     {
         BufferViewDesc ViewDesc;
-        ViewDesc.ViewType             = BUFFER_VIEW_UNORDERED_ACCESS;
-        ViewDesc.Format.ValueType     = VT_INT32;
-        ViewDesc.Format.NumComponents = 1;
+        ViewDesc.ViewType = BUFFER_VIEW_UNORDERED_ACCESS;
         m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferUAV);
         m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferUAV);
 

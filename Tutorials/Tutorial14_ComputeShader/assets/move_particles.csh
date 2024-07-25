@@ -11,8 +11,8 @@ cbuffer Constants
 #endif
 
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-RWBuffer<int /*format=r32i*/>       g_ParticleListHead;
-RWBuffer<int /*format=r32i*/>       g_ParticleLists;
+RWStructuredBuffer<int>             g_ParticleListHead;
+RWStructuredBuffer<int>             g_ParticleLists;
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main(uint3 Gid  : SV_GroupID,
