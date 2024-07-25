@@ -435,6 +435,7 @@ void USDViewer::LoadStage()
         m_Camera.SetDistRange(0.01f, 100.f);
     }
     m_Camera.SetDist(SceneExtent * 2.f);
+    m_CameraSettings.FocusDistance = SceneExtent * 1.5f;
 
     UpdateCamera();
 
