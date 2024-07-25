@@ -754,6 +754,7 @@ void USDViewer::UpdateUI()
 
                     ImGui::SliderFloat("Focal Length (mm)", &m_CameraSettings.FocalLength_mm, 24.0, 300.0);
                     ImGui::SliderFloat("Aperture (f-stop)", &m_CameraSettings.FStop, 1.0, 64.0, "%.3f", ImGuiSliderFlags_Logarithmic);
+                    ImGui::SliderFloat("Exposure", &m_CameraSettings.Exposure, -8.0, +8.0, "%.3f");
                     ImGui::SliderFloat("Focus Distance", &m_CameraSettings.FocusDistance, ClippingRange[0], ClippingRange[1], "%.3f", ImGuiSliderFlags_AlwaysClamp);
                     ImGui::SliderFloat("Sensor Width", &m_CameraSettings.SensorWidth_mm, 1, 100);
 
@@ -1149,6 +1150,7 @@ void USDViewer::UpdateCamera()
 
     m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * m_CameraView).Inverse()));
     m_Stage.Camera.GetFStopAttr().Set(m_CameraSettings.FStop);
+    m_Stage.Camera.GetExposureAttr().Set(m_CameraSettings.Exposure);
 
     // USD camera properties are measured in scene units
     m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRange / m_Stage.MetersPerUnit);

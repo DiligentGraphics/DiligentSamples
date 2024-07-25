@@ -171,7 +171,8 @@ private:
         // Focus distance in meters
         float FocusDistance = 2.0f;
 
-        float FStop = 2.8f;
+        float FStop    = 2.8f;
+        float Exposure = 0.0f;
 
         // Sensor width and height in millimeters
         float SensorWidth_mm  = 36.0f;
