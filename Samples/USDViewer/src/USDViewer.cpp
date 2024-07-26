@@ -1137,16 +1137,14 @@ void USDViewer::UpdateCamera()
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
 
-    const float        FOV = 2.0f * atanf(m_CameraSettings.SensorWidth_mm / (2.0 * m_CameraSettings.FocalLength_mm));
+    const SwapChainDesc& SCDesc      = m_pSwapChain->GetDesc();
+    m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm / static_cast<float>(SCDesc.Width) * static_cast<float>(SCDesc.Height);
+    const float        FOV           = 2.0f * atanf(m_CameraSettings.SensorHeight_mm / (2.0 * m_CameraSettings.FocalLength_mm));
     const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
     // Get projection matrix adjusted to the current screen orientation
     m_CameraProj = GetAdjustedProjectionMatrix(FOV, ClippingRange[0], ClippingRange[1]);
 
-    // TODO: We need crop image if screen size doesn't match the aspect ratio of the sensor
-    const auto& SCDesc               = m_pSwapChain->GetDesc();
-    const float AspectRatio          = static_cast<float>(SCDesc.Width) / static_cast<float>(SCDesc.Height);
-    m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm / AspectRatio;
-    m_CameraSettings.FocusDistance   = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength_mm * 0.001f, ClippingRange[1]);
+    m_CameraSettings.FocusDistance = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength_mm * 0.001f, ClippingRange[1]);
 
     m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * m_CameraView).Inverse()));
     m_Stage.Camera.GetFStopAttr().Set(m_CameraSettings.FStop);
