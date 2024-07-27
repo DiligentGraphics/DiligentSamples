@@ -60,6 +60,7 @@
 #include "pxr/usd/usdGeom/metrics.h"
 #include "pxr/usd/usdGeom/camera.h"
 #include "pxr/usd/usdGeom/imageable.h"
+#include "pxr/usd/usdGeom/tokens.h"
 #include "pxr/usd/usdLux/distantLight.h"
 #include "pxr/usd/usdLux/sphereLight.h"
 #include "pxr/usd/usdLux/domeLight.h"
@@ -609,6 +610,19 @@ void USDViewer::EditSelectedPrimTransform()
     if (!XFormable)
         return;
 
+    // Check if the selected prim has pivot.
+    // The xformOpOrder of an xformable that has all of the supported basic ops is as follows (see xformCommonAPI.h):
+    // ["xformOp:translate", "xformOp:translate:pivot", "xformOp:rotateXYZ", "xformOp:scale", "!invert!xformOp:translate:pivot"].
+    pxr::GfVec3f PivotVal{};
+    if (pxr::UsdGeomXformOp PivotOp = XFormable.GetXformOp(pxr::UsdGeomXformOp::TypeTranslate, pxr::UsdGeomTokens->pivot))
+    {
+        // There must also be an inverse pivot op to negate the translation defined by the pivot (xformCommonAPI.cpp/_GetOrAddCommonXformOps)
+        if (XFormable.GetXformOp(pxr::UsdGeomXformOp::TypeTranslate, pxr::UsdGeomTokens->pivot, /*isInverseOp = true*/ true))
+        {
+            PivotOp.Get(&PivotVal, 0);
+        }
+    }
+
     pxr::GfMatrix4d ParentGlobalXForm  = GetPrimGlobalTransform(Prim.GetParent());
     float4x4        ParentGlobalMatrix = USD::ToFloat4x4(ParentGlobalXForm);
 
@@ -618,7 +632,7 @@ void USDViewer::EditSelectedPrimTransform()
     bool            ResetsXformStack = false;
     XFormable.GetLocalTransformation(&LocalXform, &ResetsXformStack);
 
-    float4x4 NewGlobalMatrix = float4x4::MakeMatrix(LocalXform.data()) * ParentGlobalMatrix;
+    float4x4 NewGlobalMatrix = float4x4::Translation(PivotVal[0], PivotVal[1], PivotVal[2]) * float4x4::MakeMatrix(LocalXform.data()) * ParentGlobalMatrix;
 
     ImGuiIO& io = ImGui::GetIO();
     ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
@@ -626,11 +640,18 @@ void USDViewer::EditSelectedPrimTransform()
     ImGuizmo::MODE      GizmoMode      = ImGuizmo::LOCAL;
     // NOTE: it is important that ImGuizmo operates on a matrix without reflections, otherwise
     //       rotation will be flipped.
-    if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), GizmoOperation, GizmoMode, NewGlobalMatrix.Data(), NULL, NULL))
+    if (ImGuizmo::Manipulate(m_CameraView.Data(), m_CameraProj.Data(), GizmoOperation, GizmoMode, NewGlobalMatrix.Data()))
     {
         // New local matrix is the delta between new global matrix and parent global matrix
-        float4x4 NewLocalMatrix = NewGlobalMatrix * ParentGlobalMatrix.Inverse();
+        float4x4 NewLocalMatrix = float4x4::Translation(-PivotVal[0], -PivotVal[1], -PivotVal[2]) * NewGlobalMatrix * ParentGlobalMatrix.Inverse();
         XFormable.MakeMatrixXform().Set(USD::ToGfMatrix4d(NewLocalMatrix));
+        // Restore pivot as MakeMatrixXform clears all ops
+        if (PivotVal != pxr::GfVec3f{})
+        {
+            XFormable.AddXformOp(pxr::UsdGeomXformOp::TypeTranslate, pxr::UsdGeomXformOp::PrecisionFloat, pxr::UsdGeomTokens->pivot).Set(PivotVal, 0);
+            // Add inverse pivot to negate the transformation
+            XFormable.AddXformOp(pxr::UsdGeomXformOp::TypeTranslate, pxr::UsdGeomXformOp::PrecisionFloat, pxr::UsdGeomTokens->pivot, /*isInverseOp = */ true);
+        }
     }
 }
 
