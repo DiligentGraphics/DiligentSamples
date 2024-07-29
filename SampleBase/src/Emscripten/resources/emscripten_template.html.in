@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@TARGET_NAME@</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(177deg, #3a3a3a, #303e3d, #22223a);
+            background-size: 180% 180%;
+            animation: gradient-animation 15s ease infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 30px 40px;
+            text-align: center;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .loading-indicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-indicator .spinner {
+            border: 8px solid rgba(255, 255, 255, 0.2); /* Light grey */
+            border-left: 8px solid #ffffff; /* White */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            position: relative;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-indicator .progress-text {
+            font-size: 20px;
+            color: white;
+            margin-top: 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        button.webgl {
+            background: #7289da;
+        }
+
+        button.webgl:hover {
+            background: #5b6eae;
+            transform: scale(1.05);
+        }
+
+        button.webgl:active {
+            background: #4752c4;
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button.webgpu {
+            background: #43b581;
+        }
+
+        button.webgpu:hover {
+            background: #3a9d6e;
+            transform: scale(1.05);
+        }
+
+        button.webgpu:active {
+            background: #2d8c5a;
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .emscripten {
+            display: none;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            margin: 0px;
+            border: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: block;
+            image-rendering: optimizeSpeed;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -o-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+    </style>
+</head>
+<body>
+    <canvas class="emscripten" id="canvas"></canvas>
+    <div class="container">
+        <div class="card">
+            <h1>Select Graphics API</h1>
+            <div class="button-container">
+                <button class="webgl" onclick="loadWasm('gles')">WebGL</button>
+                <button class="webgpu" onclick="loadWasm('wgpu')">WebGPU</button>
+            </div>
+        </div>
+        <div class="loading-indicator" id="loading-indicator">
+            <div class="spinner"></div>
+            <div class="progress-text" id="progress-text">0%</div>
+        </div>
+    </div>
+   
+    <script type='text/javascript'>   
+        var initWebGPUDevice = (async () => {
+            const requiredFeatures = [
+                "depth-clip-control",
+                "depth32float-stencil8",
+                "texture-compression-bc",
+                "indirect-first-instance",
+                "shader-f16",
+                "rg11b10ufloat-renderable",
+                "bgra8unorm-storage",
+                "float32-filterable",
+            ];
+
+            const adapter = await navigator.gpu.requestAdapter();
+            const device = await adapter.requestDevice({
+                requiredFeatures: requiredFeatures.filter(feature => adapter.features.has(feature)),
+                requiredLimits: {
+                    maxColorAttachmentBytesPerSample: adapter.limits.maxColorAttachmentBytesPerSample
+                }
+            });
+            return device;
+        })();
+
+        var Module = {
+            preRun: [],
+            postRun: function() {
+                var canvas = document.getElementById('canvas');
+                if (canvas)
+                    canvas.focus();
+            },
+            print: (function () {
+                return function (text) {
+                    text = Array.prototype.slice.call(arguments).join(' ');
+                    console.log(text);
+                };
+            })(),
+            printErr: function (text) {
+                text = Array.prototype.slice.call(arguments).join(' ');
+                console.error(text);
+            },
+            canvas: (function () {
+                var dpr = window.devicePixelRatio;
+                var canvas = document.getElementById('canvas');
+            
+                window.onload =  function () {
+                    canvas.width = Math.ceil(dpr * window.innerWidth);
+                    canvas.height = Math.ceil(dpr * window.innerHeight);
+                };
+                canvas.addEventListener("webglcontextlost", function(e) { alert('FIXME: WebGL context lost, please reload the page'); e.preventDefault(); }, false);
+                return canvas;
+            })(),
+            setStatus: function (text) {
+                console.log("status: " + text);
+            },
+            monitorRunDependencies: function (left) {
+                // no run dependencies to log
+            }
+        };
+        
+        
+        window.onerror = function () {
+            console.log("onerror: " + event);
+        };
+
+        function loadWasm(api) {
+            // Hide the card and show the loading indicator
+            document.querySelector('.card').style.display = 'none';
+            document.getElementById('loading-indicator').style.display = 'flex';
+
+            // TODO: We need synchronize loading wasm module and progress bar 
+            let percentage = 0;
+            const progressText = document.getElementById('progress-text');
+            const interval = setInterval(() => {
+                if (percentage >= 100) {
+                    clearInterval(interval);
+                    progressText.textContent = 'Completed';
+                    setTimeout(() => {
+                        document.getElementById('loading-indicator').style.display = 'none';
+                        document.getElementById('canvas').style.display = 'flex';
+                    }, 100); // Delay before hiding the indicator
+                } else {
+                    percentage++;
+                    progressText.textContent = percentage + '%';
+                }
+            }, 2.0); 
+
+            Module.arguments = ["--mode", `${api}`];
+            if (api === 'wgpu') {
+                initWebGPUDevice.then(device => { Module.preinitializedWebGPUDevice = device });
+            }
+         
+            const script = document.createElement('script');
+            script.src = '@TARGET_NAME@.js';
+            document.body.appendChild(script);
+        }  
+
+    </script>
+</body>
+</html>

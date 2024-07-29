@@ -127,11 +127,13 @@ elseif(PLATFORM_EMSCRIPTEN)
 
     function(append_sample_base_emscripten_source TARGET_NAME)     
         get_target_property(SAMPLE_BASE_SOURCE_DIR Diligent-SampleBase SOURCE_DIR)
-        set(HTML_TEMPLATE_FILE 
-            ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/emscripten_template.html
-        )          
+        configure_file(
+            ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/emscripten_template.html.in
+            ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.html
+            @ONLY
+        )
 
-        target_link_options(${TARGET_NAME} PRIVATE "SHELL: --shell-file '${HTML_TEMPLATE_FILE}' -s WASM_BIGINT")
+        target_link_options(${TARGET_NAME} PRIVATE "SHELL: -s WASM_BIGINT -s WASM=1")
         if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND DILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO)
             target_link_options(${TARGET_NAME} PRIVATE "SHELL: -gseparate-dwarf -g0")
         endif()
