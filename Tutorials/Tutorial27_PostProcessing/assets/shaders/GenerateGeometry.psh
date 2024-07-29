@@ -115,20 +115,20 @@ Intersection IntersectSphere(Ray InputRay, float3 Center, float Radius)
     float D = B * B - 4.0 * A * C;
     // If discriminant is negative, there are no real roots hence the ray misses the
     // sphere
-    if (D < 0.0)
-        return Result;
-
-    D = sqrt(D);
-    float TNear = (-B - D) / (2.0 * A);
-    float TFear = (-B + D) / (2.0 * A);
+    if (D > 0.0)
+    {
+        D = sqrt(D);
+        float TNear = (-B - D) / (2.0 * A);
+        float TFear = (-B + D) / (2.0 * A);
     
-    float T = TNear > M_EPSILON ? TNear : TFear;
-    if (T < M_EPSILON)
-        return Result;
-
-    float3 HitPos = InputRay.Origin + T * InputRay.Direction;
-    Result.Normal = normalize(HitPos - Center);
-    Result.Distance = T;
+        float T = TNear > M_EPSILON ? TNear : TFear;
+        if (T > M_EPSILON)
+        {
+            float3 HitPos = InputRay.Origin + T * InputRay.Direction;
+            Result.Normal = normalize(HitPos - Center);
+            Result.Distance = T;
+        }
+    }
     return Result;
 }
 
@@ -145,18 +145,18 @@ Intersection IntersectAABB(Ray InputRay, float3 Center, float3 Size)
     float3 TMax = max(T1, T2);
     float TNear = max(max(TMin.x, TMin.y), TMin.z);
     float TFar  = min(min(TMax.x, TMax.y), TMax.z);
-    if (TNear >= TFar)
-        return Result;
-
-    // Use far intersection if t_near > EPSILON.
-    // This is important to avoid light leaks.
-    float T = TNear > M_EPSILON ? TNear : TFar;
-    if (T < M_EPSILON )
-        return Result;
-
-    // Compute normal for the entry point. We only use internal intersection for shadows.
-    Result.Normal = -sign(InputRay.Direction) * step(TMin.yzx, TMin.xyz) * step(TMin.zxy, TMin.xyz);
-    Result.Distance = T;
+    if (TNear < TFar)
+    {
+        // Use far intersection if t_near > EPSILON.
+        // This is important to avoid light leaks.
+        float T = TNear > M_EPSILON ? TNear : TFar;
+        if (T > M_EPSILON)
+        {
+            // Compute normal for the entry point. We only use internal intersection for shadows.
+            Result.Normal = -sign(InputRay.Direction) * step(TMin.yzx, TMin.xyz) * step(TMin.zxy, TMin.xyz);
+            Result.Distance = T;
+        }
+    }
     return Result;
 }
 
