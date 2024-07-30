@@ -96,39 +96,26 @@ m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_Particles")
 The second buffer that we will use is going to contain the index of the first
 particle in the list, for every bin. Finally, the last buffer will contain
 the index of the next particle in the list, for every particle. Both buffers will store
-one integer per particle and will be initialized as formatted buffers:
+one integer per particle and will be initialized as structured buffers:
 
 ```cpp
 BuffDesc.ElementByteStride = sizeof(int);
-BuffDesc.Mode              = BUFFER_MODE_FORMATTED;
+BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
 BuffDesc.Size              = BuffDesc.ElementByteStride * m_NumParticles;
 BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
 m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
 m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
+IBufferView* pParticleListHeadsBufferUAV = m_pParticleListHeadsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
+IBufferView* pParticleListsBufferUAV     = m_pParticleListsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
+IBufferView* pParticleListHeadsBufferSRV = m_pParticleListHeadsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
+IBufferView* pParticleListsBufferSRV     = m_pParticleListsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
 ```
 
-Formatted buffer allows format conversions when accessing elements of a buffer
-(such as float->UNORM). We will not use this though and access buffers as raw
-integer values. Formatted buffers do not provide default views because default
-format is ambiguous, so we have to explicitly define the format (one 32-bit
-integer) and manually create the views:
+In the shader, the buffers are declared as follows:
 
-```cpp
-RefCntAutoPtr<IBufferView> pParticleListHeadsBufferUAV;
-RefCntAutoPtr<IBufferView> pParticleListsBufferUAV;
-RefCntAutoPtr<IBufferView> pParticleListHeadsBufferSRV;
-RefCntAutoPtr<IBufferView> pParticleListsBufferSRV;
-
-BufferViewDesc ViewDesc;
-ViewDesc.ViewType = BUFFER_VIEW_UNORDERED_ACCESS;
-ViewDesc.Format.ValueType     = VT_INT32;
-ViewDesc.Format.NumComponents = 1;
-m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferUAV);
-m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferUAV);
-
-ViewDesc.ViewType = BUFFER_VIEW_SHADER_RESOURCE;
-m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferSRV);
-m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferSRV);
+```hlsl
+RWStructuredBuffer<int> g_ParticleListHead;
+RWStructuredBuffer<int> g_ParticleLists;
 ```
 
 The buffer views are bound to shader resource binding objects in a typical way:
@@ -138,22 +125,6 @@ m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleListHead"
                    ->Set(pParticleListHeadsBufferUAV);
 m_pMoveParticlesSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_ParticleLists")
                    ->Set(pParticleListsBufferUAV);
-```
-
-In the shaders, formatted buffers are declared similar to structured buffers, but they can only use
-basic types (`int`, `float4`, `uint2`, etc.):
-
-```hlsl
-RWBuffer<int /*format=r32i*/> g_ParticleListHead;
-```
-
-Notice the special comment in the type declaration. This comment is used by the HLSL->GLSL converter to
-make the shader work in GLSL backend.
-
-Access to a formatted buffer is performed similar to a structured buffer using the array notation:
-
-```hlsl
-g_ParticleListHead[uiGlobalThreadIdx] = -1;
 ```
 
 ## Compute Shaders
@@ -176,7 +147,7 @@ cbuffer Constants
     GlobalConstants g_Constants;
 };
 
-RWBuffer<int /*format=r32i*/> g_ParticleListHead;
+RWStructuredBuffer<int> g_ParticleListHead;
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main(uint3 Gid  : SV_GroupID,
@@ -188,8 +159,7 @@ void main(uint3 Gid  : SV_GroupID,
 }
 ```
 
-Notice, again, the usage of special comment `/*format=r32i*/`. The `THREAD_GROUP_SIZE` macro is defined
-by the host and defines the size of the compute shader thread group. 
+The `THREAD_GROUP_SIZE` macro is defined by the host and defines the size of the compute shader thread group. 
 
 Please refer to [this page](https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-dispatch)
 for explanation of group index, group thread index and other compute shader specific elements.
@@ -213,8 +183,8 @@ cbuffer Constants
 #endif
 
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-RWBuffer<int /*format=r32i*/>       g_ParticleListHead;
-RWBuffer<int /*format=r32i*/>       g_ParticleLists;
+RWStructuredBuffer<int>             g_ParticleListHead;
+RWStructuredBuffer<int>             g_ParticleLists;
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main(uint3 Gid  : SV_GroupID,
@@ -314,7 +284,7 @@ the particles can be iterated as shown in the collision shader.
 
 ### Particle Collision
 
-Particle collision is performed in two steps. On the first step we update the particle
+Particle collision is performed in two steps. On the first step, we update the particle
 position to make sure it does not intersect with other particles. On the second step,
 we update the particle speed. The reasons the steps are separated is because the math we
 use for speed updates is only valid for two-particle collisions, so we count the number 
@@ -326,8 +296,8 @@ particle-related buffers:
 
 ```hlsl
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-Buffer<int>                         g_ParticleListHead;
-Buffer<int>                         g_ParticleLists;
+StructuredBuffer<int>               g_ParticleListHead;
+StructuredBuffer<int>               g_ParticleLists;
 ```
 
 The shader starts by reading the current particle attributes
@@ -340,7 +310,6 @@ ParticleAttribs Particle = g_Particles[iParticleIdx];
 int2 i2GridPos = GetGridLocation(Particle.f2Pos, g_Constants.i2ParticleGridSize).xy;
 int GridWidth  = g_Constants.i2ParticleGridSize.x;
 int GridHeight = g_Constants.i2ParticleGridSize.y;
-
 ```
 
 The shader then goes through all bins in a 3x3 neighborhood, and for
@@ -351,7 +320,7 @@ for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); +
 {
     for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
     {
-        int AnotherParticleIdx = g_ParticleListHead.Load(x + y * GridWidth);
+        int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth];
         while (AnotherParticleIdx >= 0)
         {
             if (iParticleIdx != AnotherParticleIdx)
@@ -360,7 +329,7 @@ for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); +
                 CollideParticles(Particle, AnotherParticle);
             }
 
-            AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
+            AnotherParticleIdx = g_ParticleLists[AnotherParticleIdx];
         }
     }
 }
@@ -370,7 +339,7 @@ Notice how iteration through the list is performed: we first read the index of t
 particle:
 
 ```hlsl
-int AnotherParticleIdx = g_ParticleListHead.Load(x + y * GridWidth);
+int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth];
 ```
 
 And then run the loop until we reach the end of the list (`AnotherParticleIdx == -1`).
@@ -379,7 +348,7 @@ Inside the loop we go to the next particle by reading the next index from the
 particle's list buffer:
 
 ```hlsl
-AnotherParticleIdx = g_ParticleLists.Load(AnotherParticleIdx);
+AnotherParticleIdx = g_ParticleLists[AnotherParticleIdx];
 ```
 
 `CollideParticles` function implements the crux of particle collision. Please refer to the shader's

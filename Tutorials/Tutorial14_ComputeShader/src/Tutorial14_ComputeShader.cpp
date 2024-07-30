@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -295,20 +295,10 @@ void Tutorial14_ComputeShader::CreateParticleBuffers()
     BuffDesc.BindFlags         = BIND_UNORDERED_ACCESS | BIND_SHADER_RESOURCE;
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListHeadsBuffer);
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pParticleListsBuffer);
-    RefCntAutoPtr<IBufferView> pParticleListHeadsBufferUAV;
-    RefCntAutoPtr<IBufferView> pParticleListsBufferUAV;
-    RefCntAutoPtr<IBufferView> pParticleListHeadsBufferSRV;
-    RefCntAutoPtr<IBufferView> pParticleListsBufferSRV;
-    {
-        BufferViewDesc ViewDesc;
-        ViewDesc.ViewType = BUFFER_VIEW_UNORDERED_ACCESS;
-        m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferUAV);
-        m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferUAV);
-
-        ViewDesc.ViewType = BUFFER_VIEW_SHADER_RESOURCE;
-        m_pParticleListHeadsBuffer->CreateView(ViewDesc, &pParticleListHeadsBufferSRV);
-        m_pParticleListsBuffer->CreateView(ViewDesc, &pParticleListsBufferSRV);
-    }
+    IBufferView* pParticleListHeadsBufferUAV = m_pParticleListHeadsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
+    IBufferView* pParticleListsBufferUAV     = m_pParticleListsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS);
+    IBufferView* pParticleListHeadsBufferSRV = m_pParticleListHeadsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
+    IBufferView* pParticleListsBufferSRV     = m_pParticleListsBuffer->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE);
 
     m_pResetParticleListsSRB.Release();
     m_pResetParticleListsPSO->CreateShaderResourceBinding(&m_pResetParticleListsSRB, true);
