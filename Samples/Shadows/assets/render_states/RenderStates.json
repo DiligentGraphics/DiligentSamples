@@ -4,7 +4,8 @@
             "SourceLanguage": "HLSL",
             "Desc": {
                 "UseCombinedTextureSamplers": true
-            }
+            },
+            "CompileFlags": [ "PACK_MATRIX_ROW_MAJOR" ]
         }
     },
     "Shaders": [

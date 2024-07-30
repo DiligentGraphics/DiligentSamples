@@ -379,7 +379,12 @@ void ShadowsSample::CreatePipelineStates()
         {
             ShaderResourceVariableDesc Vars[] = {
                 {SHADER_TYPE_PIXEL, "g_tex2DDiffuse", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE},
-                {SHADER_TYPE_PIXEL, m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}};
+                {
+                    SHADER_TYPE_PIXEL,
+                    m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? "g_tex2DShadowMap" : "g_tex2DFilterableShadowMap",
+                    SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE,
+                    m_ShadowSettings.iShadowMode == SHADOW_MODE_PCF ? SHADER_VARIABLE_FLAG_UNFILTERABLE_FLOAT_TEXTURE_WEBGPU : SHADER_VARIABLE_FLAG_NONE,
+                }};
 
             auto ModifyCI = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
                 auto& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
@@ -509,14 +514,14 @@ void ShadowsSample::RenderShadowMap()
     {
         const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
-        auto WorldToLightViewSpaceMatr = m_LightAttribs.ShadowAttribs.mWorldToLightViewT.Transpose();
+        auto WorldToLightViewSpaceMatr = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
         auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         CameraAttribs ShadowCameraAttribs = {};
 
         ShadowCameraAttribs.mViewT     = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
-        ShadowCameraAttribs.mProjT     = CascadeProjMatr.Transpose();
-        ShadowCameraAttribs.mViewProjT = WorldToLightProjSpaceMatr.Transpose();
+        ShadowCameraAttribs.mProjT     = CascadeProjMatr;
+        ShadowCameraAttribs.mViewProjT = WorldToLightProjSpaceMatr;
 
         ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSettings.Resolution);
         ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSettings.Resolution);
@@ -575,9 +580,9 @@ void ShadowsSample::Render()
 
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        CamAttribs->mProjT        = Proj.Transpose();
-        CamAttribs->mViewProjT    = CameraViewProj.Transpose();
-        CamAttribs->mViewProjInvT = CameraViewProj.Inverse().Transpose();
+        CamAttribs->mProjT        = Proj;
+        CamAttribs->mViewProjT    = CameraViewProj;
+        CamAttribs->mViewProjInvT = CameraViewProj.Inverse();
         CamAttribs->f4Position    = float4(CameraWorldPos, 1);
     }
 
@@ -664,6 +669,7 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
     DistrInfo.SnapCascades        = m_ShadowSettings.SnapCascades;
     DistrInfo.EqualizeExtents     = m_ShadowSettings.EqualizeExtents;
     DistrInfo.StabilizeExtents    = m_ShadowSettings.StabilizeExtents;
+    DistrInfo.PackMatrixRowMajor  = true;
 
     m_ShadowMapMgr.DistributeCascades(DistrInfo, m_LightAttribs.ShadowAttribs);
 }
