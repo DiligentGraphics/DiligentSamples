@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -134,8 +134,13 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
     CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light Attribs CB", &m_pcbLightAttribs);
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
-    m_pLightSctrPP.reset(new EpipolarLightScattering(m_pDevice, nullptr, m_pImmediateContext, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, TEX_FORMAT_R11G11B10_FLOAT));
-    auto* pcMediaScatteringParams = m_pLightSctrPP->GetMediaAttribsCB();
+    m_pLightSctrPP     = std::make_unique<EpipolarLightScattering>(EpipolarLightScattering::CreateInfo{
+        m_pDevice,
+        nullptr,
+        m_pImmediateContext,
+        SCDesc.ColorBufferFormat,
+        SCDesc.DepthBufferFormat,
+    });
 
     m_EarthHemisphere.Create(m_pElevDataSource.get(),
                              m_TerrainRenderParams,
@@ -146,7 +151,7 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
                              strNormalMapPaths,
                              m_pcbCameraAttribs,
                              m_pcbLightAttribs,
-                             pcMediaScatteringParams);
+                             m_pLightSctrPP->GetMediaAttribsCB());
 
     CreateShadowMap();
 }
