@@ -32,6 +32,7 @@
 #include "CommonlyUsedStates.h"
 #include "StringTools.hpp"
 #include "GraphicsUtilities.h"
+#include "GraphicsAccessories.hpp"
 #include "AdvancedMath.hpp"
 #include "imgui.h"
 #include "../imGuIZMO.quat/imGuIZMO.h"
@@ -86,6 +87,10 @@ void ShadowsSample::Initialize(const SampleInitInfo& InitInfo)
     m_LightAttribs.f4Direction    = float3(-0.522699475f, -0.481321275f, -0.703671455f);
     m_LightAttribs.f4Intensity    = float4(1, 0.8f, 0.5f, 1);
     m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
+
+    // Due to a bug, NVidia driver crashes when compiling shaders with row-major matrices
+    // in nested structures.
+    m_PackMatrixRowMajor = !m_pDevice->GetDeviceInfo().IsGLDevice();
 
     m_Camera.SetPos(float3(70, 10, 0.f));
     m_Camera.SetRotation(PI_F / 2.f, 0);
@@ -337,7 +342,8 @@ void ShadowsSample::CreatePipelineStates()
     RefCntAutoPtr<IShader> pGeometryPS;
     {
         auto ModifyCI = MakeCallback([&](ShaderCreateInfo& ShaderCI) {
-            ShaderCI.Macros = Macros;
+            ShaderCI.Macros       = Macros;
+            ShaderCI.CompileFlags = m_PackMatrixRowMajor ? SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR : SHADER_COMPILE_FLAG_NONE;
         });
 
         m_pRSNLoader->LoadShader({"Mesh VS", false, ModifyCI, ModifyCI}, &pGeometryVS);
@@ -348,7 +354,8 @@ void ShadowsSample::CreatePipelineStates()
     RefCntAutoPtr<IShader> pShadowVS;
     {
         auto ModifyCI = MakeCallback([&](ShaderCreateInfo& ShaderCI) {
-            ShaderCI.Macros = Macros;
+            ShaderCI.Macros       = Macros;
+            ShaderCI.CompileFlags = m_PackMatrixRowMajor ? SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR : SHADER_COMPILE_FLAG_NONE;
         });
 
         m_pRSNLoader->LoadShader({"Mesh VS", false, ModifyCI, ModifyCI}, &pShadowVS);
@@ -514,14 +521,16 @@ void ShadowsSample::RenderShadowMap()
     {
         const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
-        auto WorldToLightViewSpaceMatr = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
-        auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
+        const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
+            m_LightAttribs.ShadowAttribs.mWorldToLightViewT :
+            m_LightAttribs.ShadowAttribs.mWorldToLightViewT.Transpose();
+        const auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         CameraAttribs ShadowCameraAttribs = {};
 
-        ShadowCameraAttribs.mViewT     = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
-        ShadowCameraAttribs.mProjT     = CascadeProjMatr;
-        ShadowCameraAttribs.mViewProjT = WorldToLightProjSpaceMatr;
+        ShadowCameraAttribs.mViewT = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
+        WriteShaderMatrix(&ShadowCameraAttribs.mProjT, CascadeProjMatr, !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&ShadowCameraAttribs.mViewProjT, WorldToLightProjSpaceMatr, !m_PackMatrixRowMajor);
 
         ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSettings.Resolution);
         ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSettings.Resolution);
@@ -580,10 +589,10 @@ void ShadowsSample::Render()
 
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        CamAttribs->mProjT        = Proj;
-        CamAttribs->mViewProjT    = CameraViewProj;
-        CamAttribs->mViewProjInvT = CameraViewProj.Inverse();
-        CamAttribs->f4Position    = float4(CameraWorldPos, 1);
+        WriteShaderMatrix(&CamAttribs->mProjT, Proj, !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&CamAttribs->mViewProjT, CameraViewProj, !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&CamAttribs->mViewProjInvT, CameraViewProj.Inverse(), !m_PackMatrixRowMajor);
+        CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
 
     ViewFrustumExt Frutstum;
@@ -669,7 +678,7 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime)
     DistrInfo.SnapCascades        = m_ShadowSettings.SnapCascades;
     DistrInfo.EqualizeExtents     = m_ShadowSettings.EqualizeExtents;
     DistrInfo.StabilizeExtents    = m_ShadowSettings.StabilizeExtents;
-    DistrInfo.PackMatrixRowMajor  = true;
+    DistrInfo.PackMatrixRowMajor  = m_PackMatrixRowMajor;
 
     m_ShadowMapMgr.DistributeCascades(DistrInfo, m_LightAttribs.ShadowAttribs);
 }
