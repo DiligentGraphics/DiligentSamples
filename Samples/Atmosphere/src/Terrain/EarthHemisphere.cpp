@@ -711,11 +711,16 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
     RenderNormalMap(pDevice, pContext, pHeightMap, HeightMapPitch, iHeightMapDim, ptex2DNormalMap);
 
     {
-        auto Callback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {
+        auto ShaderCallback = MakeCallback([&](ShaderCreateInfo& ShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {
+            if (!m_pDevice->GetDeviceInfo().IsGLDevice())
+                ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+        });
+
+        auto PipelineCallback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {
             auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
             GraphicsPipelineCI.GraphicsPipeline.DSVFormat = m_Params.ShadowMapFormat;
         });
-        m_pRSNLoader->LoadPipelineState({"Render Hemisphere Z Only", PIPELINE_TYPE_GRAPHICS, false, Callback, Callback}, &m_pHemisphereZOnlyPSO);
+        m_pRSNLoader->LoadPipelineState({"Render Hemisphere Z Only", PIPELINE_TYPE_GRAPHICS, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemisphereZOnlyPSO);
         m_pHemisphereZOnlyPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
     }
@@ -774,9 +779,14 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         Macros.AddShaderMacro("PCF_FILTER_SIZE", m_Params.m_FixedShadowFilterSize);
         Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_Params.m_FilterAcrossShadowCascades);
 
-        auto ShaderCallback = MakeCallback([&](ShaderCreateInfo& pShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {
+        auto ShaderCallback = MakeCallback([&](ShaderCreateInfo& ShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {
             if (ShaderType == SHADER_TYPE_PIXEL)
-                pShaderCI.Macros = Macros;
+            {
+                ShaderCI.Macros                         = Macros;
+                ShaderCI.WebGPUEmulatedArrayIndexSuffix = "_";
+            }
+            if (!m_pDevice->GetDeviceInfo().IsGLDevice())
+                ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
         });
 
         auto PipelineCallback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {

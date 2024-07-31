@@ -88,7 +88,7 @@ void ShadowsSample::Initialize(const SampleInitInfo& InitInfo)
     m_LightAttribs.f4Intensity    = float4(1, 0.8f, 0.5f, 1);
     m_LightAttribs.f4AmbientLight = float4(0.125f, 0.125f, 0.125f, 1);
 
-    // Due to a bug, NVidia driver crashes when compiling shaders with row-major matrices
+    // Due to a bug, NVidia OpenGL driver crashes when compiling shaders with row-major matrices
     // in nested structures.
     m_PackMatrixRowMajor = !m_pDevice->GetDeviceInfo().IsGLDevice();
 

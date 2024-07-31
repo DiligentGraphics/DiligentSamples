@@ -34,10 +34,37 @@ SamplerState      g_tex2DMtrlMap_sampler; // Linear Mirror
 Texture2DArray<float>   g_tex2DShadowMap;
 SamplerComparisonState g_tex2DShadowMap_sampler; // Comparison
 
+#ifndef WEBGPU
 Texture2D<float3> g_tex2DTileDiffuse[5];   // Material diffuse
+#define g_tex2DTileDiffuse_0 g_tex2DTileDiffuse[0]
+#define g_tex2DTileDiffuse_1 g_tex2DTileDiffuse[1]
+#define g_tex2DTileDiffuse_2 g_tex2DTileDiffuse[2]
+#define g_tex2DTileDiffuse_3 g_tex2DTileDiffuse[3]
+#define g_tex2DTileDiffuse_4 g_tex2DTileDiffuse[4]
+#else
+// WebGPU does not support arrays of resources
+Texture2D<float3> g_tex2DTileDiffuse_0;
+Texture2D<float3> g_tex2DTileDiffuse_1;
+Texture2D<float3> g_tex2DTileDiffuse_2;
+Texture2D<float3> g_tex2DTileDiffuse_3;
+Texture2D<float3> g_tex2DTileDiffuse_4;
+#endif
 SamplerState      g_tex2DTileDiffuse_sampler;   
 
+#ifndef WEBGPU
 Texture2D<float3> g_tex2DTileNM[5];   // Material NM
+#define g_tex2DTileNM_0 g_tex2DTileNM[0]
+#define g_tex2DTileNM_1 g_tex2DTileNM[1]
+#define g_tex2DTileNM_2 g_tex2DTileNM[2]
+#define g_tex2DTileNM_3 g_tex2DTileNM[3]
+#define g_tex2DTileNM_4 g_tex2DTileNM[4]
+#else
+Texture2D<float3> g_tex2DTileNM_0;
+Texture2D<float3> g_tex2DTileNM_1;
+Texture2D<float3> g_tex2DTileNM_2;
+Texture2D<float3> g_tex2DTileNM_3;
+Texture2D<float3> g_tex2DTileNM_4;
+#endif
 SamplerState      g_tex2DTileNM_sampler;   
 
 void CombineMaterials(in float4 MtrlWeights,
@@ -66,12 +93,12 @@ void CombineMaterials(in float4 MtrlWeights,
     //BaseMaterialWeight /= NormalizationFactor;
 
 	// Get diffuse color of the base material
-    float3 BaseMaterialDiffuse = g_tex2DTileDiffuse[0].Sample( g_tex2DTileDiffuse_sampler, f2TileUV.xy / g_TerrainAttribs.m_fBaseMtrlTilingScale );
+    float3 BaseMaterialDiffuse = g_tex2DTileDiffuse_0.Sample( g_tex2DTileDiffuse_sampler, f2TileUV.xy / g_TerrainAttribs.m_fBaseMtrlTilingScale );
     float3 MaterialColors[NUM_TILE_TEXTURES];
 
     // Get tangent space normal of the base material
 #if TEXTURING_MODE == TM_MATERIAL_MASK_NM
-    float3 BaseMaterialNormal = g_tex2DTileNM[0].Sample(g_tex2DTileNM_sampler, f2TileUV.xy / g_TerrainAttribs.m_fBaseMtrlTilingScale);
+    float3 BaseMaterialNormal = g_tex2DTileNM_0.Sample(g_tex2DTileNM_sampler, f2TileUV.xy / g_TerrainAttribs.m_fBaseMtrlTilingScale);
     float3 MaterialNormals[NUM_TILE_TEXTURES];
 #endif
 
@@ -84,16 +111,16 @@ void CombineMaterials(in float4 MtrlWeights,
     fTilingScale[4] = f4TilingScale.w;
     // Load material colors and normals
     const float fThresholdWeight = 3.f/256.f;
-    MaterialColors[1] = MtrlWeights.x > fThresholdWeight ? g_tex2DTileDiffuse[1].Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[1]) : float3(0.0, 0.0, 0.0);
-    MaterialColors[2] = MtrlWeights.y > fThresholdWeight ? g_tex2DTileDiffuse[2].Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[2]) : float3(0.0, 0.0, 0.0);
-    MaterialColors[3] = MtrlWeights.z > fThresholdWeight ? g_tex2DTileDiffuse[3].Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[3]) : float3(0.0, 0.0, 0.0);
-    MaterialColors[4] = MtrlWeights.w > fThresholdWeight ? g_tex2DTileDiffuse[4].Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[4]) : float3(0.0, 0.0, 0.0);
+    MaterialColors[1] = MtrlWeights.x > fThresholdWeight ? g_tex2DTileDiffuse_1.Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[1]) : float3(0.0, 0.0, 0.0);
+    MaterialColors[2] = MtrlWeights.y > fThresholdWeight ? g_tex2DTileDiffuse_2.Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[2]) : float3(0.0, 0.0, 0.0);
+    MaterialColors[3] = MtrlWeights.z > fThresholdWeight ? g_tex2DTileDiffuse_3.Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[3]) : float3(0.0, 0.0, 0.0);
+    MaterialColors[4] = MtrlWeights.w > fThresholdWeight ? g_tex2DTileDiffuse_4.Sample(g_tex2DTileDiffuse_sampler, f2TileUV.xy  / fTilingScale[4]) : float3(0.0, 0.0, 0.0);
 
 #if TEXTURING_MODE == TM_MATERIAL_MASK_NM
-    MaterialNormals[1] = MtrlWeights.x > fThresholdWeight ? g_tex2DTileNM[1].Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[1]) : float3(0.0, 0.0, 1.0);
-    MaterialNormals[2] = MtrlWeights.y > fThresholdWeight ? g_tex2DTileNM[2].Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[2]) : float3(0.0, 0.0, 1.0);
-    MaterialNormals[3] = MtrlWeights.z > fThresholdWeight ? g_tex2DTileNM[3].Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[3]) : float3(0.0, 0.0, 1.0);
-    MaterialNormals[4] = MtrlWeights.w > fThresholdWeight ? g_tex2DTileNM[4].Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[4]) : float3(0.0, 0.0, 1.0);
+    MaterialNormals[1] = MtrlWeights.x > fThresholdWeight ? g_tex2DTileNM_1.Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[1]) : float3(0.0, 0.0, 1.0);
+    MaterialNormals[2] = MtrlWeights.y > fThresholdWeight ? g_tex2DTileNM_2.Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[2]) : float3(0.0, 0.0, 1.0);
+    MaterialNormals[3] = MtrlWeights.z > fThresholdWeight ? g_tex2DTileNM_3.Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[3]) : float3(0.0, 0.0, 1.0);
+    MaterialNormals[4] = MtrlWeights.w > fThresholdWeight ? g_tex2DTileNM_4.Sample(g_tex2DTileNM_sampler, f2TileUV.xy  / fTilingScale[4]) : float3(0.0, 0.0, 1.0);
 #endif
     // Blend materials and normals using the weights
     SurfaceColor = BaseMaterialDiffuse.rgb * BaseMaterialWeight + 

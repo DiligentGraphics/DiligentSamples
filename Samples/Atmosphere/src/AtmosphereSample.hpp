@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -93,7 +93,7 @@ private:
 
     std::unique_ptr<ElevationDataSource> m_pElevDataSource;
     EarthHemsiphere                      m_EarthHemisphere;
-    bool                                 m_bIsGLDevice = false;
+    bool                                 m_PackMatrixRowMajor = false;
 
     std::unique_ptr<EpipolarLightScattering> m_pLightSctrPP;
 

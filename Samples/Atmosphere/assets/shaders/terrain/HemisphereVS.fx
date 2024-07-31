@@ -8,7 +8,7 @@
 cbuffer cbTerrainAttribs
 {
     TerrainAttribs g_TerrainAttribs;
-};
+}
 
 cbuffer cbCameraAttribs
 {
@@ -18,7 +18,7 @@ cbuffer cbCameraAttribs
 cbuffer cbLightAttribs
 {
     LightAttribs g_LightAttribs;
-};
+}
 
 cbuffer cbParticipatingMediaScatteringParams
 {

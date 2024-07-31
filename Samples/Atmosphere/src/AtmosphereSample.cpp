@@ -32,6 +32,7 @@
 #include "AtmosphereSample.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
+#include "GraphicsAccessories.hpp"
 #include "imgui.h"
 #include "../imGuIZMO.quat/imGuIZMO.h"
 #include "PlatformMisc.hpp"
@@ -60,8 +61,12 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    const auto& deviceInfo = InitInfo.pDevice->GetDeviceInfo();
-    m_bIsGLDevice          = deviceInfo.IsGLDevice();
+    const auto& DeviceInfo = InitInfo.pDevice->GetDeviceInfo();
+
+    // Due to a bug, NVidia OpenGL driver crashes when compiling shaders with row-major matrices
+    // in nested structures.
+    m_PackMatrixRowMajor = !DeviceInfo.IsGLDevice();
+
     const auto AdatperType = InitInfo.pDevice->GetAdapterInfo().Type;
     if (AdatperType == ADAPTER_TYPE_INTEGRATED)
     {
@@ -140,6 +145,8 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
         m_pImmediateContext,
         SCDesc.ColorBufferFormat,
         SCDesc.DepthBufferFormat,
+        TEX_FORMAT_R11G11B10_FLOAT,
+        m_PackMatrixRowMajor,
     });
 
     m_EarthHemisphere.Create(m_pElevDataSource.get(),
@@ -505,6 +512,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
     DistrInfo.SnapCascades        = true;
     DistrInfo.EqualizeExtents     = true;
     DistrInfo.StabilizeExtents    = true;
+    DistrInfo.PackMatrixRowMajor  = m_PackMatrixRowMajor;
     DistrInfo.AdjustCascadeRange =
         [this](int iCascade, float& MinZ, float& MaxZ) {
             if (iCascade < 0)
@@ -534,12 +542,15 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
 
         const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
-        auto WorldToLightViewSpaceMatr = ShadowAttribs.mWorldToLightViewT.Transpose();
-        auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
+        const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
+            ShadowAttribs.mWorldToLightViewT :
+            ShadowAttribs.mWorldToLightViewT.Transpose();
+
+        const auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         {
             MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD);
-            CamAttribs->mViewProjT = WorldToLightProjSpaceMatr.Transpose();
+            WriteShaderMatrix(&CamAttribs->mViewProjT, WorldToLightProjSpaceMatr, !m_PackMatrixRowMajor);
         }
 
         m_EarthHemisphere.Render(m_pImmediateContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
@@ -604,12 +615,12 @@ void AtmosphereSample::Render()
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     CameraAttribs CamAttribs;
-    CamAttribs.mViewT        = m_mCameraView.Transpose();
-    CamAttribs.mProjT        = m_mCameraProj.Transpose();
-    CamAttribs.mViewProjT    = mViewProj.Transpose();
-    CamAttribs.mViewProjInvT = mViewProj.Inverse().Transpose();
+    WriteShaderMatrix(&CamAttribs.mViewT, m_mCameraView, !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mProjT, m_mCameraProj, !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mViewProjT, mViewProj, !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mViewProjInvT, mViewProj.Inverse(), !m_PackMatrixRowMajor);
     float fNearPlane = 0.f, fFarPlane = 0.f;
-    m_mCameraProj.GetNearFarClipPlanes(fNearPlane, fFarPlane, m_bIsGLDevice);
+    m_mCameraProj.GetNearFarClipPlanes(fNearPlane, fFarPlane, m_pDevice->GetDeviceInfo().NDC.MinZ == -1);
     CamAttribs.fNearPlaneZ      = fNearPlane;
     CamAttribs.fFarPlaneZ       = fFarPlane * 0.999999f;
     CamAttribs.f4Position       = m_f3CameraPos;
@@ -831,10 +842,11 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
         float4x4::Translation(-m_f3CameraPos) *
         CameraRotationMatrix;
 
+    const bool NegativeOneToOneZ = m_pDevice->GetDeviceInfo().NDC.MinZ == -1;
     // This projection matrix is only used to set up directions in view frustum
     // Actual near and far planes are ignored
     float    FOV      = PI_F / 4.f;
-    float4x4 mTmpProj = float4x4::Projection(FOV, aspectRatio, 50.f, 500000.f, m_bIsGLDevice);
+    float4x4 mTmpProj = float4x4::Projection(FOV, aspectRatio, 50.f, 500000.f, NegativeOneToOneZ);
 
     float  fEarthRadius = AirScatteringAttribs().fEarthRadius;
     float3 EarthCenter(0, -fEarthRadius, 0);
@@ -852,7 +864,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
     fFarPlaneZ  = std::max(fFarPlaneZ, fNearPlaneZ + 100.f);
     fFarPlaneZ  = std::max(fFarPlaneZ, 1000.f);
 
-    m_mCameraProj = float4x4::Projection(FOV, aspectRatio, fNearPlaneZ, fFarPlaneZ, m_bIsGLDevice);
+    m_mCameraProj = float4x4::Projection(FOV, aspectRatio, fNearPlaneZ, fFarPlaneZ, NegativeOneToOneZ);
 
 #if 0
     if( m_bAnimateSun )
