@@ -301,12 +301,12 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
 
     auto& CurrCamAttribs          = m_CameraAttribs[CurrFrameIdx];
     CurrCamAttribs.f4ViewportSize = float4{Resolution.x, Resolution.y, 1.f / Resolution.x, 1.f / Resolution.y};
-    CurrCamAttribs.mViewT         = CameraView;
-    CurrCamAttribs.mProjT         = CameraProj;
-    CurrCamAttribs.mViewProjT     = CameraViewProj;
-    CurrCamAttribs.mViewInvT      = CameraView.Inverse();
-    CurrCamAttribs.mProjInvT      = CameraProj.Inverse();
-    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse();
+    CurrCamAttribs.mView          = CameraView;
+    CurrCamAttribs.mProj          = CameraProj;
+    CurrCamAttribs.mViewProj      = CameraViewProj;
+    CurrCamAttribs.mViewInv       = CameraView.Inverse();
+    CurrCamAttribs.mProjInv       = CameraProj.Inverse();
+    CurrCamAttribs.mViewProjInv   = CameraViewProj.Inverse();
     CurrCamAttribs.f4Position     = float4(float3::MakeVector(CameraWorld[3]), 1);
 
     CurrCamAttribs.f2Jitter.x       = Jitter.x;
@@ -344,7 +344,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
             ObjectAttribs.ObjectType                 = ObjectType;
             ObjectAttribs.CurrInvWorldMatrix         = CurrWorldMatrix.Inverse();
             ObjectAttribs.PrevWorldTransform         = PrevWorldMatrix;
-            ObjectAttribs.CurrWorldViewProjectMatrix = CurrWorldMatrix * CurrCamAttribs.mViewProjT;
+            ObjectAttribs.CurrWorldViewProjectMatrix = CurrWorldMatrix * CurrCamAttribs.mViewProj;
             ObjectAttribs.CurrNormalMatrix           = ObjectAttribs.CurrInvWorldMatrix.Transpose();
 
             ObjectAttribs.ObjectMaterialIdx0       = MaterialIdx0;

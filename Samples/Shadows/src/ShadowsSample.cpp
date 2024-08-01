@@ -522,15 +522,16 @@ void ShadowsSample::RenderShadowMap()
         const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
         const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
-            m_LightAttribs.ShadowAttribs.mWorldToLightViewT :
-            m_LightAttribs.ShadowAttribs.mWorldToLightViewT.Transpose();
+            m_LightAttribs.ShadowAttribs.mWorldToLightView :
+            m_LightAttribs.ShadowAttribs.mWorldToLightView.Transpose();
+
         const auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         CameraAttribs ShadowCameraAttribs = {};
 
-        ShadowCameraAttribs.mViewT = m_LightAttribs.ShadowAttribs.mWorldToLightViewT;
-        WriteShaderMatrix(&ShadowCameraAttribs.mProjT, CascadeProjMatr, !m_PackMatrixRowMajor);
-        WriteShaderMatrix(&ShadowCameraAttribs.mViewProjT, WorldToLightProjSpaceMatr, !m_PackMatrixRowMajor);
+        ShadowCameraAttribs.mView = m_LightAttribs.ShadowAttribs.mWorldToLightView;
+        WriteShaderMatrix(&ShadowCameraAttribs.mProj, CascadeProjMatr, !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&ShadowCameraAttribs.mViewProj, WorldToLightProjSpaceMatr, !m_PackMatrixRowMajor);
 
         ShadowCameraAttribs.f4ViewportSize.x = static_cast<float>(m_ShadowSettings.Resolution);
         ShadowCameraAttribs.f4ViewportSize.y = static_cast<float>(m_ShadowSettings.Resolution);
@@ -589,9 +590,9 @@ void ShadowsSample::Render()
 
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        WriteShaderMatrix(&CamAttribs->mProjT, Proj, !m_PackMatrixRowMajor);
-        WriteShaderMatrix(&CamAttribs->mViewProjT, CameraViewProj, !m_PackMatrixRowMajor);
-        WriteShaderMatrix(&CamAttribs->mViewProjInvT, CameraViewProj.Inverse(), !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&CamAttribs->mProj, Proj, !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&CamAttribs->mViewProj, CameraViewProj, !m_PackMatrixRowMajor);
+        WriteShaderMatrix(&CamAttribs->mViewProjInv, CameraViewProj.Inverse(), !m_PackMatrixRowMajor);
         CamAttribs->f4Position = float4(CameraWorldPos, 1);
     }
 

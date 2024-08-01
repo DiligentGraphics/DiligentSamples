@@ -543,14 +543,14 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
         const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
 
         const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
-            ShadowAttribs.mWorldToLightViewT :
-            ShadowAttribs.mWorldToLightViewT.Transpose();
+            ShadowAttribs.mWorldToLightView :
+            ShadowAttribs.mWorldToLightView.Transpose();
 
         const auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         {
             MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD);
-            WriteShaderMatrix(&CamAttribs->mViewProjT, WorldToLightProjSpaceMatr, !m_PackMatrixRowMajor);
+            WriteShaderMatrix(&CamAttribs->mViewProj, WorldToLightProjSpaceMatr, !m_PackMatrixRowMajor);
         }
 
         m_EarthHemisphere.Render(m_pImmediateContext, m_TerrainRenderParams, m_f3CameraPos, WorldToLightProjSpaceMatr, nullptr, nullptr, nullptr, true);
@@ -615,10 +615,10 @@ void AtmosphereSample::Render()
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     CameraAttribs CamAttribs;
-    WriteShaderMatrix(&CamAttribs.mViewT, m_mCameraView, !m_PackMatrixRowMajor);
-    WriteShaderMatrix(&CamAttribs.mProjT, m_mCameraProj, !m_PackMatrixRowMajor);
-    WriteShaderMatrix(&CamAttribs.mViewProjT, mViewProj, !m_PackMatrixRowMajor);
-    WriteShaderMatrix(&CamAttribs.mViewProjInvT, mViewProj.Inverse(), !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mView, m_mCameraView, !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mProj, m_mCameraProj, !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mViewProj, mViewProj, !m_PackMatrixRowMajor);
+    WriteShaderMatrix(&CamAttribs.mViewProjInv, mViewProj.Inverse(), !m_PackMatrixRowMajor);
     float fNearPlane = 0.f, fFarPlane = 0.f;
     m_mCameraProj.GetNearFarClipPlanes(fNearPlane, fFarPlane, m_pDevice->GetDeviceInfo().NDC.MinZ == -1);
     CamAttribs.fNearPlaneZ      = fNearPlane;

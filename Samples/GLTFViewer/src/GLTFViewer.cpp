@@ -1479,12 +1479,12 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
     CurrCamAttribs.f4ViewportSize = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
     CurrCamAttribs.fHandness      = CameraView.Determinant() > 0 ? 1.f : -1.f;
-    CurrCamAttribs.mViewT         = CameraView;
-    CurrCamAttribs.mProjT         = CameraProj;
-    CurrCamAttribs.mViewProjT     = CameraViewProj;
-    CurrCamAttribs.mViewInvT      = CameraView.Inverse();
-    CurrCamAttribs.mProjInvT      = CameraProj.Inverse();
-    CurrCamAttribs.mViewProjInvT  = CameraViewProj.Inverse();
+    CurrCamAttribs.mView          = CameraView;
+    CurrCamAttribs.mProj          = CameraProj;
+    CurrCamAttribs.mViewProj      = CameraViewProj;
+    CurrCamAttribs.mViewInv       = CameraView.Inverse();
+    CurrCamAttribs.mProjInv       = CameraProj.Inverse();
+    CurrCamAttribs.mViewProjInv   = CameraViewProj.Inverse();
     CurrCamAttribs.f4Position     = float4(CameraWorldPos, 1);
 
     if (m_bResetPrevCamera)
