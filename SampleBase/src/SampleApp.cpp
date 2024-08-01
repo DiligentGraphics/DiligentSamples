@@ -397,6 +397,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                     // vertex shader writes to output location 1.0 which is not consumed by fragment shader
                     "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed",
                     "WARNING-Shader-OutputNotConsumed",
+                    // https://github.com/KhronosGroup/glslang/issues/3653
+                    "VUID-VkShaderModuleCreateInfo-pCode-08737",
                 };
             EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
             EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
