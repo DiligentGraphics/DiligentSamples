@@ -151,7 +151,7 @@
     </style>
 </head>
 <body>
-    <canvas class="emscripten" id="canvas"></canvas>
+    <canvas class="emscripten" id="canvas" tabindex="1"></canvas>
     <div class="container">
         <div class="card">
             <h1>Select Graphics API</h1>
