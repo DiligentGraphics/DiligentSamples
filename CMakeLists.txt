@@ -136,3 +136,9 @@ endif()
 
 # Create a custom target to run source code formatting validation command
 add_format_validation_target(DiligentSamples "${CMAKE_CURRENT_SOURCE_DIR}" DiligentSamples)
+
+if (PLATFORM_EMSCRIPTEN)
+    set(HTTPS_SERVER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/SampleBase/src/Emscripten/resources/https_server.py)
+    set(HTTPS_SERVER_OUTPUT_DIR ${CMAKE_BINARY_DIR})
+    file(COPY ${HTTPS_SERVER_SCRIPT} DESTINATION ${HTTPS_SERVER_OUTPUT_DIR}) 
+endif()
