@@ -18,6 +18,9 @@ jobs:
     name: Linux -> Android-${{ matrix.name }}
 
     steps:
+    - name: Clean Disk
+      uses: DiligentGraphics/github-action/clean-disk-ubuntu@v1
+
     - name: Checkout
       uses: DiligentGraphics/github-action/checkout@v1
 
@@ -43,3 +46,4 @@ jobs:
         cd $GITHUB_WORKSPACE/DiligentSamples/Android
         chmod +x gradlew
         ./gradlew buildRelease
+        echo -e "\nRemaining disk space: $(df -BG / | awk 'NR==2 {print $4}' | sed 's/G//') GB"

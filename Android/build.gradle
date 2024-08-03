@@ -8,7 +8,7 @@ buildscript {
         // WARNING: later versions of gradle (until at least 8.1.1)
         // produce obscene amount of build cruft that
         // makes GitHub actions run out of disk space.
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.android.tools.build:gradle:8.5.0'
     }
 }
 
