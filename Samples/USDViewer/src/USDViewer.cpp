@@ -401,13 +401,6 @@ void USDViewer::LoadStage()
     m_Stage.FinalColorTarget = static_cast<USD::HnRenderBuffer*>(m_Stage.RenderIndex->GetBprim(pxr::HdPrimTypeTokens->renderBuffer, FinalColorTargetId));
     VERIFY_EXPR(m_Stage.FinalColorTarget != nullptr);
 
-    m_FrameParams                    = {};
-    m_FrameParams.State.FrontFaceCCW = true;
-    m_FrameParams.FinalColorTargetId = FinalColorTargetId;
-    m_FrameParams.CameraId           = m_Stage.CameraId;
-    m_Stage.TaskManager->SetFrameParams(m_FrameParams);
-
-    m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
     const pxr::TfToken UpAxis = pxr::UsdGeomGetStageUpAxis(m_Stage.Stage);
     m_Stage.RootTransform     = Diligent::float4x4::Scale(m_Stage.MetersPerUnit) * GetUpAxisTransform(UpAxis);
@@ -439,6 +432,15 @@ void USDViewer::LoadStage()
     m_CameraSettings.FocusDistance = SceneExtent * 1.5f;
 
     UpdateCamera();
+
+    m_FrameParams                                     = {};
+    m_FrameParams.State.FrontFaceCCW                  = true;
+    m_FrameParams.FinalColorTargetId                  = FinalColorTargetId;
+    m_FrameParams.CameraId                            = m_Stage.CameraId;
+    m_FrameParams.Renderer.LoadingAnimationWorldScale = 1.f / SceneExtent;
+    m_Stage.TaskManager->SetFrameParams(m_FrameParams);
+
+    m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
 
     m_PostProcessParams                              = {};
     m_PostProcessParams.ToneMapping.iToneMappingMode = TONE_MAPPING_MODE_UNCHARTED2;
