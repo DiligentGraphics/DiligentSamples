@@ -297,7 +297,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
     const float4x4 CameraViewProj = CameraView * CameraProj;
     const float4x4 CameraWorld    = CameraView.Inverse();
 
-    float4 Resolution = m_ShaderSettings->FSRSettings.SourceSize;
+    float2 Resolution = float2{static_cast<float>(m_PostFXFrameDesc.Width), static_cast<float>(m_PostFXFrameDesc.Height)};
 
     auto& CurrCamAttribs          = m_CameraAttribs[CurrFrameIdx];
     CurrCamAttribs.f4ViewportSize = float4{Resolution.x, Resolution.y, 1.f / Resolution.x, 1.f / Resolution.y};
