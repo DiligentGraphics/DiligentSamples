@@ -29,6 +29,7 @@
 
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
+#include "FirstPersonCamera.hpp"
 
 namespace Diligent
 {
@@ -46,7 +47,6 @@ public:
 
 private:
     void CreatePipelineState();
-    void CreateCube();
     void CreateDrawTasks();
     void CreateStatisticsBuffer();
     void CreateConstantsBuffer();
@@ -71,10 +71,12 @@ private:
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
 
+    FirstPersonCamera fpc{};
+
     float4x4    m_ViewProjMatrix;
     float4x4    m_ViewMatrix;
     float       m_RotationAngle  = 0;
-    bool        m_Animate        = true;
+    bool        m_MSDebugViz     = false;
     bool        m_FrustumCulling = true;
     const float m_FOV            = PI_F / 4.0f;
     const float m_CoTanHalfFov   = 1.0f / std::tan(m_FOV * 0.5f);

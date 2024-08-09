@@ -3,20 +3,24 @@
 
 # Visual Studio
 .vs
-*.vsproj
 *.vcxproj
-*.filters
+*.vcxproj.filters
+*.vcxproj.user
 *.sln
 
+#cmake
+cmake_install.cmake
+Tutorials/cmake_install.cmake
+Tutorials/Tutorial20_MeshShader/cmake_install.cmake
+
 # Folders
-x64
 build
-UnityPlugin
-Samples
-SampleBase
-ThirdParty
-CMakeFiles*
-Tutorials/*.cmake
+Samples/
+SampleBase/
+UnityPlugin/
+ThirdParty/
+CMakeFiles/
+x64/
 
 Tutorials/Tutorial00*
 Tutorials/Tutorial01*
@@ -45,9 +49,3 @@ Tutorials/Tutorial24*
 Tutorials/Tutorial25*
 Tutorials/Tutorial26*
 Tutorials/Tutorial27*
-
-Tutorials/Tutorial20_MeshShader/Debug*
-Tutorials/Tutorial20_MeshShader/Release*
-Tutorials/Tutorial20_MeshShader/*.dir
-/Tutorials/Tutorial20_MeshShader/cmake_install.cmake
-/cmake_install.cmake

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2022 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,51 +59,6 @@ SampleBase* CreateSample()
     return new Tutorial20_MeshShader();
 }
 
-void Tutorial20_MeshShader::CreateCube()
-{
-    // Pack float3 positions into float4 vectors
-    std::array<float4, TexturedCube::NumVertices> CubePos{};
-    for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
-        CubePos[v] = TexturedCube::Positions[v];
-
-    // Pack float2 texcoords into float4 vectors
-    std::array<float4, TexturedCube::NumVertices> CubeUV{};
-    for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
-    {
-        const auto& UV{TexturedCube::Texcoords[v]};
-        CubeUV[v] = {UV.x, UV.y, 0, 0};
-    }
-
-    // Pack each triangle indices into uint4
-    std::array<uint4, TexturedCube::NumIndices / 3> Indices{};
-    for (size_t tri = 0; tri < Indices.size(); ++tri)
-    {
-        const auto* src_ind{&TexturedCube::Indices[tri * 3]};
-        Indices[tri] = {src_ind[0], src_ind[1], src_ind[2], 0};
-    }
-    CubeData Data;
-
-    // radius of circumscribed sphere = (edge_length * sqrt(3) / 2)
-    Data.SphereRadius = float4{length(CubePos[0] - CubePos[1]) * std::sqrt(3.0f) * 0.5f, 0, 0, 0};
-
-    std::memcpy(Data.Positions, CubePos.data(), CubePos.size() * sizeof(CubePos[0]));
-    std::memcpy(Data.UVs, CubeUV.data(), CubeUV.size() * sizeof(CubeUV[0]));
-    std::memcpy(Data.Indices, Indices.data(), Indices.size() * sizeof(Indices[0]));
-
-    BufferDesc BuffDesc;
-    BuffDesc.Name      = "Cube vertex & index buffer";
-    BuffDesc.Usage     = USAGE_IMMUTABLE;
-    BuffDesc.BindFlags = BIND_UNIFORM_BUFFER;
-    BuffDesc.Size      = sizeof(Data);
-
-    BufferData BufData;
-    BufData.pData    = &Data;
-    BufData.DataSize = sizeof(Data);
-
-    m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_CubeBuffer);
-    VERIFY_EXPR(m_CubeBuffer != nullptr);
-}
-
 void Tutorial20_MeshShader::CreateDrawTasks()
 {
     // In this tutorial draw tasks contain:
@@ -112,7 +67,7 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     //  * time that is used for animation and will be updated in the shader.
     // Additionally you can store model transformation matrix, mesh and material IDs, etc.
 
-    const int2          GridDim{128, 128};
+    const int2          GridDim{256, 256};
     FastRandReal<float> Rnd{0, 0.f, 1.f};
 
     std::vector<DrawTask> DrawTasks;
@@ -125,10 +80,10 @@ void Tutorial20_MeshShader::CreateDrawTasks()
             int   idx = x + y * GridDim.x;
             auto& dst = DrawTasks[idx];
 
-            dst.BasePos.x  = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
-            dst.BasePos.y  = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
-            dst.Scale      = Rnd() * 0.5f + 0.5f; // 0.5 .. 1
-            dst.TimeOffset = Rnd() * PI_F;
+            dst.BasePos.x  = (x - GridDim.x / 2) * 2.f;
+            dst.BasePos.y  = (y - GridDim.y / 2) * 2.f;
+            dst.Scale      = 1.f; // 0.5 .. 1
+            dst.randomValue = Rnd();
         }
     }
 
@@ -236,7 +191,6 @@ void Tutorial20_MeshShader::CreatePipelineState()
 
     // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
     ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
-    ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     ShaderCI.Desc.UseCombinedTextureSamplers = true;
 
@@ -255,7 +209,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
         ShaderCI.Desc.ShaderType = SHADER_TYPE_AMPLIFICATION;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Mesh shader - AS";
-        ShaderCI.FilePath        = "cube.ash";
+        ShaderCI.FilePath        = "cube_ash.hlsl";
 
         m_pDevice->CreateShader(ShaderCI, &pAS);
         VERIFY_EXPR(pAS != nullptr);
@@ -266,7 +220,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
         ShaderCI.Desc.ShaderType = SHADER_TYPE_MESH;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Mesh shader - MS";
-        ShaderCI.FilePath        = "cube.msh";
+        ShaderCI.FilePath        = "cube_msh.hlsl";
 
         m_pDevice->CreateShader(ShaderCI, &pMS);
         VERIFY_EXPR(pMS != nullptr);
@@ -277,7 +231,7 @@ void Tutorial20_MeshShader::CreatePipelineState()
         ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Mesh shader - PS";
-        ShaderCI.FilePath        = "cube.psh";
+        ShaderCI.FilePath        = "cube_psh.hlsl";
 
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
@@ -308,13 +262,26 @@ void Tutorial20_MeshShader::CreatePipelineState()
     m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
     VERIFY_EXPR(m_pSRB != nullptr);
 
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics")->Set(m_pStatisticsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
-    m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
-    m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
-    m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants")->Set(m_pConstants);
-    m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics"))
+        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics")->Set(m_pStatisticsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
+    
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")) 
+        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+    
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData"))
+        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
+    
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants"))
+        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
+    
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData"))
+        m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
+    
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants"))
+        m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants")->Set(m_pConstants);
+
+    if (m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture"))
+        m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
 }
 
 void Tutorial20_MeshShader::UpdateUI()
@@ -322,10 +289,12 @@ void Tutorial20_MeshShader::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::Checkbox("Animate", &m_Animate);
         ImGui::Checkbox("Frustum culling", &m_FrustumCulling);
-        ImGui::SliderFloat("LOD scale", &m_LodScale, 1.f, 8.f);
-        ImGui::SliderFloat("Camera height", &m_CameraHeight, 5.0f, 100.0f);
+        ImGui::Checkbox("MS Debug Visualization", &m_MSDebugViz);
+        if (ImGui::Button("Reset Camera"))
+        {
+            fpc.SetPos({0, 5, 0});
+        }
         ImGui::Text("Visible cubes: %d", m_VisibleCubes);
     }
     ImGui::End();
@@ -342,8 +311,9 @@ void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
+    fpc.SetMoveSpeed(10.f);
+
     LoadTexture();
-    CreateCube();
     CreateDrawTasks();
     CreateStatisticsBuffer();
     CreateConstantsBuffer();
@@ -371,11 +341,11 @@ void Tutorial20_MeshShader::Render()
     {
         // Map the buffer and write current view, view-projection matrix and other constants.
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->ViewMat        = m_ViewMatrix;
-        CBConstants->ViewProjMat    = m_ViewProjMatrix;
+        CBConstants->ViewMat        = m_ViewMatrix.Transpose();
+        CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
         CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
         CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
-        CBConstants->CurrTime       = static_cast<float>(m_CurrTime);
+        CBConstants->MSDebugViz     = m_MSDebugViz ? 1.0f : 0.0f;
 
         // Calculate frustum planes from view-projection matrix.
         ViewFrustum Frustum;
@@ -440,19 +410,10 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    // Set world view matrix
-    if (m_Animate)
-    {
-        m_RotationAngle += static_cast<float>(ElapsedTime) * 0.2f;
-        if (m_RotationAngle > PI_F * 2.f)
-            m_RotationAngle -= PI_F * 2.f;
-        m_CurrTime += static_cast<float>(ElapsedTime);
-    }
-
-    float4x4 RotationMatrix = float4x4::RotationY(m_RotationAngle) * float4x4::RotationX(-PI_F * 0.1f);
+    fpc.Update(GetInputController(), (float)ElapsedTime);
 
     // Set camera position
-    float4x4 View = float4x4::Translation(0.f, -4.0f, m_CameraHeight);
+    float4x4 View = fpc.GetViewMatrix();
 
     // Get pretransform matrix that rotates the scene according the surface orientation
     auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
@@ -461,7 +422,7 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
     auto Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
 
     // Compute view and view-projection matrices
-    m_ViewMatrix     = RotationMatrix * View * SrfPreTransform;
+    m_ViewMatrix     = View * SrfPreTransform;
     m_ViewProjMatrix = m_ViewMatrix * Proj;
 }
 
