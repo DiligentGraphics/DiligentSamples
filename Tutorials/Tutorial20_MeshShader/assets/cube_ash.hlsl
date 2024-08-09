@@ -8,11 +8,6 @@ cbuffer cbConstants
     Constants g_Constants;
 }
 
-cbuffer cbCubeData
-{
-    CubeData g_CubeData;
-}
-
 // Statistics buffer contains the global counter of visible objects
 RWByteAddressBuffer Statistics;
 
@@ -39,16 +34,16 @@ float CalcDetailLevel(float3 cubeCenter, float radius)
     // radius     - the radius of circumscribed sphere
     
     // Get the position in the view space
-    float3 pos   = mul(float4(cubeCenter, 1.0), g_Constants.ViewMat).xyz;
+    float3 pos = mul(float4(cubeCenter, 1.0), g_Constants.ViewMat).xyz;
     
     // Square of distance from camera to circumscribed sphere
-    float  dist2 = dot(pos, pos);
+    float dist2 = dot(pos, pos);
     
     // Calculate the sphere size in screen space
-    float  size  = g_Constants.CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
+    float size = g_Constants.CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
     
     // Calculate detail level
-    float  level = clamp(1.0 - size, 0.0, 1.0);
+    float level = clamp(1.0 - size, 0.0, 1.0);
     return level;
 }
 
@@ -74,13 +69,13 @@ void main(in uint I  : SV_GroupIndex,
     DrawTask   task  = DrawTasks[gid];
     float3     pos   = float3(task.BasePos, 0.0).xzy;
     float      scale = task.Scale;
-    float      timeOffset  = task.TimeOffset;
+    float      meshletColorRndValue = task.randomValue;
 
     // Simple animation
-    pos.y = sin(g_Constants.CurrTime + timeOffset);
+    //pos.y = sin(g_Constants.CurrTime + timeOffset);
 
     // Frustum culling
-    if (g_Constants.FrustumCulling == 0 || IsVisible(pos, g_CubeData.SphereRadius.x * scale))
+    if (g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale))
     {
         // Acquire an index that will be used to safely access the payload.
         // Each thread gets a unique index.
@@ -91,7 +86,7 @@ void main(in uint I  : SV_GroupIndex,
         s_Payload.PosY[index]  = pos.y;
         s_Payload.PosZ[index]  = pos.z;
         s_Payload.Scale[index] = scale;
-        s_Payload.LODs[index]  = CalcDetailLevel(pos, g_CubeData.SphereRadius.x * scale);
+        s_Payload.MSRand[index] = meshletColorRndValue;
     }
     
     // All threads must complete their work so that we can read s_TaskCount
