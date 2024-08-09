@@ -1,3 +1,6 @@
 .vs
 .idea
 build
+.vsproj
+.filters
+./UnityPlugin
