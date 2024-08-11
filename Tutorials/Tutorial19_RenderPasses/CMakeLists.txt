@@ -21,6 +21,7 @@ set(SHADERS
     assets/ambient_light.vsh
     assets/ambient_light_glsl.psh
     assets/ambient_light_hlsl.psh
+    assets/shader_structs.fxh
     assets/DGLogo.png
 )
 

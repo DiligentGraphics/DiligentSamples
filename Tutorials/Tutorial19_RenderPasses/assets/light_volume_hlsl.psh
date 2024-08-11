@@ -1,3 +1,5 @@
+#include "shader_structs.fxh"
+
 Texture2D<float4> g_SubpassInputColor;
 SamplerState      g_SubpassInputColor_sampler;
 
@@ -13,11 +15,8 @@ struct PSInput
 
 cbuffer ShaderConstants
 {
-    float4x4 g_ViewProj;
-    float4x4 g_ViewProjInv;
-    float4   g_ViewportSize;
-    int      g_ShowLightVolumes;
-};
+    Constants g_Constants;
+}
 
 struct PSOutput
 {
@@ -30,20 +29,20 @@ void main(in  PSInput  PSIn,
     // Load depth from subpass input
     float Depth = g_SubpassInputDepthZ.Load(int3(PSIn.Pos.xy, 0)).x;
     // Get clip-space position
-    float4 ClipSpacePos = float4(PSIn.Pos.xy * g_ViewportSize.zw * float2(2.0, -2.0) + float2(-1.0, 1.0), Depth, 1.0);
+    float4 ClipSpacePos = float4(PSIn.Pos.xy * g_Constants.ViewportSize.zw * float2(2.0, -2.0) + float2(-1.0, 1.0), Depth, 1.0);
 #if defined(DESKTOP_GL) || defined(GL_ES)
     // Invery y coordinate for OpenGL
     ClipSpacePos.y *= -1.0;
 #endif
     // Reconstruct world position by applying inverse view-projection matrix
-    float4 WorldPos = mul(ClipSpacePos, g_ViewProjInv);
+    float4 WorldPos = mul(ClipSpacePos, g_Constants.ViewProjInv);
     WorldPos.xyz /= WorldPos.w;
     // Compute distance to light
     float DistToLight = length(WorldPos.xyz - PSIn.LightLocation.xyz);
     float LightRadius = PSIn.LightLocation.w;
     // Compute simple distance-based attenuation
     float Attenuation = clamp(1.0 - DistToLight/LightRadius, 0.0, 1.0);
-    if (Attenuation == 0.0 && g_ShowLightVolumes == 0)
+    if (Attenuation == 0.0 && g_Constants.ShowLightVolumes == 0)
     {
         // The pixel is not affected by this light - discard it to
         // save bandwidth
@@ -53,7 +52,7 @@ void main(in  PSInput  PSIn,
     // Load color and apply light to it
     float3 Color = g_SubpassInputColor.Load(int3(PSIn.Pos.xy, 0)).rgb;
     PSOut.Color.rgb = Color.rgb * PSIn.LightColor.rgb * Attenuation;
-    if (g_ShowLightVolumes != 0)
+    if (g_Constants.ShowLightVolumes != 0)
         PSOut.Color.rgb += PSIn.LightColor.rgb * 0.05;
 
 #if CONVERT_PS_OUTPUT_TO_GAMMA

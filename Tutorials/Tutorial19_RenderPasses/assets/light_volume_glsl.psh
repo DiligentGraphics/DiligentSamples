@@ -1,3 +1,7 @@
+#define float4x4 mat4
+#define float4   vec4
+#include "shader_structs.fxh"
+
 precision highp float;
 precision highp int;
  
@@ -11,10 +15,7 @@ layout(location = 0) out vec4 out_Color;
 
 uniform ShaderConstants
 {
-    mat4 g_ViewProj;
-    mat4 g_ViewProjInv;
-    vec4 g_ViewportSize;
-    int  g_ShowLightVolumes;
+    Constants g_Constants;
 };
 
 void main()
@@ -22,16 +23,16 @@ void main()
     // Load depth from subpass input
     float DepthZ = subpassLoad(g_SubpassInputDepthZ).x;
     // Get clip-space position
-    vec4 ClipSpacePos = vec4(gl_FragCoord.xy * g_ViewportSize.zw * vec2(2.0, -2.0) + vec2(-1.0, 1.0), DepthZ, 1.0);
+    vec4 ClipSpacePos = vec4(gl_FragCoord.xy * g_Constants.ViewportSize.zw * vec2(2.0, -2.0) + vec2(-1.0, 1.0), DepthZ, 1.0);
     // Reconstruct world position by applying inverse view-projection matrix
-    vec4 WorldPos = ClipSpacePos * g_ViewProjInv;
+    vec4 WorldPos = ClipSpacePos * g_Constants.ViewProjInv;
     WorldPos.xyz /= WorldPos.w;
     // Get distance to the light
     float DistToLight = length(WorldPos.xyz - in_LightLocation.xyz);
     float LightRadius = in_LightLocation.w;
     // Compute simple distance-based attenuation
     float Attenuation = clamp(1.0 - DistToLight/LightRadius, 0.0, 1.0);
-    if (Attenuation == 0.0 && g_ShowLightVolumes == 0)
+    if (Attenuation == 0.0 && g_Constants.ShowLightVolumes == 0)
     {
         // The pixel is not affected by this light - discard it to
         // save bandwidth
@@ -40,7 +41,7 @@ void main()
 
     // Load color from subpass input and apply light to it
     out_Color.rgb = subpassLoad(g_SubpassInputColor).rgb * in_LightColor.rgb * Attenuation;
-    if (g_ShowLightVolumes != 0)
+    if (g_Constants.ShowLightVolumes != 0)
         out_Color.rgb += in_LightColor.rgb * 0.05;
 
 #if CONVERT_PS_OUTPUT_TO_GAMMA

@@ -43,13 +43,10 @@ namespace Diligent
 namespace
 {
 
-struct ShaderConstants
+namespace HLSL
 {
-    float4x4 ViewProjMatrix;
-    float4x4 ViewProjInvMatrix;
-    float4   ViewportSize;
-    int      ShowLightVolumes;
-};
+#include "../assets/shader_structs.fxh"
+}
 
 } // namespace
 
@@ -232,6 +229,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
         ShaderCI.EntryPoint      = "main";
         ShaderCI.Desc.Name       = "Light volume PS";
         ShaderCI.FilePath        = UseGLSL ? "light_volume_glsl.psh" : "light_volume_hlsl.psh";
+        ShaderCI.GLSLExtensions  = UseGLSL ? "#extension GL_ARB_shading_language_include : enable\n" : nullptr;
         m_pDevice->CreateShader(ShaderCI, &pPS);
         VERIFY_EXPR(pPS != nullptr);
     }
@@ -496,7 +494,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    CreateUniformBuffer(m_pDevice, sizeof(ShaderConstants), "Shader constants CB", &m_pShaderConstantsCB);
+    CreateUniformBuffer(m_pDevice, sizeof(HLSL::Constants), "Shader constants CB", &m_pShaderConstantsCB);
 
     // Load textured cube
     m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
@@ -819,10 +817,10 @@ void Tutorial19_RenderPasses::Render()
 
     {
         // Update constant buffer
-        MapHelper<ShaderConstants> Constants(m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD);
-        Constants->ViewProjMatrix    = m_CameraViewProjMatrix;
-        Constants->ViewProjInvMatrix = m_CameraViewProjInvMatrix;
-        Constants->ViewportSize      = float4{
+        MapHelper<HLSL::Constants> Constants(m_pImmediateContext, m_pShaderConstantsCB, MAP_WRITE, MAP_FLAG_DISCARD);
+        Constants->ViewProj     = m_CameraViewProjMatrix;
+        Constants->ViewProjInv  = m_CameraViewProjInvMatrix;
+        Constants->ViewportSize = float4{
             static_cast<float>(SCDesc.Width),
             static_cast<float>(SCDesc.Height),
             1.f / static_cast<float>(SCDesc.Width),
