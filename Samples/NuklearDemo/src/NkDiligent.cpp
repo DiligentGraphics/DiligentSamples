@@ -137,7 +137,7 @@ struct PS_INPUT
 void vs(in  VS_INPUT vs_input,
         out PS_INPUT vs_output)
 {
-    vs_output.pos = mul(ProjectionMatrix, float4(vs_input.pos.xy, 0.0, 1.0));
+    vs_output.pos = mul(float4(vs_input.pos.xy, 0.0, 1.0), ProjectionMatrix);
     vs_output.col = vs_input.col;
     vs_output.uv  = vs_input.uv;
 }
@@ -196,6 +196,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
 
     ShaderCreateInfo ShaderCI;
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     RefCntAutoPtr<IShader> pVS;
     {
