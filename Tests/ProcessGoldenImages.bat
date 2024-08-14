@@ -203,8 +203,14 @@ rem For some reason, colored font does not work after the line that starts the s
             rem !str:abc=! replaces substring abc in str with empty string
             if not "!test_mode:--non_separable_progs=!" == "!test_mode!" (
                 if "%app_name%" == "Tutorial07_GeometryShader" (set SKIP_TEST=1)
-                if "%app_name%" == "Tutorial08_Tessellation" (set SKIP_TEST=1)
+                if "%app_name%" == "Tutorial08_Tessellation"   (set SKIP_TEST=1)
             )
+        )
+
+        if "!backend_name!" == "wgpu" (
+            if "%app_name%" == "Tutorial07_GeometryShader" (set SKIP_TEST=1)
+            if "%app_name%" == "Tutorial08_Tessellation"   (set SKIP_TEST=1)
+            if "%app_name%" == "Tutorial23_CommandQueues"  (set SKIP_TEST=1)
         )
 
         if "!SKIP_TEST!" == "0" (

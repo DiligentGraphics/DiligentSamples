@@ -37,7 +37,7 @@ jobs:
         build_type:      ["Debug", "Release"]
         cmake_generator: ["Visual Studio 17 2022"]
         # Do not build GLSLang and friends to save time as it is built by the Core and Engine CI.
-        cmake_args:      ["-DDILIGENT_NO_GLSLANG=ON -DDILIGENT_NO_HLSL=ON"]
+        cmake_args:      ["-DDILIGENT_NO_WEBGPU=OFF"]
         platform:        ["Win32"]
         build_args:      ["-- -restore"]
 
@@ -122,6 +122,15 @@ jobs:
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
         mode:              "d3d12_sw"
+        golden-image-mode: "compare_update"
+
+    - name: Sample Tests WebGPU
+      # NB: it is essential to include failure() to override the default status check of success()
+      #     that is automatically applied to if conditions that don't contain a status check function.
+      if:   ${{ (success() || failure() && steps.build.outcome == 'success') && (matrix.name == 'Win10') }}
+      uses: DiligentGraphics/github-action/run-sample-tests@v1
+      with:
+        mode:              "wgpu"
         golden-image-mode: "compare_update"
 
     - name: Upload Golden Images
