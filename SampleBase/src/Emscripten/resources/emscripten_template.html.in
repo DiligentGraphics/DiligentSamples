@@ -177,6 +177,8 @@
                 "rg11b10ufloat-renderable",
                 "bgra8unorm-storage",
                 "float32-filterable",
+                "unorm16-texture-formats",
+                "snorm16-texture-formats",
             ];
 
             const adapter = await navigator.gpu.requestAdapter();
