@@ -165,7 +165,7 @@ function process_golden_img
         if [[ "$skip_test" == "0" ]]; then
             local capture_name="$app_name""_""$backend_name"
 
-            local cmd="$app_path $mode --width $GOLDEN_IMAGE_WIDTH --height $GOLDEN_IMAGE_HEIGHT --golden_image_mode $golden_img_mode --capture_path $golden_img_dir --capture_name $capture_name --capture_format png --adapters_dialog 0 $extra_args"
+            local cmd="$app_path $mode --width $GOLDEN_IMAGE_WIDTH --height $GOLDEN_IMAGE_HEIGHT --golden_image_mode $golden_img_mode --capture_path $golden_img_dir --capture_name $capture_name --capture_format png --adapters_dialog 0 --break_on_error 0 $extra_args"
             echo $cmd
             echo ""
             bash -c "$cmd"
