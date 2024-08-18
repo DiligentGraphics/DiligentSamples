@@ -217,7 +217,7 @@ rem For some reason, colored font does not work after the line that starts the s
             rem   !!!   ERRORLEVEL doesn't get updated inside control blocks like IF statements unless           !!!
             rem   !!!   !ERRORLEVEL! is used instead of %ERRORLEVEL% and delayed expansion is enabled as below:  !!!
             rem   !!!   setlocal ENABLEDELAYEDEXPANSION                                                          !!!
-            set cmd_args=!test_mode! --width %GOLDEN_IMAGE_WIDTH% --height %GOLDEN_IMAGE_HEIGHT% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 %extra_args%
+            set cmd_args=!test_mode! --width %GOLDEN_IMAGE_WIDTH% --height %GOLDEN_IMAGE_HEIGHT% --golden_image_mode %golden_img_mode% --capture_path %golden_img_dir% --capture_name !capture_name! --capture_format png --adapters_dialog 0 --break_on_error 0 %extra_args%
             echo !app_path! !cmd_args!
             !app_path! !cmd_args!
             rem It is important to save the value of !ERRORLEVEL! so that it is not overridden by further commands

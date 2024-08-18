@@ -499,6 +499,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             LOG_ERROR_AND_THROW("Unknown device type");
             break;
     }
+    m_pEngineFactory->SetBreakOnError(m_bBreakOnError);
 
     m_AppTitle.append(" (");
     m_AppTitle.append(GetRenderDeviceTypeString(m_DeviceType));
@@ -830,6 +831,7 @@ SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char*
     ArgsParser.Parse("golden_image_tolerance", m_GoldenImgPixelTolerance);
     ArgsParser.Parse("vsync", m_bVSync);
     ArgsParser.Parse("non_separable_progs", m_bForceNonSeprblProgs);
+    ArgsParser.Parse("break_on_error", m_bBreakOnError);
 
 
     if (m_DeviceType == RENDER_DEVICE_TYPE_UNDEFINED)
