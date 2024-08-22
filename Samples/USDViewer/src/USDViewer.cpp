@@ -104,6 +104,22 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     SampleBase::ModifyEngineInitInfo(Attribs);
     // We do not need the swap chain's depth buffer.
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+
+#if VULKAN_SUPPORTED
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
+    {
+        EngineVkCreateInfo& EngineVkCI = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
+        EngineVkCI.DynamicHeapSize     = 16 << 20;
+    }
+#endif
+
+#if WEBGPU_SUPPORTED
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_WEBGPU)
+    {
+        EngineWebGPUCreateInfo& EngineWgpuCI = static_cast<EngineWebGPUCreateInfo&>(Attribs.EngineCI);
+        EngineWgpuCI.DynamicHeapSize         = 16 << 20;
+    }
+#endif
 }
 
 void USDViewer::UpdateModelsList(const std::string& Dir)
