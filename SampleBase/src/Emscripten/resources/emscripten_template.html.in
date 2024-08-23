@@ -191,6 +191,19 @@
             return device;
         })();
 
+        function extractLoadingStatus(input) {
+            var match = input.match(/(\d+)\/(\d+)/);
+            if (match) {
+                var numerator = parseInt(match[1], 10);
+                var denominator = parseInt(match[2], 10);
+        
+                var result = numerator / denominator;
+                return Math.floor(100.0 * result);
+            } else {
+                return 100;
+            }
+        }
+
         var Module = {
             preRun: [],
             postRun: function() {
@@ -220,14 +233,24 @@
                 return canvas;
             })(),
             setStatus: function (text) {
+                const progressText =  document.getElementById('progress-text');
+                const percentage = extractLoadingStatus(text)
+                if (percentage >= 100) {
+                    progressText.textContent = 'Completed';
+                    setTimeout(() => {
+                        document.getElementById('loading-indicator').style.display = 'none';
+                        document.getElementById('canvas').style.display = 'flex';
+                    }, 100); // Delay before hiding the indicator
+                } else {
+                    progressText.textContent = percentage.toString() + '%';
+                }
                 console.log("status: " + text);
             },
             monitorRunDependencies: function (left) {
                 // no run dependencies to log
             }
         };
-        
-        
+           
         window.onerror = function () {
             console.log("onerror: " + event);
         };
@@ -236,23 +259,6 @@
             // Hide the card and show the loading indicator
             document.querySelector('.card').style.display = 'none';
             document.getElementById('loading-indicator').style.display = 'flex';
-
-            // TODO: We need synchronize loading wasm module and progress bar 
-            let percentage = 0;
-            const progressText = document.getElementById('progress-text');
-            const interval = setInterval(() => {
-                if (percentage >= 100) {
-                    clearInterval(interval);
-                    progressText.textContent = 'Completed';
-                    setTimeout(() => {
-                        document.getElementById('loading-indicator').style.display = 'none';
-                        document.getElementById('canvas').style.display = 'flex';
-                    }, 100); // Delay before hiding the indicator
-                } else {
-                    percentage++;
-                    progressText.textContent = percentage + '%';
-                }
-            }, 2.0); 
 
             Module.arguments = ["--mode", `${api}`];
             if (api === 'wgpu') {
