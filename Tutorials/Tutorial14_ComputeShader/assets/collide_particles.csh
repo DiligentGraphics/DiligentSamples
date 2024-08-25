@@ -15,8 +15,16 @@ cbuffer Constants
 #endif
 
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-StructuredBuffer<int>               g_ParticleListHead;
-StructuredBuffer<int>               g_ParticleLists;
+
+// Metal backend has a limitation that structured buffers must have
+// different element types. So we use a struct to wrap the particle index.
+struct HeadData
+{
+    int FirstParticleIdx;
+};
+StructuredBuffer<HeadData> g_ParticleListHead;
+
+StructuredBuffer<int> g_ParticleLists;
 
 // https://en.wikipedia.org/wiki/Elastic_collision
 void CollideParticles(inout ParticleAttribs P0, in ParticleAttribs P1)
@@ -82,7 +90,7 @@ void main(uint3 Gid  : SV_GroupID,
         {
             for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
             {
-                int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth];
+                int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth].FirstParticleIdx;
                 while (AnotherParticleIdx >= 0)
                 {
                     if (iParticleIdx != AnotherParticleIdx)

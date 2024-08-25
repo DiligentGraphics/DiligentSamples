@@ -183,8 +183,13 @@ cbuffer Constants
 #endif
 
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-RWStructuredBuffer<int>             g_ParticleListHead;
-RWStructuredBuffer<int>             g_ParticleLists;
+struct HeadData
+{
+    int FirstParticleIdx;
+};
+RWStructuredBuffer<HeadData> g_ParticleListHead;
+
+RWStructuredBuffer<int> g_ParticleLists;
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main(uint3 Gid  : SV_GroupID,
@@ -208,11 +213,13 @@ void main(uint3 Gid  : SV_GroupID,
     // Bin particles
     int GridIdx = GetGridLocation(Particle.f2Pos, g_Constants.i2ParticleGridSize).z;
     int OriginalListIdx;
-    InterlockedExchange(g_ParticleListHead[GridIdx], iParticleIdx, OriginalListIdx);
+    InterlockedExchange(g_ParticleListHead[GridIdx].FirstParticleIdx, iParticleIdx, OriginalListIdx);
     g_ParticleLists[iParticleIdx] = OriginalListIdx;
 }
-
 ```
+
+Note that Metal backend has a limitation that structured buffers must have
+different element types. So we use a `HeadData` struct to wrap the particle index.
 
 The shader starts by loading the particle attributes and updating the position and temperature.
 The temperature is not a real temperature but rather indicates if the particle has been hit recently.
@@ -236,7 +243,7 @@ following code:
 ```hlsl
 int GridIdx = GetGridLocation(Particle.f2Pos, g_Constants.i2ParticleGridSize).z;
 int OriginalListIdx;
-InterlockedExchange(g_ParticleListHead[GridIdx], iParticleIdx, OriginalListIdx);
+InterlockedExchange(g_ParticleListHead[GridIdx].FirstParticleIdx, iParticleIdx, OriginalListIdx);
 g_ParticleLists[iParticleIdx] = OriginalListIdx;
 ```
 
@@ -296,8 +303,14 @@ particle-related buffers:
 
 ```hlsl
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-StructuredBuffer<int>               g_ParticleListHead;
-StructuredBuffer<int>               g_ParticleLists;
+
+struct HeadData
+{
+    int FirstParticleIdx;
+};
+StructuredBuffer<HeadData> g_ParticleListHead;
+
+StructuredBuffer<int> g_ParticleLists;
 ```
 
 The shader starts by reading the current particle attributes
@@ -320,7 +333,7 @@ for (int y = max(i2GridPos.y - 1, 0); y <= min(i2GridPos.y + 1, GridHeight-1); +
 {
     for (int x = max(i2GridPos.x - 1, 0); x <= min(i2GridPos.x + 1, GridWidth-1); ++x)
     {
-        int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth];
+        int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth].FirstParticleIdx;
         while (AnotherParticleIdx >= 0)
         {
             if (iParticleIdx != AnotherParticleIdx)
@@ -339,7 +352,7 @@ Notice how iteration through the list is performed: we first read the index of t
 particle:
 
 ```hlsl
-int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth];
+int AnotherParticleIdx = g_ParticleListHead[x + y * GridWidth].FirstParticleIdx;
 ```
 
 And then run the loop until we reach the end of the list (`AnotherParticleIdx == -1`).

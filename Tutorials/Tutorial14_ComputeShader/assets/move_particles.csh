@@ -11,8 +11,16 @@ cbuffer Constants
 #endif
 
 RWStructuredBuffer<ParticleAttribs> g_Particles;
-RWStructuredBuffer<int>             g_ParticleListHead;
-RWStructuredBuffer<int>             g_ParticleLists;
+
+// Metal backend has a limitation that structured buffers must have
+// different element types. So we use a struct to wrap the particle index.
+struct HeadData
+{
+    int FirstParticleIdx;
+};
+RWStructuredBuffer<HeadData> g_ParticleListHead;
+
+RWStructuredBuffer<int> g_ParticleLists;
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main(uint3 Gid  : SV_GroupID,
@@ -36,6 +44,6 @@ void main(uint3 Gid  : SV_GroupID,
     // Bin particles
     int GridIdx = GetGridLocation(Particle.f2Pos, g_Constants.i2ParticleGridSize).z;
     int OriginalListIdx;
-    InterlockedExchange(g_ParticleListHead[GridIdx], iParticleIdx, OriginalListIdx);
+    InterlockedExchange(g_ParticleListHead[GridIdx].FirstParticleIdx, iParticleIdx, OriginalListIdx);
     g_ParticleLists[iParticleIdx] = OriginalListIdx;
 }
