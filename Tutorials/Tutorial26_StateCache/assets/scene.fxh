@@ -253,7 +253,7 @@ HitInfo IntersectScene(RayInfo Ray, SceneAttribs Scene)
 
 float TestShadow(SceneAttribs Scene, RayInfo Ray)
 {
-    if (Ray.Dir.y <= 0)
+    if (Ray.Dir.y <= 0.0)
         return 0.0;
 
     HitInfo Hit = NullHit();
