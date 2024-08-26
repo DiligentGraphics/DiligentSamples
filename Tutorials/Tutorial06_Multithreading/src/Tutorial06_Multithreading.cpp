@@ -58,8 +58,15 @@ void Tutorial06_Multithreading::ModifyEngineInitInfo(const ModifyEngineInitInfoA
 #if VULKAN_SUPPORTED
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& EngineVkCI           = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
-        EngineVkCI.DynamicHeapSize = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
+        EngineVkCreateInfo& EngineVkCI = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
+        EngineVkCI.DynamicHeapSize     = 26 << 20; // Enough space for 32x32x32x256 bytes allocations for 3 frames
+    }
+#endif
+#if WEBGPU_SUPPORTED
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_WEBGPU)
+    {
+        EngineWebGPUCreateInfo& EngineWgpuCI = static_cast<EngineWebGPUCreateInfo&>(Attribs.EngineCI);
+        EngineWgpuCI.DynamicHeapSize         = 16 << 20;
     }
 #endif
 }

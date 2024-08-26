@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,9 +80,17 @@ void Tutorial09_Quads::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& A
 #if VULKAN_SUPPORTED
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& EngineVkCI{static_cast<EngineVkCreateInfo&>(Attribs.EngineCI)};
+        EngineVkCreateInfo& EngineVkCI = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
         EngineVkCI.DynamicHeapSize     = 128 << 20;
         EngineVkCI.DynamicHeapPageSize = 2 << 20;
+    }
+#endif
+#if WEBGPU_SUPPORTED
+    if (Attribs.DeviceType == RENDER_DEVICE_TYPE_WEBGPU)
+    {
+        EngineWebGPUCreateInfo& EngineWgpuCI = static_cast<EngineWebGPUCreateInfo&>(Attribs.EngineCI);
+        EngineWgpuCI.DynamicHeapSize         = 64 << 20;
+        EngineWgpuCI.DynamicHeapPageSize     = 2 << 20;
     }
 #endif
 }
