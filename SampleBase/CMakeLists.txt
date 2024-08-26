@@ -127,6 +127,17 @@ elseif(PLATFORM_EMSCRIPTEN)
 
     function(append_sample_base_emscripten_source TARGET_NAME)     
         get_target_property(SAMPLE_BASE_SOURCE_DIR Diligent-SampleBase SOURCE_DIR)
+
+        if(TARGET_NAME STREQUAL "Atmosphere" OR
+           TARGET_NAME STREQUAL "Shadows" OR
+           TARGET_NAME STREQUAL "Tutorial14_ComputeShader" OR
+           TARGET_NAME STREQUAL "Tutorial16_BindlessResources" OR
+           TARGET_NAME STREQUAL "Tutorial19_RenderPasses" OR
+           TARGET_NAME STREQUAL "Tutorial26_StateCache")
+            set(DILIGENT_DISABLE_WEBGL "disabled")
+        endif()
+
+
         configure_file(
             ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/emscripten_template.html.in
             ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.html
