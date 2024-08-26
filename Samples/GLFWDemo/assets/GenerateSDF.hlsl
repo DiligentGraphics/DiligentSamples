@@ -1,6 +1,11 @@
-Texture2D<float>                     g_SrcTex; // R channel contains: 0 - empty, 1 - wall
-SamplerState                         g_SrcTex_sampler;
+Texture2D<float> g_SrcTex; // R channel contains: 0 - empty, 1 - wall
+SamplerState     g_SrcTex_sampler;
+
+#if DST_TEXTURE_FORMAT_32F
+RWTexture2D<float /* format=r32f */> g_DstTex;
+#else
 RWTexture2D<float /* format=r16f */> g_DstTex;
+#endif
 
 bool ReadWallFlag(float2 uv)
 {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,6 +75,9 @@
 #endif
 #if METAL_SUPPORTED
 #    include "Graphics/GraphicsEngineMetal/interface/EngineFactoryMtl.h"
+#endif
+#if WEBGPU_SUPPORTED
+#    include "Graphics/GraphicsEngineWebGPU/interface/EngineFactoryWebGPU.h"
 #endif
 
 #ifdef GetObject
@@ -255,6 +258,23 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
         break;
 #endif // METAL_SUPPORTED
 
+#if WEBGPU_SUPPORTED
+        case RENDER_DEVICE_TYPE_WEBGPU:
+        {
+#    if ENGINE_DLL
+            // Load the dll and import LoadGraphicsEngineWebGPU() function
+            auto* GetEngineFactoryWGPU = LoadGraphicsEngineWebGPU();
+#    endif
+            auto* pFactoryWGPU = GetEngineFactoryWGPU();
+
+            EngineWebGPUCreateInfo EngineCI;
+            EngineCI.Features.TimestampQueries = DEVICE_FEATURE_STATE_ENABLED;
+            pFactoryWGPU->CreateDeviceAndContextsWebGPU(EngineCI, &m_pDevice, &m_pImmediateContext);
+            pFactoryWGPU->CreateSwapChainWebGPU(m_pDevice, m_pImmediateContext, SCDesc, Window, &m_pSwapChain);
+        }
+        break;
+#endif // WEBGPU_SUPPORTED
+
         default:
             std::cerr << "Unknown/unsupported device type";
             return false;
@@ -420,6 +440,15 @@ bool GLFWDemo::ProcessCommandLine(int argc, const char* const* argv, RENDER_DEVI
             return false;
 #endif
         }
+        else if (_stricmp(mode, "WGPU") == 0)
+        {
+#if WEBGPU_SUPPORTED
+            DevType = RENDER_DEVICE_TYPE_WEBGPU;
+#else
+            std::cerr << "WebGPU is not supported. Please select another device type";
+            return false;
+#endif
+        }
         else
         {
             std::cerr << "Unknown device type. Only the following types are supported: D3D11, D3D12, GL, VK";
@@ -459,6 +488,7 @@ int GLFWDemoMain(int argc, const char* const* argv)
         case RENDER_DEVICE_TYPE_GL: Title.append(" (GL"); break;
         case RENDER_DEVICE_TYPE_VULKAN: Title.append(" (VK"); break;
         case RENDER_DEVICE_TYPE_METAL: Title.append(" (Metal"); break;
+        case RENDER_DEVICE_TYPE_WEBGPU: Title.append(" (WebGPU"); break;
         default:
             UNEXPECTED("Unexpected device type");
     }

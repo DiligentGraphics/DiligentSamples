@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -442,11 +442,20 @@ void Game::CreateSDFMap()
     RefCntAutoPtr<ITexture> pSrcTex;
     {
         TextureDesc TexDesc;
-        TexDesc.Name      = "SDF Map texture";
-        TexDesc.Type      = RESOURCE_DIM_TEX_2D;
-        TexDesc.Width     = DstTexDim.x;
-        TexDesc.Height    = DstTexDim.y;
-        TexDesc.Format    = TEX_FORMAT_R16_FLOAT;
+        TexDesc.Name   = "SDF Map texture";
+        TexDesc.Type   = RESOURCE_DIM_TEX_2D;
+        TexDesc.Width  = DstTexDim.x;
+        TexDesc.Height = DstTexDim.y;
+        for (TEXTURE_FORMAT Format : {TEX_FORMAT_R16_FLOAT, TEX_FORMAT_R32_FLOAT})
+        {
+            if (GetDevice()->GetTextureFormatInfoExt(Format).BindFlags & BIND_UNORDERED_ACCESS)
+            {
+                TexDesc.Format = Format;
+                break;
+            }
+        }
+        CHECK_THROW(TexDesc.Format != TEX_FORMAT_UNKNOWN);
+
         TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
 
         m_Map.pMapTex = nullptr;
@@ -471,6 +480,7 @@ void Game::CreateSDFMap()
             ShaderMacroHelper Macros;
             Macros.AddShaderMacro("RADIUS", Constants.TexFilterRadius);
             Macros.AddShaderMacro("DIST_SCALE", 1.0f / float(Constants.SDFTexScale));
+            Macros.AddShaderMacro("DST_TEXTURE_FORMAT_32F", m_Map.pMapTex->GetDesc().Format == TEX_FORMAT_R32_FLOAT);
 
             auto Callback = MakeCallback([&](ShaderCreateInfo& ShaderCI, SHADER_TYPE ShaderType, bool& IsAddToCache) {
                 ShaderCI.Macros = Macros;
