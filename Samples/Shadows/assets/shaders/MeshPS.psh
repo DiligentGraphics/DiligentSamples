@@ -1,5 +1,6 @@
 #include "BasicStructures.fxh"
 #include "Shadows.fxh"
+#include "SRGBUtilities.fxh"
 
 Texture2D    g_tex2DDiffuse;
 SamplerState g_tex2DDiffuse_sampler;
@@ -57,6 +58,12 @@ float4 MeshPS(VSOutput VSOut) : SV_TARGET
     {
         Color = lerp(Color, GetCascadeColor(Shadow), 0.1);
     }
+
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    {
+        Color.rgb = FastLinearToSRGB(Color.rgb);
+    }
+#endif
 
     return float4(Color, 1.0);
 }

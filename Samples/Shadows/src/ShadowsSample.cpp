@@ -337,6 +337,7 @@ void ShadowsSample::CreatePipelineStates()
     Macros.AddShaderMacro("PCF_FILTER_SIZE", m_LightAttribs.ShadowAttribs.iFixedFilterSize);
     Macros.AddShaderMacro("FILTER_ACROSS_CASCADES", m_ShadowSettings.FilterAcrossCascades);
     Macros.AddShaderMacro("BEST_CASCADE_SEARCH", m_ShadowSettings.SearchBestCascade);
+    Macros.AddShaderMacro("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
 
     RefCntAutoPtr<IShader> pGeometryVS;
     RefCntAutoPtr<IShader> pGeometryPS;
