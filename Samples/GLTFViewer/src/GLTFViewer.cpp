@@ -73,14 +73,18 @@ SampleBase* CreateSample()
 const std::pair<const char*, const char*> DefaultGLTFModels[] =
 {
     {"Damaged Helmet",               "models/DamagedHelmet/DamagedHelmet.gltf"},
+#if !PLATFORM_EMSCRIPTEN
     {"Barbie Dodge Pickup",          "models/BarbieDodgePickup/scene.gltf"},
+#endif
     {"Flight Helmet",                "models/FlightHelmet/glTF/FlightHelmet.gltf"},
     {"Cesium Man",                   "models/CesiumMan/glTF/CesiumMan.gltf"},
     {"Boom Box",                     "models/BoomBoxWithAxes/glTF/BoomBoxWithAxes.gltf"},
     {"Clearcoat Ring",               "models/ClearcoatRing/glTF/ClearcoatRing.gltf"},
     {"Glam Velvet Sofa",             "models/GlamVelvetSofa/glTF/GlamVelvetSofa.gltf"},
     {"Iridescence Abalone",          "models/IridescenceAbalone/glTF/IridescenceAbalone.gltf"},
+#if !PLATFORM_EMSCRIPTEN
     {"Iridescent Dish With Olives",  "models/IridescentDishWithOlives/glTF/IridescentDishWithOlives.gltf"},
+#endif
     {"Toy Car",                      "models/ToyCar/glTF/ToyCar.gltf"},
     {"Anisotropy Barn Lamp",         "models/AnisotropyBarnLamp/glTF/AnisotropyBarnLamp.gltf"},
     {"White Furnace Test",           "models/EnvironmentTest/glTF/EnvironmentTest.gltf"},

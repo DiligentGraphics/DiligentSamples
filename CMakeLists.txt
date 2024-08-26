@@ -83,7 +83,19 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
     if(PLATFORM_EMSCRIPTEN)
         set(RESOURCE_PATH "${PROJECT_SOURCE_DIR}/assets/")
-        target_link_options(${APP_NAME} PRIVATE "SHELL: -s ALLOW_MEMORY_GROWTH=1 --preload-file '${RESOURCE_PATH}@'")
+        target_link_options(${APP_NAME} PRIVATE "SHELL: -s ALLOW_MEMORY_GROWTH=1 --preload-file ${RESOURCE_PATH}@")
+
+        if (${APP_NAME} STREQUAL "GLTFViewer")
+            set(EXCLUDE_DIRECTORIES
+                ".git"
+                "BarbieDodgePickup"
+                "IridescentDishWithOlives"
+            )
+
+            foreach(EXCLUDE_DIR IN LISTS EXCLUDE_DIRECTORIES)
+                target_link_options(${APP_NAME} PRIVATE "SHELL: --exclude-file=${PROJECT_SOURCE_DIR}/assets/models/${EXCLUDE_DIR}")
+            endforeach()    
+        endif()
         append_sample_base_emscripten_source(${APP_NAME})
     endif()
 
