@@ -132,7 +132,6 @@ elseif(PLATFORM_EMSCRIPTEN)
            TARGET_NAME STREQUAL "Shadows" OR
            TARGET_NAME STREQUAL "Tutorial14_ComputeShader" OR
            TARGET_NAME STREQUAL "Tutorial16_BindlessResources" OR
-           TARGET_NAME STREQUAL "Tutorial19_RenderPasses" OR
            TARGET_NAME STREQUAL "Tutorial26_StateCache")
             set(DILIGENT_DISABLE_WEBGL "disabled")
         endif()
