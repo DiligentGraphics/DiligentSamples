@@ -1,8 +1,8 @@
 # GLFW Demo
 
-![](Animation_Large.gif)
-
 This simple maze mini-game demonstrates how to use [GLFW](https://www.glfw.org/) to create window and handle keyboard and mouse input.
+
+![](Animation_Large.gif)
 
 ## GLFW Initialization
 

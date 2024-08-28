@@ -1,9 +1,11 @@
 # Shadows Sample
 
-![](Screenshot.jpg)
-
 This sample demonstrates how to integrate the [Shadowing component](https://github.com/DiligentGraphics/DiligentFX/tree/master/Components#shadows)
 into an application to render high-quality shadows.
+
+![](Screenshot.jpg)
+
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Shadows/Shadows.html)
 
 Sample controls:
 

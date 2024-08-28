@@ -5,6 +5,8 @@ It shows how to load shaders from files, create and use vertex, index and unifor
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial02_Cube/Tutorial02_Cube.html)
+
 ## Shaders
 
 This tutorial uses a little bit more complicated vertex shader that reads two attributes from the

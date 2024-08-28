@@ -9,6 +9,8 @@ for a real-world shadow map implementation.
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial13_ShadowMap/Tutorial13_ShadowMap.html)
+
 Rendering shadows with a shadow map consists of two steps:
 
 * The scene is rendered from the point of view of the light into a dedicated depth

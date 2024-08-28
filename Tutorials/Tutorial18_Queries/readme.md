@@ -5,6 +5,8 @@ the GPU operation, such as the number of primitives rendered, command processing
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial18_Queries/Tutorial18_Queries.html)
+
 ## Queries
 
 Queries operate by enclosing a sequence of commands in interest in `BeginQuery()`/`EndQuery()` block.

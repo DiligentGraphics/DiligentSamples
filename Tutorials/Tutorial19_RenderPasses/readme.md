@@ -4,6 +4,8 @@ This tutorial demonstrates how to use the render passes API to implement simple 
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial19_RenderPasses/Tutorial19_RenderPasses.html)
+
 Render passes is a feature of the next-generation APIs that allows applications to define rendering commands in a way
 that better maps to tiled-deferred rendering architectures used by virtually all mobile platforms. Unlike immediate
 rendering architectures typical for desktop platforms, tiled-deferred renderers split the screen into small tiles (e.g. 64x64 pixels,
