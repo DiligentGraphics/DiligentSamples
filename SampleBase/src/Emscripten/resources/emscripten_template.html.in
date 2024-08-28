@@ -201,8 +201,8 @@
         <div class="card">
             <h1>Select Graphics API</h1>
             <div class="button-container">
-                <button class="webgl" onclick="loadWasm('gles')" @DILIGENT_DISABLE_WEBGL@ >WebGL</button>
-                <button class="webgpu" onclick="loadWasm('wgpu')">WebGPU</button>
+                <button class="webgl" id="webgl-button" onclick="loadWasm('gles')" @DILIGENT_DISABLE_WEBGL@>WebGL</button>
+                <button class="webgpu" id="webgpu-button" onclick="loadWasm('wgpu')">WebGPU</button>
             </div>
         </div>
         <div class="loading-indicator" id="loading-indicator">
@@ -220,6 +220,13 @@
             var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
             if (!isChrome) {
                 document.getElementById('browser-warning').style.display = 'block';
+            }
+        }
+
+        function checkWebGPUSupport() {
+            const webgpuButton = document.getElementById('webgpu-button');
+            if (!navigator.gpu) {
+                webgpuButton.disabled = true;
             }
         }
 
@@ -308,6 +315,7 @@
         };
            
         detectBrowser();
+        checkWebGPUSupport()
 
         window.onerror = function () {
             console.log("onerror: " + event);
