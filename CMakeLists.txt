@@ -8,8 +8,9 @@ else()
     set(DILIGENT_INSTALL_SAMPLES OFF)
 endif()
 
-option(DILIGENT_BUILD_SAMPLE_BASE_ONLY      "Build only SampleBase project" OFF)
-option(DILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO "Strip debug information from Emscripten build" OFF)
+option(DILIGENT_BUILD_SAMPLE_BASE_ONLY                "Build only SampleBase project" OFF)
+option(DILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO           "Strip debug information from Emscripten build" OFF)
+option(DILIGENT_EMSCRIPTEN_INCLUDE_COI_SERVICE_WORKER "Include cross-origin isolation service worker in each emscripten build" OFF)
 
 function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 

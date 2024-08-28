@@ -213,7 +213,8 @@
             The application may not run properly on this browser. For best results, we recommend using Chrome.
         </div>
     </div>
-   
+
+    @DILIGENT_COI_SERVICE_WORKER_SCRIPT@
     <script type='text/javascript'>
         function detectBrowser() {
             var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);

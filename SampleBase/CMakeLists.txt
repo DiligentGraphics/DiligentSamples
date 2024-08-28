@@ -136,6 +136,12 @@ elseif(PLATFORM_EMSCRIPTEN)
             set(DILIGENT_DISABLE_WEBGL "disabled")
         endif()
 
+        if (DILIGENT_EMSCRIPTEN_INCLUDE_COI_SERVICE_WORKER)
+            set(DILIGENT_COI_SERVICE_WORKER_SCRIPT "<script src=\"coi-serviceworker.js\"></script>")
+            file(COPY ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/coi-serviceworker.js DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+        else()
+            set(DILIGENT_COI_SERVICE_WORKER_SCRIPT "")
+        endif()
 
         configure_file(
             ${SAMPLE_BASE_SOURCE_DIR}/src/Emscripten/resources/emscripten_template.html.in
