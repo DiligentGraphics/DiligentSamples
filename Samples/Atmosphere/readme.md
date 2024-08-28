@@ -5,4 +5,4 @@ post-processing effect into an application to render physically-based atmosphere
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Atmosphere/Atmosphere.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Atmosphere/Atmosphere.html)

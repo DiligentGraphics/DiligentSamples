@@ -5,7 +5,7 @@ use unique texture for every instance.
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial05_TextureArray/Tutorial05_TextureArray.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial05_TextureArray/Tutorial05_TextureArray.html)
 
 Texture array is a special kind of texture that consists of multiple 2D (or 1D) textures sharing the same
 format, size, and the number of mip levels. Every individual texture in the array is called *slice*. Slices can

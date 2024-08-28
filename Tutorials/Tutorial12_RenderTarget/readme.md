@@ -6,7 +6,7 @@ that you are familiar with all basics covered in Tutorial01 to Tutorial03.
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial12_RenderTarget/Tutorial12_RenderTarget.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial12_RenderTarget/Tutorial12_RenderTarget.html)
 
 ## Cube Resources
 

@@ -5,7 +5,7 @@ from file, create shader resource binding object and how to sample a texture in 
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial03_Texturing/Tutorial03_Texturing.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial03_Texturing/Tutorial03_Texturing.html)
 
 ## Shaders
 

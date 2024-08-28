@@ -4,7 +4,7 @@ This tutorial shows how to record command lists in parallel from multiple thread
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial06_Multithreading/Tutorial06_Multithreading.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial06_Multithreading/Tutorial06_Multithreading.html)
 
 This tutorial generates the same output as Tutorial05, but renders every cube using individual draw call.
 It shows how recording commands can be split between multiple threads. Note that this tutorial illustrates

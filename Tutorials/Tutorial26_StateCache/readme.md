@@ -6,7 +6,7 @@ application starts.
 
 ![](Screenshot.jpg)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial26_StateCache/Tutorial26_StateCache.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial26_StateCache/Tutorial26_StateCache.html)
 
 [Tutorial 25](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial25_StatePackager) shows
 how to package pipeline states off-line during the build process. This tutorial demonstrates an alternative approach, where

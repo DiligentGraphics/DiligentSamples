@@ -6,7 +6,7 @@ improve rendering performance.
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial16_BindlessResources/Tutorial16_BindlessResources.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial16_BindlessResources/Tutorial16_BindlessResources.html)
 
 In old APIs (Direct3D11, OpenGL/GLES), when an application needed to render multiple objects
 using different shader resources, it had to run the following loop:

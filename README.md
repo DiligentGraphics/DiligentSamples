@@ -80,7 +80,7 @@ To build and run the applications in the module, please follow the [instructions
 
 This tutorial shows how to render simple triangle using Diligent Engine API.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial01_HelloTriangle/Tutorial01_HelloTriangle.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial01_HelloTriangle/Tutorial01_HelloTriangle.html)
 
 
 ## [Tutorial 02 - Cube](Tutorials/Tutorial02_Cube)
@@ -90,7 +90,7 @@ This tutorial shows how to render simple triangle using Diligent Engine API.
 This tutorial demonstrates how to render an actual 3D object, a cube. It shows how to load shaders from files, create and use vertex, 
 index and uniform buffers.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial02_Cube/Tutorial02_Cube.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial02_Cube/Tutorial02_Cube.html)
 
 
 ## [Tutorial 03 - Texturing](Tutorials/Tutorial03_Texturing)
@@ -100,7 +100,7 @@ index and uniform buffers.
 This tutorial demonstrates how to apply a texture to a 3D object. It shows how to load a texture from file, create shader resource
 binding object and how to sample a texture in the shader.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial03_Texturing/Tutorial03_Texturing.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial03_Texturing/Tutorial03_Texturing.html)
 
 
 ## [Tutorial 03 - Texturing-C](Tutorials/Tutorial03_Texturing-C)
@@ -120,7 +120,7 @@ This tutorial demonstrates how to use the Diligent Engine API in .NET applicatio
 This tutorial demonstrates how to use instancing to render multiple copies of one object
 using unique transformation matrix for every copy.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial04_Instancing/Tutorial04_Instancing.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial04_Instancing/Tutorial04_Instancing.html)
 
 
 ## [Tutorial 05 - Texture Array](Tutorials/Tutorial05_TextureArray)
@@ -130,7 +130,7 @@ using unique transformation matrix for every copy.
 This tutorial demonstrates how to combine instancing with texture arrays to 
 use unique texture for every instance.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial05_TextureArray/Tutorial05_TextureArray.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial05_TextureArray/Tutorial05_TextureArray.html)
 
 
 ## [Tutorial 06 - Multithreading](Tutorials/Tutorial06_Multithreading)
@@ -139,7 +139,7 @@ use unique texture for every instance.
 
 This tutorial shows how to generate command lists in parallel from multiple threads.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial06_Multithreading/Tutorial06_Multithreading.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial06_Multithreading/Tutorial06_Multithreading.html)
 
 
 ## [Tutorial 07 - Geometry Shader](Tutorials/Tutorial07_GeometryShader)
@@ -163,7 +163,7 @@ rendering algorithm.
 
 This tutorial shows how to render multiple 2D quads, frequently switching textures and blend modes.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial09_Quads/Tutorial09_Quads.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial09_Quads/Tutorial09_Quads.html)
 
 
 ## [Tutorial 10 - Data Streaming](Tutorials/Tutorial10_DataStreaming)
@@ -173,7 +173,7 @@ This tutorial shows how to render multiple 2D quads, frequently switching textur
 This tutorial shows dynamic buffer mapping strategy using `MAP_FLAG_DISCARD` and `MAP_FLAG_DO_NOT_SYNCHRONIZE`
 flags to efficiently stream varying amounts of data to GPU.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial10_DataStreaming/Tutorial10_DataStreaming.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial10_DataStreaming/Tutorial10_DataStreaming.html)
 
 
 ## [Tutorial 11 - Resource Updates](Tutorials/Tutorial11_ResourceUpdates)
@@ -183,7 +183,7 @@ flags to efficiently stream varying amounts of data to GPU.
 This tutorial demonstrates different ways to update buffers and textures in Diligent Engine and explains 
 important internal details and performance implications related to each method.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial11_ResourceUpdates/Tutorial11_ResourceUpdates.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial11_ResourceUpdates/Tutorial11_ResourceUpdates.html)
 
 
 ## [Tutorial 12 - Render Target](Tutorials/Tutorial12_RenderTarget)
@@ -193,7 +193,7 @@ important internal details and performance implications related to each method.
 This tutorial demonstrates how to render a 3d cube into an offscreen render target and do a simple
 post-processing effect.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial12_RenderTarget/Tutorial12_RenderTarget.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial12_RenderTarget/Tutorial12_RenderTarget.html)
 
 
 ## [Tutorial 13 - Shadow Map](Tutorials/Tutorial13_ShadowMap)
@@ -202,7 +202,7 @@ post-processing effect.
 
 This tutorial demonstrates how to render basic shadows using a shadow map.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial13_ShadowMap/Tutorial13_ShadowMap.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial13_ShadowMap/Tutorial13_ShadowMap.html)
 
 
 ## [Tutorial 14 - Compute Shader](Tutorials/Tutorial14_ComputeShader)
@@ -211,7 +211,7 @@ This tutorial demonstrates how to render basic shadows using a shadow map.
 
 This tutorial shows how to implement a simple particle simulation system using compute shaders.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial14_ComputeShader/Tutorial14_ComputeShader.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial14_ComputeShader/Tutorial14_ComputeShader.html)
 
 
 ## [Tutorial 15 - Multiple Windows](Tutorials/Tutorial15_MultipleWindows)
@@ -229,7 +229,7 @@ This tutorial shows how to implement bindless resources, a technique that levera
 dynamic shader resource indexing feature enabled by the next-gen APIs to significantly improve
 rendering performance.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial16_BindlessResources/Tutorial16_BindlessResources.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial16_BindlessResources/Tutorial16_BindlessResources.html)
 
 
 ## [Tutorial 17 - MSAA](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial17_MSAA)
@@ -239,7 +239,7 @@ rendering performance.
 This tutorial demonstrates how to use multisample anti-aliasing (MSAA) to make
 geometrical edges look smoother and more temporarily stable.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial17_MSAA/Tutorial17_MSAA.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial17_MSAA/Tutorial17_MSAA.html)
 
 
 ## [Tutorial 18 - Queries](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial18_Queries)
@@ -249,7 +249,7 @@ geometrical edges look smoother and more temporarily stable.
 This tutorial demonstrates how to use queries to retrieve various information about
 the GPU operation, such as the number of primitives rendered, command processing duration, etc.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial18_Queries/Tutorial18_Queries.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial18_Queries/Tutorial18_Queries.html)
 
 
 ## [Tutorial 19 - Render passes](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial19_RenderPasses)
@@ -258,7 +258,7 @@ the GPU operation, such as the number of primitives rendered, command processing
 
 This tutorial demonstrates how to use the render passes API to implement simple deferred shading.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial19_RenderPasses/Tutorial19_RenderPasses.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial19_RenderPasses/Tutorial19_RenderPasses.html)
 
 
 ## [Tutorial 20 - Mesh Shader](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial20_MeshShader)
@@ -313,7 +313,7 @@ This tutorial expands the path tracing technique implemented in previous tutoria
 how to use the render state cache to save pipeline states created at run time and load them when the
 application starts.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial26_StateCache/Tutorial26_StateCache.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial26_StateCache/Tutorial26_StateCache.html)
 
 
 ## [Tutorial 27 - Post-Processing](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial27_PostProcessing)
@@ -322,7 +322,7 @@ application starts.
 
 This tutorial demonstrates how to use post-processing effects from the DiligentFX module.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial27_PostProcessing/Tutorial27_PostProcessing.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial27_PostProcessing/Tutorial27_PostProcessing.html)
 
 
 # Samples
@@ -335,7 +335,7 @@ This sample demonstrates how to integrate
 [Epipolar Light Scattering](https://github.com/DiligentGraphics/DiligentFX/tree/master/PostProcess/EpipolarLightScattering)
 post-processing effect into an application to render physically-based atmosphere.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Atmosphere/Atmosphere.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Atmosphere/Atmosphere.html)
 
 
 ## [GLFW Demo](Samples/GLFWDemo)
@@ -355,7 +355,7 @@ This simple maze mini-game demonstrates how to use GLFW to create window and han
 This sample demonstrates how to use the [Asset Loader](https://github.com/DiligentGraphics/DiligentTools/tree/master/AssetLoader)
 and [GLTF PBR Renderer](https://github.com/DiligentGraphics/DiligentFX/tree/master/PBR) to load and render GLTF models.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/GLTFViewer/GLTFViewer.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/GLTFViewer/GLTFViewer.html)
 
 
 ## [USD Viewer](Samples/USDViewer)
@@ -373,7 +373,7 @@ an implementation of the Hydra rendering API in Diligent Engine.
 This sample demonstrates how to integrate the [Shadowing component](https://github.com/DiligentGraphics/DiligentFX/tree/master/Components#shadows)
 into an application to render high-quality shadows.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Shadows/Shadows.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Shadows/Shadows.html)
 
 
 ## [Dear ImGui Demo](Samples/ImguiDemo)
@@ -382,7 +382,7 @@ into an application to render high-quality shadows.
 
 This sample demonstrates the integration of the engine with [dear imgui](https://github.com/ocornut/imgui) UI library.
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/ImguiDemo/ImguiDemo.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/ImguiDemo/ImguiDemo.html)
 
 
 ## [Nuklear Demo](Samples/NuklearDemo)

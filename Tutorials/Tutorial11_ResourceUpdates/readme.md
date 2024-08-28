@@ -5,7 +5,7 @@ internal details and performance implications related to each method.
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial11_ResourceUpdates/Tutorial11_ResourceUpdates.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial11_ResourceUpdates/Tutorial11_ResourceUpdates.html)
 
 ## Buffers
 

@@ -4,4 +4,4 @@ This sample demonstrates the integration of the engine with [dear imgui](https:/
 
 ![](Screenshot.png)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/ImguiDemo/ImguiDemo.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/ImguiDemo/ImguiDemo.html)

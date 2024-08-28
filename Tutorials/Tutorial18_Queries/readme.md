@@ -5,7 +5,7 @@ the GPU operation, such as the number of primitives rendered, command processing
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial18_Queries/Tutorial18_Queries.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial18_Queries/Tutorial18_Queries.html)
 
 ## Queries
 

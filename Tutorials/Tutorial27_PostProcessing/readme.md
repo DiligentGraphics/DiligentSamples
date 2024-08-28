@@ -3,7 +3,7 @@ This tutorial demonstrates how to use post-processing effects from the DiligentF
 
 ![](Screenshot.jpg )
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial27_PostProcessing/Tutorial27_PostProcessing.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial27_PostProcessing/Tutorial27_PostProcessing.html)
 
 ## Table of contents
 

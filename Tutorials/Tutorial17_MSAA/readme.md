@@ -5,7 +5,7 @@ and more temporarily stable.
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial17_MSAA/Tutorial17_MSAA.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial17_MSAA/Tutorial17_MSAA.html)
 
 [MSAA](https://en.wikipedia.org/wiki/Multisample_anti-aliasing) is an industry-standard method of alleviating
 geometrical aliasing and is supported by all modern graphics hardware. This tutorial shows how to use MSAA

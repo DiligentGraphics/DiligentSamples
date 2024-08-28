@@ -5,7 +5,7 @@ of one object using unique transformation matrix for every copy.
 
 ![](Animation_Large.gif)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial04_Instancing/Tutorial04_Instancing.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial04_Instancing/Tutorial04_Instancing.html)
 
 Instancing is a very widely used technique. It allows rendering multiple copies of one object (trees 
 in a forest or characters in a crowd), using just single draw call. 

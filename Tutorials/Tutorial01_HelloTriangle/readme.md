@@ -5,7 +5,7 @@ and how to render a simple triangle.
 
 ![](Screenshot.png)
 
-[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial01_HelloTriangle/Tutorial01_HelloTriangle.html)
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial01_HelloTriangle/Tutorial01_HelloTriangle.html)
 
 ## Shaders
 
