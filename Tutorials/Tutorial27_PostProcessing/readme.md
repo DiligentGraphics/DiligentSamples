@@ -1,8 +1,9 @@
  # Tutorial27 - Post Processing
+This tutorial demonstrates how to use post-processing effects from the DiligentFX module.
 
 ![](Screenshot.jpg )
 
-This tutorial demonstrates how to use post-processing effects from the DiligentFX module.
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial27_PostProcessing/Tutorial27_PostProcessing.html)
 
 ## Table of contents
 

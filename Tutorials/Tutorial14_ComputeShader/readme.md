@@ -4,6 +4,8 @@ This tutorial shows how to implement a simple particle simulation system using c
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial14_ComputeShader/Tutorial14_ComputeShader.html)
+
 The particle system consists of a number of spherical particles moving in random directions that
 encounter [elastic collisions](https://en.wikipedia.org/wiki/Elastic_collision). The simulation
 and collision detection is performed on the GPU by compute shaders. To accelerate collision detection,

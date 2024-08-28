@@ -4,6 +4,8 @@ This tutorial shows how to render multiple 2D quads, frequently switching textur
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial09_Quads/Tutorial09_Quads.html)
+
 The tutorial is based on [Tutorial06 - Multithreading](../Tutorial06_Multithreading), but renders
 2D quads instead of 3D cubes and changes the states frequently. It also demonstrates *Pipeline State
 compatibility feature* - if two PSOs share the same shader resource layout, they can use shader resource

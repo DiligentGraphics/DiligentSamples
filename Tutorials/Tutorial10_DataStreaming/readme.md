@@ -5,6 +5,8 @@ flags to efficiently stream varying amounts of data to GPU.
 
 ![](Animation_Large.gif)
 
+[Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial10_DataStreaming/Tutorial10_DataStreaming.html)
+
 The tutorial is based on [Tutorial09 - Quads](../Tutorial09_Quads), but instead of quads it renders polygons
 with varying number of vertices, streaming geometry of every polygon at every draw call.
 
