@@ -170,14 +170,16 @@
             background-color: rgba(255, 69, 0, 0.8);
             border: 2px solid #ff4500;
             border-radius: 10px;
-            padding: 15px 20px;
+            padding: 15px 20px 15px 35px;
             text-align: center;
             margin: 20px auto;
             width: 80%;
+            left: 50%;
+            transform: translateX(-50%);
             max-width: 500px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            position: relative;
+            position: absolute;
             animation: fadeIn 1s ease-in-out;
         }
 
@@ -190,8 +192,7 @@
             content: '⚠️';
             font-size: 1.5em;
             position: absolute;
-            top: 10px;
-            left: 10px;
+            left: 15px;
         }
     </style>
 </head>
@@ -325,6 +326,7 @@
             // Hide the card and show the loading indicator
             document.querySelector('.card').style.display = 'none';
             document.getElementById('loading-indicator').style.display = 'flex';
+            document.getElementById('browser-warning').style.display = 'none'; 
 
             Module.arguments = ["--mode", `${api}`];
             if (api === 'wgpu') {
