@@ -8,6 +8,7 @@ set(SOURCE
 
 set(INCLUDE
     src/Tutorial20_MeshShader.hpp
+    src/voxelizer.h
 )
 
 set(SHADERS
