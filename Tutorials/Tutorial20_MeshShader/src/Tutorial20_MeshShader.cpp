@@ -36,7 +36,6 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
-#include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
 {
