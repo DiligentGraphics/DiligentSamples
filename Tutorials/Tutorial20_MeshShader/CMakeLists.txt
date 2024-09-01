@@ -4,18 +4,16 @@ project(Tutorial20_MeshShader CXX)
 
 set(SOURCE
     src/Tutorial20_MeshShader.cpp
-    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial20_MeshShader.hpp
-    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS
-    assets/cube.ash
-    assets/cube.msh
-    assets/cube.psh
+    assets/cube_ash.hlsl
+    assets/cube_msh.hlsl
+    assets/cube_psh.hlsl
     assets/structures.fxh
 )
 
