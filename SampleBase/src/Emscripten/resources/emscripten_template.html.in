@@ -188,6 +188,34 @@
             -ms-interpolation-mode: nearest-neighbor;
         }
 
+        .back-button {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            z-index: 20; /* Ensure it stays on top */
+        }
+
+        .back-button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .back-button:active {
+            background: #1e6b99;
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
         #browser-warning {
             display: none;
             color: #ffffff;
@@ -230,7 +258,7 @@
                 <button class="webgpu" id="webgpu-button" onclick="loadWasm('wgpu')">WebGPU</button>
             </div>
             <div class="samples-container">
-                <button class="samples" id="samples-button" onclick="window.open('http://diligentgraphics.github.io/', '_blank');">Sample Gallery</button>
+                <button class="samples" id="samples-button" onclick="window.location.href = 'http://diligentgraphics.github.io/';">Sample Gallery</button>
             </div>
         </div>
         <div class="loading-indicator" id="loading-indicator">
@@ -240,6 +268,7 @@
         <div id="browser-warning">
             The application may not run properly on this browser. For best results, we recommend using Chrome.
         </div>
+        <button id="back-button" class="back-button" style="display: none;" onclick="goBack()">Return to Menu</button>
     </div>
 
     @DILIGENT_COI_SERVICE_WORKER_SCRIPT@
@@ -331,6 +360,7 @@
                     setTimeout(() => {
                         document.getElementById('loading-indicator').style.display = 'none';
                         document.getElementById('canvas').style.display = 'flex';
+                        document.getElementById('back-button').style.display = 'block';
                     }, 100); // Delay before hiding the indicator
                 } else {
                     progressText.textContent = percentage.toString() + '%';
@@ -366,7 +396,12 @@
             document.addEventListener("contextmenu", function (event) {
                 event.preventDefault();
             });
-        }  
+        }
+
+        function goBack() {
+            // Reload the page to go back to the menu
+            location.reload();
+        }
 
     </script>
 </body>
