@@ -36,6 +36,8 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
+#include "GLTFLoader.hpp"
+#include "voxelizer.h"
 
 namespace Diligent
 {
@@ -159,6 +161,30 @@ void Tutorial20_MeshShader::LoadTexture()
 
     m_CubeTextureSRV = pTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     VERIFY_EXPR(m_CubeTextureSRV != nullptr);
+}
+
+void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
+{
+    vx_mesh_t* p_triangleMesh = nullptr;
+    vx_mesh_t* p_voxelMesh = nullptr;
+
+
+    const std::pair<const char*, const char*> modelPaths[] =
+    {
+        {"TestModel", "models/DamagedHelmet/DamagedHelmet.gltf"},
+    };
+
+    //Load model from memory
+    GLTF::ModelCreateInfo ModelCI;
+    ModelCI.FileName             = modelPaths[0].second;
+    ModelCI.pResourceManager     = nullptr;
+    ModelCI.ComputeBoundingBoxes = false;
+
+    std::unique_ptr<GLTF::Model> model = std::make_unique<GLTF::Model>(m_pDevice, m_pImmediateContext, ModelCI);
+    
+    //model->Meshes[0].Primitives[0].IndexCount
+
+    printf("Model \"%s\" loaded!\n", modelPaths[0].first);
 }
 
 void Tutorial20_MeshShader::CreatePipelineState()
@@ -313,6 +339,7 @@ void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
     fpc.SetMoveSpeed(10.f);
 
     LoadTexture();
+    GetPointCloudFromMesh("");
     CreateDrawTasks();
     CreateStatisticsBuffer();
     CreateConstantsBuffer();

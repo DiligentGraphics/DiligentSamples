@@ -9,6 +9,10 @@ set(SOURCE
 set(INCLUDE
     src/Tutorial20_MeshShader.hpp
     src/voxelizer.h
+    src/AssetLoader/DXSDKMeshLoader.hpp
+    src/AssetLoader/GLTFBuilder.hpp
+    src/AssetLoader/GLTFLoader.hpp
+    src/AssetLoader/GLTFResourceManager.hpp
 )
 
 set(SHADERS
@@ -23,3 +27,5 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial20_MeshShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+
+target_link_libraries("Tutorial20_MeshShader" PRIVATE Diligent-AssetLoader)
