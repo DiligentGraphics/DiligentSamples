@@ -24,6 +24,7 @@ set(SHADERS
 
 set(ASSETS
     assets/DGLogo.png
+    assets/models/DamagedHelmet/DamagedHelmet.gltf
 )
 
 add_sample_app("Tutorial20_MeshShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
