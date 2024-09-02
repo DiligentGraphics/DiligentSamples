@@ -87,6 +87,12 @@
             margin-top: 20px;
         }
 
+        .samples-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
         button {
             padding: 15px 30px;
             font-size: 1.2em;
@@ -141,6 +147,24 @@
             background-color: #d3d3d3;
             transform: none;
             box-shadow: none;
+        }
+
+        button.samples {
+            background: #f39c12;
+            margin-top: 50px;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+
+        button.samples:hover {
+            background: #e67e22;
+            transform: scale(1.05);
+        }
+
+        button.samples:active {
+            background: #d35400;
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .emscripten {
@@ -204,6 +228,9 @@
             <div class="button-container">
                 <button class="webgl" id="webgl-button" onclick="loadWasm('gles')" @DILIGENT_DISABLE_WEBGL@>WebGL</button>
                 <button class="webgpu" id="webgpu-button" onclick="loadWasm('wgpu')">WebGPU</button>
+            </div>
+            <div class="samples-container">
+                <button class="samples" id="samples-button" onclick="window.open('http://diligentgraphics.github.io/', '_blank');">Sample Gallery</button>
             </div>
         </div>
         <div class="loading-indicator" id="loading-indicator">
