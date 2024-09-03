@@ -699,7 +699,7 @@ void vx__add_voxel(vx_mesh_t* mesh,
     }
 
     for (size_t i = 0; i < VOXELIZER_INDICES_SIZE; ++i) {
-        mesh->indices[i+mesh->nindices] = vx_voxel_indices[i] + mesh->nvertices;
+        mesh->indices[i+mesh->nindices] = (unsigned int)(vx_voxel_indices[i] + mesh->nvertices);
     }
 
     mesh->nindices += VOXELIZER_INDICES_SIZE;
@@ -1043,9 +1043,9 @@ unsigned int* vx_voxelize_snap_3dgrid(vx_mesh_t const* m,
         VX_ASSERT(oy >= 0.f);
         VX_ASSERT(oz >= 0.f);
 
-        ix = (ax == 0.0) ? 0 : (ox / ax) * (width - 1);
-        iy = (ay == 0.0) ? 0 : (oy / ay) * (height - 1);
-        iz = (az == 0.0) ? 0 : (oz / az) * (depth - 1);
+        ix = (int)((ax == 0.0) ? 0 : (ox / ax) * (width - 1));
+        iy = (int)((ay == 0.0) ? 0 : (oy / ay) * (height - 1));
+        iz = (int)((az == 0.0) ? 0 : (oz / az) * (depth - 1));
 
 
         VX_ASSERT(ix >= 0);

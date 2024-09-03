@@ -26,7 +26,6 @@
  */
 
 #include <array>
-
 #include "Tutorial20_MeshShader.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
@@ -36,11 +35,17 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
-#include "GLTFLoader.hpp"
-#include "GLTFBuilder.hpp"
-#include "voxelizer.h"
 
 #define VOXELIZER_IMPLEMENTATION
+#include "voxelizer.h"
+
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+
+#include "../tinygltf/tiny_gltf.h"
+
+using namespace tinygltf;
 
 namespace Diligent
 {
@@ -169,7 +174,7 @@ void Tutorial20_MeshShader::LoadTexture()
 void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
 {
     vx_mesh_t* p_triangleMesh = nullptr;
-    vx_mesh_t* p_voxelMesh = nullptr;
+    //vx_mesh_t* p_voxelMesh = nullptr;
 
     const std::pair<const char*, const char*> modelPaths[] =
     {
@@ -177,28 +182,35 @@ void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
     };
 
     //Load model from memory
-    GLTF::ModelCreateInfo ModelCI;
-    ModelCI.FileName             = modelPaths[0].second;
-    ModelCI.pResourceManager     = nullptr;
-    ModelCI.ComputeBoundingBoxes = false;
+    Model       model;
+    TinyGLTF    loader;
+    std::string err;
+    std::string warn;
 
-    std::unique_ptr<GLTF::Model> model = std::make_unique<GLTF::Model>(m_pDevice, m_pImmediateContext, ModelCI);
+    assert(loader.LoadASCIIFromFile(&model, &err, &warn, modelPaths[0].second));
+
+    if (!warn.empty())
+    {
+        printf("Warn: %s\n", warn.c_str());
+    }
+
+    if (!err.empty())
+    {
+        printf("Err: %s\n", err.c_str());
+    }
+
     printf("Model \"%s\" loaded!\n", modelPaths[0].first);
 
-    p_triangleMesh = vx_mesh_alloc(model->GetVertexBufferCount(), model->GetIndexBuffer()->GetDesc().Size);
 
-    IBuffer* p_Buffer = model->GetIndexBuffer(0);
-    IBufferView* pBufView = p_Buffer->GetDefaultView(Diligent::BUFFER_VIEW_TYPE::BUFFER_VIEW_SHADER_RESOURCE);
-    
 
-    IObject* p_indexBufferView = nullptr;
-    model->GetIndexBuffer()->GetUserData()->QueryInterface(GLTF::IID_BufferInitData, &p_indexBufferView);
+    //p_triangleMesh = vx_mesh_alloc(, model->GetIndexBuffer()->GetDesc().Size);
+
 
     //p_triangleMesh->vertices = p_indexBufferView;
 
 
     // Run voxelization
-    p_voxelMesh = vx_voxelize(p_triangleMesh, 0.025, 0.025, 0.025, 0.01);
+    //p_voxelMesh = vx_voxelize(p_triangleMesh, 0.025f, 0.025f, 0.025f, 0.01f);
     vx_mesh_free(p_triangleMesh);
 }
 

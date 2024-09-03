@@ -25,16 +25,16 @@ set(ASSETS
 
 include(FetchContent)
 FetchContent_Declare(
-  TinyGLTF
+    tinygltf
   GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
   GIT_TAG v2.9.3
   GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(TinyGLTF)
+FetchContent_MakeAvailable(tinygltf)
 
 
 add_sample_app("Tutorial20_MeshShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
 # target_link_libraries("Tutorial20_MeshShader" PRIVATE Diligent-AssetLoader)
 
-target_link_libraries("Tutorial20_MeshShader" PRIVATE TinyGLTF)
+target_link_libraries("Tutorial20_MeshShader" PRIVATE tinygltf)
