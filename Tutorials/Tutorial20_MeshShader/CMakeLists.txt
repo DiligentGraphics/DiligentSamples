@@ -9,10 +9,6 @@ set(SOURCE
 set(INCLUDE
     src/Tutorial20_MeshShader.hpp
     src/voxelizer.h
-    src/AssetLoader/DXSDKMeshLoader.hpp
-    src/AssetLoader/GLTFBuilder.hpp
-    src/AssetLoader/GLTFLoader.hpp
-    src/AssetLoader/GLTFResourceManager.hpp
 )
 
 set(SHADERS
@@ -27,6 +23,18 @@ set(ASSETS
     assets/models/DamagedHelmet/DamagedHelmet.gltf
 )
 
+include(FetchContent)
+FetchContent_Declare(
+  TinyGLTF
+  GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+  GIT_TAG v2.9.3
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(TinyGLTF)
+
+
 add_sample_app("Tutorial20_MeshShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
-target_link_libraries("Tutorial20_MeshShader" PRIVATE Diligent-AssetLoader)
+# target_link_libraries("Tutorial20_MeshShader" PRIVATE Diligent-AssetLoader)
+
+target_link_libraries("Tutorial20_MeshShader" PRIVATE TinyGLTF)

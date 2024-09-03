@@ -37,7 +37,10 @@
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
 #include "GLTFLoader.hpp"
+#include "GLTFBuilder.hpp"
 #include "voxelizer.h"
+
+#define VOXELIZER_IMPLEMENTATION
 
 namespace Diligent
 {
@@ -168,7 +171,6 @@ void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
     vx_mesh_t* p_triangleMesh = nullptr;
     vx_mesh_t* p_voxelMesh = nullptr;
 
-
     const std::pair<const char*, const char*> modelPaths[] =
     {
         {"TestModel", "models/DamagedHelmet/DamagedHelmet.gltf"},
@@ -181,10 +183,23 @@ void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
     ModelCI.ComputeBoundingBoxes = false;
 
     std::unique_ptr<GLTF::Model> model = std::make_unique<GLTF::Model>(m_pDevice, m_pImmediateContext, ModelCI);
-    
-    //model->Meshes[0].Primitives[0].IndexCount
-
     printf("Model \"%s\" loaded!\n", modelPaths[0].first);
+
+    p_triangleMesh = vx_mesh_alloc(model->GetVertexBufferCount(), model->GetIndexBuffer()->GetDesc().Size);
+
+    IBuffer* p_Buffer = model->GetIndexBuffer(0);
+    IBufferView* pBufView = p_Buffer->GetDefaultView(Diligent::BUFFER_VIEW_TYPE::BUFFER_VIEW_SHADER_RESOURCE);
+    
+
+    IObject* p_indexBufferView = nullptr;
+    model->GetIndexBuffer()->GetUserData()->QueryInterface(GLTF::IID_BufferInitData, &p_indexBufferView);
+
+    //p_triangleMesh->vertices = p_indexBufferView;
+
+
+    // Run voxelization
+    p_voxelMesh = vx_voxelize(p_triangleMesh, 0.025, 0.025, 0.025, 0.01);
+    vx_mesh_free(p_triangleMesh);
 }
 
 void Tutorial20_MeshShader::CreatePipelineState()
