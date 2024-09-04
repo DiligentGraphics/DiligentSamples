@@ -39,13 +39,7 @@
 #define VOXELIZER_IMPLEMENTATION
 #include "voxelizer.h"
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
-#include "../tinygltf/tiny_gltf.h"
-
-using namespace tinygltf;
+#include "ufbx/ufbx.h"
 
 namespace Diligent
 {
@@ -174,43 +168,28 @@ void Tutorial20_MeshShader::LoadTexture()
 void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
 {
     vx_mesh_t* p_triangleMesh = nullptr;
-    //vx_mesh_t* p_voxelMesh = nullptr;
+    vx_mesh_t* p_voxelMesh = nullptr;
 
     const std::pair<const char*, const char*> modelPaths[] =
     {
-        {"TestModel", "models/DamagedHelmet/DamagedHelmet.gltf"},
+        {"TestModel", "models/suzanne.fbx"},
     };
 
-    //Load model from memory
-    Model       model;
-    TinyGLTF    loader;
-    std::string err;
-    std::string warn;
+    //Load model from file
 
-    assert(loader.LoadASCIIFromFile(&model, &err, &warn, modelPaths[0].second));
+    ufbx_load_opts opts = {0}; // Optional, pass NULL for defaults
+    ufbx_scene*    scene = ufbx_load_file(modelPaths->second, &opts, NULL);
+    
+    assert(scene);
+    
+    ufbx_node* node = scene->nodes.data[0];
 
-    if (!warn.empty())
-    {
-        printf("Warn: %s\n", warn.c_str());
-    }
-
-    if (!err.empty())
-    {
-        printf("Err: %s\n", err.c_str());
-    }
-
-    printf("Model \"%s\" loaded!\n", modelPaths[0].first);
-
-
-
-    //p_triangleMesh = vx_mesh_alloc(, model->GetIndexBuffer()->GetDesc().Size);
-
-
-    //p_triangleMesh->vertices = p_indexBufferView;
+    p_triangleMesh = vx_mesh_alloc((int)node->mesh->num_vertices, (int)node->mesh->num_indices);
+    p_triangleMesh->vertices = reinterpret_cast<vx_vertex_t*>(node->mesh->vertices.begin());
 
 
     // Run voxelization
-    //p_voxelMesh = vx_voxelize(p_triangleMesh, 0.025f, 0.025f, 0.025f, 0.01f);
+    p_voxelMesh = vx_voxelize(p_triangleMesh, 0.025f, 0.025f, 0.025f, 0.01f);
     vx_mesh_free(p_triangleMesh);
 }
 
