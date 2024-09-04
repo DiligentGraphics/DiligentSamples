@@ -166,6 +166,7 @@ void Tutorial20_MeshShader::LoadTexture()
 }
 
  vx_mesh_t* p_voxelMesh = nullptr;
+ float      voxelSize   = 0.025f;
 
 Tutorial20_MeshShader::~Tutorial20_MeshShader()
 {
@@ -211,7 +212,7 @@ void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
     p_triangleMesh->indices = triMeshIndexList;
 
     // Run voxelization
-    p_voxelMesh = vx_voxelize(p_triangleMesh, 0.25f, 0.25f, 0.25f, 0.01f);
+    p_voxelMesh = vx_voxelize(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.01f);
 
     vx_mesh_free(p_triangleMesh);
     //delete[] triMeshVertexList; and delete[] triMeshIndexList; not necessary since they are released via vx_mesh_free(p_triangleMesh);
@@ -224,7 +225,7 @@ void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
     FastRandReal<float> Rnd{0, 0.f, 1.f};
 
     std::vector<DrawTask> DrawTasks;
-    unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (p_voxelMesh->nvertices % 32);
+    unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (32 - (p_voxelMesh->nvertices % 32));
     DrawTasks.resize(alignedDrawTaskSize);
 
     for (int i = 0; i < p_voxelMesh->nvertices; ++i)
@@ -235,7 +236,7 @@ void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
         dst.BasePosAndScale.x   = p_voxelMesh->vertices[i].x;
         dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
         dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
-        dst.BasePosAndScale.w   = .25f / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
+        dst.BasePosAndScale.w   = voxelSize / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
         dst.randomValue         = {Rnd(), 0, 0, 0};
     }
 
