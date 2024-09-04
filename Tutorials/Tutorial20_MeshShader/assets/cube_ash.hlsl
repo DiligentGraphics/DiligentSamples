@@ -67,12 +67,9 @@ void main(in uint I  : SV_GroupIndex,
     // Read the task arguments
     const uint gid   = wg * GROUP_SIZE + I;
     DrawTask   task  = DrawTasks[gid];
-    float3     pos   = float3(task.BasePos, 0.0).xzy;
-    float      scale = task.Scale;
-    float      meshletColorRndValue = task.randomValue;
-
-    // Simple animation
-    //pos.y = sin(g_Constants.CurrTime + timeOffset);
+    float3     pos   = task.BasePosAndScale.xyz;
+    float      scale = task.BasePosAndScale.w;
+    float      meshletColorRndValue = task.randomValue.x;
 
     // Frustum culling
     if (g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale))

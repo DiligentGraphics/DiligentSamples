@@ -45,8 +45,11 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial20: Mesh shader"; }
 
+    ~Tutorial20_MeshShader();
+
 private:
     void GetPointCloudFromMesh(std::string meshPath);
+    void CreateDrawTasksFromLoadedMesh();
     void CreatePipelineState();
     void CreateDrawTasks();
     void CreateStatisticsBuffer();

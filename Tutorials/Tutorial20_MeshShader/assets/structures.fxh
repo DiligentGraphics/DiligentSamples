@@ -5,9 +5,8 @@
 
 struct DrawTask
 {
-    float2 BasePos;
-    float Scale;
-    float randomValue;
+    float4 BasePosAndScale;
+    float4 randomValue;
 };
 
 struct Constants

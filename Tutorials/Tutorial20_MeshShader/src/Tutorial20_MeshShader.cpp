@@ -37,9 +37,9 @@
 #include "AdvancedMath.hpp"
 
 #define VOXELIZER_IMPLEMENTATION
-#include "voxelizer.h"
+#include "voxelizer.h"  // Voxelizer
 
-#include "ufbx/ufbx.h"
+#include "ufbx/ufbx.h"  // FBX importer
 
 namespace Diligent
 {
@@ -83,10 +83,10 @@ void Tutorial20_MeshShader::CreateDrawTasks()
             int   idx = x + y * GridDim.x;
             auto& dst = DrawTasks[idx];
 
-            dst.BasePos.x  = (x - GridDim.x / 2) * 2.f;
-            dst.BasePos.y  = (y - GridDim.y / 2) * 2.f;
-            dst.Scale      = 1.f; // 0.5 .. 1
-            dst.randomValue = Rnd();
+            dst.BasePosAndScale.x  = (x - GridDim.x / 2) * 2.f;
+            dst.BasePosAndScale.y  = (y - GridDim.y / 2) * 2.f;
+            dst.BasePosAndScale.w  = 1.f; // 0.5 .. 1
+            dst.randomValue        = {Rnd(), 0, 0, 0};
         }
     }
 
@@ -165,32 +165,96 @@ void Tutorial20_MeshShader::LoadTexture()
     VERIFY_EXPR(m_CubeTextureSRV != nullptr);
 }
 
+ vx_mesh_t* p_voxelMesh = nullptr;
+
+Tutorial20_MeshShader::~Tutorial20_MeshShader()
+{
+    // Delete voxelized meshes here!
+    vx_mesh_free(p_voxelMesh);
+}
+
 void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
 {
     vx_mesh_t* p_triangleMesh = nullptr;
-    vx_mesh_t* p_voxelMesh = nullptr;
-
-    const std::pair<const char*, const char*> modelPaths[] =
-    {
-        {"TestModel", "models/suzanne.fbx"},
-    };
 
     //Load model from file
-
     ufbx_load_opts opts = {0}; // Optional, pass NULL for defaults
-    ufbx_scene*    scene = ufbx_load_file(modelPaths->second, &opts, NULL);
+    ufbx_scene*    scene = ufbx_load_file(meshPath.c_str(), &opts, NULL);
     
     assert(scene);
     
     ufbx_node* node = scene->nodes.data[0];
 
-    p_triangleMesh = vx_mesh_alloc((int)node->mesh->num_vertices, (int)node->mesh->num_indices);
-    p_triangleMesh->vertices = reinterpret_cast<vx_vertex_t*>(node->mesh->vertices.begin());
+    int nVertices = static_cast<int>(node->children[0]->mesh->num_vertices);
+    int nIndices = static_cast<int>(node->children[0]->mesh->num_indices);
 
+    p_triangleMesh = vx_mesh_alloc(nVertices, nIndices);
+
+    // Copy vert and ind data
+    vx_vertex_t* triMeshVertexList = new vx_vertex_t[nVertices]; //507
+    unsigned int* triMeshIndexList = new unsigned int[nIndices]; // 1968
+
+    // Copy value by value (try memcpy later).
+    for (size_t i = 0; i < nVertices; ++i)
+    {
+        triMeshVertexList[i].x = (float) node->children[0]->mesh->vertices[i].x;
+        triMeshVertexList[i].y = (float) node->children[0]->mesh->vertices[i].y;
+        triMeshVertexList[i].z = (float) node->children[0]->mesh->vertices[i].z;
+    }
+
+    for (size_t i = 0; i < nIndices; ++i)
+    {
+        triMeshIndexList[i] = node->children[0]->mesh->vertex_indices[i];
+    }
+
+    p_triangleMesh->vertices = triMeshVertexList;
+    p_triangleMesh->indices = triMeshIndexList;
 
     // Run voxelization
-    p_voxelMesh = vx_voxelize(p_triangleMesh, 0.025f, 0.025f, 0.025f, 0.01f);
+    p_voxelMesh = vx_voxelize(p_triangleMesh, 0.25f, 0.25f, 0.25f, 0.01f);
+
     vx_mesh_free(p_triangleMesh);
+    //delete[] triMeshVertexList; and delete[] triMeshIndexList; not necessary since they are released via vx_mesh_free(p_triangleMesh);
+    ufbx_free_scene(scene);
+    // Do not vx_mesh_free(pVoxelMesh) yet. Do this in the deinitialization routine instead!
+}
+
+void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
+{
+    FastRandReal<float> Rnd{0, 0.f, 1.f};
+
+    std::vector<DrawTask> DrawTasks;
+    unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (p_voxelMesh->nvertices % 32);
+    DrawTasks.resize(alignedDrawTaskSize);
+
+    for (int i = 0; i < p_voxelMesh->nvertices; ++i)
+    {
+        int   idx = i;
+        auto& dst = DrawTasks[idx];
+
+        dst.BasePosAndScale.x   = p_voxelMesh->vertices[i].x;
+        dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
+        dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
+        dst.BasePosAndScale.w   = .25f / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
+        dst.randomValue         = {Rnd(), 0, 0, 0};
+    }
+
+    BufferDesc BuffDesc;
+    BuffDesc.Name              = "Draw tasks buffer";
+    BuffDesc.Usage             = USAGE_DEFAULT;
+    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
+    BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+
+    BufferData BufData;
+    BufData.pData    = DrawTasks.data();
+    BufData.DataSize = BuffDesc.Size;
+
+    m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
+    VERIFY_EXPR(m_pDrawTasks != nullptr);
+
+    m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
 }
 
 void Tutorial20_MeshShader::CreatePipelineState()
@@ -345,8 +409,9 @@ void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
     fpc.SetMoveSpeed(10.f);
 
     LoadTexture();
-    GetPointCloudFromMesh("");
-    CreateDrawTasks();
+    GetPointCloudFromMesh("models/suzanne.fbx");
+    //CreateDrawTasks();
+    CreateDrawTasksFromLoadedMesh();
     CreateStatisticsBuffer();
     CreateConstantsBuffer();
     CreatePipelineState();
