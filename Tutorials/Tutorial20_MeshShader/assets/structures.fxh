@@ -18,7 +18,7 @@ struct Constants
     float CoTanHalfFov;
     float MSDebugViz;
     uint FrustumCulling;
-    uint Padding;
+    uint OcclusionCulling;
 };
 
 // Payload size must be less than 16kb.

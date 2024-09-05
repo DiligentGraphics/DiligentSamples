@@ -28,6 +28,24 @@ bool IsVisible(float3 cubeCenter, float radius)
     return true;
 }
 
+bool IsOccluded(float3 meshletPos) //,float3 cameraPos)
+{
+    // Voxels are inherently AABBs
+    
+    
+    // Iterate over all meshlets (all DrawTasks) and calculate occlusion relative to 
+    // this meshlet in relation to the camera position
+    
+    // If meshlet is occluded by at least one other meshlet (which is not this meshlet)
+    // return true,
+    
+    // @TODO: Find out, how to compare against all other meshlets, not only in group
+    
+    
+    // If none is occluded, return false
+    return false;
+}
+
 float CalcDetailLevel(float3 cubeCenter, float radius)
 {
     // cubeCenter - the center of the sphere 
@@ -72,7 +90,8 @@ void main(in uint I  : SV_GroupIndex,
     float      meshletColorRndValue = task.randomValue.x;
 
     // Frustum culling
-    if (g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale))
+    if ((g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale)) &&
+        (g_Constants.OcclusionCulling == 0 || !IsOccluded(pos)))
     {
         // Acquire an index that will be used to safely access the payload.
         // Each thread gets a unique index.

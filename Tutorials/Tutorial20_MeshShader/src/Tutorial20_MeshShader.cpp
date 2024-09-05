@@ -386,6 +386,7 @@ void Tutorial20_MeshShader::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Checkbox("Frustum culling", &m_FrustumCulling);
+        ImGui::Checkbox("Occlusion culling", &m_OcclusionCulling);
         ImGui::Checkbox("MS Debug Visualization", &m_MSDebugViz);
         if (ImGui::Button("Reset Camera"))
         {
@@ -443,6 +444,7 @@ void Tutorial20_MeshShader::Render()
         CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
         CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
         CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
+        CBConstants->OcclusionCulling = m_OcclusionCulling ? 1 : 0;
         CBConstants->MSDebugViz     = m_MSDebugViz ? 1.0f : 0.0f;
 
         // Calculate frustum planes from view-projection matrix.
