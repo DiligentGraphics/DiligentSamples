@@ -166,7 +166,7 @@ void Tutorial20_MeshShader::LoadTexture()
 }
 
  vx_mesh_t* p_voxelMesh = nullptr;
- float      voxelSize   = 0.025f;
+ float      voxelSize   = 0.015f;
 
 Tutorial20_MeshShader::~Tutorial20_MeshShader()
 {
@@ -212,7 +212,7 @@ void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
     p_triangleMesh->indices = triMeshIndexList;
 
     // Run voxelization
-    p_voxelMesh = vx_voxelize(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.01f);
+    p_voxelMesh = vx_voxelize(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
 
     vx_mesh_free(p_triangleMesh);
     //delete[] triMeshVertexList; and delete[] triMeshIndexList; not necessary since they are released via vx_mesh_free(p_triangleMesh);
