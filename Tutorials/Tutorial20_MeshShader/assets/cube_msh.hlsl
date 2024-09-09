@@ -84,49 +84,25 @@ static const float2 constCubeUVs[24] =
     float2(0.5f, 0.0f),
 };
 
-const static float4 primitiveColors[36] =
+const static float4 primitiveColors[12] =
 {
     float4(76.f / 255.f, 74.f / 255.f, 89.f / 255.f, 1.0f),
-        float4(27.f / 255.f, 127.f / 255.f, 122.f / 255.f, 1.0f),
-        float4(8.f / 255.f, 151.f / 255.f, 180.f / 255.f, 1.0f),
-        float4(76.f / 255.f, 171.f / 255.f, 166.f / 255.f, 1.0f),
-        float4(242.f / 255.f, 196.f / 255.f, 226.f / 255.f, 1.0f),
-        float4(182.f / 255.f, 242.f / 255.f, 242.f / 255.f, 1.0f),
-        float4(194.f / 255.f, 242.f / 255.f, 197.f / 255.f, 1.0f),
-        float4(242.f / 255.f, 177.f / 255.f, 153.f / 255.f, 1.0f),
-        float4(242.f / 255.f, 145.f / 255.f, 145.f / 255.f, 1.0f),
-        float4(144.f / 255.f, 222.f / 255.f, 179.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 218.f / 255.f, 185.f / 255.f, 1.0f),
-        float4(172.f / 255.f, 245.f / 255.f, 184.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 224.f / 255.f, 204.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 235.f / 255.f, 204.f / 255.f, 1.0f),
-        float4(204.f / 255.f, 255.f / 255.f, 229.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 255.f / 255.f, 204.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 204.f / 255.f, 229.f / 255.f, 1.0f),
-        float4(230.f / 255.f, 230.f / 255.f, 250.f / 255.f, 1.0f),
-        float4(175.f / 255.f, 238.f / 255.f, 238.f / 255.f, 1.0f),
-        float4(224.f / 255.f, 255.f / 255.f, 255.f / 255.f, 1.0f),
-        float4(240.f / 255.f, 248.f / 255.f, 255.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 240.f / 255.f, 245.f / 255.f, 1.0f),
-        float4(250.f / 255.f, 240.f / 255.f, 230.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 228.f / 255.f, 225.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 250.f / 255.f, 240.f / 255.f, 1.0f),
-        float4(250.f / 255.f, 250.f / 255.f, 210.f / 255.f, 1.0f),
-        float4(253.f / 255.f, 245.f / 255.f, 230.f / 255.f, 1.0f),
-        float4(230.f / 255.f, 255.f / 255.f, 255.f / 255.f, 1.0f),
-        float4(245.f / 255.f, 255.f / 255.f, 250.f / 255.f, 1.0f),
-        float4(240.f / 255.f, 255.f / 255.f, 240.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 245.f / 255.f, 238.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 239.f / 255.f, 213.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 248.f / 255.f, 220.f / 255.f, 1.0f),
-        float4(250.f / 255.f, 235.f / 255.f, 215.f / 255.f, 1.0f),
-        float4(245.f / 255.f, 245.f / 255.f, 220.f / 255.f, 1.0f),
-        float4(255.f / 255.f, 228.f / 255.f, 181.f / 255.f, 1.0f)
+    float4(27.f / 255.f, 127.f / 255.f, 122.f / 255.f, 1.0f),
+    float4(8.f / 255.f, 151.f / 255.f, 180.f / 255.f, 1.0f),
+    float4(76.f / 255.f, 171.f / 255.f, 166.f / 255.f, 1.0f),
+    float4(242.f / 255.f, 196.f / 255.f, 226.f / 255.f, 1.0f),
+    float4(182.f / 255.f, 242.f / 255.f, 242.f / 255.f, 1.0f),
+    float4(194.f / 255.f, 242.f / 255.f, 197.f / 255.f, 1.0f),
+    float4(242.f / 255.f, 177.f / 255.f, 153.f / 255.f, 1.0f),
+    float4(242.f / 255.f, 145.f / 255.f, 145.f / 255.f, 1.0f),
+    float4(144.f / 255.f, 222.f / 255.f, 179.f / 255.f, 1.0f),
+    float4(255.f / 255.f, 218.f / 255.f, 185.f / 255.f, 1.0f),
+    float4(172.f / 255.f, 245.f / 255.f, 184.f / 255.f, 1.0f),
 };
 
 float4 getRandomPrimitiveColor(float randMeshletVal)
 {    
-    uint colorIdx = floor(randMeshletVal * 36);
+    uint colorIdx = floor(randMeshletVal * 12);
     return primitiveColors[colorIdx];
 }
 
