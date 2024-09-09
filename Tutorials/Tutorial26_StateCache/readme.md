@@ -227,7 +227,7 @@ Path tracing technique in this tutorial extends the method from Tutorial 25 and 
 - Multiple importance sampling with balance heuristics
 
 Please refer to the
-[shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial26_StateCache/assets/path_trace.csh)
+[shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial26_StateCache/assets/path_trace.psh)
 for more details.
 
 

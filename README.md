@@ -297,7 +297,7 @@ This tutorial demonstrates how to use multiple command queues to perform renderi
 This tutorial demonstrates how to use variable rate shading to reduce the pixel shading load.
 
 
-## [Tutorial 25 - Render State Packager](https://github.com/DiligentGraphics/DiligentSamples/tree/tutorial25/Tutorials/Tutorial25_StatePackager)
+## [Tutorial 25 - Render State Packager](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial25_StatePackager)
 
 ![](Tutorials/Tutorial25_StatePackager/Screenshot.jpg)
 

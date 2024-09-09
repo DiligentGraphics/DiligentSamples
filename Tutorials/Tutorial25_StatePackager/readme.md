@@ -41,7 +41,7 @@ In this section we provide some details about the rendering process. Additional 
 found on the internet. [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io/)
 and [Rendering Introduction Course from TU Wien University](https://www.cg.tuwien.ac.at/courses/Rendering/VU/2021S)
 could be good starting points.
-[Path tracing shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial25_StatePackager/assets/path_trace.csh)
+[Path tracing shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial25_StatePackager/assets/path_trace.psh)
 also contains a lot of additional details.
 
 The rendering process consists of the following three stages:
