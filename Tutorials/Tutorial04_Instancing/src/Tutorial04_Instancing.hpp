@@ -60,7 +60,7 @@ private:
     float4x4             m_ViewProjMatrix;
     float4x4             m_RotationMatrix;
     int                  m_GridSize   = 5;
-    static constexpr int MaxGridSize  = 32;
+    static constexpr int MaxGridSize  = 256;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
 };
 

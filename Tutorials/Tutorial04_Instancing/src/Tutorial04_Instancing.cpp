@@ -117,11 +117,12 @@ void Tutorial04_Instancing::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, 32))
+        if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, MaxGridSize))
         {
             PopulateInstanceBuffer();
         }
     }
+    ImGui::Text("Voxel count: %d", static_cast<int>(m_GridSize * m_GridSize * m_GridSize));
     ImGui::End();
 }
 
@@ -147,9 +148,7 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
     const auto            zGridSize = static_cast<size_t>(m_GridSize);
     std::vector<float4x4> InstanceData(zGridSize * zGridSize * zGridSize);
 
-    float fGridSize = static_cast<float>(m_GridSize);
-
-    float voxelScale = 1.f;
+    float voxelScale = 0.5f;
     int   instId    = 0;
     for (int x = 0; x < m_GridSize; ++x)
     {
@@ -157,13 +156,9 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
         {
             for (int z = 0; z < m_GridSize; ++z)
             {
-                // Add random offset from central position in the grid
-                float xOffset = 2.f * (x + 0.5f) / fGridSize - 1.f;
-                float yOffset = 2.f * (y + 0.5f) / fGridSize - 1.f;
-                float zOffset = 2.f * (z + 0.5f) / fGridSize - 1.f;
-                
                 // Combine rotation, scale and translation
-                float4x4 matrix        = float4x4::Scale(voxelScale, voxelScale, voxelScale) * float4x4::Translation(xOffset, yOffset, zOffset);
+                float4x4 matrix = float4x4::Scale(voxelScale, voxelScale, voxelScale) * float4x4::Translation(static_cast<float>(x) * 
+                        (voxelScale * 2.0f), static_cast<float>(y) * (voxelScale * 2.0f), static_cast<float>(z) * (voxelScale * 2.0f));
                 InstanceData[instId++] = matrix;
             }
         }
@@ -223,7 +218,7 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
     UpdateUI();
 
     // Set cube view matrix
-    float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
+    float4x4 View = float4x4::RotationX(0.0f) * float4x4::Translation(-10.f, 0.f, 40.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
     auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});

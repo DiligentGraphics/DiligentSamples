@@ -5,12 +5,14 @@ project(Tutorial04_Instancing CXX)
 set(SOURCE
     src/Tutorial04_Instancing.cpp
     ../Common/src/TexturedCube.cpp
+    src/ufbx/ufbx.c
 )
 
 set(INCLUDE
     src/Tutorial04_Instancing.hpp
     ../Common/src/TexturedCube.hpp
     src/voxelizer.h
+    src/ufbx/ufbx.h
 )
 
 set(SHADERS
