@@ -166,7 +166,7 @@ void Tutorial20_MeshShader::LoadTexture()
 }
 
  vx_mesh_t* p_voxelMesh = nullptr;
- float      voxelSize   = 0.015f;
+ float      voxelSize   = 0.010f;
 
 Tutorial20_MeshShader::~Tutorial20_MeshShader()
 {

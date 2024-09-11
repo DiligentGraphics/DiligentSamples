@@ -149,14 +149,7 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
 
     float fGridSize = static_cast<float>(m_GridSize);
 
-    std::mt19937 gen; // Standard mersenne_twister_engine. Use default seed
-                      // to generate consistent distribution.
-
-    std::uniform_real_distribution<float> scale_distr(0.3f, 1.0f);
-    std::uniform_real_distribution<float> offset_distr(-0.15f, +0.15f);
-    std::uniform_real_distribution<float> rot_distr(-PI_F, +PI_F);
-
-    float BaseScale = 0.6f / fGridSize;
+    float voxelScale = 1.f;
     int   instId    = 0;
     for (int x = 0; x < m_GridSize; ++x)
     {
@@ -165,17 +158,12 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
             for (int z = 0; z < m_GridSize; ++z)
             {
                 // Add random offset from central position in the grid
-                float xOffset = 2.f * (x + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float yOffset = 2.f * (y + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float zOffset = 2.f * (z + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                // Random scale
-                float scale = BaseScale * scale_distr(gen);
-                // Random rotation
-                float4x4 rotation = float4x4::RotationX(rot_distr(gen));
-                rotation *= float4x4::RotationY(rot_distr(gen));
-                rotation *= float4x4::RotationZ(rot_distr(gen));
+                float xOffset = 2.f * (x + 0.5f) / fGridSize - 1.f;
+                float yOffset = 2.f * (y + 0.5f) / fGridSize - 1.f;
+                float zOffset = 2.f * (z + 0.5f) / fGridSize - 1.f;
+                
                 // Combine rotation, scale and translation
-                float4x4 matrix        = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
+                float4x4 matrix        = float4x4::Scale(voxelScale, voxelScale, voxelScale) * float4x4::Translation(xOffset, yOffset, zOffset);
                 InstanceData[instId++] = matrix;
             }
         }

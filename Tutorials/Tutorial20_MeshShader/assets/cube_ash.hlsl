@@ -47,7 +47,7 @@ bool IsOccluded(uint taskGID) //,float3 cameraPos)
     
     // If meshlet is occluded by at least one other meshlet (which is not this meshlet)
     // return true, 
-    
+    // GPU Resident Drawer -> Unity
     // @TODO: Find out, which optimization techniques to use for meshlet culling
     
     

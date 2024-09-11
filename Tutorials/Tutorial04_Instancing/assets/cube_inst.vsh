@@ -33,7 +33,7 @@ void main(in  VSInput VSIn,
     // use convenience function MatrixFromRows() appropriately defined by the engine
     float4x4 InstanceMatr = MatrixFromRows(VSIn.MtrxRow0, VSIn.MtrxRow1, VSIn.MtrxRow2, VSIn.MtrxRow3);
     // Apply rotation
-    float4 TransformedPos = mul(float4(VSIn.Pos,1.0), g_Rotation);
+    float4 TransformedPos = float4(VSIn.Pos, 1.0);
     // Apply instance-specific transformation
     TransformedPos = mul(TransformedPos, InstanceMatr);
     // Apply view-projection matrix

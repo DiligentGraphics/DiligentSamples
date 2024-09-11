@@ -10,6 +10,7 @@ set(SOURCE
 set(INCLUDE
     src/Tutorial04_Instancing.hpp
     ../Common/src/TexturedCube.hpp
+    src/voxelizer.h
 )
 
 set(SHADERS
