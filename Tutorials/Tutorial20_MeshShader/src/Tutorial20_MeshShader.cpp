@@ -165,13 +165,13 @@ void Tutorial20_MeshShader::LoadTexture()
     VERIFY_EXPR(m_CubeTextureSRV != nullptr);
 }
 
- vx_mesh_t* p_voxelMesh = nullptr;
- float      voxelSize   = 0.015f;
+ vx_point_cloud_t* p_voxelMesh = nullptr;
+ float      voxelSize   = 0.010f;
 
 Tutorial20_MeshShader::~Tutorial20_MeshShader()
 {
     // Delete voxelized meshes here!
-    vx_mesh_free(p_voxelMesh);
+    vx_point_cloud_free(p_voxelMesh);
 }
 
 void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
@@ -183,39 +183,32 @@ void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
     ufbx_scene*    scene = ufbx_load_file(meshPath.c_str(), &opts, NULL);
     
     assert(scene);
-    
+
     ufbx_node* node = scene->nodes.data[0];
 
     int nVertices = static_cast<int>(node->children[0]->mesh->num_vertices);
-    int nIndices = static_cast<int>(node->children[0]->mesh->num_indices);
+    int nIndices  = static_cast<int>(node->children[0]->mesh->num_indices);
 
     p_triangleMesh = vx_mesh_alloc(nVertices, nIndices);
-
-    // Copy vert and ind data
-    vx_vertex_t* triMeshVertexList = new vx_vertex_t[nVertices]; //507
-    unsigned int* triMeshIndexList = new unsigned int[nIndices]; // 1968
 
     // Copy value by value (try memcpy later).
     for (size_t i = 0; i < nVertices; ++i)
     {
-        triMeshVertexList[i].x = (float) node->children[0]->mesh->vertices[i].x;
-        triMeshVertexList[i].y = (float) node->children[0]->mesh->vertices[i].y;
-        triMeshVertexList[i].z = (float) node->children[0]->mesh->vertices[i].z;
+        p_triangleMesh->vertices[i].x = (float)node->children[0]->mesh->vertices[i].x;
+        p_triangleMesh->vertices[i].y = (float)node->children[0]->mesh->vertices[i].y;
+        p_triangleMesh->vertices[i].z = (float)node->children[0]->mesh->vertices[i].z;
     }
 
     for (size_t i = 0; i < nIndices; ++i)
     {
-        triMeshIndexList[i] = node->children[0]->mesh->vertex_indices[i];
+        p_triangleMesh->indices[i] = node->children[0]->mesh->vertex_indices[i];
     }
 
-    p_triangleMesh->vertices = triMeshVertexList;
-    p_triangleMesh->indices = triMeshIndexList;
-
     // Run voxelization
-    p_voxelMesh = vx_voxelize(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
+    p_voxelMesh = vx_voxelize_pc(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
 
+    // Free the triangle mesh and the scene
     vx_mesh_free(p_triangleMesh);
-    //delete[] triMeshVertexList; and delete[] triMeshIndexList; not necessary since they are released via vx_mesh_free(p_triangleMesh);
     ufbx_free_scene(scene);
     // Do not vx_mesh_free(pVoxelMesh) yet. Do this in the deinitialization routine instead!
 }
@@ -230,8 +223,7 @@ void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
 
     for (int i = 0; i < p_voxelMesh->nvertices; ++i)
     {
-        int   idx = i;
-        auto& dst = DrawTasks[idx];
+        auto& dst = DrawTasks[i];
 
         dst.BasePosAndScale.x   = p_voxelMesh->vertices[i].x;
         dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;

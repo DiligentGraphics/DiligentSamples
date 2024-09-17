@@ -1,5 +1,8 @@
 #include "structures.fxh"
 
+#ifndef USE_GPU_FRUSTUM_CULLING
+#define USE_GPU_FRUSTUM_CULLING
+#endif
 // Draw task arguments
 StructuredBuffer<DrawTask> DrawTasks;
 
@@ -13,6 +16,8 @@ RWByteAddressBuffer Statistics;
 
 // Payload will be used in the mesh shader.
 groupshared Payload s_Payload;
+
+#ifdef USE_GPU_FRUSTUM_CULLING
 
 // The sphere is visible when the distance from each plane is greater than or
 // equal to the radius of the sphere.
@@ -28,51 +33,7 @@ bool IsVisible(float3 cubeCenter, float radius)
     return true;
 }
 
-bool IsOccluded(uint taskGID) //,float3 cameraPos)
-{
-    // Voxels are inherently AABBs
-    
-    
-    // Iterate over all meshlets (all DrawTasks) and calculate occlusion relative to 
-    // this meshlet in relation to the camera position
-    for (uint i = 0; i < 1; ++i)
-    {
-        if (i == taskGID) // Both meshlets to be tested against are the same
-            continue;   
-            
-        DrawTask task = DrawTasks[i];
-        float3 otherMeshletPos = task.BasePosAndScale.xzy;
-        float3 thisMeshletPos = DrawTasks[taskGID].BasePosAndScale.xyz;
-    }
-    
-    // If meshlet is occluded by at least one other meshlet (which is not this meshlet)
-    // return true, 
-    // GPU Resident Drawer -> Unity
-    // @TODO: Find out, which optimization techniques to use for meshlet culling
-    
-    
-    // If none is occluded, return false
-        return false;
-}
-
-float CalcDetailLevel(float3 cubeCenter, float radius)
-{
-    // cubeCenter - the center of the sphere 
-    // radius     - the radius of circumscribed sphere
-    
-    // Get the position in the view space
-    float3 pos = mul(float4(cubeCenter, 1.0), g_Constants.ViewMat).xyz;
-    
-    // Square of distance from camera to circumscribed sphere
-    float dist2 = dot(pos, pos);
-    
-    // Calculate the sphere size in screen space
-    float size = g_Constants.CoTanHalfFov * radius / sqrt(dist2 - radius * radius);
-    
-    // Calculate detail level
-    float level = clamp(1.0 - size, 0.0, 1.0);
-    return level;
-}
+#endif
 
 // The number of cubes that are visible by the camera,
 // computed by every thread group
@@ -105,11 +66,11 @@ void main(in uint I  : SV_GroupIndex,
         How can I optimize culling computation scaling with the amount of meshlets?
     */
     
-    
+    #ifdef USE_GPU_FRUSTUM_CULLING
     // Frustum culling
-    if ((g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale)) &&
-        (g_Constants.OcclusionCulling == 0 || !IsOccluded(gid)))
+    if ((g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale)))
     {
+    #endif
         // Acquire an index that will be used to safely access the payload.
         // Each thread gets a unique index.
         uint index = 0;
@@ -120,8 +81,10 @@ void main(in uint I  : SV_GroupIndex,
         s_Payload.PosZ[index]  = pos.z;
         s_Payload.Scale[index] = scale;
         s_Payload.MSRand[index] = meshletColorRndValue;
-    }
     
+    #ifdef USE_GPU_FRUSTUM_CULLING
+    }
+    #endif
     // All threads must complete their work so that we can read s_TaskCount
     GroupMemoryBarrierWithGroupSync();
 

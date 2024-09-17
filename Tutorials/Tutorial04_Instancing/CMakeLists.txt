@@ -22,6 +22,7 @@ set(SHADERS
 
 set(ASSETS
     assets/DGLogo.png
+    assets/models/suzanne.fbx
 )
 
 add_sample_app("Tutorial04_Instancing" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

@@ -35,12 +35,25 @@
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
 
+#define VOXELIZER_IMPLEMENTATION
+#include "voxelizer.h"  // Voxelizer
+
+#include "ufbx/ufbx.h"  // FBX importer
+
 namespace Diligent
 {
+    float             voxelSize   = 0.010f;
+    vx_point_cloud_t* p_voxelMesh = nullptr;
 
 SampleBase* CreateSample()
 {
     return new Tutorial04_Instancing();
+}
+
+Tutorial04_Instancing::~Tutorial04_Instancing()
+{
+    // Delete voxelized meshes here!
+    vx_point_cloud_free(p_voxelMesh);
 }
 
 void Tutorial04_Instancing::CreatePipelineState()
@@ -107,7 +120,7 @@ void Tutorial04_Instancing::CreateInstanceBuffer()
     // Use default usage as this buffer will only be updated when grid size changes
     InstBuffDesc.Usage     = USAGE_DEFAULT;
     InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-    InstBuffDesc.Size      = sizeof(float4x4) * MaxInstances;
+    InstBuffDesc.Size      = sizeof(float4x4) * p_voxelMesh->nvertices;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
     PopulateInstanceBuffer();
 }
@@ -117,12 +130,16 @@ void Tutorial04_Instancing::UpdateUI()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, MaxGridSize))
+        if (ImGui::Button("Reset Camera"))
         {
-            PopulateInstanceBuffer();
+            fpc.SetPos({0, 5, 0});
         }
-    }
-    ImGui::Text("Voxel count: %d", static_cast<int>(m_GridSize * m_GridSize * m_GridSize));
+
+        ImGui::Checkbox("Occlusion Culling", &m_UseOcclusionCulling);
+        ImGui::Checkbox("Frustum Culling", &m_UseFrustumCulling);
+
+        ImGui::Text("Voxel count: %d", static_cast<int>(p_voxelMesh->nvertices));
+    }    
     ImGui::End();
 }
 
@@ -139,30 +156,61 @@ void Tutorial04_Instancing::Initialize(const SampleInitInfo& InitInfo)
     // Set cube texture SRV in the SRB
     m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_TextureSRV);
 
+    GetPointCloudFromMesh("models/suzanne.fbx");
     CreateInstanceBuffer();
+}
+
+void Tutorial04_Instancing::GetPointCloudFromMesh(std::string meshPath)
+{
+    vx_mesh_t* p_triangleMesh = nullptr;
+
+    //Load model from file
+    ufbx_load_opts opts  = {0}; // Optional, pass NULL for defaults
+    ufbx_scene*    scene = ufbx_load_file(meshPath.c_str(), &opts, NULL);
+
+    assert(scene);
+
+    ufbx_node* node = scene->nodes.data[0];
+
+    int nVertices = static_cast<int>(node->children[0]->mesh->num_vertices);
+    int nIndices  = static_cast<int>(node->children[0]->mesh->num_indices);
+
+    p_triangleMesh = vx_mesh_alloc(nVertices, nIndices);
+
+    // Copy value by value (try memcpy later).
+    for (size_t i = 0; i < nVertices; ++i)
+    {
+        p_triangleMesh->vertices[i].x = (float)node->children[0]->mesh->vertices[i].x;
+        p_triangleMesh->vertices[i].y = (float)node->children[0]->mesh->vertices[i].y;
+        p_triangleMesh->vertices[i].z = (float)node->children[0]->mesh->vertices[i].z;
+    }
+
+    for (size_t i = 0; i < nIndices; ++i)
+    {
+        p_triangleMesh->indices[i] = node->children[0]->mesh->vertex_indices[i];
+    }
+
+    // Run voxelization
+    p_voxelMesh = vx_voxelize_pc(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
+
+    // Free the triangle mesh and the scene
+    vx_mesh_free(p_triangleMesh);
+    ufbx_free_scene(scene);
+    // Do not vx_mesh_free(pVoxelMesh) yet. Do this in the deinitialization routine instead!
 }
 
 void Tutorial04_Instancing::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    const auto            zGridSize = static_cast<size_t>(m_GridSize);
-    std::vector<float4x4> InstanceData(zGridSize * zGridSize * zGridSize);
+    std::vector<float4x4> InstanceData(p_voxelMesh->nvertices);
 
-    float voxelScale = 0.5f;
-    int   instId    = 0;
-    for (int x = 0; x < m_GridSize; ++x)
+    for (int i = 0; i < p_voxelMesh->nvertices; ++i)
     {
-        for (int y = 0; y < m_GridSize; ++y)
-        {
-            for (int z = 0; z < m_GridSize; ++z)
-            {
-                // Combine rotation, scale and translation
-                float4x4 matrix = float4x4::Scale(voxelScale, voxelScale, voxelScale) * float4x4::Translation(static_cast<float>(x) * 
-                        (voxelScale * 2.0f), static_cast<float>(y) * (voxelScale * 2.0f), static_cast<float>(z) * (voxelScale * 2.0f));
-                InstanceData[instId++] = matrix;
-            }
-        }
+        float4x4 matrix = float4x4::Scale(voxelSize / 2.0f, voxelSize / 2.0f, voxelSize / 2.0f) * 
+            float4x4::Translation(p_voxelMesh->vertices[i].x, p_voxelMesh->vertices[i].y, p_voxelMesh->vertices[i].z);
+        InstanceData[i] = matrix;
     }
+
     // Update instance data buffer
     Uint32 DataSize = static_cast<Uint32>(sizeof(InstanceData[0]) * InstanceData.size());
     m_pImmediateContext->UpdateBuffer(m_InstanceBuffer, 0, DataSize, InstanceData.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -206,7 +254,7 @@ void Tutorial04_Instancing::Render()
     DrawIndexedAttribs DrawAttrs;       // This is an indexed draw call
     DrawAttrs.IndexType    = VT_UINT32; // Index type
     DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize; // The number of instances
+    DrawAttrs.NumInstances = static_cast<Uint32>(p_voxelMesh->nvertices); // The number of instances
     // Verify the state of vertex and index buffers
     DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->DrawIndexed(DrawAttrs);
@@ -215,10 +263,11 @@ void Tutorial04_Instancing::Render()
 void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
+    fpc.Update(GetInputController(), (float)ElapsedTime);
     UpdateUI();
 
     // Set cube view matrix
-    float4x4 View = float4x4::RotationX(0.0f) * float4x4::Translation(-10.f, 0.f, 40.0f);
+    float4x4 View = fpc.GetViewMatrix();
 
     // Get pretransform matrix that rotates the scene according the surface orientation
     auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});

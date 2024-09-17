@@ -29,6 +29,7 @@
 
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
+#include "FirstPersonCamera.hpp"
 
 namespace Diligent
 {
@@ -43,11 +44,14 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial04: Instancing"; }
 
+    ~Tutorial04_Instancing();
+
 private:
     void CreatePipelineState();
     void CreateInstanceBuffer();
     void UpdateUI();
     void PopulateInstanceBuffer();
+    void GetPointCloudFromMesh(std::string meshPath);
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
@@ -57,11 +61,16 @@ private:
     RefCntAutoPtr<ITextureView>           m_TextureSRV;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB;
 
+    FirstPersonCamera fpc{};
+
     float4x4             m_ViewProjMatrix;
     float4x4             m_RotationMatrix;
     int                  m_GridSize   = 5;
     static constexpr int MaxGridSize  = 256;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
+
+    bool m_UseOcclusionCulling = false;
+    bool m_UseFrustumCulling   = true;
 };
 
 } // namespace Diligent
