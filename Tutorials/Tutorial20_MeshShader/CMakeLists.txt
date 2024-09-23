@@ -5,12 +5,14 @@ project(Tutorial20_MeshShader CXX)
 set(SOURCE
     src/Tutorial20_MeshShader.cpp
     src/ufbx/ufbx.c
+    src/octree/octree.cpp
 )
 
 set(INCLUDE
     src/Tutorial20_MeshShader.hpp
     src/voxelizer.h
     src/ufbx/ufbx.h
+    src/octree/octree.h
 )
 
 set(SHADERS

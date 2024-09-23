@@ -21,6 +21,14 @@ struct Constants
     uint OcclusionCulling;
 };
 
+struct GPUOctreeNode
+{
+    float3 min;
+    float3 max;
+    int childrenStartIndex;
+    int numChildren;
+};
+
 // Payload size must be less than 16kb.
 struct Payload
 {

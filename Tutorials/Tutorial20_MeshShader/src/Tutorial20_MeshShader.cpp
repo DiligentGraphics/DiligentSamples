@@ -35,6 +35,7 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
+#include "octree/octree.h"
 
 #define VOXELIZER_IMPLEMENTATION
 #include "voxelizer.h"  // Voxelizer
@@ -43,479 +44,504 @@
 
 namespace Diligent
 {
-namespace
-{
 
-#include "../assets/structures.fxh"
-
-struct DrawStatistics
-{
-    Uint32 visibleCubes;
-};
-
-static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be 16-byte aligned");
-
-} // namespace
-
-SampleBase* CreateSample()
-{
-    return new Tutorial20_MeshShader();
-}
-
-void Tutorial20_MeshShader::CreateDrawTasks()
-{
-    // In this tutorial draw tasks contain:
-    //  * cube position in the grid
-    //  * cube scale factor
-    //  * time that is used for animation and will be updated in the shader.
-    // Additionally you can store model transformation matrix, mesh and material IDs, etc.
-
-    const int2          GridDim{256, 256};
-    FastRandReal<float> Rnd{0, 0.f, 1.f};
-
-    std::vector<DrawTask> DrawTasks;
-    DrawTasks.resize(static_cast<size_t>(GridDim.x) * static_cast<size_t>(GridDim.y));
-
-    for (int y = 0; y < GridDim.y; ++y)
+    namespace
     {
-        for (int x = 0; x < GridDim.x; ++x)
+    
+        #include "../assets/structures.fxh"
+        
+        struct DrawStatistics
         {
-            int   idx = x + y * GridDim.x;
-            auto& dst = DrawTasks[idx];
+            Uint32 visibleCubes;
+        };
+        
+        static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be 16-byte aligned");
+    
+    } // namespace
 
-            dst.BasePosAndScale.x  = (x - GridDim.x / 2) * 2.f;
-            dst.BasePosAndScale.y  = (y - GridDim.y / 2) * 2.f;
-            dst.BasePosAndScale.w  = 1.f; // 0.5 .. 1
-            dst.randomValue        = {Rnd(), 0, 0, 0};
+    SampleBase* CreateSample()
+    {
+        return new Tutorial20_MeshShader();
+    }
+    
+    void Tutorial20_MeshShader::CreateDrawTasks()
+    {
+        // In this tutorial draw tasks contain:
+        //  * cube position in the grid
+        //  * cube scale factor
+        //  * time that is used for animation and will be updated in the shader.
+        // Additionally you can store model transformation matrix, mesh and material IDs, etc.
+    
+        const int2          GridDim{256, 256};
+        FastRandReal<float> Rnd{0, 0.f, 1.f};
+    
+        std::vector<DrawTask> DrawTasks;
+        DrawTasks.resize(static_cast<size_t>(GridDim.x) * static_cast<size_t>(GridDim.y));
+    
+        for (int y = 0; y < GridDim.y; ++y)
+        {
+            for (int x = 0; x < GridDim.x; ++x)
+            {
+                int   idx = x + y * GridDim.x;
+                auto& dst = DrawTasks[idx];
+    
+                dst.BasePosAndScale.x  = (x - GridDim.x / 2) * 2.f;
+                dst.BasePosAndScale.y  = (y - GridDim.y / 2) * 2.f;
+                dst.BasePosAndScale.w  = 1.f; // 0.5 .. 1
+                dst.randomValue        = {Rnd(), 0, 0, 0};
+            }
+        }
+    
+        BufferDesc BuffDesc;
+        BuffDesc.Name              = "Draw tasks buffer";
+        BuffDesc.Usage             = USAGE_DEFAULT;
+        BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
+        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+        BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
+        BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+    
+        BufferData BufData;
+        BufData.pData    = DrawTasks.data();
+        BufData.DataSize = BuffDesc.Size;
+    
+        m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
+        VERIFY_EXPR(m_pDrawTasks != nullptr);
+    
+        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
+    }
+    
+    void Tutorial20_MeshShader::CreateStatisticsBuffer()
+    {
+        // This buffer is used as an atomic counter in the amplification shader to show
+        // how many cubes are rendered with and without frustum culling.
+    
+        BufferDesc BuffDesc;
+        BuffDesc.Name      = "Statistics buffer";
+        BuffDesc.Usage     = USAGE_DEFAULT;
+        BuffDesc.BindFlags = BIND_UNORDERED_ACCESS;
+        BuffDesc.Mode      = BUFFER_MODE_RAW;
+        BuffDesc.Size      = sizeof(DrawStatistics);
+    
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsBuffer);
+        VERIFY_EXPR(m_pStatisticsBuffer != nullptr);
+    
+        // Staging buffer is needed to read the data from statistics buffer.
+    
+        BuffDesc.Name           = "Statistics staging buffer";
+        BuffDesc.Usage          = USAGE_STAGING;
+        BuffDesc.BindFlags      = BIND_NONE;
+        BuffDesc.Mode           = BUFFER_MODE_UNDEFINED;
+        BuffDesc.CPUAccessFlags = CPU_ACCESS_READ;
+        BuffDesc.Size           = sizeof(DrawStatistics) * m_StatisticsHistorySize;
+    
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsStaging);
+        VERIFY_EXPR(m_pStatisticsStaging != nullptr);
+    
+        FenceDesc FDesc;
+        FDesc.Name = "Statistics available";
+        m_pDevice->CreateFence(FDesc, &m_pStatisticsAvailable);
+    }
+    
+    void Tutorial20_MeshShader::CreateConstantsBuffer()
+    {
+        BufferDesc BuffDesc;
+        BuffDesc.Name           = "Constant buffer";
+        BuffDesc.Usage          = USAGE_DYNAMIC;
+        BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
+        BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+        BuffDesc.Size           = sizeof(Constants);
+    
+        m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pConstants);
+        VERIFY_EXPR(m_pConstants != nullptr);
+    }
+    
+    void Tutorial20_MeshShader::LoadTexture()
+    {
+        TextureLoadInfo loadInfo;
+        loadInfo.IsSRGB = true;
+        RefCntAutoPtr<ITexture> pTex;
+        CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &pTex);
+        VERIFY_EXPR(pTex != nullptr);
+    
+        m_CubeTextureSRV = pTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        VERIFY_EXPR(m_CubeTextureSRV != nullptr);
+    }
+    
+     vx_point_cloud_t* p_voxelMesh = nullptr;
+     float      voxelSize   = 0.010f;
+    
+    Tutorial20_MeshShader::~Tutorial20_MeshShader()
+    {
+        // Delete voxelized meshes here!
+        vx_point_cloud_free(p_voxelMesh);
+    }
+    
+    void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
+    {
+        vx_mesh_t* p_triangleMesh = nullptr;
+    
+        //Load model from file
+        ufbx_load_opts opts = {0}; // Optional, pass NULL for defaults
+        ufbx_scene*    scene = ufbx_load_file(meshPath.c_str(), &opts, NULL);
+        
+        assert(scene);
+    
+        ufbx_node* node = scene->nodes.data[0];
+    
+        int nVertices = static_cast<int>(node->children[0]->mesh->num_vertices);
+        int nIndices  = static_cast<int>(node->children[0]->mesh->num_indices);
+    
+        p_triangleMesh = vx_mesh_alloc(nVertices, nIndices);
+    
+        // Copy value by value (try memcpy later).
+        for (size_t i = 0; i < nVertices; ++i)
+        {
+            p_triangleMesh->vertices[i].x = (float)node->children[0]->mesh->vertices[i].x;
+            p_triangleMesh->vertices[i].y = (float)node->children[0]->mesh->vertices[i].y;
+            p_triangleMesh->vertices[i].z = (float)node->children[0]->mesh->vertices[i].z;
+        }
+    
+        for (size_t i = 0; i < nIndices; ++i)
+        {
+            p_triangleMesh->indices[i] = node->children[0]->mesh->vertex_indices[i];
+        }
+    
+        // Run voxelization
+        p_voxelMesh = vx_voxelize_pc(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
+    
+        // Free the triangle mesh and the scene
+        vx_mesh_free(p_triangleMesh);
+        ufbx_free_scene(scene);
+        // Do not vx_mesh_free(pVoxelMesh) yet. Do this in the deinitialization routine instead!
+    }
+    
+    void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
+    {
+        FastRandReal<float> Rnd{0, 0.f, 1.f};
+    
+        // Draw Tasks
+        std::vector<DrawTask> DrawTasks;
+        unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (32 - (p_voxelMesh->nvertices % 32));
+        DrawTasks.resize(alignedDrawTaskSize);
+       
+        
+        for (int i = 0; i < p_voxelMesh->nvertices; ++i)
+        {
+            auto& dst = DrawTasks[i];
+    
+            dst.BasePosAndScale.x   = p_voxelMesh->vertices[i].x;
+            dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
+            dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
+            dst.BasePosAndScale.w   = voxelSize / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
+            dst.randomValue         = {Rnd(), 0, 0, 0};
+        }
+    
+        //// Octree
+        //ObjectBuffer.reserve(p_voxelMesh->nvertices);
+    
+        //AABB                  world = {DirectX::XMFLOAT3{-1.5f, -1.5f, -1.5f}, DirectX::XMFLOAT3{1.5f, 1.5f, 1.5f}};
+        //OctreeNode<DrawTask>* root  = new OctreeNode<DrawTask>(world);
+    
+        //DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
+    
+        //for (int i = 0; i < ObjectBuffer.size(); ++i)
+        //{
+        //    auto minBoundVec = DirectX::XMVectorSubtract({DrawTasks[i].BasePosAndScale.x, DrawTasks[i].BasePosAndScale.y, DrawTasks[i].BasePosAndScale.z}, voxelSizeOffset);
+        //    auto maxBoundVec = DirectX::XMVectorAdd({DrawTasks[i].BasePosAndScale.x, DrawTasks[i].BasePosAndScale.y, DrawTasks[i].BasePosAndScale.z}, voxelSizeOffset);
+    
+        //    DirectX::XMFLOAT3 minBound;
+        //    DirectX::XMFLOAT3 maxBound;
+    
+        //    DirectX::XMStoreFloat3(&minBound, minBoundVec);
+        //    DirectX::XMStoreFloat3(&maxBound, maxBoundVec);
+    
+        //    root->InsertObject(i, {minBound, maxBound});
+        //}
+    
+        BufferDesc BuffDesc;
+        BuffDesc.Name              = "Draw tasks buffer";
+        BuffDesc.Usage             = USAGE_DEFAULT;
+        BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
+        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+        BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
+        BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+    
+        BufferData BufData;
+        BufData.pData    = DrawTasks.data();
+        BufData.DataSize = BuffDesc.Size;
+    
+        m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
+        VERIFY_EXPR(m_pDrawTasks != nullptr);
+    
+        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
+    }
+    
+    void Tutorial20_MeshShader::CreatePipelineState()
+    {
+        // Pipeline state object encompasses configuration of all GPU stages
+    
+        GraphicsPipelineStateCreateInfo PSOCreateInfo;
+        PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
+    
+        PSODesc.Name = "Mesh shader";
+    
+        PSODesc.PipelineType                                                = PIPELINE_TYPE_MESH;
+        PSOCreateInfo.GraphicsPipeline.NumRenderTargets                     = 1;
+        PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                        = m_pSwapChain->GetDesc().ColorBufferFormat;
+        PSOCreateInfo.GraphicsPipeline.DSVFormat                            = m_pSwapChain->GetDesc().DepthBufferFormat;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
+    
+        // Topology is defined in the mesh shader, this value is not used.
+        PSOCreateInfo.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_UNDEFINED;
+    
+        // Define variable type that will be used by default.
+        PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    
+        ShaderCreateInfo ShaderCI;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    
+        // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
+        ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
+    
+        ShaderCI.Desc.UseCombinedTextureSamplers = true;
+    
+        // Create a shader source stream factory to load shaders from files.
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    
+        ShaderMacroHelper Macros;
+        Macros.AddShaderMacro("GROUP_SIZE", ASGroupSize);
+    
+        ShaderCI.Macros = Macros;
+    
+        RefCntAutoPtr<IShader> pAS;
+        {
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_AMPLIFICATION;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Mesh shader - AS";
+            ShaderCI.FilePath        = "cube_ash.hlsl";
+    
+            m_pDevice->CreateShader(ShaderCI, &pAS);
+            VERIFY_EXPR(pAS != nullptr);
+        }
+    
+        RefCntAutoPtr<IShader> pMS;
+        {
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_MESH;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Mesh shader - MS";
+            ShaderCI.FilePath        = "cube_msh.hlsl";
+    
+            m_pDevice->CreateShader(ShaderCI, &pMS);
+            VERIFY_EXPR(pMS != nullptr);
+        }
+    
+        RefCntAutoPtr<IShader> pPS;
+        {
+            ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
+            ShaderCI.EntryPoint      = "main";
+            ShaderCI.Desc.Name       = "Mesh shader - PS";
+            ShaderCI.FilePath        = "cube_psh.hlsl";
+    
+            m_pDevice->CreateShader(ShaderCI, &pPS);
+            VERIFY_EXPR(pPS != nullptr);
+        }
+    
+        // clang-format off
+        // Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
+        SamplerDesc SamLinearClampDesc
+        {
+            FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
+            TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
+        };
+        ImmutableSamplerDesc ImtblSamplers[] = 
+        {
+            {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
+        };
+        // clang-format on
+        PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
+        PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+    
+        PSOCreateInfo.pAS = pAS;
+        PSOCreateInfo.pMS = pMS;
+        PSOCreateInfo.pPS = pPS;
+    
+        m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
+        VERIFY_EXPR(m_pPSO != nullptr);
+    
+        m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
+        VERIFY_EXPR(m_pSRB != nullptr);
+    
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics")->Set(m_pStatisticsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
+        
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")) 
+            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+        
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
+        
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
+        
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
+        
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants")->Set(m_pConstants);
+    
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
+    }
+    
+    void Tutorial20_MeshShader::UpdateUI()
+    {
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Checkbox("Frustum culling", &m_FrustumCulling);
+            ImGui::Checkbox("Occlusion culling", &m_OcclusionCulling);
+            ImGui::Checkbox("MS Debug Visualization", &m_MSDebugViz);
+            if (ImGui::Button("Reset Camera"))
+            {
+                fpc.SetPos({0, 5, 0});
+            }
+            ImGui::Text("Visible cubes: %d", m_VisibleCubes);
+        }
+        ImGui::End();
+    }
+    
+    void Tutorial20_MeshShader::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
+    {
+        SampleBase::ModifyEngineInitInfo(Attribs);
+    
+        Attribs.EngineCI.Features.MeshShaders = DEVICE_FEATURE_STATE_ENABLED;
+    }
+    
+    void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
+    {
+        SampleBase::Initialize(InitInfo);
+    
+        fpc.SetMoveSpeed(10.f);
+    
+        LoadTexture();
+        GetPointCloudFromMesh("models/suzanne.fbx");
+        //CreateDrawTasks();
+        CreateDrawTasksFromLoadedMesh();
+        CreateStatisticsBuffer();
+        CreateConstantsBuffer();
+        CreatePipelineState();
+    }
+    
+    // Render a frame
+    void Tutorial20_MeshShader::Render()
+    {
+        auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+        // Clear the back buffer
+        const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
+        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    
+        // Reset statistics
+        DrawStatistics stats;
+        std::memset(&stats, 0, sizeof(stats));
+        m_pImmediateContext->UpdateBuffer(m_pStatisticsBuffer, 0, sizeof(stats), &stats, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    
+        m_pImmediateContext->SetPipelineState(m_pPSO);
+        m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    
+        {
+            // Map the buffer and write current view, view-projection matrix and other constants.
+            MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
+            CBConstants->ViewMat        = m_ViewMatrix.Transpose();
+            CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
+            CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
+            CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
+            CBConstants->OcclusionCulling = m_OcclusionCulling ? 1 : 0;
+            CBConstants->MSDebugViz     = m_MSDebugViz ? 1.0f : 0.0f;
+    
+            // Calculate frustum planes from view-projection matrix.
+            ViewFrustum Frustum;
+            ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
+    
+            // Each frustum plane must be normalized.
+            for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
+            {
+                Plane3D plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
+                float   invlen = 1.0f / length(plane.Normal);
+                plane.Normal *= invlen;
+                plane.Distance *= invlen;
+    
+                CBConstants->Frustum[i] = plane;
+            }
+        }
+    
+        // Amplification shader executes 32 threads per group and the task count must be aligned to 32
+        // to prevent loss of tasks or access outside of the data array.
+        VERIFY_EXPR(m_DrawTaskCount % ASGroupSize == 0);
+    
+        DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
+        m_pImmediateContext->DrawMesh(drawAttrs);
+    
+        // Copy statistics to staging buffer
+        {
+            m_VisibleCubes = 0;
+    
+            m_pImmediateContext->CopyBuffer(m_pStatisticsBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                            m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % m_StatisticsHistorySize) * sizeof(DrawStatistics), sizeof(DrawStatistics),
+                                            RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    
+            // We should use synchronizations to safely access the mapped memory.
+            m_pImmediateContext->EnqueueSignal(m_pStatisticsAvailable, m_FrameId);
+    
+            // Read statistics from previous frame.
+            Uint64 AvailableFrameId = m_pStatisticsAvailable->GetCompletedValue();
+    
+            // Synchronize
+            if (m_FrameId - AvailableFrameId > m_StatisticsHistorySize)
+            {
+                // In theory we should never get here as we wait for more than enough
+                // frames.
+                AvailableFrameId = m_FrameId - m_StatisticsHistorySize;
+                m_pStatisticsAvailable->Wait(AvailableFrameId);
+            }
+    
+            // Read the staging data
+            if (AvailableFrameId > 0)
+            {
+                MapHelper<DrawStatistics> StagingData(m_pImmediateContext, m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT);
+                if (StagingData)
+                    m_VisibleCubes = StagingData[AvailableFrameId % m_StatisticsHistorySize].visibleCubes;
+            }
+    
+            ++m_FrameId;
         }
     }
-
-    BufferDesc BuffDesc;
-    BuffDesc.Name              = "Draw tasks buffer";
-    BuffDesc.Usage             = USAGE_DEFAULT;
-    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
-    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
-    BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
-    BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
-
-    BufferData BufData;
-    BufData.pData    = DrawTasks.data();
-    BufData.DataSize = BuffDesc.Size;
-
-    m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
-    VERIFY_EXPR(m_pDrawTasks != nullptr);
-
-    m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
-}
-
-void Tutorial20_MeshShader::CreateStatisticsBuffer()
-{
-    // This buffer is used as an atomic counter in the amplification shader to show
-    // how many cubes are rendered with and without frustum culling.
-
-    BufferDesc BuffDesc;
-    BuffDesc.Name      = "Statistics buffer";
-    BuffDesc.Usage     = USAGE_DEFAULT;
-    BuffDesc.BindFlags = BIND_UNORDERED_ACCESS;
-    BuffDesc.Mode      = BUFFER_MODE_RAW;
-    BuffDesc.Size      = sizeof(DrawStatistics);
-
-    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsBuffer);
-    VERIFY_EXPR(m_pStatisticsBuffer != nullptr);
-
-    // Staging buffer is needed to read the data from statistics buffer.
-
-    BuffDesc.Name           = "Statistics staging buffer";
-    BuffDesc.Usage          = USAGE_STAGING;
-    BuffDesc.BindFlags      = BIND_NONE;
-    BuffDesc.Mode           = BUFFER_MODE_UNDEFINED;
-    BuffDesc.CPUAccessFlags = CPU_ACCESS_READ;
-    BuffDesc.Size           = sizeof(DrawStatistics) * m_StatisticsHistorySize;
-
-    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pStatisticsStaging);
-    VERIFY_EXPR(m_pStatisticsStaging != nullptr);
-
-    FenceDesc FDesc;
-    FDesc.Name = "Statistics available";
-    m_pDevice->CreateFence(FDesc, &m_pStatisticsAvailable);
-}
-
-void Tutorial20_MeshShader::CreateConstantsBuffer()
-{
-    BufferDesc BuffDesc;
-    BuffDesc.Name           = "Constant buffer";
-    BuffDesc.Usage          = USAGE_DYNAMIC;
-    BuffDesc.BindFlags      = BIND_UNIFORM_BUFFER;
-    BuffDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-    BuffDesc.Size           = sizeof(Constants);
-
-    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_pConstants);
-    VERIFY_EXPR(m_pConstants != nullptr);
-}
-
-void Tutorial20_MeshShader::LoadTexture()
-{
-    TextureLoadInfo loadInfo;
-    loadInfo.IsSRGB = true;
-    RefCntAutoPtr<ITexture> pTex;
-    CreateTextureFromFile("DGLogo.png", loadInfo, m_pDevice, &pTex);
-    VERIFY_EXPR(pTex != nullptr);
-
-    m_CubeTextureSRV = pTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    VERIFY_EXPR(m_CubeTextureSRV != nullptr);
-}
-
- vx_point_cloud_t* p_voxelMesh = nullptr;
- float      voxelSize   = 0.010f;
-
-Tutorial20_MeshShader::~Tutorial20_MeshShader()
-{
-    // Delete voxelized meshes here!
-    vx_point_cloud_free(p_voxelMesh);
-}
-
-void Tutorial20_MeshShader::GetPointCloudFromMesh(std::string meshPath)
-{
-    vx_mesh_t* p_triangleMesh = nullptr;
-
-    //Load model from file
-    ufbx_load_opts opts = {0}; // Optional, pass NULL for defaults
-    ufbx_scene*    scene = ufbx_load_file(meshPath.c_str(), &opts, NULL);
     
-    assert(scene);
-
-    ufbx_node* node = scene->nodes.data[0];
-
-    int nVertices = static_cast<int>(node->children[0]->mesh->num_vertices);
-    int nIndices  = static_cast<int>(node->children[0]->mesh->num_indices);
-
-    p_triangleMesh = vx_mesh_alloc(nVertices, nIndices);
-
-    // Copy value by value (try memcpy later).
-    for (size_t i = 0; i < nVertices; ++i)
+    void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
     {
-        p_triangleMesh->vertices[i].x = (float)node->children[0]->mesh->vertices[i].x;
-        p_triangleMesh->vertices[i].y = (float)node->children[0]->mesh->vertices[i].y;
-        p_triangleMesh->vertices[i].z = (float)node->children[0]->mesh->vertices[i].z;
-    }
-
-    for (size_t i = 0; i < nIndices; ++i)
-    {
-        p_triangleMesh->indices[i] = node->children[0]->mesh->vertex_indices[i];
-    }
-
-    // Run voxelization
-    p_voxelMesh = vx_voxelize_pc(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
-
-    // Free the triangle mesh and the scene
-    vx_mesh_free(p_triangleMesh);
-    ufbx_free_scene(scene);
-    // Do not vx_mesh_free(pVoxelMesh) yet. Do this in the deinitialization routine instead!
-}
-
-void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
-{
-    FastRandReal<float> Rnd{0, 0.f, 1.f};
-
-    std::vector<DrawTask> DrawTasks;
-    unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (32 - (p_voxelMesh->nvertices % 32));
-    DrawTasks.resize(alignedDrawTaskSize);
-
-    for (int i = 0; i < p_voxelMesh->nvertices; ++i)
-    {
-        auto& dst = DrawTasks[i];
-
-        dst.BasePosAndScale.x   = p_voxelMesh->vertices[i].x;
-        dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
-        dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
-        dst.BasePosAndScale.w   = voxelSize / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
-        dst.randomValue         = {Rnd(), 0, 0, 0};
-    }
-
-    BufferDesc BuffDesc;
-    BuffDesc.Name              = "Draw tasks buffer";
-    BuffDesc.Usage             = USAGE_DEFAULT;
-    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
-    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
-    BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
-    BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
-
-    BufferData BufData;
-    BufData.pData    = DrawTasks.data();
-    BufData.DataSize = BuffDesc.Size;
-
-    m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
-    VERIFY_EXPR(m_pDrawTasks != nullptr);
-
-    m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
-}
-
-void Tutorial20_MeshShader::CreatePipelineState()
-{
-    // Pipeline state object encompasses configuration of all GPU stages
-
-    GraphicsPipelineStateCreateInfo PSOCreateInfo;
-    PipelineStateDesc&              PSODesc = PSOCreateInfo.PSODesc;
-
-    PSODesc.Name = "Mesh shader";
-
-    PSODesc.PipelineType                                                = PIPELINE_TYPE_MESH;
-    PSOCreateInfo.GraphicsPipeline.NumRenderTargets                     = 1;
-    PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                        = m_pSwapChain->GetDesc().ColorBufferFormat;
-    PSOCreateInfo.GraphicsPipeline.DSVFormat                            = m_pSwapChain->GetDesc().DepthBufferFormat;
-    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
-    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
-    PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
-    PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
-
-    // Topology is defined in the mesh shader, this value is not used.
-    PSOCreateInfo.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_UNDEFINED;
-
-    // Define variable type that will be used by default.
-    PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
-
-    ShaderCreateInfo ShaderCI;
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-
-    // For Direct3D12 we must use the new DXIL compiler that supports mesh shaders.
-    ShaderCI.ShaderCompiler = SHADER_COMPILER_DXC;
-
-    ShaderCI.Desc.UseCombinedTextureSamplers = true;
-
-    // Create a shader source stream factory to load shaders from files.
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-
-    ShaderMacroHelper Macros;
-    Macros.AddShaderMacro("GROUP_SIZE", ASGroupSize);
-
-    ShaderCI.Macros = Macros;
-
-    RefCntAutoPtr<IShader> pAS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_AMPLIFICATION;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Mesh shader - AS";
-        ShaderCI.FilePath        = "cube_ash.hlsl";
-
-        m_pDevice->CreateShader(ShaderCI, &pAS);
-        VERIFY_EXPR(pAS != nullptr);
-    }
-
-    RefCntAutoPtr<IShader> pMS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_MESH;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Mesh shader - MS";
-        ShaderCI.FilePath        = "cube_msh.hlsl";
-
-        m_pDevice->CreateShader(ShaderCI, &pMS);
-        VERIFY_EXPR(pMS != nullptr);
-    }
-
-    RefCntAutoPtr<IShader> pPS;
-    {
-        ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
-        ShaderCI.EntryPoint      = "main";
-        ShaderCI.Desc.Name       = "Mesh shader - PS";
-        ShaderCI.FilePath        = "cube_psh.hlsl";
-
-        m_pDevice->CreateShader(ShaderCI, &pPS);
-        VERIFY_EXPR(pPS != nullptr);
-    }
-
-    // clang-format off
-    // Define immutable sampler for g_Texture. Immutable samplers should be used whenever possible
-    SamplerDesc SamLinearClampDesc
-    {
-        FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, FILTER_TYPE_LINEAR, 
-        TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP, TEXTURE_ADDRESS_CLAMP
-    };
-    ImmutableSamplerDesc ImtblSamplers[] = 
-    {
-        {SHADER_TYPE_PIXEL, "g_Texture", SamLinearClampDesc}
-    };
-    // clang-format on
-    PSODesc.ResourceLayout.ImmutableSamplers    = ImtblSamplers;
-    PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
-
-    PSOCreateInfo.pAS = pAS;
-    PSOCreateInfo.pMS = pMS;
-    PSOCreateInfo.pPS = pPS;
-
-    m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pPSO);
-    VERIFY_EXPR(m_pPSO != nullptr);
-
-    m_pPSO->CreateShaderResourceBinding(&m_pSRB, true);
-    VERIFY_EXPR(m_pSRB != nullptr);
-
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics"))
-        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "Statistics")->Set(m_pStatisticsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
+        SampleBase::Update(CurrTime, ElapsedTime);
+        UpdateUI();
     
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")) 
-        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+        fpc.Update(GetInputController(), (float)ElapsedTime);
     
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData"))
-        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
+        // Set camera position
+        float4x4 View = fpc.GetViewMatrix();
     
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants"))
-        m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
+        // Get pretransform matrix that rotates the scene according the surface orientation
+        auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
     
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData"))
-        m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
+        // Get projection matrix adjusted to the current screen orientation
+        auto Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
     
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants"))
-        m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants")->Set(m_pConstants);
-
-    if (m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture"))
-        m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
-}
-
-void Tutorial20_MeshShader::UpdateUI()
-{
-    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::Checkbox("Frustum culling", &m_FrustumCulling);
-        ImGui::Checkbox("Occlusion culling", &m_OcclusionCulling);
-        ImGui::Checkbox("MS Debug Visualization", &m_MSDebugViz);
-        if (ImGui::Button("Reset Camera"))
-        {
-            fpc.SetPos({0, 5, 0});
-        }
-        ImGui::Text("Visible cubes: %d", m_VisibleCubes);
+        // Compute view and view-projection matrices
+        m_ViewMatrix     = View * SrfPreTransform;
+        m_ViewProjMatrix = m_ViewMatrix * Proj;
     }
-    ImGui::End();
-}
-
-void Tutorial20_MeshShader::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
-{
-    SampleBase::ModifyEngineInitInfo(Attribs);
-
-    Attribs.EngineCI.Features.MeshShaders = DEVICE_FEATURE_STATE_ENABLED;
-}
-
-void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
-{
-    SampleBase::Initialize(InitInfo);
-
-    fpc.SetMoveSpeed(10.f);
-
-    LoadTexture();
-    GetPointCloudFromMesh("models/suzanne.fbx");
-    //CreateDrawTasks();
-    CreateDrawTasksFromLoadedMesh();
-    CreateStatisticsBuffer();
-    CreateConstantsBuffer();
-    CreatePipelineState();
-}
-
-// Render a frame
-void Tutorial20_MeshShader::Render()
-{
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
-    // Clear the back buffer
-    const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Reset statistics
-    DrawStatistics stats;
-    std::memset(&stats, 0, sizeof(stats));
-    m_pImmediateContext->UpdateBuffer(m_pStatisticsBuffer, 0, sizeof(stats), &stats, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    m_pImmediateContext->SetPipelineState(m_pPSO);
-    m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    {
-        // Map the buffer and write current view, view-projection matrix and other constants.
-        MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
-        CBConstants->ViewMat        = m_ViewMatrix.Transpose();
-        CBConstants->ViewProjMat    = m_ViewProjMatrix.Transpose();
-        CBConstants->CoTanHalfFov   = m_LodScale * m_CoTanHalfFov;
-        CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
-        CBConstants->OcclusionCulling = m_OcclusionCulling ? 1 : 0;
-        CBConstants->MSDebugViz     = m_MSDebugViz ? 1.0f : 0.0f;
-
-        // Calculate frustum planes from view-projection matrix.
-        ViewFrustum Frustum;
-        ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
-
-        // Each frustum plane must be normalized.
-        for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
-        {
-            Plane3D plane  = Frustum.GetPlane(static_cast<ViewFrustum::PLANE_IDX>(i));
-            float   invlen = 1.0f / length(plane.Normal);
-            plane.Normal *= invlen;
-            plane.Distance *= invlen;
-
-            CBConstants->Frustum[i] = plane;
-        }
-    }
-
-    // Amplification shader executes 32 threads per group and the task count must be aligned to 32
-    // to prevent loss of tasks or access outside of the data array.
-    VERIFY_EXPR(m_DrawTaskCount % ASGroupSize == 0);
-
-    DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
-    m_pImmediateContext->DrawMesh(drawAttrs);
-
-    // Copy statistics to staging buffer
-    {
-        m_VisibleCubes = 0;
-
-        m_pImmediateContext->CopyBuffer(m_pStatisticsBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        m_pStatisticsStaging, static_cast<Uint32>(m_FrameId % m_StatisticsHistorySize) * sizeof(DrawStatistics), sizeof(DrawStatistics),
-                                        RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // We should use synchronizations to safely access the mapped memory.
-        m_pImmediateContext->EnqueueSignal(m_pStatisticsAvailable, m_FrameId);
-
-        // Read statistics from previous frame.
-        Uint64 AvailableFrameId = m_pStatisticsAvailable->GetCompletedValue();
-
-        // Synchronize
-        if (m_FrameId - AvailableFrameId > m_StatisticsHistorySize)
-        {
-            // In theory we should never get here as we wait for more than enough
-            // frames.
-            AvailableFrameId = m_FrameId - m_StatisticsHistorySize;
-            m_pStatisticsAvailable->Wait(AvailableFrameId);
-        }
-
-        // Read the staging data
-        if (AvailableFrameId > 0)
-        {
-            MapHelper<DrawStatistics> StagingData(m_pImmediateContext, m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT);
-            if (StagingData)
-                m_VisibleCubes = StagingData[AvailableFrameId % m_StatisticsHistorySize].visibleCubes;
-        }
-
-        ++m_FrameId;
-    }
-}
-
-void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
-{
-    SampleBase::Update(CurrTime, ElapsedTime);
-    UpdateUI();
-
-    fpc.Update(GetInputController(), (float)ElapsedTime);
-
-    // Set camera position
-    float4x4 View = fpc.GetViewMatrix();
-
-    // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
-
-    // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
-
-    // Compute view and view-projection matrices
-    m_ViewMatrix     = View * SrfPreTransform;
-    m_ViewProjMatrix = m_ViewMatrix * Proj;
-}
 
 } // namespace Diligent
