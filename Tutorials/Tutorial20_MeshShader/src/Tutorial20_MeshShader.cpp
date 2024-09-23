@@ -88,7 +88,7 @@ namespace Diligent
                 dst.BasePosAndScale.x  = (x - GridDim.x / 2) * 2.f;
                 dst.BasePosAndScale.y  = (y - GridDim.y / 2) * 2.f;
                 dst.BasePosAndScale.w  = 1.f; // 0.5 .. 1
-                dst.randomValue        = {Rnd(), 0, 0, 0};
+                dst.RandomValue        = {Rnd(), 0, 0, 0};
             }
         }
     
@@ -233,7 +233,7 @@ namespace Diligent
             dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
             dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
             dst.BasePosAndScale.w   = voxelSize / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
-            dst.randomValue         = {Rnd(), 0, 0, 0};
+            dst.RandomValue         = {Rnd(), 0, 0, 0};
         }
     
         //// Octree

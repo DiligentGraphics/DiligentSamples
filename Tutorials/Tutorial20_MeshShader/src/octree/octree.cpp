@@ -1,12 +1,11 @@
 #include "octree.h"
-//#include "../assets/structures.fxh"
-#include <BasicMath.hpp>
+#include "DrawTask.h"
 
-//std::vector<DrawTask> ObjectBuffer = {};
+std::vector<DrawTask> ObjectBuffer = {};
 
 AABB GetObjectBounds(int index)
 {
-   /* DrawTask task = ObjectBuffer.at(index);
+    DrawTask task = ObjectBuffer.at(index);
 
     DirectX::XMVECTOR voxelSizeOffset = {task.BasePosAndScale.w * 2, task.BasePosAndScale.w * 2, task.BasePosAndScale.w * 2};
 
@@ -17,7 +16,7 @@ AABB GetObjectBounds(int index)
     DirectX::XMFLOAT3 maxBound;
 
     DirectX::XMStoreFloat3(&minBound, minBoundVec);
-    DirectX::XMStoreFloat3(&maxBound, maxBoundVec);*/
+    DirectX::XMStoreFloat3(&maxBound, maxBoundVec);
 
     return {DirectX::XMFLOAT3{}, DirectX::XMFLOAT3{}};
 }

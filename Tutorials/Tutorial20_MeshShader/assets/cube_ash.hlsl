@@ -89,7 +89,7 @@ void main(in uint I  : SV_GroupIndex,
     DrawTask   task  = DrawTasks[gid];
     float3     pos   = task.BasePosAndScale.xyz;
     float      scale = task.BasePosAndScale.w;
-    float      meshletColorRndValue = task.randomValue.x;
+    float      meshletColorRndValue = task.RandomValue.x;
 
     
     /* 

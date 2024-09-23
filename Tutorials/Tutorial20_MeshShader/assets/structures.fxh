@@ -1,4 +1,3 @@
-
 #ifndef GROUP_SIZE
 #define GROUP_SIZE 32
 #endif
@@ -6,7 +5,7 @@
 struct DrawTask
 {
     float4 BasePosAndScale;
-    float4 randomValue;
+    float4 RandomValue;
 };
 
 struct Constants

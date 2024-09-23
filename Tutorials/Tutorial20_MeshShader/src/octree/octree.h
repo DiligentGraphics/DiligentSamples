@@ -3,6 +3,7 @@
 #include <DirectXMath.h>
 #include <array>
 #include <vector>
+#include "DrawTask.h"
 
 struct AABB
 {
@@ -31,4 +32,5 @@ public:
 
 constexpr int MaxObjectsPerLeaf() { return 100; }
 bool Intersects(const AABB& first, const AABB& second);
-//extern std::vector<DrawTask> ObjectBuffer;
+
+extern std::vector<DrawTask> ObjectBuffer;

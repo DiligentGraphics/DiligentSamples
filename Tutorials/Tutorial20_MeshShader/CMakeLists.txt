@@ -13,6 +13,7 @@ set(INCLUDE
     src/voxelizer.h
     src/ufbx/ufbx.h
     src/octree/octree.h
+    src/DrawTask.h
 )
 
 set(SHADERS
