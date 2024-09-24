@@ -5,6 +5,7 @@
 #endif
 // Draw task arguments
 StructuredBuffer<DrawTask> DrawTasks;
+StructuredBuffer<int> GridIndices;
 
 //StructuredBuffer<GPUOctreeNode> SpatialLookup;
 

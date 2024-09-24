@@ -35,7 +35,8 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
-#include "octree/octree.h"
+#include <set>
+#include <unordered_set>
 
 #define VOXELIZER_IMPLEMENTATION
 #include "voxelizer.h"  // Voxelizer
@@ -172,6 +173,7 @@ namespace Diligent
     
     Tutorial20_MeshShader::~Tutorial20_MeshShader()
     {
+        delete p_occlusionOctreeRoot;
         // Delete voxelized meshes here!
         vx_point_cloud_free(p_voxelMesh);
     }
@@ -227,8 +229,8 @@ namespace Diligent
         
         for (int i = 0; i < p_voxelMesh->nvertices; ++i)
         {
-            auto& dst = DrawTasks[i];
-    
+            DrawTask& dst = DrawTasks[i];
+
             dst.BasePosAndScale.x   = p_voxelMesh->vertices[i].x;
             dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
             dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
@@ -236,27 +238,65 @@ namespace Diligent
             dst.RandomValue         = {Rnd(), 0, 0, 0};
         }
     
-        //// Octree
-        //ObjectBuffer.reserve(p_voxelMesh->nvertices);
+        // Octree
+        AABB                  world = {DirectX::XMFLOAT3{-1.5f, -1.5f, -1.5f}, DirectX::XMFLOAT3{1.5f, 1.5f, 1.5f}};
+        p_occlusionOctreeRoot  = new OctreeNode<VoxelOC::DrawTask>(world);
+        ObjectBuffer.reserve(p_voxelMesh->nvertices);
+        DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
     
-        //AABB                  world = {DirectX::XMFLOAT3{-1.5f, -1.5f, -1.5f}, DirectX::XMFLOAT3{1.5f, 1.5f, 1.5f}};
-        //OctreeNode<DrawTask>* root  = new OctreeNode<DrawTask>(world);
-    
-        //DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
-    
-        //for (int i = 0; i < ObjectBuffer.size(); ++i)
-        //{
-        //    auto minBoundVec = DirectX::XMVectorSubtract({DrawTasks[i].BasePosAndScale.x, DrawTasks[i].BasePosAndScale.y, DrawTasks[i].BasePosAndScale.z}, voxelSizeOffset);
-        //    auto maxBoundVec = DirectX::XMVectorAdd({DrawTasks[i].BasePosAndScale.x, DrawTasks[i].BasePosAndScale.y, DrawTasks[i].BasePosAndScale.z}, voxelSizeOffset);
-    
-        //    DirectX::XMFLOAT3 minBound;
-        //    DirectX::XMFLOAT3 maxBound;
-    
-        //    DirectX::XMStoreFloat3(&minBound, minBoundVec);
-        //    DirectX::XMStoreFloat3(&maxBound, maxBoundVec);
-    
-        //    root->InsertObject(i, {minBound, maxBound});
-        //}
+        {
+        
+            for (int i = 0; i < p_voxelMesh->nvertices; ++i)
+            {
+                VoxelOC::DrawTask drawTask;
+                ObjectBuffer.push_back(drawTask);
+
+                // Copy values to global object buffer so they can be accessed during octree creation
+                DirectX::XMStoreFloat4(&ObjectBuffer[i].BasePosAndScale,
+                                       {DrawTasks[i].BasePosAndScale.x,
+                                        DrawTasks[i].BasePosAndScale.y,
+                                        DrawTasks[i].BasePosAndScale.z,
+                                        DrawTasks[i].BasePosAndScale.w});
+
+                DirectX::XMStoreFloat4(&ObjectBuffer[i].RandomValue,
+                                       {DrawTasks[i].RandomValue.x,
+                                        0,
+                                        0,
+                                        0});
+            }
+
+
+            for (int i = 0; i < p_voxelMesh->nvertices; ++i)
+            {
+                // Calculate bounds
+                DirectX::XMVECTOR minBoundVec = DirectX::XMVectorSubtract(
+                    {DrawTasks[i].BasePosAndScale.x,
+                     DrawTasks[i].BasePosAndScale.y,
+                     DrawTasks[i].BasePosAndScale.z},
+                    voxelSizeOffset);
+                DirectX::XMVECTOR maxBoundVec = DirectX::XMVectorAdd(
+                    {DrawTasks[i].BasePosAndScale.x,
+                     DrawTasks[i].BasePosAndScale.y,
+                     DrawTasks[i].BasePosAndScale.z},
+                    voxelSizeOffset);
+
+                DirectX::XMFLOAT3 minBound;
+                DirectX::XMFLOAT3 maxBound;
+
+                DirectX::XMStoreFloat3(&minBound, minBoundVec);
+                DirectX::XMStoreFloat3(&maxBound, maxBoundVec);
+
+                p_occlusionOctreeRoot->InsertObject(i, {minBound, maxBound});
+            }
+        }
+
+        
+
+        // Now create a buffer where objects in one node are stored contigously (start index + length)
+        // Create octree node meta data for the GPU and set buffers occordingly.
+
+        // Maybe use grid with bitmask instead of explicit positions?
+        // -> Voxel culling using camera position and grid dimensions to calculate indices and compare bit mask
     
         BufferDesc BuffDesc;
         BuffDesc.Name              = "Draw tasks buffer";
@@ -272,7 +312,33 @@ namespace Diligent
     
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
         VERIFY_EXPR(m_pDrawTasks != nullptr);
+        
+        /*std::vector<int> pointCloudArray{};
     
+        {
+            std::set<int> pointCloudIndices{};
+            p_occlusionOctreeRoot->GetAllGridIndices(pointCloudIndices);
+            pointCloudArray.reserve(pointCloudIndices.size());
+
+            for (auto& index : pointCloudIndices)
+            {
+                pointCloudArray.push_back(index);
+            }
+        }*/
+
+        /*BuffDesc.Name              = "Grid index buffer";
+        BuffDesc.Usage             = USAGE_DEFAULT;
+        BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
+        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+        BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
+        BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+
+        BufData.pData    = DrawTasks.data();
+        BufData.DataSize = BuffDesc.Size;
+
+        m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pGridIndices);
+        VERIFY_EXPR(m_pGridIndices != nullptr);*/
+
         m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
     }
     
@@ -382,6 +448,9 @@ namespace Diligent
         if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")) 
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "DrawTasks")->Set(m_pDrawTasks->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
         
+        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "GridIndices"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "GridIndices")->Set(m_pGridIndices->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+
         if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData"))
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
         
@@ -426,7 +495,7 @@ namespace Diligent
     {
         SampleBase::Initialize(InitInfo);
     
-        fpc.SetMoveSpeed(10.f);
+        fpc.SetMoveSpeed(5.f);
     
         LoadTexture();
         GetPointCloudFromMesh("models/suzanne.fbx");
@@ -537,7 +606,7 @@ namespace Diligent
         auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
     
         // Get projection matrix adjusted to the current screen orientation
-        auto Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
+        auto Proj = GetAdjustedProjectionMatrix(m_FOV, 0.01f, 1000.f);
     
         // Compute view and view-projection matrices
         m_ViewMatrix     = View * SrfPreTransform;
