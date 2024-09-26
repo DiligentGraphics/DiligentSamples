@@ -128,47 +128,57 @@ public:
 
     void InsertObject(int objectIndex, const AABB objectBounds)
     {
-        ++insertObjectDebugInfo->processedIndices;
-        // Check if object needs to be inside this node
-        if (!Intersects(bounds, objectBounds))
-            return;
+        OctreeNode*              currentNode = this;
+        std::vector<OctreeNode*> path;
 
-        if (isLeaf && objectIndices.size() < MaxObjectsPerLeaf())
+        while (true)
         {
-            objectIndices.push_back(objectIndex);
-            ++insertObjectDebugInfo->acceptedIndices;
-            
-            insertObjectDebugInfo->maxIndex = 
-                insertObjectDebugInfo->maxIndex < objectIndex ? objectIndex : insertObjectDebugInfo->maxIndex;
+            path.push_back(currentNode);
 
-            insertObjectDebugInfo->minIndex =
-                insertObjectDebugInfo->minIndex > objectIndex ? objectIndex : insertObjectDebugInfo->minIndex;
-        }
-        else
-        {
-            if (isLeaf)
+            if (currentNode->isLeaf)
             {
-                ++insertObjectDebugInfo->skippedIndices;
-
-                SplitNode();
-
-                // Insert existing objects in child nodes
-                for (int index : objectIndices)
+                if (currentNode->objectIndices.size() < MaxObjectsPerLeaf())
                 {
-                    // You'd need to get the bounds for this object from somewhere
-                    AABB existingObjectBounds = GetObjectBounds(index);
-
-                    for (auto& child : children)
-                        child->InsertObject(index, existingObjectBounds);
+                    currentNode->objectIndices.push_back(objectIndex);
+                    return;
                 }
-                contentOccupationMask = 0;
-                objectIndices.clear(); // Clear indices of the splitted node
+                else
+                {
+                    // Need to split this node
+                    currentNode->SplitNode();
+                    // Re-distribute existing objects
+                    for (int index : currentNode->objectIndices)
+                    {
+                        for (auto& child : currentNode->children)
+                        {
+                            if (Intersects(child->bounds, GetObjectBounds(index)))
+                            {
+                                child->objectIndices.push_back(index);
+                            }
+                        }
+                    }
+                    currentNode->objectIndices.clear();
+                    // Continue to insert the new object
+                }
             }
 
-            // Insert new object in child nodes
-            for (auto& child : children)
+            // Find the appropriate child
+            bool foundChild = false;
+            for (auto& child : currentNode->children)
             {
-                child->InsertObject(objectIndex, objectBounds);
+                if (Intersects(child->bounds, objectBounds))
+                {
+                    currentNode = child;
+                    foundChild  = true;
+                    break;
+                }
+            }
+
+            if (!foundChild)
+            {
+                // Object doesn't fit in any child, insert it here
+                currentNode->objectIndices.push_back(objectIndex);
+                return;
             }
         }
     }

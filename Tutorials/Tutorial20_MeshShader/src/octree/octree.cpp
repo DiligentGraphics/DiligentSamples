@@ -6,7 +6,7 @@ AABB GetObjectBounds(int index)
 {
     VoxelOC::DrawTask task = ObjectBuffer.at(index);
 
-    DirectX::XMVECTOR voxelSizeOffset = {task.BasePosAndScale.w * 2, task.BasePosAndScale.w * 2, task.BasePosAndScale.w * 2};
+    DirectX::XMVECTOR voxelSizeOffset = {task.BasePosAndScale.w, task.BasePosAndScale.w, task.BasePosAndScale.w};
 
     auto minBoundVec = DirectX::XMVectorSubtract({task.BasePosAndScale.x, task.BasePosAndScale.y, task.BasePosAndScale.z}, voxelSizeOffset);
     auto maxBoundVec = DirectX::XMVectorAdd({task.BasePosAndScale.x, task.BasePosAndScale.y, task.BasePosAndScale.z}, voxelSizeOffset);

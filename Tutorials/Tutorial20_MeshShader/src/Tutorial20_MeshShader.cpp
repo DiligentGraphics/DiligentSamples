@@ -169,7 +169,7 @@ namespace Diligent
     }
     
      vx_point_cloud_t* p_voxelMesh = nullptr;
-     float      voxelSize   = 0.50f;
+     float      voxelSize   = 1.f;
     
     Tutorial20_MeshShader::~Tutorial20_MeshShader()
     {
@@ -187,7 +187,7 @@ namespace Diligent
         ufbx_scene*    scene = ufbx_load_file(meshPath.c_str(), &opts, NULL);
         
         assert(scene);
-    
+
         ufbx_node* node = scene->nodes.data[0];
     
         int nVertices = static_cast<int>(node->children[0]->mesh->num_vertices);
@@ -275,7 +275,7 @@ namespace Diligent
         }
     
         //Octree
-        AABB world                        = {DirectX::XMFLOAT3{-1.f, -1.f, -1.f}, DirectX::XMFLOAT3{1.f, 1.f, 1.f}};
+        AABB world                        = {DirectX::XMFLOAT3{-3.f, -3.f, -3.f}, DirectX::XMFLOAT3{3.f, 3.f, 3.f}};
         DebugInfo getGridIndicesDebugInfo;
         DebugInfo insertIndicesDebugInfo;
         p_occlusionOctreeRoot             = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo, &insertIndicesDebugInfo);
@@ -530,7 +530,7 @@ namespace Diligent
     {
         SampleBase::Initialize(InitInfo);
     
-        fpc.SetMoveSpeed(5.f);
+        fpc.SetMoveSpeed(25.f);
     
         LoadTexture();
         GetPointCloudFromMesh("models/suzanne.fbx");
