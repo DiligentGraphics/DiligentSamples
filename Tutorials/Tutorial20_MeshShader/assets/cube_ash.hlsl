@@ -87,37 +87,28 @@ void main(in uint I  : SV_GroupIndex,
 
     // Read the task arguments
     const uint gid   = wg * GROUP_SIZE + I;
-    DrawTask   task  = DrawTasks[gid];
+    DrawTask task = DrawTasks[GridIndices[gid]];
     float3     pos   = task.BasePosAndScale.xyz;
     float      scale = task.BasePosAndScale.w;
     float      meshletColorRndValue = task.RandomValue.x;
-
+    int taskCount = (int) task.RandomValue.y;
+    int padding = (int) task.RandomValue.z;
     
-    /* 
-        Frustum Culling before occlusion culling ? 
-        Both in the same call ? 
-        How can I optimize culling computation scaling with the amount of meshlets?
-    */
     
-    #ifdef USE_GPU_FRUSTUM_CULLING
     // Frustum culling
-    if ((g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale)))
+    if ((taskCount - padding > gid) && (g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale)))
     {
-    #endif
         // Acquire an index that will be used to safely access the payload.
         // Each thread gets a unique index.
-        uint index = 0;
-        InterlockedAdd(s_TaskCount, 1, index);
+            uint index = 0;
+            InterlockedAdd(s_TaskCount, 1, index);
         
-        s_Payload.PosX[index] = pos.x;
-        s_Payload.PosY[index] = pos.y;
-        s_Payload.PosZ[index] = pos.z;
-        s_Payload.Scale[index] = scale;
-        s_Payload.MSRand[index] = meshletColorRndValue;
-        
-    #ifdef USE_GPU_FRUSTUM_CULLING
+            s_Payload.PosX[index] = pos.x;
+            s_Payload.PosY[index] = pos.y;
+            s_Payload.PosZ[index] = pos.z;
+            s_Payload.Scale[index] = scale;
+            s_Payload.MSRand[index] = meshletColorRndValue;    
     }
-    #endif
 
     // All threads must complete their work so that we can read s_TaskCount
     GroupMemoryBarrierWithGroupSync();

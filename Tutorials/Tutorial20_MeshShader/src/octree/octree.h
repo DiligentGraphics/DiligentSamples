@@ -18,6 +18,17 @@ constexpr int MaxObjectsPerLeaf() { return 64; }
 bool Intersects(const AABB& first, const AABB& second);
 extern AABB   GetObjectBounds(int index);
 
+struct DebugInfo
+{
+    size_t processedIndices = 0;
+    size_t acceptedIndices  = 0;
+    size_t skippedIndices   = 0;
+    size_t minIndex         = INT_MAX;
+    size_t maxIndex         = 0;
+    size_t minIndexSkipped  = INT_MAX;
+    size_t maxIndexSkipped  = 0;
+};
+
 template<typename T>
 class OctreeNode
 {
@@ -29,9 +40,11 @@ public:
     unsigned long long         contentOccupationMask = 0;
     unsigned int               childOccupationMask   = 0;
 
+    DebugInfo* getGridIndicesDebugInfo = nullptr;
+    DebugInfo* insertObjectDebugInfo = nullptr;
 
-    OctreeNode(const AABB& bounds) :
-        bounds(bounds), isLeaf(true)
+    OctreeNode(const AABB& bounds, DebugInfo* getGridIdicesDebugInfo, DebugInfo* insertObjectDebugInfo) :
+        bounds(bounds), isLeaf(true), getGridIndicesDebugInfo(getGridIdicesDebugInfo), insertObjectDebugInfo(insertObjectDebugInfo)
     {
         children.fill(nullptr);
         objectIndices.reserve(MaxObjectsPerLeaf());
@@ -49,21 +62,40 @@ public:
         }
     }
 
-    void GetAllGridIndices(std::set<int>& gridIndexBuffer)
+    void GetAllGridIndices(std::vector<int>& gridIndexBuffer, std::vector<char>& duplicateBuffer)
     {
         // Check for children (Buttom Up)
         if (childOccupationMask > 0)
         {
             for (int i = 0; i < children.size(); ++i)
             {
-                if (childOccupationMask & (0b00000001 << i))
-                    children[i]->GetAllGridIndices(gridIndexBuffer);
+                //if (childOccupationMask & (0b00000001 << i))
+                if (children[i] != nullptr)
+                    children[i]->GetAllGridIndices(gridIndexBuffer, duplicateBuffer);
             }
         }
 
         // Add own indices if present
-        for (auto& index : objectIndices)
-            gridIndexBuffer.insert(index);
+        for (int index = 0; index < objectIndices.size(); ++index)
+        {
+            ++getGridIndicesDebugInfo->processedIndices;
+
+            if (duplicateBuffer[objectIndices[index]] == 0)
+            {
+                gridIndexBuffer.push_back(objectIndices[index]) ;
+                duplicateBuffer[objectIndices[index]] = 1;
+                ++getGridIndicesDebugInfo->acceptedIndices;
+
+                getGridIndicesDebugInfo->maxIndex = getGridIndicesDebugInfo->maxIndex < objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->maxIndex;
+                getGridIndicesDebugInfo->minIndex = getGridIndicesDebugInfo->minIndex > objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->minIndex;
+            }
+            else 
+            {
+                ++getGridIndicesDebugInfo->skippedIndices;
+                getGridIndicesDebugInfo->maxIndexSkipped = getGridIndicesDebugInfo->maxIndexSkipped < objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->maxIndexSkipped;
+                getGridIndicesDebugInfo->minIndexSkipped = getGridIndicesDebugInfo->minIndexSkipped > objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->minIndexSkipped;         
+            }
+        }
     }
 
     void SplitNode()
@@ -87,7 +119,7 @@ public:
             newMax.y = (i & 2) ? bounds.max.y : center.y;
             newMax.z = (i & 4) ? bounds.max.z : center.z;
 
-            children[i] = new OctreeNode({newMin, newMax});
+            children[i] = new OctreeNode({newMin, newMax}, getGridIndicesDebugInfo, insertObjectDebugInfo);
             childOccupationMask |= 0b00000001 << i;
         }
 
@@ -96,6 +128,7 @@ public:
 
     void InsertObject(int objectIndex, const AABB objectBounds)
     {
+        ++insertObjectDebugInfo->processedIndices;
         // Check if object needs to be inside this node
         if (!Intersects(bounds, objectBounds))
             return;
@@ -103,11 +136,20 @@ public:
         if (isLeaf && objectIndices.size() < MaxObjectsPerLeaf())
         {
             objectIndices.push_back(objectIndex);
+            ++insertObjectDebugInfo->acceptedIndices;
+            
+            insertObjectDebugInfo->maxIndex = 
+                insertObjectDebugInfo->maxIndex < objectIndex ? objectIndex : insertObjectDebugInfo->maxIndex;
+
+            insertObjectDebugInfo->minIndex =
+                insertObjectDebugInfo->minIndex > objectIndex ? objectIndex : insertObjectDebugInfo->minIndex;
         }
         else
         {
             if (isLeaf)
             {
+                ++insertObjectDebugInfo->skippedIndices;
+
                 SplitNode();
 
                 // Insert existing objects in child nodes

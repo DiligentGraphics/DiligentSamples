@@ -169,7 +169,7 @@ namespace Diligent
     }
     
      vx_point_cloud_t* p_voxelMesh = nullptr;
-     float      voxelSize   = 0.010f;
+     float      voxelSize   = 0.50f;
     
     Tutorial20_MeshShader::~Tutorial20_MeshShader()
     {
@@ -217,6 +217,39 @@ namespace Diligent
         // Do not vx_mesh_free(pVoxelMesh) yet. Do this in the deinitialization routine instead!
     }
     
+    struct Vec4
+    {
+        float x, y, z, w;
+
+        Vec4(Diligent::float4& other)
+        {
+            x = other.x;
+            y = other.y;
+            z = other.z;
+            w = other.w;
+        }
+
+        bool operator<(const Vec4& other) const
+        {
+            if (x != other.x)
+                return x < other.x;
+
+            if (y != other.y)
+                return y < other.y;
+
+            if (z != other.z)
+                return z < other.z;
+
+
+            return false;
+        }
+
+        bool operator==(const Vec4& other) const
+        {
+            return x == other.x && y == other.y && z == other.z && w == other.w;
+        }
+    };
+
     void Tutorial20_MeshShader::CreateDrawTasksFromLoadedMesh()
     {
         FastRandReal<float> Rnd{0, 0.f, 1.f};
@@ -226,6 +259,7 @@ namespace Diligent
         unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (32 - (p_voxelMesh->nvertices % 32));
         DrawTasks.resize(alignedDrawTaskSize);
        
+        std::set<Diligent::Vec4> debugSet{};
         
         for (int i = 0; i < p_voxelMesh->nvertices; ++i)
         {
@@ -235,37 +269,38 @@ namespace Diligent
             dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
             dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
             dst.BasePosAndScale.w   = voxelSize / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
-            dst.RandomValue         = {Rnd(), 0, 0, 0};
+            dst.RandomValue         = {Rnd(), (float)alignedDrawTaskSize, (float)(alignedDrawTaskSize - p_voxelMesh->nvertices), 0};
+
+            debugSet.insert(dst.BasePosAndScale);
         }
     
-        // Octree
-        AABB                  world = {DirectX::XMFLOAT3{-1.5f, -1.5f, -1.5f}, DirectX::XMFLOAT3{1.5f, 1.5f, 1.5f}};
-        p_occlusionOctreeRoot  = new OctreeNode<VoxelOC::DrawTask>(world);
-        ObjectBuffer.reserve(p_voxelMesh->nvertices);
+        //Octree
+        AABB world                        = {DirectX::XMFLOAT3{-1.f, -1.f, -1.f}, DirectX::XMFLOAT3{1.f, 1.f, 1.f}};
+        DebugInfo getGridIndicesDebugInfo;
+        DebugInfo insertIndicesDebugInfo;
+        p_occlusionOctreeRoot             = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo, &insertIndicesDebugInfo);
         DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
     
-        {
-        
+        {                    
+
             for (int i = 0; i < p_voxelMesh->nvertices; ++i)
             {
-                VoxelOC::DrawTask drawTask;
-                ObjectBuffer.push_back(drawTask);
+                VoxelOC::DrawTask task;
+                
+                task.BasePosAndScale.x = DrawTasks[i].BasePosAndScale.x;
+                task.BasePosAndScale.y = DrawTasks[i].BasePosAndScale.y;
+                task.BasePosAndScale.z = DrawTasks[i].BasePosAndScale.z;
+                task.BasePosAndScale.w = DrawTasks[i].BasePosAndScale.w;
 
-                // Copy values to global object buffer so they can be accessed during octree creation
-                DirectX::XMStoreFloat4(&ObjectBuffer[i].BasePosAndScale,
-                                       {DrawTasks[i].BasePosAndScale.x,
-                                        DrawTasks[i].BasePosAndScale.y,
-                                        DrawTasks[i].BasePosAndScale.z,
-                                        DrawTasks[i].BasePosAndScale.w});
+                task.RandomValue.x = DrawTasks[i].RandomValue.x;
+                task.RandomValue.y = DrawTasks[i].RandomValue.y;
+                task.RandomValue.z = DrawTasks[i].RandomValue.z;
+                task.RandomValue.w = DrawTasks[i].RandomValue.w;
 
-                DirectX::XMStoreFloat4(&ObjectBuffer[i].RandomValue,
-                                       {DrawTasks[i].RandomValue.x,
-                                        0,
-                                        0,
-                                        0});
+                ObjectBuffer.push_back(task);
             }
 
-
+            // Calculate bounds and add them to octree
             for (int i = 0; i < p_voxelMesh->nvertices; ++i)
             {
                 // Calculate bounds
@@ -290,8 +325,6 @@ namespace Diligent
             }
         }
 
-        
-
         // Now create a buffer where objects in one node are stored contigously (start index + length)
         // Create octree node meta data for the GPU and set buffers occordingly.
 
@@ -313,31 +346,33 @@ namespace Diligent
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pDrawTasks);
         VERIFY_EXPR(m_pDrawTasks != nullptr);
         
-        /*std::vector<int> pointCloudArray{};
-    
-        {
-            std::set<int> pointCloudIndices{};
-            p_occlusionOctreeRoot->GetAllGridIndices(pointCloudIndices);
-            pointCloudArray.reserve(pointCloudIndices.size());
+        std::vector<int> sortedNodeBuffer{};
+        std::vector<char> duplicateBuffer{};
 
-            for (auto& index : pointCloudIndices)
-            {
-                pointCloudArray.push_back(index);
-            }
-        }*/
+        sortedNodeBuffer.reserve(alignedDrawTaskSize);
+        duplicateBuffer.resize(alignedDrawTaskSize);
 
-        /*BuffDesc.Name              = "Grid index buffer";
+        memset(&duplicateBuffer[0], 0, duplicateBuffer.size() * sizeof(char));
+
+        p_occlusionOctreeRoot->GetAllGridIndices(sortedNodeBuffer, duplicateBuffer);
+        
+        //size_t previousLength = sortedNodeBuffer.size();
+        //sortedNodeBuffer.resize(alignedDrawTaskSize);
+
+        //memset(&sortedNodeBuffer[previousLength - 1], 0, (sortedNodeBuffer.size() - previousLength) * sizeof(int));
+
+        BuffDesc.Name              = "Grid index buffer";
         BuffDesc.Usage             = USAGE_DEFAULT;
         BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
         BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
-        BuffDesc.ElementByteStride = sizeof(DrawTasks[0]);
-        BuffDesc.Size              = sizeof(DrawTasks[0]) * static_cast<Uint32>(DrawTasks.size());
+        BuffDesc.ElementByteStride = sizeof(sortedNodeBuffer[0]);
+        BuffDesc.Size              = sizeof(sortedNodeBuffer[0]) * static_cast<Uint32>(sortedNodeBuffer.size());
 
-        BufData.pData    = DrawTasks.data();
+        BufData.pData    = sortedNodeBuffer.data();
         BufData.DataSize = BuffDesc.Size;
 
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pGridIndices);
-        VERIFY_EXPR(m_pGridIndices != nullptr);*/
+        VERIFY_EXPR(m_pGridIndices != nullptr);
 
         m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
     }
