@@ -209,7 +209,7 @@ namespace Diligent
         }
     
         // Run voxelization
-        p_voxelMesh = vx_voxelize_pc(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.001f);
+        p_voxelMesh = vx_voxelize_pc(p_triangleMesh, voxelSize, voxelSize, voxelSize, 0.1f);
     
         // Free the triangle mesh and the scene
         vx_mesh_free(p_triangleMesh);
@@ -261,6 +261,7 @@ namespace Diligent
        
         std::set<Diligent::Vec4> debugSet{};
         
+        // Populate DrawTasks
         for (int i = 0; i < p_voxelMesh->nvertices; ++i)
         {
             DrawTask& dst = DrawTasks[i];
@@ -277,16 +278,16 @@ namespace Diligent
         //Octree
         AABB world                        = {DirectX::XMFLOAT3{-3.f, -3.f, -3.f}, DirectX::XMFLOAT3{3.f, 3.f, 3.f}};
         DebugInfo getGridIndicesDebugInfo;
-        DebugInfo insertIndicesDebugInfo;
-        p_occlusionOctreeRoot             = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo, &insertIndicesDebugInfo);
-        DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
+        p_occlusionOctreeRoot             = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo);
     
-        {                    
+        const DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
 
+        {
+            // Copy draw tasks to global object buffer for AABB calculations
             for (int i = 0; i < p_voxelMesh->nvertices; ++i)
             {
                 VoxelOC::DrawTask task;
-                
+
                 task.BasePosAndScale.x = DrawTasks[i].BasePosAndScale.x;
                 task.BasePosAndScale.y = DrawTasks[i].BasePosAndScale.y;
                 task.BasePosAndScale.z = DrawTasks[i].BasePosAndScale.z;
@@ -325,12 +326,13 @@ namespace Diligent
             }
         }
 
+
         // Now create a buffer where objects in one node are stored contigously (start index + length)
         // Create octree node meta data for the GPU and set buffers occordingly.
 
         // Maybe use grid with bitmask instead of explicit positions?
         // -> Voxel culling using camera position and grid dimensions to calculate indices and compare bit mask
-    
+        
         BufferDesc BuffDesc;
         BuffDesc.Name              = "Draw tasks buffer";
         BuffDesc.Usage             = USAGE_DEFAULT;
@@ -355,12 +357,15 @@ namespace Diligent
         memset(&duplicateBuffer[0], 0, duplicateBuffer.size() * sizeof(char));
 
         p_occlusionOctreeRoot->GetAllGridIndices(sortedNodeBuffer, duplicateBuffer);
-        
-        //size_t previousLength = sortedNodeBuffer.size();
-        //sortedNodeBuffer.resize(alignedDrawTaskSize);
 
-        //memset(&sortedNodeBuffer[previousLength - 1], 0, (sortedNodeBuffer.size() - previousLength) * sizeof(int));
+        CreateSortedIndexBuffer(sortedNodeBuffer);
 
+        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size()); 
+    }
+
+    void Tutorial20_MeshShader::CreateSortedIndexBuffer(std::vector<int>& sortedNodeBuffer)
+    {
+        BufferDesc BuffDesc;
         BuffDesc.Name              = "Grid index buffer";
         BuffDesc.Usage             = USAGE_DEFAULT;
         BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
@@ -368,13 +373,12 @@ namespace Diligent
         BuffDesc.ElementByteStride = sizeof(sortedNodeBuffer[0]);
         BuffDesc.Size              = sizeof(sortedNodeBuffer[0]) * static_cast<Uint32>(sortedNodeBuffer.size());
 
+        BufferData BufData;
         BufData.pData    = sortedNodeBuffer.data();
         BufData.DataSize = BuffDesc.Size;
 
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pGridIndices);
         VERIFY_EXPR(m_pGridIndices != nullptr);
-
-        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
     }
     
     void Tutorial20_MeshShader::CreatePipelineState()

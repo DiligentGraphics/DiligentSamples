@@ -41,10 +41,9 @@ public:
     unsigned int               childOccupationMask   = 0;
 
     DebugInfo* getGridIndicesDebugInfo = nullptr;
-    DebugInfo* insertObjectDebugInfo = nullptr;
 
-    OctreeNode(const AABB& bounds, DebugInfo* getGridIdicesDebugInfo, DebugInfo* insertObjectDebugInfo) :
-        bounds(bounds), isLeaf(true), getGridIndicesDebugInfo(getGridIdicesDebugInfo), insertObjectDebugInfo(insertObjectDebugInfo)
+    OctreeNode(const AABB& bounds, DebugInfo* getGridIdicesDebugInfo) :
+        bounds(bounds), isLeaf(true), getGridIndicesDebugInfo(getGridIdicesDebugInfo)
     {
         children.fill(nullptr);
         objectIndices.reserve(MaxObjectsPerLeaf());
@@ -119,7 +118,7 @@ public:
             newMax.y = (i & 2) ? bounds.max.y : center.y;
             newMax.z = (i & 4) ? bounds.max.z : center.z;
 
-            children[i] = new OctreeNode({newMin, newMax}, getGridIndicesDebugInfo, insertObjectDebugInfo);
+            children[i] = new OctreeNode({newMin, newMax}, getGridIndicesDebugInfo);
             childOccupationMask |= 0b00000001 << i;
         }
 

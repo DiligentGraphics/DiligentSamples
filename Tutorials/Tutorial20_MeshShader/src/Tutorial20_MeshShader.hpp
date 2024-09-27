@@ -34,7 +34,6 @@
 
 namespace Diligent
 {
-
     class Tutorial20_MeshShader final : public SampleBase
     {
     public:
@@ -51,6 +50,7 @@ namespace Diligent
     private:
         void GetPointCloudFromMesh(std::string meshPath);
         void CreateDrawTasksFromLoadedMesh();
+        void CreateSortedIndexBuffer(std::vector<int>& sortedNodeBuffer);
         void CreatePipelineState();
         void CreateDrawTasks();
         void CreateStatisticsBuffer();
