@@ -109,7 +109,8 @@ public:
 
         for (int i = 0; i < 8; ++i)
         {
-            DirectX::XMFLOAT3 newMin, newMax;
+            DirectX::XMFLOAT3 newMin{};
+            DirectX::XMFLOAT3 newMax{};
 
             newMin.x = (i & 1) ? center.x : bounds.min.x;
             newMin.y = (i & 2) ? center.y : bounds.min.y;

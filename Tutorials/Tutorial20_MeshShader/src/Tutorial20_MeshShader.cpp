@@ -86,8 +86,8 @@ namespace Diligent
                 int   idx = x + y * GridDim.x;
                 auto& dst = DrawTasks[idx];
     
-                dst.BasePosAndScale.x  = (x - GridDim.x / 2) * 2.f;
-                dst.BasePosAndScale.y  = (y - GridDim.y / 2) * 2.f;
+                dst.BasePosAndScale.x  = static_cast<float>((x - GridDim.x / 2) * 2);
+                dst.BasePosAndScale.y  = static_cast<float>((y - GridDim.y / 2) * 2);
                 dst.BasePosAndScale.w  = 1.f; // 0.5 .. 1
                 dst.RandomValue        = {Rnd(), 0, 0, 0};
             }
@@ -286,7 +286,7 @@ namespace Diligent
             // Copy draw tasks to global object buffer for AABB calculations
             for (int i = 0; i < p_voxelMesh->nvertices; ++i)
             {
-                VoxelOC::DrawTask task;
+                VoxelOC::DrawTask task{};
 
                 task.BasePosAndScale.x = DrawTasks[i].BasePosAndScale.x;
                 task.BasePosAndScale.y = DrawTasks[i].BasePosAndScale.y;
