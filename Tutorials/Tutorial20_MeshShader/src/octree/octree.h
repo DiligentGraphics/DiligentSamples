@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 #include <set>
-#include "DrawTask.h"
+#include "../DrawTask.h"
 
 struct AABB
 {
@@ -61,18 +61,24 @@ public:
         }
     }
 
-    void GetAllGridIndices(std::vector<int>& gridIndexBuffer, std::vector<char>& duplicateBuffer)
+    void GetAllGridIndices(std::vector<int>& gridIndexBuffer, std::vector<char>& duplicateBuffer, std::vector<VoxelOC::GPUOctreeNode>& octreeNodeBuffer)
     {
         // Check for children (Buttom Up)
-        if (childOccupationMask > 0)
+        for (int i = 0; i < children.size(); ++i)
         {
-            for (int i = 0; i < children.size(); ++i)
-            {
-                //if (childOccupationMask & (0b00000001 << i))
-                if (children[i] != nullptr)
-                    children[i]->GetAllGridIndices(gridIndexBuffer, duplicateBuffer);
-            }
+            //if (childOccupationMask & (0b00000001 << i))
+            if (children[i] != nullptr)
+                children[i]->GetAllGridIndices(gridIndexBuffer, duplicateBuffer, octreeNodeBuffer);
         }
+
+        // Create octree node data for gpu
+        VoxelOC::GPUOctreeNode ocNode;
+        ocNode.childrenStartIndex = static_cast<int>(gridIndexBuffer.size());
+        ocNode.numChildren        = static_cast<int>(objectIndices.size());
+        ocNode.minAndIsFull       = DirectX::XMFLOAT4{bounds.min.x, bounds.min.y, bounds.min.z, objectIndices.size() >= MaxObjectsPerLeaf() ? 1.0f : 0.0f};
+        ocNode.max                = DirectX::XMFLOAT4{bounds.max.x, bounds.max.y, bounds.max.z, 0};
+
+        octreeNodeBuffer.push_back(std::move(ocNode));
 
         // Add own indices if present
         for (int index = 0; index < objectIndices.size(); ++index)

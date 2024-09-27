@@ -5,9 +5,12 @@
 #endif
 // Draw task arguments
 StructuredBuffer<DrawTask> DrawTasks;
+
+// Inidces into the drawtask buffer which group adjacent voxels together
 StructuredBuffer<int> GridIndices;
 
-//StructuredBuffer<GPUOctreeNode> SpatialLookup;
+// Description of the spatial layout of the nodes, containing adjacent voxels
+StructuredBuffer<GPUOctreeNode> OctreeNodes;
 
 cbuffer cbConstants
 {
@@ -19,8 +22,6 @@ RWByteAddressBuffer Statistics;
 
 // Payload will be used in the mesh shader.
 groupshared Payload s_Payload;
-
-#ifdef USE_GPU_FRUSTUM_CULLING
 
 // The sphere is visible when the distance from each plane is greater than or
 // equal to the radius of the sphere.
@@ -36,37 +37,6 @@ bool IsVisible(float3 cubeCenter, float radius)
     return true;
 }
 
-#endif
-
-//bool IsOccludedByNeighbouringVoxel(float3 position, float3 cameraDirection)
-//{
-//    // Check if the voxel in relative camera direction is occluding this voxel
-//    float voxelSize = 0.010f;
-//    float3 targetPosition;
-    
-//    targetPosition.x = position.x + (cameraDirection.x > 0.5f ? voxelSize : 0f);
-//    targetPosition.x += (cameraDirection.x < -0.5f ? -voxelSize : 0f);
-    
-//    targetPosition.y = position.y + (cameraDirection.y > 0.5f ? voxelSize : 0f);
-//    targetPosition.y += (cameraDirection.y < -0.5f ? -voxelSize : 0f);
-    
-//    targetPosition.z = position.z + (cameraDirection.z > 0.5f ? voxelSize : 0f);
-//    targetPosition.z += (cameraDirection.z < -0.5f ? -voxelSize : 0f);
-    
-    
-//    // Index targetPosition(s) into Spatial Container and check if there are any voxels resident
-//    // If so, return true, if not, false
-//    return false;
-//}
-
-//bool IsOccluded(float3 cubeCenter, float radius)
-//{
-//    float3 center = cubeCenter;
-//    float3 cameraPosition = g_Constants.ViewMat._11_11_11; // @TODO: Find appropriate members here
-//    float3 vecToCam = normalize(cameraPosition - center);
-    
-//    return IsOccludedByNeighbouringVoxel(center, vecToCam);
-//}
 
 // The number of cubes that are visible by the camera,
 // computed by every thread group

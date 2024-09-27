@@ -51,6 +51,7 @@ namespace Diligent
         void GetPointCloudFromMesh(std::string meshPath);
         void CreateDrawTasksFromLoadedMesh();
         void CreateSortedIndexBuffer(std::vector<int>& sortedNodeBuffer);
+        void CreateGPUOctreeNodeBuffer(std::vector<VoxelOC::GPUOctreeNode>& octreeNodeBuffer);
         void CreatePipelineState();
         void CreateDrawTasks();
         void CreateStatisticsBuffer();
@@ -72,6 +73,7 @@ namespace Diligent
         Uint32                 m_DrawTaskCount = 0;
         RefCntAutoPtr<IBuffer> m_pDrawTasks;
         RefCntAutoPtr<IBuffer> m_pGridIndices;
+        RefCntAutoPtr<IBuffer> m_pOctreeNodes;
         RefCntAutoPtr<IBuffer> m_pConstants;
     
         RefCntAutoPtr<IPipelineState>         m_pPSO;

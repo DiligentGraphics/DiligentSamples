@@ -17,4 +17,12 @@ namespace VoxelOC
                 && BasePosAndScale.z == other.BasePosAndScale.z;
         }
     };
+
+    struct GPUOctreeNode
+    {
+        DirectX::XMFLOAT4 minAndIsFull{};
+        DirectX::XMFLOAT4 max{};
+        int               childrenStartIndex{};
+        int               numChildren{};
+    };
 }

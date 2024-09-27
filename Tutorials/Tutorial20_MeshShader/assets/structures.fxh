@@ -2,28 +2,31 @@
 #define GROUP_SIZE 32
 #endif
 
+// 32 bytes
 struct DrawTask
 {
-    float4 BasePosAndScale;
-    float4 RandomValue;
+    float4 BasePosAndScale;     // [x, y, z, xyzScale]
+    float4 RandomValue;         // [rand, alignedDrawTaskSize, drawTaskCountPadding, 0]
 };
 
+// 168 bytes
 struct Constants
 {
-    float4x4 ViewMat;
-    float4x4 ViewProjMat;
-    float4 Frustum[6];
+    float4x4 ViewMat;           // 4 * 16 = 64
+    float4x4 ViewProjMat;       // 4 * 16 = 64
+    float4 Frustum[6];          // 4 * 6 = 24
 
-    float CoTanHalfFov;
-    float MSDebugViz;
-    uint FrustumCulling;
-    uint OcclusionCulling;
+    float CoTanHalfFov;         // 4
+    float MSDebugViz;           // 4
+    uint FrustumCulling;        // 4
+    uint OcclusionCulling;      // 4
 };
 
+// 32 bytes
 struct GPUOctreeNode
 {
-    float3 min;
-    float3 max;
+    float4 minAndIsFull;        // [x, y, z, isFull]
+    float4 max;
     int childrenStartIndex;
     int numChildren;
 };

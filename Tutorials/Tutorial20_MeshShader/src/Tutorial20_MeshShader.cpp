@@ -259,8 +259,6 @@ namespace Diligent
         unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (32 - (p_voxelMesh->nvertices % 32));
         DrawTasks.resize(alignedDrawTaskSize);
        
-        std::set<Diligent::Vec4> debugSet{};
-        
         // Populate DrawTasks
         for (int i = 0; i < p_voxelMesh->nvertices; ++i)
         {
@@ -270,13 +268,15 @@ namespace Diligent
             dst.BasePosAndScale.y   = p_voxelMesh->vertices[i].y;
             dst.BasePosAndScale.z   = p_voxelMesh->vertices[i].z;
             dst.BasePosAndScale.w   = voxelSize / 2.f; // 0.5 .. 1 -> divide by 2 for size from middle point
-            dst.RandomValue         = {Rnd(), (float)alignedDrawTaskSize, (float)(alignedDrawTaskSize - p_voxelMesh->nvertices), 0};
-
-            debugSet.insert(dst.BasePosAndScale);
+            
+            dst.RandomValue.x       = Rnd();
+            dst.RandomValue.y       = static_cast<float>(alignedDrawTaskSize);
+            dst.RandomValue.z       = static_cast<float>(alignedDrawTaskSize - p_voxelMesh->nvertices);
+            dst.RandomValue.w       = 0;
         }
     
         //Octree
-        AABB world                        = {DirectX::XMFLOAT3{-3.f, -3.f, -3.f}, DirectX::XMFLOAT3{3.f, 3.f, 3.f}};
+        AABB world                        = {DirectX::XMFLOAT3{-100.f, -100.f, -100.f}, DirectX::XMFLOAT3{100.f, 100.f, 100.f}};
         DebugInfo getGridIndicesDebugInfo;
         p_occlusionOctreeRoot             = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo);
     
@@ -350,15 +350,18 @@ namespace Diligent
         
         std::vector<int> sortedNodeBuffer{};
         std::vector<char> duplicateBuffer{};
+        std::vector<VoxelOC::GPUOctreeNode> octreeNodeBuffer{};
 
         sortedNodeBuffer.reserve(alignedDrawTaskSize);
+        octreeNodeBuffer.reserve(static_cast<int>(alignedDrawTaskSize / 2.0f));
         duplicateBuffer.resize(alignedDrawTaskSize);
 
         memset(&duplicateBuffer[0], 0, duplicateBuffer.size() * sizeof(char));
 
-        p_occlusionOctreeRoot->GetAllGridIndices(sortedNodeBuffer, duplicateBuffer);
+        p_occlusionOctreeRoot->GetAllGridIndices(sortedNodeBuffer, duplicateBuffer, octreeNodeBuffer);
 
         CreateSortedIndexBuffer(sortedNodeBuffer);
+        CreateGPUOctreeNodeBuffer(octreeNodeBuffer);
 
         m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size()); 
     }
@@ -379,6 +382,24 @@ namespace Diligent
 
         m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pGridIndices);
         VERIFY_EXPR(m_pGridIndices != nullptr);
+    }
+
+    void Tutorial20_MeshShader::CreateGPUOctreeNodeBuffer(std::vector<VoxelOC::GPUOctreeNode>& octreeNodeBuffer)
+    {
+        BufferDesc BuffDesc;
+        BuffDesc.Name              = "Octree node buffer";
+        BuffDesc.Usage             = USAGE_DEFAULT;
+        BuffDesc.BindFlags         = BIND_SHADER_RESOURCE;
+        BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+        BuffDesc.ElementByteStride = sizeof(octreeNodeBuffer[0]);
+        BuffDesc.Size              = sizeof(octreeNodeBuffer[0]) * static_cast<Uint32>(octreeNodeBuffer.size());
+
+        BufferData BufData;
+        BufData.pData    = octreeNodeBuffer.data();
+        BufData.DataSize = BuffDesc.Size;
+
+        m_pDevice->CreateBuffer(BuffDesc, &BufData, &m_pOctreeNodes);
+        VERIFY_EXPR(m_pOctreeNodes != nullptr);
     }
     
     void Tutorial20_MeshShader::CreatePipelineState()
@@ -489,6 +510,9 @@ namespace Diligent
         
         if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "GridIndices"))
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "GridIndices")->Set(m_pGridIndices->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+
+       if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "OctreeNodes"))
+            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "OctreeNodes")->Set(m_pOctreeNodes->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
 
         if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData"))
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
