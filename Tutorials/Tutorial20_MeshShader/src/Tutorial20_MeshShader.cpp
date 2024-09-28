@@ -169,7 +169,7 @@ namespace Diligent
     }
     
      vx_point_cloud_t* p_voxelMesh = nullptr;
-     float      voxelSize   = 1.f;
+     float      voxelSize   = 2.f;
     
     Tutorial20_MeshShader::~Tutorial20_MeshShader()
     {
@@ -259,6 +259,9 @@ namespace Diligent
         unsigned long long    alignedDrawTaskSize = p_voxelMesh->nvertices + (32 - (p_voxelMesh->nvertices % 32));
         DrawTasks.resize(alignedDrawTaskSize);
        
+        DirectX::XMFLOAT3 minMeshDimensions{10000.f, 10000.f, 10000.f};
+        DirectX::XMFLOAT3 maxMeshDimensions{-10000.f, -10000.f, -10000.f};
+
         // Populate DrawTasks
         for (int i = 0; i < p_voxelMesh->nvertices; ++i)
         {
@@ -273,12 +276,25 @@ namespace Diligent
             dst.RandomValue.y       = static_cast<float>(alignedDrawTaskSize);
             dst.RandomValue.z       = static_cast<float>(alignedDrawTaskSize - p_voxelMesh->nvertices);
             dst.RandomValue.w       = 0;
+
+            minMeshDimensions.x = dst.BasePosAndScale.x < minMeshDimensions.x ? dst.BasePosAndScale.x : minMeshDimensions.x;
+            minMeshDimensions.y = dst.BasePosAndScale.y < minMeshDimensions.y ? dst.BasePosAndScale.y : minMeshDimensions.y;
+            minMeshDimensions.z = dst.BasePosAndScale.z < minMeshDimensions.z ? dst.BasePosAndScale.z : minMeshDimensions.z;
+
+            maxMeshDimensions.x = dst.BasePosAndScale.x > maxMeshDimensions.x ? dst.BasePosAndScale.x : maxMeshDimensions.x;
+            maxMeshDimensions.y = dst.BasePosAndScale.y > maxMeshDimensions.y ? dst.BasePosAndScale.y : maxMeshDimensions.y;
+            maxMeshDimensions.z = dst.BasePosAndScale.z > maxMeshDimensions.z ? dst.BasePosAndScale.z : maxMeshDimensions.z;
         }
     
+        // Add some spatial padding to explicitly include every voxel!
+        minMeshDimensions.x -= voxelSize * 2.f; minMeshDimensions.y -= voxelSize * 2.f; minMeshDimensions.z -= voxelSize * 2.f;
+        maxMeshDimensions.x += voxelSize * 2.f; maxMeshDimensions.y += voxelSize * 2.f; maxMeshDimensions.z += voxelSize * 2.f;
+
         //Octree
-        AABB world                        = {DirectX::XMFLOAT3{-100.f, -100.f, -100.f}, DirectX::XMFLOAT3{100.f, 100.f, 100.f}};
+        AABB world                        = {minMeshDimensions, maxMeshDimensions};
         DebugInfo getGridIndicesDebugInfo;
-        p_occlusionOctreeRoot             = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo);
+        DebugInfo insertOctreeDebugInfo;
+        p_occlusionOctreeRoot = new OctreeNode<VoxelOC::DrawTask>(world, &getGridIndicesDebugInfo, &insertOctreeDebugInfo);
     
         const DirectX::XMVECTOR voxelSizeOffset = {voxelSize, voxelSize, voxelSize};
 

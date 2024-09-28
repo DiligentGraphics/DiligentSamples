@@ -10,12 +10,18 @@ struct AABB
 {
     DirectX::XMFLOAT3 min = {};
     DirectX::XMFLOAT3 max = {};
+
+    DirectX::XMFLOAT3 Center() const
+    {
+        return {(min.x + max.x) / 2.f, (min.y + max.y) / 2.f, (min.z + max.z) / 2.f};
+    }
 };
 
 extern std::vector<VoxelOC::DrawTask> ObjectBuffer;
 
 constexpr int MaxObjectsPerLeaf() { return 64; }
-bool Intersects(const AABB& first, const AABB& second);
+bool          IntersectAABBAABB(const AABB& first, const AABB& second);
+bool          IntersectAABBPoint(const AABB& first, const DirectX::XMFLOAT3& second);
 extern AABB   GetObjectBounds(int index);
 
 struct DebugInfo
@@ -41,9 +47,10 @@ public:
     unsigned int               childOccupationMask   = 0;
 
     DebugInfo* getGridIndicesDebugInfo = nullptr;
+    DebugInfo* insertOctreeDebugInfo   = nullptr;
 
-    OctreeNode(const AABB& bounds, DebugInfo* getGridIdicesDebugInfo) :
-        bounds(bounds), isLeaf(true), getGridIndicesDebugInfo(getGridIdicesDebugInfo)
+    OctreeNode(const AABB& bounds, DebugInfo* getGridIdicesDebugInfo, DebugInfo* insertOctreeDebugInfo) :
+        bounds(bounds), isLeaf(true), getGridIndicesDebugInfo(getGridIdicesDebugInfo), insertOctreeDebugInfo(insertOctreeDebugInfo)
     {
         children.fill(nullptr);
         objectIndices.reserve(MaxObjectsPerLeaf());
@@ -85,6 +92,11 @@ public:
         {
             ++getGridIndicesDebugInfo->processedIndices;
 
+            if (objectIndices[index] == 103)
+            {
+                getGridIndicesDebugInfo->processedIndices++;
+            }
+
             if (duplicateBuffer[objectIndices[index]] == 0)
             {
                 gridIndexBuffer.push_back(objectIndices[index]) ;
@@ -125,8 +137,7 @@ public:
             newMax.y = (i & 2) ? bounds.max.y : center.y;
             newMax.z = (i & 4) ? bounds.max.z : center.z;
 
-            children[i] = new OctreeNode({newMin, newMax}, getGridIndicesDebugInfo);
-            childOccupationMask |= 0b00000001 << i;
+            children[i] = new OctreeNode({newMin, newMax}, getGridIndicesDebugInfo, insertOctreeDebugInfo);
         }
 
         isLeaf = false;
@@ -137,8 +148,18 @@ public:
         OctreeNode*              currentNode = this;
         std::vector<OctreeNode*> path;
 
+        ++insertOctreeDebugInfo->processedIndices;
+        insertOctreeDebugInfo->minIndex = insertOctreeDebugInfo->minIndex > objectIndex ? objectIndex : insertOctreeDebugInfo->minIndex;
+        insertOctreeDebugInfo->maxIndex = insertOctreeDebugInfo->maxIndex < objectIndex ? objectIndex : insertOctreeDebugInfo->maxIndex;
+
         while (true)
         {
+            if (!IntersectAABBPoint(bounds, objectBounds.Center()))
+            {
+                ++insertOctreeDebugInfo->skippedIndices;
+                return;
+            }
+
             path.push_back(currentNode);
 
             if (currentNode->isLeaf)
@@ -146,6 +167,7 @@ public:
                 if (currentNode->objectIndices.size() < MaxObjectsPerLeaf())
                 {
                     currentNode->objectIndices.push_back(objectIndex);
+                    ++insertOctreeDebugInfo->acceptedIndices;
                     return;
                 }
                 else
@@ -155,9 +177,16 @@ public:
                     // Re-distribute existing objects
                     for (int index : currentNode->objectIndices)
                     {
+
+                        if (index == 103)
+                        {
+                            ++insertOctreeDebugInfo->acceptedIndices;
+                        }
+
+                        AABB existingBounds = GetObjectBounds(index);
                         for (auto& child : currentNode->children)
                         {
-                            if (Intersects(child->bounds, GetObjectBounds(index)))
+                            if (IntersectAABBPoint(child->bounds, existingBounds.Center()))
                             {
                                 child->objectIndices.push_back(index);
                             }
@@ -170,9 +199,10 @@ public:
 
             // Find the appropriate child
             bool foundChild = false;
+
             for (auto& child : currentNode->children)
             {
-                if (Intersects(child->bounds, objectBounds))
+                if (IntersectAABBPoint(child->bounds, objectBounds.Center()))
                 {
                     currentNode = child;
                     foundChild  = true;
@@ -184,6 +214,7 @@ public:
             {
                 // Object doesn't fit in any child, insert it here
                 currentNode->objectIndices.push_back(objectIndex);
+                ++insertOctreeDebugInfo->skippedIndices;
                 return;
             }
         }
