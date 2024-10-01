@@ -64,7 +64,6 @@ void main(in uint I  : SV_GroupIndex,
     int taskCount = (int) task.RandomValue.y;
     int padding = (int) task.RandomValue.z;
     
-    
     // Frustum culling
     if ((taskCount - padding > gid) && (g_Constants.FrustumCulling == 0 || IsVisible(pos, 1.73 * scale)))
     {

@@ -206,7 +206,7 @@ public:
                 {
                     currentNode = child;
                     foundChild  = true;
-                    break;
+                    break;                      // Breaking here is fatal when checking for intersection with an AABB!
                 }
             }
 

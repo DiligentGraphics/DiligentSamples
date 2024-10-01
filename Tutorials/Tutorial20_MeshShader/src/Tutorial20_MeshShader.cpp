@@ -379,7 +379,7 @@ namespace Diligent
         CreateSortedIndexBuffer(sortedNodeBuffer);
         CreateGPUOctreeNodeBuffer(octreeNodeBuffer);
 
-        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size()); 
+        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
     }
 
     void Tutorial20_MeshShader::CreateSortedIndexBuffer(std::vector<int>& sortedNodeBuffer)
@@ -432,7 +432,7 @@ namespace Diligent
         PSOCreateInfo.GraphicsPipeline.RTVFormats[0]                        = m_pSwapChain->GetDesc().ColorBufferFormat;
         PSOCreateInfo.GraphicsPipeline.DSVFormat                            = m_pSwapChain->GetDesc().DepthBufferFormat;
         PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
-        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FillMode              = FILL_MODE_SOLID; 
         PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = False;
         PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable         = True;
     

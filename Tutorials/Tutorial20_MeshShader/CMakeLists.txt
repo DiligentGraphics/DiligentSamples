@@ -26,6 +26,7 @@ set(SHADERS
 set(ASSETS
     assets/DGLogo.png
     assets/models/suzanne.fbx
+    assets/models/sponza.fbx
 )
 
 add_sample_app("Tutorial20_MeshShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
