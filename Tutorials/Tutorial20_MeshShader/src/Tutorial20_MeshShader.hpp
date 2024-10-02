@@ -71,6 +71,8 @@ namespace Diligent
         static constexpr Int32 ASGroupSize = 32;
     
         Uint32                 m_DrawTaskCount = 0;
+        Uint32                 m_DrawTaskPadding = 0;
+
         RefCntAutoPtr<IBuffer> m_pDrawTasks;
         RefCntAutoPtr<IBuffer> m_pGridIndices;
         RefCntAutoPtr<IBuffer> m_pOctreeNodes;
@@ -85,6 +87,7 @@ namespace Diligent
         float4x4    m_ViewMatrix;
         float       m_RotationAngle  = 0;
         bool        m_MSDebugViz     = false;
+        bool        m_OTDebugViz     = false;
         bool        m_FrustumCulling = true;
         bool        m_OcclusionCulling = true;
         const float m_FOV            = PI_F / 4.0f;
@@ -93,6 +96,7 @@ namespace Diligent
         float       m_CameraHeight   = 10.0f;
         float       m_CurrTime       = 0.0f;
         Uint32      m_VisibleCubes   = 0;
+        Uint32      m_VisibleOTNodes = 0;
     
         OctreeNode<VoxelOC::DrawTask>* p_occlusionOctreeRoot = nullptr;
     };

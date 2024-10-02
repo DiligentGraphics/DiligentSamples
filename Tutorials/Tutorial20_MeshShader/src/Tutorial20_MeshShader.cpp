@@ -54,6 +54,7 @@ namespace Diligent
         struct DrawStatistics
         {
             Uint32 visibleCubes;
+            Uint32 visibleOctreeNodes;
         };
         
         static_assert(sizeof(DrawTask) % 16 == 0, "Structure must be 16-byte aligned");
@@ -368,9 +369,9 @@ namespace Diligent
         std::vector<char> duplicateBuffer{};
         std::vector<VoxelOC::GPUOctreeNode> octreeNodeBuffer{};
 
-        sortedNodeBuffer.reserve(alignedDrawTaskSize);
-        octreeNodeBuffer.reserve(static_cast<int>(alignedDrawTaskSize / 2.0f));
-        duplicateBuffer.resize(alignedDrawTaskSize);
+        sortedNodeBuffer.reserve(DrawTasks.size());
+        octreeNodeBuffer.reserve(static_cast<int>(DrawTasks.size() / 2.0f));
+        duplicateBuffer.resize(DrawTasks.size());
 
         memset(&duplicateBuffer[0], 0, duplicateBuffer.size() * sizeof(char));
 
@@ -379,7 +380,18 @@ namespace Diligent
         CreateSortedIndexBuffer(sortedNodeBuffer);
         CreateGPUOctreeNodeBuffer(octreeNodeBuffer);
 
-        m_DrawTaskCount = static_cast<Uint32>(DrawTasks.size());
+        // Set draw task count and padding
+        m_DrawTaskPadding = static_cast<Uint32>(octreeNodeBuffer.size());
+        octreeNodeBuffer.resize(octreeNodeBuffer.size() + 32 - (octreeNodeBuffer.size() % 32));
+        m_DrawTaskPadding = static_cast<Uint32>(octreeNodeBuffer.size() - m_DrawTaskPadding);
+
+        m_DrawTaskCount = static_cast<Uint32>(octreeNodeBuffer.size());
+
+        for (auto& task : DrawTasks)
+        {
+            task.RandomValue.x = static_cast<float>(m_DrawTaskCount);
+            task.RandomValue.y = static_cast<float>(m_DrawTaskPadding);
+        }
     }
 
     void Tutorial20_MeshShader::CreateSortedIndexBuffer(std::vector<int>& sortedNodeBuffer)
@@ -535,7 +547,7 @@ namespace Diligent
         
         if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants"))
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
-        
+
         if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData"))
             m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
         
@@ -554,11 +566,14 @@ namespace Diligent
             ImGui::Checkbox("Frustum culling", &m_FrustumCulling);
             ImGui::Checkbox("Occlusion culling", &m_OcclusionCulling);
             ImGui::Checkbox("MS Debug Visualization", &m_MSDebugViz);
+            ImGui::Checkbox("Octree Debug Visualization", &m_OTDebugViz);
+
             if (ImGui::Button("Reset Camera"))
             {
                 fpc.SetPos({0, 5, 0});
             }
             ImGui::Text("Visible cubes: %d", m_VisibleCubes);
+            ImGui::Text("Visible octree nodes: %d", m_VisibleOTNodes);
         }
         ImGui::End();
     }
@@ -612,6 +627,7 @@ namespace Diligent
             CBConstants->FrustumCulling = m_FrustumCulling ? 1 : 0;
             CBConstants->OcclusionCulling = m_OcclusionCulling ? 1 : 0;
             CBConstants->MSDebugViz     = m_MSDebugViz ? 1.0f : 0.0f;
+            CBConstants->OctreeDebugViz   = m_OTDebugViz ? 1.0f : 0.0f;
     
             // Calculate frustum planes from view-projection matrix.
             ViewFrustum Frustum;
@@ -633,7 +649,8 @@ namespace Diligent
         // to prevent loss of tasks or access outside of the data array.
         VERIFY_EXPR(m_DrawTaskCount % ASGroupSize == 0);
     
-        DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
+        //DrawMeshAttribs drawAttrs{m_DrawTaskCount / ASGroupSize, DRAW_FLAG_VERIFY_ALL};
+        DrawMeshAttribs drawAttrs{m_DrawTaskCount, DRAW_FLAG_VERIFY_ALL};
         m_pImmediateContext->DrawMesh(drawAttrs);
     
         // Copy statistics to staging buffer
@@ -664,7 +681,10 @@ namespace Diligent
             {
                 MapHelper<DrawStatistics> StagingData(m_pImmediateContext, m_pStatisticsStaging, MAP_READ, MAP_FLAG_DO_NOT_WAIT);
                 if (StagingData)
+                {
                     m_VisibleCubes = StagingData[AvailableFrameId % m_StatisticsHistorySize].visibleCubes;
+                    m_VisibleOTNodes = StagingData[AvailableFrameId % m_StatisticsHistorySize].visibleOctreeNodes;
+                }
             }
     
             ++m_FrameId;

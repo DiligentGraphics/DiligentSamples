@@ -84,25 +84,33 @@ static const float2 constCubeUVs[24] =
     float2(0.5f, 0.0f),
 };
 
-const static float4 primitiveColors[12] =
+const static float4 primitiveColors[20] =
 {
-    float4(76.f / 255.f, 74.f / 255.f, 89.f / 255.f, 1.0f),
-    float4(27.f / 255.f, 127.f / 255.f, 122.f / 255.f, 1.0f),
-    float4(8.f / 255.f, 151.f / 255.f, 180.f / 255.f, 1.0f),
-    float4(76.f / 255.f, 171.f / 255.f, 166.f / 255.f, 1.0f),
-    float4(242.f / 255.f, 196.f / 255.f, 226.f / 255.f, 1.0f),
-    float4(182.f / 255.f, 242.f / 255.f, 242.f / 255.f, 1.0f),
-    float4(194.f / 255.f, 242.f / 255.f, 197.f / 255.f, 1.0f),
-    float4(242.f / 255.f, 177.f / 255.f, 153.f / 255.f, 1.0f),
-    float4(242.f / 255.f, 145.f / 255.f, 145.f / 255.f, 1.0f),
-    float4(144.f / 255.f, 222.f / 255.f, 179.f / 255.f, 1.0f),
-    float4(255.f / 255.f, 218.f / 255.f, 185.f / 255.f, 1.0f),
-    float4(172.f / 255.f, 245.f / 255.f, 184.f / 255.f, 1.0f),
+    float4(76.f / 255.f, 74.f / 255.f, 89.f / 255.f, 1.0f), // Dunkelviolett
+    float4(255.f / 255.f, 107.f / 255.f, 107.f / 255.f, 1.0f), // Korallenrot
+    float4(50.f / 255.f, 168.f / 255.f, 82.f / 255.f, 1.0f), // Smaragdgrün
+    float4(255.f / 255.f, 195.f / 255.f, 0.f / 255.f, 1.0f), // Goldgelb
+    float4(0.f / 255.f, 153.f / 255.f, 255.f / 255.f, 1.0f), // Hellblau
+    float4(255.f / 255.f, 128.f / 255.f, 0.f / 255.f, 1.0f), // Orange
+    float4(138.f / 255.f, 43.f / 255.f, 226.f / 255.f, 1.0f), // Blauviolett
+    float4(0.f / 255.f, 204.f / 255.f, 102.f / 255.f, 1.0f), // Mintgrün
+    float4(255.f / 255.f, 0.f / 255.f, 127.f / 255.f, 1.0f), // Magenta
+    float4(204.f / 255.f, 204.f / 255.f, 0.f / 255.f, 1.0f), // Olivgrün
+    float4(102.f / 255.f, 204.f / 255.f, 255.f / 255.f, 1.0f), // Himmelblau
+    float4(255.f / 255.f, 153.f / 255.f, 204.f / 255.f, 1.0f), // Rosa
+    float4(153.f / 255.f, 51.f / 255.f, 0.f / 255.f, 1.0f), // Rotbraun
+    float4(0.f / 255.f, 255.f / 255.f, 204.f / 255.f, 1.0f), // Türkis
+    float4(204.f / 255.f, 0.f / 255.f, 204.f / 255.f, 1.0f), // Lila
+    float4(255.f / 255.f, 204.f / 255.f, 153.f / 255.f, 1.0f), // Pfirsich
+    float4(51.f / 255.f, 102.f / 255.f, 0.f / 255.f, 1.0f), // Dunkelgrün
+    float4(102.f / 255.f, 0.f / 255.f, 102.f / 255.f, 1.0f), // Dunkelviolett
+    float4(255.f / 255.f, 255.f / 255.f, 153.f / 255.f, 1.0f), // Hellgelb
+    float4(0.f / 255.f, 102.f / 255.f, 204.f / 255.f, 1.0f), // Königsblau
 };
 
 float4 getRandomPrimitiveColor(float randMeshletVal)
 {    
-    uint colorIdx = floor(randMeshletVal * 12);
+    uint colorIdx = floor(randMeshletVal * 20);
     return primitiveColors[colorIdx];
 }
 
@@ -129,7 +137,7 @@ void main(in uint I : SV_GroupIndex, // thread index used to access mesh shader 
     // Each thread handles only one vertex
     verts[I].Pos = mul(float4(pos + constCubePos[I].xyz * scale, 1.0), g_Constants.ViewProjMat);
     verts[I].UV = constCubeUVs[I].xy;
-    verts[I].Color = g_Constants.MSDebugViz * getRandomPrimitiveColor(randValue);
+    verts[I].Color = g_Constants.MSDebugViz * getRandomPrimitiveColor((randValue + ((1 - g_Constants.OctreeDebugViz) * 0.1f * gid)) % 1.0f);
     
     // Only the first 12 threads write indices. We must not access the array outside of its bounds.
     if (I < 12)

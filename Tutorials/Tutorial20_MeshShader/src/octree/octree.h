@@ -19,7 +19,7 @@ struct AABB
 
 extern std::vector<VoxelOC::DrawTask> ObjectBuffer;
 
-constexpr int MaxObjectsPerLeaf() { return 64; }
+constexpr int MaxObjectsPerLeaf() { return 32; }
 bool          IntersectAABBAABB(const AABB& first, const AABB& second);
 bool          IntersectAABBPoint(const AABB& first, const DirectX::XMFLOAT3& second);
 extern AABB   GetObjectBounds(int index);
