@@ -1,7 +1,7 @@
 #include "structures.fxh"
 
 #ifndef SHOW_STATISTICS
-#define SHOW_STATISTICS 0
+#define SHOW_STATISTICS 1
 #endif
 // Draw task arguments
 StructuredBuffer<DrawTask> DrawTasks;

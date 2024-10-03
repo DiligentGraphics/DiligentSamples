@@ -34,7 +34,6 @@
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
-#include "AdvancedMath.hpp"
 #include <set>
 #include <unordered_set>
 
@@ -567,6 +566,7 @@ namespace Diligent
             ImGui::Checkbox("Occlusion culling", &m_OcclusionCulling);
             ImGui::Checkbox("MS Debug Visualization", &m_MSDebugViz);
             ImGui::Checkbox("Octree Debug Visualization", &m_OTDebugViz);
+            ImGui::Checkbox("Syncronize Camera Position", &m_SyncCamPosition);
 
             if (ImGui::Button("Reset Camera"))
             {
@@ -574,6 +574,7 @@ namespace Diligent
             }
             ImGui::Text("Visible cubes: %d", m_VisibleCubes);
             ImGui::Text("Visible octree nodes: %d", m_VisibleOTNodes);
+
         }
         ImGui::End();
     }
@@ -630,8 +631,8 @@ namespace Diligent
             CBConstants->OctreeDebugViz   = m_OTDebugViz ? 1.0f : 0.0f;
     
             // Calculate frustum planes from view-projection matrix.
-            ViewFrustum Frustum;
-            ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
+            if (m_SyncCamPosition)
+                ExtractViewFrustumPlanesFromMatrix(m_ViewProjMatrix, Frustum, false);
     
             // Each frustum plane must be normalized.
             for (uint i = 0; i < _countof(CBConstants->Frustum); ++i)
@@ -708,7 +709,7 @@ namespace Diligent
         auto Proj = GetAdjustedProjectionMatrix(m_FOV, 0.01f, 1000.f);
     
         // Compute view and view-projection matrices
-        m_ViewMatrix     = View * SrfPreTransform;
+        m_ViewMatrix = View * SrfPreTransform;
         m_ViewProjMatrix = m_ViewMatrix * Proj;
     }
 

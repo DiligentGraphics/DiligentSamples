@@ -85,32 +85,17 @@ public:
         ocNode.minAndIsFull       = DirectX::XMFLOAT4{bounds.min.x, bounds.min.y, bounds.min.z, objectIndices.size() >= MaxObjectsPerLeaf() ? 1.0f : 0.0f};
         ocNode.max                = DirectX::XMFLOAT4{bounds.max.x, bounds.max.y, bounds.max.z, 0};
 
-        octreeNodeBuffer.push_back(std::move(ocNode));
+        // @TODO: Check if it can be adventageous to treat nodes in a tree fashion and collaps full nodes to a full parent node!
+        if (objectIndices.size() > 0)       // Only insert nodes which actually store voxels. Makes it easier to iterate in depth pre-pass
+            octreeNodeBuffer.push_back(std::move(ocNode));
 
         // Add own indices if present
         for (int index = 0; index < objectIndices.size(); ++index)
         {
-            ++getGridIndicesDebugInfo->processedIndices;
-
-            if (objectIndices[index] == 103)
-            {
-                getGridIndicesDebugInfo->processedIndices++;
-            }
-
             if (duplicateBuffer[objectIndices[index]] == 0)
             {
                 gridIndexBuffer.push_back(objectIndices[index]) ;
                 duplicateBuffer[objectIndices[index]] = 1;
-                ++getGridIndicesDebugInfo->acceptedIndices;
-
-                getGridIndicesDebugInfo->maxIndex = getGridIndicesDebugInfo->maxIndex < objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->maxIndex;
-                getGridIndicesDebugInfo->minIndex = getGridIndicesDebugInfo->minIndex > objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->minIndex;
-            }
-            else 
-            {
-                ++getGridIndicesDebugInfo->skippedIndices;
-                getGridIndicesDebugInfo->maxIndexSkipped = getGridIndicesDebugInfo->maxIndexSkipped < objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->maxIndexSkipped;
-                getGridIndicesDebugInfo->minIndexSkipped = getGridIndicesDebugInfo->minIndexSkipped > objectIndices[index] ? objectIndices[index] : getGridIndicesDebugInfo->minIndexSkipped;         
             }
         }
     }

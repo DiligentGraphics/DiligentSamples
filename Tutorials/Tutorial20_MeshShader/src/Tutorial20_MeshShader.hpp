@@ -31,6 +31,8 @@
 #include "BasicMath.hpp"
 #include "FirstPersonCamera.hpp"
 #include "octree/octree.h"
+#include <AdvancedMath.hpp>
+
 
 namespace Diligent
 {
@@ -82,7 +84,8 @@ namespace Diligent
         RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
     
         FirstPersonCamera fpc{};
-    
+        ViewFrustum       Frustum{};
+
         float4x4    m_ViewProjMatrix;
         float4x4    m_ViewMatrix;
         float       m_RotationAngle  = 0;
@@ -90,6 +93,7 @@ namespace Diligent
         bool        m_OTDebugViz     = false;
         bool        m_FrustumCulling = true;
         bool        m_OcclusionCulling = true;
+        bool        m_SyncCamPosition  = true;
         const float m_FOV            = PI_F / 4.0f;
         const float m_CoTanHalfFov   = 1.0f / std::tan(m_FOV * 0.5f);
         float       m_LodScale       = 4.0f;
