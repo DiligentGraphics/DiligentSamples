@@ -51,15 +51,24 @@ namespace Diligent
     
     private:
         void GetPointCloudFromMesh(std::string meshPath);
+        
         void CreateDrawTasksFromLoadedMesh();
+        void CreateDrawTasks();
+        
+        void CreatePipelineState();        
         void CreateSortedIndexBuffer(std::vector<int>& sortedNodeBuffer);
         void CreateGPUOctreeNodeBuffer(std::vector<VoxelOC::GPUOctreeNode>& octreeNodeBuffer);
-        void CreatePipelineState();
-        void CreateDrawTasks();
         void CreateStatisticsBuffer();
         void CreateConstantsBuffer();
+
         void LoadTexture();
         void UpdateUI();
+
+        void PreWindowResize() override;
+        void WindowResize(Uint32 Width, Uint32 Height) override;
+
+        // 2 Pass Depth OC
+        void                   CreateDepthBuffers();
     
         RefCntAutoPtr<IBuffer>      m_CubeBuffer;
         RefCntAutoPtr<ITextureView> m_CubeTextureSRV;
@@ -79,12 +88,21 @@ namespace Diligent
         RefCntAutoPtr<IBuffer> m_pGridIndices;
         RefCntAutoPtr<IBuffer> m_pOctreeNodes;
         RefCntAutoPtr<IBuffer> m_pConstants;
+        RefCntAutoPtr<ITexture>     m_pDepthBufferCpy;
+        RefCntAutoPtr<ITextureView> m_pDepthBufferCpySRV;
+        RefCntAutoPtr<ITextureView> m_pDepthBufferCpyUAV;
+
+        RefCntAutoPtr<ITexture>     m_pPrevDepthBuffer;
+        RefCntAutoPtr<ITextureView> m_pPrevDepthBufferSRV;
+
     
+
         RefCntAutoPtr<IPipelineState>         m_pPSO;
         RefCntAutoPtr<IShaderResourceBinding> m_pSRB;
     
         FirstPersonCamera fpc{};
         ViewFrustum       Frustum{};
+
 
         float4x4    m_ViewProjMatrix;
         float4x4    m_ViewMatrix;

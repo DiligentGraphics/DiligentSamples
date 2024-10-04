@@ -36,6 +36,7 @@
 #include "FastRand.hpp"
 #include <set>
 #include <unordered_set>
+#include <d3d12.h>
 
 #define VOXELIZER_IMPLEMENTATION
 #include "voxelizer.h"  // Voxelizer
@@ -49,6 +50,7 @@ namespace Diligent
     {
     
         #include "../assets/structures.fxh"
+#include "../../../../DiligentCore/Graphics/GraphicsEngineD3D12/include/d3dx12_win.h"
         
         struct DrawStatistics
         {
@@ -540,15 +542,9 @@ namespace Diligent
 
        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "OctreeNodes"))
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "OctreeNodes")->Set(m_pOctreeNodes->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
-
-        if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData"))
-            m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbCubeData")->Set(m_CubeBuffer);
         
         if (m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants"))
             m_pSRB->GetVariableByName(SHADER_TYPE_AMPLIFICATION, "cbConstants")->Set(m_pConstants);
-
-        if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData"))
-            m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbCubeData")->Set(m_CubeBuffer);
         
         if (m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants"))
             m_pSRB->GetVariableByName(SHADER_TYPE_MESH, "cbConstants")->Set(m_pConstants);
@@ -556,7 +552,95 @@ namespace Diligent
         if (m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture"))
             m_pSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_CubeTextureSRV);
     }
-    
+
+    void Tutorial20_MeshShader::CreateDepthBuffers()
+    {
+        /*
+            |-------------------------|
+            |   Main Depth Buffer     |-------------> First Prepass: Render best occluders into main depth buffer
+            |-------------------------|
+
+            |-------------------------|
+            |  Main Depth Buffer Cpy  |-------------> First Prepass: Copy main depth buffer and create HiZ
+            |-------------------------|
+            
+            |-------------------------|
+            | Prev Frame Depth Buffer |-------------> EOF: Copy last frames depth buffer! 
+            |-------------------------|
+
+        */
+
+        if (m_pDepthBufferCpy.RawPtr() != nullptr)
+            m_pDepthBufferCpy.Release();
+        
+        if (m_pDepthBufferCpySRV.RawPtr() != nullptr)
+            m_pDepthBufferCpySRV.Release();
+        
+        if (m_pDepthBufferCpyUAV.RawPtr() != nullptr)
+            m_pDepthBufferCpyUAV.Release();
+
+        if (m_pPrevDepthBuffer.RawPtr() != nullptr)
+            m_pPrevDepthBuffer.Release();
+        
+        if (m_pPrevDepthBufferSRV.RawPtr() != nullptr)
+            m_pPrevDepthBufferSRV.Release();
+
+        ITextureView* pDepthBufferDSV = m_pSwapChain->GetDepthBufferDSV();
+        ITexture*     pDepthTexture   = pDepthBufferDSV->GetTexture();
+        const auto&   DepthTexDesc    = pDepthTexture->GetDesc();
+
+        // Create a separate texture for occlusion culling computations
+        TextureDesc OcclusionTexDesc = DepthTexDesc; // Copy the description of the depth texture
+        OcclusionTexDesc.Name        = "Occlusion Computation Texture";
+        OcclusionTexDesc.Usage       = USAGE_DEFAULT;
+        OcclusionTexDesc.BindFlags   = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
+        
+        // If the original depth buffer is using a depth-specific format, we need to use a compatible color format
+        if (OcclusionTexDesc.Format == TEX_FORMAT_D32_FLOAT)
+            OcclusionTexDesc.Format = TEX_FORMAT_R32_FLOAT;
+        else if (OcclusionTexDesc.Format == TEX_FORMAT_D24_UNORM_S8_UINT)
+            OcclusionTexDesc.Format = TEX_FORMAT_R24_UNORM_X8_TYPELESS;
+
+        m_pDevice->CreateTexture(OcclusionTexDesc, nullptr, &m_pDepthBufferCpy);
+        VERIFY_EXPR(m_pDepthBufferCpy != nullptr);
+
+        // Create SRV for the occlusion texture
+        TextureViewDesc             OcclusionSRVDesc;
+        OcclusionSRVDesc.ViewType = TEXTURE_VIEW_SHADER_RESOURCE;
+        m_pDepthBufferCpy->CreateView(OcclusionSRVDesc, &m_pDepthBufferCpySRV);
+        VERIFY_EXPR(m_pDepthBufferCpySRV != nullptr);
+
+        // Create UAV for the occlusion texture
+        TextureViewDesc             OcclusionUAVDesc;
+        OcclusionUAVDesc.ViewType = TEXTURE_VIEW_UNORDERED_ACCESS;
+        m_pDepthBufferCpy->CreateView(OcclusionUAVDesc, &m_pDepthBufferCpyUAV);
+        VERIFY_EXPR(m_pDepthBufferCpyUAV != nullptr);
+
+        // ------------- Previous frames depth buffer ---------------
+
+        // New code for the previous frame's depth buffer
+        TextureDesc PrevDepthTexDesc = DepthTexDesc;
+        PrevDepthTexDesc.Name        = "Previous Frame Depth Texture";
+        PrevDepthTexDesc.Usage       = USAGE_DEFAULT;
+        PrevDepthTexDesc.BindFlags   = BIND_SHADER_RESOURCE;
+
+        // Use a color format compatible with the depth format
+        if (PrevDepthTexDesc.Format == TEX_FORMAT_D32_FLOAT)
+            PrevDepthTexDesc.Format = TEX_FORMAT_R32_FLOAT;
+        else if (PrevDepthTexDesc.Format == TEX_FORMAT_D24_UNORM_S8_UINT)
+            PrevDepthTexDesc.Format = TEX_FORMAT_R24_UNORM_X8_TYPELESS;
+
+        m_pDevice->CreateTexture(PrevDepthTexDesc, nullptr, &m_pPrevDepthBuffer);
+        VERIFY_EXPR(m_pPrevDepthBuffer != nullptr);
+
+        // Create SRV for the previous depth buffer
+        TextureViewDesc PrevDepthSRVDesc;
+        PrevDepthSRVDesc.ViewType = TEXTURE_VIEW_SHADER_RESOURCE;
+        m_pPrevDepthBuffer->CreateView(PrevDepthSRVDesc, &m_pPrevDepthBufferSRV);
+        VERIFY_EXPR(m_pPrevDepthBufferSRV != nullptr);
+
+    }
+        
     void Tutorial20_MeshShader::UpdateUI()
     {
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -577,6 +661,16 @@ namespace Diligent
 
         }
         ImGui::End();
+    }
+
+    void Tutorial20_MeshShader::PreWindowResize()
+    {
+        
+    }
+
+    void Tutorial20_MeshShader::WindowResize(Uint32 Width, Uint32 Height)
+    {
+        CreateDepthBuffers();
     }
     
     void Tutorial20_MeshShader::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
@@ -599,18 +693,21 @@ namespace Diligent
         CreateStatisticsBuffer();
         CreateConstantsBuffer();
         CreatePipelineState();
+        CreateDepthBuffers();
     }
     
     // Render a frame
     void Tutorial20_MeshShader::Render()
     {
+        
         auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
         auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
-        // Clear the back buffer
+        // Clear the back buffer and depth buffer
         const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
+
         // Reset statistics
         DrawStatistics stats;
         std::memset(&stats, 0, sizeof(stats));
@@ -619,6 +716,9 @@ namespace Diligent
         m_pImmediateContext->SetPipelineState(m_pPSO);
         m_pImmediateContext->CommitShaderResources(m_pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     
+        // Draw best occluders to depth buffer
+
+
         {
             // Map the buffer and write current view, view-projection matrix and other constants.
             MapHelper<Constants> CBConstants(m_pImmediateContext, m_pConstants, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -688,6 +788,18 @@ namespace Diligent
                 }
             }
     
+            // Unset render targets
+            m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
+
+            // Store depth buffer of this frame in depth buffer copy resource!
+            CopyTextureAttribs storeDepthBufAttribs{};
+            storeDepthBufAttribs.pSrcTexture = m_pSwapChain->GetDepthBufferDSV()->GetTexture();
+            storeDepthBufAttribs.pDstTexture = m_pDepthBufferCpy;
+            storeDepthBufAttribs.SrcTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+            storeDepthBufAttribs.DstTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+
+            m_pImmediateContext->CopyTexture(storeDepthBufAttribs);
+
             ++m_FrameId;
         }
     }
