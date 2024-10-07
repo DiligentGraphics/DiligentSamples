@@ -4,7 +4,7 @@ apply from: "../../../DiligentTools/NativeApp/Android/android_common.gradle"
 android {
     defaultConfig {
         // 24 is the minimum since ARCore only works with 24 and higher.
-        minSdkVersion 24
+        minSdkVersion 28
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
