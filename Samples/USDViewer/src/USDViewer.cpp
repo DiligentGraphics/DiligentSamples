@@ -149,12 +149,14 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
     ArgsParser.Parse("vertex_pool", m_UseVertexPool);
     ArgsParser.Parse("index_pool", m_UseIndexPool);
     ArgsParser.Parse("atlas_dim", m_TextureAtlasDim);
+    ArgsParser.Parse("texture_compress_mode", m_TextureCompressMode);
     ArgsParser.Parse("shader_cache", m_EnableShaderCache);
     LOG_INFO_MESSAGE("USD Viewer Arguments:",
                      "\n    USD Path:        ", m_UsdFileName,
                      "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
                      "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No",
-                     "\n    Tex atlas dim:   ", m_TextureAtlasDim);
+                     "\n    Tex atlas dim:   ", m_TextureAtlasDim,
+                     "\n    Tex compression: ", m_TextureCompressMode);
 
     std::string ModelsDir;
     ArgsParser.Parse("usd_dir", 'd', ModelsDir);
@@ -315,12 +317,13 @@ void USDViewer::LoadStage()
     }
 
     USD::HnRenderDelegate::CreateInfo DelegateCI;
-    DelegateCI.pDevice           = m_DeviceWithCache;
-    DelegateCI.pContext          = m_pImmediateContext;
-    DelegateCI.pRenderStateCache = m_DeviceWithCache;
-    DelegateCI.UseVertexPool     = m_UseVertexPool;
-    DelegateCI.UseIndexPool      = m_UseIndexPool;
-    DelegateCI.EnableShadows     = true;
+    DelegateCI.pDevice             = m_DeviceWithCache;
+    DelegateCI.pContext            = m_pImmediateContext;
+    DelegateCI.pRenderStateCache   = m_DeviceWithCache;
+    DelegateCI.UseVertexPool       = m_UseVertexPool;
+    DelegateCI.UseIndexPool        = m_UseIndexPool;
+    DelegateCI.EnableShadows       = true;
+    DelegateCI.TextureCompressMode = static_cast<TEXTURE_LOAD_COMPRESS_MODE>(m_TextureCompressMode);
 
     DelegateCI.AllowHotShaderReload   = m_EnableHotShaderReload;
     DelegateCI.AsyncShaderCompilation = true;

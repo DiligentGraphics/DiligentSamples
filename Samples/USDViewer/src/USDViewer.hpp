@@ -151,9 +151,10 @@ private:
 
     std::string m_UsdFileName;
 
-    bool   m_UseIndexPool    = true;
-    bool   m_UseVertexPool   = true;
-    Uint32 m_TextureAtlasDim = 2048;
+    bool   m_UseIndexPool        = true;
+    bool   m_UseVertexPool       = true;
+    Uint32 m_TextureAtlasDim     = 2048;
+    Uint32 m_TextureCompressMode = 1;
 
     USD::HN_MATERIAL_TEXTURES_BINDING_MODE m_BindingMode = USD::HN_MATERIAL_TEXTURES_BINDING_MODE_LEGACY;
 
