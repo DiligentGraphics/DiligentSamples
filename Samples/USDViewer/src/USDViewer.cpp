@@ -38,6 +38,7 @@
 #include "FileSystem.hpp"
 #include "Timer.hpp"
 #include "RenderStateCache.h"
+#include "ThreadPool.hpp"
 
 #include "Tasks/HnReadRprimIdTask.hpp"
 #include "Tasks/HnRenderBoundBoxTask.hpp"
@@ -151,12 +152,15 @@ SampleBase::CommandLineStatus USDViewer::ProcessCommandLine(int argc, const char
     ArgsParser.Parse("atlas_dim", m_TextureAtlasDim);
     ArgsParser.Parse("texture_compress_mode", m_TextureCompressMode);
     ArgsParser.Parse("shader_cache", m_EnableShaderCache);
+    ArgsParser.Parse("async_texture_loading", m_AsyncTextureLoading);
     LOG_INFO_MESSAGE("USD Viewer Arguments:",
                      "\n    USD Path:        ", m_UsdFileName,
                      "\n    Use vertex pool: ", m_UseVertexPool ? "Yes" : "No",
                      "\n    Use index pool:  ", m_UseIndexPool ? "Yes" : "No",
                      "\n    Tex atlas dim:   ", m_TextureAtlasDim,
-                     "\n    Tex compression: ", m_TextureCompressMode);
+                     "\n    Shader Cache:    ", m_EnableShaderCache ? "Yes" : "No",
+                     "\n    Tex compression: ", m_TextureCompressMode,
+                     "\n    Async tex load:  ", m_AsyncTextureLoading ? "Yes" : "No");
 
     std::string ModelsDir;
     ArgsParser.Parse("usd_dir", 'd', ModelsDir);
@@ -317,9 +321,19 @@ void USDViewer::LoadStage()
     }
 
     USD::HnRenderDelegate::CreateInfo DelegateCI;
-    DelegateCI.pDevice             = m_DeviceWithCache;
-    DelegateCI.pContext            = m_pImmediateContext;
-    DelegateCI.pRenderStateCache   = m_DeviceWithCache;
+    DelegateCI.pDevice           = m_DeviceWithCache;
+    DelegateCI.pContext          = m_pImmediateContext;
+    DelegateCI.pRenderStateCache = m_DeviceWithCache;
+
+    RefCntAutoPtr<IThreadPool> pThreadPool{m_DeviceWithCache.GetShaderCompilationThreadPool()};
+    if (!pThreadPool)
+    {
+        ThreadPoolCreateInfo ThreadPoolCI;
+        ThreadPoolCI.NumThreads = std::max(std::thread::hardware_concurrency(), 2u) - 1u;
+        pThreadPool             = CreateThreadPool(ThreadPoolCI);
+    }
+    DelegateCI.pThreadPool = pThreadPool;
+
     DelegateCI.UseVertexPool       = m_UseVertexPool;
     DelegateCI.UseIndexPool        = m_UseIndexPool;
     DelegateCI.EnableShadows       = true;
@@ -327,6 +341,8 @@ void USDViewer::LoadStage()
 
     DelegateCI.AllowHotShaderReload   = m_EnableHotShaderReload;
     DelegateCI.AsyncShaderCompilation = true;
+    DelegateCI.AsyncTextureLoading    = m_AsyncTextureLoading;
+    DelegateCI.TextureLoadBudget      = Uint64{512} << Uint64{20};
 
     if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
@@ -1084,78 +1100,83 @@ void USDViewer::UpdateUI()
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Stats"))
-            {
-                const auto MemoryStats = m_Stage.RenderDelegate->GetMemoryStats();
-                ImGui::TextDisabled("Task time\n"
-                                    "Binding\n"
-                                    "Draws + MDraws\n"
-                                    "Tris\n"
-                                    "Lines\n"
-                                    "Points\n"
-                                    "State Changes\n"
-                                    "  PSO\n"
-                                    "  SRB\n"
-                                    "  VB\n"
-                                    "  IB\n"
-                                    "Buffer M + U\n"
-                                    "Memory Usage\n"
-                                    "  Vertex Pool\n"
-                                    "  Index Pool\n"
-                                    "  Atlas");
-                ImGui::SameLine();
-
-                const std::string VertPoolCommittedSizeStr = GetMemorySizeString(MemoryStats.VertexPool.CommittedSize);
-                const std::string VertPoolUsedSizeStr      = GetMemorySizeString(MemoryStats.VertexPool.UsedSize);
-                const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
-                const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
-                const std::string AtlasCommittedSizeStr    = GetMemorySizeString(MemoryStats.Atlas.CommittedSize).c_str();
-
-                const char* TextureBindingModeStr = "";
-                switch (m_BindingMode)
-                {
-                    case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_LEGACY: TextureBindingModeStr = "Legacy"; break;
-                    case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_ATLAS: TextureBindingModeStr = "Atlas"; break;
-                    case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC: TextureBindingModeStr = "Dynamic"; break;
-                }
-
-                ImGui::TextDisabled("%.1f ms\n"
-                                    "%s\n"
-                                    "%d + %d\n"
-                                    "%d\n"
-                                    "%d\n"
-                                    "%d\n"
-                                    "\n"
-                                    "%d\n"
-                                    "%d\n"
-                                    "%d\n"
-                                    "%d\n"
-                                    "%d + %d\n"
-                                    "\n"
-                                    "%s / %s (%d allocs, %dK verts)\n"
-                                    "%s / %s (%d allocs)\n"
-                                    "%s (%.1lf%%, %d allocs)",
-                                    m_Stats.TaskRunTime * 1000.f,
-                                    TextureBindingModeStr,
-                                    m_Stats.NumDrawCommands, m_Stats.NumMultiDrawCommands,
-                                    m_Stats.NumTriangles,
-                                    m_Stats.NumLines,
-                                    m_Stats.NumPoints,
-                                    m_Stats.NumPSOChanges,
-                                    m_Stats.NumSRBChanges,
-                                    m_Stats.NumVBChanges,
-                                    m_Stats.NumIBChanges,
-                                    m_Stats.NumBufferMaps, m_Stats.NumBufferUpdates,
-                                    VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(),
-                                    MemoryStats.VertexPool.AllocationCount,
-                                    static_cast<Uint32>(MemoryStats.VertexPool.AllocatedVertexCount / 1000ull),
-                                    IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
-                                    AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount);
-                ImGui::EndTabItem();
-            }
-
             ImGui::EndTabBar();
         }
+    }
+    ImGui::End();
+
+
+    if (ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground))
+    {
+        const USD::HnRenderDelegateMemoryStats MemoryStats = m_Stage.RenderDelegate->GetMemoryStats();
+        ImGui::Text("Task time\n"
+                    "Binding\n"
+                    "Draws + MDraws\n"
+                    "Tris\n"
+                    "Lines\n"
+                    "Points\n"
+                    "State Changes\n"
+                    "  PSO\n"
+                    "  SRB\n"
+                    "  VB\n"
+                    "  IB\n"
+                    "Buffer M + U\n"
+                    "Memory Usage\n"
+                    "  Vertex Pool\n"
+                    "  Index Pool\n"
+                    "  Atlas");
+        ImGui::SameLine();
+
+        const std::string VertPoolCommittedSizeStr = GetMemorySizeString(MemoryStats.VertexPool.CommittedSize);
+        const std::string VertPoolUsedSizeStr      = GetMemorySizeString(MemoryStats.VertexPool.UsedSize);
+        const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
+        const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
+        const std::string AtlasCommittedSizeStr    = GetMemorySizeString<Uint64>(MemoryStats.Atlas.CommittedSize, 0, 1 << 20).c_str();
+
+        const char* TextureBindingModeStr = "";
+        switch (m_BindingMode)
+        {
+            case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_LEGACY: TextureBindingModeStr = "Legacy"; break;
+            case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_ATLAS: TextureBindingModeStr = "Atlas"; break;
+            case USD::HN_MATERIAL_TEXTURES_BINDING_MODE_DYNAMIC: TextureBindingModeStr = "Dynamic"; break;
+        }
+
+        ImGui::Text("%.1f ms\n"
+                    "%s\n"
+                    "%d + %d\n"
+                    "%d\n"
+                    "%d\n"
+                    "%d\n"
+                    "\n"
+                    "%d\n"
+                    "%d\n"
+                    "%d\n"
+                    "%d\n"
+                    "%d + %d\n"
+                    "\n"
+                    "%s / %s (%d allocs, %dK verts)\n"
+                    "%s / %s (%d allocs)\n"
+                    "%s (%.1lf%%, %d allocs)",
+                    m_Stats.TaskRunTime * 1000.f,
+                    TextureBindingModeStr,
+                    m_Stats.NumDrawCommands, m_Stats.NumMultiDrawCommands,
+                    m_Stats.NumTriangles,
+                    m_Stats.NumLines,
+                    m_Stats.NumPoints,
+                    m_Stats.NumPSOChanges,
+                    m_Stats.NumSRBChanges,
+                    m_Stats.NumVBChanges,
+                    m_Stats.NumIBChanges,
+                    m_Stats.NumBufferMaps, m_Stats.NumBufferUpdates,
+                    VertPoolUsedSizeStr.c_str(), VertPoolCommittedSizeStr.c_str(),
+                    MemoryStats.VertexPool.AllocationCount,
+                    static_cast<Uint32>(MemoryStats.VertexPool.AllocatedVertexCount / 1000ull),
+                    IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
+                    AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount);
+
+        ImVec2 WndSize     = ImGui::GetWindowSize();
+        ImVec2 DisplaySize = ImGui::GetIO().DisplaySize;
+        ImGui::SetWindowPos(ImVec2(DisplaySize.x - WndSize.x - 10, DisplaySize.y - WndSize.y - 10));
     }
     ImGui::End();
 

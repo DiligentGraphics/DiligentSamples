@@ -153,6 +153,7 @@ private:
 
     bool   m_UseIndexPool        = true;
     bool   m_UseVertexPool       = true;
+    bool   m_AsyncTextureLoading = true;
     Uint32 m_TextureAtlasDim     = 2048;
     Uint32 m_TextureCompressMode = 1;
 
