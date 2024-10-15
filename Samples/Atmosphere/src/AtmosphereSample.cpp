@@ -540,7 +540,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
         m_pImmediateContext->SetRenderTargets(0, nullptr, pCascadeDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
+        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTransform(iCascade).Proj;
 
         const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
             ShadowAttribs.mWorldToLightView :

@@ -520,7 +520,7 @@ void ShadowsSample::RenderShadowMap()
     auto iNumShadowCascades = m_LightAttribs.ShadowAttribs.iNumCascades;
     for (int iCascade = 0; iCascade < iNumShadowCascades; ++iCascade)
     {
-        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTranform(iCascade).Proj;
+        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTransform(iCascade).Proj;
 
         const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
             m_LightAttribs.ShadowAttribs.mWorldToLightView :
