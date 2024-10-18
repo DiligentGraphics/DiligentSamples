@@ -602,6 +602,33 @@ void USDViewer::PopulateSceneTree(const pxr::UsdPrim& Prim)
             ImGui::TextDisabled("%s", Prop.GetName().GetText());
         }
 
+        // Check for and display variant sets
+        pxr::UsdVariantSets      VariantSets     = Prim.GetVariantSets();
+        std::vector<std::string> VariantSetNames = VariantSets.GetNames();
+        for (const std::string& VariantSetName : VariantSetNames)
+        {
+            pxr::UsdVariantSet       VariantSet       = VariantSets.GetVariantSet(VariantSetName);
+            const std::string        VariantSelection = VariantSet.GetVariantSelection();
+            std::vector<std::string> VariantNames     = VariantSet.GetVariantNames();
+            std::vector<const char*> VariantNamePtrs(VariantNames.size());
+
+            int SelectedVariant = -1;
+            for (size_t i = 0; i < VariantNames.size(); ++i)
+            {
+                VariantNamePtrs[i] = VariantNames[i].c_str();
+                if (VariantSelection == VariantNames[i])
+                    SelectedVariant = static_cast<int>(i);
+            }
+            ImGui::SetNextItemWidth(180);
+            if (ImGui::Combo((VariantSetName + " variant").c_str(), &SelectedVariant, VariantNamePtrs.data(), static_cast<int>(VariantNames.size())))
+            {
+                if (SelectedVariant >= 0)
+                {
+                    VariantSet.SetVariantSelection(VariantNames[SelectedVariant]);
+                }
+            }
+        }
+
         for (auto Child : Prim.GetAllChildren())
             PopulateSceneTree(Child);
 
