@@ -1151,7 +1151,8 @@ void USDViewer::UpdateUI()
                     "Memory Usage\n"
                     "  Vertex Pool\n"
                     "  Index Pool\n"
-                    "  Atlas");
+                    "  Atlas\n"
+                    "  Sep Tex");
         ImGui::SameLine();
 
         const std::string VertPoolCommittedSizeStr = GetMemorySizeString(MemoryStats.VertexPool.CommittedSize);
@@ -1159,6 +1160,7 @@ void USDViewer::UpdateUI()
         const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
         const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
         const std::string AtlasCommittedSizeStr    = GetMemorySizeString<Uint64>(MemoryStats.Atlas.CommittedSize, 0, 1 << 20).c_str();
+        const std::string SepTexturesSizeStr       = GetMemorySizeString<Uint64>(MemoryStats.TextureRegistry.SeparateTexDataSize, 0, 1 << 20).c_str();
 
         const char* TextureBindingModeStr = "";
         switch (m_BindingMode)
@@ -1183,7 +1185,8 @@ void USDViewer::UpdateUI()
                     "\n"
                     "%s / %s (%d allocs, %dK verts)\n"
                     "%s / %s (%d allocs)\n"
-                    "%s (%.1lf%%, %d allocs)",
+                    "%s (%.1lf%%, %d allocs)\n"
+                    "%s",
                     m_Stats.TaskRunTime * 1000.f,
                     TextureBindingModeStr,
                     m_Stats.NumDrawCommands, m_Stats.NumMultiDrawCommands,
@@ -1199,7 +1202,8 @@ void USDViewer::UpdateUI()
                     MemoryStats.VertexPool.AllocationCount,
                     static_cast<Uint32>(MemoryStats.VertexPool.AllocatedVertexCount / 1000ull),
                     IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
-                    AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount);
+                    AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount,
+                    SepTexturesSizeStr.c_str());
 
         ImVec2 WndSize     = ImGui::GetWindowSize();
         ImVec2 DisplaySize = ImGui::GetIO().DisplaySize;
