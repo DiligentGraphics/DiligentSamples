@@ -347,8 +347,8 @@ void ShadowsSample::CreatePipelineStates()
             ShaderCI.CompileFlags = m_PackMatrixRowMajor ? SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR : SHADER_COMPILE_FLAG_NONE;
         });
 
-        m_pRSNLoader->LoadShader({"Mesh VS", false, ModifyCI, ModifyCI}, &pGeometryVS);
-        m_pRSNLoader->LoadShader({"Mesh PS", false, ModifyCI, ModifyCI}, &pGeometryPS);
+        m_pRSNLoader->LoadShader({"Mesh VS", false, false, ModifyCI, ModifyCI}, &pGeometryVS);
+        m_pRSNLoader->LoadShader({"Mesh PS", false, false, ModifyCI, ModifyCI}, &pGeometryPS);
     }
 
     Macros.AddShaderMacro("SHADOW_PASS", true);
@@ -359,7 +359,7 @@ void ShadowsSample::CreatePipelineStates()
             ShaderCI.CompileFlags = m_PackMatrixRowMajor ? SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR : SHADER_COMPILE_FLAG_NONE;
         });
 
-        m_pRSNLoader->LoadShader({"Mesh VS", false, ModifyCI, ModifyCI}, &pShadowVS);
+        m_pRSNLoader->LoadShader({"Mesh VS", false, false, ModifyCI, ModifyCI}, &pShadowVS);
     }
 
     m_PSOIndex.resize(m_Mesh.GetNumVBs());
@@ -410,7 +410,7 @@ void ShadowsSample::CreatePipelineStates()
             });
 
             RefCntAutoPtr<IPipelineState> pRenderMeshPSO;
-            m_pRSNLoader->LoadPipelineState({"Mesh PSO", PIPELINE_TYPE_GRAPHICS, false, ModifyCI, ModifyCI}, &pRenderMeshPSO);
+            m_pRSNLoader->LoadPipelineState({"Mesh PSO", PIPELINE_TYPE_GRAPHICS, false, false, ModifyCI, ModifyCI}, &pRenderMeshPSO);
 
             pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
             pRenderMeshPSO->GetStaticVariableByName(SHADER_TYPE_PIXEL, "cbLightAttribs")->Set(m_LightAttribsCB);
@@ -429,7 +429,7 @@ void ShadowsSample::CreatePipelineStates()
             });
 
             RefCntAutoPtr<IPipelineState> pRenderMeshShadowPSO;
-            m_pRSNLoader->LoadPipelineState({"Mesh Shadow PSO", PIPELINE_TYPE_GRAPHICS, false, ModifyCI, ModifyCI}, &pRenderMeshShadowPSO);
+            m_pRSNLoader->LoadPipelineState({"Mesh Shadow PSO", PIPELINE_TYPE_GRAPHICS, false, false, ModifyCI, ModifyCI}, &pRenderMeshShadowPSO);
             pRenderMeshShadowPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbCameraAttribs")->Set(m_CameraAttribsCB);
             m_RenderMeshShadowPSO.emplace_back(std::move(pRenderMeshShadowPSO));
         }

@@ -570,7 +570,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     m_pResMapping->AddResource("cbNMGenerationAttribs", pcbNMGenerationAttribs, true);
 
     RefCntAutoPtr<IPipelineState> pRenderNormalMapPSO;
-    m_pRSNLoader->LoadPipelineState({"Render Normal Map", PIPELINE_TYPE_GRAPHICS, false}, &pRenderNormalMapPSO);
+    m_pRSNLoader->LoadPipelineState({"Render Normal Map", PIPELINE_TYPE_GRAPHICS, false, false}, &pRenderNormalMapPSO);
 
     pRenderNormalMapPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
 
@@ -720,7 +720,7 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
             auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
             GraphicsPipelineCI.GraphicsPipeline.DSVFormat = m_Params.ShadowMapFormat;
         });
-        m_pRSNLoader->LoadPipelineState({"Render Hemisphere Z Only", PIPELINE_TYPE_GRAPHICS, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemisphereZOnlyPSO);
+        m_pRSNLoader->LoadPipelineState({"Render Hemisphere Z Only", PIPELINE_TYPE_GRAPHICS, false, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemisphereZOnlyPSO);
         m_pHemisphereZOnlyPSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemisphereZOnlyPSO->CreateShaderResourceBinding(&m_pHemisphereZOnlySRB, true);
     }
@@ -795,7 +795,7 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
             GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_Params.DstRTVFormat;
             GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
         });
-        m_pRSNLoader->LoadPipelineState({"RenderHemisphere", PIPELINE_TYPE_GRAPHICS, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemispherePSO);
+        m_pRSNLoader->LoadPipelineState({"RenderHemisphere", PIPELINE_TYPE_GRAPHICS, false, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemispherePSO);
 
         m_pHemispherePSO->BindStaticResources(SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, m_pResMapping, BIND_SHADER_RESOURCES_VERIFY_ALL_RESOLVED);
         m_pHemispherePSO->CreateShaderResourceBinding(&m_pHemisphereSRB, true);

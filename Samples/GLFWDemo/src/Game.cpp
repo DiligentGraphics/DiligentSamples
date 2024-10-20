@@ -486,7 +486,7 @@ void Game::CreateSDFMap()
                 ShaderCI.Macros = Macros;
             });
 
-            m_pRSNLoader->LoadPipelineState({"Generate SDF map PSO", PIPELINE_TYPE_COMPUTE, true, nullptr, nullptr, Callback, Callback}, &pGenSdfPSO);
+            m_pRSNLoader->LoadPipelineState({"Generate SDF map PSO", PIPELINE_TYPE_COMPUTE, true, true, nullptr, nullptr, Callback, Callback}, &pGenSdfPSO);
             CHECK_THROW(pGenSdfPSO != nullptr);
         }
 
@@ -542,7 +542,7 @@ void Game::CreatePipelineState()
         GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });
 
-    m_pRSNLoader->LoadPipelineState({"Draw map PSO", PIPELINE_TYPE_GRAPHICS, true, Callback, Callback}, &m_Map.pPSO);
+    m_pRSNLoader->LoadPipelineState({"Draw map PSO", PIPELINE_TYPE_GRAPHICS, true, true, Callback, Callback}, &m_Map.pPSO);
     CHECK_THROW(m_Map.pPSO != nullptr);
 
     BufferDesc CBDesc;
