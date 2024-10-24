@@ -1231,6 +1231,8 @@ void USDViewer::UpdateCamera()
     m_CameraView = float4x4::Scale(1, -1, 1) * m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0, 0, CameraDist);
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
+    // USD camera looks along -Z axis
+    m_CameraView *= float4x4::Scale(1, 1, -1);
 
     const SwapChainDesc& SCDesc      = m_pSwapChain->GetDesc();
     m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm / static_cast<float>(SCDesc.Width) * static_cast<float>(SCDesc.Height);
