@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +48,15 @@ struct MouseState
     Float32      PosY        = -1;
     BUTTON_FLAGS ButtonFlags = BUTTON_FLAG_NONE;
     Float32      WheelDelta  = 0;
+
+    constexpr bool IsValid()
+    {
+        return PosX >= 0 && PosY >= 0;
+    }
+    explicit constexpr operator bool()
+    {
+        return IsValid();
+    }
 };
 DEFINE_FLAG_ENUM_OPERATORS(MouseState::BUTTON_FLAGS)
 
