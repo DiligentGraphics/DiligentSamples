@@ -377,7 +377,7 @@ Zero value indicates that the shader is executed for the first time and in this
 case it overwrites the previous value.
 
 Refer to the
-[shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial25_StatePackager/assets/path_trace.csh)
+[shader source code](https://github.com/DiligentGraphics/DiligentSamples/blob/master/Tutorials/Tutorial25_StatePackager/assets/path_trace.psh)
 for additional details.
 
 
