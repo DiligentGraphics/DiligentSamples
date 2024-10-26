@@ -1231,8 +1231,10 @@ void USDViewer::UpdateCamera()
     m_CameraView = float4x4::Scale(1, -1, 1) * m_Camera.GetRotation().ToMatrix() * float4x4::Translation(0, 0, CameraDist);
     // Apply pretransform matrix that rotates the scene according the surface orientation
     m_CameraView *= GetSurfacePretransformMatrix(float3{0, 0, 1});
-    // USD camera looks along -Z axis
-    m_CameraView *= float4x4::Scale(1, 1, -1);
+
+    // USD camera looks along -Z axis with the transform defined in scene units
+    const float    UnitsPerMeter = 1.f / m_Stage.MetersPerUnit;
+    const float4x4 USDCameraView = m_CameraView * float4x4::Scale(UnitsPerMeter, UnitsPerMeter, -UnitsPerMeter);
 
     const SwapChainDesc& SCDesc      = m_pSwapChain->GetDesc();
     m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm / static_cast<float>(SCDesc.Width) * static_cast<float>(SCDesc.Height);
@@ -1243,7 +1245,7 @@ void USDViewer::UpdateCamera()
 
     m_CameraSettings.FocusDistance = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength_mm * 0.001f, ClippingRange[1]);
 
-    m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * m_CameraView).Inverse()));
+    m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * USDCameraView).Inverse()));
     m_Stage.Camera.GetFStopAttr().Set(m_CameraSettings.FStop);
     m_Stage.Camera.GetExposureAttr().Set(m_CameraSettings.Exposure);
 
