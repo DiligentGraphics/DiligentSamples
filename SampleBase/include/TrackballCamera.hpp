@@ -53,12 +53,12 @@ public:
         }
         m_LastMouseState = Mouse;
 
-        auto fYawDelta   = MouseDeltaX * m_RotationSpeed;
-        auto fPitchDelta = MouseDeltaY * m_RotationSpeed;
+        auto fYawDelta   = MouseDeltaX;
+        auto fPitchDelta = MouseDeltaY;
         if (Mouse.ButtonFlags & MouseState::BUTTON_FLAG_LEFT)
         {
-            m_Yaw += (m_IsLeftHanded ? -fYawDelta : +fYawDelta);
-            m_Pitch += fPitchDelta;
+            m_Yaw += (m_IsLeftHanded ? -fYawDelta : +fYawDelta) * m_RotationSpeed;
+            m_Pitch += fPitchDelta * m_RotationSpeed;
             m_Pitch = std::max(m_Pitch, -static_cast<T>(PI / 2.0));
             m_Pitch = std::min(m_Pitch, +static_cast<T>(PI / 2.0));
         }
@@ -76,8 +76,8 @@ public:
             auto CameraRight = Vector3<T>::MakeVector(CameraWorld[0]);
             auto CameraUp    = Vector3<T>::MakeVector(CameraWorld[1]);
             m_SecondaryRotation =
-                Quaternion<T>::RotationFromAxisAngle(CameraRight, -fPitchDelta) *
-                Quaternion<T>::RotationFromAxisAngle(CameraUp, m_IsLeftHanded ? +fYawDelta : -fYawDelta) *
+                Quaternion<T>::RotationFromAxisAngle(CameraRight, -fPitchDelta * m_SecondaryRotationSpeed) *
+                Quaternion<T>::RotationFromAxisAngle(CameraUp, (m_IsLeftHanded ? +fYawDelta : -fYawDelta) * m_SecondaryRotationSpeed) *
                 m_SecondaryRotation;
         }
 
@@ -163,6 +163,11 @@ public:
         m_RotationSpeed = RotationSpeed;
     }
 
+    void SetSecondaryRotationSpeed(T RotationSpeed)
+    {
+        m_SecondaryRotationSpeed = RotationSpeed;
+    }
+
     void SetZoomSpeed(T ZoomSpeed)
     {
         m_ZoomSpeed = ZoomSpeed;
@@ -207,8 +212,9 @@ protected:
     T m_MinDist = 0.125;
     T m_MaxDist = 5;
 
-    T m_RotationSpeed = static_cast<T>(0.005);
-    T m_ZoomSpeed     = static_cast<T>(0.25);
+    T m_RotationSpeed          = static_cast<T>(0.005);
+    T m_SecondaryRotationSpeed = static_cast<T>(0.005);
+    T m_ZoomSpeed              = static_cast<T>(0.25);
 
     bool m_IsLeftHanded = false;
 
