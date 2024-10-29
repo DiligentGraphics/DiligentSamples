@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +94,7 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
     m_TheHeightMap.resize(size_t{m_iStride} * size_t{m_iNumRows});
 
     VERIFY(ImgInfo.ComponentType == VT_UINT16 && ImgInfo.NumComponents == 1, "Unexpected scanline size: 16-bit single-channel image is expected");
-    auto* pSrcImgData = reinterpret_cast<Uint8*>(pImageData->GetDataPtr());
+    Uint8* pSrcImgData = pImageData->GetDataPtr<Uint8>();
     for (size_t row = 0; row < ImgInfo.Height; row++, pSrcImgData += ImgInfo.RowStride)
     {
         memcpy(&m_TheHeightMap[row * m_iStride], pSrcImgData, size_t{ImgInfo.Width} * size_t{GetValueSize(ImgInfo.ComponentType)});

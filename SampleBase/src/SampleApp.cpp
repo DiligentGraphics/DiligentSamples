@@ -957,8 +957,7 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
                                                   /*FlipY = */ m_pDevice->GetDeviceInfo().IsGLDevice());
     pCtx->UnmapTextureSubresource(Capture.pTexture, 0, 0);
 
-    auto* pGoldenImgPixels = reinterpret_cast<const Uint8*>(pGoldenImg->GetData()->GetDataPtr());
-
+    const Uint8* pGoldenImgPixels = pGoldenImg->GetData()->GetConstDataPtr<Uint8>();
 
     size_t NumBadPixels  = 0;
     size_t NumDiffPixels = 0;
