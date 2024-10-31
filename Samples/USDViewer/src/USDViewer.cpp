@@ -364,6 +364,8 @@ void USDViewer::LoadStage()
     }
     DelegateCI.TextureBindingMode = m_BindingMode;
 
+    DelegateCI.MaxJointCount = 256;
+
     const pxr::GfRange3d SceneAABB = ComputeStageAABB(*m_Stage.Stage);
 
     m_Stage.MetersPerUnit    = pxr::UsdGeomGetStageMetersPerUnit(m_Stage.Stage);
