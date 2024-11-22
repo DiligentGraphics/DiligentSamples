@@ -547,8 +547,9 @@ void GLTFViewer::CreateGLTFRenderer()
             m_RenderParams.Flags |= GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB;
     }
 
-    // Reuse primitive attribs and joints buffers as they are referenced by existing model SRBs.
+    // Reuse primitive attribs, material attribs and joints buffers as they are referenced by existing model SRBs.
     RendererCI.pPrimitiveAttribsCB = m_GLTFRenderer ? m_GLTFRenderer->GetPBRPrimitiveAttribsCB() : nullptr;
+    RendererCI.pMaterialAttribsCB  = m_GLTFRenderer ? m_GLTFRenderer->GetPBRMaterialAttribsCB() : nullptr;
     RendererCI.pJointsBuffer       = m_GLTFRenderer ? m_GLTFRenderer->GetJointsBuffer() : nullptr;
 
     m_GLTFRenderer = std::make_unique<GLTF_PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, RendererCI);
