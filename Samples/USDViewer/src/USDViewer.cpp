@@ -110,7 +110,7 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
         EngineVkCreateInfo& EngineVkCI = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
-        EngineVkCI.DynamicHeapSize     = 16 << 20;
+        EngineVkCI.DynamicHeapSize     = 64 << 20;
     }
 #endif
 
@@ -118,7 +118,7 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_WEBGPU)
     {
         EngineWebGPUCreateInfo& EngineWgpuCI = static_cast<EngineWebGPUCreateInfo&>(Attribs.EngineCI);
-        EngineWgpuCI.DynamicHeapSize         = 16 << 20;
+        EngineWgpuCI.DynamicHeapSize         = 32 << 20;
     }
 #endif
 }
@@ -212,7 +212,7 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
 
         const std::string CachePath      = GetRenderStateCacheFilePath(RenderStateCacheLocationAppData, "USDViewer", m_pDevice->GetDeviceInfo().Type);
         const bool        SaveOnExit     = true;
-        constexpr Uint32  ContentVersion = 1;
+        constexpr Uint32  ContentVersion = 2;
         m_DeviceWithCache.LoadCacheFromFile(CachePath.c_str(), SaveOnExit, ContentVersion);
     }
     else
@@ -342,7 +342,10 @@ void USDViewer::LoadStage()
     DelegateCI.AllowHotShaderReload   = m_EnableHotShaderReload;
     DelegateCI.AsyncShaderCompilation = true;
     DelegateCI.AsyncTextureLoading    = m_AsyncTextureLoading;
-    DelegateCI.TextureLoadBudget      = Uint64{512} << Uint64{20};
+    DelegateCI.PackVertexNormals      = true;
+    DelegateCI.PackVertexPositions    = true;
+    DelegateCI.TextureLoadBudget      = Uint64{1024} << Uint64{20};
+    DelegateCI.GeometryLoadBudget     = Uint64{128} << Uint64{20};
 
     if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
@@ -1154,15 +1157,20 @@ void USDViewer::UpdateUI()
                     "  Vertex Pool\n"
                     "  Index Pool\n"
                     "  Atlas\n"
-                    "  Sep Tex");
+                    "  Sep Tex\n"
+                    "  Tex upload\n"
+                    "  V + I upload");
         ImGui::SameLine();
 
         const std::string VertPoolCommittedSizeStr = GetMemorySizeString(MemoryStats.VertexPool.CommittedSize);
         const std::string VertPoolUsedSizeStr      = GetMemorySizeString(MemoryStats.VertexPool.UsedSize);
-        const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize).c_str();
-        const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize).c_str();
-        const std::string AtlasCommittedSizeStr    = GetMemorySizeString<Uint64>(MemoryStats.Atlas.CommittedSize, 0, 1 << 20).c_str();
-        const std::string SepTexturesSizeStr       = GetMemorySizeString<Uint64>(MemoryStats.TextureRegistry.SeparateTexDataSize, 0, 1 << 20).c_str();
+        const std::string IndPoolCommittedSizeStr  = GetMemorySizeString(MemoryStats.IndexPool.CommittedSize);
+        const std::string IndPoolUsedSizeStr       = GetMemorySizeString(MemoryStats.IndexPool.UsedSize);
+        const std::string AtlasCommittedSizeStr    = GetMemorySizeString<Uint64>(MemoryStats.Atlas.CommittedSize, 0, 1 << 20);
+        const std::string SepTexturesSizeStr       = GetMemorySizeString<Uint64>(MemoryStats.TextureRegistry.SeparateTexDataSize, 0, 1 << 20);
+        const std::string LoadingSizeStr           = GetMemorySizeString<Uint64>(MemoryStats.TextureRegistry.LoadingTexDataSize, 0, 1 << 20);
+        const std::string LoadingIndSizeStr        = GetMemorySizeString<Uint64>(MemoryStats.IndexPool.PendingDataSize, 0, 1 << 20);
+        const std::string LoadingVertSizeStr       = GetMemorySizeString<Uint64>(MemoryStats.VertexPool.PendingDataSize, 0, 1 << 20);
 
         const char* TextureBindingModeStr = "";
         switch (m_BindingMode)
@@ -1188,7 +1196,9 @@ void USDViewer::UpdateUI()
                     "%s / %s (%d allocs, %dK verts)\n"
                     "%s / %s (%d allocs)\n"
                     "%s (%.1lf%%, %d allocs)\n"
-                    "%s",
+                    "%s\n"
+                    "%s (%d)\n"
+                    "%s + %s",
                     m_Stats.TaskRunTime * 1000.f,
                     TextureBindingModeStr,
                     m_Stats.NumDrawCommands, m_Stats.NumMultiDrawCommands,
@@ -1205,7 +1215,9 @@ void USDViewer::UpdateUI()
                     static_cast<Uint32>(MemoryStats.VertexPool.AllocatedVertexCount / 1000ull),
                     IndPoolUsedSizeStr.c_str(), IndPoolCommittedSizeStr.c_str(), MemoryStats.IndexPool.AllocationCount,
                     AtlasCommittedSizeStr.c_str(), static_cast<double>(MemoryStats.Atlas.AllocatedTexels) / static_cast<double>(std::max(MemoryStats.Atlas.TotalTexels, Uint64{1})) * 100.0, MemoryStats.Atlas.AllocationCount,
-                    SepTexturesSizeStr.c_str());
+                    SepTexturesSizeStr.c_str(),
+                    LoadingSizeStr.c_str(), MemoryStats.TextureRegistry.NumTexturesLoading,
+                    LoadingVertSizeStr.c_str(), LoadingIndSizeStr.c_str());
 
         ImVec2 WndSize     = ImGui::GetWindowSize();
         ImVec2 DisplaySize = ImGui::GetIO().DisplaySize;
