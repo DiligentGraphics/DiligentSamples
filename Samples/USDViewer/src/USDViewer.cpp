@@ -111,6 +111,7 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     {
         EngineVkCreateInfo& EngineVkCI = static_cast<EngineVkCreateInfo&>(Attribs.EngineCI);
         EngineVkCI.DynamicHeapSize     = 64 << 20;
+        EngineVkCI.DynamicHeapPageSize = 1 << 20;
     }
 #endif
 
@@ -119,6 +120,7 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     {
         EngineWebGPUCreateInfo& EngineWgpuCI = static_cast<EngineWebGPUCreateInfo&>(Attribs.EngineCI);
         EngineWgpuCI.DynamicHeapSize         = 32 << 20;
+        EngineWgpuCI.DynamicHeapPageSize     = 1 << 20;
     }
 #endif
 }
