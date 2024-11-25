@@ -106,6 +106,8 @@ void USDViewer::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
     // We do not need the swap chain's depth buffer.
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 
+    Attribs.EngineCI.Features.SparseResources = DEVICE_FEATURE_STATE_OPTIONAL;
+
 #if VULKAN_SUPPORTED
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
@@ -550,8 +552,6 @@ void USDViewer::Render()
     m_Stage.FinalColorTarget->SetTarget(m_pSwapChain->GetCurrentBackBufferRTV());
 
     {
-        ScopedDebugGroup DebugGroup{m_pImmediateContext, "Hydrogent"};
-
         pxr::HdTaskSharedPtrVector tasks = m_Stage.TaskManager->GetTasks();
         m_Engine.Execute(m_Stage.RenderIndex.get(), &tasks);
     }
