@@ -349,7 +349,7 @@ void USDViewer::LoadStage()
     DelegateCI.PackVertexNormals      = true;
     DelegateCI.PackVertexPositions    = true;
     DelegateCI.TextureLoadBudget      = Uint64{1024} << Uint64{20};
-    DelegateCI.GeometryLoadBudget     = Uint64{128} << Uint64{20};
+    DelegateCI.GeometryLoadBudget     = Uint64{64} << Uint64{20};
 
     if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
