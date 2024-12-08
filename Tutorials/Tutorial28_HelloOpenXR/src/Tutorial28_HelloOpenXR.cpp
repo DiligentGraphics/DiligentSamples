@@ -32,7 +32,6 @@
 #ifndef NOMINMAX
 #    define NOMINMAX
 #endif
-#include <Windows.h>
 #include <crtdbg.h>
 
 #if D3D11_SUPPORTED
@@ -57,6 +56,7 @@
 
 #include "RefCntAutoPtr.hpp"
 #include "StringTools.h"
+#include "OpenXRUtilities.h"
 
 #include <openxr/openxr.h>
 
@@ -75,84 +75,6 @@ inline const char* GetXRErrorString(XrInstance xrInstance, XrResult result)
         XrResult result = (x);                                                                                                                \
         CHECK_ERR(XR_SUCCEEDED(result), "OPENXR: ", int(result), "(", (m_xrInstance ? GetXRErrorString(m_xrInstance, result) : ""), ") ", y); \
     } while (false)
-
-XrBool32 OpenXRMessageCallbackFunction(XrDebugUtilsMessageSeverityFlagsEXT xrMessageSeverity, XrDebugUtilsMessageTypeFlagsEXT messageType, const XrDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-    DEBUG_MESSAGE_SEVERITY MessageSeverity = DEBUG_MESSAGE_SEVERITY_INFO;
-    if (xrMessageSeverity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-    {
-        MessageSeverity = DEBUG_MESSAGE_SEVERITY_ERROR;
-    }
-    else if (xrMessageSeverity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-    {
-        MessageSeverity = DEBUG_MESSAGE_SEVERITY_WARNING;
-    }
-
-    std::string messageTypeStr;
-    if (messageType & XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
-    {
-        messageTypeStr += "GEN";
-    }
-    if (messageType & XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
-    {
-        if (!messageTypeStr.empty())
-        {
-            messageTypeStr += ",";
-        }
-        messageTypeStr += "SPEC";
-    }
-    if (messageType & XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
-    {
-        if (!messageTypeStr.empty())
-        {
-            messageTypeStr += ",";
-        }
-        messageTypeStr += "PERF";
-    }
-
-    std::string functionName = (pCallbackData->functionName) ? pCallbackData->functionName : "";
-    std::string messageId    = (pCallbackData->messageId) ? pCallbackData->messageId : "";
-    std::string message      = (pCallbackData->message) ? pCallbackData->message : "";
-
-    LOG_DEBUG_MESSAGE(MessageSeverity, '[', messageTypeStr, "] ", functionName, messageId, " - ", message);
-
-    return XrBool32{};
-}
-
-XrDebugUtilsMessengerEXT CreateOpenXRDebugUtilsMessenger(XrInstance m_xrInstance)
-{
-    // Fill out a XrDebugUtilsMessengerCreateInfoEXT structure specifying all severities and types.
-    // Set the userCallback to OpenXRMessageCallbackFunction().
-    XrDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI{XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
-    debugUtilsMessengerCI.messageSeverities = XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debugUtilsMessengerCI.messageTypes      = XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
-    debugUtilsMessengerCI.userCallback      = (PFN_xrDebugUtilsMessengerCallbackEXT)OpenXRMessageCallbackFunction;
-    debugUtilsMessengerCI.userData          = nullptr;
-
-    // Load xrCreateDebugUtilsMessengerEXT() function pointer as it is not default loaded by the OpenXR loader.
-    XrDebugUtilsMessengerEXT           debugUtilsMessenger{};
-    PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT;
-    OPENXR_CHECK(xrGetInstanceProcAddr(m_xrInstance, "xrCreateDebugUtilsMessengerEXT", (PFN_xrVoidFunction*)&xrCreateDebugUtilsMessengerEXT), "Failed to get InstanceProcAddr.");
-    if (xrCreateDebugUtilsMessengerEXT)
-    {
-        // Finally create and return the XrDebugUtilsMessengerEXT.
-        OPENXR_CHECK(xrCreateDebugUtilsMessengerEXT(m_xrInstance, &debugUtilsMessengerCI, &debugUtilsMessenger), "Failed to create DebugUtilsMessenger.");
-    }
-    return debugUtilsMessenger;
-}
-
-void DestroyOpenXRDebugUtilsMessenger(XrInstance m_xrInstance, XrDebugUtilsMessengerEXT debugUtilsMessenger)
-{
-    // Load xrDestroyDebugUtilsMessengerEXT() function pointer as it is not default loaded by the OpenXR loader.
-    PFN_xrDestroyDebugUtilsMessengerEXT xrDestroyDebugUtilsMessengerEXT = nullptr;
-    OPENXR_CHECK(xrGetInstanceProcAddr(m_xrInstance, "xrDestroyDebugUtilsMessengerEXT", (PFN_xrVoidFunction*)&xrDestroyDebugUtilsMessengerEXT), "Failed to get InstanceProcAddr.");
-
-    if (xrDestroyDebugUtilsMessengerEXT)
-    {
-        // Destroy the provided XrDebugUtilsMessengerEXT.
-        OPENXR_CHECK(xrDestroyDebugUtilsMessengerEXT(debugUtilsMessenger), "Failed to destroy DebugUtilsMessenger.");
-    }
-}
 
 const char* GetGraphicsAPIInstanceExtensionString(RENDER_DEVICE_TYPE Type)
 {
@@ -197,7 +119,7 @@ public:
         }
         if (m_DebugUtilsMessenger != XR_NULL_HANDLE)
         {
-            DestroyOpenXRDebugUtilsMessenger(m_xrInstance, m_DebugUtilsMessenger);
+            DestroyOpenXRDebugUtilsMessenger(m_DebugUtilsMessenger);
         }
         if (m_xrInstance)
         {
@@ -363,13 +285,38 @@ public:
         }
     }
 
-    bool InitializeDiligentEngine(HWND hWnd)
+    void CreateXrSession()
+    {
+        RefCntAutoPtr<IDataBlob> pGraphicsBinding;
+        GetOpenXRGraphicsBinding(m_pDevice, m_pImmediateContext, &pGraphicsBinding);
+
+        XrSessionCreateInfo sessionCI{XR_TYPE_SESSION_CREATE_INFO};
+        sessionCI.next        = pGraphicsBinding->GetConstDataPtr();
+        sessionCI.createFlags = 0;
+        sessionCI.systemId    = m_SystemId;
+
+        OPENXR_CHECK(xrCreateSession(m_xrInstance, &sessionCI, &m_xrSession), "Failed to create Session.");
+    }
+
+
+    bool Initialize()
     {
         CreateXrInstance();
         GetXrInstanceProperties();
         GetXrSystemID();
         GetViewConfigurationViews();
         GetEnvironmentBlendModes();
+
+        if (!InitializeDiligentEngine())
+            return false;
+
+        CreateXrSession();
+
+        return true;
+    }
+
+    bool InitializeDiligentEngine()
+    {
 
         OpenXRAttribs XRAttribs;
         static_assert(sizeof(XRAttribs.Instance) == sizeof(m_xrInstance), "XrInstance size mismatch");
@@ -378,7 +325,6 @@ public:
         memcpy(&XRAttribs.SystemId, &m_SystemId, sizeof(m_SystemId));
         XRAttribs.GetInstanceProcAddr = xrGetInstanceProcAddr;
 
-        SwapChainDesc SCDesc;
         switch (m_DeviceType)
         {
 #if D3D11_SUPPORTED
@@ -392,8 +338,6 @@ public:
 #    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
-                Win32NativeWindow Window{hWnd};
-                pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &m_pSwapChain);
             }
             break;
 #endif
@@ -411,8 +355,6 @@ public:
 
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
-                Win32NativeWindow Window{hWnd};
-                pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &m_pSwapChain);
             }
             break;
 #endif
@@ -421,10 +363,11 @@ public:
 #if GL_SUPPORTED
             case RENDER_DEVICE_TYPE_GL:
             {
-#    if EXPLICITLY_LOAD_ENGINE_GL_DLL
+#    if 0
+#        if EXPLICITLY_LOAD_ENGINE_GL_DLL
                 // Load the dll and import GetEngineFactoryOpenGL() function
                 auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
-#    endif
+#        endif
                 auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
@@ -432,6 +375,7 @@ public:
                 EngineCI.Window.hWnd = hWnd;
 
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
+#    endif
             }
             break;
 #endif
@@ -449,12 +393,6 @@ public:
 
                 auto* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
-
-                if (!m_pSwapChain && hWnd != nullptr)
-                {
-                    Win32NativeWindow Window{hWnd};
-                    pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, Window, &m_pSwapChain);
-                }
             }
             break;
 #endif
@@ -552,31 +490,121 @@ public:
 
     void Render()
     {
-        // Set render targets before issuing any draw command.
-        // Note that Present() unbinds the back buffer if it is set as render target.
-        auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-        auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
-        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Clear the back buffer
-        const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
-        // Let the engine perform required state transitions
-        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
     void Present()
     {
-        m_pSwapChain->Present();
     }
 
-    void WindowResize(Uint32 Width, Uint32 Height)
+    void PollSystemEvents()
     {
-        if (m_pSwapChain)
-            m_pSwapChain->Resize(Width, Height);
+    }
+
+    void PollEvents()
+    {
+        // Poll OpenXR for a new event.
+        XrEventDataBuffer eventData{XR_TYPE_EVENT_DATA_BUFFER};
+        auto              XrPollEvents = [&]() -> bool {
+            eventData = {XR_TYPE_EVENT_DATA_BUFFER};
+            return xrPollEvent(m_xrInstance, &eventData) == XR_SUCCESS;
+        };
+
+        while (XrPollEvents())
+        {
+            switch (eventData.type)
+            {
+                // Log the number of lost events from the runtime.
+                case XR_TYPE_EVENT_DATA_EVENTS_LOST:
+                {
+                    XrEventDataEventsLost* eventsLost = reinterpret_cast<XrEventDataEventsLost*>(&eventData);
+                    LOG_INFO_MESSAGE("OPENXR: Events Lost: ", eventsLost->lostEventCount);
+                    break;
+                }
+                // Log that an instance loss is pending and shutdown the application.
+                case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
+                {
+                    XrEventDataInstanceLossPending* instanceLossPending = reinterpret_cast<XrEventDataInstanceLossPending*>(&eventData);
+                    LOG_INFO_MESSAGE("OPENXR: Instance Loss Pending at: ", instanceLossPending->lossTime);
+                    m_SessionRunning     = false;
+                    m_ApplicationRunning = false;
+                    break;
+                }
+                // Log that the interaction profile has changed.
+                case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
+                {
+                    XrEventDataInteractionProfileChanged* interactionProfileChanged = reinterpret_cast<XrEventDataInteractionProfileChanged*>(&eventData);
+                    LOG_INFO_MESSAGE("OPENXR: Interaction Profile changed for Session: ", interactionProfileChanged->session);
+                    if (interactionProfileChanged->session != m_xrSession)
+                    {
+                        LOG_INFO_MESSAGE("XrEventDataInteractionProfileChanged for unknown Session");
+                        break;
+                    }
+                    break;
+                }
+                // Log that there's a reference space change pending.
+                case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
+                {
+                    XrEventDataReferenceSpaceChangePending* referenceSpaceChangePending = reinterpret_cast<XrEventDataReferenceSpaceChangePending*>(&eventData);
+                    LOG_INFO_MESSAGE("OPENXR: Reference Space Change pending for Session: ", referenceSpaceChangePending->session);
+                    if (referenceSpaceChangePending->session != m_xrSession)
+                    {
+                        LOG_INFO_MESSAGE("XrEventDataReferenceSpaceChangePending for unknown Session");
+                        break;
+                    }
+                    break;
+                }
+                // Session State changes:
+                case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED:
+                {
+                    XrEventDataSessionStateChanged* sessionStateChanged = reinterpret_cast<XrEventDataSessionStateChanged*>(&eventData);
+                    if (sessionStateChanged->session != m_xrSession)
+                    {
+                        LOG_INFO_MESSAGE("XrEventDataSessionStateChanged for unknown Session");
+                        break;
+                    }
+
+                    if (sessionStateChanged->state == XR_SESSION_STATE_READY)
+                    {
+                        // SessionState is ready. Begin the XrSession using the XrViewConfigurationType.
+                        XrSessionBeginInfo sessionBeginInfo{XR_TYPE_SESSION_BEGIN_INFO};
+                        sessionBeginInfo.primaryViewConfigurationType = m_ViewConfiguration;
+                        OPENXR_CHECK(xrBeginSession(m_xrSession, &sessionBeginInfo), "Failed to begin Session.");
+                        m_SessionRunning = true;
+                    }
+                    if (sessionStateChanged->state == XR_SESSION_STATE_STOPPING)
+                    {
+                        // SessionState is stopping. End the XrSession.
+                        OPENXR_CHECK(xrEndSession(m_xrSession), "Failed to end Session.");
+                        m_SessionRunning = false;
+                    }
+                    if (sessionStateChanged->state == XR_SESSION_STATE_EXITING)
+                    {
+                        // SessionState is exiting. Exit the application.
+                        m_SessionRunning     = false;
+                        m_ApplicationRunning = false;
+                    }
+                    if (sessionStateChanged->state == XR_SESSION_STATE_LOSS_PENDING)
+                    {
+                        // SessionState is loss pending. Exit the application.
+                        // It's possible to try a reestablish an XrInstance and XrSession, but we will simply exit here.
+                        m_SessionRunning     = false;
+                        m_ApplicationRunning = false;
+                    }
+                    // Store state for reference across the application.
+                    m_SessionState = sessionStateChanged->state;
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
+            }
+        }
     }
 
     RENDER_DEVICE_TYPE GetDeviceType() const { return m_DeviceType; }
+    bool               IsRunning() const { return m_ApplicationRunning; }
+    bool               IsSessionRunning() const { return m_SessionRunning; }
 
 private:
     RefCntAutoPtr<IRenderDevice>  m_pDevice;
@@ -637,38 +665,9 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
     if (!g_pTheApp->ProcessCommandLine(cmdLine))
         return -1;
 
-    std::wstring Title(L"Tutorial00: Hello Win32");
-    switch (g_pTheApp->GetDeviceType())
-    {
-        case RENDER_DEVICE_TYPE_D3D11: Title.append(L" (D3D11)"); break;
-        case RENDER_DEVICE_TYPE_D3D12: Title.append(L" (D3D12)"); break;
-        case RENDER_DEVICE_TYPE_GL: Title.append(L" (GL)"); break;
-        case RENDER_DEVICE_TYPE_VULKAN: Title.append(L" (VK)"); break;
-    }
-    // Register our window class
-    WNDCLASSEX wcex = {sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, MessageProc,
-                       0L, 0L, hInstance, NULL, NULL, NULL, NULL, L"SampleApp", NULL};
-    RegisterClassEx(&wcex);
-
-    // Create a window
-    LONG WindowWidth  = 1280;
-    LONG WindowHeight = 1024;
-    RECT rc           = {0, 0, WindowWidth, WindowHeight};
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    HWND wnd = CreateWindow(L"SampleApp", Title.c_str(),
-                            WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-                            rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
-    if (!wnd)
-    {
-        MessageBox(NULL, L"Cannot create window", L"Error", MB_OK | MB_ICONERROR);
-        return 0;
-    }
-    ShowWindow(wnd, nShowCmd);
-    UpdateWindow(wnd);
-
     try
     {
-        if (!g_pTheApp->InitializeDiligentEngine(wnd))
+        if (!g_pTheApp->Initialize())
             return -1;
     }
     catch (...)
@@ -678,65 +677,18 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
 
     g_pTheApp->CreateResources();
 
-    // Main message loop
-    MSG msg = {0};
-    while (WM_QUIT != msg.message)
+    // Main loop
+    while (g_pTheApp->IsRunning())
     {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
+        g_pTheApp->PollSystemEvents();
+        g_pTheApp->PollEvents();
+        if (g_pTheApp->IsSessionRunning())
         {
             g_pTheApp->Render();
-            g_pTheApp->Present();
         }
     }
 
     g_pTheApp.reset();
 
-    return (int)msg.wParam;
-}
-
-// Called every time the NativeNativeAppBase receives a message
-LRESULT CALLBACK MessageProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            BeginPaint(wnd, &ps);
-            EndPaint(wnd, &ps);
-            return 0;
-        }
-        case WM_SIZE: // Window size has been changed
-            if (g_pTheApp)
-            {
-                g_pTheApp->WindowResize(LOWORD(lParam), HIWORD(lParam));
-            }
-            return 0;
-
-        case WM_CHAR:
-            if (wParam == VK_ESCAPE)
-                PostQuitMessage(0);
-            return 0;
-
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
-
-        case WM_GETMINMAXINFO:
-        {
-            LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
-
-            lpMMI->ptMinTrackSize.x = 320;
-            lpMMI->ptMinTrackSize.y = 240;
-            return 0;
-        }
-
-        default:
-            return DefWindowProc(wnd, message, wParam, lParam);
-    }
+    return 0;
 }

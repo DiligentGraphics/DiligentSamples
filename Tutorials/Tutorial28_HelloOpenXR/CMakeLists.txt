@@ -18,6 +18,7 @@ target_compile_definitions(Tutorial28_HelloOpenXR PRIVATE ENGINE_DLL=1)
 target_link_libraries(Tutorial28_HelloOpenXR PRIVATE
     Diligent-BuildSettings
     Diligent-Common
+    Diligent-GraphicsTools
     openxr_loader
 )
 
