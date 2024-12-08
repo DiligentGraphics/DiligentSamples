@@ -171,7 +171,7 @@ const char* GetGraphicsAPIInstanceExtensionString(RENDER_DEVICE_TYPE Type)
 #endif
 
 #if VULKAN_SUPPORTED
-        case RENDER_DEVICE_TYPE_VULKAN: return "XR_KHR_vulkan_enable";
+        case RENDER_DEVICE_TYPE_VULKAN: return "XR_KHR_vulkan_enable2";
 #endif
 
         default:
@@ -303,19 +303,19 @@ public:
         // Get the XrSystemId from the instance and the supplied XrFormFactor.
         XrSystemGetInfo systemGI{XR_TYPE_SYSTEM_GET_INFO};
         systemGI.formFactor = m_FormFactor;
-        OPENXR_CHECK(xrGetSystem(m_xrInstance, &systemGI, &m_SystemID), "Failed to get SystemID.");
+        OPENXR_CHECK(xrGetSystem(m_xrInstance, &systemGI, &m_SystemId), "Failed to get SystemID.");
 
         // Get the System's properties for some general information about the hardware and the vendor.
-        OPENXR_CHECK(xrGetSystemProperties(m_xrInstance, m_SystemID, &m_SystemProperties), "Failed to get SystemProperties.");
+        OPENXR_CHECK(xrGetSystemProperties(m_xrInstance, m_SystemId, &m_SystemProperties), "Failed to get SystemProperties.");
     }
 
     void GetViewConfigurationViews()
     {
         // Gets the View Configuration Types. The first call gets the count of the array that will be returned. The next call fills out the array.
         uint32_t viewConfigurationCount = 0;
-        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_SystemID, 0, &viewConfigurationCount, nullptr), "Failed to enumerate View Configurations.");
+        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_SystemId, 0, &viewConfigurationCount, nullptr), "Failed to enumerate View Configurations.");
         std::vector<XrViewConfigurationType> ViewConfigurations(viewConfigurationCount);
-        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_SystemID, viewConfigurationCount, &viewConfigurationCount, ViewConfigurations.data()), "Failed to enumerate View Configurations.");
+        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_SystemId, viewConfigurationCount, &viewConfigurationCount, ViewConfigurations.data()), "Failed to enumerate View Configurations.");
 
         // Pick the first application supported View Configuration Type con supported by the hardware.
         for (const XrViewConfigurationType& viewConfiguration : m_ApplicationViewConfigurations)
@@ -334,18 +334,18 @@ public:
 
         // Gets the View Configuration Views. The first call gets the count of the array that will be returned. The next call fills out the array.
         uint32_t viewConfigurationViewCount = 0;
-        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_SystemID, m_ViewConfiguration, 0, &viewConfigurationViewCount, nullptr), "Failed to enumerate ViewConfiguration Views.");
+        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_SystemId, m_ViewConfiguration, 0, &viewConfigurationViewCount, nullptr), "Failed to enumerate ViewConfiguration Views.");
         m_ViewConfigurationViews.resize(viewConfigurationViewCount, {XR_TYPE_VIEW_CONFIGURATION_VIEW});
-        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_SystemID, m_ViewConfiguration, viewConfigurationViewCount, &viewConfigurationViewCount, m_ViewConfigurationViews.data()), "Failed to enumerate ViewConfiguration Views.");
+        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_SystemId, m_ViewConfiguration, viewConfigurationViewCount, &viewConfigurationViewCount, m_ViewConfigurationViews.data()), "Failed to enumerate ViewConfiguration Views.");
     }
 
     void GetEnvironmentBlendModes()
     {
         // Retrieve the available blend modes. The first call gets the count of the array that will be returned. The next call fills out the array.
         uint32_t environmentBlendModeCount = 0;
-        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_SystemID, m_ViewConfiguration, 0, &environmentBlendModeCount, nullptr), "Failed to enumerate EnvironmentBlend Modes.");
+        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_SystemId, m_ViewConfiguration, 0, &environmentBlendModeCount, nullptr), "Failed to enumerate EnvironmentBlend Modes.");
         std::vector<XrEnvironmentBlendMode> EnvironmentBlendModes(environmentBlendModeCount);
-        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_SystemID, m_ViewConfiguration, environmentBlendModeCount, &environmentBlendModeCount, EnvironmentBlendModes.data()), "Failed to enumerate EnvironmentBlend Modes.");
+        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_SystemId, m_ViewConfiguration, environmentBlendModeCount, &environmentBlendModeCount, EnvironmentBlendModes.data()), "Failed to enumerate EnvironmentBlend Modes.");
 
         // Pick the first application supported blend mode supported by the hardware.
         for (const XrEnvironmentBlendMode& environmentBlendMode : {XR_ENVIRONMENT_BLEND_MODE_OPAQUE, XR_ENVIRONMENT_BLEND_MODE_ADDITIVE})
@@ -371,6 +371,13 @@ public:
         GetViewConfigurationViews();
         GetEnvironmentBlendModes();
 
+        OpenXRAttribs XRAttribs;
+        static_assert(sizeof(XRAttribs.Instance) == sizeof(m_xrInstance), "XrInstance size mismatch");
+        memcpy(&XRAttribs.Instance, &m_xrInstance, sizeof(m_xrInstance));
+        static_assert(sizeof(XRAttribs.SystemId) == sizeof(m_SystemId), "XrSystemID size mismatch");
+        memcpy(&XRAttribs.SystemId, &m_SystemId, sizeof(m_SystemId));
+        XRAttribs.GetInstanceProcAddr = xrGetInstanceProcAddr;
+
         SwapChainDesc SCDesc;
         switch (m_DeviceType)
         {
@@ -378,6 +385,7 @@ public:
             case RENDER_DEVICE_TYPE_D3D11:
             {
                 EngineD3D11CreateInfo EngineCI;
+                EngineCI.pXRAttribs = &XRAttribs;
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D11() function
                 auto* GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
@@ -399,6 +407,7 @@ public:
                 auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngineCI;
+                EngineCI.pXRAttribs = &XRAttribs;
 
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -419,6 +428,7 @@ public:
                 auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
+                EngineCI.pXRAttribs  = &XRAttribs;
                 EngineCI.Window.hWnd = hWnd;
 
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
@@ -435,6 +445,7 @@ public:
                 auto GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngineCI;
+                EngineCI.pXRAttribs = &XRAttribs;
 
                 auto* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -580,7 +591,7 @@ private:
     XrDebugUtilsMessengerEXT m_DebugUtilsMessenger = XR_NULL_HANDLE;
 
     XrFormFactor       m_FormFactor       = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-    XrSystemId         m_SystemID         = {};
+    XrSystemId         m_SystemId         = {};
     XrSystemProperties m_SystemProperties = {XR_TYPE_SYSTEM_PROPERTIES};
 
     XrSession      m_xrSession          = {};
