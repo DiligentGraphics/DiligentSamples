@@ -4,7 +4,7 @@ if(PLATFORM_WIN32 OR PLATFORM_LINUX)
 elseif(PLATFORM_EMSCRIPTEN)
     cmake_minimum_required (VERSION 3.13)
 else()
-    cmake_minimum_required (VERSION 3.6)
+    cmake_minimum_required (VERSION 3.10)
     set(DILIGENT_INSTALL_SAMPLES OFF)
 endif()
 
