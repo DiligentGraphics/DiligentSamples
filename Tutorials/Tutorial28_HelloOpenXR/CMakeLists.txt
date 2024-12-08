@@ -19,6 +19,7 @@ target_link_libraries(Tutorial28_HelloOpenXR PRIVATE
     Diligent-BuildSettings
     Diligent-Common
     Diligent-GraphicsTools
+    Diligent-GraphicsAccessories
     openxr_loader
 )
 

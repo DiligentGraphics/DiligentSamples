@@ -57,6 +57,8 @@
 #include "RefCntAutoPtr.hpp"
 #include "StringTools.h"
 #include "OpenXRUtilities.h"
+#include "GraphicsUtilities.h"
+#include "GraphicsAccessories.hpp"
 
 #include <openxr/openxr.h>
 
@@ -113,6 +115,12 @@ public:
     {
         m_pImmediateContext->Flush();
 
+        DestroyXrSwapchains();
+
+        if (m_LocalSpace)
+        {
+            OPENXR_CHECK(xrDestroySpace(m_LocalSpace), "Failed to destroy Space.");
+        }
         if (m_xrSession)
         {
             OPENXR_CHECK(xrDestroySession(m_xrSession), "Failed to destroy Session.");
@@ -204,7 +212,12 @@ public:
 
         if (DebugUtilsMessengerEnabled)
         {
-            m_DebugUtilsMessenger = CreateOpenXRDebugUtilsMessenger(m_xrInstance);
+            constexpr XrDebugUtilsMessageSeverityFlagsEXT xrMessageSeverities =
+                XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+            m_DebugUtilsMessenger = CreateOpenXRDebugUtilsMessenger(m_xrInstance, xrMessageSeverities);
         }
     }
 
@@ -298,6 +311,186 @@ public:
         OPENXR_CHECK(xrCreateSession(m_xrInstance, &sessionCI, &m_xrSession), "Failed to create Session.");
     }
 
+    void CreateXrReferenceSpace()
+    {
+        // Fill out an XrReferenceSpaceCreateInfo structure and create a reference XrSpace, specifying a Local space with an identity pose as the origin.
+        XrReferenceSpaceCreateInfo referenceSpaceCI{XR_TYPE_REFERENCE_SPACE_CREATE_INFO};
+        referenceSpaceCI.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_LOCAL;
+        referenceSpaceCI.poseInReferenceSpace = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}};
+        OPENXR_CHECK(xrCreateReferenceSpace(m_xrSession, &referenceSpaceCI, &m_LocalSpace), "Failed to create ReferenceSpace.");
+    }
+
+    void CreateXrSwapchains()
+    {
+        uint32_t formatCount = 0;
+        OPENXR_CHECK(xrEnumerateSwapchainFormats(m_xrSession, 0, &formatCount, nullptr), "Failed to enumerate Swapchain Formats");
+        std::vector<int64_t> formats(formatCount);
+        OPENXR_CHECK(xrEnumerateSwapchainFormats(m_xrSession, formatCount, &formatCount, formats.data()), "Failed to enumerate Swapchain Formats");
+
+        // xrEnumerateSwapchainFormats returns an array of API-specific formats ordered by preference
+        int64_t        NativeColorFormat = 0;
+        int64_t        NativeDepthFormat = 0;
+        TEXTURE_FORMAT ColorFormat       = TEX_FORMAT_UNKNOWN;
+        TEXTURE_FORMAT DepthFormat       = TEX_FORMAT_UNKNOWN;
+        for (int64_t NativeFormat : formats)
+        {
+            const TEXTURE_FORMAT        Format     = GetTextureFormatFromNative(NativeFormat, m_DeviceType);
+            const TextureFormatAttribs& FmtAttribs = GetTextureFormatAttribs(Format);
+            if (FmtAttribs.IsDepthStencil())
+            {
+                if (NativeDepthFormat == 0)
+                {
+                    DepthFormat       = Format;
+                    NativeDepthFormat = NativeFormat;
+                }
+            }
+            else
+            {
+                if (NativeColorFormat == 0)
+                {
+                    ColorFormat       = Format;
+                    NativeColorFormat = NativeFormat;
+                }
+            }
+
+            if (NativeColorFormat != 0 && NativeDepthFormat != 0)
+                break;
+        }
+
+        if (NativeColorFormat == 0)
+        {
+            LOG_ERROR_AND_THROW("Failed to find a compatible color format for Swapchain");
+        }
+        if (NativeDepthFormat == 0)
+        {
+            LOG_ERROR_AND_THROW("Failed to find a compatible depth format for Swapchain");
+        }
+
+        //Resize the SwapchainInfo to match the number of view in the View Configuration.
+        m_ColorSwapchains.resize(m_ViewConfigurationViews.size());
+        m_DepthSwapchains.resize(m_ViewConfigurationViews.size());
+
+        // Per view, create a color and depth swapchain, and their associated image views.
+        for (size_t i = 0; i < m_ViewConfigurationViews.size(); i++)
+        {
+            SwapchainInfo& ColorSwapchain = m_ColorSwapchains[i];
+            SwapchainInfo& DepthSwapchain = m_DepthSwapchains[i];
+
+            // Fill out an XrSwapchainCreateInfo structure and create an XrSwapchain.
+            // Color.
+            {
+                XrSwapchainCreateInfo swapchainCI{XR_TYPE_SWAPCHAIN_CREATE_INFO};
+                swapchainCI.createFlags = 0;
+                swapchainCI.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+                swapchainCI.format      = NativeColorFormat;
+                swapchainCI.sampleCount = m_ViewConfigurationViews[i].recommendedSwapchainSampleCount; // Use the recommended values from the XrViewConfigurationView.
+                swapchainCI.width       = m_ViewConfigurationViews[i].recommendedImageRectWidth;
+                swapchainCI.height      = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+                swapchainCI.faceCount   = 1;
+                swapchainCI.arraySize   = 1;
+                swapchainCI.mipCount    = 1;
+                OPENXR_CHECK(xrCreateSwapchain(m_xrSession, &swapchainCI, &ColorSwapchain.Swapchain), "Failed to create Color Swapchain");
+                ColorSwapchain.Format = swapchainCI.format; // Save the swapchain format for later use.
+            }
+
+            // Depth.
+            {
+                XrSwapchainCreateInfo swapchainCI{XR_TYPE_SWAPCHAIN_CREATE_INFO};
+                swapchainCI.createFlags = 0;
+                swapchainCI.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                swapchainCI.format      = NativeDepthFormat;
+                swapchainCI.sampleCount = m_ViewConfigurationViews[i].recommendedSwapchainSampleCount; // Use the recommended values from the XrViewConfigurationView.
+                swapchainCI.width       = m_ViewConfigurationViews[i].recommendedImageRectWidth;
+                swapchainCI.height      = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+                swapchainCI.faceCount   = 1;
+                swapchainCI.arraySize   = 1;
+                swapchainCI.mipCount    = 1;
+                OPENXR_CHECK(xrCreateSwapchain(m_xrSession, &swapchainCI, &DepthSwapchain.Swapchain), "Failed to create Depth Swapchain");
+                DepthSwapchain.Format = swapchainCI.format; // Save the swapchain format for later use.
+            }
+
+            // Get the number of images in the color swapchain.
+            uint32_t ColorSwapchainImageCount = 0;
+            OPENXR_CHECK(xrEnumerateSwapchainImages(ColorSwapchain.Swapchain, 0, &ColorSwapchainImageCount, nullptr), "Failed to enumerate Color Swapchain Images.");
+            // Allocate the memory for the color swapchain image data.
+            RefCntAutoPtr<IDataBlob> pColorSwapchainImageData;
+            AllocateOpenXRSwapchainImageData(m_DeviceType, ColorSwapchainImageCount, &pColorSwapchainImageData);
+            // Get the color swapchain image data.
+            OPENXR_CHECK(xrEnumerateSwapchainImages(ColorSwapchain.Swapchain, ColorSwapchainImageCount, &ColorSwapchainImageCount,
+                                                    pColorSwapchainImageData->GetDataPtr<XrSwapchainImageBaseHeader>()),
+                         "Failed to enumerate Color Swapchain Images.");
+
+            uint32_t DepthSwapchainImageCount = 0;
+            OPENXR_CHECK(xrEnumerateSwapchainImages(DepthSwapchain.Swapchain, 0, &DepthSwapchainImageCount, nullptr), "Failed to enumerate Depth Swapchain Images.");
+            RefCntAutoPtr<IDataBlob> pDepthSwapchainImageData;
+            AllocateOpenXRSwapchainImageData(m_DeviceType, DepthSwapchainImageCount, &pDepthSwapchainImageData);
+            OPENXR_CHECK(xrEnumerateSwapchainImages(DepthSwapchain.Swapchain, DepthSwapchainImageCount, &DepthSwapchainImageCount,
+                                                    pDepthSwapchainImageData->GetDataPtr<XrSwapchainImageBaseHeader>()),
+                         "Failed to enumerate Depth Swapchain Images.");
+
+
+            ColorSwapchain.Views.resize(ColorSwapchainImageCount);
+            for (uint32_t j = 0; j < ColorSwapchainImageCount; j++)
+            {
+                std::string Name = "Color Swapchain Image " + std::to_string(j);
+                TextureDesc ColorDesc;
+                ColorDesc.Name      = Name.c_str();
+                ColorDesc.Type      = RESOURCE_DIM_TEX_2D;
+                ColorDesc.Format    = ColorFormat;
+                ColorDesc.Width     = m_ViewConfigurationViews[i].recommendedImageRectWidth;
+                ColorDesc.Height    = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+                ColorDesc.MipLevels = 1;
+                ColorDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+
+                RefCntAutoPtr<ITexture> pColorImage;
+                GetOpenXRSwapchainImage(m_pDevice, pColorSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, ColorDesc, &pColorImage);
+
+                TextureViewDesc RTVDesc;
+                RTVDesc.ViewType = TEXTURE_VIEW_RENDER_TARGET;
+                pColorImage->CreateView(RTVDesc, &ColorSwapchain.Views[j]);
+                VERIFY_EXPR(ColorSwapchain.Views[j] != nullptr);
+            }
+
+            DepthSwapchain.Views.resize(DepthSwapchainImageCount);
+            for (uint32_t j = 0; j < DepthSwapchainImageCount; j++)
+            {
+                std::string Name = "Depth Swapchain Image " + std::to_string(j);
+                TextureDesc DepthDesc;
+                DepthDesc.Name      = Name.c_str();
+                DepthDesc.Type      = RESOURCE_DIM_TEX_2D;
+                DepthDesc.Format    = DepthFormat;
+                DepthDesc.Width     = m_ViewConfigurationViews[i].recommendedImageRectWidth;
+                DepthDesc.Height    = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+                DepthDesc.MipLevels = 1;
+                DepthDesc.BindFlags = BIND_DEPTH_STENCIL | BIND_SHADER_RESOURCE;
+
+                RefCntAutoPtr<ITexture> pDepthImage;
+                GetOpenXRSwapchainImage(m_pDevice, pDepthSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, DepthDesc, &pDepthImage);
+
+                TextureViewDesc DSVDesc;
+                DSVDesc.ViewType = TEXTURE_VIEW_DEPTH_STENCIL;
+                pDepthImage->CreateView(DSVDesc, &DepthSwapchain.Views[j]);
+                VERIFY_EXPR(DepthSwapchain.Views[j] != nullptr);
+            }
+        }
+    }
+
+    void DestroyXrSwapchains()
+    {
+        // Per view in the view configuration:
+        for (size_t i = 0; i < m_ViewConfigurationViews.size(); i++)
+        {
+            SwapchainInfo& ColorSwapchain = m_ColorSwapchains[i];
+            SwapchainInfo& DepthSwapchain = m_DepthSwapchains[i];
+
+            ColorSwapchain.Views.clear();
+            DepthSwapchain.Views.clear();
+
+            // Destroy the swapchains.
+            OPENXR_CHECK(xrDestroySwapchain(ColorSwapchain.Swapchain), "Failed to destroy Color Swapchain");
+            OPENXR_CHECK(xrDestroySwapchain(DepthSwapchain.Swapchain), "Failed to destroy Depth Swapchain");
+        }
+    }
 
     bool Initialize()
     {
@@ -311,6 +504,8 @@ public:
             return false;
 
         CreateXrSession();
+        CreateXrReferenceSpace();
+        CreateXrSwapchains();
 
         return true;
     }
@@ -488,8 +683,141 @@ public:
     {
     }
 
-    void Render()
+    void RenderFrame()
     {
+        // Get the XrFrameState for timing and rendering info.
+        XrFrameState    frameState{XR_TYPE_FRAME_STATE};
+        XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
+        OPENXR_CHECK(xrWaitFrame(m_xrSession, &frameWaitInfo, &frameState), "Failed to wait for XR Frame.");
+
+        // Tell the OpenXR compositor that the application is beginning the frame.
+        XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
+        OPENXR_CHECK(xrBeginFrame(m_xrSession, &frameBeginInfo), "Failed to begin the XR Frame.");
+
+        // Variables for rendering and layer composition.
+        bool            rendered = false;
+        RenderLayerInfo renderLayerInfo;
+        renderLayerInfo.PredictedDisplayTime = frameState.predictedDisplayTime;
+
+        // Check that the session is active and that we should render.
+        bool sessionActive = (m_xrSessionState == XR_SESSION_STATE_SYNCHRONIZED ||
+                              m_xrSessionState == XR_SESSION_STATE_VISIBLE ||
+                              m_xrSessionState == XR_SESSION_STATE_FOCUSED);
+        if (sessionActive && frameState.shouldRender)
+        {
+            // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
+            rendered = RenderLayer(renderLayerInfo);
+            if (rendered)
+            {
+                renderLayerInfo.Layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.LayerProjection));
+            }
+        }
+
+        // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
+        XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
+        frameEndInfo.displayTime          = frameState.predictedDisplayTime;
+        frameEndInfo.environmentBlendMode = m_EnvironmentBlendMode;
+        frameEndInfo.layerCount           = static_cast<uint32_t>(renderLayerInfo.Layers.size());
+        frameEndInfo.layers               = renderLayerInfo.Layers.data();
+        OPENXR_CHECK(xrEndFrame(m_xrSession, &frameEndInfo), "Failed to end the XR Frame.");
+    }
+
+private:
+    struct RenderLayerInfo;
+
+public:
+    bool RenderLayer(RenderLayerInfo& renderLayerInfo)
+    {
+        // Locate the views from the view configuration within the (reference) space at the display time.
+        std::vector<XrView> views(m_ViewConfigurationViews.size(), {XR_TYPE_VIEW});
+
+        XrViewState      viewState{XR_TYPE_VIEW_STATE}; // Will contain information on whether the position and/or orientation is valid and/or tracked.
+        XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
+        viewLocateInfo.viewConfigurationType = m_ViewConfiguration;
+        viewLocateInfo.displayTime           = renderLayerInfo.PredictedDisplayTime;
+        viewLocateInfo.space                 = m_LocalSpace;
+        uint32_t viewCount                   = 0;
+        if (xrLocateViews(m_xrSession, &viewLocateInfo, &viewState, static_cast<uint32_t>(views.size()), &viewCount, views.data()) != XR_SUCCESS)
+        {
+            LOG_INFO_MESSAGE("Failed to locate Views.");
+            return false;
+        }
+
+        // Resize the layer projection views to match the view count. The layer projection views are used in the layer projection.
+        renderLayerInfo.LayerProjectionViews.resize(viewCount, {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW});
+
+        // Per view in the view configuration:
+        for (uint32_t i = 0; i < viewCount; i++)
+        {
+            SwapchainInfo& colorSwapchain = m_ColorSwapchains[i];
+            SwapchainInfo& depthSwapchain = m_DepthSwapchains[i];
+
+            // Acquire and wait for an image from the swapchains.
+            // Get the image index of an image in the swapchains.
+            // The timeout is infinite.
+            uint32_t                    colorImageIndex = 0;
+            uint32_t                    depthImageIndex = 0;
+            XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+            OPENXR_CHECK(xrAcquireSwapchainImage(colorSwapchain.Swapchain, &acquireInfo, &colorImageIndex), "Failed to acquire Image from the Color Swapchian");
+            OPENXR_CHECK(xrAcquireSwapchainImage(depthSwapchain.Swapchain, &acquireInfo, &depthImageIndex), "Failed to acquire Image from the Depth Swapchian");
+
+            XrSwapchainImageWaitInfo waitInfo = {XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
+            waitInfo.timeout                  = XR_INFINITE_DURATION;
+            OPENXR_CHECK(xrWaitSwapchainImage(colorSwapchain.Swapchain, &waitInfo), "Failed to wait for Image from the Color Swapchain");
+            OPENXR_CHECK(xrWaitSwapchainImage(depthSwapchain.Swapchain, &waitInfo), "Failed to wait for Image from the Depth Swapchain");
+
+            // Get the width and height and construct the viewport and scissors.
+            const uint32_t& width  = m_ViewConfigurationViews[i].recommendedImageRectWidth;
+            const uint32_t& height = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+
+            // Fill out the XrCompositionLayerProjectionView structure specifying the pose and fov from the view.
+            // This also associates the swapchain image with this layer projection view.
+            renderLayerInfo.LayerProjectionViews[i]                                  = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
+            renderLayerInfo.LayerProjectionViews[i].pose                             = views[i].pose;
+            renderLayerInfo.LayerProjectionViews[i].fov                              = views[i].fov;
+            renderLayerInfo.LayerProjectionViews[i].subImage.swapchain               = colorSwapchain.Swapchain;
+            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.offset.x      = 0;
+            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.offset.y      = 0;
+            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.extent.width  = static_cast<int32_t>(width);
+            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.extent.height = static_cast<int32_t>(height);
+            renderLayerInfo.LayerProjectionViews[i].subImage.imageArrayIndex         = 0; // Useful for multiview rendering.
+
+            ITextureView* pRTV = colorSwapchain.Views[colorImageIndex];
+            ITextureView* pDSV = depthSwapchain.Views[depthImageIndex];
+
+            // Swap chain images acquired by xrAcquireSwapchainImage are guaranteed to be in
+            // COLOR_ATTACHMENT_OPTIMAL/DEPTH_STENCIL_ATTACHMENT_OPTIMAL state.
+            pRTV->GetTexture()->SetState(RESOURCE_STATE_RENDER_TARGET);
+            pDSV->GetTexture()->SetState(RESOURCE_STATE_DEPTH_WRITE);
+
+            m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+            float4 Red{1.0f, 0.0f, 0.0f, 1.0f};
+            float4 Green{0.0f, 1.0f, 0.0f, 1.0f};
+            m_pImmediateContext->ClearRenderTarget(pRTV, i == 0 ? Red.Data() : Green.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+
+
+            m_pImmediateContext->Flush();
+            m_pImmediateContext->FinishFrame();
+            m_pDevice->ReleaseStaleResources();
+
+            // Swap chain images must be in COLOR_ATTACHMENT_OPTIMAL/DEPTH_STENCIL_ATTACHMENT_OPTIMAL state
+            // when they are released by xrReleaseSwapchainImage.
+
+            // Give the swapchain image back to OpenXR, allowing the compositor to use the image.
+            XrSwapchainImageReleaseInfo releaseInfo{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+            OPENXR_CHECK(xrReleaseSwapchainImage(colorSwapchain.Swapchain, &releaseInfo), "Failed to release Image back to the Color Swapchain");
+            OPENXR_CHECK(xrReleaseSwapchainImage(depthSwapchain.Swapchain, &releaseInfo), "Failed to release Image back to the Depth Swapchain");
+        }
+
+        // Fill out the XrCompositionLayerProjection structure for usage with xrEndFrame().
+        renderLayerInfo.LayerProjection.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT | XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
+        renderLayerInfo.LayerProjection.space      = m_LocalSpace;
+        renderLayerInfo.LayerProjection.viewCount  = static_cast<uint32_t>(renderLayerInfo.LayerProjectionViews.size());
+        renderLayerInfo.LayerProjection.views      = renderLayerInfo.LayerProjectionViews.data();
+
+        return true;
     }
 
     void Present()
@@ -525,7 +853,7 @@ public:
                 {
                     XrEventDataInstanceLossPending* instanceLossPending = reinterpret_cast<XrEventDataInstanceLossPending*>(&eventData);
                     LOG_INFO_MESSAGE("OPENXR: Instance Loss Pending at: ", instanceLossPending->lossTime);
-                    m_SessionRunning     = false;
+                    m_xrSessionRunning   = false;
                     m_ApplicationRunning = false;
                     break;
                 }
@@ -569,29 +897,29 @@ public:
                         XrSessionBeginInfo sessionBeginInfo{XR_TYPE_SESSION_BEGIN_INFO};
                         sessionBeginInfo.primaryViewConfigurationType = m_ViewConfiguration;
                         OPENXR_CHECK(xrBeginSession(m_xrSession, &sessionBeginInfo), "Failed to begin Session.");
-                        m_SessionRunning = true;
+                        m_xrSessionRunning = true;
                     }
                     if (sessionStateChanged->state == XR_SESSION_STATE_STOPPING)
                     {
                         // SessionState is stopping. End the XrSession.
                         OPENXR_CHECK(xrEndSession(m_xrSession), "Failed to end Session.");
-                        m_SessionRunning = false;
+                        m_xrSessionRunning = false;
                     }
                     if (sessionStateChanged->state == XR_SESSION_STATE_EXITING)
                     {
                         // SessionState is exiting. Exit the application.
-                        m_SessionRunning     = false;
+                        m_xrSessionRunning   = false;
                         m_ApplicationRunning = false;
                     }
                     if (sessionStateChanged->state == XR_SESSION_STATE_LOSS_PENDING)
                     {
                         // SessionState is loss pending. Exit the application.
                         // It's possible to try a reestablish an XrInstance and XrSession, but we will simply exit here.
-                        m_SessionRunning     = false;
+                        m_xrSessionRunning   = false;
                         m_ApplicationRunning = false;
                     }
                     // Store state for reference across the application.
-                    m_SessionState = sessionStateChanged->state;
+                    m_xrSessionState = sessionStateChanged->state;
                     break;
                 }
                 default:
@@ -604,7 +932,7 @@ public:
 
     RENDER_DEVICE_TYPE GetDeviceType() const { return m_DeviceType; }
     bool               IsRunning() const { return m_ApplicationRunning; }
-    bool               IsSessionRunning() const { return m_SessionRunning; }
+    bool               IsSessionRunning() const { return m_xrSessionRunning; }
 
 private:
     RefCntAutoPtr<IRenderDevice>  m_pDevice;
@@ -623,13 +951,22 @@ private:
     XrSystemProperties m_SystemProperties = {XR_TYPE_SYSTEM_PROPERTIES};
 
     XrSession      m_xrSession          = {};
-    XrSessionState m_SessionState       = XR_SESSION_STATE_UNKNOWN;
+    XrSessionState m_xrSessionState     = XR_SESSION_STATE_UNKNOWN;
     bool           m_ApplicationRunning = true;
-    bool           m_SessionRunning     = false;
+    bool           m_xrSessionRunning   = false;
 
     std::vector<XrViewConfigurationType> m_ApplicationViewConfigurations = {XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO};
     XrViewConfigurationType              m_ViewConfiguration             = XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM;
     std::vector<XrViewConfigurationView> m_ViewConfigurationViews;
+
+    struct SwapchainInfo
+    {
+        XrSwapchain                              Swapchain = XR_NULL_HANDLE;
+        int64_t                                  Format    = 0;
+        std::vector<RefCntAutoPtr<ITextureView>> Views;
+    };
+    std::vector<SwapchainInfo> m_ColorSwapchains = {};
+    std::vector<SwapchainInfo> m_DepthSwapchains = {};
 
     XrEnvironmentBlendMode m_EnvironmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_MAX_ENUM;
 
@@ -684,7 +1021,7 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
         g_pTheApp->PollEvents();
         if (g_pTheApp->IsSessionRunning())
         {
-            g_pTheApp->Render();
+            g_pTheApp->RenderFrame();
         }
     }
 
