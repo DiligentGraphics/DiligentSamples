@@ -57,6 +57,7 @@ To build and run the applications in the module, please follow the [instructions
   - [25 - Render State Packager](#tutorial-25---render-state-packager)
   - [26 - Render State Cache](#tutorial-26---render-state-cache)
   - [27 - Post-Processing](#tutorial-27---post-processing)
+  - [28 - Hello-OpenXR](#tutorial-28---hello-openxr)
 - [Samples](#samples)
   - [Atmospheric Light Scattering](#atmospheric-light-scattering-sample)
   - [GLFW Demo](#glfw-demo)
@@ -323,6 +324,11 @@ application starts.
 This tutorial demonstrates how to use post-processing effects from the DiligentFX module.
 
 [:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial27_PostProcessing/Tutorial27_PostProcessing.html)
+
+
+## [Tutorial 28 - Hello OpenXR](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial28_HelloOpenXR)
+
+This tutorial demonstrates how to use Diligent Engine with OpenXR API to render a simple scene in a VR headset.
 
 
 # Samples
