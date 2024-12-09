@@ -1,9 +1,4 @@
-struct PSInput 
-{
-    float4 Pos    : SV_POSITION;
-    float3 Normal : NORMAL; 
-    float4 Color  : COLOR;    
-};
+#include "shader_constants.h"
 
 struct PSOutput
 {
@@ -14,7 +9,7 @@ void main(in  PSInput  PSIn,
           out PSOutput PSOut)
 {
     float4 Color = PSIn.Color;
-    float3 LightDir = normalize(float3(1.0, 1.0, 1.0));
-    Color *= max(dot(LightDir, PSIn.Normal), 0.0) + 0.2;
+    float3 LightDir = normalize(float3(-0.5, -0.8, -0.2));
+    Color *= max(dot(-LightDir, PSIn.Normal), 0.0) * 0.5 + 0.2;
     PSOut.Color = Color;
 }

@@ -14,6 +14,7 @@ set(INCLUDE
 set(SHADERS
     assets/cube.vsh
     assets/cube.psh
+    assets/shader_constants.h
 )
 
 set(ASSETS)

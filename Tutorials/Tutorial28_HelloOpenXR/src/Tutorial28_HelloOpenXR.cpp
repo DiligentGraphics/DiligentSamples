@@ -120,6 +120,95 @@ struct Constants
 
 } // namespace HLSL
 
+
+// Creates a projection matrix based on the specified dimensions.
+// The projection matrix transforms -Z=forward, +Y=up, +X=right to the appropriate clip space for the graphics API.
+// The far plane is placed at infinity if farZ <= nearZ.
+// An infinite projection matrix is preferred for rasterization because, except for
+// things *right* up against the near plane, it always provides better precision:
+//              "Tightening the Precision of Perspective Rendering"
+//              Paul Upchurch, Mathieu Desbrun
+//              Journal of Graphics Tools, Volume 16, Issue 1, 2012
+inline float4x4 XrCreateProjection(const float tanAngleLeft,
+                                   const float tanAngleRight,
+                                   const float tanAngleUp,
+                                   float const tanAngleDown,
+                                   const float nearZ,
+                                   const float farZ,
+                                   bool        NegativeOneToOneZ)
+{
+    const float tanAngleWidth  = tanAngleRight - tanAngleLeft;
+    const float tanAngleHeight = tanAngleUp - tanAngleDown;
+
+    // Set to nearZ for a [-1,1] Z clip space (OpenGL / OpenGL ES).
+    // Set to zero for a [0,1] Z clip space (Vulkan / D3D / Metal).
+    const float offsetZ = NegativeOneToOneZ ? nearZ : 0;
+
+    float4x4 result;
+    float*   m = result.Data();
+    if (farZ <= nearZ)
+    {
+        // place the far plane at infinity
+        m[0]  = 2.0f / tanAngleWidth;
+        m[4]  = 0.0f;
+        m[8]  = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+        m[12] = 0.0f;
+
+        m[1]  = 0.0f;
+        m[5]  = 2.0f / tanAngleHeight;
+        m[9]  = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+        m[13] = 0.0f;
+
+        m[2]  = 0.0f;
+        m[6]  = 0.0f;
+        m[10] = -1.0f;
+        m[14] = -(nearZ + offsetZ);
+
+        m[3]  = 0.0f;
+        m[7]  = 0.0f;
+        m[11] = -1.0f;
+        m[15] = 0.0f;
+    }
+    else
+    {
+        // normal projection
+        m[0]  = 2.0f / tanAngleWidth;
+        m[4]  = 0.0f;
+        m[8]  = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+        m[12] = 0.0f;
+
+        m[1]  = 0.0f;
+        m[5]  = 2.0f / tanAngleHeight;
+        m[9]  = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+        m[13] = 0.0f;
+
+        m[2]  = 0.0f;
+        m[6]  = 0.0f;
+        m[10] = -(farZ + offsetZ) / (farZ - nearZ);
+        m[14] = -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
+
+        m[3]  = 0.0f;
+        m[7]  = 0.0f;
+        m[11] = -1.0f;
+        m[15] = 0.0f;
+    }
+
+    return result;
+}
+
+// Creates a projection matrix based on the specified FOV.
+inline float4x4 XrCreateProjectionFov(const XrFovf fov, const float nearZ, const float farZ, bool NegativeOneToOneZ)
+{
+    const float tanLeft  = tanf(fov.angleLeft);
+    const float tanRight = tanf(fov.angleRight);
+
+    const float tanDown = tanf(fov.angleDown);
+    const float tanUp   = tanf(fov.angleUp);
+
+    return XrCreateProjection(tanLeft, tanRight, tanUp, tanDown, nearZ, farZ, NegativeOneToOneZ);
+}
+
+
 class Tutorial28_HelloOpenXR
 {
 public:
@@ -667,7 +756,8 @@ public:
             .SetDepthFormat(m_DepthFormat)
             .SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode              = CULL_MODE_BACK;
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = True;
         // Enable depth testing
         PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
 
@@ -842,18 +932,17 @@ public:
             m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
             // Compute the view-projection transform.
-            // All matrices (including OpenXR's) are column-major, right-handed.
             const float NearZ             = 0.05f;
             const float FarZ              = 100.0f;
             const bool  NegativeOneToOneZ = m_DeviceType == RENDER_DEVICE_TYPE_GL || m_DeviceType == RENDER_DEVICE_TYPE_GLES;
-            float4x4    CameraProj        = float4x4::Projection(PI_F / 2.f, 1.0, NearZ, FarZ, NegativeOneToOneZ);
+            float4x4    CameraProj        = XrCreateProjectionFov(views[i].fov, NearZ, FarZ, NegativeOneToOneZ);
 
             const XrQuaternionf& orientation = views[i].pose.orientation;
             const XrVector3f&    position    = views[i].pose.position;
 
             float4x4 CameraWorld =
                 QuaternionF{orientation.x, orientation.y, orientation.z, orientation.w}.ToMatrix() *
-                float4x4::Translation(-position.x, -position.y, -position.z);
+                float4x4::Translation(position.x, position.y, position.z);
 
             float4x4 CameraView     = CameraWorld.Inverse();
             float4x4 CameraViewProj = CameraView * CameraProj;
