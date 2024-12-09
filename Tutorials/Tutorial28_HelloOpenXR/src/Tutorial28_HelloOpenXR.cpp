@@ -59,6 +59,10 @@
 #include "OpenXRUtilities.h"
 #include "GraphicsUtilities.h"
 #include "GraphicsAccessories.hpp"
+#include "GraphicsTypesX.hpp"
+#include "MapHelper.hpp"
+
+#include "../../Common/src/TexturedCube.hpp"
 
 #include <openxr/openxr.h>
 
@@ -104,6 +108,18 @@ const char* GetGraphicsAPIInstanceExtensionString(RENDER_DEVICE_TYPE Type)
     }
 }
 
+namespace HLSL
+{
+
+struct Constants
+{
+    float4x4 WorldViewProj;
+    float4x4 Model;
+    float4   Color;
+};
+
+} // namespace HLSL
+
 class Tutorial28_HelloOpenXR
 {
 public:
@@ -115,6 +131,8 @@ public:
     {
         m_pImmediateContext->Flush();
 
+        // Make sure that the swap chains are not used by the GPU before they are destroyed
+        m_Device.IdleGPU();
         DestroyXrSwapchains();
 
         if (m_LocalSpace)
@@ -125,7 +143,7 @@ public:
         {
             OPENXR_CHECK(xrDestroySession(m_xrSession), "Failed to destroy Session.");
         }
-        if (m_DebugUtilsMessenger != XR_NULL_HANDLE)
+        if (m_DebugUtilsMessenger)
         {
             DestroyOpenXRDebugUtilsMessenger(m_DebugUtilsMessenger);
         }
@@ -301,7 +319,7 @@ public:
     void CreateXrSession()
     {
         RefCntAutoPtr<IDataBlob> pGraphicsBinding;
-        GetOpenXRGraphicsBinding(m_pDevice, m_pImmediateContext, &pGraphicsBinding);
+        GetOpenXRGraphicsBinding(m_Device, m_pImmediateContext, &pGraphicsBinding);
 
         XrSessionCreateInfo sessionCI{XR_TYPE_SESSION_CREATE_INFO};
         sessionCI.next        = pGraphicsBinding->GetConstDataPtr();
@@ -328,10 +346,8 @@ public:
         OPENXR_CHECK(xrEnumerateSwapchainFormats(m_xrSession, formatCount, &formatCount, formats.data()), "Failed to enumerate Swapchain Formats");
 
         // xrEnumerateSwapchainFormats returns an array of API-specific formats ordered by preference
-        int64_t        NativeColorFormat = 0;
-        int64_t        NativeDepthFormat = 0;
-        TEXTURE_FORMAT ColorFormat       = TEX_FORMAT_UNKNOWN;
-        TEXTURE_FORMAT DepthFormat       = TEX_FORMAT_UNKNOWN;
+        int64_t NativeColorFormat = 0;
+        int64_t NativeDepthFormat = 0;
         for (int64_t NativeFormat : formats)
         {
             const TEXTURE_FORMAT        Format     = GetTextureFormatFromNative(NativeFormat, m_DeviceType);
@@ -340,7 +356,7 @@ public:
             {
                 if (NativeDepthFormat == 0)
                 {
-                    DepthFormat       = Format;
+                    m_DepthFormat     = Format;
                     NativeDepthFormat = NativeFormat;
                 }
             }
@@ -348,7 +364,7 @@ public:
             {
                 if (NativeColorFormat == 0)
                 {
-                    ColorFormat       = Format;
+                    m_ColorFormat     = Format;
                     NativeColorFormat = NativeFormat;
                 }
             }
@@ -416,7 +432,7 @@ public:
                     ImgDesc.BindFlags = (IsDepth ? BIND_DEPTH_STENCIL : BIND_RENDER_TARGET) | BIND_SHADER_RESOURCE;
 
                     RefCntAutoPtr<ITexture> pImage;
-                    GetOpenXRSwapchainImage(m_pDevice, pSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, ImgDesc, &pImage);
+                    GetOpenXRSwapchainImage(m_Device, pSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, ImgDesc, &pImage);
 
                     TextureViewDesc ViewDesc;
                     ViewDesc.ViewType = IsDepth ? TEXTURE_VIEW_DEPTH_STENCIL : TEXTURE_VIEW_RENDER_TARGET;
@@ -427,8 +443,8 @@ public:
                 return Swapchain;
             };
 
-            m_ColorSwapchains[i] = CreateSwapchain(m_ViewConfigurationViews[i], NativeColorFormat, ColorFormat, false);
-            m_DepthSwapchains[i] = CreateSwapchain(m_ViewConfigurationViews[i], NativeDepthFormat, DepthFormat, true);
+            m_ColorSwapchains[i] = CreateSwapchain(m_ViewConfigurationViews[i], NativeColorFormat, m_ColorFormat, false);
+            m_DepthSwapchains[i] = CreateSwapchain(m_ViewConfigurationViews[i], NativeDepthFormat, m_DepthFormat, true);
         }
     }
 
@@ -469,7 +485,6 @@ public:
 
     bool InitializeDiligentEngine()
     {
-
         OpenXRAttribs XRAttribs;
         static_assert(sizeof(XRAttribs.Instance) == sizeof(m_xrInstance), "XrInstance size mismatch");
         memcpy(&XRAttribs.Instance, &m_xrInstance, sizeof(m_xrInstance));
@@ -477,6 +492,7 @@ public:
         memcpy(&XRAttribs.SystemId, &m_SystemId, sizeof(m_SystemId));
         XRAttribs.GetInstanceProcAddr = xrGetInstanceProcAddr;
 
+        RefCntAutoPtr<IRenderDevice> pDevice;
         switch (m_DeviceType)
         {
 #if D3D11_SUPPORTED
@@ -489,7 +505,7 @@ public:
                 auto* GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
                 auto* pFactoryD3D11 = GetEngineFactoryD3D11();
-                pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
+                pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
 #endif
@@ -506,7 +522,7 @@ public:
                 EngineCI.pXRAttribs = &XRAttribs;
 
                 auto* pFactoryD3D12 = GetEngineFactoryD3D12();
-                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
+                pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
 #endif
@@ -526,7 +542,7 @@ public:
                 EngineCI.pXRAttribs  = &XRAttribs;
                 EngineCI.Window.hWnd = hWnd;
 
-                pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
+                pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &pDevice, &m_pImmediateContext, SCDesc, &m_pSwapChain);
 #    endif
             }
             break;
@@ -544,17 +560,18 @@ public:
                 EngineCI.pXRAttribs = &XRAttribs;
 
                 auto* pFactoryVk = GetEngineFactoryVk();
-                pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
+                pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
 #endif
-
 
             default:
                 std::cerr << "Unknown/unsupported device type";
                 return false;
                 break;
         }
+
+        m_Device = pDevice;
 
         return true;
     }
@@ -638,6 +655,76 @@ public:
 
     void CreateResources()
     {
+        TexturedCube::VERTEX_COMPONENT_FLAGS CubeVertexComponents =
+            TexturedCube::VERTEX_COMPONENT_FLAG_POSITION |
+            TexturedCube::VERTEX_COMPONENT_FLAG_NORMAL;
+        m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_Device, CubeVertexComponents);
+        m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_Device);
+
+        GraphicsPipelineStateCreateInfoX PSOCreateInfo{"Cube PSO"};
+        PSOCreateInfo
+            .AddRenderTarget(m_ColorFormat)
+            .SetDepthFormat(m_DepthFormat)
+            .SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+        PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_BACK;
+        // Enable depth testing
+        PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
+
+        ShaderCreateInfo ShaderCI;
+        ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+        ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
+        RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+        m_Device.GetEngineFactory()->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+        ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+
+        // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
+        constexpr bool UseCombinedTextureSamplers = true;
+
+        RefCntAutoPtr<IShader> pVS;
+        {
+            ShaderCI.Desc       = {"Cube VS", SHADER_TYPE_VERTEX, UseCombinedTextureSamplers};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.FilePath   = "cube.vsh";
+
+            pVS = m_Device.CreateShader(ShaderCI);
+            VERIFY_EXPR(pVS);
+        }
+
+        RefCntAutoPtr<IShader> pPS;
+        {
+            ShaderCI.Desc       = {"Cube PS", SHADER_TYPE_PIXEL, UseCombinedTextureSamplers};
+            ShaderCI.EntryPoint = "main";
+            ShaderCI.FilePath   = "cube.psh";
+
+            pPS = m_Device.CreateShader(ShaderCI);
+            VERIFY_EXPR(pPS);
+        }
+
+        InputLayoutDescX InputLayout{
+            // Attribute 0 - vertex position
+            LayoutElement{0, 0, 3, VT_FLOAT32, False},
+            // Attribute 1 - vertex normal
+            LayoutElement{1, 0, 3, VT_FLOAT32, False},
+        };
+
+        PSOCreateInfo
+            .AddShader(pVS)
+            .AddShader(pPS)
+            .SetInputLayout(InputLayout);
+
+        PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType        = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+        PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableMergeStages = SHADER_TYPE_VS_PS;
+
+        m_PSO = m_Device.CreateGraphicsPipelineState(PSOCreateInfo);
+        VERIFY_EXPR(m_PSO);
+
+        m_PSO->CreateShaderResourceBinding(&m_SRB, true);
+        VERIFY_EXPR(m_SRB);
+
+        m_Constants = m_Device.CreateBuffer("Constants", sizeof(HLSL::Constants), USAGE_DYNAMIC);
+        m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "Constants")->Set(m_Constants);
     }
 
     void RenderFrame()
@@ -652,7 +739,6 @@ public:
         OPENXR_CHECK(xrBeginFrame(m_xrSession, &frameBeginInfo), "Failed to begin the XR Frame.");
 
         // Variables for rendering and layer composition.
-        bool            rendered = false;
         RenderLayerInfo renderLayerInfo;
         renderLayerInfo.PredictedDisplayTime = frameState.predictedDisplayTime;
 
@@ -663,8 +749,7 @@ public:
         if (sessionActive && frameState.shouldRender)
         {
             // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
-            rendered = RenderLayer(renderLayerInfo);
-            if (rendered)
+            if (RenderLayer(renderLayerInfo))
             {
                 renderLayerInfo.Layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.LayerProjection));
             }
@@ -724,20 +809,21 @@ public:
             OPENXR_CHECK(xrWaitSwapchainImage(depthSwapchain.Swapchain, &waitInfo), "Failed to wait for Image from the Depth Swapchain");
 
             // Get the width and height and construct the viewport and scissors.
-            const uint32_t& width  = m_ViewConfigurationViews[i].recommendedImageRectWidth;
-            const uint32_t& height = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+            const uint32_t width  = m_ViewConfigurationViews[i].recommendedImageRectWidth;
+            const uint32_t height = m_ViewConfigurationViews[i].recommendedImageRectHeight;
 
             // Fill out the XrCompositionLayerProjectionView structure specifying the pose and fov from the view.
             // This also associates the swapchain image with this layer projection view.
-            renderLayerInfo.LayerProjectionViews[i]                                  = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
-            renderLayerInfo.LayerProjectionViews[i].pose                             = views[i].pose;
-            renderLayerInfo.LayerProjectionViews[i].fov                              = views[i].fov;
-            renderLayerInfo.LayerProjectionViews[i].subImage.swapchain               = colorSwapchain.Swapchain;
-            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.offset.x      = 0;
-            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.offset.y      = 0;
-            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.extent.width  = static_cast<int32_t>(width);
-            renderLayerInfo.LayerProjectionViews[i].subImage.imageRect.extent.height = static_cast<int32_t>(height);
-            renderLayerInfo.LayerProjectionViews[i].subImage.imageArrayIndex         = 0; // Useful for multiview rendering.
+            XrCompositionLayerProjectionView& layerProjectionView = renderLayerInfo.LayerProjectionViews[i];
+            layerProjectionView                                   = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
+            layerProjectionView.pose                              = views[i].pose;
+            layerProjectionView.fov                               = views[i].fov;
+            layerProjectionView.subImage.swapchain                = colorSwapchain.Swapchain;
+            layerProjectionView.subImage.imageRect.offset.x       = 0;
+            layerProjectionView.subImage.imageRect.offset.y       = 0;
+            layerProjectionView.subImage.imageRect.extent.width   = static_cast<int32_t>(width);
+            layerProjectionView.subImage.imageRect.extent.height  = static_cast<int32_t>(height);
+            layerProjectionView.subImage.imageArrayIndex          = 0; // Useful for multiview rendering.
 
             ITextureView* pRTV = colorSwapchain.Views[colorImageIndex];
             ITextureView* pDSV = depthSwapchain.Views[depthImageIndex];
@@ -749,15 +835,44 @@ public:
 
             m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-            float4 Red{1.0f, 0.0f, 0.0f, 1.0f};
-            float4 Green{0.0f, 1.0f, 0.0f, 1.0f};
-            m_pImmediateContext->ClearRenderTarget(pRTV, i == 0 ? Red.Data() : Green.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            float4 Gray{0.17f, 0.17f, 0.17f, 1.00f};
+            float4 Black{0.00f, 0.00f, 0.00f, 1.00f};
+            m_pImmediateContext->ClearRenderTarget(pRTV, m_EnvironmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_OPAQUE ? Gray.Data() : Black.Data(),
+                                                   RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+            // Compute the view-projection transform.
+            // All matrices (including OpenXR's) are column-major, right-handed.
+            const float NearZ             = 0.05f;
+            const float FarZ              = 100.0f;
+            const bool  NegativeOneToOneZ = m_DeviceType == RENDER_DEVICE_TYPE_GL || m_DeviceType == RENDER_DEVICE_TYPE_GLES;
+            float4x4    CameraProj        = float4x4::Projection(PI_F / 2.f, 1.0, NearZ, FarZ, NegativeOneToOneZ);
 
+            const XrQuaternionf& orientation = views[i].pose.orientation;
+            const XrVector3f&    position    = views[i].pose.position;
+
+            float4x4 CameraWorld =
+                QuaternionF{orientation.x, orientation.y, orientation.z, orientation.w}.ToMatrix() *
+                float4x4::Translation(-position.x, -position.y, -position.z);
+
+            float4x4 CameraView     = CameraWorld.Inverse();
+            float4x4 CameraViewProj = CameraView * CameraProj;
+
+            IBuffer* pVBs[] = {m_CubeVertexBuffer};
+            m_pImmediateContext->SetVertexBuffers(0, _countof(pVBs), pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            m_pImmediateContext->SetIndexBuffer(m_CubeIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+            m_pImmediateContext->SetPipelineState(m_PSO);
+            m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+            // Draw a floor. Scale it by 2 in the X and Z, and 0.1 in the Y,
+            RenderCuboid({0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -m_ViewHeightM, 0.0f}, {2.0f, 0.1f, 2.0f}, {0.4f, 0.5f, 0.5f}, CameraViewProj);
+            // Draw a "table".
+            RenderCuboid({0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -m_ViewHeightM + 0.9f, -0.7f}, {1.0f, 0.2f, 1.0f}, {0.6f, 0.6f, 0.4f}, CameraViewProj);
 
             m_pImmediateContext->Flush();
             m_pImmediateContext->FinishFrame();
-            m_pDevice->ReleaseStaleResources();
+            m_Device.ReleaseStaleResources();
 
             // Swap chain images must be in COLOR_ATTACHMENT_OPTIMAL/DEPTH_STENCIL_ATTACHMENT_OPTIMAL state
             // when they are released by xrReleaseSwapchainImage.
@@ -777,8 +892,16 @@ public:
         return true;
     }
 
-    void Present()
+    void RenderCuboid(QuaternionF rotation, float3 position, float3 scale, float3 color, const float4x4& CameraViewProj)
     {
+        {
+            MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
+            CBConstants->WorldViewProj = float4x4::Scale(scale * 0.5) * float4x4::Translation(position) * CameraViewProj;
+            CBConstants->Model         = float4x4::Identity();
+            CBConstants->Color         = float4{color.x, color.y, color.z, 1.0f};
+        }
+
+        m_pImmediateContext->DrawIndexed({36, VT_UINT32, DRAW_FLAG_VERIFY_ALL});
     }
 
     void PollSystemEvents()
@@ -892,7 +1015,7 @@ public:
     bool               IsSessionRunning() const { return m_xrSessionRunning; }
 
 private:
-    RefCntAutoPtr<IRenderDevice>  m_pDevice;
+    RenderDeviceX_N               m_Device;
     RefCntAutoPtr<IDeviceContext> m_pImmediateContext;
     RefCntAutoPtr<ISwapChain>     m_pSwapChain;
     RENDER_DEVICE_TYPE            m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
@@ -916,6 +1039,8 @@ private:
     XrViewConfigurationType              m_ViewConfiguration             = XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM;
     std::vector<XrViewConfigurationView> m_ViewConfigurationViews;
 
+    TEXTURE_FORMAT m_ColorFormat = TEX_FORMAT_UNKNOWN;
+    TEXTURE_FORMAT m_DepthFormat = TEX_FORMAT_UNKNOWN;
     struct SwapchainInfo
     {
         XrSwapchain                              Swapchain = XR_NULL_HANDLE;
@@ -937,6 +1062,12 @@ private:
 
     // In STAGE space, viewHeightM should be 0. In LOCAL space, it should be offset downwards, below the viewer's initial position.
     float m_ViewHeightM = 1.5f;
+
+    RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
+    RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
+    RefCntAutoPtr<IBuffer>                m_Constants;
+    RefCntAutoPtr<IPipelineState>         m_PSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
 };
 
 std::unique_ptr<Tutorial28_HelloOpenXR> g_pTheApp;
