@@ -114,7 +114,7 @@ namespace HLSL
 struct Constants
 {
     float4x4 WorldViewProj;
-    float4x4 Model;
+    float4x4 NormalTransform;
     float4   Color;
 };
 
@@ -965,6 +965,7 @@ public:
 
             // Swap chain images must be in COLOR_ATTACHMENT_OPTIMAL/DEPTH_STENCIL_ATTACHMENT_OPTIMAL state
             // when they are released by xrReleaseSwapchainImage.
+            // Since they are already in the correct states, no transitions are necessary.
 
             // Give the swapchain image back to OpenXR, allowing the compositor to use the image.
             XrSwapchainImageReleaseInfo releaseInfo{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
@@ -983,11 +984,13 @@ public:
 
     void RenderCuboid(QuaternionF rotation, float3 position, float3 scale, float3 color, const float4x4& CameraViewProj)
     {
+        float4x4 ModelTransform  = float4x4::Scale(scale * 0.5) * rotation.ToMatrix() * float4x4::Translation(position);
+        float4x4 NormalTransform = rotation.ToMatrix();
         {
             MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
-            CBConstants->WorldViewProj = float4x4::Scale(scale * 0.5) * float4x4::Translation(position) * CameraViewProj;
-            CBConstants->Model         = float4x4::Identity();
-            CBConstants->Color         = float4{color.x, color.y, color.z, 1.0f};
+            CBConstants->WorldViewProj   = ModelTransform * CameraViewProj;
+            CBConstants->NormalTransform = NormalTransform;
+            CBConstants->Color           = float4{color.x, color.y, color.z, 1.0f};
         }
 
         m_pImmediateContext->DrawIndexed({36, VT_UINT32, DRAW_FLAG_VERIFY_ALL});
