@@ -373,105 +373,62 @@ public:
         // Per view, create a color and depth swapchain, and their associated image views.
         for (size_t i = 0; i < m_ViewConfigurationViews.size(); i++)
         {
-            SwapchainInfo& ColorSwapchain = m_ColorSwapchains[i];
-            SwapchainInfo& DepthSwapchain = m_DepthSwapchains[i];
+            auto CreateSwapchain = [this](const XrViewConfigurationView& Config, int64_t NativeFormat, TEXTURE_FORMAT Format, bool IsDepth) {
+                SwapchainInfo Swapchain;
 
-            // Fill out an XrSwapchainCreateInfo structure and create an XrSwapchain.
-            // Color.
-            {
                 XrSwapchainCreateInfo swapchainCI{XR_TYPE_SWAPCHAIN_CREATE_INFO};
                 swapchainCI.createFlags = 0;
-                swapchainCI.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-                swapchainCI.format      = NativeColorFormat;
-                swapchainCI.sampleCount = m_ViewConfigurationViews[i].recommendedSwapchainSampleCount; // Use the recommended values from the XrViewConfigurationView.
-                swapchainCI.width       = m_ViewConfigurationViews[i].recommendedImageRectWidth;
-                swapchainCI.height      = m_ViewConfigurationViews[i].recommendedImageRectHeight;
+                swapchainCI.usageFlags =
+                    (IsDepth ? XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT) |
+                    XR_SWAPCHAIN_USAGE_SAMPLED_BIT;
+                swapchainCI.format      = NativeFormat;
+                swapchainCI.sampleCount = Config.recommendedSwapchainSampleCount; // Use the recommended values from the XrViewConfigurationView.
+                swapchainCI.width       = Config.recommendedImageRectWidth;
+                swapchainCI.height      = Config.recommendedImageRectHeight;
                 swapchainCI.faceCount   = 1;
                 swapchainCI.arraySize   = 1;
                 swapchainCI.mipCount    = 1;
-                OPENXR_CHECK(xrCreateSwapchain(m_xrSession, &swapchainCI, &ColorSwapchain.Swapchain), "Failed to create Color Swapchain");
-                ColorSwapchain.Format = swapchainCI.format; // Save the swapchain format for later use.
-            }
+                OPENXR_CHECK(xrCreateSwapchain(m_xrSession, &swapchainCI, &Swapchain.Swapchain),
+                             (IsDepth ? "Failed to create depth swapchain" : "Failed to create color swapchain"));
 
-            // Depth.
-            {
-                XrSwapchainCreateInfo swapchainCI{XR_TYPE_SWAPCHAIN_CREATE_INFO};
-                swapchainCI.createFlags = 0;
-                swapchainCI.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-                swapchainCI.format      = NativeDepthFormat;
-                swapchainCI.sampleCount = m_ViewConfigurationViews[i].recommendedSwapchainSampleCount; // Use the recommended values from the XrViewConfigurationView.
-                swapchainCI.width       = m_ViewConfigurationViews[i].recommendedImageRectWidth;
-                swapchainCI.height      = m_ViewConfigurationViews[i].recommendedImageRectHeight;
-                swapchainCI.faceCount   = 1;
-                swapchainCI.arraySize   = 1;
-                swapchainCI.mipCount    = 1;
-                OPENXR_CHECK(xrCreateSwapchain(m_xrSession, &swapchainCI, &DepthSwapchain.Swapchain), "Failed to create Depth Swapchain");
-                DepthSwapchain.Format = swapchainCI.format; // Save the swapchain format for later use.
-            }
+                // Get the number of images in the swapchain.
+                uint32_t SwapchainImageCount = 0;
+                OPENXR_CHECK(xrEnumerateSwapchainImages(Swapchain.Swapchain, 0, &SwapchainImageCount, nullptr), "Failed to enumerate swapchain Images.");
+                // Allocate the memory for the swapchain image data.
+                RefCntAutoPtr<IDataBlob> pSwapchainImageData;
+                AllocateOpenXRSwapchainImageData(m_DeviceType, SwapchainImageCount, &pSwapchainImageData);
+                // Get the swapchain image data.
+                OPENXR_CHECK(xrEnumerateSwapchainImages(Swapchain.Swapchain, SwapchainImageCount, &SwapchainImageCount,
+                                                        pSwapchainImageData->GetDataPtr<XrSwapchainImageBaseHeader>()),
+                             "Failed to enumerate swapchain Images.");
 
-            // Get the number of images in the color swapchain.
-            uint32_t ColorSwapchainImageCount = 0;
-            OPENXR_CHECK(xrEnumerateSwapchainImages(ColorSwapchain.Swapchain, 0, &ColorSwapchainImageCount, nullptr), "Failed to enumerate Color Swapchain Images.");
-            // Allocate the memory for the color swapchain image data.
-            RefCntAutoPtr<IDataBlob> pColorSwapchainImageData;
-            AllocateOpenXRSwapchainImageData(m_DeviceType, ColorSwapchainImageCount, &pColorSwapchainImageData);
-            // Get the color swapchain image data.
-            OPENXR_CHECK(xrEnumerateSwapchainImages(ColorSwapchain.Swapchain, ColorSwapchainImageCount, &ColorSwapchainImageCount,
-                                                    pColorSwapchainImageData->GetDataPtr<XrSwapchainImageBaseHeader>()),
-                         "Failed to enumerate Color Swapchain Images.");
+                Swapchain.Views.resize(SwapchainImageCount);
+                for (uint32_t j = 0; j < SwapchainImageCount; j++)
+                {
+                    std::string Name = (IsDepth ? "Depth Swapchain Image " : "Color Swapchain Image ") + std::to_string(j);
+                    TextureDesc ImgDesc;
+                    ImgDesc.Name      = Name.c_str();
+                    ImgDesc.Type      = RESOURCE_DIM_TEX_2D;
+                    ImgDesc.Format    = Format;
+                    ImgDesc.Width     = swapchainCI.width;
+                    ImgDesc.Height    = swapchainCI.height;
+                    ImgDesc.MipLevels = 1;
+                    ImgDesc.BindFlags = (IsDepth ? BIND_DEPTH_STENCIL : BIND_RENDER_TARGET) | BIND_SHADER_RESOURCE;
 
-            uint32_t DepthSwapchainImageCount = 0;
-            OPENXR_CHECK(xrEnumerateSwapchainImages(DepthSwapchain.Swapchain, 0, &DepthSwapchainImageCount, nullptr), "Failed to enumerate Depth Swapchain Images.");
-            RefCntAutoPtr<IDataBlob> pDepthSwapchainImageData;
-            AllocateOpenXRSwapchainImageData(m_DeviceType, DepthSwapchainImageCount, &pDepthSwapchainImageData);
-            OPENXR_CHECK(xrEnumerateSwapchainImages(DepthSwapchain.Swapchain, DepthSwapchainImageCount, &DepthSwapchainImageCount,
-                                                    pDepthSwapchainImageData->GetDataPtr<XrSwapchainImageBaseHeader>()),
-                         "Failed to enumerate Depth Swapchain Images.");
+                    RefCntAutoPtr<ITexture> pImage;
+                    GetOpenXRSwapchainImage(m_pDevice, pSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, ImgDesc, &pImage);
 
+                    TextureViewDesc ViewDesc;
+                    ViewDesc.ViewType = IsDepth ? TEXTURE_VIEW_DEPTH_STENCIL : TEXTURE_VIEW_RENDER_TARGET;
+                    pImage->CreateView(ViewDesc, &Swapchain.Views[j]);
+                    VERIFY_EXPR(Swapchain.Views[j] != nullptr);
+                }
 
-            ColorSwapchain.Views.resize(ColorSwapchainImageCount);
-            for (uint32_t j = 0; j < ColorSwapchainImageCount; j++)
-            {
-                std::string Name = "Color Swapchain Image " + std::to_string(j);
-                TextureDesc ColorDesc;
-                ColorDesc.Name      = Name.c_str();
-                ColorDesc.Type      = RESOURCE_DIM_TEX_2D;
-                ColorDesc.Format    = ColorFormat;
-                ColorDesc.Width     = m_ViewConfigurationViews[i].recommendedImageRectWidth;
-                ColorDesc.Height    = m_ViewConfigurationViews[i].recommendedImageRectHeight;
-                ColorDesc.MipLevels = 1;
-                ColorDesc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+                return Swapchain;
+            };
 
-                RefCntAutoPtr<ITexture> pColorImage;
-                GetOpenXRSwapchainImage(m_pDevice, pColorSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, ColorDesc, &pColorImage);
-
-                TextureViewDesc RTVDesc;
-                RTVDesc.ViewType = TEXTURE_VIEW_RENDER_TARGET;
-                pColorImage->CreateView(RTVDesc, &ColorSwapchain.Views[j]);
-                VERIFY_EXPR(ColorSwapchain.Views[j] != nullptr);
-            }
-
-            DepthSwapchain.Views.resize(DepthSwapchainImageCount);
-            for (uint32_t j = 0; j < DepthSwapchainImageCount; j++)
-            {
-                std::string Name = "Depth Swapchain Image " + std::to_string(j);
-                TextureDesc DepthDesc;
-                DepthDesc.Name      = Name.c_str();
-                DepthDesc.Type      = RESOURCE_DIM_TEX_2D;
-                DepthDesc.Format    = DepthFormat;
-                DepthDesc.Width     = m_ViewConfigurationViews[i].recommendedImageRectWidth;
-                DepthDesc.Height    = m_ViewConfigurationViews[i].recommendedImageRectHeight;
-                DepthDesc.MipLevels = 1;
-                DepthDesc.BindFlags = BIND_DEPTH_STENCIL | BIND_SHADER_RESOURCE;
-
-                RefCntAutoPtr<ITexture> pDepthImage;
-                GetOpenXRSwapchainImage(m_pDevice, pDepthSwapchainImageData->GetConstDataPtr<XrSwapchainImageBaseHeader>(), j, DepthDesc, &pDepthImage);
-
-                TextureViewDesc DSVDesc;
-                DSVDesc.ViewType = TEXTURE_VIEW_DEPTH_STENCIL;
-                pDepthImage->CreateView(DSVDesc, &DepthSwapchain.Views[j]);
-                VERIFY_EXPR(DepthSwapchain.Views[j] != nullptr);
-            }
+            m_ColorSwapchains[i] = CreateSwapchain(m_ViewConfigurationViews[i], NativeColorFormat, ColorFormat, false);
+            m_DepthSwapchains[i] = CreateSwapchain(m_ViewConfigurationViews[i], NativeDepthFormat, DepthFormat, true);
         }
     }
 
@@ -666,10 +623,10 @@ public:
         }
         else
         {
-#if D3D12_SUPPORTED
-            m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
-#elif VULKAN_SUPPORTED
+#if VULKAN_SUPPORTED
             m_DeviceType = RENDER_DEVICE_TYPE_VULKAN;
+#elif D3D12_SUPPORTED
+            m_DeviceType = RENDER_DEVICE_TYPE_D3D12;
 #elif D3D11_SUPPORTED
             m_DeviceType = RENDER_DEVICE_TYPE_D3D11;
 #elif GL_SUPPORTED
@@ -962,7 +919,6 @@ private:
     struct SwapchainInfo
     {
         XrSwapchain                              Swapchain = XR_NULL_HANDLE;
-        int64_t                                  Format    = 0;
         std::vector<RefCntAutoPtr<ITextureView>> Views;
     };
     std::vector<SwapchainInfo> m_ColorSwapchains = {};
