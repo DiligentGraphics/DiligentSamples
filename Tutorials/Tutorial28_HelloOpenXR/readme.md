@@ -14,6 +14,14 @@ The rest of this document focuses on Diligent Engine-specific steps and assumes 
 
 ### Initialization
 
+OpenXR instance should enable the following extensions:
+
+* `XR_KHR_D3D11_enable` for Direct3D11
+* `XR_KHR_D3D12_enable` for Direct3D12
+* `XR_KHR_opengl_enable` for OpenGL
+* `XR_KHR_opengl_es_enable` for OpenGL ES
+* `XR_KHR_vulkan_enable2` for Vulkan
+
 Diligent Engine should be initialized after the OpenXR instance is created and system id is obtained.
 Prepare the `OpenXRAttribs` structure:
 

@@ -75,11 +75,11 @@ inline const char* GetXRErrorString(XrInstance xrInstance, XrResult result)
     return string;
 }
 
-#define OPENXR_CHECK(x, y)                                                                                                                    \
-    do                                                                                                                                        \
-    {                                                                                                                                         \
-        XrResult result = (x);                                                                                                                \
-        CHECK_ERR(XR_SUCCEEDED(result), "OPENXR: ", int(result), "(", (m_xrInstance ? GetXRErrorString(m_xrInstance, result) : ""), ") ", y); \
+#define OPENXR_CHECK(Expr, Msg)                                                                                                                              \
+    do                                                                                                                                                       \
+    {                                                                                                                                                        \
+        XrResult result = Expr;                                                                                                                              \
+        CHECK_ERR(XR_SUCCEEDED(result), "OPENXR: ", static_cast<int>(result), "(", (m_xrInstance ? GetXRErrorString(m_xrInstance, result) : ""), ") ", Msg); \
     } while (false)
 
 const char* GetGraphicsAPIInstanceExtensionString(RENDER_DEVICE_TYPE Type)
@@ -129,40 +129,40 @@ struct Constants
 //              "Tightening the Precision of Perspective Rendering"
 //              Paul Upchurch, Mathieu Desbrun
 //              Journal of Graphics Tools, Volume 16, Issue 1, 2012
-inline float4x4 XrCreateProjection(const float tanAngleLeft,
-                                   const float tanAngleRight,
-                                   const float tanAngleUp,
-                                   float const tanAngleDown,
-                                   const float nearZ,
-                                   const float farZ,
+inline float4x4 XrCreateProjection(const float TanAngleLeft,
+                                   const float TanAngleRight,
+                                   const float TanAngleUp,
+                                   float const TanAngleDown,
+                                   const float NearZ,
+                                   const float FarZ,
                                    bool        NegativeOneToOneZ)
 {
-    const float tanAngleWidth  = tanAngleRight - tanAngleLeft;
-    const float tanAngleHeight = tanAngleUp - tanAngleDown;
+    const float tanAngleWidth  = TanAngleRight - TanAngleLeft;
+    const float tanAngleHeight = TanAngleUp - TanAngleDown;
 
     // Set to nearZ for a [-1,1] Z clip space (OpenGL / OpenGL ES).
     // Set to zero for a [0,1] Z clip space (Vulkan / D3D / Metal).
-    const float offsetZ = NegativeOneToOneZ ? nearZ : 0;
+    const float OffsetZ = NegativeOneToOneZ ? NearZ : 0;
 
-    float4x4 result;
-    float*   m = result.Data();
-    if (farZ <= nearZ)
+    float4x4 Proj;
+    float*   m = Proj.Data();
+    if (FarZ <= NearZ)
     {
         // place the far plane at infinity
         m[0]  = 2.0f / tanAngleWidth;
         m[4]  = 0.0f;
-        m[8]  = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+        m[8]  = (TanAngleRight + TanAngleLeft) / tanAngleWidth;
         m[12] = 0.0f;
 
         m[1]  = 0.0f;
         m[5]  = 2.0f / tanAngleHeight;
-        m[9]  = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+        m[9]  = (TanAngleUp + TanAngleDown) / tanAngleHeight;
         m[13] = 0.0f;
 
         m[2]  = 0.0f;
         m[6]  = 0.0f;
         m[10] = -1.0f;
-        m[14] = -(nearZ + offsetZ);
+        m[14] = -(NearZ + OffsetZ);
 
         m[3]  = 0.0f;
         m[7]  = 0.0f;
@@ -174,18 +174,18 @@ inline float4x4 XrCreateProjection(const float tanAngleLeft,
         // normal projection
         m[0]  = 2.0f / tanAngleWidth;
         m[4]  = 0.0f;
-        m[8]  = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+        m[8]  = (TanAngleRight + TanAngleLeft) / tanAngleWidth;
         m[12] = 0.0f;
 
         m[1]  = 0.0f;
         m[5]  = 2.0f / tanAngleHeight;
-        m[9]  = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+        m[9]  = (TanAngleUp + TanAngleDown) / tanAngleHeight;
         m[13] = 0.0f;
 
         m[2]  = 0.0f;
         m[6]  = 0.0f;
-        m[10] = -(farZ + offsetZ) / (farZ - nearZ);
-        m[14] = -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
+        m[10] = -(FarZ + OffsetZ) / (FarZ - NearZ);
+        m[14] = -(FarZ * (NearZ + OffsetZ)) / (FarZ - NearZ);
 
         m[3]  = 0.0f;
         m[7]  = 0.0f;
@@ -193,19 +193,17 @@ inline float4x4 XrCreateProjection(const float tanAngleLeft,
         m[15] = 0.0f;
     }
 
-    return result;
+    return Proj;
 }
 
 // Creates a projection matrix based on the specified FOV.
-inline float4x4 XrCreateProjectionFov(const XrFovf fov, const float nearZ, const float farZ, bool NegativeOneToOneZ)
+inline float4x4 XrCreateProjectionFov(const XrFovf FOV, const float NearZ, const float FarZ, bool NegativeOneToOneZ)
 {
-    const float tanLeft  = tanf(fov.angleLeft);
-    const float tanRight = tanf(fov.angleRight);
-
-    const float tanDown = tanf(fov.angleDown);
-    const float tanUp   = tanf(fov.angleUp);
-
-    return XrCreateProjection(tanLeft, tanRight, tanUp, tanDown, nearZ, farZ, NegativeOneToOneZ);
+    const float TanLeft  = tanf(FOV.angleLeft);
+    const float TanRight = tanf(FOV.angleRight);
+    const float TanUp    = tanf(FOV.angleUp);
+    const float TanDown  = tanf(FOV.angleDown);
+    return XrCreateProjection(TanLeft, TanRight, TanUp, TanDown, NearZ, FarZ, NegativeOneToOneZ);
 }
 
 
@@ -224,9 +222,9 @@ public:
         m_Device.IdleGPU();
         DestroyXrSwapchains();
 
-        if (m_LocalSpace)
+        if (m_xrLocalSpace)
         {
-            OPENXR_CHECK(xrDestroySpace(m_LocalSpace), "Failed to destroy Space.");
+            OPENXR_CHECK(xrDestroySpace(m_xrLocalSpace), "Failed to destroy Space.");
         }
         if (m_xrSession)
         {
@@ -254,38 +252,36 @@ public:
         AI.apiVersion    = XR_CURRENT_API_VERSION;
 
         // Get all the API Layers from the OpenXR runtime.
-        uint32_t                          apiLayerCount = 0;
-        std::vector<XrApiLayerProperties> apiLayerProperties;
-        OPENXR_CHECK(xrEnumerateApiLayerProperties(0, &apiLayerCount, nullptr), "Failed to enumerate ApiLayerProperties.");
-        apiLayerProperties.resize(apiLayerCount, {XR_TYPE_API_LAYER_PROPERTIES});
-        OPENXR_CHECK(xrEnumerateApiLayerProperties(apiLayerCount, &apiLayerCount, apiLayerProperties.data()), "Failed to enumerate ApiLayerProperties.");
+        uint32_t ApiLayerCount = 0;
+        OPENXR_CHECK(xrEnumerateApiLayerProperties(0, &ApiLayerCount, nullptr), "Failed to enumerate ApiLayerProperties.");
+        std::vector<XrApiLayerProperties> ApiLayerProperties{ApiLayerCount, XrApiLayerProperties{XR_TYPE_API_LAYER_PROPERTIES}};
+        OPENXR_CHECK(xrEnumerateApiLayerProperties(ApiLayerCount, &ApiLayerCount, ApiLayerProperties.data()), "Failed to enumerate ApiLayerProperties.");
 
         // Check the requested API layers against the ones from the OpenXR. If found add it to the Active API Layers.
-        for (const std::string& requestLayer : m_ApiLayers)
+        for (const std::string& Layer : m_ApiLayers)
         {
-            for (const XrApiLayerProperties& layerProperty : apiLayerProperties)
+            for (const XrApiLayerProperties& LayerProperty : ApiLayerProperties)
             {
-                if (requestLayer.c_str() == layerProperty.layerName)
+                if (Layer.c_str() == LayerProperty.layerName)
                 {
-                    m_ActiveAPILayers.push_back(requestLayer.c_str());
+                    m_ActiveAPILayers.push_back(Layer.c_str());
                     break;
                 }
             }
         }
 
         // Get all the Instance Extensions from the OpenXR instance.
-        uint32_t                           extensionCount = 0;
-        std::vector<XrExtensionProperties> extensionProperties;
-        OPENXR_CHECK(xrEnumerateInstanceExtensionProperties(nullptr, 0, &extensionCount, nullptr), "Failed to enumerate InstanceExtensionProperties.");
-        extensionProperties.resize(extensionCount, {XR_TYPE_EXTENSION_PROPERTIES});
-        OPENXR_CHECK(xrEnumerateInstanceExtensionProperties(nullptr, extensionCount, &extensionCount, extensionProperties.data()), "Failed to enumerate InstanceExtensionProperties.");
+        uint32_t ExtensionCount = 0;
+        OPENXR_CHECK(xrEnumerateInstanceExtensionProperties(nullptr, 0, &ExtensionCount, nullptr), "Failed to enumerate InstanceExtensionProperties.");
+        std::vector<XrExtensionProperties> ExtensionProperties{ExtensionCount, XrExtensionProperties{XR_TYPE_EXTENSION_PROPERTIES}};
+        OPENXR_CHECK(xrEnumerateInstanceExtensionProperties(nullptr, ExtensionCount, &ExtensionCount, ExtensionProperties.data()), "Failed to enumerate InstanceExtensionProperties.");
 
         // Check the requested Instance Extensions against the ones from the OpenXR runtime.
         // If an extension is found add it to Active Instance Extensions.
-        auto CheckExtension = [&extensionProperties](const char* extensionName) -> bool {
-            for (const XrExtensionProperties& extensionProperty : extensionProperties)
+        auto CheckExtension = [&ExtensionProperties](const char* ExtensionName) -> bool {
+            for (const XrExtensionProperties& ExtensionProperty : ExtensionProperties)
             {
-                if (strcmp(extensionName, extensionProperty.extensionName) == 0)
+                if (strcmp(ExtensionName, ExtensionProperty.extensionName) == 0)
                 {
                     return true;
                 }
@@ -331,21 +327,21 @@ public:
     void GetXrInstanceProperties()
     {
         // Get the instance's properties and log the runtime name and version.
-        XrInstanceProperties instanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
-        OPENXR_CHECK(xrGetInstanceProperties(m_xrInstance, &instanceProperties), "Failed to get InstanceProperties.");
+        XrInstanceProperties InstanceProperties{XR_TYPE_INSTANCE_PROPERTIES};
+        OPENXR_CHECK(xrGetInstanceProperties(m_xrInstance, &InstanceProperties), "Failed to get InstanceProperties.");
 
-        LOG_INFO_MESSAGE("OpenXR Runtime: ", instanceProperties.runtimeName, " - ",
-                         XR_VERSION_MAJOR(instanceProperties.runtimeVersion), ".",
-                         XR_VERSION_MINOR(instanceProperties.runtimeVersion), ".",
-                         XR_VERSION_PATCH(instanceProperties.runtimeVersion));
+        LOG_INFO_MESSAGE("OpenXR Runtime: ", InstanceProperties.runtimeName, " - ",
+                         XR_VERSION_MAJOR(InstanceProperties.runtimeVersion), ".",
+                         XR_VERSION_MINOR(InstanceProperties.runtimeVersion), ".",
+                         XR_VERSION_PATCH(InstanceProperties.runtimeVersion));
     }
 
     void GetXrSystemID()
     {
         // Get the XrSystemId from the instance and the supplied XrFormFactor.
-        XrSystemGetInfo systemGI{XR_TYPE_SYSTEM_GET_INFO};
-        systemGI.formFactor = m_xrFormFactor;
-        OPENXR_CHECK(xrGetSystem(m_xrInstance, &systemGI, &m_xrSystemId), "Failed to get SystemID.");
+        XrSystemGetInfo SystemGI{XR_TYPE_SYSTEM_GET_INFO};
+        SystemGI.formFactor = m_xrFormFactor;
+        OPENXR_CHECK(xrGetSystem(m_xrInstance, &SystemGI, &m_xrSystemId), "Failed to get SystemID.");
 
         // Get the System's properties for some general information about the hardware and the vendor.
         OPENXR_CHECK(xrGetSystemProperties(m_xrInstance, m_xrSystemId, &m_xrSystemProperties), "Failed to get SystemProperties.");
@@ -354,17 +350,17 @@ public:
     void GetViewConfigurationViews()
     {
         // Gets the View Configuration Types. The first call gets the count of the array that will be returned. The next call fills out the array.
-        uint32_t viewConfigurationCount = 0;
-        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_xrSystemId, 0, &viewConfigurationCount, nullptr), "Failed to enumerate View Configurations.");
-        std::vector<XrViewConfigurationType> ViewConfigurations(viewConfigurationCount);
-        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_xrSystemId, viewConfigurationCount, &viewConfigurationCount, ViewConfigurations.data()), "Failed to enumerate View Configurations.");
+        uint32_t ViewConfigurationCount = 0;
+        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_xrSystemId, 0, &ViewConfigurationCount, nullptr), "Failed to enumerate View Configurations.");
+        std::vector<XrViewConfigurationType> ViewConfigurations(ViewConfigurationCount);
+        OPENXR_CHECK(xrEnumerateViewConfigurations(m_xrInstance, m_xrSystemId, ViewConfigurationCount, &ViewConfigurationCount, ViewConfigurations.data()), "Failed to enumerate View Configurations.");
 
         // Pick the first application supported View Configuration Type con supported by the hardware.
-        for (const XrViewConfigurationType& viewConfiguration : m_ApplicationViewConfigurations)
+        for (const XrViewConfigurationType& ViewConfiguration : m_ApplicationViewConfigurations)
         {
-            if (std::find(ViewConfigurations.begin(), ViewConfigurations.end(), viewConfiguration) != ViewConfigurations.end())
+            if (std::find(ViewConfigurations.begin(), ViewConfigurations.end(), ViewConfiguration) != ViewConfigurations.end())
             {
-                m_ViewConfiguration = viewConfiguration;
+                m_ViewConfiguration = ViewConfiguration;
                 break;
             }
         }
@@ -375,26 +371,26 @@ public:
         }
 
         // Gets the View Configuration Views. The first call gets the count of the array that will be returned. The next call fills out the array.
-        uint32_t viewConfigurationViewCount = 0;
-        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystemId, m_ViewConfiguration, 0, &viewConfigurationViewCount, nullptr), "Failed to enumerate ViewConfiguration Views.");
-        m_ViewConfigurationViews.resize(viewConfigurationViewCount, {XR_TYPE_VIEW_CONFIGURATION_VIEW});
-        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystemId, m_ViewConfiguration, viewConfigurationViewCount, &viewConfigurationViewCount, m_ViewConfigurationViews.data()), "Failed to enumerate ViewConfiguration Views.");
+        uint32_t ViewConfigurationViewCount = 0;
+        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystemId, m_ViewConfiguration, 0, &ViewConfigurationViewCount, nullptr), "Failed to enumerate ViewConfiguration Views.");
+        m_ViewConfigurationViews.resize(ViewConfigurationViewCount, {XR_TYPE_VIEW_CONFIGURATION_VIEW});
+        OPENXR_CHECK(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystemId, m_ViewConfiguration, ViewConfigurationViewCount, &ViewConfigurationViewCount, m_ViewConfigurationViews.data()), "Failed to enumerate ViewConfiguration Views.");
     }
 
     void GetEnvironmentBlendModes()
     {
         // Retrieve the available blend modes. The first call gets the count of the array that will be returned. The next call fills out the array.
-        uint32_t environmentBlendModeCount = 0;
-        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_xrSystemId, m_ViewConfiguration, 0, &environmentBlendModeCount, nullptr), "Failed to enumerate EnvironmentBlend Modes.");
-        std::vector<XrEnvironmentBlendMode> EnvironmentBlendModes(environmentBlendModeCount);
-        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_xrSystemId, m_ViewConfiguration, environmentBlendModeCount, &environmentBlendModeCount, EnvironmentBlendModes.data()), "Failed to enumerate EnvironmentBlend Modes.");
+        uint32_t EnvironmentBlendModeCount = 0;
+        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_xrSystemId, m_ViewConfiguration, 0, &EnvironmentBlendModeCount, nullptr), "Failed to enumerate EnvironmentBlend Modes.");
+        std::vector<XrEnvironmentBlendMode> EnvironmentBlendModes(EnvironmentBlendModeCount);
+        OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(m_xrInstance, m_xrSystemId, m_ViewConfiguration, EnvironmentBlendModeCount, &EnvironmentBlendModeCount, EnvironmentBlendModes.data()), "Failed to enumerate EnvironmentBlend Modes.");
 
         // Pick the first application supported blend mode supported by the hardware.
-        for (const XrEnvironmentBlendMode& environmentBlendMode : {XR_ENVIRONMENT_BLEND_MODE_OPAQUE, XR_ENVIRONMENT_BLEND_MODE_ADDITIVE})
+        for (const XrEnvironmentBlendMode& EnvironmentBlendMode : {XR_ENVIRONMENT_BLEND_MODE_OPAQUE, XR_ENVIRONMENT_BLEND_MODE_ADDITIVE})
         {
-            if (std::find(EnvironmentBlendModes.begin(), EnvironmentBlendModes.end(), environmentBlendMode) != EnvironmentBlendModes.end())
+            if (std::find(EnvironmentBlendModes.begin(), EnvironmentBlendModes.end(), EnvironmentBlendMode) != EnvironmentBlendModes.end())
             {
-                m_xrEnvironmentBlendMode = environmentBlendMode;
+                m_xrEnvironmentBlendMode = EnvironmentBlendMode;
                 break;
             }
         }
@@ -424,7 +420,7 @@ public:
         XrReferenceSpaceCreateInfo referenceSpaceCI{XR_TYPE_REFERENCE_SPACE_CREATE_INFO};
         referenceSpaceCI.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_LOCAL;
         referenceSpaceCI.poseInReferenceSpace = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}};
-        OPENXR_CHECK(xrCreateReferenceSpace(m_xrSession, &referenceSpaceCI, &m_LocalSpace), "Failed to create ReferenceSpace.");
+        OPENXR_CHECK(xrCreateReferenceSpace(m_xrSession, &referenceSpaceCI, &m_xrLocalSpace), "Failed to create ReferenceSpace.");
     }
 
     void CreateXrSwapchains()
@@ -820,28 +816,28 @@ public:
     void RenderFrame()
     {
         // Get the XrFrameState for timing and rendering info.
-        XrFrameState    frameState{XR_TYPE_FRAME_STATE};
-        XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
-        OPENXR_CHECK(xrWaitFrame(m_xrSession, &frameWaitInfo, &frameState), "Failed to wait for XR Frame.");
+        XrFrameState    FrameState{XR_TYPE_FRAME_STATE};
+        XrFrameWaitInfo FrameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
+        OPENXR_CHECK(xrWaitFrame(m_xrSession, &FrameWaitInfo, &FrameState), "Failed to wait for XR Frame.");
 
         // Tell the OpenXR compositor that the application is beginning the frame.
-        XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
-        OPENXR_CHECK(xrBeginFrame(m_xrSession, &frameBeginInfo), "Failed to begin the XR Frame.");
+        XrFrameBeginInfo FrameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
+        OPENXR_CHECK(xrBeginFrame(m_xrSession, &FrameBeginInfo), "Failed to begin the XR Frame.");
 
         // Variables for rendering and layer composition.
-        RenderLayerInfo renderLayerInfo;
-        renderLayerInfo.PredictedDisplayTime = frameState.predictedDisplayTime;
+        RenderLayerInfo LayerInfo;
+        LayerInfo.PredictedDisplayTime = FrameState.predictedDisplayTime;
 
         // Check that the session is active and that we should render.
         bool sessionActive = (m_xrSessionState == XR_SESSION_STATE_SYNCHRONIZED ||
                               m_xrSessionState == XR_SESSION_STATE_VISIBLE ||
                               m_xrSessionState == XR_SESSION_STATE_FOCUSED);
-        if (sessionActive && frameState.shouldRender)
+        if (sessionActive && FrameState.shouldRender)
         {
             // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
-            if (RenderLayer(renderLayerInfo))
+            if (RenderLayer(LayerInfo))
             {
-                renderLayerInfo.Layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.LayerProjection));
+                LayerInfo.Layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&LayerInfo.LayerProjection));
             }
         }
 
@@ -851,57 +847,57 @@ public:
         m_Device.ReleaseStaleResources();
 
         // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
-        XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
-        frameEndInfo.displayTime          = frameState.predictedDisplayTime;
-        frameEndInfo.environmentBlendMode = m_xrEnvironmentBlendMode;
-        frameEndInfo.layerCount           = static_cast<uint32_t>(renderLayerInfo.Layers.size());
-        frameEndInfo.layers               = renderLayerInfo.Layers.data();
-        OPENXR_CHECK(xrEndFrame(m_xrSession, &frameEndInfo), "Failed to end the XR Frame.");
+        XrFrameEndInfo FrameEndInfo{XR_TYPE_FRAME_END_INFO};
+        FrameEndInfo.displayTime          = FrameState.predictedDisplayTime;
+        FrameEndInfo.environmentBlendMode = m_xrEnvironmentBlendMode;
+        FrameEndInfo.layerCount           = static_cast<uint32_t>(LayerInfo.Layers.size());
+        FrameEndInfo.layers               = LayerInfo.Layers.data();
+        OPENXR_CHECK(xrEndFrame(m_xrSession, &FrameEndInfo), "Failed to end the XR Frame.");
     }
 
 private:
     struct RenderLayerInfo;
 
 public:
-    bool RenderLayer(RenderLayerInfo& renderLayerInfo)
+    bool RenderLayer(RenderLayerInfo& LayerInfo)
     {
         // Locate the views from the view configuration within the (reference) space at the display time.
-        std::vector<XrView> views(m_ViewConfigurationViews.size(), {XR_TYPE_VIEW});
+        std::vector<XrView> Views(m_ViewConfigurationViews.size(), {XR_TYPE_VIEW});
 
-        XrViewState      viewState{XR_TYPE_VIEW_STATE}; // Will contain information on whether the position and/or orientation is valid and/or tracked.
-        XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
-        viewLocateInfo.viewConfigurationType = m_ViewConfiguration;
-        viewLocateInfo.displayTime           = renderLayerInfo.PredictedDisplayTime;
-        viewLocateInfo.space                 = m_LocalSpace;
-        uint32_t viewCount                   = 0;
-        if (xrLocateViews(m_xrSession, &viewLocateInfo, &viewState, static_cast<uint32_t>(views.size()), &viewCount, views.data()) != XR_SUCCESS)
+        XrViewState      ViewState{XR_TYPE_VIEW_STATE}; // Will contain information on whether the position and/or orientation is valid and/or tracked.
+        XrViewLocateInfo ViewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
+        ViewLocateInfo.viewConfigurationType = m_ViewConfiguration;
+        ViewLocateInfo.displayTime           = LayerInfo.PredictedDisplayTime;
+        ViewLocateInfo.space                 = m_xrLocalSpace;
+        uint32_t ViewCount                   = 0;
+        if (xrLocateViews(m_xrSession, &ViewLocateInfo, &ViewState, static_cast<uint32_t>(Views.size()), &ViewCount, Views.data()) != XR_SUCCESS)
         {
             LOG_INFO_MESSAGE("Failed to locate Views.");
             return false;
         }
 
         // Resize the layer projection views to match the view count. The layer projection views are used in the layer projection.
-        renderLayerInfo.LayerProjectionViews.resize(viewCount, {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW});
+        LayerInfo.LayerProjectionViews.resize(ViewCount, {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW});
 
         // Per view in the view configuration:
-        for (uint32_t i = 0; i < viewCount; i++)
+        for (uint32_t i = 0; i < ViewCount; i++)
         {
-            SwapchainInfo& colorSwapchain = m_ColorSwapchains[i];
-            SwapchainInfo& depthSwapchain = m_DepthSwapchains[i];
+            SwapchainInfo& ColorSwapchain = m_ColorSwapchains[i];
+            SwapchainInfo& DepthSwapchain = m_DepthSwapchains[i];
 
             // Acquire and wait for an image from the swapchains.
             // Get the image index of an image in the swapchains.
             // The timeout is infinite.
-            uint32_t                    colorImageIndex = 0;
-            uint32_t                    depthImageIndex = 0;
-            XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
-            OPENXR_CHECK(xrAcquireSwapchainImage(colorSwapchain.xrSwapchain, &acquireInfo, &colorImageIndex), "Failed to acquire Image from the Color Swapchian");
-            OPENXR_CHECK(xrAcquireSwapchainImage(depthSwapchain.xrSwapchain, &acquireInfo, &depthImageIndex), "Failed to acquire Image from the Depth Swapchian");
+            uint32_t                    ColorImageIndex = 0;
+            uint32_t                    DepthImageIndex = 0;
+            XrSwapchainImageAcquireInfo AcquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+            OPENXR_CHECK(xrAcquireSwapchainImage(ColorSwapchain.xrSwapchain, &AcquireInfo, &ColorImageIndex), "Failed to acquire Image from the Color Swapchian");
+            OPENXR_CHECK(xrAcquireSwapchainImage(DepthSwapchain.xrSwapchain, &AcquireInfo, &DepthImageIndex), "Failed to acquire Image from the Depth Swapchian");
 
-            XrSwapchainImageWaitInfo waitInfo = {XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
-            waitInfo.timeout                  = XR_INFINITE_DURATION;
-            OPENXR_CHECK(xrWaitSwapchainImage(colorSwapchain.xrSwapchain, &waitInfo), "Failed to wait for Image from the Color Swapchain");
-            OPENXR_CHECK(xrWaitSwapchainImage(depthSwapchain.xrSwapchain, &waitInfo), "Failed to wait for Image from the Depth Swapchain");
+            XrSwapchainImageWaitInfo WaitInfo = {XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
+            WaitInfo.timeout                  = XR_INFINITE_DURATION;
+            OPENXR_CHECK(xrWaitSwapchainImage(ColorSwapchain.xrSwapchain, &WaitInfo), "Failed to wait for Image from the Color Swapchain");
+            OPENXR_CHECK(xrWaitSwapchainImage(DepthSwapchain.xrSwapchain, &WaitInfo), "Failed to wait for Image from the Depth Swapchain");
 
             // Get the width and height and construct the viewport and scissors.
             const uint32_t width  = m_ViewConfigurationViews[i].recommendedImageRectWidth;
@@ -909,19 +905,19 @@ public:
 
             // Fill out the XrCompositionLayerProjectionView structure specifying the pose and fov from the view.
             // This also associates the swapchain image with this layer projection view.
-            XrCompositionLayerProjectionView& layerProjectionView = renderLayerInfo.LayerProjectionViews[i];
-            layerProjectionView                                   = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
-            layerProjectionView.pose                              = views[i].pose;
-            layerProjectionView.fov                               = views[i].fov;
-            layerProjectionView.subImage.swapchain                = colorSwapchain.xrSwapchain;
-            layerProjectionView.subImage.imageRect.offset.x       = 0;
-            layerProjectionView.subImage.imageRect.offset.y       = 0;
-            layerProjectionView.subImage.imageRect.extent.width   = static_cast<int32_t>(width);
-            layerProjectionView.subImage.imageRect.extent.height  = static_cast<int32_t>(height);
-            layerProjectionView.subImage.imageArrayIndex          = 0; // Useful for multiview rendering.
+            XrCompositionLayerProjectionView& LayerProjectionView = LayerInfo.LayerProjectionViews[i];
+            LayerProjectionView                                   = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
+            LayerProjectionView.pose                              = Views[i].pose;
+            LayerProjectionView.fov                               = Views[i].fov;
+            LayerProjectionView.subImage.swapchain                = ColorSwapchain.xrSwapchain;
+            LayerProjectionView.subImage.imageRect.offset.x       = 0;
+            LayerProjectionView.subImage.imageRect.offset.y       = 0;
+            LayerProjectionView.subImage.imageRect.extent.width   = static_cast<int32_t>(width);
+            LayerProjectionView.subImage.imageRect.extent.height  = static_cast<int32_t>(height);
+            LayerProjectionView.subImage.imageArrayIndex          = 0; // Useful for multiview rendering.
 
-            ITextureView* pRTV = colorSwapchain.Views[colorImageIndex];
-            ITextureView* pDSV = depthSwapchain.Views[depthImageIndex];
+            ITextureView* pRTV = ColorSwapchain.Views[ColorImageIndex];
+            ITextureView* pDSV = DepthSwapchain.Views[DepthImageIndex];
 
             // Swap chain images acquired by xrAcquireSwapchainImage are guaranteed to be in
             // COLOR_ATTACHMENT_OPTIMAL/DEPTH_STENCIL_ATTACHMENT_OPTIMAL state.
@@ -940,14 +936,14 @@ public:
             const float NearZ             = 0.05f;
             const float FarZ              = 100.0f;
             const bool  NegativeOneToOneZ = m_DeviceType == RENDER_DEVICE_TYPE_GL || m_DeviceType == RENDER_DEVICE_TYPE_GLES;
-            float4x4    CameraProj        = XrCreateProjectionFov(views[i].fov, NearZ, FarZ, NegativeOneToOneZ);
+            float4x4    CameraProj        = XrCreateProjectionFov(Views[i].fov, NearZ, FarZ, NegativeOneToOneZ);
 
-            const XrQuaternionf& orientation = views[i].pose.orientation;
-            const XrVector3f&    position    = views[i].pose.position;
+            const XrQuaternionf& Orientation = Views[i].pose.orientation;
+            const XrVector3f&    Position    = Views[i].pose.position;
 
             float4x4 CameraWorld =
-                QuaternionF{orientation.x, orientation.y, orientation.z, orientation.w}.ToMatrix() *
-                float4x4::Translation(position.x, position.y, position.z);
+                QuaternionF{Orientation.x, Orientation.y, Orientation.z, Orientation.w}.ToMatrix() *
+                float4x4::Translation(Position.x, Position.y, Position.z);
 
             float4x4 CameraView     = CameraWorld.Inverse();
             float4x4 CameraViewProj = CameraView * CameraProj;
@@ -973,15 +969,15 @@ public:
 
             // Give the swapchain image back to OpenXR, allowing the compositor to use the image.
             XrSwapchainImageReleaseInfo releaseInfo{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
-            OPENXR_CHECK(xrReleaseSwapchainImage(colorSwapchain.xrSwapchain, &releaseInfo), "Failed to release Image back to the Color Swapchain");
-            OPENXR_CHECK(xrReleaseSwapchainImage(depthSwapchain.xrSwapchain, &releaseInfo), "Failed to release Image back to the Depth Swapchain");
+            OPENXR_CHECK(xrReleaseSwapchainImage(ColorSwapchain.xrSwapchain, &releaseInfo), "Failed to release Image back to the Color Swapchain");
+            OPENXR_CHECK(xrReleaseSwapchainImage(DepthSwapchain.xrSwapchain, &releaseInfo), "Failed to release Image back to the Depth Swapchain");
         }
 
         // Fill out the XrCompositionLayerProjection structure for usage with xrEndFrame().
-        renderLayerInfo.LayerProjection.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT | XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
-        renderLayerInfo.LayerProjection.space      = m_LocalSpace;
-        renderLayerInfo.LayerProjection.viewCount  = static_cast<uint32_t>(renderLayerInfo.LayerProjectionViews.size());
-        renderLayerInfo.LayerProjection.views      = renderLayerInfo.LayerProjectionViews.data();
+        LayerInfo.LayerProjection.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT | XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
+        LayerInfo.LayerProjection.space      = m_xrLocalSpace;
+        LayerInfo.LayerProjection.viewCount  = static_cast<uint32_t>(LayerInfo.LayerProjectionViews.size());
+        LayerInfo.LayerProjection.views      = LayerInfo.LayerProjectionViews.data();
 
         return true;
     }
@@ -1007,28 +1003,28 @@ public:
     void PollEvents()
     {
         // Poll OpenXR for a new event.
-        XrEventDataBuffer eventData{XR_TYPE_EVENT_DATA_BUFFER};
+        XrEventDataBuffer EventData{XR_TYPE_EVENT_DATA_BUFFER};
         auto              XrPollEvents = [&]() -> bool {
-            eventData = {XR_TYPE_EVENT_DATA_BUFFER};
-            return xrPollEvent(m_xrInstance, &eventData) == XR_SUCCESS;
+            EventData = {XR_TYPE_EVENT_DATA_BUFFER};
+            return xrPollEvent(m_xrInstance, &EventData) == XR_SUCCESS;
         };
 
         while (XrPollEvents())
         {
-            switch (eventData.type)
+            switch (EventData.type)
             {
                 // Log the number of lost events from the runtime.
                 case XR_TYPE_EVENT_DATA_EVENTS_LOST:
                 {
-                    XrEventDataEventsLost* eventsLost = reinterpret_cast<XrEventDataEventsLost*>(&eventData);
-                    LOG_INFO_MESSAGE("OPENXR: Events Lost: ", eventsLost->lostEventCount);
+                    XrEventDataEventsLost* EventsLost = reinterpret_cast<XrEventDataEventsLost*>(&EventData);
+                    LOG_INFO_MESSAGE("OPENXR: Events Lost: ", EventsLost->lostEventCount);
                     break;
                 }
                 // Log that an instance loss is pending and shutdown the application.
                 case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
                 {
-                    XrEventDataInstanceLossPending* instanceLossPending = reinterpret_cast<XrEventDataInstanceLossPending*>(&eventData);
-                    LOG_INFO_MESSAGE("OPENXR: Instance Loss Pending at: ", instanceLossPending->lossTime);
+                    XrEventDataInstanceLossPending* InstanceLossPending = reinterpret_cast<XrEventDataInstanceLossPending*>(&EventData);
+                    LOG_INFO_MESSAGE("OPENXR: Instance Loss Pending at: ", InstanceLossPending->lossTime);
                     m_xrSessionRunning   = false;
                     m_ApplicationRunning = false;
                     break;
@@ -1036,9 +1032,9 @@ public:
                 // Log that the interaction profile has changed.
                 case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
                 {
-                    XrEventDataInteractionProfileChanged* interactionProfileChanged = reinterpret_cast<XrEventDataInteractionProfileChanged*>(&eventData);
-                    LOG_INFO_MESSAGE("OPENXR: Interaction Profile changed for Session: ", interactionProfileChanged->session);
-                    if (interactionProfileChanged->session != m_xrSession)
+                    XrEventDataInteractionProfileChanged* InteractionProfileChanged = reinterpret_cast<XrEventDataInteractionProfileChanged*>(&EventData);
+                    LOG_INFO_MESSAGE("OPENXR: Interaction Profile changed for Session: ", InteractionProfileChanged->session);
+                    if (InteractionProfileChanged->session != m_xrSession)
                     {
                         LOG_INFO_MESSAGE("XrEventDataInteractionProfileChanged for unknown Session");
                         break;
@@ -1048,9 +1044,9 @@ public:
                 // Log that there's a reference space change pending.
                 case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
                 {
-                    XrEventDataReferenceSpaceChangePending* referenceSpaceChangePending = reinterpret_cast<XrEventDataReferenceSpaceChangePending*>(&eventData);
-                    LOG_INFO_MESSAGE("OPENXR: Reference Space Change pending for Session: ", referenceSpaceChangePending->session);
-                    if (referenceSpaceChangePending->session != m_xrSession)
+                    XrEventDataReferenceSpaceChangePending* ReferenceSpaceChangePending = reinterpret_cast<XrEventDataReferenceSpaceChangePending*>(&EventData);
+                    LOG_INFO_MESSAGE("OPENXR: Reference Space Change pending for Session: ", ReferenceSpaceChangePending->session);
+                    if (ReferenceSpaceChangePending->session != m_xrSession)
                     {
                         LOG_INFO_MESSAGE("XrEventDataReferenceSpaceChangePending for unknown Session");
                         break;
@@ -1060,14 +1056,14 @@ public:
                 // Session State changes:
                 case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED:
                 {
-                    XrEventDataSessionStateChanged* sessionStateChanged = reinterpret_cast<XrEventDataSessionStateChanged*>(&eventData);
-                    if (sessionStateChanged->session != m_xrSession)
+                    XrEventDataSessionStateChanged* SessionStateChanged = reinterpret_cast<XrEventDataSessionStateChanged*>(&EventData);
+                    if (SessionStateChanged->session != m_xrSession)
                     {
                         LOG_INFO_MESSAGE("XrEventDataSessionStateChanged for unknown Session");
                         break;
                     }
 
-                    if (sessionStateChanged->state == XR_SESSION_STATE_READY)
+                    if (SessionStateChanged->state == XR_SESSION_STATE_READY)
                     {
                         // SessionState is ready. Begin the XrSession using the XrViewConfigurationType.
                         XrSessionBeginInfo sessionBeginInfo{XR_TYPE_SESSION_BEGIN_INFO};
@@ -1075,19 +1071,19 @@ public:
                         OPENXR_CHECK(xrBeginSession(m_xrSession, &sessionBeginInfo), "Failed to begin Session.");
                         m_xrSessionRunning = true;
                     }
-                    if (sessionStateChanged->state == XR_SESSION_STATE_STOPPING)
+                    if (SessionStateChanged->state == XR_SESSION_STATE_STOPPING)
                     {
                         // SessionState is stopping. End the XrSession.
                         OPENXR_CHECK(xrEndSession(m_xrSession), "Failed to end Session.");
                         m_xrSessionRunning = false;
                     }
-                    if (sessionStateChanged->state == XR_SESSION_STATE_EXITING)
+                    if (SessionStateChanged->state == XR_SESSION_STATE_EXITING)
                     {
                         // SessionState is exiting. Exit the application.
                         m_xrSessionRunning   = false;
                         m_ApplicationRunning = false;
                     }
-                    if (sessionStateChanged->state == XR_SESSION_STATE_LOSS_PENDING)
+                    if (SessionStateChanged->state == XR_SESSION_STATE_LOSS_PENDING)
                     {
                         // SessionState is loss pending. Exit the application.
                         // It's possible to try a reestablish an XrInstance and XrSession, but we will simply exit here.
@@ -1095,7 +1091,7 @@ public:
                         m_ApplicationRunning = false;
                     }
                     // Store state for reference across the application.
-                    m_xrSessionState = sessionStateChanged->state;
+                    m_xrSessionState = SessionStateChanged->state;
                     break;
                 }
                 default:
@@ -1147,7 +1143,7 @@ private:
 
     XrEnvironmentBlendMode m_xrEnvironmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_MAX_ENUM;
 
-    XrSpace m_LocalSpace = XR_NULL_HANDLE;
+    XrSpace m_xrLocalSpace = XR_NULL_HANDLE;
     struct RenderLayerInfo
     {
         XrTime                                        PredictedDisplayTime = 0;

@@ -37,7 +37,7 @@ jobs:
         build_type:      ["Debug", "Release"]
         cmake_generator: ["Visual Studio 17 2022"]
         # Do not build GLSLang and friends to save time as it is built by the Core and Engine CI.
-        cmake_args:      ["-DDILIGENT_NO_WEBGPU=OFF"]
+        cmake_args:      ["-DDILIGENT_NO_WEBGPU=OFF -DDILIGENT_USE_OPENXR=ON"]
         platform:        ["Win32"]
         build_args:      ["-- -restore"]
 
