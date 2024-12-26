@@ -6,7 +6,8 @@ This module contains tutorials and sample applications intended to demonstrate t
 the [Core](https://github.com/DiligentGraphics/DiligentCore), [Tools](https://github.com/DiligentGraphics/DiligentTools),
 and [FX](https://github.com/DiligentGraphics/DiligentFX) submodules.
 
-To build and run the applications in the module, please follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine#build-and-run-instructions) in the master repository.
+To build and run the applications, please clone the [main repository](https://github.com/DiligentGraphics/DiligentEngine?tab=readme-ov-file#cloning-the-repository)
+and follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine#build-and-run-instructions).
 
 | Platform                                                                                                                                    |   Build Status                    |
 | --------------------------------------------------------------------------------------------------------------------------------------------| --------------------------------- |
