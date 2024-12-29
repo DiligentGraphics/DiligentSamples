@@ -166,6 +166,7 @@ void Tutorial29_OIT::UpdateUI()
         {
             m_MinOpacity = std::min(m_MaxOpacity, m_MinOpacity);
         }
+        ImGui::Checkbox("Animate", &m_Animate);
     }
     ImGui::End();
 }
@@ -268,8 +269,15 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
     SampleBase::Update(CurrTime, ElapsedTime);
     UpdateUI();
 
-    // Set cube view matrix
-    float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
+    if (m_Animate)
+    {
+        m_AnimationTime += ElapsedTime;
+    }
+
+    float4x4 View =
+        float4x4::RotationY(static_cast<float>(m_AnimationTime * 0.25)) *
+        float4x4::RotationX(-0.6f) *
+        float4x4::Translation(0.f, 0.f, 4.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
     float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});

@@ -58,8 +58,11 @@ private:
     RefCntAutoPtr<IPipelineState>         m_AlphaBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
 
+    bool   m_Animate       = true;
+    double m_AnimationTime = 0.0;
+
     float4x4             m_ViewProjMatrix;
-    int                  m_GridSize   = 5;
+    int                  m_GridSize   = 8;
     float                m_MinOpacity = 0.2f;
     float                m_MaxOpacity = 1.0f;
     static constexpr int MaxGridSize  = 32;
