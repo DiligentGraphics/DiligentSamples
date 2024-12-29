@@ -1,0 +1,27 @@
+#include "common.fxh"
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+// Note that if separate shader objects are not supported (this is only the case for old GLES3.0 devices), vertex
+// shader output variable name must match exactly the name of the pixel shader input variable.
+// If the variable has structure type (like in this example), the structure declarations must also be identical.
+void main(in PSInput   PSIn,
+          out PSOutput PSOut)
+{
+    float4 Color;
+    Color.rgb = ComputeLighting(PSIn.Color.rgb, PSIn.Normal, g_Constants.LightDir.xyz);
+    Color.a   = PSIn.Color.a;
+#if CONVERT_PS_OUTPUT_TO_GAMMA
+    // Use fast approximation for gamma correction.
+    Color.rgb = pow(Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+#endif
+    PSOut.Color = Color;
+}
