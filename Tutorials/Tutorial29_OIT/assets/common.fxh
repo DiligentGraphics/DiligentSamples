@@ -2,6 +2,11 @@ struct Constants
 {
     float4x4 ViewProj;
     float4   LightDir;
+    
+    float MinOpacity;
+    float MaxOpacity;
+    float Padding0;
+    float Padding1;
 };
 
 #ifndef __cplusplus

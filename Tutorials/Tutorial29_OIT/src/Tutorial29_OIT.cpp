@@ -34,6 +34,7 @@
 #include "GraphicsUtilities.h"
 #include "imgui.h"
 #include "GraphicsTypesX.hpp"
+#include "CommonlyUsedStates.h"
 
 namespace Diligent
 {
@@ -86,7 +87,7 @@ void Tutorial29_OIT::CreatePipelineStates()
     {
         ShaderCI.Desc       = {"Geometry PS", SHADER_TYPE_PIXEL, true};
         ShaderCI.EntryPoint = "main";
-        ShaderCI.FilePath   = "geometry.psh";
+        ShaderCI.FilePath   = "alpha_blend.psh";
 
         pGeometryPS = Device.CreateShader(ShaderCI);
     }
@@ -100,9 +101,9 @@ void Tutorial29_OIT::CreatePipelineStates()
     {
         // Per-vertex data - first buffer slot
         // Attribute 0 - vertex position
-        LayoutElement{0, 0, 3, VT_FLOAT32, False},
+        LayoutElement{0, 0, 3, VT_FLOAT32},
         // Attribute 1 - normal
-        LayoutElement{1, 0, 3, VT_FLOAT32, False},
+        LayoutElement{1, 0, 3, VT_FLOAT32},
             
         // Per-instance data - second buffer slot
         // Attribute 2 - translation and scale
@@ -112,9 +113,8 @@ void Tutorial29_OIT::CreatePipelineStates()
     };
     // clang-format on
 
-    PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = True;
-
-    PsoCI.GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
+    // Disable depth testing
+    PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
     PipelineResourceLayoutDescX ResourceLayout;
     ResourceLayout.AddVariable(SHADER_TYPE_VS_PS, "cbConstants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
@@ -126,12 +126,13 @@ void Tutorial29_OIT::CreatePipelineStates()
         .AddShader(pVS)
         .AddShader(pGeometryPS)
         .SetResourceLayout(ResourceLayout)
+        .SetBlendDesc(BS_PremultipliedAlphaBlend)
         .AddRenderTarget(SCDesc.ColorBufferFormat)
         .SetDepthFormat(SCDesc.DepthBufferFormat);
 
-    m_pPSO = Device.CreateGraphicsPipelineState(PsoCI);
-    m_pPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
-    m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
+    m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
+    m_AlphaBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+    m_AlphaBlendPSO->CreateShaderResourceBinding(&m_AlphaBlendSRB, true);
 }
 
 void Tutorial29_OIT::CreateInstanceBuffer()
@@ -156,6 +157,14 @@ void Tutorial29_OIT::UpdateUI()
         if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, 32))
         {
             PopulateInstanceBuffer();
+        }
+        if (ImGui::SliderFloat("Min Opacity", &m_MinOpacity, 0.f, 1.f))
+        {
+            m_MaxOpacity = std::max(m_MaxOpacity, m_MinOpacity);
+        }
+        if (ImGui::SliderFloat("Max Opacity", &m_MaxOpacity, 0.f, 1.f))
+        {
+            m_MinOpacity = std::min(m_MaxOpacity, m_MinOpacity);
         }
     }
     ImGui::End();
@@ -191,28 +200,17 @@ void Tutorial29_OIT::PopulateInstanceBuffer()
                       // to generate consistent distribution.
 
     std::uniform_real_distribution<float> scale_distr{0.3f, 1.0f};
-    std::uniform_real_distribution<float> offset_distr{-0.2f, +0.2f};
+    std::uniform_real_distribution<float> offset_distr{-1.f, +1.f};
     std::uniform_real_distribution<float> color_distr{0.3f, 1.0f};
+    std::uniform_real_distribution<float> alpha_distr{0.f, 1.f};
 
     float BaseScale = 1.f / fGridSize;
     int   instId    = 0;
-    for (int x = 0; x < m_GridSize; ++x)
+    for (int i = 0; i < m_GridSize * m_GridSize * m_GridSize; ++i)
     {
-        for (int y = 0; y < m_GridSize; ++y)
-        {
-            for (int z = 0; z < m_GridSize; ++z)
-            {
-                // Add random offset from central position in the grid
-                float xOffset = 2.f * (x + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float yOffset = 2.f * (y + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                float zOffset = 2.f * (z + 0.5f + offset_distr(gen)) / fGridSize - 1.f;
-                // Random scale
-                float  scale               = BaseScale * scale_distr(gen);
-                float4 TranslationAndScale = float4{xOffset, yOffset, zOffset, scale};
-                float4 Color               = float4{color_distr(gen), color_distr(gen), color_distr(gen), 1.f};
-                Instances[instId++]        = {TranslationAndScale, Color};
-            }
-        }
+        float4 TranslationAndScale = float4{offset_distr(gen), offset_distr(gen), offset_distr(gen), BaseScale * scale_distr(gen)};
+        float4 Color               = float4{color_distr(gen), color_distr(gen), color_distr(gen), alpha_distr(gen)};
+        Instances[instId++]        = {TranslationAndScale, Color};
     }
     // Update instance data buffer
     Uint32 DataSize = static_cast<Uint32>(sizeof(Instances[0]) * Instances.size());
@@ -238,8 +236,10 @@ void Tutorial29_OIT::Render()
     {
         // Map the buffer and write current world-view-projection matrix
         MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
-        CBConstants->ViewProj = m_ViewProjMatrix;
-        CBConstants->LightDir = normalize(float3{0.57735f, -0.57735f, 0.157735f});
+        CBConstants->ViewProj   = m_ViewProjMatrix;
+        CBConstants->LightDir   = normalize(float3{0.57735f, -0.57735f, 0.157735f});
+        CBConstants->MinOpacity = m_MinOpacity;
+        CBConstants->MaxOpacity = m_MaxOpacity;
     }
 
     // Bind vertex, instance and index buffers
@@ -249,10 +249,10 @@ void Tutorial29_OIT::Render()
     m_pImmediateContext->SetIndexBuffer(m_IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Set the pipeline state
-    m_pImmediateContext->SetPipelineState(m_pPSO);
+    m_pImmediateContext->SetPipelineState(m_AlphaBlendPSO);
     // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
     // makes sure that resources are transitioned to required states.
-    m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    m_pImmediateContext->CommitShaderResources(m_AlphaBlendSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawIndexedAttribs DrawAttrs;       // This is an indexed draw call
     DrawAttrs.IndexType    = VT_UINT32; // Index type

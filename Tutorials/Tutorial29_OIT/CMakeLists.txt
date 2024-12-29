@@ -13,7 +13,7 @@ set(INCLUDE
 set(SHADERS
     assets/common.fxh
     assets/geometry.vsh
-    assets/geometry.psh
+    assets/alpha_blend.psh
 )
 
 set(ASSETS

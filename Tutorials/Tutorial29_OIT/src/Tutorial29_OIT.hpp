@@ -55,11 +55,13 @@ private:
 
     Uint32 m_NumIndices = 0;
 
-    RefCntAutoPtr<IPipelineState>         m_pPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    RefCntAutoPtr<IPipelineState>         m_AlphaBlendPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
 
     float4x4             m_ViewProjMatrix;
     int                  m_GridSize   = 5;
+    float                m_MinOpacity = 0.2f;
+    float                m_MaxOpacity = 1.0f;
     static constexpr int MaxGridSize  = 32;
     static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
 };
