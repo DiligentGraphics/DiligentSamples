@@ -57,7 +57,7 @@ void Tutorial18_Queries::CreateCubePSO()
     CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
     CubePsoCI.VSFilePath           = "cube.vsh";
     CubePsoCI.PSFilePath           = "cube.psh";
-    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
+    CubePsoCI.Components           = GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX;
 
     m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
 
@@ -93,7 +93,7 @@ void Tutorial18_Queries::Initialize(const SampleInitInfo& InitInfo)
     CreateCubePSO();
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     // Set cube texture SRV in the SRB

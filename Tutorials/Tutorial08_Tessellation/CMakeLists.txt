@@ -26,4 +26,3 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial08_Tessellation" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial08_Tessellation PRIVATE Diligent-TextureLoader)

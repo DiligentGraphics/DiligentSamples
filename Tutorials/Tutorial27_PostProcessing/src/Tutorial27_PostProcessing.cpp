@@ -199,7 +199,7 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
 
     // Create bounding box vertex and index buffers
     {
-        m_Resources.Insert(RESOURCE_IDENTIFIER_OBJECT_AABB_VERTEX_BUFFER, TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POSITION));
+        m_Resources.Insert(RESOURCE_IDENTIFIER_OBJECT_AABB_VERTEX_BUFFER, TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POSITION));
         m_Resources.Insert(RESOURCE_IDENTIFIER_OBJECT_AABB_INDEX_BUFFER, TexturedCube::CreateIndexBuffer(m_pDevice));
     }
 

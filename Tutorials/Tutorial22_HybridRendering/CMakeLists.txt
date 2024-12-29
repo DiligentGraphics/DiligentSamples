@@ -4,12 +4,10 @@ project(Tutorial22_HybridRendering CXX)
 
 set(SOURCE
     src/Tutorial22_HybridRendering.cpp
-    ../Common/src/TexturedCube.cpp
 )
 
 set(INCLUDE
     src/Tutorial22_HybridRendering.hpp
-    ../Common/src/TexturedCube.hpp
 )
 
 set(SHADERS

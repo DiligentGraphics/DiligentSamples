@@ -132,7 +132,7 @@ void Tutorial04_Instancing::Initialize(const SampleInitInfo& InitInfo)
     CreatePipelineState();
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     m_TextureSRV       = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     // Set cube texture SRV in the SRB

@@ -191,7 +191,7 @@ void Tutorial05_TextureArray::Initialize(const SampleInitInfo& InitInfo)
     CreatePipelineState();
 
     // Load cube vertex and index buffers
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
 
     CreateInstanceBuffer();

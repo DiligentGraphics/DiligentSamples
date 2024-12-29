@@ -25,7 +25,7 @@
  *  of the possibility of such damages.
  */
 
-#include <array>
+#include <vector>
 
 #include "Tutorial20_MeshShader.hpp"
 #include "MapHelper.hpp"
@@ -36,7 +36,6 @@
 #include "ImGuiUtils.hpp"
 #include "FastRand.hpp"
 #include "AdvancedMath.hpp"
-#include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
 {
@@ -61,24 +60,36 @@ SampleBase* CreateSample()
 
 void Tutorial20_MeshShader::CreateCube()
 {
-    // Pack float3 positions into float4 vectors
-    std::array<float4, TexturedCube::NumVertices> CubePos{};
-    for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
-        CubePos[v] = TexturedCube::Positions[v];
+    RefCntAutoPtr<IDataBlob> pCubeVerts;
+    RefCntAutoPtr<IDataBlob> pCubeIndices;
+    GeometryPrimitiveInfo    CubeGeoInfo;
+    constexpr float          CubeSize = 2.f;
+    CreateGeometryPrimitive(CubeGeometryPrimitiveAttributes{CubeSize, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX}, &pCubeVerts, &pCubeIndices, &CubeGeoInfo);
 
-    // Pack float2 texcoords into float4 vectors
-    std::array<float4, TexturedCube::NumVertices> CubeUV{};
-    for (Uint32 v = 0; v < TexturedCube::NumVertices; ++v)
+    struct CubeVertex
     {
-        const auto& UV{TexturedCube::Texcoords[v]};
-        CubeUV[v] = {UV.x, UV.y, 0, 0};
+        float3 Pos;
+        float2 UV;
+    };
+    VERIFY_EXPR(CubeGeoInfo.VertexSize == sizeof(CubeVertex));
+    const CubeVertex* pVerts   = pCubeVerts->GetConstDataPtr<CubeVertex>();
+    const Uint32*     pIndices = pCubeIndices->GetConstDataPtr<Uint32>();
+
+    // Pack float3 positions into float4 vectors
+    // Pack float2 texcoords into float4 vectors
+    std::vector<float4> CubePos(CubeGeoInfo.NumVertices);
+    std::vector<float4> CubeUV(CubeGeoInfo.NumVertices);
+    for (Uint32 v = 0; v < CubeGeoInfo.NumVertices; ++v)
+    {
+        CubePos[v] = float4{pVerts[v].Pos, 1};
+        CubeUV[v]  = float4{pVerts[v].UV, 0, 0};
     }
 
     // Pack each triangle indices into uint4
-    std::array<uint4, TexturedCube::NumIndices / 3> Indices{};
+    std::vector<uint4> Indices(CubeGeoInfo.NumIndices / 3);
     for (size_t tri = 0; tri < Indices.size(); ++tri)
     {
-        const auto* src_ind{&TexturedCube::Indices[tri * 3]};
+        const Uint32* src_ind{&pIndices[tri * 3]};
         Indices[tri] = {src_ind[0], src_ind[1], src_ind[2], 0};
     }
     CubeData Data;

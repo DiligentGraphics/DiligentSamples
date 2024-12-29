@@ -22,4 +22,3 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial04_Instancing" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial04_Instancing PRIVATE Diligent-TextureLoader)

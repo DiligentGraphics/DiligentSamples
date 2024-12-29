@@ -34,7 +34,6 @@
 #include "ImGuiUtils.hpp"
 #include "../imGuIZMO.quat/imGuIZMO.h"
 #include "Align.hpp"
-#include "../../Common/src/TexturedCube.hpp"
 
 namespace Diligent
 {
@@ -165,15 +164,17 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
     // Create meshes
     {
         Mesh CubeMesh;
-        CubeMesh.Name         = "Cube";
-        CubeMesh.VertexBuffer = TexturedCube::CreateVertexBuffer(
-            m_pDevice,
-            TexturedCube::VERTEX_COMPONENT_FLAG_POS_NORM_UV,
-            BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING,
-            BUFFER_MODE_STRUCTURED);
-        CubeMesh.IndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice, BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING, BUFFER_MODE_STRUCTURED);
-        CubeMesh.NumVertices = TexturedCube::NumVertices;
-        CubeMesh.NumIndices  = TexturedCube::NumIndices;
+        CubeMesh.Name = "Cube";
+        GeometryPrimitiveBuffersCreateInfo CubeBuffersCI;
+        CubeBuffersCI.VertexBufferBindFlags = BIND_VERTEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
+        CubeBuffersCI.IndexBufferBindFlags  = BIND_INDEX_BUFFER | BIND_SHADER_RESOURCE | BIND_RAY_TRACING;
+        CubeBuffersCI.VertexBufferMode      = BUFFER_MODE_STRUCTURED;
+        CubeBuffersCI.IndexBufferMode       = BUFFER_MODE_STRUCTURED;
+        GeometryPrimitiveInfo CubeGeoInfo;
+        CreateGeometryPrimitiveBuffers(m_pDevice, CubeGeometryPrimitiveAttributes{2.f, GEOMETRY_PRIMITIVE_VERTEX_FLAG_ALL},
+                                       &CubeBuffersCI, &CubeMesh.VertexBuffer, &CubeMesh.IndexBuffer, &CubeGeoInfo);
+        CubeMesh.NumVertices = CubeGeoInfo.NumVertices;
+        CubeMesh.NumIndices  = CubeGeoInfo.NumIndices;
 
         auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25});
 

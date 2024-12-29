@@ -58,7 +58,7 @@ void Tutorial13_ShadowMap::CreateCubePSO()
     CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
     CubePsoCI.VSFilePath           = "cube.vsh";
     CubePsoCI.PSFilePath           = "cube.psh";
-    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_NORM_UV;
+    CubePsoCI.Components           = GEOMETRY_PRIMITIVE_VERTEX_FLAG_ALL;
 
     m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
 
@@ -402,7 +402,7 @@ void Tutorial13_ShadowMap::Initialize(const SampleInitInfo& InitInfo)
     // Load cube
 
     // In this tutorial we need vertices with normals
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_NORM_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_ALL);
     // Load index buffer
     m_CubeIndexBuffer = TexturedCube::CreateIndexBuffer(m_pDevice);
     // Explicitly transition vertex and index buffers to required states

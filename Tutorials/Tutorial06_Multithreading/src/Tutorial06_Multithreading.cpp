@@ -84,7 +84,7 @@ void Tutorial06_Multithreading::CreatePipelineState(std::vector<StateTransitionD
     CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
     CubePsoCI.VSFilePath           = "cube.vsh";
     CubePsoCI.PSFilePath           = "cube.psh";
-    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
+    CubePsoCI.Components           = GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX;
 
     m_pPSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
 
@@ -164,7 +164,7 @@ void Tutorial06_Multithreading::Initialize(const SampleInitInfo& InitInfo)
     CreatePipelineState(Barriers);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     // Explicitly transition vertex and index buffers to required states
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);

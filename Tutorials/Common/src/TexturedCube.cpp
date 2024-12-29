@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,7 @@
 #include "BasicMath.hpp"
 #include "TextureUtilities.h"
 #include "GraphicsTypesX.hpp"
+#include "GraphicsUtilities.h"
 
 namespace Diligent
 {
@@ -38,137 +39,45 @@ namespace Diligent
 namespace TexturedCube
 {
 
-
-//      (-1,+1,+1)________________(+1,+1,+1)                  Z
-//               /|              /|                           |      Y
-//              / |             / |                           |     /
-//             /  |            /  |                           |    /
-//            /   |           /   |                           |   /
-//(-1,-1,+1) /____|__________/(+1,-1,+1)                      |  /
-//           |    |__________|____|                           | /
-//           |   /(-1,+1,-1) |    /(+1,+1,-1)                 |----------------> X
-//           |  /            |   /
-//           | /             |  /
-//           |/              | /
-//           /_______________|/
-//        (-1,-1,-1)       (+1,-1,-1)
-//
-
-const std::array<float3, NumVertices> Positions = {
-    float3{-1, -1, -1}, float3{-1, +1, -1}, float3{+1, +1, -1}, float3{+1, -1, -1}, // Bottom
-    float3{-1, -1, -1}, float3{-1, -1, +1}, float3{+1, -1, +1}, float3{+1, -1, -1}, // Front
-    float3{+1, -1, -1}, float3{+1, -1, +1}, float3{+1, +1, +1}, float3{+1, +1, -1}, // Right
-    float3{+1, +1, -1}, float3{+1, +1, +1}, float3{-1, +1, +1}, float3{-1, +1, -1}, // Back
-    float3{-1, +1, -1}, float3{-1, +1, +1}, float3{-1, -1, +1}, float3{-1, -1, -1}, // Left
-    float3{-1, -1, +1}, float3{+1, -1, +1}, float3{+1, +1, +1}, float3{-1, +1, +1}  // Top
-};
-
-const std::array<float2, NumVertices> Texcoords = {
-    float2{0, 1}, float2{0, 0}, float2{1, 0}, float2{1, 1}, // Bottom
-    float2{0, 1}, float2{0, 0}, float2{1, 0}, float2{1, 1}, // Front
-    float2{0, 1}, float2{1, 1}, float2{1, 0}, float2{0, 0}, // Right
-    float2{0, 1}, float2{0, 0}, float2{1, 0}, float2{1, 1}, // Back
-    float2{1, 0}, float2{0, 0}, float2{0, 1}, float2{1, 1}, // Left
-    float2{1, 1}, float2{0, 1}, float2{0, 0}, float2{1, 0}  // Top
-};
-
-const std::array<float3, NumVertices> Normals = {
-    float3{0, 0, -1}, float3{0, 0, -1}, float3{0, 0, -1}, float3{0, 0, -1}, // Bottom
-    float3{0, -1, 0}, float3{0, -1, 0}, float3{0, -1, 0}, float3{0, -1, 0}, // Front
-    float3{+1, 0, 0}, float3{+1, 0, 0}, float3{+1, 0, 0}, float3{+1, 0, 0}, // Right
-    float3{0, +1, 0}, float3{0, +1, 0}, float3{0, +1, 0}, float3{0, +1, 0}, // Back
-    float3{-1, 0, 0}, float3{-1, 0, 0}, float3{-1, 0, 0}, float3{-1, 0, 0}, // Left
-    float3{0, 0, +1}, float3{0, 0, +1}, float3{0, 0, +1}, float3{0, 0, +1}  // Top
-};
-
-// clang-format off
-const std::array<Uint32, NumIndices> Indices =
+RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*                  pDevice,
+                                          GEOMETRY_PRIMITIVE_VERTEX_FLAGS Components,
+                                          BIND_FLAGS                      BindFlags,
+                                          BUFFER_MODE                     Mode)
 {
-    2,0,1,    2,3,0,
-    4,6,5,    4,7,6,
-    8,10,9,   8,11,10,
-    12,14,13, 12,15,14,
-    16,18,17, 16,19,18,
-    20,21,22, 20,22,23
-};
-// clang-format on
+    GeometryPrimitiveBuffersCreateInfo CubeBuffersCI;
+    CubeBuffersCI.VertexBufferBindFlags = BindFlags;
+    CubeBuffersCI.VertexBufferMode      = Mode;
 
-RefCntAutoPtr<IBuffer> CreateVertexBuffer(IRenderDevice*         pDevice,
-                                          VERTEX_COMPONENT_FLAGS Components,
-                                          BIND_FLAGS             BindFlags,
-                                          BUFFER_MODE            Mode)
-{
-    VERIFY_EXPR(Components != VERTEX_COMPONENT_FLAG_NONE);
-    const Uint32 TotalVertexComponents =
-        ((Components & VERTEX_COMPONENT_FLAG_POSITION) ? 3 : 0) +
-        ((Components & VERTEX_COMPONENT_FLAG_NORMAL) ? 3 : 0) +
-        ((Components & VERTEX_COMPONENT_FLAG_TEXCOORD) ? 2 : 0);
-
-    std::vector<float> VertexData(size_t{TotalVertexComponents} * NumVertices);
-
-    auto it = VertexData.begin();
-    for (Uint32 v = 0; v < NumVertices; ++v)
-    {
-        if (Components & VERTEX_COMPONENT_FLAG_POSITION)
-        {
-            const auto& Pos{Positions[v]};
-            *(it++) = Pos.x;
-            *(it++) = Pos.y;
-            *(it++) = Pos.z;
-        }
-        if (Components & VERTEX_COMPONENT_FLAG_NORMAL)
-        {
-            const auto& N{Normals[v]};
-            *(it++) = N.x;
-            *(it++) = N.y;
-            *(it++) = N.z;
-        }
-        if (Components & VERTEX_COMPONENT_FLAG_TEXCOORD)
-        {
-            const auto& UV{Texcoords[v]};
-            *(it++) = UV.x;
-            *(it++) = UV.y;
-        }
-    }
-    VERIFY_EXPR(it == VertexData.end());
-
-    BufferDesc VertBuffDesc;
-    VertBuffDesc.Name      = "Cube vertex buffer";
-    VertBuffDesc.Usage     = USAGE_IMMUTABLE;
-    VertBuffDesc.BindFlags = BindFlags;
-    VertBuffDesc.Size      = static_cast<Uint64>(VertexData.size() * sizeof(VertexData[0]));
-    VertBuffDesc.Mode      = Mode;
-    if (Mode != BUFFER_MODE_UNDEFINED)
-    {
-        VertBuffDesc.ElementByteStride = TotalVertexComponents * sizeof(VertexData[0]);
-    }
-
-    BufferData VBData;
-    VBData.pData    = VertexData.data();
-    VBData.DataSize = VertBuffDesc.Size;
-    RefCntAutoPtr<IBuffer> pCubeVertexBuffer;
-
-    pDevice->CreateBuffer(VertBuffDesc, &VBData, &pCubeVertexBuffer);
-
-    return pCubeVertexBuffer;
+    GeometryPrimitiveInfo  CubePrimInfo;
+    RefCntAutoPtr<IBuffer> pVertices;
+    CreateGeometryPrimitiveBuffers(
+        pDevice,
+        CubeGeometryPrimitiveAttributes{2.f, Components},
+        &CubeBuffersCI,
+        &pVertices,
+        nullptr,
+        &CubePrimInfo);
+    VERIFY_EXPR(CubePrimInfo.NumVertices == 24 && CubePrimInfo.NumIndices == 36);
+    return pVertices;
 }
 
 RefCntAutoPtr<IBuffer> CreateIndexBuffer(IRenderDevice* pDevice, BIND_FLAGS BindFlags, BUFFER_MODE Mode)
 {
-    BufferDesc IndBuffDesc;
-    IndBuffDesc.Name      = "Cube index buffer";
-    IndBuffDesc.Usage     = USAGE_IMMUTABLE;
-    IndBuffDesc.BindFlags = BindFlags;
-    IndBuffDesc.Size      = sizeof(Indices);
-    IndBuffDesc.Mode      = Mode;
-    if (Mode != BUFFER_MODE_UNDEFINED)
-        IndBuffDesc.ElementByteStride = sizeof(Indices[0]);
-    BufferData IBData;
-    IBData.pData    = Indices.data();
-    IBData.DataSize = NumIndices * sizeof(Indices[0]);
-    RefCntAutoPtr<IBuffer> pBuffer;
-    pDevice->CreateBuffer(IndBuffDesc, &IBData, &pBuffer);
-    return pBuffer;
+    GeometryPrimitiveBuffersCreateInfo CubeBuffersCI;
+    CubeBuffersCI.IndexBufferBindFlags = BindFlags;
+    CubeBuffersCI.IndexBufferMode      = Mode;
+
+    GeometryPrimitiveInfo  CubePrimInfo;
+    RefCntAutoPtr<IBuffer> pIndices;
+    CreateGeometryPrimitiveBuffers(
+        pDevice,
+        CubeGeometryPrimitiveAttributes{},
+        &CubeBuffersCI,
+        nullptr,
+        &pIndices,
+        &CubePrimInfo);
+    VERIFY_EXPR(CubePrimInfo.NumVertices == 24 && CubePrimInfo.NumIndices == 36);
+    return pIndices;
 }
 
 RefCntAutoPtr<ITexture> LoadTexture(IRenderDevice* pDevice, const char* Path)
@@ -179,7 +88,6 @@ RefCntAutoPtr<ITexture> LoadTexture(IRenderDevice* pDevice, const char* Path)
     CreateTextureFromFile(Path, loadInfo, pDevice, &pTex);
     return pTex;
 }
-
 
 RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInfo, bool ConvertPSOutputToGamma)
 {
@@ -253,11 +161,11 @@ RefCntAutoPtr<IPipelineState> CreatePipelineState(const CreatePSOInfo& CreateInf
     InputLayoutDescX InputLayout;
 
     Uint32 Attrib = 0;
-    if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_POSITION)
+    if (CreateInfo.Components & GEOMETRY_PRIMITIVE_VERTEX_FLAG_POSITION)
         InputLayout.Add(Attrib++, 0u, 3u, VT_FLOAT32, False);
-    if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_NORMAL)
+    if (CreateInfo.Components & GEOMETRY_PRIMITIVE_VERTEX_FLAG_NORMAL)
         InputLayout.Add(Attrib++, 0u, 3u, VT_FLOAT32, False);
-    if (CreateInfo.Components & VERTEX_COMPONENT_FLAG_TEXCOORD)
+    if (CreateInfo.Components & GEOMETRY_PRIMITIVE_VERTEX_FLAG_TEXCOORD)
         InputLayout.Add(Attrib++, 0u, 2u, VT_FLOAT32, False);
 
     for (Uint32 i = 0; i < CreateInfo.NumExtraLayoutElements; ++i)

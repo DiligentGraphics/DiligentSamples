@@ -25,7 +25,6 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial06_Multithreading" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial06_Multithreading PRIVATE Diligent-TextureLoader)
 if(PLATFORM_LINUX)
     target_link_libraries(Tutorial06_Multithreading PRIVATE pthread)
 endif()

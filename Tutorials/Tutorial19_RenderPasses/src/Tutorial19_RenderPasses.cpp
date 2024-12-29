@@ -506,7 +506,7 @@ void Tutorial19_RenderPasses::Initialize(const SampleInitInfo& InitInfo)
     CreateUniformBuffer(m_pDevice, sizeof(HLSL::Constants), "Shader constants CB", &m_pShaderConstantsCB);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 

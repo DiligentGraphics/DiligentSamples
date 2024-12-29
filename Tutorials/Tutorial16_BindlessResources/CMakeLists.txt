@@ -23,4 +23,3 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial16_BindlessResources" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial16_BindlessResources PRIVATE Diligent-TextureLoader)

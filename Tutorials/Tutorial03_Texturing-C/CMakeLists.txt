@@ -21,4 +21,3 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial03_Texturing-C" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial03_Texturing-C PRIVATE Diligent-TextureLoader)

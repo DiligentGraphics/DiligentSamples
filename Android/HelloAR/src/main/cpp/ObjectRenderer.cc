@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2024 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +70,7 @@ void ObjRenderer::Initialize(IRenderDevice* pDevice)
     }
 
     // Create cube vertex and index buffers
-    m_pCubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_pCubeVertexBuffer = TexturedCube::CreateVertexBuffer(pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     VERIFY(m_pCubeVertexBuffer, "Failed to create cube vertex buffer");
 
     m_pCubeIndexBuffer = TexturedCube::CreateIndexBuffer(pDevice);

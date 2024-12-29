@@ -28,4 +28,3 @@ set(ASSETS
 )
 
 add_sample_app("Tutorial13_ShadowMap" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
-target_link_libraries(Tutorial13_ShadowMap PRIVATE Diligent-TextureLoader)

@@ -57,7 +57,7 @@ void Tutorial17_MSAA::CreateCubePSO()
     CubePsoCI.pShaderSourceFactory = pShaderSourceFactory;
     CubePsoCI.VSFilePath           = "cube.vsh";
     CubePsoCI.PSFilePath           = "cube.psh";
-    CubePsoCI.Components           = TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV;
+    CubePsoCI.Components           = GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX;
     CubePsoCI.SampleCount          = m_SampleCount;
 
     m_pCubePSO = TexturedCube::CreatePipelineState(CubePsoCI, m_ConvertPSOutputToGamma);
@@ -125,7 +125,7 @@ void Tutorial17_MSAA::Initialize(const SampleInitInfo& InitInfo)
     CreateUniformBuffer(m_pDevice, sizeof(float4x4), "VS constants CB", &m_CubeVSConstants);
 
     // Load textured cube
-    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, TexturedCube::VERTEX_COMPONENT_FLAG_POS_UV);
+    m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_pDevice, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_TEX);
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
     m_CubeTextureSRV   = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png")->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 

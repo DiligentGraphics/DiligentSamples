@@ -740,9 +740,9 @@ public:
 
     void CreateResources()
     {
-        TexturedCube::VERTEX_COMPONENT_FLAGS CubeVertexComponents =
-            TexturedCube::VERTEX_COMPONENT_FLAG_POSITION |
-            TexturedCube::VERTEX_COMPONENT_FLAG_NORMAL;
+        GEOMETRY_PRIMITIVE_VERTEX_FLAGS CubeVertexComponents =
+            GEOMETRY_PRIMITIVE_VERTEX_FLAG_POSITION |
+            GEOMETRY_PRIMITIVE_VERTEX_FLAG_NORMAL;
         m_CubeVertexBuffer = TexturedCube::CreateVertexBuffer(m_Device, CubeVertexComponents);
         m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_Device);
 
