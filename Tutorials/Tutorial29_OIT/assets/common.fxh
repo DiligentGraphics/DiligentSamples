@@ -1,12 +1,12 @@
 struct Constants
 {
     float4x4 ViewProj;
+    float4x4 Proj;
     float4   LightDir;
     
     float MinOpacity;
     float MaxOpacity;
-    float Padding0;
-    float Padding1;
+    uint2 ScreenSize;
 };
 
 #ifndef __cplusplus

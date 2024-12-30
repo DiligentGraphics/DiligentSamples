@@ -64,6 +64,7 @@ void Tutorial29_OIT::CreatePipelineStates()
 
     ShaderMacroHelper Macros;
     Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
+    Macros.Add("THREAD_GROUP_SIZE", static_cast<int>(m_ThreadGroupSizeXY));
     ShaderCI.Macros = Macros;
 
     // Create a shader source stream factory to load shaders from files.
@@ -83,56 +84,150 @@ void Tutorial29_OIT::CreatePipelineStates()
         pVS = Device.CreateShader(ShaderCI);
     }
 
-    RefCntAutoPtr<IShader> pGeometryPS;
+    RefCntAutoPtr<IShader> pAlphaBlendPS;
     {
-        ShaderCI.Desc       = {"Geometry PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.Desc       = {"Alpha-blend PS", SHADER_TYPE_PIXEL, true};
         ShaderCI.EntryPoint = "main";
         ShaderCI.FilePath   = "alpha_blend.psh";
 
-        pGeometryPS = Device.CreateShader(ShaderCI);
+        pAlphaBlendPS = Device.CreateShader(ShaderCI);
     }
 
-    GraphicsPipelineStateCreateInfoX PsoCI{"Geometry PSO"};
-
-    // clang-format off
-    // Define vertex shader input layout
-    // This tutorial uses two types of input: per-vertex data and per-instance data.
-    InputLayoutDescX InputLayout
+    RefCntAutoPtr<IShader> pOITBlendPS;
     {
-        // Per-vertex data - first buffer slot
-        // Attribute 0 - vertex position
-        LayoutElement{0, 0, 3, VT_FLOAT32},
-        // Attribute 1 - normal
-        LayoutElement{1, 0, 3, VT_FLOAT32},
+        ShaderCI.Desc       = {"OIT blend PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "oit_blend.psh";
+
+        pOITBlendPS = Device.CreateShader(ShaderCI);
+    }
+
+    RefCntAutoPtr<IShader> pBuildOITLayersPS;
+    {
+        ShaderCI.Desc       = {"Build OIT Layers PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "build_oit_rov.psh";
+
+        pBuildOITLayersPS = Device.CreateShader(ShaderCI);
+    }
+
+    RefCntAutoPtr<IShader> pClearOITLayersCS;
+    {
+        ShaderCI.Desc       = {"Clear OIT Layers", SHADER_TYPE_COMPUTE, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "clear_oit_layers.csh";
+
+        pClearOITLayersCS = Device.CreateShader(ShaderCI);
+    }
+
+    {
+        ComputePipelineStateCreateInfoX PsoCI{"Clear OIT Layers"};
+
+        PipelineResourceLayoutDescX ResourceLayout;
+        ResourceLayout.AddVariable(SHADER_TYPE_COMPUTE, "g_rwOITLayers", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE);
+        PsoCI
+            .AddShader(pClearOITLayersCS)
+            .SetResourceLayout(ResourceLayout);
+
+        m_ClearOITLayersPSO = Device.CreateComputePipelineState(PsoCI);
+        m_ClearOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "cbConstants")->Set(m_Constants);
+    }
+
+    {
+        GraphicsPipelineStateCreateInfoX PsoCI;
+
+        // clang-format off
+        // Define vertex shader input layout
+        // This tutorial uses two types of input: per-vertex data and per-instance data.
+        InputLayoutDescX InputLayout
+        {
+            // Per-vertex data - first buffer slot
+            // Attribute 0 - vertex position
+            LayoutElement{0, 0, 3, VT_FLOAT32},
+            // Attribute 1 - normal
+            LayoutElement{1, 0, 3, VT_FLOAT32},
             
-        // Per-instance data - second buffer slot
-        // Attribute 2 - translation and scale
-        LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-        // Attribute 3 - color
-        LayoutElement{3, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
-    };
-    // clang-format on
+            // Per-instance data - second buffer slot
+            // Attribute 2 - translation and scale
+            LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+            // Attribute 3 - color
+            LayoutElement{3, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
+        };
+        // clang-format on
 
-    // Disable depth testing
-    PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+        // Disable depth testing
+        PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 
-    PipelineResourceLayoutDescX ResourceLayout;
-    ResourceLayout.AddVariable(SHADER_TYPE_VS_PS, "cbConstants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
+        PipelineResourceLayoutDescX ResourceLayout;
+        ResourceLayout
+            .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE)
+            .AddVariable(SHADER_TYPE_VS_PS, "cbConstants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
 
+        const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+
+        PsoCI
+            .SetName("Alpha-blend PSO")
+            .SetInputLayout(InputLayout)
+            .AddShader(pVS)
+            .AddShader(pAlphaBlendPS)
+            .SetResourceLayout(ResourceLayout)
+            .SetBlendDesc(BS_PremultipliedAlphaBlend)
+            .AddRenderTarget(SCDesc.ColorBufferFormat)
+            .SetDepthFormat(SCDesc.DepthBufferFormat);
+
+        m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_AlphaBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+        m_AlphaBlendPSO->CreateShaderResourceBinding(&m_AlphaBlendSRB, true);
+
+        PsoCI
+            .SetName("OIT blend PSO")
+            .SetBlendDesc(BS_AdditiveBlend)
+            .AddShader(pOITBlendPS);
+        m_OITBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_OITBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+
+        PsoCI
+            .SetName("Build OIT Layers PSO")
+            .SetBlendDesc(BS_Default)
+            .AddShader(pBuildOITLayersPS)
+            .ClearRenderTargets()
+            .SetDepthFormat(TEX_FORMAT_UNKNOWN);
+        m_BuildOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_BuildOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+    }
+}
+
+void Tutorial29_OIT::PrepareOITResources()
+{
     const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+    if (m_OITLayers && (m_OITLayers->GetDesc().Width != SCDesc.Width || m_OITLayers->GetDesc().Height != SCDesc.Height))
+        m_OITLayers.Release();
 
-    PsoCI
-        .SetInputLayout(InputLayout)
-        .AddShader(pVS)
-        .AddShader(pGeometryPS)
-        .SetResourceLayout(ResourceLayout)
-        .SetBlendDesc(BS_PremultipliedAlphaBlend)
-        .AddRenderTarget(SCDesc.ColorBufferFormat)
-        .SetDepthFormat(SCDesc.DepthBufferFormat);
+    if (m_OITLayers)
+        return;
 
-    m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
-    m_AlphaBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
-    m_AlphaBlendPSO->CreateShaderResourceBinding(&m_AlphaBlendSRB, true);
+    TextureDesc TexDesc;
+    TexDesc.Name      = "OIT Layers";
+    TexDesc.Type      = RESOURCE_DIM_TEX_2D;
+    TexDesc.Width     = SCDesc.Width;
+    TexDesc.Height    = SCDesc.Height;
+    TexDesc.MipLevels = 1;
+    TexDesc.Format    = TEX_FORMAT_RGBA32_UINT;
+    TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
+    TexDesc.Usage     = USAGE_DEFAULT;
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_OITLayers);
+
+    m_ClearOITLayersSRB.Release();
+    m_ClearOITLayersPSO->CreateShaderResourceBinding(&m_ClearOITLayersSRB, true);
+    m_ClearOITLayersSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+
+    m_BuildOITLayersSRB.Release();
+    m_BuildOITLayersPSO->CreateShaderResourceBinding(&m_BuildOITLayersSRB, true);
+    m_BuildOITLayersSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+
+    m_OITBlendSRB.Release();
+    m_OITBlendPSO->CreateShaderResourceBinding(&m_OITBlendSRB, true);
+    m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
 void Tutorial29_OIT::CreateInstanceBuffer()
@@ -158,6 +253,9 @@ void Tutorial29_OIT::UpdateUI()
         {
             PopulateInstanceBuffer();
         }
+
+        ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode), "Unsorted Alpha Blend\0Layered ROV\0\0");
+
         if (ImGui::SliderFloat("Min Opacity", &m_MinOpacity, 0.f, 1.f))
         {
             m_MaxOpacity = std::max(m_MaxOpacity, m_MinOpacity);
@@ -219,49 +317,95 @@ void Tutorial29_OIT::PopulateInstanceBuffer()
 }
 
 
+void Tutorial29_OIT::RenderGrid()
+{
+    IBuffer* pBuffs[] = {m_VertexBuffer, m_InstanceBuffer};
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetIndexBuffer(m_IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    DrawIndexedAttribs DrawAttrs;
+    DrawAttrs.IndexType    = VT_UINT32;
+    DrawAttrs.NumIndices   = m_NumIndices;
+    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize;
+    DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL;
+    m_pImmediateContext->DrawIndexed(DrawAttrs);
+}
+
 // Render a frame
 void Tutorial29_OIT::Render()
 {
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+    {
+        // Map the buffer and write current world-view-projection matrix
+        MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
+        CBConstants->ViewProj   = m_ViewProjMatrix;
+        CBConstants->Proj       = m_ProjMatrix;
+        CBConstants->LightDir   = normalize(float3{0.57735f, -0.57735f, 0.157735f});
+        CBConstants->MinOpacity = m_MinOpacity;
+        CBConstants->MaxOpacity = m_MaxOpacity;
+        CBConstants->ScreenSize = {SCDesc.Width, SCDesc.Height};
+    }
+
     ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
-    float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
+    float4 ClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
     if (m_ConvertPSOutputToGamma)
     {
         // If manual gamma correction is required, we need to clear the render target with sRGB color
         ClearColor = LinearToSRGB(ClearColor);
     }
+
+    if (m_RenderMode != RenderMode::UnsortedAlphaBlend)
+    {
+        PrepareOITResources();
+
+        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        // Clear OIT layers
+        m_pImmediateContext->SetPipelineState(m_ClearOITLayersPSO);
+        m_pImmediateContext->CommitShaderResources(m_ClearOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        DispatchComputeAttribs DispatchAttrs{
+            (SCDesc.Width + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
+            (SCDesc.Height + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
+            1,
+        };
+        m_pImmediateContext->DispatchCompute(DispatchAttrs);
+
+        m_pImmediateContext->SetPipelineState(m_BuildOITLayersPSO);
+        m_pImmediateContext->CommitShaderResources(m_BuildOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        // Since there are no render target, we have to manually set the viewport
+        Viewport VP{SCDesc.Width, SCDesc.Height};
+        m_pImmediateContext->SetViewports(1, &VP, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
+
+        RenderGrid();
+    }
+
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
+    IPipelineState*         pPSO = nullptr;
+    IShaderResourceBinding* pSRB = nullptr;
+    switch (m_RenderMode)
     {
-        // Map the buffer and write current world-view-projection matrix
-        MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
-        CBConstants->ViewProj   = m_ViewProjMatrix;
-        CBConstants->LightDir   = normalize(float3{0.57735f, -0.57735f, 0.157735f});
-        CBConstants->MinOpacity = m_MinOpacity;
-        CBConstants->MaxOpacity = m_MaxOpacity;
+        case RenderMode::UnsortedAlphaBlend:
+            pPSO = m_AlphaBlendPSO;
+            pSRB = m_AlphaBlendSRB;
+            break;
+
+        case RenderMode::LayeredROV:
+            pPSO = m_OITBlendPSO;
+            pSRB = m_OITBlendSRB;
+            break;
+
+        default:
+            UNEXPECTED("Unexpected render mode");
     }
 
-    // Bind vertex, instance and index buffers
-    const Uint64 offsets[] = {0, 0};
-    IBuffer*     pBuffs[]  = {m_VertexBuffer, m_InstanceBuffer};
-    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Set the pipeline state
-    m_pImmediateContext->SetPipelineState(m_AlphaBlendPSO);
-    // Commit shader resources. RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode
-    // makes sure that resources are transitioned to required states.
-    m_pImmediateContext->CommitShaderResources(m_AlphaBlendSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    DrawIndexedAttribs DrawAttrs;       // This is an indexed draw call
-    DrawAttrs.IndexType    = VT_UINT32; // Index type
-    DrawAttrs.NumIndices   = m_NumIndices;
-    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize; // The number of instances
-    // Verify the state of vertex and index buffers
-    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
-    m_pImmediateContext->DrawIndexed(DrawAttrs);
+    m_pImmediateContext->SetPipelineState(pPSO);
+    m_pImmediateContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    RenderGrid();
 }
 
 void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
@@ -283,10 +427,10 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
     float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    m_ProjMatrix = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 10.f);
 
     // Compute view-projection matrix
-    m_ViewProjMatrix = View * SrfPreTransform * Proj;
+    m_ViewProjMatrix = View * SrfPreTransform * m_ProjMatrix;
 }
 
 } // namespace Diligent

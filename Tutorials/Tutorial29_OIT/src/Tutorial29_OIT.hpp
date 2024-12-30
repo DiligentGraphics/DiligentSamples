@@ -45,28 +45,47 @@ public:
 private:
     void CreatePipelineStates();
     void CreateInstanceBuffer();
+    void PrepareOITResources();
     void UpdateUI();
     void PopulateInstanceBuffer();
+    void RenderGrid();
 
-    RefCntAutoPtr<IBuffer> m_VertexBuffer;
-    RefCntAutoPtr<IBuffer> m_IndexBuffer;
-    RefCntAutoPtr<IBuffer> m_InstanceBuffer;
-    RefCntAutoPtr<IBuffer> m_Constants;
+    RefCntAutoPtr<IBuffer>  m_VertexBuffer;
+    RefCntAutoPtr<IBuffer>  m_IndexBuffer;
+    RefCntAutoPtr<IBuffer>  m_InstanceBuffer;
+    RefCntAutoPtr<IBuffer>  m_Constants;
+    RefCntAutoPtr<ITexture> m_OITLayers;
 
     Uint32 m_NumIndices = 0;
 
+    RefCntAutoPtr<IPipelineState>         m_ClearOITLayersPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_ClearOITLayersSRB;
+
     RefCntAutoPtr<IPipelineState>         m_AlphaBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
+    RefCntAutoPtr<IPipelineState>         m_OITBlendPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_OITBlendSRB;
+    RefCntAutoPtr<IPipelineState>         m_BuildOITLayersPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_BuildOITLayersSRB;
+
+    enum class RenderMode : int
+    {
+        UnsortedAlphaBlend,
+        LayeredROV,
+        Count
+    } m_RenderMode = RenderMode::UnsortedAlphaBlend;
 
     bool   m_Animate       = true;
     double m_AnimationTime = 0.0;
 
+    float4x4             m_ProjMatrix;
     float4x4             m_ViewProjMatrix;
-    int                  m_GridSize   = 8;
-    float                m_MinOpacity = 0.2f;
-    float                m_MaxOpacity = 1.0f;
-    static constexpr int MaxGridSize  = 32;
-    static constexpr int MaxInstances = MaxGridSize * MaxGridSize * MaxGridSize;
+    int                  m_GridSize          = 8;
+    float                m_MinOpacity        = 0.2f;
+    float                m_MaxOpacity        = 1.0f;
+    Uint32               m_ThreadGroupSizeXY = 16;
+    static constexpr int MaxGridSize         = 32;
+    static constexpr int MaxInstances        = MaxGridSize * MaxGridSize * MaxGridSize;
 };
 
 } // namespace Diligent

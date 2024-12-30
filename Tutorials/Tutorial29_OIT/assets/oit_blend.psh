@@ -1,9 +1,12 @@
 #include "common.fxh"
+#include "oit.fxh"
 
 cbuffer cbConstants
 {
     Constants g_Constants;
 }
+
+Texture2D<uint4> g_OITLayers;
 
 struct PSOutput
 {
@@ -16,7 +19,14 @@ void main(in PSInput   PSIn,
     float4 Color;
     Color.rgb = ComputeLighting(PSIn.Color.rgb, PSIn.Normal, g_Constants.LightDir.xyz);
     Color.a   = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
-    Color.rgb *= Color.a;
+    
+    OITLayers Layers;
+    Layers.Data = g_OITLayers[uint2(PSIn.Pos.xy)];
+    
+    float D = PSIn.Pos.z;
+    float TailFactor;
+    float T = GetOITTransmittance(Layers, D, TailFactor);
+    Color.rgb *= T * Color.a * TailFactor;
     
 #if CONVERT_PS_OUTPUT_TO_GAMMA
     // Use fast approximation for gamma correction.

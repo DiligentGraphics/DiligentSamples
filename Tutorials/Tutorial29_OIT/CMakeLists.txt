@@ -12,8 +12,12 @@ set(INCLUDE
 
 set(SHADERS
     assets/common.fxh
+    assets/oit.fxh
     assets/geometry.vsh
     assets/alpha_blend.psh
+    assets/clear_oit_layers.csh
+    assets/build_oit_rov.psh
+    assets/oit_blend.psh
 )
 
 set(ASSETS
