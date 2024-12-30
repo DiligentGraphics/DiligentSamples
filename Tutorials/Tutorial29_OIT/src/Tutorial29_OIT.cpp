@@ -427,7 +427,7 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
     float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    m_ProjMatrix = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 10.f);
+    m_ProjMatrix = GetAdjustedProjectionMatrix(PI_F / 4.0f, 1.f, 5.f);
 
     // Compute view-projection matrix
     m_ViewProjMatrix = View * SrfPreTransform * m_ProjMatrix;
