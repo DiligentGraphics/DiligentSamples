@@ -34,7 +34,7 @@ void main(in PSInput   PSIn,
         {
             uint LayerDT = g_OITLayers[Offset + layer];
             uint LayerD = GetOITLayerDepth(LayerDT);
-            if (D <= LayerD)
+            if (D <= LayerD + 1u)
             {
                 break;
             }
