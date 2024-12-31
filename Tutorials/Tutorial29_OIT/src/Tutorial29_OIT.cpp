@@ -72,6 +72,22 @@ static constexpr BlendStateDesc BS_UpdateOITTail{
     },
 };
 
+static constexpr BlendStateDesc BS_AttenuateBackground{
+    False,                // AlphaToCoverageEnable
+    False,                // IndependentBlendEnable
+    RenderTargetBlendDesc // Render Target 0
+    {
+        True,                   // BlendEnable
+        False,                  // LogicOperationEnable
+        BLEND_FACTOR_ZERO,      // SrcBlend
+        BLEND_FACTOR_SRC_ALPHA, // DestBlend
+        BLEND_OPERATION_ADD,    // BlendOp
+        BLEND_FACTOR_ZERO,      // SrcBlendAlpha
+        BLEND_FACTOR_ONE,       // DestBlendAlpha
+        BLEND_OPERATION_ADD,    // BlendOpAlpha
+    },
+};
+
 void Tutorial29_OIT::CreatePipelineStates()
 {
     ShaderCreateInfo ShaderCI;
@@ -92,13 +108,22 @@ void Tutorial29_OIT::CreatePipelineStates()
 
     RenderDeviceX_N Device{m_pDevice};
 
-    RefCntAutoPtr<IShader> pVS;
+    RefCntAutoPtr<IShader> pGeometryVS;
     {
         ShaderCI.Desc       = {"Geometry VS", SHADER_TYPE_VERTEX, true};
         ShaderCI.EntryPoint = "main";
         ShaderCI.FilePath   = "geometry.vsh";
 
-        pVS = Device.CreateShader(ShaderCI);
+        pGeometryVS = Device.CreateShader(ShaderCI);
+    }
+
+    RefCntAutoPtr<IShader> pScreenTriangleVS;
+    {
+        ShaderCI.Desc       = {"Screen Triangle VS", SHADER_TYPE_VERTEX, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "screen_triangle.vsh";
+
+        pScreenTriangleVS = Device.CreateShader(ShaderCI);
     }
 
     RefCntAutoPtr<IShader> pAlphaBlendPS;
@@ -137,6 +162,15 @@ void Tutorial29_OIT::CreatePipelineStates()
         pClearOITLayersCS = Device.CreateShader(ShaderCI);
     }
 
+    RefCntAutoPtr<IShader> pAttenuateBackgroundPS;
+    {
+        ShaderCI.Desc       = {"Attenuate Background PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "attenuate_background.psh";
+
+        pAttenuateBackgroundPS = Device.CreateShader(ShaderCI);
+    }
+
     {
         ComputePipelineStateCreateInfoX PsoCI{"Clear OIT Layers"};
 
@@ -149,6 +183,8 @@ void Tutorial29_OIT::CreatePipelineStates()
         m_ClearOITLayersPSO = Device.CreateComputePipelineState(PsoCI);
         m_ClearOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "cbConstants")->Set(m_Constants);
     }
+
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     {
         GraphicsPipelineStateCreateInfoX PsoCI;
@@ -180,12 +216,10 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE)
             .AddVariable(SHADER_TYPE_VS_PS, "cbConstants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
 
-        const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
-
         PsoCI
             .SetName("Alpha-blend PSO")
             .SetInputLayout(InputLayout)
-            .AddShader(pVS)
+            .AddShader(pGeometryVS)
             .AddShader(pAlphaBlendPS)
             .SetResourceLayout(ResourceLayout)
             .SetBlendDesc(BS_PremultipliedAlphaBlend)
@@ -212,6 +246,26 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetDepthFormat(TEX_FORMAT_UNKNOWN);
         m_UpdateOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_UpdateOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+    }
+
+    {
+        GraphicsPipelineStateCreateInfoX PsoCI{"Attenuate background"};
+
+        PipelineResourceLayoutDescX ResourceLayout;
+        ResourceLayout
+            .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE)
+            .AddVariable(SHADER_TYPE_VS_PS, "cbConstants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
+
+        PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
+        PsoCI
+            .AddRenderTarget(SCDesc.ColorBufferFormat)
+            .SetDepthFormat(SCDesc.DepthBufferFormat)
+            .SetBlendDesc(BS_AttenuateBackground)
+            .AddShader(pScreenTriangleVS)
+            .AddShader(pAttenuateBackgroundPS)
+            .SetResourceLayout(ResourceLayout);
+        m_AttenuateBackgroundPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_AttenuateBackgroundPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
     }
 }
 
@@ -257,6 +311,11 @@ void Tutorial29_OIT::PrepareOITResources()
     m_OITBlendPSO->CreateShaderResourceBinding(&m_OITBlendSRB, true);
     m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
     m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+
+    m_AttenuateBackgroundSRB.Release();
+    m_AttenuateBackgroundPSO->CreateShaderResourceBinding(&m_AttenuateBackgroundSRB, true);
+    m_AttenuateBackgroundSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+    m_AttenuateBackgroundSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
 void Tutorial29_OIT::CreateInstanceBuffer()
@@ -410,7 +469,7 @@ void Tutorial29_OIT::Render()
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Clear the back buffer
-    float4 ClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+    float4 ClearColor = {0.35f, 0.35f, 0.35f, 1.0f};
     if (m_ConvertPSOutputToGamma)
     {
         // If manual gamma correction is required, we need to clear the render target with sRGB color
@@ -418,6 +477,13 @@ void Tutorial29_OIT::Render()
     }
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    if (m_RenderMode == RenderMode::Layered)
+    {
+        m_pImmediateContext->SetPipelineState(m_AttenuateBackgroundPSO);
+        m_pImmediateContext->CommitShaderResources(m_AttenuateBackgroundSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
+    }
 
     IPipelineState*         pPSO = nullptr;
     IShaderResourceBinding* pSRB = nullptr;

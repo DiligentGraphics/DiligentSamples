@@ -18,6 +18,8 @@ set(SHADERS
     assets/clear_oit_layers.csh
     assets/update_oit_layers.psh
     assets/oit_blend.psh
+    assets/screen_triangle.vsh
+    assets/attenuate_background.psh
 )
 
 set(ASSETS

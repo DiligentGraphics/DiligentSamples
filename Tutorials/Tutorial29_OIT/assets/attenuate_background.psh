@@ -1,0 +1,40 @@
+#include "common.fxh"
+#include "oit.fxh"
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
+
+StructuredBuffer<uint> g_OITLayers;
+Texture2D<float4>      g_OITTail;
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+void main(in float4 Pos : SV_Position,
+          out PSOutput PSOut)
+{
+    uint Offset = GetOITLayerDataOffset(uint2(Pos.xy), g_Constants.ScreenSize);
+    float T = 1.0;
+    uint layer = 0u;
+    while (layer < uint(NUM_OIT_LAYERS))
+    {
+        uint LayerDT = g_OITLayers[Offset + layer];
+        if (LayerDT == 0xFFFFFFFFu)
+            break;
+        T *= GetOITLayerTransmittance(LayerDT);
+        ++layer;
+    }
+    if (layer == uint(NUM_OIT_LAYERS))
+    {
+        float4 Tail = g_OITTail.Load(int3(Pos.xy, 0));
+        T *= Tail.a;
+    }
+    if (T == 1.0)
+        discard;
+
+    PSOut.Color = float4(0.0, 0.0, 0.0, T);
+}

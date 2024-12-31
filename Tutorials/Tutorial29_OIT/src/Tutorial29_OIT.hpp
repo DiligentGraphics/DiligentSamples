@@ -70,6 +70,8 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_OITBlendSRB;
     RefCntAutoPtr<IPipelineState>         m_UpdateOITLayersPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_UpdateOITLayersSRB;
+    RefCntAutoPtr<IPipelineState>         m_AttenuateBackgroundPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_AttenuateBackgroundSRB;
 
     enum class RenderMode : int
     {
@@ -85,7 +87,7 @@ private:
 
     float4x4             m_ProjMatrix;
     float4x4             m_ViewProjMatrix;
-    int                  m_GridSize          = 8;
+    int                  m_GridSize          = 10;
     float                m_MinOpacity        = 0.2f;
     float                m_MaxOpacity        = 1.0f;
     Uint32               m_ThreadGroupSizeXY = 16;
