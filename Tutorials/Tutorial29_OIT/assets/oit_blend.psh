@@ -28,8 +28,9 @@ void main(in PSInput   PSIn,
         float T = 1.0;
     
         uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
-        uint layer;
-        for (; layer < uint(NUM_OIT_LAYERS); ++layer)
+
+        uint layer = 0u;
+        while (layer < uint(NUM_OIT_LAYERS))
         {
             uint LayerDT = g_OITLayers[Offset + layer];
             uint LayerD = GetOITLayerDepth(LayerDT);
@@ -39,6 +40,7 @@ void main(in PSInput   PSIn,
             }
             float LayerT = GetOITLayerTransmittance(LayerDT);
             T *= LayerT;
+            ++layer;
         }
         if (layer == uint(NUM_OIT_LAYERS))
         {
