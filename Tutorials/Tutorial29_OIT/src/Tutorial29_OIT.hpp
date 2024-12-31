@@ -44,6 +44,7 @@ public:
 
 private:
     void CreatePipelineStates();
+    void CreateGeometryBuffers();
     void CreateInstanceBuffer();
     void PrepareOITResources();
     void UpdateUI();

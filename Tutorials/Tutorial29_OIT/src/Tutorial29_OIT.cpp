@@ -318,9 +318,22 @@ void Tutorial29_OIT::PrepareOITResources()
     m_AttenuateBackgroundSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
+void Tutorial29_OIT::CreateGeometryBuffers()
+{
+    Uint32 NumSubdivision = std::min(4 * 32 / m_GridSize, 8);
+
+    m_VertexBuffer.Release();
+    m_IndexBuffer.Release();
+
+    GeometryPrimitiveInfo PrimInfo;
+    CreateGeometryPrimitiveBuffers(m_pDevice, SphereGeometryPrimitiveAttributes{1.f, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_NORM, NumSubdivision},
+                                   nullptr, &m_VertexBuffer, &m_IndexBuffer, &PrimInfo);
+    m_NumIndices = PrimInfo.NumIndices;
+}
+
 void Tutorial29_OIT::CreateInstanceBuffer()
 {
-    // Create instance data buffer that will store transformation matrices
+    // Create instance data buffer
     BufferDesc InstBuffDesc;
     InstBuffDesc.Name = "Instance data buffer";
     // Use default usage as this buffer will only be updated when grid size changes
@@ -339,6 +352,7 @@ void Tutorial29_OIT::UpdateUI()
     {
         if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, 32))
         {
+            CreateGeometryBuffers();
             PopulateInstanceBuffer();
         }
 
@@ -361,17 +375,9 @@ void Tutorial29_OIT::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    // Create geometry buffers
-    {
-        GeometryPrimitiveInfo PrimInfo;
-        CreateGeometryPrimitiveBuffers(m_pDevice, SphereGeometryPrimitiveAttributes{1.f, GEOMETRY_PRIMITIVE_VERTEX_FLAG_POS_NORM, 8},
-                                       nullptr, &m_VertexBuffer, &m_IndexBuffer, &PrimInfo);
-        m_NumIndices = PrimInfo.NumIndices;
-    }
-
     CreateUniformBuffer(m_pDevice, sizeof(HLSL::Constants), "Constants", &m_Constants);
     CreateInstanceBuffer();
-
+    CreateGeometryBuffers();
     CreatePipelineStates();
 }
 
