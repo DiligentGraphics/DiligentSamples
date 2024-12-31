@@ -11,12 +11,11 @@ RWStructuredBuffer<uint> g_rwOITLayers;
 float4 main(in PSInput PSIn) : SV_Target
 {
     float A = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
-    float T = 1.0 - A;
-    float D = PSIn.Pos.z;
-
     uint Layer = 0xFFFFFFFFu;
-    if (T < 0.99)
+    if (A > OPACITY_THRESHOLD)
     {
+        float T = 1.0 - A;
+        float D = PSIn.Pos.z;        
         Layer = PackOITLayer(D, T);
         uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
         for (uint i = 0; i < uint(NUM_OIT_LAYERS); ++i)

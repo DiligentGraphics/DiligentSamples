@@ -24,4 +24,7 @@ float3 ComputeLighting(float3 Color, float3 Normal, float3 LightDir)
     float DiffuseIntensity = max(0, dot(Normal, -LightDir));
     return Color * (AmbientColor + LightColor * DiffuseIntensity);
 }
+
+#define OPACITY_THRESHOLD (1.0/255.0)
+
 #endif

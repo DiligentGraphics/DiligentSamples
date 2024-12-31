@@ -20,33 +20,36 @@ void main(in PSInput   PSIn,
     float4 Color;
     Color.rgb = ComputeLighting(PSIn.Color.rgb, PSIn.Normal, g_Constants.LightDir.xyz);
     Color.a   = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
-
-    float Depth = PSIn.Pos.z;
-    uint  D     = uint(Depth * 16777215.0);
-    float T     = 1.0;
-    
-    uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
-    uint layer;
-    for (; layer < uint(NUM_OIT_LAYERS); ++layer)
+    Color.rgb *= Color.a;
+    if (Color.a > OPACITY_THRESHOLD)
     {
-        uint LayerDT = g_OITLayers[Offset + layer];
-        uint LayerD  = GetOITLayerDepth(LayerDT);
-        if (D <= LayerD)
+        float Depth = PSIn.Pos.z;
+        uint D = uint(Depth * 16777215.0);
+        float T = 1.0;
+    
+        uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
+        uint layer;
+        for (; layer < uint(NUM_OIT_LAYERS); ++layer)
         {
-            break;
+            uint LayerDT = g_OITLayers[Offset + layer];
+            uint LayerD = GetOITLayerDepth(LayerDT);
+            if (D <= LayerD)
+            {
+                break;
+            }
+            float LayerT = GetOITLayerTransmittance(LayerDT);
+            T *= LayerT;
         }
-        float LayerT = GetOITLayerTransmittance(LayerDT);
-        T *= LayerT;
-    }
-    if (layer == uint(NUM_OIT_LAYERS))
-    {
-        float4 Tail = g_OITTail.Load(int3(PSIn.Pos.xy, 0));
-        // Average contribution of all tail pixels.
-        T /= (255.0 * Tail.x);
+        if (layer == uint(NUM_OIT_LAYERS))
+        {
+            float4 Tail = g_OITTail.Load(int3(PSIn.Pos.xy, 0));
+            // Average contribution of all tail pixels.
+            T /= max(255.0 * Tail.x, 1.0);
+        }
+
+        Color.rgb *= T;
     }
 
-    Color.rgb *= T * Color.a;
-    
 #if CONVERT_PS_OUTPUT_TO_GAMMA
     // Use fast approximation for gamma correction.
     Color.rgb = pow(Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
