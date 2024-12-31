@@ -228,6 +228,7 @@ void Tutorial29_OIT::CreatePipelineStates()
 
         m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_AlphaBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+        m_AlphaBlendSRB.Release();
         m_AlphaBlendPSO->CreateShaderResourceBinding(&m_AlphaBlendSRB, true);
 
         PsoCI
@@ -357,6 +358,14 @@ void Tutorial29_OIT::UpdateUI()
         }
 
         ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode), "Unsorted Alpha Blend\0Layered\0\0");
+        if (m_RenderMode == RenderMode::Layered)
+        {
+            if (ImGui::SliderInt("Num OIT Layers", &m_NumOITLayers, 1, 16))
+            {
+                CreatePipelineStates();
+                PrepareOITResources();
+            }
+        }
 
         if (ImGui::SliderFloat("Min Opacity", &m_MinOpacity, 0.f, 1.f))
         {

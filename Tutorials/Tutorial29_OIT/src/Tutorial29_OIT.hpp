@@ -84,7 +84,7 @@ private:
     bool   m_Animate       = true;
     double m_AnimationTime = 0.0;
 
-    Uint32 m_NumOITLayers = 4;
+    int m_NumOITLayers = 4;
 
     float4x4             m_ProjMatrix;
     float4x4             m_ViewProjMatrix;
