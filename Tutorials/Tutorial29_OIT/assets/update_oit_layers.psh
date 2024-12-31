@@ -1,0 +1,48 @@
+#include "common.fxh"
+#include "oit.fxh"
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
+
+RWStructuredBuffer<uint> g_rwOITLayers;
+
+float4 main(in PSInput PSIn) : SV_Target
+{
+    float A = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
+    float T = 1.0 - A;
+    float D = PSIn.Pos.z;
+
+    uint Layer = 0xFFFFFFFFu;
+    if (T < 0.99)
+    {
+        Layer = PackOITLayer(D, T);
+        uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
+        for (uint i = 0; i < uint(NUM_OIT_LAYERS); ++i)
+        {
+            uint OrigLayer;
+            InterlockedMin(g_rwOITLayers[Offset + i], Layer, OrigLayer);
+            if (OrigLayer == 0xFFFFFFFFu || // Empty space
+                OrigLayer == Layer)         // Layer matches another one exactly
+            {
+                // Do not update tail transmittance
+                Layer = 0xFFFFFFFFu;
+                break;
+            }
+            // Layer > OrigLayer: we did not insert the layer
+            // Layer < OrigLayer: we inserted the layer, so now we need to insert the original layer
+            Layer = max(Layer, OrigLayer);
+        }
+    }
+    
+    if (Layer == 0xFFFFFFFFu)
+    {
+        return float4(0.0, 0.0, 0.0, 1.0);
+    }
+    else
+    {
+        float TailT = GetOITLayerTransmittance(Layer);
+        return float4(1.0 / 255.0, 0.0, 0.0, TailT);
+    }
+}

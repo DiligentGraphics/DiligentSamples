@@ -16,7 +16,7 @@ set(SHADERS
     assets/geometry.vsh
     assets/alpha_blend.psh
     assets/clear_oit_layers.csh
-    assets/build_oit_rov.psh
+    assets/update_oit_layers.psh
     assets/oit_blend.psh
 )
 

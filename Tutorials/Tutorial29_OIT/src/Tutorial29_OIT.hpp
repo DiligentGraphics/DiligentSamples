@@ -50,11 +50,14 @@ private:
     void PopulateInstanceBuffer();
     void RenderGrid();
 
-    RefCntAutoPtr<IBuffer>  m_VertexBuffer;
-    RefCntAutoPtr<IBuffer>  m_IndexBuffer;
-    RefCntAutoPtr<IBuffer>  m_InstanceBuffer;
-    RefCntAutoPtr<IBuffer>  m_Constants;
-    RefCntAutoPtr<ITexture> m_OITLayers;
+    RefCntAutoPtr<IBuffer> m_VertexBuffer;
+    RefCntAutoPtr<IBuffer> m_IndexBuffer;
+    RefCntAutoPtr<IBuffer> m_InstanceBuffer;
+    RefCntAutoPtr<IBuffer> m_Constants;
+    RefCntAutoPtr<IBuffer> m_OITLayers;
+
+    static constexpr TEXTURE_FORMAT TailTransmittanceFormat = TEX_FORMAT_RGBA8_UNORM;
+    RefCntAutoPtr<ITexture>         m_OITTail;
 
     Uint32 m_NumIndices = 0;
 
@@ -65,18 +68,20 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
     RefCntAutoPtr<IPipelineState>         m_OITBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_OITBlendSRB;
-    RefCntAutoPtr<IPipelineState>         m_BuildOITLayersPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_BuildOITLayersSRB;
+    RefCntAutoPtr<IPipelineState>         m_UpdateOITLayersPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_UpdateOITLayersSRB;
 
     enum class RenderMode : int
     {
         UnsortedAlphaBlend,
-        LayeredROV,
+        Layered,
         Count
-    } m_RenderMode = RenderMode::UnsortedAlphaBlend;
+    } m_RenderMode = RenderMode::Layered;
 
     bool   m_Animate       = true;
     double m_AnimationTime = 0.0;
+
+    Uint32 m_NumOITLayers = 4;
 
     float4x4             m_ProjMatrix;
     float4x4             m_ViewProjMatrix;

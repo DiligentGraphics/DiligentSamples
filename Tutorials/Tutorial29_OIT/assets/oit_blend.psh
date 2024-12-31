@@ -6,7 +6,8 @@ cbuffer cbConstants
     Constants g_Constants;
 }
 
-Texture2D<uint4> g_OITLayers;
+StructuredBuffer<uint> g_OITLayers;
+Texture2D<float4>      g_OITTail;
 
 struct PSOutput
 {
@@ -19,14 +20,32 @@ void main(in PSInput   PSIn,
     float4 Color;
     Color.rgb = ComputeLighting(PSIn.Color.rgb, PSIn.Normal, g_Constants.LightDir.xyz);
     Color.a   = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
+
+    float Depth = PSIn.Pos.z;
+    uint  D     = uint(Depth * 16777215.0);
+    float T     = 1.0;
     
-    OITLayers Layers;
-    Layers.Data = g_OITLayers[uint2(PSIn.Pos.xy)];
-    
-    float D = PSIn.Pos.z;
-    float TailFactor;
-    float T = GetOITTransmittance(Layers, D, TailFactor);
-    Color.rgb *= T * Color.a * TailFactor;
+    uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
+    uint layer;
+    for (; layer < uint(NUM_OIT_LAYERS); ++layer)
+    {
+        uint LayerDT = g_OITLayers[Offset + layer];
+        uint LayerD  = GetOITLayerDepth(LayerDT);
+        if (D <= LayerD)
+        {
+            break;
+        }
+        float LayerT = GetOITLayerTransmittance(LayerDT);
+        T *= LayerT;
+    }
+    if (layer == uint(NUM_OIT_LAYERS))
+    {
+        float4 Tail = g_OITTail.Load(int3(PSIn.Pos.xy, 0));
+        // Average contribution of all tail pixels.
+        T /= (255.0 * Tail.x);
+    }
+
+    Color.rgb *= T * Color.a;
     
 #if CONVERT_PS_OUTPUT_TO_GAMMA
     // Use fast approximation for gamma correction.

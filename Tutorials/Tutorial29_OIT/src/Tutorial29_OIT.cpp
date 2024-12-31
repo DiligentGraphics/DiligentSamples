@@ -56,6 +56,22 @@ SampleBase* CreateSample()
     return new Tutorial29_OIT();
 }
 
+static constexpr BlendStateDesc BS_UpdateOITTail{
+    False,                // AlphaToCoverageEnable
+    False,                // IndependentBlendEnable
+    RenderTargetBlendDesc // Render Target 0
+    {
+        True,                   // BlendEnable
+        False,                  // LogicOperationEnable
+        BLEND_FACTOR_ONE,       // SrcBlend
+        BLEND_FACTOR_ONE,       // DestBlend
+        BLEND_OPERATION_ADD,    // BlendOp
+        BLEND_FACTOR_ZERO,      // SrcBlendAlpha
+        BLEND_FACTOR_SRC_ALPHA, // DestBlendAlpha
+        BLEND_OPERATION_ADD,    // BlendOpAlpha
+    },
+};
+
 void Tutorial29_OIT::CreatePipelineStates()
 {
     ShaderCreateInfo ShaderCI;
@@ -65,6 +81,7 @@ void Tutorial29_OIT::CreatePipelineStates()
     ShaderMacroHelper Macros;
     Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
     Macros.Add("THREAD_GROUP_SIZE", static_cast<int>(m_ThreadGroupSizeXY));
+    Macros.Add("NUM_OIT_LAYERS", static_cast<int>(m_NumOITLayers));
     ShaderCI.Macros = Macros;
 
     // Create a shader source stream factory to load shaders from files.
@@ -102,13 +119,13 @@ void Tutorial29_OIT::CreatePipelineStates()
         pOITBlendPS = Device.CreateShader(ShaderCI);
     }
 
-    RefCntAutoPtr<IShader> pBuildOITLayersPS;
+    RefCntAutoPtr<IShader> pUpdateOITLayersPS;
     {
-        ShaderCI.Desc       = {"Build OIT Layers PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.Desc       = {"Update OIT Layers PS", SHADER_TYPE_PIXEL, true};
         ShaderCI.EntryPoint = "main";
-        ShaderCI.FilePath   = "build_oit_rov.psh";
+        ShaderCI.FilePath   = "update_oit_layers.psh";
 
-        pBuildOITLayersPS = Device.CreateShader(ShaderCI);
+        pUpdateOITLayersPS = Device.CreateShader(ShaderCI);
     }
 
     RefCntAutoPtr<IShader> pClearOITLayersCS;
@@ -187,47 +204,59 @@ void Tutorial29_OIT::CreatePipelineStates()
         m_OITBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
 
         PsoCI
-            .SetName("Build OIT Layers PSO")
-            .SetBlendDesc(BS_Default)
-            .AddShader(pBuildOITLayersPS)
+            .SetName("Update OIT Layers PSO")
+            .SetBlendDesc(BS_UpdateOITTail)
+            .AddShader(pUpdateOITLayersPS)
             .ClearRenderTargets()
+            .AddRenderTarget(TailTransmittanceFormat)
             .SetDepthFormat(TEX_FORMAT_UNKNOWN);
-        m_BuildOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
-        m_BuildOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+        m_UpdateOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_UpdateOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
     }
 }
 
 void Tutorial29_OIT::PrepareOITResources()
 {
     const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
-    if (m_OITLayers && (m_OITLayers->GetDesc().Width != SCDesc.Width || m_OITLayers->GetDesc().Height != SCDesc.Height))
+    if (m_OITLayers && m_OITLayers->GetDesc().Size != SCDesc.Width * SCDesc.Height * m_NumOITLayers * sizeof(Uint32))
         m_OITLayers.Release();
 
     if (m_OITLayers)
         return;
 
+    BufferDesc BuffDesc;
+    BuffDesc.Name              = "OIT Layers";
+    BuffDesc.Size              = SCDesc.Width * SCDesc.Height * m_NumOITLayers * sizeof(Uint32);
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(Uint32);
+    BuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
+    BuffDesc.Usage             = USAGE_DEFAULT;
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_OITLayers);
+
     TextureDesc TexDesc;
-    TexDesc.Name      = "OIT Layers";
+    TexDesc.Name      = "OIT Tail";
     TexDesc.Type      = RESOURCE_DIM_TEX_2D;
     TexDesc.Width     = SCDesc.Width;
     TexDesc.Height    = SCDesc.Height;
     TexDesc.MipLevels = 1;
-    TexDesc.Format    = TEX_FORMAT_RGBA32_UINT;
-    TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
+    TexDesc.Format    = TailTransmittanceFormat;
+    TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
     TexDesc.Usage     = USAGE_DEFAULT;
-    m_pDevice->CreateTexture(TexDesc, nullptr, &m_OITLayers);
+    m_OITTail.Release();
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_OITTail);
 
     m_ClearOITLayersSRB.Release();
     m_ClearOITLayersPSO->CreateShaderResourceBinding(&m_ClearOITLayersSRB, true);
-    m_ClearOITLayersSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+    m_ClearOITLayersSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
 
-    m_BuildOITLayersSRB.Release();
-    m_BuildOITLayersPSO->CreateShaderResourceBinding(&m_BuildOITLayersSRB, true);
-    m_BuildOITLayersSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+    m_UpdateOITLayersSRB.Release();
+    m_UpdateOITLayersPSO->CreateShaderResourceBinding(&m_UpdateOITLayersSRB, true);
+    m_UpdateOITLayersSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
 
     m_OITBlendSRB.Release();
     m_OITBlendPSO->CreateShaderResourceBinding(&m_OITBlendSRB, true);
-    m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+    m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
 void Tutorial29_OIT::CreateInstanceBuffer()
@@ -254,7 +283,7 @@ void Tutorial29_OIT::UpdateUI()
             PopulateInstanceBuffer();
         }
 
-        ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode), "Unsorted Alpha Blend\0Layered ROV\0\0");
+        ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode), "Unsorted Alpha Blend\0Layered\0\0");
 
         if (ImGui::SliderFloat("Min Opacity", &m_MinOpacity, 0.f, 1.f))
         {
@@ -346,16 +375,6 @@ void Tutorial29_OIT::Render()
         CBConstants->ScreenSize = {SCDesc.Width, SCDesc.Height};
     }
 
-    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
-    // Clear the back buffer
-    float4 ClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-    if (m_ConvertPSOutputToGamma)
-    {
-        // If manual gamma correction is required, we need to clear the render target with sRGB color
-        ClearColor = LinearToSRGB(ClearColor);
-    }
-
     if (m_RenderMode != RenderMode::UnsortedAlphaBlend)
     {
         PrepareOITResources();
@@ -372,8 +391,13 @@ void Tutorial29_OIT::Render()
         };
         m_pImmediateContext->DispatchCompute(DispatchAttrs);
 
-        m_pImmediateContext->SetPipelineState(m_BuildOITLayersPSO);
-        m_pImmediateContext->CommitShaderResources(m_BuildOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        ITextureView* pRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        float Tail[4] = {0, 0, 0, 1};
+        m_pImmediateContext->ClearRenderTarget(pRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        m_pImmediateContext->SetPipelineState(m_UpdateOITLayersPSO);
+        m_pImmediateContext->CommitShaderResources(m_UpdateOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         // Since there are no render target, we have to manually set the viewport
         Viewport VP{SCDesc.Width, SCDesc.Height};
         m_pImmediateContext->SetViewports(1, &VP, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
@@ -381,7 +405,17 @@ void Tutorial29_OIT::Render()
         RenderGrid();
     }
 
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // Clear the back buffer
+    float4 ClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+    if (m_ConvertPSOutputToGamma)
+    {
+        // If manual gamma correction is required, we need to clear the render target with sRGB color
+        ClearColor = LinearToSRGB(ClearColor);
+    }
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -394,7 +428,7 @@ void Tutorial29_OIT::Render()
             pSRB = m_AlphaBlendSRB;
             break;
 
-        case RenderMode::LayeredROV:
+        case RenderMode::Layered:
             pPSO = m_OITBlendPSO;
             pSRB = m_OITBlendSRB;
             break;
