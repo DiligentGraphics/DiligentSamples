@@ -44,6 +44,9 @@ void InputControllerEmscripten::OnMouseButtonEvent(MouseButton Button, bool IsPr
         case MouseButtonLeft:
             m_MouseState.ButtonFlags = IsPressed ? (m_MouseState.ButtonFlags | MouseState::BUTTON_FLAG_LEFT) : (m_MouseState.ButtonFlags & ~MouseState::BUTTON_FLAG_LEFT);
             break;
+        case MouseButtonMiddle:
+            m_MouseState.ButtonFlags = IsPressed ? (m_MouseState.ButtonFlags | MouseState::BUTTON_FLAG_MIDDLE) : (m_MouseState.ButtonFlags & ~MouseState::BUTTON_FLAG_MIDDLE);
+            break;
         case MouseButtonRight:
             m_MouseState.ButtonFlags = IsPressed ? (m_MouseState.ButtonFlags | MouseState::BUTTON_FLAG_RIGHT) : (m_MouseState.ButtonFlags & ~MouseState::BUTTON_FLAG_RIGHT);
             break;
@@ -102,6 +105,15 @@ void InputControllerEmscripten::ProcessKeyEvent(int32_t KeyCode, bool IsKeyPress
             break;
         case DOM_VK_ADD:
             UpdateKeyState(InputKeys::ZoomIn);
+            break;
+        case DOM_VK_CONTROL:
+            UpdateKeyState(InputKeys::ControlDown);
+            break;
+        case DOM_VK_SHIFT:
+            UpdateKeyState(InputKeys::ShiftDown);
+            break;
+        case DOM_VK_ALT:
+            UpdateKeyState(InputKeys::AltDown);
             break;
     }
 }
