@@ -90,7 +90,8 @@ static constexpr BlendStateDesc BS_AttenuateBackground{
 
 void Tutorial29_OIT::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
-    Attribs.EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.ComputeShaders           = DEVICE_FEATURE_STATE_ENABLED;
+    Attribs.EngineCI.Features.PixelUAVWritesAndAtomics = DEVICE_FEATURE_STATE_ENABLED;
     // We will create our own depth buffer
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 }
