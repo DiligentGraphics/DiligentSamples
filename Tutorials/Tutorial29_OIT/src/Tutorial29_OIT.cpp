@@ -449,7 +449,7 @@ void Tutorial29_OIT::CreateInstanceBuffers()
         {
             Instance.TranslationAndScale = float4{offset_distr(gen), offset_distr(gen), offset_distr(gen), BaseScale * scale_distr(gen)};
             float4 TransparentColor{color_distr(gen), color_distr(gen), color_distr(gen), alpha_distr(gen)};
-            float4 OpaqueColor{0.5, 0.5, 0.5, 1.0};
+            float4 OpaqueColor{0.5, 0.5, 0.5, -1.0};
             Instance.Color = IsTransparent ? TransparentColor : OpaqueColor;
         }
         // Update instance data buffer

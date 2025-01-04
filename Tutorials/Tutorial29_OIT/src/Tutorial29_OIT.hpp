@@ -99,7 +99,7 @@ private:
     float4x4              m_ProjMatrix;
     float4x4              m_ViewProjMatrix;
     int                   m_GridSize          = 10;
-    float                 m_PercentOpaque     = 25;
+    float                 m_PercentOpaque     = 10;
     float                 m_MinOpacity        = 0.2f;
     float                 m_MaxOpacity        = 1.0f;
     Uint32                m_ThreadGroupSizeXY = 16;
