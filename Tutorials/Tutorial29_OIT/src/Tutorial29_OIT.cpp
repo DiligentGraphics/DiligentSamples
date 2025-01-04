@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Diligent Graphics LLC
+ *  Copyright 2024-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -208,9 +208,6 @@ void Tutorial29_OIT::CreatePipelineStates()
         };
         // clang-format on
 
-        // Disable depth testing
-        PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
-
         PipelineResourceLayoutDescX ResourceLayout;
         ResourceLayout
             .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE)
@@ -224,7 +221,8 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetResourceLayout(ResourceLayout)
             .SetBlendDesc(BS_PremultipliedAlphaBlend)
             .AddRenderTarget(SCDesc.ColorBufferFormat)
-            .SetDepthFormat(SCDesc.DepthBufferFormat);
+            .SetDepthFormat(SCDesc.DepthBufferFormat)
+            .SetDepthStencilDesc(DSS_EnableDepthNoWrites);
 
         m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_AlphaBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
@@ -232,8 +230,15 @@ void Tutorial29_OIT::CreatePipelineStates()
         m_AlphaBlendPSO->CreateShaderResourceBinding(&m_AlphaBlendSRB, true);
 
         PsoCI
+            .SetName("Opaque PSO")
+            .SetBlendDesc(BS_Default)
+            .SetDepthStencilDesc(DSS_Default);
+        m_OpaquePSO = Device.CreateGraphicsPipelineState(PsoCI);
+
+        PsoCI
             .SetName("OIT blend PSO")
             .SetBlendDesc(BS_AdditiveBlend)
+            .SetDepthStencilDesc(DSS_EnableDepthNoWrites)
             .AddShader(pOITBlendPS);
         m_OITBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_OITBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
@@ -244,7 +249,8 @@ void Tutorial29_OIT::CreatePipelineStates()
             .AddShader(pUpdateOITLayersPS)
             .ClearRenderTargets()
             .AddRenderTarget(TailTransmittanceFormat)
-            .SetDepthFormat(TEX_FORMAT_UNKNOWN);
+            .SetDepthFormat(SCDesc.DepthBufferFormat)
+            .SetDepthStencilDesc(DSS_EnableDepthNoWrites);
         m_UpdateOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_UpdateOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
     }
@@ -257,11 +263,11 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetDefaultVariableType(SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE)
             .AddVariable(SHADER_TYPE_VS_PS, "cbConstants", SHADER_RESOURCE_VARIABLE_TYPE_STATIC);
 
-        PsoCI.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
         PsoCI
             .AddRenderTarget(SCDesc.ColorBufferFormat)
             .SetDepthFormat(SCDesc.DepthBufferFormat)
             .SetBlendDesc(BS_AttenuateBackground)
+            .SetDepthStencilDesc(DSS_DisableDepth)
             .AddShader(pScreenTriangleVS)
             .AddShader(pAttenuateBackgroundPS)
             .SetResourceLayout(ResourceLayout);
@@ -332,20 +338,6 @@ void Tutorial29_OIT::CreateGeometryBuffers()
     m_NumIndices = PrimInfo.NumIndices;
 }
 
-void Tutorial29_OIT::CreateInstanceBuffer()
-{
-    // Create instance data buffer
-    BufferDesc InstBuffDesc;
-    InstBuffDesc.Name = "Instance data buffer";
-    // Use default usage as this buffer will only be updated when grid size changes
-    InstBuffDesc.Usage     = USAGE_DEFAULT;
-    InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
-    InstBuffDesc.Size      = sizeof(HLSL::InstanceData) * MaxInstances;
-    m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
-
-    PopulateInstanceBuffer();
-}
-
 void Tutorial29_OIT::UpdateUI()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -354,7 +346,12 @@ void Tutorial29_OIT::UpdateUI()
         if (ImGui::SliderInt("Grid Size", &m_GridSize, 1, 32))
         {
             CreateGeometryBuffers();
-            PopulateInstanceBuffer();
+            CreateInstanceBuffers();
+        }
+
+        if (ImGui::SliderFloat("Percent Opaque", &m_PercentOpaque, 0.f, 100.f))
+        {
+            CreateInstanceBuffers();
         }
 
         ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode), "Unsorted Alpha Blend\0Layered\0\0");
@@ -385,18 +382,14 @@ void Tutorial29_OIT::Initialize(const SampleInitInfo& InitInfo)
     SampleBase::Initialize(InitInfo);
 
     CreateUniformBuffer(m_pDevice, sizeof(HLSL::Constants), "Constants", &m_Constants);
-    CreateInstanceBuffer();
+    CreateInstanceBuffers();
     CreateGeometryBuffers();
     CreatePipelineStates();
 }
 
-void Tutorial29_OIT::PopulateInstanceBuffer()
+void Tutorial29_OIT::CreateInstanceBuffers()
 {
-    // Populate instance data buffer
-    const size_t                    zGridSize = static_cast<size_t>(m_GridSize);
-    std::vector<HLSL::InstanceData> Instances(zGridSize * zGridSize * zGridSize);
-
-    float fGridSize = static_cast<float>(m_GridSize);
+    m_InstanceBuffer = {};
 
     std::mt19937 gen; // Standard mersenne_twister_engine. Use default seed
                       // to generate consistent distribution.
@@ -406,30 +399,58 @@ void Tutorial29_OIT::PopulateInstanceBuffer()
     std::uniform_real_distribution<float> color_distr{0.3f, 1.0f};
     std::uniform_real_distribution<float> alpha_distr{0.f, 1.f};
 
-    float BaseScale = 1.f / fGridSize;
-    int   instId    = 0;
-    for (int i = 0; i < m_GridSize * m_GridSize * m_GridSize; ++i)
+
+    const Uint32 TotalInstances = m_GridSize * m_GridSize * m_GridSize;
+    m_NumInstances[0]           = static_cast<Uint32>(static_cast<float>(TotalInstances) * m_PercentOpaque / 100.f);
+    m_NumInstances[1]           = TotalInstances - m_NumInstances[0];
+    for (Uint32 IsTransparent = 0; IsTransparent < 2; ++IsTransparent)
     {
-        float4 TranslationAndScale = float4{offset_distr(gen), offset_distr(gen), offset_distr(gen), BaseScale * scale_distr(gen)};
-        float4 Color               = float4{color_distr(gen), color_distr(gen), color_distr(gen), alpha_distr(gen)};
-        Instances[instId++]        = {TranslationAndScale, Color};
+        std::vector<HLSL::InstanceData> Instances(m_NumInstances[IsTransparent]);
+        if (Instances.empty())
+            continue;
+
+        float BaseScale = 1.f / static_cast<float>(m_GridSize);
+        for (HLSL::InstanceData& Instance : Instances)
+        {
+            Instance.TranslationAndScale = float4{offset_distr(gen), offset_distr(gen), offset_distr(gen), BaseScale * scale_distr(gen)};
+            float4 TransparentColor{color_distr(gen), color_distr(gen), color_distr(gen), alpha_distr(gen)};
+            float4 OpaqueColor{0.5, 0.5, 0.5, 1.0};
+            Instance.Color = IsTransparent ? TransparentColor : OpaqueColor;
+        }
+        // Update instance data buffer
+        Uint32 DataSize = static_cast<Uint32>(sizeof(Instances[0]) * Instances.size());
+
+        // Create instance data buffer
+        BufferDesc InstBuffDesc;
+        InstBuffDesc.Name = "Instance data buffer";
+        // Use default usage as this buffer will only be updated when grid size changes
+        InstBuffDesc.Usage     = USAGE_DEFAULT;
+        InstBuffDesc.BindFlags = BIND_VERTEX_BUFFER;
+        InstBuffDesc.Size      = DataSize;
+
+        BufferData Data{Instances.data(), DataSize};
+        m_pDevice->CreateBuffer(InstBuffDesc, &Data, &m_InstanceBuffer[IsTransparent]);
     }
-    // Update instance data buffer
-    Uint32 DataSize = static_cast<Uint32>(sizeof(Instances[0]) * Instances.size());
-    m_pImmediateContext->UpdateBuffer(m_InstanceBuffer, 0, DataSize, Instances.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 
-void Tutorial29_OIT::RenderGrid()
+void Tutorial29_OIT::RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB)
 {
-    IBuffer* pBuffs[] = {m_VertexBuffer, m_InstanceBuffer};
+    const Uint32 NumInstances = m_NumInstances[IsTransparent ? 1 : 0];
+    if (NumInstances == 0)
+        return;
+
+    m_pImmediateContext->SetPipelineState(pPSO);
+    m_pImmediateContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    IBuffer* pBuffs[] = {m_VertexBuffer, m_InstanceBuffer[IsTransparent ? 1 : 0]};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffs), pBuffs, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType    = VT_UINT32;
     DrawAttrs.NumIndices   = m_NumIndices;
-    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize;
+    DrawAttrs.NumInstances = NumInstances;
     DrawAttrs.Flags        = DRAW_FLAG_VERIFY_ALL;
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
@@ -449,78 +470,81 @@ void Tutorial29_OIT::Render()
         CBConstants->ScreenSize = {SCDesc.Width, SCDesc.Height};
     }
 
-    if (m_RenderMode != RenderMode::UnsortedAlphaBlend)
+    ITextureView* pDSV          = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pSwapChainRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     {
-        PrepareOITResources();
+        m_pImmediateContext->SetRenderTargets(1, &pSwapChainRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        // Clear OIT layers
-        m_pImmediateContext->SetPipelineState(m_ClearOITLayersPSO);
-        m_pImmediateContext->CommitShaderResources(m_ClearOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        DispatchComputeAttribs DispatchAttrs{
-            (SCDesc.Width + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
-            (SCDesc.Height + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
-            1,
-        };
-        m_pImmediateContext->DispatchCompute(DispatchAttrs);
-
-        ITextureView* pRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
-        m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        float Tail[4] = {0, 0, 0, 1};
-        m_pImmediateContext->ClearRenderTarget(pRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        m_pImmediateContext->SetPipelineState(m_UpdateOITLayersPSO);
-        m_pImmediateContext->CommitShaderResources(m_UpdateOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        // Since there are no render target, we have to manually set the viewport
-        Viewport VP{SCDesc.Width, SCDesc.Height};
-        m_pImmediateContext->SetViewports(1, &VP, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
-
-        RenderGrid();
+        // Clear the back buffer
+        float4 ClearColor = {0.35f, 0.35f, 0.35f, 1.0f};
+        if (m_ConvertPSOutputToGamma)
+        {
+            // If manual gamma correction is required, we need to clear the render target with sRGB color
+            ClearColor = LinearToSRGB(ClearColor);
+        }
+        m_pImmediateContext->ClearRenderTarget(pSwapChainRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
-    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
-    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    // Clear the back buffer
-    float4 ClearColor = {0.35f, 0.35f, 0.35f, 1.0f};
-    if (m_ConvertPSOutputToGamma)
+    if (m_NumInstances[0] > 0)
     {
-        // If manual gamma correction is required, we need to clear the render target with sRGB color
-        ClearColor = LinearToSRGB(ClearColor);
-    }
-    m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-    if (m_RenderMode == RenderMode::Layered)
-    {
-        m_pImmediateContext->SetPipelineState(m_AttenuateBackgroundPSO);
-        m_pImmediateContext->CommitShaderResources(m_AttenuateBackgroundSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
+        RenderGrid(/*IsTransparent = */ false, m_OpaquePSO, m_AlphaBlendSRB);
     }
 
-    IPipelineState*         pPSO = nullptr;
-    IShaderResourceBinding* pSRB = nullptr;
-    switch (m_RenderMode)
+    if (m_NumInstances[1] > 0)
     {
-        case RenderMode::UnsortedAlphaBlend:
-            pPSO = m_AlphaBlendPSO;
-            pSRB = m_AlphaBlendSRB;
-            break;
+        if (m_RenderMode == RenderMode::Layered)
+        {
+            PrepareOITResources();
 
-        case RenderMode::Layered:
-            pPSO = m_OITBlendPSO;
-            pSRB = m_OITBlendSRB;
-            break;
+            m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        default:
-            UNEXPECTED("Unexpected render mode");
+            // Clear OIT layers
+            m_pImmediateContext->SetPipelineState(m_ClearOITLayersPSO);
+            m_pImmediateContext->CommitShaderResources(m_ClearOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            DispatchComputeAttribs DispatchAttrs{
+                (SCDesc.Width + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
+                (SCDesc.Height + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
+                1,
+            };
+            m_pImmediateContext->DispatchCompute(DispatchAttrs);
+
+            ITextureView* pTailRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+            m_pImmediateContext->SetRenderTargets(1, &pTailRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            float Tail[4] = {0, 0, 0, 1};
+            m_pImmediateContext->ClearRenderTarget(pTailRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+            RenderGrid(/*IsTransparent = */ true, m_UpdateOITLayersPSO, m_UpdateOITLayersSRB);
+        }
+
+        m_pImmediateContext->SetRenderTargets(1, &pSwapChainRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        if (m_RenderMode == RenderMode::Layered)
+        {
+            m_pImmediateContext->SetPipelineState(m_AttenuateBackgroundPSO);
+            m_pImmediateContext->CommitShaderResources(m_AttenuateBackgroundSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
+        }
+
+        IPipelineState*         pPSO = nullptr;
+        IShaderResourceBinding* pSRB = nullptr;
+        switch (m_RenderMode)
+        {
+            case RenderMode::UnsortedAlphaBlend:
+                pPSO = m_AlphaBlendPSO;
+                pSRB = m_AlphaBlendSRB;
+                break;
+
+            case RenderMode::Layered:
+                pPSO = m_OITBlendPSO;
+                pSRB = m_OITBlendSRB;
+                break;
+
+            default:
+                UNEXPECTED("Unexpected render mode");
+        }
+        RenderGrid(/*IsTransparent = */ true, pPSO, pSRB);
     }
-
-    m_pImmediateContext->SetPipelineState(pPSO);
-    m_pImmediateContext->CommitShaderResources(pSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    RenderGrid();
 }
 
 void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Diligent Graphics LLC
+ *  Copyright 2024-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <array>
+
 #include "SampleBase.hpp"
 #include "BasicMath.hpp"
 
@@ -45,17 +47,17 @@ public:
 private:
     void CreatePipelineStates();
     void CreateGeometryBuffers();
-    void CreateInstanceBuffer();
     void PrepareOITResources();
     void UpdateUI();
-    void PopulateInstanceBuffer();
-    void RenderGrid();
+    void CreateInstanceBuffers();
+    void RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB);
 
     RefCntAutoPtr<IBuffer> m_VertexBuffer;
     RefCntAutoPtr<IBuffer> m_IndexBuffer;
-    RefCntAutoPtr<IBuffer> m_InstanceBuffer;
     RefCntAutoPtr<IBuffer> m_Constants;
     RefCntAutoPtr<IBuffer> m_OITLayers;
+
+    std::array<RefCntAutoPtr<IBuffer>, 2> m_InstanceBuffer; // 0 - opaque, 1 - transparent
 
     static constexpr TEXTURE_FORMAT TailTransmittanceFormat = TEX_FORMAT_RGBA8_UNORM;
     RefCntAutoPtr<ITexture>         m_OITTail;
@@ -65,6 +67,7 @@ private:
     RefCntAutoPtr<IPipelineState>         m_ClearOITLayersPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_ClearOITLayersSRB;
 
+    RefCntAutoPtr<IPipelineState>         m_OpaquePSO;
     RefCntAutoPtr<IPipelineState>         m_AlphaBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
     RefCntAutoPtr<IPipelineState>         m_OITBlendPSO;
@@ -86,14 +89,15 @@ private:
 
     int m_NumOITLayers = 4;
 
-    float4x4             m_ProjMatrix;
-    float4x4             m_ViewProjMatrix;
-    int                  m_GridSize          = 10;
-    float                m_MinOpacity        = 0.2f;
-    float                m_MaxOpacity        = 1.0f;
-    Uint32               m_ThreadGroupSizeXY = 16;
-    static constexpr int MaxGridSize         = 32;
-    static constexpr int MaxInstances        = MaxGridSize * MaxGridSize * MaxGridSize;
+    float4x4              m_ProjMatrix;
+    float4x4              m_ViewProjMatrix;
+    int                   m_GridSize          = 10;
+    float                 m_PercentOpaque     = 25;
+    float                 m_MinOpacity        = 0.2f;
+    float                 m_MaxOpacity        = 1.0f;
+    Uint32                m_ThreadGroupSizeXY = 16;
+    std::array<Uint32, 2> m_NumInstances{};
+    static constexpr int  MaxGridSize = 32;
 };
 
 } // namespace Diligent
