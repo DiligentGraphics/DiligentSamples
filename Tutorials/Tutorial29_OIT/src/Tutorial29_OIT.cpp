@@ -306,6 +306,17 @@ void Tutorial29_OIT::WindowResize(Uint32 Width, Uint32 Height)
     TexDesc.Usage = USAGE_DEFAULT;
     m_DepthBuffer.Release();
     m_pDevice->CreateTexture(TexDesc, nullptr, &m_DepthBuffer);
+
+    // In OpenGL, color buffer of the default framebuffer can only be bound with the default framebuffer's
+    // depth buffer and cannot be combined with any other depth buffer.
+    if (m_pDevice->GetDeviceInfo().IsGLDevice())
+    {
+        TexDesc.Name      = "Color buffer";
+        TexDesc.BindFlags = BIND_RENDER_TARGET;
+        TexDesc.Format    = m_pSwapChain->GetDesc().ColorBufferFormat;
+        m_ColorBuffer.Release();
+        m_pDevice->CreateTexture(TexDesc, nullptr, &m_ColorBuffer);
+    }
 }
 
 void Tutorial29_OIT::PrepareOITResources()
@@ -506,10 +517,13 @@ void Tutorial29_OIT::Render()
         CBConstants->ScreenSize = {SCDesc.Width, SCDesc.Height};
     }
 
-    ITextureView* pDSV          = m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
-    ITextureView* pSwapChainRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
+    ITextureView* pRTV = m_ColorBuffer ?
+        m_ColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) :
+        m_pSwapChain->GetCurrentBackBufferRTV();
+
     {
-        m_pImmediateContext->SetRenderTargets(1, &pSwapChainRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // Clear the back buffer
         float4 ClearColor = {0.35f, 0.35f, 0.35f, 1.0f};
@@ -518,7 +532,7 @@ void Tutorial29_OIT::Render()
             // If manual gamma correction is required, we need to clear the render target with sRGB color
             ClearColor = LinearToSRGB(ClearColor);
         }
-        m_pImmediateContext->ClearRenderTarget(pSwapChainRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
 
@@ -553,7 +567,7 @@ void Tutorial29_OIT::Render()
             RenderGrid(/*IsTransparent = */ true, m_UpdateOITLayersPSO, m_UpdateOITLayersSRB);
         }
 
-        m_pImmediateContext->SetRenderTargets(1, &pSwapChainRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         if (m_RenderMode == RenderMode::Layered)
         {
@@ -580,6 +594,18 @@ void Tutorial29_OIT::Render()
                 UNEXPECTED("Unexpected render mode");
         }
         RenderGrid(/*IsTransparent = */ true, pPSO, pSRB);
+    }
+
+    if (m_ColorBuffer)
+    {
+        // Copy the color buffer to the swap chain
+        CopyTextureAttribs CopyAttribs{
+            m_ColorBuffer,
+            RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+            m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture(),
+            RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+        };
+        m_pImmediateContext->CopyTexture(CopyAttribs);
     }
 }
 
