@@ -88,8 +88,18 @@ static constexpr BlendStateDesc BS_AttenuateBackground{
     },
 };
 
+void Tutorial29_OIT::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
+{
+    Attribs.EngineCI.Features.ComputeShaders = DEVICE_FEATURE_STATE_ENABLED;
+    // We will create our own depth buffer
+    Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+}
+
 void Tutorial29_OIT::CreatePipelineStates()
 {
+    RenderDeviceX_N Device{m_pDevice};
+    // WebGPU does not support earlydepthstencil attribute
+    m_EarlyDepthStencilSupported = !Device.GetDeviceInfo().IsWebGPUDevice();
     ShaderCreateInfo ShaderCI;
 
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
@@ -98,6 +108,8 @@ void Tutorial29_OIT::CreatePipelineStates()
     Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
     Macros.Add("THREAD_GROUP_SIZE", static_cast<int>(m_ThreadGroupSizeXY));
     Macros.Add("NUM_OIT_LAYERS", static_cast<int>(m_NumOITLayers));
+    // Use manual depth testing on WebGPU as it does not support the earlydepthstencil attribute
+    Macros.Add("USE_MANUAL_DEPTH_TEST", !m_EarlyDepthStencilSupported);
     ShaderCI.Macros = Macros;
 
     // Create a shader source stream factory to load shaders from files.
@@ -105,8 +117,6 @@ void Tutorial29_OIT::CreatePipelineStates()
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
     ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
     ShaderCI.CompileFlags               = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
-
-    RenderDeviceX_N Device{m_pDevice};
 
     RefCntAutoPtr<IShader> pGeometryVS;
     {
@@ -221,7 +231,7 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetResourceLayout(ResourceLayout)
             .SetBlendDesc(BS_PremultipliedAlphaBlend)
             .AddRenderTarget(SCDesc.ColorBufferFormat)
-            .SetDepthFormat(SCDesc.DepthBufferFormat)
+            .SetDepthFormat(m_DepthFormat)
             .SetDepthStencilDesc(DSS_EnableDepthNoWrites);
 
         m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
@@ -243,14 +253,18 @@ void Tutorial29_OIT::CreatePipelineStates()
         m_OITBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_OITBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
 
+
+        ResourceLayout.AddVariable(SHADER_TYPE_PIXEL, "g_DepthBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE,
+                                   SHADER_VARIABLE_FLAG_UNFILTERABLE_FLOAT_TEXTURE_WEBGPU);
         PsoCI
             .SetName("Update OIT Layers PSO")
+            .SetResourceLayout(ResourceLayout)
             .SetBlendDesc(BS_UpdateOITTail)
             .AddShader(pUpdateOITLayersPS)
             .ClearRenderTargets()
             .AddRenderTarget(TailTransmittanceFormat)
-            .SetDepthFormat(SCDesc.DepthBufferFormat)
-            .SetDepthStencilDesc(DSS_EnableDepthNoWrites);
+            .SetDepthFormat(m_EarlyDepthStencilSupported ? m_DepthFormat : TEX_FORMAT_UNKNOWN)
+            .SetDepthStencilDesc(m_EarlyDepthStencilSupported ? DSS_EnableDepthNoWrites : DSS_DisableDepth);
         m_UpdateOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_UpdateOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
     }
@@ -265,7 +279,7 @@ void Tutorial29_OIT::CreatePipelineStates()
 
         PsoCI
             .AddRenderTarget(SCDesc.ColorBufferFormat)
-            .SetDepthFormat(SCDesc.DepthBufferFormat)
+            .SetDepthFormat(m_DepthFormat)
             .SetBlendDesc(BS_AttenuateBackground)
             .SetDepthStencilDesc(DSS_DisableDepth)
             .AddShader(pScreenTriangleVS)
@@ -274,6 +288,23 @@ void Tutorial29_OIT::CreatePipelineStates()
         m_AttenuateBackgroundPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_AttenuateBackgroundPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
     }
+}
+
+void Tutorial29_OIT::WindowResize(Uint32 Width, Uint32 Height)
+{
+    TextureDesc TexDesc;
+    TexDesc.Name      = "Depth buffer";
+    TexDesc.Type      = RESOURCE_DIM_TEX_2D;
+    TexDesc.Width     = Width;
+    TexDesc.Height    = Height;
+    TexDesc.MipLevels = 1;
+    TexDesc.Format    = m_DepthFormat;
+    TexDesc.BindFlags = BIND_DEPTH_STENCIL;
+    if (!m_EarlyDepthStencilSupported)
+        TexDesc.BindFlags |= BIND_SHADER_RESOURCE;
+    TexDesc.Usage = USAGE_DEFAULT;
+    m_DepthBuffer.Release();
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_DepthBuffer);
 }
 
 void Tutorial29_OIT::PrepareOITResources()
@@ -313,6 +344,10 @@ void Tutorial29_OIT::PrepareOITResources()
     m_UpdateOITLayersSRB.Release();
     m_UpdateOITLayersPSO->CreateShaderResourceBinding(&m_UpdateOITLayersSRB, true);
     m_UpdateOITLayersSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_rwOITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
+    if (!m_EarlyDepthStencilSupported)
+    {
+        m_UpdateOITLayersSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_DepthBuffer")->Set(m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    }
 
     m_OITBlendSRB.Release();
     m_OITBlendPSO->CreateShaderResourceBinding(&m_OITBlendSRB, true);
@@ -470,7 +505,7 @@ void Tutorial29_OIT::Render()
         CBConstants->ScreenSize = {SCDesc.Width, SCDesc.Height};
     }
 
-    ITextureView* pDSV          = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pDSV          = m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
     ITextureView* pSwapChainRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     {
         m_pImmediateContext->SetRenderTargets(1, &pSwapChainRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -510,7 +545,7 @@ void Tutorial29_OIT::Render()
             m_pImmediateContext->DispatchCompute(DispatchAttrs);
 
             ITextureView* pTailRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
-            m_pImmediateContext->SetRenderTargets(1, &pTailRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            m_pImmediateContext->SetRenderTargets(1, &pTailRTV, m_EarlyDepthStencilSupported ? pDSV : nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             float Tail[4] = {0, 0, 0, 1};
             m_pImmediateContext->ClearRenderTarget(pTailRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 

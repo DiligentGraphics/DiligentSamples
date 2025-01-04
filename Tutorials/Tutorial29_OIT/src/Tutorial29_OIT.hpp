@@ -37,12 +37,15 @@ namespace Diligent
 class Tutorial29_OIT final : public SampleBase
 {
 public:
+    virtual void ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs) override final;
     virtual void Initialize(const SampleInitInfo& InitInfo) override final;
 
     virtual void Render() override final;
     virtual void Update(double CurrTime, double ElapsedTime) override final;
 
     virtual const Char* GetSampleName() const override final { return "Tutorial29: Order-Independent Transparency"; }
+
+    virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
 private:
     void CreatePipelineStates();
@@ -52,10 +55,11 @@ private:
     void CreateInstanceBuffers();
     void RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB);
 
-    RefCntAutoPtr<IBuffer> m_VertexBuffer;
-    RefCntAutoPtr<IBuffer> m_IndexBuffer;
-    RefCntAutoPtr<IBuffer> m_Constants;
-    RefCntAutoPtr<IBuffer> m_OITLayers;
+    RefCntAutoPtr<IBuffer>  m_VertexBuffer;
+    RefCntAutoPtr<IBuffer>  m_IndexBuffer;
+    RefCntAutoPtr<IBuffer>  m_Constants;
+    RefCntAutoPtr<IBuffer>  m_OITLayers;
+    RefCntAutoPtr<ITexture> m_DepthBuffer;
 
     std::array<RefCntAutoPtr<IBuffer>, 2> m_InstanceBuffer; // 0 - opaque, 1 - transparent
 
@@ -83,6 +87,9 @@ private:
         Layered,
         Count
     } m_RenderMode = RenderMode::Layered;
+
+    TEXTURE_FORMAT m_DepthFormat                = TEX_FORMAT_D32_FLOAT;
+    bool           m_EarlyDepthStencilSupported = false;
 
     bool   m_Animate       = true;
     double m_AnimationTime = 0.0;

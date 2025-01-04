@@ -6,6 +6,12 @@ cbuffer cbConstants
     Constants g_Constants;
 }
 
+// WebGPU does not support the earlydepthstencil attribute, so we have
+// to manually perform the depth test in the shader.
+#if USE_MANUAL_DEPTH_TEST
+Texture2D<float> g_DepthBuffer;
+#endif
+
 RWStructuredBuffer<uint> g_rwOITLayers;
 
 // By default, early depth stencil will be disabled for this shader because it writes to a UAV.
@@ -13,12 +19,19 @@ RWStructuredBuffer<uint> g_rwOITLayers;
 [earlydepthstencil]
 float4 main(in PSInput PSIn) : SV_Target
 {
+    float D = PSIn.Pos.z;
+#if USE_MANUAL_DEPTH_TEST
+    if (D >= g_DepthBuffer.Load(int3(PSIn.Pos.xy, 0)))
+    {
+        discard;
+    }
+#endif
+
     float A = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
     uint Layer = 0xFFFFFFFFu;
     if (A > OPACITY_THRESHOLD)
     {
         float T = 1.0 - A;
-        float D = PSIn.Pos.z;        
         Layer = PackOITLayer(D, T);
         uint Offset = GetOITLayerDataOffset(uint2(PSIn.Pos.xy), g_Constants.ScreenSize);
         for (uint i = 0; i < uint(NUM_OIT_LAYERS); ++i)
