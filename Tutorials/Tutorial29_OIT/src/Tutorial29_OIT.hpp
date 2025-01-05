@@ -61,7 +61,7 @@ private:
     RefCntAutoPtr<IBuffer>  m_IndexBuffer;
     RefCntAutoPtr<IBuffer>  m_Constants;
     RefCntAutoPtr<IBuffer>  m_OITLayers;
-    RefCntAutoPtr<ITexture> m_ColorBuffer;
+    RefCntAutoPtr<ITexture> m_ColorBufferGL;
     RefCntAutoPtr<ITexture> m_DepthBuffer;
 
     std::array<RefCntAutoPtr<IBuffer>, 2> m_InstanceBuffer; // 0 - opaque, 1 - transparent

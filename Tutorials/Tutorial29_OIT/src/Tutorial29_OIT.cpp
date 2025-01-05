@@ -95,7 +95,8 @@ void Tutorial29_OIT::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Att
     Attribs.EngineCI.Features.ComputeShaders           = DEVICE_FEATURE_STATE_ENABLED;
     Attribs.EngineCI.Features.PixelUAVWritesAndAtomics = DEVICE_FEATURE_STATE_ENABLED;
     // We will create our own depth buffer
-    Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+    if (Attribs.DeviceType != RENDER_DEVICE_TYPE_GL && Attribs.DeviceType != RENDER_DEVICE_TYPE_GLES)
+        Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 }
 
 void Tutorial29_OIT::CreatePipelineStates()
@@ -316,8 +317,8 @@ void Tutorial29_OIT::WindowResize(Uint32 Width, Uint32 Height)
         TexDesc.Name      = "Color buffer";
         TexDesc.BindFlags = BIND_RENDER_TARGET;
         TexDesc.Format    = m_pSwapChain->GetDesc().ColorBufferFormat;
-        m_ColorBuffer.Release();
-        m_pDevice->CreateTexture(TexDesc, nullptr, &m_ColorBuffer);
+        m_ColorBufferGL.Release();
+        m_pDevice->CreateTexture(TexDesc, nullptr, &m_ColorBufferGL);
     }
 }
 
@@ -571,9 +572,16 @@ void Tutorial29_OIT::Render()
     }
 
     ITextureView* pDSV = m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
-    ITextureView* pRTV = (m_RenderMode == RenderMode::Layered && m_ColorBuffer) ?
-        m_ColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) :
-        m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    if (m_ColorBufferGL)
+    {
+        // In OpenGL, color buffer of the default framebuffer can only be bound with the default framebuffer's
+        // depth buffer and cannot be combined with any other depth buffer.
+        if (m_RenderMode == RenderMode::Layered)
+            pRTV = m_ColorBufferGL->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+        else
+            pDSV = m_pSwapChain->GetDepthBufferDSV();
+    }
 
     // Render opaque objects
     {
@@ -612,11 +620,11 @@ void Tutorial29_OIT::Render()
         }
     }
 
-    if (m_RenderMode == RenderMode::Layered && m_ColorBuffer)
+    if (m_RenderMode == RenderMode::Layered && m_ColorBufferGL)
     {
         // Copy the color buffer to the swap chain
         CopyTextureAttribs CopyAttribs{
-            m_ColorBuffer,
+            m_ColorBufferGL,
             RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
             m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture(),
             RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
