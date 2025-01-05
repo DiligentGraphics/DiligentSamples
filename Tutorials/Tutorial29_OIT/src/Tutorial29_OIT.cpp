@@ -88,6 +88,54 @@ static constexpr BlendStateDesc BS_AttenuateBackground{
     },
 };
 
+
+static const BlendStateDesc BS_WeightedBlend = []() {
+    BlendStateDesc BS{
+        False, // AlphaToCoverageEnable
+        True   // IndependentBlendEnable
+    };
+
+    BS.RenderTargets[0] = RenderTargetBlendDesc{
+        True,                // BlendEnable
+        False,               // LogicOperationEnable
+        BLEND_FACTOR_ONE,    // SrcBlend
+        BLEND_FACTOR_ONE,    // DestBlend
+        BLEND_OPERATION_ADD, // BlendOp
+        BLEND_FACTOR_ONE,    // SrcBlendAlpha
+        BLEND_FACTOR_ONE,    // DestBlendAlpha
+        BLEND_OPERATION_ADD, // BlendOpAlpha
+    };
+
+    BS.RenderTargets[1] = RenderTargetBlendDesc{
+        True,                       // BlendEnable
+        False,                      // LogicOperationEnable
+        BLEND_FACTOR_ZERO,          // SrcBlend
+        BLEND_FACTOR_INV_SRC_ALPHA, // DestBlend
+        BLEND_OPERATION_ADD,        // BlendOp
+        BLEND_FACTOR_ZERO,          // SrcBlendAlpha
+        BLEND_FACTOR_ZERO,          // DestBlendAlpha
+        BLEND_OPERATION_ADD,        // BlendOpAlpha
+    };
+
+    return BS;
+}();
+
+static constexpr BlendStateDesc BS_WeightedResolve{
+    False,                // AlphaToCoverageEnable
+    False,                // IndependentBlendEnable
+    RenderTargetBlendDesc // Render Target 0
+    {
+        True,                       // BlendEnable
+        False,                      // LogicOperationEnable
+        BLEND_FACTOR_INV_SRC_ALPHA, // SrcBlend
+        BLEND_FACTOR_SRC_ALPHA,     // DestBlend
+        BLEND_OPERATION_ADD,        // BlendOp
+        BLEND_FACTOR_ZERO,          // SrcBlendAlpha
+        BLEND_FACTOR_ZERO,          // DestBlendAlpha
+        BLEND_OPERATION_ADD,        // BlendOpAlpha
+    },
+};
+
 void Tutorial29_OIT::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attribs)
 {
     SampleBase::ModifyEngineInitInfo(Attribs);
@@ -185,6 +233,24 @@ void Tutorial29_OIT::CreatePipelineStates()
         pAttenuateBackgroundPS = Device.CreateShader(ShaderCI);
     }
 
+    RefCntAutoPtr<IShader> pWeightedBlendPS;
+    {
+        ShaderCI.Desc       = {"Weighted blend PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "weighted_blend.psh";
+
+        pWeightedBlendPS = Device.CreateShader(ShaderCI);
+    }
+
+    RefCntAutoPtr<IShader> pWeightedResolvePS;
+    {
+        ShaderCI.Desc       = {"Weighted resolve PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.EntryPoint = "main";
+        ShaderCI.FilePath   = "weighted_resolve.psh";
+
+        pWeightedResolvePS = Device.CreateShader(ShaderCI);
+    }
+
     {
         ComputePipelineStateCreateInfoX PsoCI{"Clear OIT Layers"};
 
@@ -271,6 +337,21 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetDepthStencilDesc(m_EarlyDepthStencilSupported ? DSS_EnableDepthNoWrites : DSS_DisableDepth);
         m_UpdateOITLayersPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_UpdateOITLayersPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+
+
+        ResourceLayout.RemoveVariable("g_DepthBuffer");
+        PsoCI
+            .SetName("Weighted blend PSO")
+            .SetResourceLayout(ResourceLayout)
+            .SetBlendDesc(BS_WeightedBlend)
+            .AddShader(pWeightedBlendPS)
+            .ClearRenderTargets()
+            .AddRenderTarget(WeightedColorFormat)
+            .AddRenderTarget(WeightedRevealFormat)
+            .SetDepthFormat(m_DepthFormat)
+            .SetDepthStencilDesc(DSS_EnableDepthNoWrites);
+        m_WeightedBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_WeightedBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
     }
 
     {
@@ -291,6 +372,20 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetResourceLayout(ResourceLayout);
         m_AttenuateBackgroundPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_AttenuateBackgroundPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+    }
+
+
+    {
+        GraphicsPipelineStateCreateInfoX PsoCI{"Weighted resolve"};
+        PsoCI.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+        PsoCI
+            .AddRenderTarget(SCDesc.ColorBufferFormat)
+            .SetDepthFormat(m_DepthFormat)
+            .SetBlendDesc(BS_WeightedResolve)
+            .SetDepthStencilDesc(DSS_DisableDepth)
+            .AddShader(pScreenTriangleVS)
+            .AddShader(pWeightedResolvePS);
+        m_WeightedResolvePSO = Device.CreateGraphicsPipelineState(PsoCI);
     }
 }
 
@@ -322,13 +417,10 @@ void Tutorial29_OIT::WindowResize(Uint32 Width, Uint32 Height)
     }
 }
 
-void Tutorial29_OIT::PrepareOITResources()
+void Tutorial29_OIT::PrepareLayeredOITResources()
 {
     const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
-    if (m_OITLayers && m_OITLayers->GetDesc().Size != SCDesc.Width * SCDesc.Height * m_NumOITLayers * sizeof(Uint32))
-        m_OITLayers.Release();
-
-    if (m_OITLayers)
+    if (m_OITLayers && m_OITLayers->GetDesc().Size == SCDesc.Width * SCDesc.Height * m_NumOITLayers * sizeof(Uint32))
         return;
 
     BufferDesc BuffDesc;
@@ -338,6 +430,7 @@ void Tutorial29_OIT::PrepareOITResources()
     BuffDesc.ElementByteStride = sizeof(Uint32);
     BuffDesc.BindFlags         = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
     BuffDesc.Usage             = USAGE_DEFAULT;
+    m_OITLayers.Release();
     m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_OITLayers);
 
     TextureDesc TexDesc;
@@ -375,6 +468,35 @@ void Tutorial29_OIT::PrepareOITResources()
     m_AttenuateBackgroundSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 }
 
+void Tutorial29_OIT::PrepareWeightedOITResources()
+{
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+    if (m_WeightedColor && m_WeightedColor->GetDesc().Width == SCDesc.Width && m_WeightedColor->GetDesc().Height == SCDesc.Height)
+        m_WeightedColor.Release();
+
+    TextureDesc TexDesc;
+    TexDesc.Name      = "Weighted color";
+    TexDesc.Type      = RESOURCE_DIM_TEX_2D;
+    TexDesc.Width     = SCDesc.Width;
+    TexDesc.Height    = SCDesc.Height;
+    TexDesc.MipLevels = 1;
+    TexDesc.Format    = WeightedColorFormat;
+    TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+    TexDesc.Usage     = USAGE_DEFAULT;
+    m_WeightedColor.Release();
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_WeightedColor);
+
+    TexDesc.Name   = "Weighted reveal";
+    TexDesc.Format = WeightedRevealFormat;
+    m_WeightedReveal.Release();
+    m_pDevice->CreateTexture(TexDesc, nullptr, &m_WeightedReveal);
+
+    m_WeightedResolveSRB.Release();
+    m_WeightedResolvePSO->CreateShaderResourceBinding(&m_WeightedResolveSRB, true);
+    m_WeightedResolveSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Color")->Set(m_WeightedColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_WeightedResolveSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Reveal")->Set(m_WeightedReveal->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+}
+
 void Tutorial29_OIT::CreateGeometryBuffers()
 {
     Uint32 NumSubdivision = std::min(4 * 32 / m_GridSize, 8);
@@ -407,13 +529,14 @@ void Tutorial29_OIT::UpdateUI()
         ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode),
                      "Unsorted Alpha Blend\0"
                      "Layered\0"
+                     "Weighted\0"
                      "\0");
         if (m_RenderMode == RenderMode::Layered)
         {
             if (ImGui::SliderInt("Num OIT Layers", &m_NumOITLayers, 1, 16))
             {
                 CreatePipelineStates();
-                PrepareOITResources();
+                PrepareLayeredOITResources();
             }
         }
 
@@ -515,7 +638,7 @@ void Tutorial29_OIT::RenderUnsortedAlphaBlend()
 
 void Tutorial29_OIT::RenderLayered(ITextureView* pRTV, ITextureView* pDSV)
 {
-    PrepareOITResources();
+    PrepareLayeredOITResources();
 
     // Clear OIT layers
     {
@@ -536,8 +659,8 @@ void Tutorial29_OIT::RenderLayered(ITextureView* pRTV, ITextureView* pDSV)
     {
         ITextureView* pTailRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
         m_pImmediateContext->SetRenderTargets(1, &pTailRTV, m_EarlyDepthStencilSupported ? pDSV : nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-        float Tail[4] = {0, 0, 0, 1};
-        m_pImmediateContext->ClearRenderTarget(pTailRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        float4 Tail{0, 0, 0, 1};
+        m_pImmediateContext->ClearRenderTarget(pTailRTV, Tail.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         RenderGrid(/*IsTransparent = */ true, m_UpdateOITLayersPSO, m_UpdateOITLayersSRB);
     }
 
@@ -556,6 +679,34 @@ void Tutorial29_OIT::RenderLayered(ITextureView* pRTV, ITextureView* pDSV)
     }
 }
 
+void Tutorial29_OIT::RenderWeighted(ITextureView* pRTV, ITextureView* pDSV)
+{
+    PrepareWeightedOITResources();
+
+    // Render weighted blend
+    {
+        ITextureView* pRTVs[2] = {
+            m_WeightedColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+            m_WeightedReveal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
+        };
+        m_pImmediateContext->SetRenderTargets(2, pRTVs, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        float4 Zero{0};
+        float4 One{1};
+        m_pImmediateContext->ClearRenderTarget(pRTVs[0], Zero.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->ClearRenderTarget(pRTVs[1], One.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        RenderGrid(/*IsTransparent = */ true, m_WeightedBlendPSO, m_AlphaBlendSRB);
+    }
+
+    // Resolve
+    {
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->SetPipelineState(m_WeightedResolvePSO);
+        m_pImmediateContext->CommitShaderResources(m_WeightedResolveSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
+    }
+}
+
+
 // Render a frame
 void Tutorial29_OIT::Render()
 {
@@ -565,6 +716,7 @@ void Tutorial29_OIT::Render()
         MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
         CBConstants->ViewProj   = m_ViewProjMatrix;
         CBConstants->Proj       = m_ProjMatrix;
+        CBConstants->View       = m_ViewMatrix;
         CBConstants->LightDir   = normalize(float3{0.57735f, -0.57735f, 0.157735f});
         CBConstants->MinOpacity = m_MinOpacity;
         CBConstants->MaxOpacity = m_MaxOpacity;
@@ -588,7 +740,7 @@ void Tutorial29_OIT::Render()
         m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // Clear the back buffer
-        float4 ClearColor = {0.35f, 0.35f, 0.35f, 1.0f};
+        float4 ClearColor{0.35f, 0.35f, 0.35f, 1.0f};
         if (m_ConvertPSOutputToGamma)
         {
             // If manual gamma correction is required, we need to clear the render target with sRGB color
@@ -613,6 +765,10 @@ void Tutorial29_OIT::Render()
 
             case RenderMode::Layered:
                 RenderLayered(pRTV, pDSV);
+                break;
+
+            case RenderMode::Weighted:
+                RenderWeighted(pRTV, pDSV);
                 break;
 
             default:
@@ -643,7 +799,7 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
         m_AnimationTime += ElapsedTime;
     }
 
-    float4x4 View =
+    m_ViewMatrix =
         float4x4::RotationY(static_cast<float>(m_AnimationTime * 0.25)) *
         float4x4::RotationX(-0.6f) *
         float4x4::Translation(0.f, 0.f, 4.0f);
@@ -655,7 +811,7 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
     m_ProjMatrix = GetAdjustedProjectionMatrix(PI_F / 4.0f, 1.f, 5.f);
 
     // Compute view-projection matrix
-    m_ViewProjMatrix = View * SrfPreTransform * m_ProjMatrix;
+    m_ViewProjMatrix = m_ViewMatrix * SrfPreTransform * m_ProjMatrix;
 }
 
 } // namespace Diligent

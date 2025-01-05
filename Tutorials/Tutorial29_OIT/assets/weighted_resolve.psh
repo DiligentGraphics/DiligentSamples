@@ -1,0 +1,23 @@
+#include "common.fxh"
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
+
+Texture2D<float4> g_Color;
+Texture2D<float>  g_Reveal;
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+void main(in float4 Pos : SV_Position,
+          out PSOutput PSOut)
+{
+    float4 Color  = g_Color.Load(int3(Pos.xy, 0));
+    float  Reveal = g_Reveal.Load(int3(Pos.xy, 0));
+    // RGB Blend:  Src * (1.0 - SrcA) + Dst * SrcA
+    PSOut.Color = float4(Color.rgb / max(Color.a, 1e-5), Reveal);
+}

@@ -20,7 +20,8 @@ void main(in  VSInput VSIn,
           out PSInput PSIn) 
 {
     float3 Pos = VSIn.Pos * VSIn.TranslationAndScale.w + VSIn.TranslationAndScale.xyz;
-    PSIn.Pos    = mul(float4(Pos, 1.0), g_Constants.ViewProj);
-    PSIn.Normal = VSIn.Normal;
-    PSIn.Color  = VSIn.Color;
+    PSIn.Pos     = mul(float4(Pos, 1.0), g_Constants.ViewProj);
+    PSIn.Normal  = VSIn.Normal;
+    PSIn.Color   = VSIn.Color;
+    PSIn.CameraZ = mul(float4(Pos, 1.0), g_Constants.View).z;
 }

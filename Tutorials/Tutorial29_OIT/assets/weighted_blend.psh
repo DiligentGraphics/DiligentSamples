@@ -1,0 +1,37 @@
+#include "common.fxh"
+
+cbuffer cbConstants
+{
+    Constants g_Constants;
+}
+
+struct PSOutput
+{
+    float4 Color  : SV_TARGET0;
+    float4 Reveal : SV_TARGET1;
+};
+
+void main(in PSInput   PSIn,
+          out PSOutput PSOut)
+{
+    float4 Color;
+    Color.rgb = ComputeLighting(PSIn.Color.rgb, PSIn.Normal, g_Constants.LightDir.xyz);
+    Color.a = lerp(g_Constants.MinOpacity, g_Constants.MaxOpacity, PSIn.Color.a);
+    Color.rgb *= Color.a;
+
+    // The depth functions in the paper expect a camera-space Z in the range 0.1 to 500,
+    // but the scene at the moment uses a range of about 1 to 4, so multiply by 100:
+    float CameraZ = PSIn.CameraZ * 100.0;
+    float DistWeight = clamp(0.03 / (1e-5 + pow(CameraZ / 200.0, 4.0)), 1e-2, 3e+3);
+    float AlphaWeight = max(min(1.0, max(max(Color.r, Color.g), Color.b) * Color.a), Color.a);
+    AlphaWeight *= AlphaWeight;
+
+    float Weight = AlphaWeight * DistWeight;
+
+    // RGBA Blend:  Src * 1 + Dst * 1
+    PSOut.Color = Color * Weight;
+
+    // RGB Blend:   SRC * 0 + Dst * (1 - SrcA)
+    // A   Blend:   irrelevant
+    PSOut.Reveal = float4(0.0, 0.0, 0.0, Color.a);
+}

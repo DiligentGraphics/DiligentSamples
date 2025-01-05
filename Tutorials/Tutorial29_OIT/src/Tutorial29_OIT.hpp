@@ -50,12 +50,14 @@ public:
 private:
     void CreatePipelineStates();
     void CreateGeometryBuffers();
-    void PrepareOITResources();
+    void PrepareLayeredOITResources();
+    void PrepareWeightedOITResources();
     void UpdateUI();
     void CreateInstanceBuffers();
     void RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB);
     void RenderUnsortedAlphaBlend();
     void RenderLayered(ITextureView* pRTV, ITextureView* pDSV);
+    void RenderWeighted(ITextureView* pRTV, ITextureView* pDSV);
 
     RefCntAutoPtr<IBuffer>  m_VertexBuffer;
     RefCntAutoPtr<IBuffer>  m_IndexBuffer;
@@ -63,11 +65,16 @@ private:
     RefCntAutoPtr<IBuffer>  m_OITLayers;
     RefCntAutoPtr<ITexture> m_ColorBufferGL;
     RefCntAutoPtr<ITexture> m_DepthBuffer;
+    RefCntAutoPtr<ITexture> m_WeightedColor;
+    RefCntAutoPtr<ITexture> m_WeightedReveal;
 
     std::array<RefCntAutoPtr<IBuffer>, 2> m_InstanceBuffer; // 0 - opaque, 1 - transparent
 
     static constexpr TEXTURE_FORMAT TailTransmittanceFormat = TEX_FORMAT_RGBA8_UNORM;
     RefCntAutoPtr<ITexture>         m_OITTail;
+
+    static constexpr TEXTURE_FORMAT WeightedColorFormat  = TEX_FORMAT_RGBA16_FLOAT;
+    static constexpr TEXTURE_FORMAT WeightedRevealFormat = TEX_FORMAT_R16_FLOAT;
 
     Uint32 m_NumIndices = 0;
 
@@ -76,6 +83,7 @@ private:
 
     RefCntAutoPtr<IPipelineState>         m_OpaquePSO;
     RefCntAutoPtr<IPipelineState>         m_AlphaBlendPSO;
+    RefCntAutoPtr<IPipelineState>         m_WeightedBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
     RefCntAutoPtr<IPipelineState>         m_OITBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_OITBlendSRB;
@@ -83,11 +91,15 @@ private:
     RefCntAutoPtr<IShaderResourceBinding> m_UpdateOITLayersSRB;
     RefCntAutoPtr<IPipelineState>         m_AttenuateBackgroundPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AttenuateBackgroundSRB;
+    RefCntAutoPtr<IPipelineState>         m_WeightedResolvePSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_WeightedResolveSRB;
+
 
     enum class RenderMode : int
     {
         UnsortedAlphaBlend,
         Layered,
+        Weighted,
         Count
     } m_RenderMode = RenderMode::Layered;
 
@@ -99,6 +111,7 @@ private:
 
     int m_NumOITLayers = 4;
 
+    float4x4              m_ViewMatrix;
     float4x4              m_ProjMatrix;
     float4x4              m_ViewProjMatrix;
     int                   m_GridSize          = 10;

@@ -17,9 +17,11 @@ set(SHADERS
     assets/alpha_blend.psh
     assets/clear_oit_layers.csh
     assets/update_oit_layers.psh
+    assets/attenuate_background.psh
     assets/oit_blend.psh
     assets/screen_triangle.vsh
-    assets/attenuate_background.psh
+    assets/weighted_blend.psh
+    assets/weighted_resolve.psh
 )
 
 set(ASSETS
