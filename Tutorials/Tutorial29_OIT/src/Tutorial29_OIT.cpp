@@ -403,7 +403,10 @@ void Tutorial29_OIT::UpdateUI()
             CreateInstanceBuffers();
         }
 
-        ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode), "Unsorted Alpha Blend\0Layered\0\0");
+        ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode),
+                     "Unsorted Alpha Blend\0"
+                     "Layered\0"
+                     "\0");
         if (m_RenderMode == RenderMode::Layered)
         {
             if (ImGui::SliderInt("Num OIT Layers", &m_NumOITLayers, 1, 16))
@@ -504,6 +507,54 @@ void Tutorial29_OIT::RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShade
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
+void Tutorial29_OIT::RenderUnsortedAlphaBlend()
+{
+    RenderGrid(/*IsTransparent = */ true, m_AlphaBlendPSO, m_AlphaBlendSRB);
+}
+
+void Tutorial29_OIT::RenderLayered(ITextureView* pRTV, ITextureView* pDSV)
+{
+    PrepareOITResources();
+
+    // Clear OIT layers
+    {
+        m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->SetPipelineState(m_ClearOITLayersPSO);
+        m_pImmediateContext->CommitShaderResources(m_ClearOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+        const SwapChainDesc&   SCDesc = m_pSwapChain->GetDesc();
+        DispatchComputeAttribs DispatchAttrs{
+            (SCDesc.Width + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
+            (SCDesc.Height + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
+            1,
+        };
+        m_pImmediateContext->DispatchCompute(DispatchAttrs);
+    }
+
+    // Update OIT layers
+    {
+        ITextureView* pTailRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
+        m_pImmediateContext->SetRenderTargets(1, &pTailRTV, m_EarlyDepthStencilSupported ? pDSV : nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        float Tail[4] = {0, 0, 0, 1};
+        m_pImmediateContext->ClearRenderTarget(pTailRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        RenderGrid(/*IsTransparent = */ true, m_UpdateOITLayersPSO, m_UpdateOITLayersSRB);
+    }
+
+    m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    // Attenuate background
+    {
+        m_pImmediateContext->SetPipelineState(m_AttenuateBackgroundPSO);
+        m_pImmediateContext->CommitShaderResources(m_AttenuateBackgroundSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
+    }
+
+    // Render transparent objects using OIT
+    {
+        RenderGrid(/*IsTransparent = */ true, m_OITBlendPSO, m_OITBlendSRB);
+    }
+}
+
 // Render a frame
 void Tutorial29_OIT::Render()
 {
@@ -520,10 +571,11 @@ void Tutorial29_OIT::Render()
     }
 
     ITextureView* pDSV = m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
-    ITextureView* pRTV = m_ColorBuffer ?
+    ITextureView* pRTV = (m_RenderMode == RenderMode::Layered && m_ColorBuffer) ?
         m_ColorBuffer->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET) :
         m_pSwapChain->GetCurrentBackBufferRTV();
 
+    // Render opaque objects
     {
         m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -536,69 +588,31 @@ void Tutorial29_OIT::Render()
         }
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor.Data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-    }
 
-    if (m_NumInstances[0] > 0)
-    {
-        RenderGrid(/*IsTransparent = */ false, m_OpaquePSO, m_AlphaBlendSRB);
+        if (m_NumInstances[0] > 0)
+        {
+            RenderGrid(/*IsTransparent = */ false, m_OpaquePSO, m_AlphaBlendSRB);
+        }
     }
 
     if (m_NumInstances[1] > 0)
     {
-        if (m_RenderMode == RenderMode::Layered)
-        {
-            PrepareOITResources();
-
-            m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-            // Clear OIT layers
-            m_pImmediateContext->SetPipelineState(m_ClearOITLayersPSO);
-            m_pImmediateContext->CommitShaderResources(m_ClearOITLayersSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            DispatchComputeAttribs DispatchAttrs{
-                (SCDesc.Width + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
-                (SCDesc.Height + m_ThreadGroupSizeXY - 1) / m_ThreadGroupSizeXY,
-                1,
-            };
-            m_pImmediateContext->DispatchCompute(DispatchAttrs);
-
-            ITextureView* pTailRTV = m_OITTail->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET);
-            m_pImmediateContext->SetRenderTargets(1, &pTailRTV, m_EarlyDepthStencilSupported ? pDSV : nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            float Tail[4] = {0, 0, 0, 1};
-            m_pImmediateContext->ClearRenderTarget(pTailRTV, Tail, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-            RenderGrid(/*IsTransparent = */ true, m_UpdateOITLayersPSO, m_UpdateOITLayersSRB);
-        }
-
-        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        if (m_RenderMode == RenderMode::Layered)
-        {
-            m_pImmediateContext->SetPipelineState(m_AttenuateBackgroundPSO);
-            m_pImmediateContext->CommitShaderResources(m_AttenuateBackgroundSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-            m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
-        }
-
-        IPipelineState*         pPSO = nullptr;
-        IShaderResourceBinding* pSRB = nullptr;
         switch (m_RenderMode)
         {
             case RenderMode::UnsortedAlphaBlend:
-                pPSO = m_AlphaBlendPSO;
-                pSRB = m_AlphaBlendSRB;
+                RenderUnsortedAlphaBlend();
                 break;
 
             case RenderMode::Layered:
-                pPSO = m_OITBlendPSO;
-                pSRB = m_OITBlendSRB;
+                RenderLayered(pRTV, pDSV);
                 break;
 
             default:
                 UNEXPECTED("Unexpected render mode");
         }
-        RenderGrid(/*IsTransparent = */ true, pPSO, pSRB);
     }
 
-    if (m_ColorBuffer)
+    if (m_RenderMode == RenderMode::Layered && m_ColorBuffer)
     {
         // Copy the color buffer to the swap chain
         CopyTextureAttribs CopyAttribs{

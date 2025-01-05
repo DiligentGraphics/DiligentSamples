@@ -54,6 +54,8 @@ private:
     void UpdateUI();
     void CreateInstanceBuffers();
     void RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB);
+    void RenderUnsortedAlphaBlend();
+    void RenderLayered(ITextureView* pRTV, ITextureView* pDSV);
 
     RefCntAutoPtr<IBuffer>  m_VertexBuffer;
     RefCntAutoPtr<IBuffer>  m_IndexBuffer;
