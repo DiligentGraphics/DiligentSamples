@@ -8,17 +8,12 @@ jobs:
       matrix:
         os:         ["windows-latest", "ubuntu-20.04", "macos-14"]
         build_type: ["Debug", "Release"]
-        exclude:
-          # Exclude MacOS-Release
-          - os:         "macos-14"
-            build_type: "Release"
-
         include:
           - os:         "windows-latest"
             build_type: "Release"
             host_name:  "Win10"
             # Do not build WebGPU on Windows/Release as it is extremely slow
-            cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON -DDILIGENT_NO_WEBGPU=ON"
+            cmake_args: "-DDILIGENT_NO_WEBGPU=ON -DDILIGENT_NO_ARCHIVER=ON"
 
           - os:         "windows-latest"
             build_type: "Debug"
@@ -26,10 +21,18 @@ jobs:
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"
 
           - os:        "ubuntu-20.04"
+            build_type: "Debug"
             host_name: "Linux"
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"
 
+          - os:        "ubuntu-20.04"
+            build_type: "Release"
+            host_name: "Linux"
+            # Do not build WebGPU on Linux/Release as it is extremely slow
+            cmake_args: "-DDILIGENT_NO_WEBGPU=ON -DDILIGENT_NO_ARCHIVER=ON"
+
           - os:        "macos-14"
+            build_type: "Debug"
             host_name: "MacOS"
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"
 
