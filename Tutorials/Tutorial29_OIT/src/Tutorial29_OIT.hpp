@@ -57,7 +57,7 @@ private:
     void RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB);
     void RenderUnsortedAlphaBlend();
     void RenderLayered(ITextureView* pRTV, ITextureView* pDSV);
-    void RenderWeighted(ITextureView* pRTV, ITextureView* pDSV);
+    void RenderWeighted();
 
     RefCntAutoPtr<IBuffer>  m_VertexBuffer;
     RefCntAutoPtr<IBuffer>  m_IndexBuffer;
@@ -98,8 +98,8 @@ private:
     enum class RenderMode : int
     {
         UnsortedAlphaBlend,
-        Layered,
         Weighted,
+        Layered,
         Count
     } m_RenderMode = RenderMode::Layered;
 

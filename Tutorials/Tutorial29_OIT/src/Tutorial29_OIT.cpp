@@ -380,7 +380,7 @@ void Tutorial29_OIT::CreatePipelineStates()
         PsoCI.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
         PsoCI
             .AddRenderTarget(SCDesc.ColorBufferFormat)
-            .SetDepthFormat(m_DepthFormat)
+            .SetDepthFormat(TEX_FORMAT_UNKNOWN)
             .SetBlendDesc(BS_WeightedResolve)
             .SetDepthStencilDesc(DSS_DisableDepth)
             .AddShader(pScreenTriangleVS)
@@ -528,8 +528,8 @@ void Tutorial29_OIT::UpdateUI()
 
         ImGui::Combo("Render Mode", reinterpret_cast<int*>(&m_RenderMode),
                      "Unsorted Alpha Blend\0"
-                     "Layered\0"
                      "Weighted\0"
+                     "Layered\0"
                      "\0");
         if (m_RenderMode == RenderMode::Layered)
         {
@@ -679,7 +679,7 @@ void Tutorial29_OIT::RenderLayered(ITextureView* pRTV, ITextureView* pDSV)
     }
 }
 
-void Tutorial29_OIT::RenderWeighted(ITextureView* pRTV, ITextureView* pDSV)
+void Tutorial29_OIT::RenderWeighted()
 {
     PrepareWeightedOITResources();
 
@@ -689,6 +689,7 @@ void Tutorial29_OIT::RenderWeighted(ITextureView* pRTV, ITextureView* pDSV)
             m_WeightedColor->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
             m_WeightedReveal->GetDefaultView(TEXTURE_VIEW_RENDER_TARGET),
         };
+        ITextureView* pDSV = m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_DEPTH_STENCIL);
         m_pImmediateContext->SetRenderTargets(2, pRTVs, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         float4 Zero{0};
         float4 One{1};
@@ -699,7 +700,8 @@ void Tutorial29_OIT::RenderWeighted(ITextureView* pRTV, ITextureView* pDSV)
 
     // Resolve
     {
-        m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->SetPipelineState(m_WeightedResolvePSO);
         m_pImmediateContext->CommitShaderResources(m_WeightedResolveSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->Draw({3, DRAW_FLAG_VERIFY_ALL});
@@ -763,12 +765,20 @@ void Tutorial29_OIT::Render()
                 RenderUnsortedAlphaBlend();
                 break;
 
-            case RenderMode::Layered:
-                RenderLayered(pRTV, pDSV);
+            case RenderMode::Weighted:
+                if (m_pDevice->GetDeviceInfo().IsGLDevice())
+                {
+                    // Copy depth buffer from the default framebuffer since it needs to be used
+                    // with weighted render targets.
+                    CopyTextureAttribs CopyAttribs{pDSV->GetTexture(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                                   m_DepthBuffer, RESOURCE_STATE_TRANSITION_MODE_TRANSITION};
+                    m_pImmediateContext->CopyTexture(CopyAttribs);
+                }
+                RenderWeighted();
                 break;
 
-            case RenderMode::Weighted:
-                RenderWeighted(pRTV, pDSV);
+            case RenderMode::Layered:
+                RenderLayered(pRTV, pDSV);
                 break;
 
             default:

@@ -1,10 +1,5 @@
 #include "common.fxh"
 
-cbuffer cbConstants
-{
-    Constants g_Constants;
-}
-
 Texture2D<float4> g_Color;
 Texture2D<float>  g_Reveal;
 
