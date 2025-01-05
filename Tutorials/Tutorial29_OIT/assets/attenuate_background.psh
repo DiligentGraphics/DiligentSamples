@@ -36,5 +36,6 @@ void main(in float4 Pos : SV_Position,
     if (T == 1.0)
         discard;
 
+    // RGB blend: Src * 0 + Dst * SrcA
     PSOut.Color = float4(0.0, 0.0, 0.0, T);
 }

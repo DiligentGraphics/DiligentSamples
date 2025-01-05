@@ -56,5 +56,6 @@ void main(in PSInput   PSIn,
     // Use fast approximation for gamma correction.
     Color.rgb = pow(Color.rgb, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
 #endif
+    // RGB Blend: Src * 1 + Dst * 1
     PSOut.Color = Color;
 }

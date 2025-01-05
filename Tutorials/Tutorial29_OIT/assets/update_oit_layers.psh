@@ -51,6 +51,8 @@ float4 main(in PSInput PSIn) : SV_Target
         }
     }
     
+    // RGB Blend: Src * 1 + Dst * 1
+    // A   Blend: Src * 0 + Dst * SrcA
     if (Layer == 0xFFFFFFFFu)
     {
         return float4(0.0, 0.0, 0.0, 1.0);
