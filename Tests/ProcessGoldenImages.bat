@@ -98,6 +98,7 @@ set TestApps="Tutorials/Tutorial01_HelloTriangle"^
              "Tutorials/Tutorial25_StatePackager --show_ui 0"^
              "Tutorials/Tutorial26_StateCache --show_ui 0"^
              "Tutorials/Tutorial26_StateCache --show_ui 0"^
+             "Tutorials/Tutorial29_OIT --show_ui 0"^
              "Samples/Atmosphere --show_ui 0"^
              "Samples/GLTFViewer --show_ui 0"^
              "Samples/NuklearDemo --show_ui 0"^
