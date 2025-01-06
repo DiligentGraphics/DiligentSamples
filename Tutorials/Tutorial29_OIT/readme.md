@@ -1,6 +1,8 @@
 # Tutorial29 - Order-Independent Transparency
 
-This tutorial demonstrates how to implement order-independent transparency (OIT).
+This tutorial demonstrates how to implement order-independent transparency (OIT) methods to render transparent objects without sorting.
+
+![](Screenshot.jpg)
 
 
 # Introduction

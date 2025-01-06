@@ -59,6 +59,7 @@ and follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine
   - [26 - Render State Cache](#tutorial-26---render-state-cache)
   - [27 - Post-Processing](#tutorial-27---post-processing)
   - [28 - Hello-OpenXR](#tutorial-28---hello-openxr)
+  - [29 - OIT](#tutorial-29---oit)
 - [Samples](#samples)
   - [Atmospheric Light Scattering](#atmospheric-light-scattering-sample)
   - [GLFW Demo](#glfw-demo)
@@ -330,6 +331,15 @@ This tutorial demonstrates how to use post-processing effects from the DiligentF
 ## [Tutorial 28 - Hello OpenXR](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial28_HelloOpenXR)
 
 This tutorial demonstrates how to use Diligent Engine with OpenXR API to render a simple scene in a VR headset.
+
+
+## [Tutorial 29 - OIT](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial29_OIT)
+
+![](Tutorials/Tutorial29_OIT/Screenshot.jpg)
+
+This tutorial demonstrates how to implement order-independent transparency (OIT) methods to render transparent objects without sorting.
+
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial29_OIT/Tutorial29_OIT.html)
 
 
 # Samples
