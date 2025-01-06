@@ -22,6 +22,7 @@ BUILD_TARGETS = [
     "Tutorial19_RenderPasses",
     "Tutorial26_StateCache",
     "Tutorial27_PostProcessing",
+    "Tutorial29_OIT",
 
     "Atmosphere",
     "ImguiDemo",
