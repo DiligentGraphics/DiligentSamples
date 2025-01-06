@@ -4,6 +4,8 @@ This tutorial demonstrates how to implement order-independent transparency (OIT)
 
 ![](Screenshot.jpg)
 
+[:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial29_OIT/Tutorial29_OIT.html)
+
 
 # Introduction
 
