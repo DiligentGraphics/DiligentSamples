@@ -1,50 +1,56 @@
 # Tutorial29 - Order-Independent Transparency
 
-This tutorial demonstrates how to implement order-independent transparency.
+This tutorial demonstrates how to implement order-independent transparency (OIT).
 
 
 # Introduction
 
-Transparent objects have always posed a challenge in computer graphics because the order in which they are rendered affects the final image. This is because the blending operation is not commutative, meaning that the order in which transparent surfaces are composited over each other matters. Sorting objects based on their depth only provides a partial solution as in many cases it is not possible to determine a single correct order that would work for all pixels in the image (e.g. when transparent objects intersect, for self-overlaping transparent objects with complex geometry, for nested objects, etc.). This is where order-independent transparency (OIT) comes in. OIT methods allow for rendering transparent objects in any order without visual artifacts. This tutorial demonstrates how to implement OIT in Diligent Engine.
+Transparent objects have long posed a challenge in computer graphics because the order in which they are rendered affects the final image. This is due to the non-commutative nature of the blending operation - i.e., the order in which transparent surfaces are composited over each other matters. Sorting objects by their depth is only a partial solution because in many cases there is no single correct order that works for all pixels (for example, when transparent objects intersect, for self-overlapping transparent objects with complex geometry, or for nested objects). This is where order-independent transparency (OIT) comes in. OIT methods allow transparent objects to be rendered in any order without producing visual artifacts. This tutorial shows how to implement OIT in Diligent Engine.
 
 
 # Algorithms
 
+This tutorial demonstrates three different approaches to rendering transparent objects:
+
+1. Unsorted alpha-blending
+2. Weighted-blended OIT
+3. Layered OIT
 
 ## Unsorted alpha-blending
 
-This is the simplest approach that is present to demonstrate the visual artifacts that occur when rendering transparent objects without sorting them.
-
+This is the simplest approach. It is used here to illustrate the kind of visual artifacts that appear when rendering transparent objects without sorting.
 
 ## Weighted-blended OIT
 
-[Weighted-blended OIT](https://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html) assigns weights to each transparent surface based on its depth and transparency, trying to assign higher weights to surfaces that are closer to the camera and more opaque. The method is simple to implement and very efficient, but due to its approximation nature it has some limitations. First, the weighting functions need to be tweaked for each scene to achieve the best results. Second, the method does not work well for surfaces with high opacity.
+[Weighted-blended OIT](https://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html) assigns weights to each transparent surface based on its depth and transparency, giving higher weights to surfaces closer to the camera and more opaque. This method is easy to implement and very efficient, but because it is an approximation, it has limitations:
 
+1. The weighting functions often need tweaking on a per-scene basis to achieve the best results.
+2. The method does not work well for surfaces with high opacity.
 
 ## Layered OIT
 
-This approach is based on the method of [Fang Liu et al.](https://dl.acm.org/doi/10.1145/1730804.1730817). However, instead of storing the fragments itself, the method first builds the transmittance function that allows rendering the transparent objects in any order with additive blending.
+This approach is based on the method of [Fang Liu et al.](https://dl.acm.org/doi/10.1145/1730804.1730817). However, instead of storing the individual fragments, the algorithm builds a transmittance function that allows the transparent objects to be rendered in any order with additive blending.
 
-Consider three surfaces A, B, and C that are composited on top of each other in that order. The final color is given by the following equation:
+Consider three surfaces A, B, and C that are composited on top of each other in that order. The final color is given by:
 
 ```
 RGB = (RGB_A * T_B  + RGB_B) * T_C + RGB_C = RGB_A * T_B * T_C + RGB_B * T_C + RGB_C
 ```
 
-where `RGB_A`, `RGB_B`, and `RGB_C` are the (alpha-premultiplied) colors of the surfaces, and `T_B` and `T_C` are the transmittance functions of the surfaces. The transmittance function is defined as the fraction of light that passes through the surface. 
+where `RGB_A`, `RGB_B`, and `RGB_C` are the (alpha-premultiplied) colors of the surfaces, and `T_B` and `T_C` are the transmittance functions of the surfaces. The transmittance function is the fraction of light that passes through a given surface.
 
-Note that we can rewrite this equation in a general form as:
+We can rewrite this more generally as:
 
 ```
 RGB = RGB_A * Tc(A)  + RGB_B * Tc(B) + RGB_C * Tc(C)
 ```
 
-where `Tc(X)` is the cumulative transmittance function from the camera to the surface X. The cumulative transmittance function is defined as the product of the transmittance functions of all surfaces between the camera and the surface X. Thus if we know the transmittance function, we can render the transparent objects in any order with additive blending.
+where `Tc(X)` is the *cumulative* transmittance function from the camera to the surface `X`. This cumulative transmittance is the product of the transmittances of all surfaces between the camera and `X`. If we know the transmittance function for each pixel, we can render the transparent objects in any order using additive blending.
 
 
 ### The transmittance function
 
-The transmittance function in our implementation is represented as a set of a K closest layers storing the layer transmittance and depth. All other layers are merged into the tail that contains the total number of merged layers and total transmittance. Each layer is represented as a 32-bit integer where the 24 most significant bits store the depth and the 8 least significant bits store the transmittance. This representation allows for sorting the layers based on their depth using atomic operations. The following function is used to pack the layer data into a 32-bit integer:
+In our implementation, the transmittance function is represented by up to `K` closest layers, each storing that layer's transmittance and depth. Any additional layers are merged into a tail, which contains the total number of merged layers and the total transmittance. Each layer is packed into a 32-bit integer where the top 24 bits store the depth and the bottom 8 bits store the transmittance. This design allows us to sort layers by depth using atomic operations. The following function packs the layer data into a 32-bit integer:
 
 ```hlsl
 uint PackOITLayer(float Depth, float Transmittance)
@@ -55,29 +61,30 @@ uint PackOITLayer(float Depth, float Transmittance)
 }
 ```
 
-The layer data is stored in a structured buffer and the tail is stored in RGBA8 texture.
+Layer data is stored in a structured buffer, and the tail is stored in an RGBA8 texture.
 
 
 ### Implementation
 
-The algorithm runs after all opaque objects have been rendered. It consists of the following steps discussed in details below:
+After rendering all opaque objects, the algorithm proceeds with the following steps (described in detail below):
 
-* Clear oit layers buffer
+* Clear the OIT layers buffer
 * Render transparent objects to build the transmittance function
 * Attenuate the background
 * Render transparent objects and composite them using the transmittance function
 
 #### Clearing the OIT layers buffer
 
-The layers buffer is cleared by a compute shader that sets the value of each element to `0xFFFFFFFF` which corresponds to the empty layer.
+The layers buffer is cleared by a compute shader that sets the value of each element to `0xFFFFFFFF`, which indicates an empty layer.
 
 
 #### Building the transmittance function
 
-The main challenge in building the transmitance function is to design an algorithm that can merge the layers in parallel. Recall that the GPU processes multiple surfaces that cover the same pixel simultaneously and in arbitrary order.
-We build upon the original algorithm by Fang Liu et al. and use atomic operations. Recall that we pack the layer depth and transmittance into a 32-bit integer that allows using the atomic min operation to insert a new layer into the buffer. The algorithm keeps layers sorted based on their depth. To insert a new layer, it performs atomic min operation with all layers in order. If the operation succeeds, the new layer is inserted into the buffer, and atomic operation returns the previous value, which in turn needs to be inserted into the buffer. The remaining layers are merged into the tail.
+The main challenge is designing an algorithm that merges layers in parallel, given that multiple surfaces covering the same pixel might be processed simultaneously in arbitrary order.
+We build upon the algorithm by Fang Liu et al. and use atomic operations. Recall that we pack the layer depth and transmittance into a 32-bit integer, making atomic min suitable for inserting a new layer into the buffer while keeping the buffer sorted by depth.
+To insert a new layer, the shader performs atomic min operation with all stored layers in order. If the operation succeeds, the new layer is inserted into the buffer, and atomic operation returns the previous value, which in turn needs to be inserted into the buffer or merged into the tail.
 
-The algorithm is implemented in the following pixel shader:
+Below is the key part of the pixel shader:
 
 ```hlsl
 RWStructuredBuffer<uint> g_rwOITLayers;
@@ -127,7 +134,7 @@ float4 main(in PSInput PSIn) : SV_Target
 }
 ```
 
-The algorithm starts by obtaining the pixel depth value and the alpha value of the transparent object. Notice that alpha represents the object opacity, while we need the transmittance value which is `1 - alpha`. The opacity value is then compared with the opacity threshold that is set to `1.0/255.0`. Since we use 8 bits to store transmittance, any opacity below that corresponds to the fully transparent object and is discarded.
+The algorithm starts by obtaining the pixel depth value and the alpha value of the transparent object. Notice that alpha represents the object opacity, while we need the transmittance value which is `1 - A`. The opacity value is then compared with the opacity threshold that is set to `1.0/255.0`. Since we use 8 bits to store transmittance, any opacity below that corresponds to the fully transparent object and is discarded.
 
 ```hlsl
 float D = PSIn.Pos.z;
@@ -178,7 +185,7 @@ Note that multiple shader invocations can attempt to insert different layers int
 1. Values in the buffer may only decrease. If an algorithm is attempting to insert a value at position `i`, it may only be inserted at position `i` or later, no matter what other invocations are doing.
 2. Each invocation guarantees that value at position `i` is larger than the value at position `i-1`. This ensures that the buffer is always sorted.
 
-After the loop finishes, there are two possible outcomes: either the layer was inserted into the buffer, in which case `Layer == 0xFFFFFFFFu`, or we are left with the value that needs to be inserted into the tail. The tail is updated using the alpha blending. We accumulate the total number of tail layers in the color channel, and the total transmittance in the alpha channel:
+After the loop finishes, there are two possible outcomes: either the layer was inserted into empty space in the buffer, in which case `Layer == 0xFFFFFFFFu`, or we are left with the value that needs to be inserted into the tail. The tail is updated using the alpha blending. We accumulate the total number of tail layers in the color channel, and the total transmittance in the alpha channel:
 
 ```hlsl
 // RGB Blend: Src * 1 + Dst * 1
@@ -194,15 +201,13 @@ else
 }
 ```
 
-An important property of this algorithm is that it is stable. The order in which transparent objects are rendered does not affect the final result. The K closest layers are stored in the buffer, and all other layers are merged into the tail. The tail blending operations are commutative, so the order in which they are composited does not matter.
+An important property of this algorithm is that it is stable. The order in which transparent objects are rendered does not affect the final result. The `K` closest layers are stored in the buffer, and all other layers are merged into the tail. The tail blending operations are commutative, so the order in which they are composited does not matter.
 
-
-A very important detail not to miss is that the shader uses the `earlydepthstencil` attribute to force early depth stencil test to be enabled. This is necessary because the shader writes to a UAV, which by default disables early depth stencil test. Sinc we want opaque objects to occlude any transparent objects behind them, we need to force early depth stencil test to be enabled.
-
+**Note**: The `earlydepthstencil` attribute is crucial because writing to a UAV normally disables early depth-stencil tests. We re-enable them to ensure opaque objects correctly occlude transparent ones behind them.
 
 #### Attenuating the background
 
-We are now ready to render the transparent objects, but before we do that, we need to attenuate the background based on the transmittance function. This is done by rendering a full-screen quad that uses alpha-blending to multiply the background color with the transmittance value. The source code for the pixel shader is shown below:
+Before rendering the transparent objects, we first attenuate the background based on the computed transmittance function. We draw a full-screen quad that multiplies the background color by the product of all transmittances:
 
 ```hlsl
 StructuredBuffer<uint> g_OITLayers;
@@ -236,12 +241,12 @@ void main(in float4 Pos : SV_Position,
 
 ```
 
-The shader iterates over all layers in the buffer and accumulates the transmittance value. If the maximum number of layers is reached, the tail transmittance is loaded from the alpha channel of the tail texture.
+This shader iterates over all layers in the buffer to accumulate the total transmittance value. If the maximum number of layers has been reached, the tail's transmittance is taken from the alpha channel of the tail texture. If `T` is 1.0 (meaning the background is unchanged), we simply discard the pixel. Otherwise, alpha-blending scales the background color by `T`.
 
 
 #### Compositing the transparent objects
 
-The final step is to render the transparent objects and composite them using the transmittance function. To compute the transmittance, the pixel shader iterates over all layers in the buffer and accumulates the transmittance of all layers closer to the camera than the current pixel:
+Finally, we render the transparent objects again, this time using the transmittance data to composite them correctly. The pixel shader computes how much light was transmitted from the current fragment by accumulating the transmittances of all layers closer to the camera:
 
 ```hlsl
 float Depth = PSIn.Pos.z;
@@ -274,19 +279,20 @@ if (layer == uint(NUM_OIT_LAYERS))
 Color.rgb *= T;
 ```
 
-Note that the contribution of the tail layers is averaged. The total number of tail layers is stored in the red channel of the tail texture.
+Here, `T` accumulates the transmittances of all layers in front of the current fragment. If there are more than `K` layers, we take the average contribution from the tail. This ensures correct blending, even if many layers overlap.
 
 
 ### API-specific notes
 
-Since **WebGPU** does not support the `earlydepthstencil` attribute, we have to perform the depth test manually in the pixel shader.
-
-Since **OpenGL** does not allow using the depth buffer of a default framebuffer with any other render target, we have to perform a few extra copies.
+* **WebGPU**: Since WebGPU does not support the `earlydepthstencil` attribute, the depth test must be done manually in the pixel shader.
+* **OpenGL**: OpenGL does not allow using the default framebuffer's depth buffer with any other render target, so we must perform additional copies.
 
 
 # Discussion
 
-The layered OIT algorithm is efficient and stable. It provides 100% correct results if the number of overlapping transparent objects is not greater than the number of layers in the buffer. It properly handles objects with high opacity, including 100% opaque. For `K` layers, the algorithm uses `K * 4 + 4` bytes. For 4 layers, this is 20 bytes. Tweaking the number of layers allows for a trade-off between memory consumption/performance and quality.
+The layered OIT algorithm is both efficient and stable. It produces correct results when the number of overlapping transparent objects does not exceed the number of layers `K`. It also handles high-opacity objects (even fully opaque ones) correctly. For `K` layers, the algorithm requires `K * 4 + 4` bytes per pixel. For four layers, that amounts to 20 bytes. By adjusting `K`, you can balance memory usage and performance against image quality.
+
+However, the algorithm is less efficient for large numbers of overlapping, highly transparent objects (e.g., smoke). In such cases, the weighted-blended OIT or [moment-based OIT](https://momentsingraphics.de/I3D2018.html) may be more suitable.
 
 # References
 
@@ -294,3 +300,5 @@ The layered OIT algorithm is efficient and stable. It provides 100% correct resu
 - [Implementing Weighted, Blended Order-Independent Transparency by Morgan McGuire](https://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html)
 - [Order-Independent Transparency Vulkan Sample by NVidia](https://github.com/nvpro-samples/vk_order_independent_transparency)
 - [FreePipe: a programmable parallel rendering architecture for efficient multi-fragment effects by Fang Liu et al.](https://dl.acm.org/doi/10.1145/1730804.1730817)
+- [Moment-Based Order-Independent Transparency by Cedrick Munstermann](https://momentsingraphics.de/I3D2018.html)
+- [Wavelet Transparency by Maksim Aizenshtein](https://arxiv.org/abs/2201.00094)
