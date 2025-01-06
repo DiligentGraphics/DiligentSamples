@@ -8,10 +8,6 @@ cbuffer cbConstants
 
 RWStructuredBuffer<uint> g_rwOITLayers;
 
-#ifndef THREAD_GROUP_SIZE
-#   define THREAD_GROUP_SIZE 16
-#endif
-
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
 void main(uint3 ThreadID : SV_DispatchThreadID)
 {

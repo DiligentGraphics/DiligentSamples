@@ -1,7 +1,6 @@
 struct Constants
 {
     float4x4 ViewProj;
-    float4x4 View;
     float4x4 Proj;
     float4   LightDir;
     
@@ -13,10 +12,9 @@ struct Constants
 #ifndef __cplusplus
 struct PSInput 
 { 
-    float4 Pos     : SV_POSITION; 
-    float3 Normal  : TEX_COORD; 
-    float4 Color   : COLOR;
-    float  CameraZ : CAMERAZ;
+    float4 Pos    : SV_POSITION; 
+    float3 Normal : TEX_COORD; 
+    float4 Color  : COLOR;
 };
 
 float3 ComputeLighting(float3 Color, float3 Normal, float3 LightDir)

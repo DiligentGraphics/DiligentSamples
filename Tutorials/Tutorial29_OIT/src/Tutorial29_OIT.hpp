@@ -74,7 +74,7 @@ private:
     RefCntAutoPtr<ITexture>         m_OITTail;
 
     static constexpr TEXTURE_FORMAT WeightedColorFormat  = TEX_FORMAT_RGBA16_FLOAT;
-    static constexpr TEXTURE_FORMAT WeightedRevealFormat = TEX_FORMAT_R16_FLOAT;
+    static constexpr TEXTURE_FORMAT WeightedRevealFormat = TEX_FORMAT_R8_UNORM;
 
     Uint32 m_NumIndices = 0;
 
@@ -111,7 +111,6 @@ private:
 
     int m_NumOITLayers = 4;
 
-    float4x4              m_ViewMatrix;
     float4x4              m_ProjMatrix;
     float4x4              m_ViewProjMatrix;
     int                   m_GridSize          = 10;

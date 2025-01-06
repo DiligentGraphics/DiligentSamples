@@ -113,7 +113,7 @@ static const BlendStateDesc BS_WeightedBlend = []() {
         BLEND_FACTOR_INV_SRC_ALPHA, // DestBlend
         BLEND_OPERATION_ADD,        // BlendOp
         BLEND_FACTOR_ZERO,          // SrcBlendAlpha
-        BLEND_FACTOR_ZERO,          // DestBlendAlpha
+        BLEND_FACTOR_INV_SRC_ALPHA, // DestBlendAlpha
         BLEND_OPERATION_ADD,        // BlendOpAlpha
     };
 
@@ -130,8 +130,8 @@ static constexpr BlendStateDesc BS_WeightedResolve{
         BLEND_FACTOR_INV_SRC_ALPHA, // SrcBlend
         BLEND_FACTOR_SRC_ALPHA,     // DestBlend
         BLEND_OPERATION_ADD,        // BlendOp
-        BLEND_FACTOR_ZERO,          // SrcBlendAlpha
-        BLEND_FACTOR_ZERO,          // DestBlendAlpha
+        BLEND_FACTOR_INV_SRC_ALPHA, // SrcBlendAlpha
+        BLEND_FACTOR_SRC_ALPHA,     // DestBlendAlpha
         BLEND_OPERATION_ADD,        // BlendOpAlpha
     },
 };
@@ -199,9 +199,9 @@ void Tutorial29_OIT::CreatePipelineStates()
 
     RefCntAutoPtr<IShader> pOITBlendPS;
     {
-        ShaderCI.Desc       = {"OIT blend PS", SHADER_TYPE_PIXEL, true};
+        ShaderCI.Desc       = {"Layered blend PS", SHADER_TYPE_PIXEL, true};
         ShaderCI.EntryPoint = "main";
-        ShaderCI.FilePath   = "oit_blend.psh";
+        ShaderCI.FilePath   = "layered_oit_blend.psh";
 
         pOITBlendPS = Device.CreateShader(ShaderCI);
     }
@@ -718,7 +718,6 @@ void Tutorial29_OIT::Render()
         MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
         CBConstants->ViewProj   = m_ViewProjMatrix;
         CBConstants->Proj       = m_ProjMatrix;
-        CBConstants->View       = m_ViewMatrix;
         CBConstants->LightDir   = normalize(float3{0.57735f, -0.57735f, 0.157735f});
         CBConstants->MinOpacity = m_MinOpacity;
         CBConstants->MaxOpacity = m_MaxOpacity;
@@ -809,7 +808,7 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
         m_AnimationTime += ElapsedTime;
     }
 
-    m_ViewMatrix =
+    float4x4 View =
         float4x4::RotationY(static_cast<float>(m_AnimationTime * 0.25)) *
         float4x4::RotationX(-0.6f) *
         float4x4::Translation(0.f, 0.f, 4.0f);
@@ -821,7 +820,7 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
     m_ProjMatrix = GetAdjustedProjectionMatrix(PI_F / 4.0f, 1.f, 5.f);
 
     // Compute view-projection matrix
-    m_ViewProjMatrix = m_ViewMatrix * SrfPreTransform * m_ProjMatrix;
+    m_ViewProjMatrix = View * SrfPreTransform * m_ProjMatrix;
 }
 
 } // namespace Diligent

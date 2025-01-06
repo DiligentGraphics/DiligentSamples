@@ -23,5 +23,4 @@ void main(in  VSInput VSIn,
     PSIn.Pos     = mul(float4(Pos, 1.0), g_Constants.ViewProj);
     PSIn.Normal  = VSIn.Normal;
     PSIn.Color   = VSIn.Color;
-    PSIn.CameraZ = mul(float4(Pos, 1.0), g_Constants.View).z;
 }

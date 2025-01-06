@@ -34,6 +34,7 @@ void main(in PSInput   PSIn,
         {
             uint LayerDT = g_OITLayers[Offset + layer];
             uint LayerD = GetOITLayerDepth(LayerDT);
+            // +1u helps to avoid precision issues.
             if (D <= LayerD + 1u)
             {
                 break;
@@ -45,7 +46,7 @@ void main(in PSInput   PSIn,
         if (layer == uint(NUM_OIT_LAYERS))
         {
             float4 Tail = g_OITTail.Load(int3(PSIn.Pos.xy, 0));
-            // Average contribution of all tail pixels.
+            // Average contribution of all tail layers.
             T /= max(255.0 * Tail.x, 1.0);
         }
 
