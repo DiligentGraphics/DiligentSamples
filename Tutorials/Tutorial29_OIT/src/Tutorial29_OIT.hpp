@@ -85,15 +85,14 @@ private:
     RefCntAutoPtr<IPipelineState>         m_AlphaBlendPSO;
     RefCntAutoPtr<IPipelineState>         m_WeightedBlendPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AlphaBlendSRB;
-    RefCntAutoPtr<IPipelineState>         m_OITBlendPSO;
-    RefCntAutoPtr<IShaderResourceBinding> m_OITBlendSRB;
+    RefCntAutoPtr<IPipelineState>         m_LayeredOITBlendPSO;
+    RefCntAutoPtr<IShaderResourceBinding> m_LayeredOITBlendSRB;
     RefCntAutoPtr<IPipelineState>         m_UpdateOITLayersPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_UpdateOITLayersSRB;
     RefCntAutoPtr<IPipelineState>         m_AttenuateBackgroundPSO;
     RefCntAutoPtr<IShaderResourceBinding> m_AttenuateBackgroundSRB;
     RefCntAutoPtr<IPipelineState>         m_WeightedResolvePSO;
     RefCntAutoPtr<IShaderResourceBinding> m_WeightedResolveSRB;
-
 
     enum class RenderMode : int
     {
@@ -111,7 +110,6 @@ private:
 
     int m_NumOITLayers = 4;
 
-    float4x4              m_ProjMatrix;
     float4x4              m_ViewProjMatrix;
     int                   m_GridSize          = 10;
     float                 m_PercentOpaque     = 10;

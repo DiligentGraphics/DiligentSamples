@@ -56,6 +56,8 @@ SampleBase* CreateSample()
     return new Tutorial29_OIT();
 }
 
+// Accumulate the total number of tail layers in R channel (Src * 1 + Dst * 1)
+// Compute the total tail attenuation in A channel (Src * 0 + Dst * SrcA)
 static constexpr BlendStateDesc BS_UpdateOITTail{
     False,                // AlphaToCoverageEnable
     False,                // IndependentBlendEnable
@@ -72,6 +74,7 @@ static constexpr BlendStateDesc BS_UpdateOITTail{
     },
 };
 
+// Attenuate the background using transmittance (Src * 0 + Dst * SrcA)
 static constexpr BlendStateDesc BS_AttenuateBackground{
     False,                // AlphaToCoverageEnable
     False,                // IndependentBlendEnable
@@ -144,7 +147,11 @@ void Tutorial29_OIT::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Att
     Attribs.EngineCI.Features.PixelUAVWritesAndAtomics = DEVICE_FEATURE_STATE_ENABLED;
     // We will create our own depth buffer
     if (Attribs.DeviceType != RENDER_DEVICE_TYPE_GL && Attribs.DeviceType != RENDER_DEVICE_TYPE_GLES)
+    {
+        // We use our own depth buffer, but since OpenGL does not allow using depth buffer from the default framebuffer
+        // with any other render target, we have to use it.
         Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
+    }
 }
 
 void Tutorial29_OIT::CreatePipelineStates()
@@ -152,9 +159,13 @@ void Tutorial29_OIT::CreatePipelineStates()
     RenderDeviceX_N Device{m_pDevice};
     // WebGPU does not support earlydepthstencil attribute
     m_EarlyDepthStencilSupported = !Device.GetDeviceInfo().IsWebGPUDevice();
-    ShaderCreateInfo ShaderCI;
 
-    ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+    ShaderCI.CompileFlags               = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     ShaderMacroHelper Macros;
     Macros.Add("CONVERT_PS_OUTPUT_TO_GAMMA", m_ConvertPSOutputToGamma);
@@ -163,12 +174,6 @@ void Tutorial29_OIT::CreatePipelineStates()
     // Use manual depth testing on WebGPU as it does not support the earlydepthstencil attribute
     Macros.Add("USE_MANUAL_DEPTH_TEST", !m_EarlyDepthStencilSupported);
     ShaderCI.Macros = Macros;
-
-    // Create a shader source stream factory to load shaders from files.
-    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
-    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
-    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-    ShaderCI.CompileFlags               = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
     RefCntAutoPtr<IShader> pGeometryVS;
     {
@@ -269,24 +274,19 @@ void Tutorial29_OIT::CreatePipelineStates()
     {
         GraphicsPipelineStateCreateInfoX PsoCI;
 
-        // clang-format off
-        // Define vertex shader input layout
-        // This tutorial uses two types of input: per-vertex data and per-instance data.
-        InputLayoutDescX InputLayout
-        {
+        InputLayoutDescX InputLayout{
             // Per-vertex data - first buffer slot
             // Attribute 0 - vertex position
             LayoutElement{0, 0, 3, VT_FLOAT32},
             // Attribute 1 - normal
             LayoutElement{1, 0, 3, VT_FLOAT32},
-            
+
             // Per-instance data - second buffer slot
             // Attribute 2 - translation and scale
             LayoutElement{2, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
             // Attribute 3 - color
-            LayoutElement{3, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
+            LayoutElement{3, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         };
-        // clang-format on
 
         PipelineResourceLayoutDescX ResourceLayout;
         ResourceLayout
@@ -303,7 +303,6 @@ void Tutorial29_OIT::CreatePipelineStates()
             .AddRenderTarget(SCDesc.ColorBufferFormat)
             .SetDepthFormat(m_DepthFormat)
             .SetDepthStencilDesc(DSS_EnableDepthNoWrites);
-
         m_AlphaBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
         m_AlphaBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
         m_AlphaBlendSRB.Release();
@@ -320,8 +319,8 @@ void Tutorial29_OIT::CreatePipelineStates()
             .SetBlendDesc(BS_AdditiveBlend)
             .SetDepthStencilDesc(DSS_EnableDepthNoWrites)
             .AddShader(pOITBlendPS);
-        m_OITBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
-        m_OITBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
+        m_LayeredOITBlendPSO = Device.CreateGraphicsPipelineState(PsoCI);
+        m_LayeredOITBlendPSO->GetStaticVariableByName(SHADER_TYPE_VERTEX, "cbConstants")->Set(m_Constants);
 
 
         ResourceLayout.AddVariable(SHADER_TYPE_PIXEL, "g_DepthBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE,
@@ -341,7 +340,7 @@ void Tutorial29_OIT::CreatePipelineStates()
 
         ResourceLayout.RemoveVariable("g_DepthBuffer");
         PsoCI
-            .SetName("Weighted blend PSO")
+            .SetName("Weighted blended PSO")
             .SetResourceLayout(ResourceLayout)
             .SetBlendDesc(BS_WeightedBlend)
             .AddShader(pWeightedBlendPS)
@@ -457,10 +456,10 @@ void Tutorial29_OIT::PrepareLayeredOITResources()
         m_UpdateOITLayersSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_DepthBuffer")->Set(m_DepthBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
-    m_OITBlendSRB.Release();
-    m_OITBlendPSO->CreateShaderResourceBinding(&m_OITBlendSRB, true);
-    m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
-    m_OITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
+    m_LayeredOITBlendSRB.Release();
+    m_LayeredOITBlendPSO->CreateShaderResourceBinding(&m_LayeredOITBlendSRB, true);
+    m_LayeredOITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITLayers")->Set(m_OITLayers->GetDefaultView(BUFFER_VIEW_SHADER_RESOURCE));
+    m_LayeredOITBlendSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_OITTail")->Set(m_OITTail->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
     m_AttenuateBackgroundSRB.Release();
     m_AttenuateBackgroundPSO->CreateShaderResourceBinding(&m_AttenuateBackgroundSRB, true);
@@ -472,7 +471,7 @@ void Tutorial29_OIT::PrepareWeightedOITResources()
 {
     const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
     if (m_WeightedColor && m_WeightedColor->GetDesc().Width == SCDesc.Width && m_WeightedColor->GetDesc().Height == SCDesc.Height)
-        m_WeightedColor.Release();
+        return;
 
     TextureDesc TexDesc;
     TexDesc.Name      = "Weighted color";
@@ -675,7 +674,7 @@ void Tutorial29_OIT::RenderLayered(ITextureView* pRTV, ITextureView* pDSV)
 
     // Render transparent objects using OIT
     {
-        RenderGrid(/*IsTransparent = */ true, m_OITBlendPSO, m_OITBlendSRB);
+        RenderGrid(/*IsTransparent = */ true, m_LayeredOITBlendPSO, m_LayeredOITBlendSRB);
     }
 }
 
@@ -717,7 +716,6 @@ void Tutorial29_OIT::Render()
         // Map the buffer and write current world-view-projection matrix
         MapHelper<HLSL::Constants> CBConstants{m_pImmediateContext, m_Constants, MAP_WRITE, MAP_FLAG_DISCARD};
         CBConstants->ViewProj   = m_ViewProjMatrix;
-        CBConstants->Proj       = m_ProjMatrix;
         CBConstants->LightDir   = normalize(float3{0.57735f, -0.57735f, 0.157735f});
         CBConstants->MinOpacity = m_MinOpacity;
         CBConstants->MaxOpacity = m_MaxOpacity;
@@ -817,10 +815,10 @@ void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
     float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    m_ProjMatrix = GetAdjustedProjectionMatrix(PI_F / 4.0f, 1.f, 5.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 1.f, 5.f);
 
     // Compute view-projection matrix
-    m_ViewProjMatrix = View * SrfPreTransform * m_ProjMatrix;
+    m_ViewProjMatrix = View * SrfPreTransform * Proj;
 }
 
 } // namespace Diligent

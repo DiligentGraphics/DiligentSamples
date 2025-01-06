@@ -1,7 +1,6 @@
 struct Constants
 {
     float4x4 ViewProj;
-    float4x4 Proj;
     float4   LightDir;
     
     float MinOpacity;
