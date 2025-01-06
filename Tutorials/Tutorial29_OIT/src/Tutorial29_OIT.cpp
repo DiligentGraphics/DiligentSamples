@@ -739,7 +739,7 @@ void Tutorial29_OIT::Render()
         m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // Clear the back buffer
-        float4 ClearColor{0.35f, 0.35f, 0.35f, 1.0f};
+        float4 ClearColor{0.0625f, 0.0625f, 0.0625f, 1.0f};
         if (m_ConvertPSOutputToGamma)
         {
             // If manual gamma correction is required, we need to clear the render target with sRGB color
