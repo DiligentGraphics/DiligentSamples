@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023-2024 Diligent Graphics LLC
+ *  Copyright 2023-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -179,6 +179,9 @@ private:
         // Sensor width and height in millimeters
         float SensorWidth_mm  = 36.0f;
         float SensorHeight_mm = 24.0f;
+
+        // 0 - perspective, 1 - orthographic
+        int Projection = 0;
     } m_CameraSettings;
 
     struct RenderStats

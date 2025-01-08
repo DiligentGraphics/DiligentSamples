@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023-2024 Diligent Graphics LLC
+ *  Copyright 2023-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -845,14 +845,24 @@ void USDViewer::UpdateUI()
                     const auto         CameraDist = m_Camera.GetDist();
                     const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
 
-                    ImGui::SliderFloat("Focal Length (mm)", &m_CameraSettings.FocalLength_mm, 24.0, 300.0);
-                    ImGui::SliderFloat("Aperture (f-stop)", &m_CameraSettings.FStop, 1.0, 64.0, "%.3f", ImGuiSliderFlags_Logarithmic);
-                    ImGui::SliderFloat("Exposure", &m_CameraSettings.Exposure, -8.0, +8.0, "%.3f");
-                    ImGui::SliderFloat("Focus Distance", &m_CameraSettings.FocusDistance, ClippingRange[0], ClippingRange[1], "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                    ImGui::SliderFloat("Sensor Width", &m_CameraSettings.SensorWidth_mm, 1, 100);
+                    ImGui::Combo("Projection", &m_CameraSettings.Projection,
+                                 "Perspective\0"
+                                 "Orthographic\0");
 
-                    ImGui::ScopedDisabler Disabler{true, 0.5f};
-                    ImGui::SliderFloat("Sensor Height", &m_CameraSettings.SensorHeight_mm, 1, 100);
+                    {
+                        ImGui::ScopedDisabler Disabler{m_CameraSettings.Projection != 0, 0.5f};
+                        ImGui::SliderFloat("Focal Length (mm)", &m_CameraSettings.FocalLength_mm, 24.0, 300.0);
+                        ImGui::SliderFloat("Aperture (f-stop)", &m_CameraSettings.FStop, 1.0, 64.0, "%.3f", ImGuiSliderFlags_Logarithmic);
+                        ImGui::SliderFloat("Focus Distance", &m_CameraSettings.FocusDistance, ClippingRange[0], ClippingRange[1], "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                        ImGui::SliderFloat("Sensor Width", &m_CameraSettings.SensorWidth_mm, 1, 100);
+                    }
+
+                    {
+                        ImGui::ScopedDisabler Disabler{true, 0.5f};
+                        ImGui::SliderFloat("Sensor Height", &m_CameraSettings.SensorHeight_mm, 1, 100);
+                    }
+
+                    ImGui::SliderFloat("Exposure", &m_CameraSettings.Exposure, -8.0, +8.0, "%.3f");
 
                     ImGui::TreePop();
                 }
@@ -1253,20 +1263,40 @@ void USDViewer::UpdateCamera()
     const float4x4 USDCameraView = m_CameraView * float4x4::Scale(UnitsPerMeter, UnitsPerMeter, -UnitsPerMeter);
 
     const SwapChainDesc& SCDesc      = m_pSwapChain->GetDesc();
-    m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm / static_cast<float>(SCDesc.Width) * static_cast<float>(SCDesc.Height);
+    const float          AspectRatio = static_cast<float>(SCDesc.Height) / static_cast<float>(SCDesc.Width);
+    m_CameraSettings.SensorHeight_mm = m_CameraSettings.SensorWidth_mm * AspectRatio;
     const float        FOV           = 2.0f * atanf(m_CameraSettings.SensorHeight_mm / (2.0 * m_CameraSettings.FocalLength_mm));
-    const pxr::GfVec2f ClippingRange{CameraDist / 100.f, CameraDist * 3.f};
-    // Get projection matrix adjusted to the current screen orientation
-    m_CameraProj = GetAdjustedProjectionMatrix(FOV, ClippingRange[0], ClippingRange[1]);
+    const pxr::GfVec2f ClippingRangeMeters{CameraDist / 100.f, CameraDist * 3.f};
 
-    m_CameraSettings.FocusDistance = clamp(m_CameraSettings.FocusDistance, ClippingRange[0] + m_CameraSettings.FocalLength_mm * 0.001f, ClippingRange[1]);
+    const float MillimetersPerUnit = m_Stage.MetersPerUnit * 1000.f;
+
+    float HorzApertureUnits = 0;
+    float VertApertureUnits = 0;
+    if (m_CameraSettings.Projection == 0)
+    {
+        HorzApertureUnits = m_CameraSettings.SensorWidth_mm / MillimetersPerUnit;
+        VertApertureUnits = m_CameraSettings.SensorHeight_mm / MillimetersPerUnit;
+
+        m_CameraProj = GetAdjustedProjectionMatrix(FOV, ClippingRangeMeters[0], ClippingRangeMeters[1]);
+        m_Stage.Camera.GetProjectionAttr().Set(pxr::UsdGeomTokens->perspective);
+    }
+    else
+    {
+        HorzApertureUnits = 0.0625 * ClippingRangeMeters[1] / m_Stage.MetersPerUnit;
+        VertApertureUnits = HorzApertureUnits * AspectRatio;
+
+        m_CameraProj = float4x4::Ortho(HorzApertureUnits * m_Stage.MetersPerUnit, VertApertureUnits * m_Stage.MetersPerUnit, ClippingRangeMeters[0], ClippingRangeMeters[1], false);
+        m_Stage.Camera.GetProjectionAttr().Set(pxr::UsdGeomTokens->orthographic);
+    }
+
+    m_CameraSettings.FocusDistance = clamp(m_CameraSettings.FocusDistance, ClippingRangeMeters[0] + m_CameraSettings.FocalLength_mm * 0.001f, ClippingRangeMeters[1]);
 
     m_Stage.Camera.MakeMatrixXform().Set(USD::ToGfMatrix4d((m_Stage.RootTransform * USDCameraView).Inverse()));
     m_Stage.Camera.GetFStopAttr().Set(m_CameraSettings.FStop);
     m_Stage.Camera.GetExposureAttr().Set(m_CameraSettings.Exposure);
 
     // USD camera properties are measured in scene units
-    m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRange / m_Stage.MetersPerUnit);
+    m_Stage.Camera.GetClippingRangeAttr().Set(ClippingRangeMeters / m_Stage.MetersPerUnit);
     m_Stage.Camera.GetFocusDistanceAttr().Set(m_CameraSettings.FocusDistance / m_Stage.MetersPerUnit);
 
     // By an odd convention, lens and filmback properties are measured in tenths of a scene unit rather than "raw" scene units.
@@ -1277,13 +1307,12 @@ void USDViewer::UpdateCamera()
     //      float focalLength;
     //      UsdCamera.GetFocalLengthAttr().Get(&focalLength); // focalLength == 30
     // However
-    //      focalLength = SceneDelegate->GetCameraParamValue(id, HdCameraTokens->focalLength).Get<float>(); //  focalLength == 3
-
+    //      focalLength = SceneDelegate->GetCameraParamValue(id, HdCameraTokens->focalLength).Get<float>(); //  focalLength ==
     constexpr float UsdCamLensUnitScale = 10;
-    const float     MillimetersPerUnit  = m_Stage.MetersPerUnit * 1000.f;
+
     m_Stage.Camera.GetFocalLengthAttr().Set(m_CameraSettings.FocalLength_mm * UsdCamLensUnitScale / MillimetersPerUnit);
-    m_Stage.Camera.GetHorizontalApertureAttr().Set(m_CameraSettings.SensorWidth_mm * UsdCamLensUnitScale / MillimetersPerUnit);
-    m_Stage.Camera.GetVerticalApertureAttr().Set(m_CameraSettings.SensorHeight_mm * UsdCamLensUnitScale / MillimetersPerUnit);
+    m_Stage.Camera.GetHorizontalApertureAttr().Set(HorzApertureUnits * UsdCamLensUnitScale);
+    m_Stage.Camera.GetVerticalApertureAttr().Set(VertApertureUnits * UsdCamLensUnitScale);
 }
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)
