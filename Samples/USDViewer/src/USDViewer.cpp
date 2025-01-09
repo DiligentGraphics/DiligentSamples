@@ -1282,7 +1282,7 @@ void USDViewer::UpdateCamera()
     }
     else
     {
-        HorzApertureUnits = 0.0625 * ClippingRangeMeters[1] / m_Stage.MetersPerUnit;
+        HorzApertureUnits = 0.5 * ClippingRangeMeters[1] / m_Stage.MetersPerUnit;
         VertApertureUnits = HorzApertureUnits * AspectRatio;
 
         m_CameraProj = float4x4::Ortho(HorzApertureUnits * m_Stage.MetersPerUnit, VertApertureUnits * m_Stage.MetersPerUnit, ClippingRangeMeters[0], ClippingRangeMeters[1], false);
