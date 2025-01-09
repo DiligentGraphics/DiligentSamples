@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Diligent Graphics LLC
+ *  Copyright 2024-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -283,17 +283,10 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
     constexpr float ZNear = 0.1f;
     constexpr float ZFar  = 100.f;
 
-    auto ComputeProjJitterMatrix = [&](const float4x4& ProjMatrix, float2 Jitter) -> float4x4 {
-        float4x4 Result = ProjMatrix;
-        Result[2][0]    = Jitter.x;
-        Result[2][1]    = Jitter.y;
-        return Result;
-    };
-
     const float2 Jitter = m_ShaderSettings->TAAEnabled ? m_TemporalAntiAliasing->GetJitterOffset() : float2{0.0f, 0.0f};
 
     const float4x4 CameraView     = m_Camera.GetViewMatrix();
-    const float4x4 CameraProj     = ComputeProjJitterMatrix(GetAdjustedProjectionMatrix(YFov, ZNear, ZFar), Jitter);
+    const float4x4 CameraProj     = TemporalAntiAliasing::GetJitteredProjMatrix(GetAdjustedProjectionMatrix(YFov, ZNear, ZFar), Jitter);
     const float4x4 CameraViewProj = CameraView * CameraProj;
     const float4x4 CameraWorld    = CameraView.Inverse();
 
