@@ -479,10 +479,10 @@ void USDViewer::LoadStage()
     UpdateCamera();
 
     m_FrameParams                                     = {};
-    m_FrameParams.State.FrontFaceCCW                  = true;
     m_FrameParams.FinalColorTargetId                  = FinalColorTargetId;
     m_FrameParams.CameraId                            = m_Stage.CameraId;
     m_FrameParams.Renderer.LoadingAnimationWorldScale = 1.f / SceneExtent;
+    m_FrameParams.UseReverseDepth                     = (m_DeviceWithCache.GetDeviceInfo().NDC.MinZ == 0);
     m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
     m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
@@ -975,6 +975,9 @@ void USDViewer::UpdateUI()
 
                     if (ImGui::Checkbox("Shadows", &m_Stage.UseShadows))
                         m_Stage.RenderDelegate->SetUseShadows(m_Stage.UseShadows);
+
+                    if (ImGui::Checkbox("Use reverse depth", &m_FrameParams.UseReverseDepth))
+                        UpdateFrameParams = true;
 
                     ImGui::TreePop();
                 }
