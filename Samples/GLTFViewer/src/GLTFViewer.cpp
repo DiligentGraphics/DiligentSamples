@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -1323,9 +1323,11 @@ void GLTFViewer::Render()
         EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
         // It is essential to write zero alpha because we use alpha channel
         // to attenuate SSR for transparent surfaces.
-        EnvMapAttribs.Alpha                = 0.0;
-        EnvMapAttribs.ConvertOutputToSRGB  = (m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0;
-        EnvMapAttribs.ComputeMotionVectors = m_bEnablePostProcessing;
+        EnvMapAttribs.Alpha = 0.0;
+        if ((m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0)
+            EnvMapAttribs.Options |= EnvMapRenderer::OPTION_FLAG_CONVERT_OUTPUT_TO_SRGB;
+        if (m_bEnablePostProcessing)
+            EnvMapAttribs.Options |= EnvMapRenderer::OPTION_FLAG_COMPUTE_MOTION_VECTORS;
 
         m_EnvMapRenderer->Prepare(m_pImmediateContext, EnvMapAttribs, TMAttribs);
         m_EnvMapRenderer->Render(m_pImmediateContext);
@@ -1336,11 +1338,13 @@ void GLTFViewer::Render()
     if (m_BoundBoxMode != BoundBoxMode::None)
     {
         BoundBoxRenderer::RenderAttribs Attribs;
-        Attribs.ConvertOutputToSRGB  = (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
-        constexpr float4 BBColor     = float4{0.5, 0.0, 0.0, 1.0};
-        Attribs.Color                = &BBColor;
-        Attribs.BoundBoxTransform    = &m_BoundBoxTransform;
-        Attribs.ComputeMotionVectors = m_bEnablePostProcessing;
+        if (SCDesc.ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM || SCDesc.ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM)
+            Attribs.Options |= BoundBoxRenderer::OPTION_FLAG_CONVERT_OUTPUT_TO_SRGB;
+        if (m_bEnablePostProcessing)
+            Attribs.Options |= BoundBoxRenderer::OPTION_FLAG_COMPUTE_MOTION_VECTORS;
+        constexpr float4 BBColor  = float4{0.5, 0.0, 0.0, 1.0};
+        Attribs.Color             = &BBColor;
+        Attribs.BoundBoxTransform = &m_BoundBoxTransform;
         m_BoundBoxRenderer->Prepare(m_pImmediateContext, Attribs);
         m_BoundBoxRenderer->Render(m_pImmediateContext);
     }
@@ -1482,15 +1486,17 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
 
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
-    CurrCamAttribs.f4ViewportSize = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
-    CurrCamAttribs.fHandness      = CameraView.Determinant() > 0 ? 1.f : -1.f;
-    CurrCamAttribs.mView          = CameraView;
-    CurrCamAttribs.mProj          = CameraProj;
-    CurrCamAttribs.mViewProj      = CameraViewProj;
-    CurrCamAttribs.mViewInv       = CameraView.Inverse();
-    CurrCamAttribs.mProjInv       = CameraProj.Inverse();
-    CurrCamAttribs.mViewProjInv   = CameraViewProj.Inverse();
-    CurrCamAttribs.f4Position     = float4(CameraWorldPos, 1);
+    CurrCamAttribs.f4ViewportSize  = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
+    CurrCamAttribs.fHandness       = CameraView.Determinant() > 0 ? 1.f : -1.f;
+    CurrCamAttribs.mView           = CameraView;
+    CurrCamAttribs.mProj           = CameraProj;
+    CurrCamAttribs.mViewProj       = CameraViewProj;
+    CurrCamAttribs.mViewInv        = CameraView.Inverse();
+    CurrCamAttribs.mProjInv        = CameraProj.Inverse();
+    CurrCamAttribs.mViewProjInv    = CameraViewProj.Inverse();
+    CurrCamAttribs.f4Position      = float4(CameraWorldPos, 1);
+    CurrCamAttribs.fNearPlaneDepth = 0;
+    CurrCamAttribs.fFarPlaneDepth  = 1;
 
     if (m_bResetPrevCamera)
     {
