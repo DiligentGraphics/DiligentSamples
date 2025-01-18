@@ -348,6 +348,7 @@ void USDViewer::LoadStage()
     DelegateCI.AsyncTextureLoading    = m_AsyncTextureLoading;
     DelegateCI.PackVertexNormals      = true;
     DelegateCI.PackVertexPositions    = true;
+    DelegateCI.PackVertexColors       = true;
     DelegateCI.TextureLoadBudget      = Uint64{1024} << Uint64{20};
     DelegateCI.GeometryLoadBudget     = Uint64{64} << Uint64{20};
 
