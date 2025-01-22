@@ -249,7 +249,7 @@ public:
         AI.applicationVersion = 1;
         strcpy_s(AI.engineName, XR_MAX_ENGINE_NAME_SIZE, "Diligent Engine");
         AI.engineVersion = DILIGENT_API_VERSION;
-        AI.apiVersion    = XR_CURRENT_API_VERSION;
+        AI.apiVersion    = XR_MAKE_VERSION(1, 0, 0);
 
         // Get all the API Layers from the OpenXR runtime.
         uint32_t ApiLayerCount = 0;
