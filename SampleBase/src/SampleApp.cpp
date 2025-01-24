@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +39,7 @@
 #include "FileWrapper.hpp"
 #include "CommandLineParser.hpp"
 #include "GraphicsAccessories.hpp"
+#include "ImageTools.h"
 
 #if D3D11_SUPPORTED
 #    include "EngineFactoryD3D11.h"
@@ -957,29 +958,23 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
                                                   /*FlipY = */ m_pDevice->GetDeviceInfo().IsGLDevice());
     pCtx->UnmapTextureSubresource(Capture.pTexture, 0, 0);
 
-    const Uint8* pGoldenImgPixels = pGoldenImg->GetData()->GetConstDataPtr<Uint8>();
+    ComputeImageDifferenceAttribs DiffAttribs;
+    DiffAttribs.Width        = TexDesc.Width;
+    DiffAttribs.Height       = TexDesc.Height;
+    DiffAttribs.pImage1      = CapturedPixels.data();
+    DiffAttribs.NumChannels1 = 3;
+    DiffAttribs.Stride1      = TexDesc.Width * 3;
+    DiffAttribs.pImage2      = pGoldenImg->GetData()->GetConstDataPtr<Uint8>();
+    DiffAttribs.NumChannels2 = GoldenImgDesc.NumComponents;
+    DiffAttribs.Stride2      = GoldenImgDesc.RowStride;
+    DiffAttribs.Threshold    = static_cast<Uint32>(m_GoldenImgPixelTolerance);
 
-    size_t NumBadPixels  = 0;
-    size_t NumDiffPixels = 0;
-    int    MaxDiff       = 0;
-    for (size_t row = 0; row < TexDesc.Height; ++row)
-    {
-        for (size_t col = 0; col < TexDesc.Width; ++col)
-        {
-            const auto* SrcPixel = &CapturedPixels[(col + row * size_t{TexDesc.Width}) * 3u];
-            const auto* DstPixel = pGoldenImgPixels + row * size_t{GoldenImgDesc.RowStride} + col * size_t{GoldenImgDesc.NumComponents};
+    ImageDiffInfo ImgDiff;
+    ComputeImageDifference(DiffAttribs, ImgDiff);
 
-            const auto DiffR = std::abs(int{SrcPixel[0]} - int{DstPixel[0]});
-            const auto DiffG = std::abs(int{SrcPixel[1]} - int{DstPixel[1]});
-            const auto DiffB = std::abs(int{SrcPixel[2]} - int{DstPixel[2]});
-            const auto Diff  = std::max(std::max(DiffR, DiffG), DiffB);
-            if (Diff > m_GoldenImgPixelTolerance)
-                ++NumBadPixels;
-            else if (Diff != 0)
-                ++NumDiffPixels;
-            MaxDiff = std::max(MaxDiff, Diff);
-        }
-    }
+    const Uint32 NumBadPixels  = ImgDiff.NumDiffPixelsAboveThreshold;
+    const Uint32 NumDiffPixels = ImgDiff.NumDiffPixels - ImgDiff.NumDiffPixelsAboveThreshold;
+    const Uint32 MaxDiff       = ImgDiff.MaxDiff;
     if (NumBadPixels == 0)
     {
         if (NumDiffPixels == 0)
