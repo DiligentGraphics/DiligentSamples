@@ -149,11 +149,6 @@ elseif(PLATFORM_EMSCRIPTEN)
             ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.html
             @ONLY
         )
-
-        target_link_options(${TARGET_NAME} PRIVATE "SHELL: -s WASM_BIGINT -s WASM=1")
-        if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND DILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO)
-            target_link_options(${TARGET_NAME} PRIVATE "SHELL: -gseparate-dwarf -g0")
-        endif()
     endfunction()
     
 else()
