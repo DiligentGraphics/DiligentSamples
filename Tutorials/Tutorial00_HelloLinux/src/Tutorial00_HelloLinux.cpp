@@ -512,7 +512,8 @@ int x_main()
         GLX_DEPTH_SIZE,     24,
 
         //GLX_SAMPLE_BUFFERS, 1,
-        GLX_SAMPLES, 1,
+        //GLX_SAMPLES, 1, // 0 Means no MSAA. 1 Requests any MSAA.
+                          // If MSAA is not supported, glXChooseFBConfig will fail.
         None
      };
     // clang-format on
