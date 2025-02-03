@@ -98,6 +98,8 @@ declare -a TestApps=(
     "Tutorials/Tutorial17_MSAA"
     "Tutorials/Tutorial18_Queries --show_ui 0"
     "Tutorials/Tutorial19_RenderPasses"
+    "Tutorials/Tutorial20_MeshShader --show_ui 0"
+    "Tutorials/Tutorial21_RayTracing --show_ui 0"
     "Tutorials/Tutorial23_CommandQueues --show_ui 0"
     "Tutorials/Tutorial25_StatePackager --show_ui 0"
     "Tutorials/Tutorial26_StateCache --show_ui 0"
@@ -152,15 +154,19 @@ function process_golden_img
         done
 
         skip_test=0
-        if [[ "$backend_name" == "gl" && ("$app_name" == "Tutorial07_GeometryShader" || "$app_name" == "Tutorial08_Tessellation") ]]; then
-            for i in "${!args[@]}"; do
-                if [[ "${args[$i]}" == "--non_separable_progs" ]]; then
-                    let j=i+1
-                    if [[ "${args[$j]}" != "0" ]]; then
-                        skip_test=1
+        if [[ "$backend_name" == "gl" ]]; then
+            if [[ "$app_name" == "Tutorial07_GeometryShader" || "$app_name" == "Tutorial08_Tessellation" ]]; then
+                for i in "${!args[@]}"; do
+                    if [[ "${args[$i]}" == "--non_separable_progs" ]]; then
+                        let j=i+1
+                        if [[ "${args[$j]}" != "0" ]]; then
+                            skip_test=1
+                        fi
                     fi
-                fi
-            done
+                done
+            elif [[ "$app_name" == "Tutorial20_MeshShader" || "$app_name" == "Tutorial21_RayTracing" ]]; then
+                skip_test=1
+            fi
         fi
 
         if [[ "$skip_test" == "0" ]]; then
