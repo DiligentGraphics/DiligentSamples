@@ -90,6 +90,14 @@ jobs:
         mode:              "vk_sw"
         golden-image-mode: "compare_update"
 
+    - name: Sample Tests Vk Compatibility
+      if:   success()
+      uses: DiligentGraphics/github-action/run-sample-tests@v1
+      with:
+        mode:              "vk_sw"
+        golden-image-mode: "compare"
+        vk-compatibility: true
+
     - name: Sample Tests GL
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
       uses: DiligentGraphics/github-action/run-sample-tests@v1
@@ -102,7 +110,7 @@ jobs:
       uses: DiligentGraphics/github-action/run-sample-tests@v1
       with:
         mode:                "gl"
-        golden-image-mode:   "compare_update"
+        golden-image-mode:   "compare"
         non-separable-progs: "true"
 
 

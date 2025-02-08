@@ -410,6 +410,12 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineCI.AdapterId = FindAdapter(pFactoryVk, EngineCI.GraphicsAPIVersion, m_AdapterAttribs);
             m_TheSample->ModifyEngineInitInfo({pFactoryVk, m_DeviceType, EngineCI, m_SwapChainInitDesc});
 
+            if (m_bVulkanCompatibilityMode)
+            {
+                LOG_INFO_MESSAGE(TextColorCode::Magenta, "Using Vulkan compatibility mode");
+                EngineCI.FeaturesVk = DeviceFeaturesVk{DEVICE_FEATURE_STATE_DISABLED};
+            }
+
             NumImmediateContexts = std::max(1u, EngineCI.NumImmediateContexts);
             ppContexts.resize(NumImmediateContexts + EngineCI.NumDeferredContexts);
             pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, ppContexts.data());
@@ -832,6 +838,7 @@ SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char*
     ArgsParser.Parse("golden_image_tolerance", m_GoldenImgPixelTolerance);
     ArgsParser.Parse("vsync", m_bVSync);
     ArgsParser.Parse("non_separable_progs", m_bForceNonSeprblProgs);
+    ArgsParser.Parse("vk_compatibility", m_bVulkanCompatibilityMode);
     ArgsParser.Parse("break_on_error", m_bBreakOnError);
 
 

@@ -125,15 +125,16 @@ protected:
     Uint32       m_AdapterId   = DEFAULT_ADAPTER_ID;
     ADAPTER_TYPE m_AdapterType = ADAPTER_TYPE_UNKNOWN;
     std::string  m_AdapterDetailsString;
-    int          m_SelectedDisplayMode  = 0;
-    bool         m_bVSync               = false;
-    bool         m_bFullScreenMode      = false;
-    bool         m_bShowAdaptersDialog  = true;
-    bool         m_bShowUI              = true;
-    bool         m_bForceNonSeprblProgs = false;
-    bool         m_bBreakOnError        = true;
-    double       m_CurrentTime          = 0;
-    Uint32       m_MaxFrameLatency      = SwapChainDesc{}.BufferCount;
+    int          m_SelectedDisplayMode      = 0;
+    bool         m_bVSync                   = false;
+    bool         m_bFullScreenMode          = false;
+    bool         m_bShowAdaptersDialog      = true;
+    bool         m_bShowUI                  = true;
+    bool         m_bForceNonSeprblProgs     = false;
+    bool         m_bVulkanCompatibilityMode = false;
+    bool         m_bBreakOnError            = true;
+    double       m_CurrentTime              = 0;
+    Uint32       m_MaxFrameLatency          = SwapChainDesc{}.BufferCount;
 
     // We will need this when we have to recreate the swap chain (on Android)
     SwapChainDesc m_SwapChainInitDesc;

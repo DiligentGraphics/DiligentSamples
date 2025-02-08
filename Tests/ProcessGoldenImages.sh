@@ -104,7 +104,8 @@ declare -a TestApps=(
     "Tutorials/Tutorial25_StatePackager --show_ui 0"
     "Tutorials/Tutorial26_StateCache --show_ui 0"
      # On the second run the states should be loaded from the cache
-    "Tutorials/Tutorial26_StateCache --show_ui 0"
+     # Second run is done in compatibility mode
+     #"Tutorials/Tutorial26_StateCache --show_ui 0"
     "Tutorials/Tutorial29_OIT --show_ui 0"
     "Samples/Atmosphere --show_ui 0"
     "Samples/GLTFViewer --show_ui 0 --use_cache 1"
@@ -117,6 +118,22 @@ tests_failed=0
 tests_passed=0
 tests_skipped=0
 overall_status=""
+
+function get_argument_value {
+    local arg_name=$1
+    local default_value=$2
+    shift 2
+    local args=("$@")
+    
+    for i in "${!args[@]}"; do
+        if [[ "${args[$i]}" == "$arg_name" ]]; then
+            let j=i+1
+            echo "${args[$j]}"
+            return
+        fi
+    done
+    echo "$default_value"
+}
 
 function process_golden_img
 {
@@ -156,14 +173,10 @@ function process_golden_img
         skip_test=0
         if [[ "$backend_name" == "gl" ]]; then
             if [[ "$app_name" == "Tutorial07_GeometryShader" || "$app_name" == "Tutorial08_Tessellation" ]]; then
-                for i in "${!args[@]}"; do
-                    if [[ "${args[$i]}" == "--non_separable_progs" ]]; then
-                        let j=i+1
-                        if [[ "${args[$j]}" != "0" ]]; then
-                            skip_test=1
-                        fi
-                    fi
-                done
+                local non_separable_progs=$(get_argument_value "--non_separable_progs" "0" "${args[@]}")
+                if [[ "$non_separable_progs" != "0" ]]; then
+                    skip_test=1
+                fi
             elif [[ "$app_name" == "Tutorial20_MeshShader" || "$app_name" == "Tutorial21_RayTracing" ]]; then
                 skip_test=1
             fi
