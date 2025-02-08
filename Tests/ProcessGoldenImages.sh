@@ -94,7 +94,7 @@ declare -a TestApps=(
     "Tutorials/Tutorial12_RenderTarget"
     "Tutorials/Tutorial13_ShadowMap"
     "Tutorials/Tutorial14_ComputeShader"
-    # "Tutorials/Tutorial16_BindlessResources" does not work properly on llvmpipe 
+    "Tutorials/Tutorial16_BindlessResources"
     "Tutorials/Tutorial17_MSAA"
     "Tutorials/Tutorial18_Queries --show_ui 0"
     "Tutorials/Tutorial19_RenderPasses"
