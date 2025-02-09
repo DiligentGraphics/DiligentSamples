@@ -18,7 +18,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.10)
 
 # Import the ARCore library.
 add_library(arcore SHARED IMPORTED)
