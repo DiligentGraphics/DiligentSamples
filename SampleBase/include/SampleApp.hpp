@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,11 +95,13 @@ protected:
 
     virtual void SetFullscreenMode(const DisplayModeAttribs& DisplayMode)
     {
+        m_TheSample->ReleaseSwapChainBuffers();
         m_bFullScreenMode = true;
         m_pSwapChain->SetFullscreenMode(DisplayMode);
     }
     virtual void SetWindowedMode()
     {
+        m_TheSample->ReleaseSwapChainBuffers();
         m_bFullScreenMode = false;
         m_pSwapChain->SetWindowedMode();
     }
