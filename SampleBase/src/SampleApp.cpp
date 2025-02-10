@@ -101,7 +101,7 @@ SampleApp::~SampleApp()
 
 void SampleApp::UpdateAppSettings(bool IsInitialization)
 {
-    const auto DesiredSettings = m_TheSample->GetDesiredApplicationSettings(IsInitialization);
+    const DesiredApplicationSettings DesiredSettings = m_TheSample->GetDesiredApplicationSettings(IsInitialization);
 
     if (IsInitialization)
     {
@@ -155,7 +155,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         else
             LOG_ERROR_AND_THROW("Failed to find compatible hardware adapters");
 
-        auto AdapterId = m_AdapterId;
+        Uint32 AdapterId = m_AdapterId;
         if (AdapterId != DEFAULT_ADAPTER_ID)
         {
             if (AdapterId < Adapters.size())
@@ -188,8 +188,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             m_AdapterType = ADAPTER_TYPE_UNKNOWN;
             for (Uint32 i = 0; i < Adapters.size(); ++i)
             {
-                const auto& AdapterInfo = Adapters[i];
-                const auto  AdapterType = AdapterInfo.Type;
+                const GraphicsAdapterInfo& AdapterInfo = Adapters[i];
+                const ADAPTER_TYPE         AdapterType = AdapterInfo.Type;
                 static_assert((ADAPTER_TYPE_DISCRETE > ADAPTER_TYPE_INTEGRATED &&
                                ADAPTER_TYPE_INTEGRATED > ADAPTER_TYPE_SOFTWARE &&
                                ADAPTER_TYPE_SOFTWARE > ADAPTER_TYPE_UNKNOWN),
@@ -203,10 +203,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 else if (AdapterType == m_AdapterType)
                 {
                     // Select adapter with more memory
-                    const auto& NewAdapterMem   = AdapterInfo.Memory;
-                    const auto  NewTotalMemory  = NewAdapterMem.LocalMemory + NewAdapterMem.HostVisibleMemory + NewAdapterMem.UnifiedMemory;
-                    const auto& CurrAdapterMem  = Adapters[AdapterId].Memory;
-                    const auto  CurrTotalMemory = CurrAdapterMem.LocalMemory + CurrAdapterMem.HostVisibleMemory + CurrAdapterMem.UnifiedMemory;
+                    const AdapterMemoryInfo& NewAdapterMem   = AdapterInfo.Memory;
+                    const Uint64             NewTotalMemory  = NewAdapterMem.LocalMemory + NewAdapterMem.HostVisibleMemory + NewAdapterMem.UnifiedMemory;
+                    const AdapterMemoryInfo& CurrAdapterMem  = Adapters[AdapterId].Memory;
+                    const Uint64             CurrTotalMemory = CurrAdapterMem.LocalMemory + CurrAdapterMem.HostVisibleMemory + CurrAdapterMem.UnifiedMemory;
                     if (NewTotalMemory > CurrTotalMemory)
                     {
                         AdapterId = i;
@@ -233,10 +233,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D11() function
-            auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+            GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
-            auto* pFactoryD3D11 = GetEngineFactoryD3D11();
-            m_pEngineFactory    = pFactoryD3D11;
+            IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
+            m_pEngineFactory                   = pFactoryD3D11;
 
             EngineD3D11CreateInfo EngineCI;
             EngineCI.GraphicsAPIVersion = {11, 0};
@@ -279,9 +279,9 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D12() function
-            auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
+            GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
-            auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+            IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
             if (!pFactoryD3D12->LoadD3D12())
             {
                 LOG_ERROR_AND_THROW("Failed to load Direct3D12");
@@ -344,10 +344,10 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #    endif
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
             // Load the dll and import GetEngineFactoryOpenGL() function
-            auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
+            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #    endif
-            auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
-            m_pEngineFactory     = pFactoryOpenGL;
+            IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
+            m_pEngineFactory                     = pFactoryOpenGL;
 
             EngineGLCreateInfo EngineCI;
             EngineCI.Window = *pWindow;
@@ -386,7 +386,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
             // Load the dll and import GetEngineFactoryVk() function
-            auto GetEngineFactoryVk = LoadGraphicsEngineVk();
+            GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
             EngineVkCreateInfo EngineCI;
             if (m_ValidationLevel >= 0)
@@ -404,8 +404,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
             EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
 
-            auto* pFactoryVk = GetEngineFactoryVk();
-            m_pEngineFactory = pFactoryVk;
+            IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
+            m_pEngineFactory             = pFactoryVk;
 
             EngineCI.AdapterId = FindAdapter(pFactoryVk, EngineCI.GraphicsAPIVersion, m_AdapterAttribs);
             m_TheSample->ModifyEngineInitInfo({pFactoryVk, m_DeviceType, EngineCI, m_SwapChainInitDesc});
@@ -438,8 +438,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            auto* pFactoryMtl = GetEngineFactoryMtl();
-            m_pEngineFactory  = pFactoryMtl;
+            IEngineFactoryMtl* pFactoryMtl = GetEngineFactoryMtl();
+            m_pEngineFactory               = pFactoryMtl;
 
             m_TheSample->ModifyEngineInitInfo({pFactoryMtl, m_DeviceType, EngineCI, m_SwapChainInitDesc});
 
@@ -463,14 +463,14 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
         {
 #    if EXPLICITLY_LOAD_ENGINE_WEBGPU_DLL
             // Load the dll and import LoadGraphicsEngineWebGPU() function
-            auto GetEngineFactoryWebGPU = LoadGraphicsEngineWebGPU();
+            GetEngineFactoryWebGPUType GetEngineFactoryWebGPU = LoadGraphicsEngineWebGPU();
 #    endif
             EngineWebGPUCreateInfo EngineCI;
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            auto* pFactoryWebGPU = GetEngineFactoryWebGPU();
-            m_pEngineFactory     = pFactoryWebGPU;
+            IEngineFactoryWebGPU* pFactoryWebGPU = GetEngineFactoryWebGPU();
+            m_pEngineFactory                     = pFactoryWebGPU;
 
             NumImmediateContexts = std::max(1u, EngineCI.NumImmediateContexts);
             ppContexts.resize(NumImmediateContexts + EngineCI.NumDeferredContexts);
@@ -553,7 +553,7 @@ void SampleApp::InitializeSample()
     }
 #endif
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     m_MaxFrameLatency = SCDesc.BufferCount;
 
@@ -578,7 +578,7 @@ void SampleApp::InitializeSample()
 void SampleApp::UpdateAdaptersDialog()
 {
 #if PLATFORM_WIN32 || PLATFORM_LINUX
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     Uint32 AdaptersWndWidth = std::min(330u, SCDesc.Width);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(AdaptersWndWidth), 0), ImGuiCond_Always);
@@ -603,7 +603,7 @@ void SampleApp::UpdateAdaptersDialog()
                         " Centered",
                         " Stretched" //
                     };
-                const auto& Mode = m_DisplayModes[i];
+                const DisplayModeAttribs& Mode = m_DisplayModes[i];
 
                 std::stringstream ss;
 
@@ -630,7 +630,7 @@ void SampleApp::UpdateAdaptersDialog()
             {
                 if (ImGui::Button("Go Full Screen"))
                 {
-                    const auto& SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
+                    const DisplayModeAttribs& SelectedMode = m_DisplayModes[m_SelectedDisplayMode];
                     SetFullscreenMode(SelectedMode);
                 }
             }
@@ -659,7 +659,7 @@ void SampleApp::UpdateAdaptersDialog()
             if (SCDesc.BufferCount <= _countof(FrameLatencies) && m_MaxFrameLatency <= _countof(FrameLatencies))
             {
                 ImGui::SetNextItemWidth(120);
-                auto NumFrameLatencyItems = std::max(std::max(m_MaxFrameLatency, SCDesc.BufferCount), Uint32{4});
+                Uint32 NumFrameLatencyItems = std::max(std::max(m_MaxFrameLatency, SCDesc.BufferCount), Uint32{4});
                 if (ImGui::Combo("Max frame latency", &m_MaxFrameLatency, FrameLatencies, NumFrameLatencyItems))
                 {
                     m_TheSample->ReleaseSwapChainBuffers();
@@ -815,7 +815,7 @@ SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char*
                          }
                          else
                          {
-                             auto AdapterId = atoi(ArgVal);
+                             int AdapterId = atoi(ArgVal);
                              VERIFY_EXPR(AdapterId >= 0);
                              m_AdapterId = static_cast<Uint32>(AdapterId >= 0 ? AdapterId : 0);
                          }
@@ -871,8 +871,8 @@ void SampleApp::WindowResize(int width, int height)
     {
         m_TheSample->ReleaseSwapChainBuffers();
         m_pSwapChain->Resize(width, height);
-        auto SCWidth  = m_pSwapChain->GetDesc().Width;
-        auto SCHeight = m_pSwapChain->GetDesc().Height;
+        Uint32 SCWidth  = m_pSwapChain->GetDesc().Width;
+        Uint32 SCHeight = m_pSwapChain->GetDesc().Height;
         m_TheSample->WindowResize(SCWidth, SCHeight);
     }
 }
@@ -885,7 +885,7 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 
     if (m_pImGui)
     {
-        const auto& SCDesc = m_pSwapChain->GetDesc();
+        const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
         m_pImGui->NewFrame(SCDesc.Width, SCDesc.Height, SCDesc.PreTransform);
         if (m_bShowAdaptersDialog)
         {
@@ -904,11 +904,11 @@ void SampleApp::Render()
     if (m_NumImmediateContexts == 0 || !m_pSwapChain)
         return;
 
-    auto* pCtx = GetImmediateContext();
+    IDeviceContext* pCtx = GetImmediateContext();
     pCtx->ClearStats();
 
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     pCtx->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     m_TheSample->Render();
@@ -940,8 +940,8 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
         return;
     }
 
-    const auto& TexDesc       = Capture.pTexture->GetDesc();
-    const auto& GoldenImgDesc = pGoldenImg->GetDesc();
+    const TextureDesc& TexDesc       = Capture.pTexture->GetDesc();
+    const ImageDesc&   GoldenImgDesc = pGoldenImg->GetDesc();
     if (GoldenImgDesc.Width != TexDesc.Width)
     {
         LOG_ERROR_MESSAGE("Golden image width (", GoldenImgDesc.Width, ") does not match the captured image width (", TexDesc.Width, ")");
@@ -955,15 +955,16 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
         return;
     }
 
-    auto* const pCtx = GetImmediateContext();
+    IDeviceContext* const pCtx = GetImmediateContext();
 
     MappedTextureSubresource TexData;
     pCtx->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
-    auto CapturedPixels = Image::ConvertImageData(TexDesc.Width, TexDesc.Height,
-                                                  reinterpret_cast<const Uint8*>(TexData.pData), static_cast<Uint32>(TexData.Stride),
-                                                  TexDesc.Format, TEX_FORMAT_RGBA8_UNORM,
-                                                  /*KeepAlpha = */ false,
-                                                  /*FlipY = */ m_pDevice->GetDeviceInfo().IsGLDevice());
+    std::vector<Uint8> CapturedPixels = Image::ConvertImageData(
+        TexDesc.Width, TexDesc.Height,
+        reinterpret_cast<const Uint8*>(TexData.pData), static_cast<Uint32>(TexData.Stride),
+        TexDesc.Format, TEX_FORMAT_RGBA8_UNORM,
+        /*KeepAlpha = */ false,
+        /*FlipY = */ m_pDevice->GetDeviceInfo().IsGLDevice());
     pCtx->UnmapTextureSubresource(Capture.pTexture, 0, 0);
 
     ComputeImageDifferenceAttribs DiffAttribs;
@@ -1013,11 +1014,11 @@ void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::C
 
 void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::CaptureInfo& Capture)
 {
-    auto* const pCtx = GetImmediateContext();
+    IDeviceContext* const pCtx = GetImmediateContext();
 
     MappedTextureSubresource TexData;
     pCtx->MapTextureSubresource(Capture.pTexture, 0, 0, MAP_READ, MAP_FLAG_DO_NOT_WAIT, nullptr, TexData);
-    const auto& TexDesc = Capture.pTexture->GetDesc();
+    const TextureDesc& TexDesc = Capture.pTexture->GetDesc();
 
     Image::EncodeInfo Info;
     Info.Width       = TexDesc.Width;
@@ -1037,7 +1038,7 @@ void SampleApp::SaveScreenCapture(const std::string& FileName, ScreenCapture::Ca
     FileWrapper pFile(FileName.c_str(), EFileAccessMode::Overwrite);
     if (pFile)
     {
-        auto res = pFile->Write(pEncodedImage->GetDataPtr(), pEncodedImage->GetSize());
+        bool res = pFile->Write(pEncodedImage->GetDataPtr(), pEncodedImage->GetSize());
         if (!res)
         {
             LOG_ERROR_MESSAGE("Failed to write screen capture file '", FileName, "'.");
@@ -1059,7 +1060,7 @@ void SampleApp::Present()
     if (!m_pSwapChain)
         return;
 
-    auto* const pCtx = GetImmediateContext();
+    IDeviceContext* const pCtx = GetImmediateContext();
 
     if (m_pScreenCapture && m_ScreenCaptureInfo.FramesToCapture > 0)
     {
@@ -1091,7 +1092,7 @@ void SampleApp::Present()
 
     if (m_pScreenCapture)
     {
-        while (auto Capture = m_pScreenCapture->GetCapture())
+        while (ScreenCapture::CaptureInfo Capture = m_pScreenCapture->GetCapture())
         {
             std::string FileName;
             {
