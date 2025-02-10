@@ -114,7 +114,7 @@ elseif(PLATFORM_TVOS)
         include/SampleApp.hpp
     )
 
-elseif(PLATFORM_EMSCRIPTEN)
+elseif(PLATFORM_WEB)
     set(SOURCE
         src/Emscripten/InputControllerEmscripten.cpp
         src/Emscripten/SampleAppEmscripten.cpp

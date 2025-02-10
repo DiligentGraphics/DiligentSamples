@@ -62,7 +62,7 @@ void Tutorial19_RenderPasses::ModifyEngineInitInfo(const ModifyEngineInitInfoAtt
     // We do not need the depth buffer from the swap chain in this sample
     Attribs.SCDesc.DepthBufferFormat = TEX_FORMAT_UNKNOWN;
 
-#if PLATFORM_EMSCRIPTEN
+#if PLATFORM_WEB
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_GLES)
     {
         EngineGLCreateInfo& EngineGlCI = static_cast<EngineGLCreateInfo&>(Attribs.EngineCI);

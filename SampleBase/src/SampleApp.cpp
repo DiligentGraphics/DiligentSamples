@@ -69,7 +69,7 @@
 #include "ImGuiImplDiligent.hpp"
 #include "ImGuiUtils.hpp"
 
-#if PLATFORM_EMSCRIPTEN
+#if PLATFORM_WEB
 #    include <emscripten/html5_webgpu.h>
 #endif
 
@@ -352,7 +352,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineGLCreateInfo EngineCI;
             EngineCI.Window = *pWindow;
 
-#    if PLATFORM_EMSCRIPTEN
+#    if PLATFORM_WEB
             EngineCI.WebGLAttribs.Alpha           = false;
             EngineCI.WebGLAttribs.PowerPreference = WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
 #    endif
@@ -482,7 +482,7 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
                 EngineCI.NumDeferredContexts = 0;
             }
 
-#    if PLATFORM_EMSCRIPTEN
+#    if PLATFORM_WEB
             (void)FindAdapter;
             WGPUDevice   wgpuDevice   = emscripten_webgpu_get_device();
             WGPUInstance wgpuInstance = wgpuCreateInstance(nullptr);

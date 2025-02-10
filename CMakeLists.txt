@@ -1,7 +1,7 @@
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     cmake_minimum_required (VERSION 3.13)
     option(DILIGENT_INSTALL_SAMPLES "Enable installation of samples and tutorials" ON)
-elseif(PLATFORM_EMSCRIPTEN)
+elseif(PLATFORM_WEB)
     cmake_minimum_required (VERSION 3.13)
 else()
     cmake_minimum_required (VERSION 3.10)
@@ -81,7 +81,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
         )
     endif()
 
-    if(PLATFORM_EMSCRIPTEN)
+    if(PLATFORM_WEB)
         set(RESOURCE_PATH "${PROJECT_SOURCE_DIR}/assets/")
         target_link_options(${APP_NAME} PRIVATE "SHELL: -s ALLOW_MEMORY_GROWTH=1 --preload-file ${RESOURCE_PATH}@")
 
@@ -149,7 +149,7 @@ endif()
 # Create a custom target to run source code formatting validation command
 add_format_validation_target(DiligentSamples "${CMAKE_CURRENT_SOURCE_DIR}" DiligentSamples)
 
-if (PLATFORM_EMSCRIPTEN)
+if (PLATFORM_WEB)
     set(HTTPS_SERVER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/SampleBase/src/Emscripten/resources/https_server.py)
     set(HTTPS_SERVER_OUTPUT_DIR ${CMAKE_BINARY_DIR})
     file(COPY ${HTTPS_SERVER_SCRIPT} DESTINATION ${HTTPS_SERVER_OUTPUT_DIR}) 
