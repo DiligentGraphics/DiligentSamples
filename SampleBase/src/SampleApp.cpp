@@ -662,6 +662,7 @@ void SampleApp::UpdateAdaptersDialog()
                 auto NumFrameLatencyItems = std::max(std::max(m_MaxFrameLatency, SCDesc.BufferCount), Uint32{4});
                 if (ImGui::Combo("Max frame latency", &m_MaxFrameLatency, FrameLatencies, NumFrameLatencyItems))
                 {
+                    m_TheSample->ReleaseSwapChainBuffers();
                     m_pSwapChain->SetMaximumFrameLatency(m_MaxFrameLatency);
                 }
             }
@@ -868,7 +869,7 @@ void SampleApp::WindowResize(int width, int height)
 {
     if (m_pSwapChain)
     {
-        m_TheSample->PreWindowResize();
+        m_TheSample->ReleaseSwapChainBuffers();
         m_pSwapChain->Resize(width, height);
         auto SCWidth  = m_pSwapChain->GetDesc().Width;
         auto SCHeight = m_pSwapChain->GetDesc().Height;

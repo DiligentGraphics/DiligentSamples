@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2023 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -171,7 +171,15 @@ public:
 
     virtual void Render()                                    = 0;
     virtual void Update(double CurrTime, double ElapsedTime) = 0;
-    virtual void PreWindowResize() {}
+
+    /// Called by the framework to let the application release any references to the swap chain buffers.
+    ///
+    /// \remarks    In Direct3D11 and Direct3D12, the swap chain must be released before a new swap chain can be created, see
+    ///             https://learn.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-flush#deferred-destruction-issues-with-flip-presentation-swap-chains.
+    ///             If the application keeps references to the back buffer, it must implement this function to release
+    ///             these references.
+    virtual void ReleaseSwapChainBuffers() {}
+
     virtual void WindowResize(Uint32 Width, Uint32 Height) {}
     virtual bool HandleNativeMessage(const void* pNativeMsgData) { return false; }
 

@@ -543,17 +543,17 @@ void Tutorial19_RenderPasses::ReleaseWindowResources()
     m_pAmbientLightSRB.Release();
 }
 
-void Tutorial19_RenderPasses::PreWindowResize()
+void Tutorial19_RenderPasses::ReleaseSwapChainBuffers()
 {
     // In Direct3D11, all references to the swap chain must be released
     // before the swap chain can be resized. WindowResize() is called
     // after the swap chain has been resized.
-    ReleaseWindowResources();
+    m_FramebufferCache.clear();
 }
 
 void Tutorial19_RenderPasses::WindowResize(Uint32 Width, Uint32 Height)
 {
-    // On Android, PreWindowResize() is never called because
+    // On Android, ReleaseSwapChainBuffers() is never called because
     // there is no robust way to detect window size change.
     ReleaseWindowResources();
 }

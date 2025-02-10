@@ -55,7 +55,7 @@ public:
     {
         if (m_SampleInitialized)
         {
-            m_TheSample->PreWindowResize();
+            m_TheSample->ReleaseSwapChainBuffers();
         }
 
         InitWindowSizeDependentResources();
