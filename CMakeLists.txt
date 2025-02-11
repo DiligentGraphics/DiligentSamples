@@ -83,7 +83,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
     if(PLATFORM_WEB)
         set(RESOURCE_PATH "${PROJECT_SOURCE_DIR}/assets/")
-        target_link_options(${APP_NAME} PRIVATE "SHELL: -s ALLOW_MEMORY_GROWTH=1 --preload-file ${RESOURCE_PATH}@")
+        target_link_options(${APP_NAME} PRIVATE "SHELL: -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB --preload-file ${RESOURCE_PATH}@")
 
         if (${APP_NAME} STREQUAL "GLTFViewer")
             set(EXCLUDE_DIRECTORIES
