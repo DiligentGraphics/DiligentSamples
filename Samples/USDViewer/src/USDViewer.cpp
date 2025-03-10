@@ -351,6 +351,7 @@ void USDViewer::LoadStage()
     DelegateCI.PackVertexColors       = true;
     DelegateCI.TextureLoadBudget      = Uint64{1024} << Uint64{20};
     DelegateCI.GeometryLoadBudget     = Uint64{64} << Uint64{20};
+    DelegateCI.OITLayerCount          = 4;
 
     if (m_DeviceWithCache.GetDeviceInfo().Features.BindlessResources)
     {
