@@ -133,9 +133,8 @@ private:
 
     pxr::HdEngine m_Engine;
 
-    USD::HnRenderRprimsTaskParams m_RenderParams;
-    USD::HnPostProcessTaskParams  m_PostProcessParams;
-    USD::HnBeginFrameTaskParams   m_FrameParams;
+    USD::HnPostProcessTaskParams m_PostProcessParams;
+    USD::HnBeginFrameTaskParams  m_FrameParams;
 
     Uint32 m_SSRSettingsDisplayMode = 0;
 

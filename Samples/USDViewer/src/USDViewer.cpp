@@ -487,8 +487,6 @@ void USDViewer::LoadStage()
     m_FrameParams.UseReverseDepth                     = (m_DeviceWithCache.GetDeviceInfo().NDC.MinZ == 0);
     m_Stage.TaskManager->SetFrameParams(m_FrameParams);
 
-    m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
-
     m_PostProcessParams                              = {};
     m_PostProcessParams.ToneMapping.iToneMappingMode = TONE_MAPPING_MODE_UNCHARTED2;
     m_PostProcessParams.ConvertOutputToSRGB          = m_ConvertPSOutputToGamma;
@@ -731,7 +729,6 @@ void USDViewer::EditSelectedPrimTransform()
 
 void USDViewer::UpdateUI()
 {
-    bool UpdateRenderParams      = false;
     bool UpdateFrameParams       = false;
     bool UpdatePostProcessParams = false;
 
@@ -1247,8 +1244,6 @@ void USDViewer::UpdateUI()
         EditSelectedPrimTransform();
     }
 
-    if (UpdateRenderParams)
-        m_Stage.TaskManager->SetRenderRprimParams(m_RenderParams);
     if (UpdatePostProcessParams)
         m_Stage.TaskManager->SetPostProcessParams(m_PostProcessParams);
     if (UpdateFrameParams)
