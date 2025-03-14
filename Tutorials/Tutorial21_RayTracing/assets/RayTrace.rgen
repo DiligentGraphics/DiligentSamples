@@ -2,7 +2,13 @@
 #include "structures.fxh"
 #include "RayUtils.fxh"
 
-RWTexture2D<float4> g_ColorBuffer;
+#ifdef VULKAN
+#   define VK_IMAGE_FORMAT_RGBA8 [[vk::image_format("rgba8")]]
+#else
+#   define VK_IMAGE_FORMAT_RGBA8
+#endif
+
+VK_IMAGE_FORMAT_RGBA8 RWTexture2D<float4> g_ColorBuffer;
 
 [shader("raygeneration")]
 void main()
