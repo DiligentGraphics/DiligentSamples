@@ -49,9 +49,10 @@ float4 main(in FullScreenTriangleVSOutput VSOut) : SV_Target
     
     float3 SSR = GetSpecularIBL_GGX(SrfInfo, IBLInfo, SSRRadiance.rgb);
 
+    float Opacity = 1.0 - OutColor.a;
     if (DebugMode == 0.0)
     {
-        OutColor.rgb += (SSR.rgb - SpecularIBL.rgb) * SSRRadiance.w * OutColor.a * SSRScale;
+        OutColor.rgb += (SSR.rgb - SpecularIBL.rgb) * SSRRadiance.w * Opacity * SSRScale;
     }
     else if (DebugMode == 1.0)
     {

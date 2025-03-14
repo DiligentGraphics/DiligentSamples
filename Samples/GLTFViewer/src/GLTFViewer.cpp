@@ -1321,9 +1321,7 @@ void GLTFViewer::Render()
         EnvMapAttribs.pEnvMap       = pEnvMapSRV;
         EnvMapAttribs.AverageLogLum = m_ShaderAttribs.AverageLogLum;
         EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
-        // It is essential to write zero alpha because we use alpha channel
-        // to attenuate SSR for transparent surfaces.
-        EnvMapAttribs.Alpha = 0.0;
+        EnvMapAttribs.Alpha         = 1.0;
         if ((m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0)
             EnvMapAttribs.Options |= EnvMapRenderer::OPTION_FLAG_CONVERT_OUTPUT_TO_SRGB;
         if (m_bEnablePostProcessing)
