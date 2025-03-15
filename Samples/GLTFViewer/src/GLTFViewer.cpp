@@ -993,8 +993,9 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::IridescenceThickness, "Iridescence Thickness"},
                 {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
                 {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
+                {GLTF_PBR_Renderer::DebugViewType::SceneDepth, "Scene Depth"},
             };
-            static_assert(_countof(DebugViews) == 34, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(_countof(DebugViews) == 35, "Did you add a new debug view mode? You may want to handle it here");
 
             ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }
@@ -1485,6 +1486,8 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     const auto& SCDesc = m_pSwapChain->GetDesc();
 
     CurrCamAttribs.f4ViewportSize  = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
+    CurrCamAttribs.fNearPlaneZ     = ZNear;
+    CurrCamAttribs.fFarPlaneZ      = ZFar;
     CurrCamAttribs.fHandness       = CameraView.Determinant() > 0 ? 1.f : -1.f;
     CurrCamAttribs.mView           = CameraView;
     CurrCamAttribs.mProj           = CameraProj;

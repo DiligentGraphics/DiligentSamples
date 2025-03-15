@@ -915,7 +915,8 @@ void USDViewer::UpdateUI()
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceThickness)] = "Iridescence Thickness";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transmission)]         = "Transmission";
                         DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
-                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 34, "Did you add a new debug view mode? You may want to handle it here");
+                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SceneDepth)]           = "Scene Depth";
+                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 35, "Did you add a new debug view mode? You may want to handle it here");
 
                         if (ImGui::Combo("Debug view", &m_Stage.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size()), 15))
                         {
