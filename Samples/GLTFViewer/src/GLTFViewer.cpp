@@ -182,7 +182,7 @@ void GLTFViewer::LoadModel(const char* Path)
     m_CameraId = 0;
     m_CameraNodes.clear();
     m_LightNodes.clear();
-    for (const auto* node : m_Model->Scenes[m_RenderParams.SceneIndex].LinearNodes)
+    for (const GLTF::Node* node : m_Model->Scenes[m_RenderParams.SceneIndex].LinearNodes)
     {
         if (node->pCamera != nullptr && node->pCamera->Type == GLTF::Camera::Projection::Perspective)
             m_CameraNodes.push_back(node);
@@ -235,7 +235,7 @@ void GLTFViewer::UpdateScene()
     MaxDim = std::max(MaxDim, ModelDim.z);
 
     m_SceneScale       = (1.0f / std::max(MaxDim, 0.01f)) * 0.5f;
-    auto     Translate = -m_ModelAABB.Min - 0.5f * ModelDim;
+    float3   Translate = -m_ModelAABB.Min - 0.5f * ModelDim;
     float4x4 InvYAxis  = float4x4::Identity();
     InvYAxis._22       = -1;
 
@@ -257,7 +257,7 @@ void GLTFViewer::UpdateModelsList(const std::string& Dir)
 #if PLATFORM_WIN32 || PLATFORM_LINUX || PLATFORM_MACOS
     if (!Dir.empty())
     {
-        auto SearchRes = FileSystem::SearchRecursive(Dir.c_str(), "*.gltf");
+        FileSystem::SearchFilesResult SearchRes = FileSystem::SearchRecursive(Dir.c_str(), "*.gltf");
         for (const auto& File : SearchRes)
         {
             m_Models.push_back(ModelInfo{File.Name, Dir + FileSystem::SlashSymbol + File.Name});
@@ -289,13 +289,13 @@ GLTFViewer::CommandLineStatus GLTFViewer::ProcessCommandLine(int argc, const cha
 
 void GLTFViewer::CreateGLTFResourceCache()
 {
-    auto InputLayout = GLTF::VertexAttributesToInputLayout(GLTF::DefaultVertexAttributes.data(), static_cast<Uint32>(GLTF::DefaultVertexAttributes.size()));
-    auto Strides     = InputLayout.ResolveAutoOffsetsAndStrides();
+    InputLayoutDescX    InputLayout = GLTF::VertexAttributesToInputLayout(GLTF::DefaultVertexAttributes.data(), static_cast<Uint32>(GLTF::DefaultVertexAttributes.size()));
+    std::vector<Uint32> Strides     = InputLayout.ResolveAutoOffsetsAndStrides();
 
     std::vector<VertexPoolElementDesc> VtxPoolElems;
     VtxPoolElems.reserve(Strides.size());
     m_CacheUseInfo.VtxLayoutKey.Elements.reserve(Strides.size());
-    for (const auto& Stride : Strides)
+    for (const Uint32& Stride : Strides)
     {
         VtxPoolElems.emplace_back(Stride, BIND_VERTEX_BUFFER);
         m_CacheUseInfo.VtxLayoutKey.Elements.emplace_back(Stride, BIND_VERTEX_BUFFER);
@@ -363,7 +363,7 @@ static RefCntAutoPtr<ITextureView> CreateWhiteFurnaceEnvMap(IRenderDevice* pDevi
 
     std::vector<Uint32>            Data(6 * TexDesc.Width * TexDesc.Height, 0xFFFFFFFFu);
     std::vector<TextureSubResData> SubResData(6);
-    for (auto& Subres : SubResData)
+    for (TextureSubResData& Subres : SubResData)
     {
         Subres.pData  = Data.data();
         Subres.Stride = TexDesc.Width * sizeof(Uint32);
@@ -570,8 +570,8 @@ void GLTFViewer::CreateGLTFRenderer()
     // Reset environment map in GLTF renderer
     if (m_pCurrentEnvMapSRV != nullptr)
     {
-        auto* pEnvMap       = m_pCurrentEnvMapSRV;
-        m_pCurrentEnvMapSRV = nullptr;
+        ITextureView* pEnvMap = m_pCurrentEnvMapSRV;
+        m_pCurrentEnvMapSRV   = nullptr;
         SetEnvironmentMap(pEnvMap);
     }
 }
@@ -749,8 +749,8 @@ void GLTFViewer::ApplyPosteffects::Initialize(IRenderDevice* pDevice, TEXTURE_FO
     ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
     ShaderCI.CompileFlags   = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
 
-    auto pCompoundSourceFactory         = CreateCompoundShaderSourceFactory(pDevice);
-    ShaderCI.pShaderSourceStreamFactory = pCompoundSourceFactory;
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pCompoundSourceFactory = CreateCompoundShaderSourceFactory(pDevice);
+    ShaderCI.pShaderSourceStreamFactory                                   = pCompoundSourceFactory;
 
     ShaderMacroHelper Macros;
     Macros.Add("CONVERT_OUTPUT_TO_SRGB", RTVFormat == TEX_FORMAT_RGBA8_UNORM || RTVFormat == TEX_FORMAT_BGRA8_UNORM);
@@ -834,7 +834,7 @@ void GLTFViewer::UpdateUI()
             FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
             OpenDialogAttribs.Title  = "Select GLTF file";
             OpenDialogAttribs.Filter = "glTF files\0*.gltf;*.glb\0";
-            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+            std::string FileName     = FileSystem::FileDialog(OpenDialogAttribs);
             if (!FileName.empty())
             {
                 LoadModel(FileName.c_str());
@@ -846,7 +846,7 @@ void GLTFViewer::UpdateUI()
             FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
             OpenDialogAttribs.Title  = "Select HDR file";
             OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
-            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+            std::string FileName     = FileSystem::FileDialog(OpenDialogAttribs);
             if (!FileName.empty())
                 LoadEnvironmentMap(FileName.data());
         }
@@ -870,7 +870,7 @@ void GLTFViewer::UpdateUI()
             CamList.emplace_back(0, "default");
             for (Uint32 i = 0; i < m_CameraNodes.size(); ++i)
             {
-                const auto& Cam = *m_CameraNodes[i]->pCamera;
+                const GLTF::Camera& Cam = *m_CameraNodes[i]->pCamera;
                 CamList.emplace_back(i + 1, Cam.Name.empty() ? std::to_string(i) : Cam.Name);
             }
 
@@ -880,7 +880,7 @@ void GLTFViewer::UpdateUI()
 
         if (m_CameraId == 0)
         {
-            auto ModelRotation = m_Camera.GetSecondaryRotation();
+            QuaternionF ModelRotation = m_Camera.GetSecondaryRotation();
             if (ImGui::gizmo3D("Model Rotation", ModelRotation, ImGui::GetTextLineHeight() * 10))
                 m_Camera.SetSecondaryRotation(ModelRotation);
             ImGui::SameLine();
@@ -894,7 +894,7 @@ void GLTFViewer::UpdateUI()
                 m_Camera.ResetDefaults();
             }
 
-            auto CameraDist = m_Camera.GetDist();
+            float CameraDist = m_Camera.GetDist();
             if (ImGui::SliderFloat("Camera distance", &CameraDist, m_Camera.GetMinDist(), m_Camera.GetMaxDist()))
                 m_Camera.SetDist(CameraDist);
         }
@@ -1166,10 +1166,10 @@ void GLTFViewer::Render()
     }
 
 
-    const auto& CurrCamAttribs = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
-    const auto& PrevCamAttribs = m_CameraAttribs[(m_CurrentFrameNumber + 1) & 0x01];
-    const auto& CurrTransforms = m_Transforms[m_CurrentFrameNumber & 0x01];
-    const auto& PrevTransforms = m_Transforms[(m_CurrentFrameNumber + 1) & 0x01];
+    const HLSL::CameraAttribs&   CurrCamAttribs = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
+    const HLSL::CameraAttribs&   PrevCamAttribs = m_CameraAttribs[(m_CurrentFrameNumber + 1) & 0x01];
+    const GLTF::ModelTransforms& CurrTransforms = m_Transforms[m_CurrentFrameNumber & 0x01];
+    const GLTF::ModelTransforms& PrevTransforms = m_Transforms[(m_CurrentFrameNumber + 1) & 0x01];
 
     {
         MapHelper<HLSL::PBRFrameAttribs> FrameAttribs{m_pImmediateContext, m_FrameAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD};
@@ -1202,8 +1202,8 @@ void GLTFViewer::Render()
                 }
                 else if (m_BoundBoxMode == BoundBoxMode::Global)
                 {
-                    auto TransformedBB  = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
-                    m_BoundBoxTransform = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
+                    BoundBox TransformedBB = m_ModelAABB.Transform(m_RenderParams.ModelTransform);
+                    m_BoundBoxTransform    = float4x4::Scale(TransformedBB.Max - TransformedBB.Min) * float4x4::Translation(TransformedBB.Min);
                 }
                 else
                 {
@@ -1218,14 +1218,14 @@ void GLTFViewer::Render()
 #    error PBR_MAX_LIGHTS should not be defined here
 #endif
             // Light data follows the render attributes
-            auto* Lights = reinterpret_cast<HLSL::PBRLightAttribs*>(FrameAttribs + 1);
+            HLSL::PBRLightAttribs* Lights = reinterpret_cast<HLSL::PBRLightAttribs*>(FrameAttribs + 1);
             if (!m_LightNodes.empty())
             {
                 LightCount = std::min(static_cast<Uint32>(m_LightNodes.size()), m_GLTFRenderer->GetSettings().MaxLightCount);
                 for (int i = 0; i < LightCount; ++i)
                 {
-                    const auto& LightNode            = *m_LightNodes[i];
-                    const auto  LightGlobalTransform = m_Transforms[m_CurrentFrameNumber & 0x01].NodeGlobalMatrices[LightNode.Index] * m_RenderParams.ModelTransform;
+                    const GLTF::Node& LightNode            = *m_LightNodes[i];
+                    const float4x4    LightGlobalTransform = m_Transforms[m_CurrentFrameNumber & 0x01].NodeGlobalMatrices[LightNode.Index] * m_RenderParams.ModelTransform;
 
                     // The light direction is along the negative Z axis of the light's local space.
                     // https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_lights_punctual#adding-light-instances-to-nodes
@@ -1242,7 +1242,7 @@ void GLTFViewer::Render()
             }
         }
         {
-            auto& Renderer = FrameAttribs->Renderer;
+            HLSL::PBRRendererShaderParameters& Renderer = FrameAttribs->Renderer;
             m_GLTFRenderer->SetInternalShaderParameters(Renderer);
 
             Renderer.OcclusionStrength = m_ShaderAttribs.OcclusionStrength;
@@ -1269,7 +1269,7 @@ void GLTFViewer::Render()
     }
 
     auto RenderModel = [&](GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAGS AlphaModes) {
-        const auto OrigAlphaModes = m_RenderParams.AlphaModes;
+        const GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAGS OrigAlphaModes = m_RenderParams.AlphaModes;
 
         m_RenderParams.AlphaModes &= AlphaModes;
         if (m_RenderParams.AlphaModes != GLTF_PBR_Renderer::RenderInfo::ALPHA_MODE_FLAG_NONE)
@@ -1449,9 +1449,9 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     }
     else
     {
-        const auto* pCameraNode           = m_CameraNodes[m_CameraId - 1];
-        const auto* pCamera               = pCameraNode->pCamera;
-        const auto& CameraGlobalTransform = m_Transforms[m_CurrentFrameNumber & 0x01].NodeGlobalMatrices[pCameraNode->Index];
+        const GLTF::Node*   pCameraNode           = m_CameraNodes[m_CameraId - 1];
+        const GLTF::Camera* pCamera               = pCameraNode->pCamera;
+        const float4x4&     CameraGlobalTransform = m_Transforms[m_CurrentFrameNumber & 0x01].NodeGlobalMatrices[pCameraNode->Index];
 
         // GLTF camera is defined such that the local +X axis is to the right,
         // the lens looks towards the local -Z axis, and the top of the camera
@@ -1475,14 +1475,14 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     float4x4 CameraWorld = CameraView.Inverse();
 
     // Get projection matrix adjusted to the current screen orientation
-    const auto CameraProj     = GetAdjustedProjectionMatrix(YFov, ZNear, ZFar);
-    const auto CameraViewProj = CameraView * CameraProj;
+    const float4x4 CameraProj     = GetAdjustedProjectionMatrix(YFov, ZNear, ZFar);
+    const float4x4 CameraViewProj = CameraView * CameraProj;
 
     float3 CameraWorldPos = float3::MakeVector(CameraWorld[3]);
 
-    auto& CurrCamAttribs = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
+    HLSL::CameraAttribs& CurrCamAttribs = m_CameraAttribs[m_CurrentFrameNumber & 0x01];
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     CurrCamAttribs.f4ViewportSize  = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
     CurrCamAttribs.fNearPlaneZ     = ZNear;
