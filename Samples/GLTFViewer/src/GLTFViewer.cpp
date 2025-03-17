@@ -338,12 +338,8 @@ void GLTFViewer::CreateGLTFResourceCache()
     m_pResourceMgr = GLTF::ResourceManager::Create(m_pDevice, ResourceMgrCI);
 
     m_CacheUseInfo.pResourceMgr = m_pResourceMgr;
-
-    m_CacheUseInfo.BaseColorFormat    = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.NormalFormat       = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.OcclusionFormat    = TEX_FORMAT_RGBA8_UNORM;
-    m_CacheUseInfo.EmissiveFormat     = TEX_FORMAT_RGBA8_UNORM;
+    // GLTF loader uses typeless format for texture atlases to allow UNORM and SRGB usage.
+    m_CacheUseInfo.SetAtlasFormats(TEX_FORMAT_RGBA8_TYPELESS);
 }
 
 static RefCntAutoPtr<ITextureView> CreateWhiteFurnaceEnvMap(IRenderDevice* pDevice)
@@ -551,6 +547,12 @@ void GLTFViewer::CreateGLTFRenderer()
     RendererCI.pPrimitiveAttribsCB = m_GLTFRenderer ? m_GLTFRenderer->GetPBRPrimitiveAttribsCB() : nullptr;
     RendererCI.pMaterialAttribsCB  = m_GLTFRenderer ? m_GLTFRenderer->GetPBRMaterialAttribsCB() : nullptr;
     RendererCI.pJointsBuffer       = m_GLTFRenderer ? m_GLTFRenderer->GetJointsBuffer() : nullptr;
+
+    // Using TEX_COLOR_CONVERSION_MODE_NONE requires creating sRGB views, which is not supported
+    // when TextureSubresourceViews feature is not available.
+    RendererCI.TexColorConversionMode = m_pDevice->GetDeviceInfo().Features.TextureSubresourceViews ?
+        GLTF_PBR_Renderer::CreateInfo::TEX_COLOR_CONVERSION_MODE_NONE :
+        GLTF_PBR_Renderer::CreateInfo::TEX_COLOR_CONVERSION_MODE_SRGB_TO_LINEAR;
 
     m_GLTFRenderer = std::make_unique<GLTF_PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, RendererCI);
 
