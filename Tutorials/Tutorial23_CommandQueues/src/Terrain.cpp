@@ -240,6 +240,12 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
         ShaderCI.FilePath                   = "GenerateTerrain.csh";
         ShaderCI.EntryPoint                 = "CSMain";
 
+        // Vulkan requires image format to be specified in the shader, but glslang does not support
+        // the [[vk::image_format]] attribute (https://github.com/KhronosGroup/glslang/issues/3790).
+        // So we have to convert HLSL to GLSL so that the converter can add the attribute from the
+        // /*format=...*/ comment.
+        ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_HLSL_TO_SPIRV_VIA_GLSL;
+
         RefCntAutoPtr<IShader> pCS;
         m_Device->CreateShader(ShaderCI, &pCS);
 
