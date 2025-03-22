@@ -53,12 +53,14 @@ public:
         Uint32 BaseVertex = 0;
     };
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreatePipelineState();
     void CreateGeometryBuffers();
     void CreateInstanceBuffer();
     void LoadTextures();
-    void UpdateUI();
     void PopulateInstanceBuffer();
 
     static constexpr int        NumTextures = 4;

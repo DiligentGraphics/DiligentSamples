@@ -45,9 +45,11 @@ public:
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreateCubePSO();
-    void UpdateUI();
     void CreateMSAARenderTarget();
 
     static constexpr TEXTURE_FORMAT DepthBufferFormat = TEX_FORMAT_D32_FLOAT;

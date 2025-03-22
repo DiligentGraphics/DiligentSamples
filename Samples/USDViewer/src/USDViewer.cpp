@@ -1318,7 +1318,6 @@ void USDViewer::UpdateCamera()
 
 void USDViewer::Update(double CurrTime, double ElapsedTime)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
     m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
     UpdateCamera();
@@ -1331,8 +1330,8 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
             m_Stage.Animation.Time = m_Stage.Animation.StartTime;
     }
 
-    // Update camera first as TRS widget needs camera view/proj matrices.
-    UpdateUI();
+    // Update camera before updating UI as TRS widget needs camera view/proj matrices.
+    SampleBase::Update(CurrTime, ElapsedTime);
 
     if (LastAnimationTime != m_Stage.Animation.Time)
     {

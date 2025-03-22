@@ -63,8 +63,10 @@ public:
     Tutorial26_StateCache();
     ~Tutorial26_StateCache();
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
-    void UpdateUI();
     void CreateGBuffer();
     void CreatePathTracePSO();
 

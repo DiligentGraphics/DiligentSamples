@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -686,7 +686,6 @@ void Tutorial09_Quads::CreateInstanceBuffer()
 void Tutorial09_Quads::Update(double CurrTime, double ElapsedTime)
 {
     SampleBase::Update(CurrTime, ElapsedTime);
-    UpdateUI();
 
     UpdateQuads(static_cast<float>(std::min(ElapsedTime, 0.25)));
 }

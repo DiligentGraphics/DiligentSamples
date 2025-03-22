@@ -71,8 +71,10 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "USD Viewer"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
-    void UpdateUI();
     void LoadStage();
     void LoadEnvironmentMap(const char* Path);
     void PopulateSceneTree(const pxr::UsdPrim& Prim);

@@ -51,11 +51,13 @@ public:
     virtual void ReleaseSwapChainBuffers() override final;
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreateCubePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void CreateLightVolumePSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void CreateAmbientLightPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
-    void UpdateUI();
     void CreateRenderPass();
     void DrawScene();
     void ApplyLighting();

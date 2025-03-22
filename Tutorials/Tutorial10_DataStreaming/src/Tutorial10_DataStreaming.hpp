@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,10 +55,12 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial10: Streaming"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreatePipelineStates(std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
-    void UpdateUI();
 
     void InitializePolygons();
     void InitializePolygonGeometry();

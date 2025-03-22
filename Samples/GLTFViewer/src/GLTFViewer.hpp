@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -65,11 +65,13 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "GLTF Viewer"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void LoadModel(const char* Path);
     void LoadEnvironmentMap(const char* Path);
     void UpdateScene();
-    void UpdateUI();
     void CreateGLTFResourceCache();
     void UpdateModelsList(const std::string& Dir);
     bool SetEnvironmentMap(ITextureView* pEnvMap);

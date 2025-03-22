@@ -44,6 +44,9 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial20: Mesh shader"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreatePipelineState();
     void CreateCube();
@@ -51,7 +54,6 @@ private:
     void CreateStatisticsBuffer();
     void CreateConstantsBuffer();
     void LoadTexture();
-    void UpdateUI();
 
     RefCntAutoPtr<IBuffer>      m_CubeBuffer;
     RefCntAutoPtr<ITextureView> m_CubeTextureSRV;

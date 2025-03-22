@@ -1434,7 +1434,6 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime)
     }
 
     SampleBase::Update(CurrTime, ElapsedTime);
-    UpdateUI();
 
     m_ElapsedTime = static_cast<float>(ElapsedTime);
 

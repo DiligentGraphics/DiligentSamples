@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,11 +45,13 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial13: Shadow Map"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreateCubePSO();
     void CreatePlanePSO();
     void CreateShadowMapVisPSO();
-    void UpdateUI();
     void CreateShadowMap();
     void RenderShadowMap();
     void RenderCube(const float4x4& CameraViewProj, bool IsShadowPass);

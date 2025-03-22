@@ -47,12 +47,14 @@ public:
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreatePipelineStates();
     void CreateGeometryBuffers();
     void PrepareLayeredOITResources();
     void PrepareWeightedOITResources();
-    void UpdateUI();
     void CreateInstanceBuffers();
     void RenderGrid(bool IsTransparent, IPipelineState* pPSO, IShaderResourceBinding* pSRB);
     void RenderUnsortedAlphaBlend();

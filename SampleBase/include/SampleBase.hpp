@@ -199,6 +199,9 @@ public:
     }
 
 protected:
+    virtual void UpdateUI() {}
+
+protected:
     // Returns projection matrix adjusted to the current screen orientation
     float4x4 GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const;
 
@@ -234,6 +237,8 @@ inline void SampleBase::Update(double CurrTime, double ElapsedTime)
         m_NumFramesRendered = 0;
         m_LastFPSTime       = CurrTime;
     }
+
+    UpdateUI();
 }
 
 extern SampleBase* CreateSample();

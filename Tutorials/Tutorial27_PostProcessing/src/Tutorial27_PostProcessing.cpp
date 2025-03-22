@@ -267,7 +267,6 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
 {
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     SampleBase::Update(CurrTime, ElapsedTime);
-    UpdateUI();
 
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0) & 0x01;
     const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 1) & 0x01;

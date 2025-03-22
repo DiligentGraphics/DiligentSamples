@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,10 +43,13 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial07: Geometry Shader"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreatePipelineState();
-    void UpdateUI();
 
+private:
     RefCntAutoPtr<IPipelineState>         m_pPSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;

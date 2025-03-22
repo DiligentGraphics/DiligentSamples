@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025s Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,10 +50,12 @@ public:
 
     virtual const Char* GetSampleName() const override final { return "Tutorial06: Multithreaded rendering"; }
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
     void CreatePipelineState(std::vector<StateTransitionDesc>& Barriers);
     void LoadTextures(std::vector<StateTransitionDesc>& Barriers);
-    void UpdateUI();
     void PopulateInstanceData();
 
     void StartWorkerThreads(size_t NumThreads);

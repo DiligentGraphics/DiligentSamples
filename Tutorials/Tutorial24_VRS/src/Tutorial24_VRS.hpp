@@ -49,8 +49,10 @@ public:
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
-    void UpdateUI();
     void LoadTexture();
     void CreateVRSPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory);        // For desktop D3D12 and Vulkan and Metal
     void CreateDensityMapPipelineState(IShaderSourceInputStreamFactory* pShaderSourceFactory); // For mobile Vulkan only

@@ -52,8 +52,10 @@ public:
 
     virtual void WindowResize(Uint32 Width, Uint32 Height) override final;
 
+protected:
+    virtual void UpdateUI() override final;
+
 private:
-    void UpdateUI();
     void CreatePostProcessPSO(IShaderSourceInputStreamFactory* pShaderSourceFactory);
     void DownSample();
     void PostProcess();
