@@ -416,9 +416,9 @@ void Tutorial24_VRS::Render()
     }
 }
 
-void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime)
+void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     const auto& MState = m_InputController.GetMouseState();
     if (m_VRSMode == VRS_MODE_TEXTURE_BASED && (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)

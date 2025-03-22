@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -338,9 +338,9 @@ void Tutorial12_RenderTarget::Render()
     m_pImmediateContext->Draw(RTDrawAttrs);
 }
 
-void Tutorial12_RenderTarget::Update(double CurrTime, double ElapsedTime)
+void Tutorial12_RenderTarget::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_fCurrentTime = static_cast<float>(CurrTime);
 

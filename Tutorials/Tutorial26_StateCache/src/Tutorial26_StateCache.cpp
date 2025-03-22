@@ -721,9 +721,9 @@ void Tutorial26_StateCache::Render()
     }
 }
 
-void Tutorial26_StateCache::Update(double CurrTime, double ElapsedTime)
+void Tutorial26_StateCache::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     {

@@ -103,9 +103,9 @@ void ImguiDemo::Render()
 }
 
 
-void ImguiDemo::Update(double CurrTime, double ElapsedTime)
+void ImguiDemo::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 }
 
 void ImguiDemo::WindowResize(Uint32 Width, Uint32 Height)

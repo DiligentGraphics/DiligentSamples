@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Diligent Graphics LLC
+ *  Copyright 2024-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public:
 
     void Render() override final;
 
-    void Update(double CurrTime, double ElapsedTime) override final;
+    void Update(double CurrTime, double ElapsedTime, bool DoUpdateUI) override final;
 
     void WindowResize(Uint32 Width, Uint32 Height) override final;
 

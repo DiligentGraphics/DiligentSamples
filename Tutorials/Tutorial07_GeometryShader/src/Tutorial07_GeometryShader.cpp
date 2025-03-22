@@ -277,9 +277,9 @@ void Tutorial07_GeometryShader::Render()
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
-void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime)
+void Tutorial07_GeometryShader::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Apply rotation
     float4x4 CubeModelTransform = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);

@@ -101,7 +101,7 @@ set TestApps="Tutorials/Tutorial01_HelloTriangle"^
              "Tutorials/Tutorial29_OIT --show_ui 0"^
              "Samples/Atmosphere --show_ui 0"^
              "Samples/GLTFViewer --show_ui 0"^
-             "Samples/NuklearDemo --show_ui 0"^
+             "Samples/NuklearDemo"^
              "Samples/Shadows --show_ui 0"
 
 rem  ImguiDemo has fps counter in the UI, so we have to skip it

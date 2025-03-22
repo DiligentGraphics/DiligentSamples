@@ -414,9 +414,9 @@ void Tutorial25_StatePackager::Render()
     }
 }
 
-void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime)
+void Tutorial25_StatePackager::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     {

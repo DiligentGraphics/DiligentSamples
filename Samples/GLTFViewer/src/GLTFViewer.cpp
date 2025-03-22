@@ -1426,14 +1426,14 @@ void GLTFViewer::Render()
     }
 }
 
-void GLTFViewer::Update(double CurrTime, double ElapsedTime)
+void GLTFViewer::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
     if (m_CameraId == 0)
     {
         m_Camera.Update(m_InputController);
     }
 
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_ElapsedTime = static_cast<float>(ElapsedTime);
 

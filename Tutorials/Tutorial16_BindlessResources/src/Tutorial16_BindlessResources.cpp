@@ -601,9 +601,9 @@ void Tutorial16_BindlessResources::Render()
     }
 }
 
-void Tutorial16_BindlessResources::Update(double CurrTime, double ElapsedTime)
+void Tutorial16_BindlessResources::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);

@@ -95,9 +95,9 @@ void NuklearDemo::Render()
 }
 
 
-void NuklearDemo::Update(double CurrTime, double ElapsedTime)
+void NuklearDemo::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 }
 
 void NuklearDemo::WindowResize(Uint32 Width, Uint32 Height)

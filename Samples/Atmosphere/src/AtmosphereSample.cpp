@@ -787,7 +787,7 @@ void ComputeApproximateNearFarPlaneDist(const float3&   CameraPos,
 }
 
 
-void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
+void AtmosphereSample::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
     const auto& mouseState = m_InputController.GetMouseState();
 
@@ -829,7 +829,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime)
             float4x4::RotationArbitrary(WorldRight, fPitchDelta);
     }
 
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_fElapsedTime = static_cast<float>(ElapsedTime);
 

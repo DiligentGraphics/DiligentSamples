@@ -683,9 +683,9 @@ void Tutorial09_Quads::CreateInstanceBuffer()
     m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 }
 
-void Tutorial09_Quads::Update(double CurrTime, double ElapsedTime)
+void Tutorial09_Quads::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     UpdateQuads(static_cast<float>(std::min(ElapsedTime, 0.25)));
 }

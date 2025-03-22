@@ -933,9 +933,9 @@ void Tutorial22_HybridRendering::Render()
     }
 }
 
-void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime)
+void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     const float dt = static_cast<float>(ElapsedTime);
 

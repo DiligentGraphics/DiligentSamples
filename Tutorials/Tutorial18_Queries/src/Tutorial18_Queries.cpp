@@ -258,9 +258,9 @@ void Tutorial18_Queries::Render()
         m_pPipelineStatsQuery->End(m_pImmediateContext, &m_PipelineStatsData, sizeof(m_PipelineStatsData));
 }
 
-void Tutorial18_Queries::Update(double CurrTime, double ElapsedTime)
+void Tutorial18_Queries::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Apply rotation
     float4x4 CubeModelTransform = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f) * float4x4::RotationX(-PI_F * 0.1f);

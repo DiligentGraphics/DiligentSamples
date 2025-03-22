@@ -269,9 +269,9 @@ void Tutorial17_MSAA::Render()
     }
 }
 
-void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime)
+void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     if (m_bRotateGrid)
         m_fCurrentTime += static_cast<float>(ElapsedTime);

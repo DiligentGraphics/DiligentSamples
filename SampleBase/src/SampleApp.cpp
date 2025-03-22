@@ -894,7 +894,7 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
     }
     if (m_pDevice)
     {
-        m_TheSample->Update(CurrTime, ElapsedTime);
+        m_TheSample->Update(CurrTime, ElapsedTime, m_bShowUI);
         m_TheSample->GetInputController().ClearState();
     }
 }

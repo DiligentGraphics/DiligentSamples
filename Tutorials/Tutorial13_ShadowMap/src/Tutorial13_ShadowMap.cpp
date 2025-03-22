@@ -606,9 +606,9 @@ void Tutorial13_ShadowMap::Render()
     RenderShadowMapVis();
 }
 
-void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime)
+void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Animate the cube
     m_CubeWorldMatrix = float4x4::RotationY(static_cast<float>(CurrTime) * 1.0f);

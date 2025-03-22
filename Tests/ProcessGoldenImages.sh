@@ -109,7 +109,7 @@ declare -a TestApps=(
     "Tutorials/Tutorial29_OIT --show_ui 0"
     "Samples/Atmosphere --show_ui 0"
     "Samples/GLTFViewer --show_ui 0 --use_cache 1"
-    "Samples/NuklearDemo --show_ui 0"
+    "Samples/NuklearDemo"
     "Samples/Shadows --show_ui 0"
     # "Samples/ImguiDemo" has fps counter in the UI, so we have to skip it
 )

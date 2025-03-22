@@ -384,9 +384,9 @@ void Tutorial08_Tessellation::Render()
     m_pImmediateContext->Draw(DrawAttrs);
 }
 
-void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime)
+void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Set world view matrix
     if (m_Animate)

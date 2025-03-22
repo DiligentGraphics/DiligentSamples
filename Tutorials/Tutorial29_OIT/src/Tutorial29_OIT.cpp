@@ -796,9 +796,9 @@ void Tutorial29_OIT::Render()
     }
 }
 
-void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime)
+void Tutorial29_OIT::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     if (m_Animate)
     {

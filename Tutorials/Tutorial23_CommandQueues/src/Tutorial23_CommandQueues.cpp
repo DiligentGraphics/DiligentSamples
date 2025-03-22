@@ -613,11 +613,11 @@ void Tutorial23_CommandQueues::Render()
     m_Profiler.End(nullptr, Profiler::FRAME);
 }
 
-void Tutorial23_CommandQueues::Update(double CurrTime, double ElapsedTime)
+void Tutorial23_CommandQueues::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
     // Update profiler before updating the UI
     m_Profiler.Update(ElapsedTime);
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     const float dt = static_cast<float>(ElapsedTime);
     m_Camera.Update(m_InputController, dt);

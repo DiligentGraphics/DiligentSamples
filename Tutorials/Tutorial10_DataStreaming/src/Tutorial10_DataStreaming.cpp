@@ -836,9 +836,9 @@ void Tutorial10_DataStreaming::CreateInstanceBuffer()
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_BatchDataBuffer);
 }
 
-void Tutorial10_DataStreaming::Update(double CurrTime, double ElapsedTime)
+void Tutorial10_DataStreaming::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     UpdatePolygons(static_cast<float>(std::min(ElapsedTime, 0.25)));
 }

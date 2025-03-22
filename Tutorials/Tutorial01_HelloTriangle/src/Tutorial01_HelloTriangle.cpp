@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -171,9 +171,9 @@ void Tutorial01_HelloTriangle::Render()
     m_pImmediateContext->Draw(drawAttrs);
 }
 
-void Tutorial01_HelloTriangle::Update(double CurrTime, double ElapsedTime)
+void Tutorial01_HelloTriangle::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 }
 
 } // namespace Diligent

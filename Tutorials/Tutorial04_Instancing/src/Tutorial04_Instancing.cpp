@@ -229,9 +229,9 @@ void Tutorial04_Instancing::Render()
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 }
 
-void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime)
+void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Set cube view matrix
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);

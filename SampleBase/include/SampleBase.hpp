@@ -169,8 +169,9 @@ public:
 
     virtual void Initialize(const SampleInitInfo& InitInfo) = 0;
 
-    virtual void Render()                                    = 0;
-    virtual void Update(double CurrTime, double ElapsedTime) = 0;
+    virtual void Render() = 0;
+
+    virtual void Update(double CurrTime, double ElapsedTime, bool DoUpdateUI) = 0;
 
     /// Called by the framework to let the application release any references to the swap chain buffers.
     ///
@@ -226,7 +227,7 @@ protected:
     InputController m_InputController;
 };
 
-inline void SampleBase::Update(double CurrTime, double ElapsedTime)
+inline void SampleBase::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
     ++m_NumFramesRendered;
     ++m_CurrentFrameNumber;
@@ -238,7 +239,10 @@ inline void SampleBase::Update(double CurrTime, double ElapsedTime)
         m_LastFPSTime       = CurrTime;
     }
 
-    UpdateUI();
+    if (DoUpdateUI)
+    {
+        UpdateUI();
+    }
 }
 
 extern SampleBase* CreateSample();

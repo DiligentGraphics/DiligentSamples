@@ -643,9 +643,9 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
     }
 }
 
-void ShadowsSample::Update(double CurrTime, double ElapsedTime)
+void ShadowsSample::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     {

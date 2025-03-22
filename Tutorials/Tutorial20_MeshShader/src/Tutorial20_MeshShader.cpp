@@ -446,9 +446,9 @@ void Tutorial20_MeshShader::Render()
     }
 }
 
-void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime)
+void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     // Set world view matrix
     if (m_Animate)

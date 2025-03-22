@@ -1316,7 +1316,7 @@ void USDViewer::UpdateCamera()
     m_Stage.Camera.GetVerticalApertureAttr().Set(VertApertureUnits * UsdCamLensUnitScale);
 }
 
-void USDViewer::Update(double CurrTime, double ElapsedTime)
+void USDViewer::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
     m_Camera.SetZoomSpeed(m_Camera.GetDist() * 0.1f);
     m_Camera.Update(m_InputController);
@@ -1331,7 +1331,7 @@ void USDViewer::Update(double CurrTime, double ElapsedTime)
     }
 
     // Update camera before updating UI as TRS widget needs camera view/proj matrices.
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     if (LastAnimationTime != m_Stage.Animation.Time)
     {

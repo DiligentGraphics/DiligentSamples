@@ -839,9 +839,9 @@ void Tutorial21_RayTracing::Render()
     }
 }
 
-void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime)
+void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     if (m_Animate)
     {

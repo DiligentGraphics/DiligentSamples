@@ -433,9 +433,9 @@ void Tutorial14_ComputeShader::Render()
     m_pImmediateContext->Draw(drawAttrs);
 }
 
-void Tutorial14_ComputeShader::Update(double CurrTime, double ElapsedTime)
+void Tutorial14_ComputeShader::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     m_fTimeDelta = static_cast<float>(ElapsedTime);
 }

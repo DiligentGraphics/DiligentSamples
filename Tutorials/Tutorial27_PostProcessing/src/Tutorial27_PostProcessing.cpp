@@ -263,10 +263,10 @@ void Tutorial27_PostProcessing::Render()
     ComputeGammaCorrection();
 }
 
-void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime)
+void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0) & 0x01;
     const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 1) & 0x01;

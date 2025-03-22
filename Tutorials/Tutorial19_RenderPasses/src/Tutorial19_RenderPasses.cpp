@@ -896,9 +896,9 @@ void Tutorial19_RenderPasses::Render()
     }
 }
 
-void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime)
+void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    SampleBase::Update(CurrTime, ElapsedTime);
+    SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
     if (m_AnimateLights)
         UpdateLights(static_cast<float>(ElapsedTime));
