@@ -39,7 +39,8 @@
                 "Desc": {
                     "Name": "Generate SDF CS"
                 },
-                "FilePath": "GenerateSDF.hlsl"
+                "FilePath": "GenerateSDF.hlsl",
+                "CompileFlags": "HLSL_TO_SPIRV_VIA_GLSL"
             }
         },
         {
