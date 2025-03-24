@@ -1,6 +1,3 @@
-[submodule "ThirdParty/nuklear"]
-	path = ThirdParty/nuklear
-	url = https://github.com/DiligentGraphics/nuklear
 [submodule "ThirdParty/glfw"]
 	path = ThirdParty/glfw
 	url = https://github.com/DiligentGraphics/glfw.git
