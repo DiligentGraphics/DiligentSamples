@@ -31,13 +31,14 @@
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_VARARGS
-#include "../../../ThirdParty/nuklear/nuklear.h"
+#include "../../../ThirdParty/Nuklear/nuklear.h"
 
 #include "NkDiligent.h"
 
-#include "../../../ThirdParty/nuklear/demo/style.c"
-#include "../../../ThirdParty/nuklear/demo/overview.c"
+#include "../../../ThirdParty/Nuklear/demo/common/style.c"
 
+static const struct nk_color nk_white = {255, 255, 255, 255};
+#include "../../../ThirdParty/Nuklear/demo/common/overview.c"
 
 namespace Diligent
 {

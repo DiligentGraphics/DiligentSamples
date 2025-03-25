@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -353,7 +353,7 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
         config.circle_segment_count = 22;
         config.curve_segment_count  = 22;
         config.arc_segment_count    = 22;
-        config.null                 = nk_dlg_ctx->null;
+        config.tex_null             = nk_dlg_ctx->null;
 
         // setup buffers to load vertices and elements
         struct nk_buffer vbuf, ibuf;

@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.10)
 file(RELATIVE_PATH SAMPLES_DIR "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 if (NOT DILIGENT_NUKLEAR_DIR)
-    set(DILIGENT_NUKLEAR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/nuklear" CACHE PATH "nuklear source directory")
+    set(DILIGENT_NUKLEAR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Nuklear" CACHE PATH "nuklear source directory")
 endif()
 if (NOT EXISTS "${DILIGENT_NUKLEAR_DIR}/nuklear.h")
     message(FATAL_ERROR "${DILIGENT_NUKLEAR_DIR}/nuklear.h does not exist. This indicates that nuklear submodule is not checked out or DILIGENT_NUKLEAR_DIR variable contains invalid path.")
