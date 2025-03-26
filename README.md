@@ -477,7 +477,7 @@ See [Apache 2.0 license](License.txt).
 
 This project has some third-party dependencies, each of which may have independent licensing:
 
-* [nuklear](https://github.com/Immediate-Mode-UI/Nuklear): A single-header ANSI C gui library ([MIT or Public domain license](https://github.com/Immediate-Mode-UI/Nuklear/blob/master/LICENSE)).
+* [nuklear](https://github.com/Immediate-Mode-UI/Nuklear): A single-header ANSI C gui library ([MIT or Public domain license](https://github.com/DiligentGraphics/NuklearUI/blob/master/LICENSE)).
 * [glfw](https://github.com/glfw/glfw): A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input ([zlib License](https://github.com/DiligentGraphics/glfw/blob/master/LICENSE.md)).
 * [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo): Immediate mode 3D gizmo for scene editing and other controls based on Dear Imgui ([MIT](https://github.com/CedricGuillemet/ImGuizmo/blob/master/LICENSE)).
 
