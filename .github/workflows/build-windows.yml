@@ -82,11 +82,11 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: DiligentGraphics/github-action/checkout@v4
+      uses: DiligentGraphics/github-action/checkout@v5
 
     - name: Set up build environment
       if:   success()
-      uses: DiligentGraphics/github-action/setup-build-env@v4
+      uses: DiligentGraphics/github-action/setup-build-env@v5
       with:
         platform:        ${{ matrix.platform }}
         cmake-generator: ${{ matrix.cmake_generator }}
@@ -94,7 +94,7 @@ jobs:
 
     - name: Configure CMake
       if:   success()
-      uses: DiligentGraphics/github-action/configure-cmake@v4
+      uses: DiligentGraphics/github-action/configure-cmake@v5
       with:
         generator:  ${{ matrix.cmake_generator }}
         vs-arch:    ${{ matrix.toolset }}
@@ -104,13 +104,13 @@ jobs:
     - name: Build
       id:   build
       if:   success()
-      uses: DiligentGraphics/github-action/build@v4
+      uses: DiligentGraphics/github-action/build@v5
       with:
         build-args: ${{ matrix.build_args }}
 
     - name: Sample Tests D3D11
       if:   ${{ matrix.name == 'Win10' || matrix.name == 'Win8.1' || matrix.name == 'Win10-Ninja' }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v4
+      uses: DiligentGraphics/github-action/run-sample-tests@v5
       with:
         mode:              "d3d11_sw"
         golden-image-mode: "compare_update"
@@ -119,7 +119,7 @@ jobs:
       # NB: it is essential to include failure() to override the default status check of success()
       #     that is automatically applied to if conditions that don't contain a status check function.
       if:   ${{ (success() || failure() && steps.build.outcome == 'success') && (matrix.name == 'Win10' || matrix.name == 'Win10-Ninja') }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v4
+      uses: DiligentGraphics/github-action/run-sample-tests@v5
       with:
         mode:              "d3d12_sw"
         golden-image-mode: "compare_update"
@@ -128,7 +128,7 @@ jobs:
       # NB: it is essential to include failure() to override the default status check of success()
       #     that is automatically applied to if conditions that don't contain a status check function.
       if:   ${{ (success() || failure() && steps.build.outcome == 'success') && (matrix.name == 'Win10') }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v4
+      uses: DiligentGraphics/github-action/run-sample-tests@v5
       with:
         mode:              "wgpu"
         golden-image-mode: "compare_update"
