@@ -430,16 +430,16 @@ void AtmosphereSample::UpdateUI()
                         ToneMappingMode[TONE_MAPPING_MODE_REINHARD]     = "Reinhard";
                         ToneMappingMode[TONE_MAPPING_MODE_REINHARD_MOD] = "Reinhard Mod";
                         ToneMappingMode[TONE_MAPPING_MODE_UNCHARTED2]   = "Uncharted 2";
-                        ToneMappingMode[TONE_MAPPING_FILMIC_ALU]        = "Filmic ALU";
-                        ToneMappingMode[TONE_MAPPING_LOGARITHMIC]       = "Logarithmic";
-                        ToneMappingMode[TONE_MAPPING_ADAPTIVE_LOG]      = "Adaptive log";
+                        ToneMappingMode[TONE_MAPPING_MODE_FILMIC_ALU]   = "Filmic ALU";
+                        ToneMappingMode[TONE_MAPPING_MODE_LOGARITHMIC]  = "Logarithmic";
+                        ToneMappingMode[TONE_MAPPING_MODE_ADAPTIVE_LOG] = "Adaptive log";
                         ImGui::Combo("Tone Mapping Mode", &m_PPAttribs.ToneMapping.iToneMappingMode, ToneMappingMode.data(), static_cast<int>(ToneMappingMode.size()));
                     }
 
                     if (m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
                         m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_UNCHARTED2 ||
-                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG)
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_LOGARITHMIC ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_ADAPTIVE_LOG)
                     {
                         ImGui::SliderFloat("White Point", &m_PPAttribs.ToneMapping.fWhitePoint, 0.01f, 10.0f);
                     }
@@ -447,8 +447,8 @@ void AtmosphereSample::UpdateUI()
                     if (m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_EXP ||
                         m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD ||
                         m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_REINHARD_MOD ||
-                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_LOGARITHMIC ||
-                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_ADAPTIVE_LOG)
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_LOGARITHMIC ||
+                        m_PPAttribs.ToneMapping.iToneMappingMode == TONE_MAPPING_MODE_ADAPTIVE_LOG)
                     {
                         ImGui::SliderFloat("Luminance Saturation", &m_PPAttribs.ToneMapping.fLuminanceSaturation, 0.01f, 2.f);
                     }
