@@ -1,4 +1,4 @@
-# DiligentSamples <img src="https://github.com/DiligentGraphics/DiligentCore/blob/master/media/diligentgraphics-logo.png" height=64 align="right" valign="middle">
+# Diligent Samples <img src="https://github.com/DiligentGraphics/DiligentCore/blob/master/media/diligentgraphics-logo.png" height=64 align="right" valign="middle">
 
 
 This module contains tutorials and sample applications intended to demonstrate the usage of
@@ -364,7 +364,7 @@ This simple maze mini-game demonstrates how to use GLFW to create window and han
 
 ## [GLTF Viewer](Samples/GLTFViewer)
 
-|||
+| | |
 |-----------------|-----------------|
 | ![](https://github.com/DiligentGraphics/DiligentFX/blob/master/PBR/screenshots/damaged_helmet.jpg) | ![](https://github.com/DiligentGraphics/DiligentFX/blob/master/PBR/screenshots/flight_helmet.jpg) |
 | ![](https://github.com/DiligentGraphics/DiligentFX/blob/master/PBR/screenshots/mr_spheres.jpg)     | ![](Samples/GLTFViewer/screenshots/cesium_man_large.gif)  |
