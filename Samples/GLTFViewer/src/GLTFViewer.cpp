@@ -1258,6 +1258,7 @@ void GLTFViewer::Render()
             Renderer.PointSize         = 1;
             Renderer.MipBias           = 0;
             Renderer.LightCount        = LightCount;
+            Renderer.DebugView         = static_cast<int>(m_RenderParams.DebugView);
         }
     }
 
@@ -1485,19 +1486,16 @@ void GLTFViewer::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 
     const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
-    CurrCamAttribs.f4ViewportSize  = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
-    CurrCamAttribs.fNearPlaneZ     = ZNear;
-    CurrCamAttribs.fFarPlaneZ      = ZFar;
-    CurrCamAttribs.fHandness       = CameraView.Determinant() > 0 ? 1.f : -1.f;
-    CurrCamAttribs.mView           = CameraView;
-    CurrCamAttribs.mProj           = CameraProj;
-    CurrCamAttribs.mViewProj       = CameraViewProj;
-    CurrCamAttribs.mViewInv        = CameraView.Inverse();
-    CurrCamAttribs.mProjInv        = CameraProj.Inverse();
-    CurrCamAttribs.mViewProjInv    = CameraViewProj.Inverse();
-    CurrCamAttribs.f4Position      = float4(CameraWorldPos, 1);
-    CurrCamAttribs.fNearPlaneDepth = 0;
-    CurrCamAttribs.fFarPlaneDepth  = 1;
+    CurrCamAttribs.f4ViewportSize = float4{static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / SCDesc.Width, 1.f / SCDesc.Height};
+    CurrCamAttribs.SetClipPlanes(ZNear, ZFar);
+    CurrCamAttribs.fHandness    = CameraView.Determinant() > 0 ? 1.f : -1.f;
+    CurrCamAttribs.mView        = CameraView;
+    CurrCamAttribs.mProj        = CameraProj;
+    CurrCamAttribs.mViewProj    = CameraViewProj;
+    CurrCamAttribs.mViewInv     = CameraView.Inverse();
+    CurrCamAttribs.mProjInv     = CameraProj.Inverse();
+    CurrCamAttribs.mViewProjInv = CameraViewProj.Inverse();
+    CurrCamAttribs.f4Position   = float4(CameraWorldPos, 1);
 
     if (m_bResetPrevCamera)
     {
