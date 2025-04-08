@@ -879,48 +879,38 @@ void USDViewer::UpdateUI()
                         UpdateFrameParams = true;
 
                     {
-                        std::array<const char*, static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews)> DebugViews;
+                        std::array<const char*, USD::HN_VIEW_MODE_COUNT> ViewModes;
 
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::None)]                 = "None";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord0)]            = "Tex coords 0";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Texcoord1)]            = "Tex coords 1";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::BaseColor)]            = "Base Color";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transparency)]         = "Transparency";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Occlusion)]            = "Occlusion";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Emissive)]             = "Emissive";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Metallic)]             = "Metallic";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Roughness)]            = "Roughness";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseColor)]         = "Diffuse color";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularColor)]        = "Specular color (R0)";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Reflectance90)]        = "Reflectance90";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MeshNormal)]           = "Mesh normal";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ShadingNormal)]        = "Shading normal";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::MotionVectors)]        = "Motion vectors";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::NdotV)]                = "n*v";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::PunctualLighting)]     = "Punctual Lighting";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::DiffuseIBL)]           = "Diffuse IBL";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::WhiteBaseColor)]       = "White Base Color";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SpecularIBL)]          = "Specular IBL";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoat)]            = "Clear Coat";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatFactor)]      = "Clear Coat Factor";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatRoughness)]   = "Clear Coat Roughness";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::ClearCoatNormal)]      = "Clear Coat Normal";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Sheen)]                = "Sheen";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SheenColor)]           = "Sheen Color";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SheenRoughness)]       = "Sheen Roughness";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::AnisotropyStrength)]   = "Anisotropy Strength";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::AnisotropyDirection)]  = "Anisotropy Direction";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Iridescence)]          = "Iridescence";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceFactor)]    = "Iridescence Factor";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::IridescenceThickness)] = "Iridescence Thickness";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Transmission)]         = "Transmission";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::Thickness)]            = "Volume Thickness";
-                        DebugViews[static_cast<size_t>(PBR_Renderer::DebugViewType::SceneDepth)]           = "Scene Depth";
-                        static_assert(static_cast<size_t>(PBR_Renderer::DebugViewType::NumDebugViews) == 35, "Did you add a new debug view mode? You may want to handle it here");
+                        ViewModes[USD::HN_VIEW_MODE_SHADED]              = "Shaded";
+                        ViewModes[USD::HN_VIEW_MODE_TEXCOORD0]           = "Tex coords 0";
+                        ViewModes[USD::HN_VIEW_MODE_TEXCOORD1]           = "Tex coords 1";
+                        ViewModes[USD::HN_VIEW_MODE_BASE_COLOR]          = "Base Color";
+                        ViewModes[USD::HN_VIEW_MODE_TRANSPARENCY]        = "Transparency";
+                        ViewModes[USD::HN_VIEW_MODE_OCCLUSION]           = "Occlusion";
+                        ViewModes[USD::HN_VIEW_MODE_EMISSIVE]            = "Emissive";
+                        ViewModes[USD::HN_VIEW_MODE_METALLIC]            = "Metallic";
+                        ViewModes[USD::HN_VIEW_MODE_ROUGHNESS]           = "Roughness";
+                        ViewModes[USD::HN_VIEW_MODE_DIFFUSE_COLOR]       = "Diffuse color";
+                        ViewModes[USD::HN_VIEW_MODE_SPECULAR_COLOR]      = "Specular color (R0)";
+                        ViewModes[USD::HN_VIEW_MODE_REFLECTANCE90]       = "Reflectance90";
+                        ViewModes[USD::HN_VIEW_MODE_MESH_NORMAL]         = "Mesh normal";
+                        ViewModes[USD::HN_VIEW_MODE_SHADING_NORMAL]      = "Shading normal";
+                        ViewModes[USD::HN_VIEW_MODE_MOTION_VECTORS]      = "Motion vectors";
+                        ViewModes[USD::HN_VIEW_MODE_NDOTV]               = "n*v";
+                        ViewModes[USD::HN_VIEW_MODE_PUNCTUAL_LIGHTING]   = "Punctual Lighting";
+                        ViewModes[USD::HN_VIEW_MODE_DIFFUSE_IBL]         = "Diffuse IBL";
+                        ViewModes[USD::HN_VIEW_MODE_SPECULAR_IBL]        = "Specular IBL";
+                        ViewModes[USD::HN_VIEW_MODE_WHITE_BASE_COLOR]    = "White Base Color";
+                        ViewModes[USD::HN_VIEW_MODE_CLEARCOAT]           = "Clear Coat";
+                        ViewModes[USD::HN_VIEW_MODE_CLEARCOAT_FACTOR]    = "Clear Coat Factor";
+                        ViewModes[USD::HN_VIEW_MODE_CLEARCOAT_ROUGHNESS] = "Clear Coat Roughness";
+                        ViewModes[USD::HN_VIEW_MODE_CLEARCOAT_NORMAL]    = "Clear Coat Normal";
+                        ViewModes[USD::HN_VIEW_MODE_SCENE_DEPTH]         = "Scene Depth";
+                        static_assert(USD::HN_VIEW_MODE_COUNT == 25, "Did you add a new view mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Debug view", &m_Stage.DebugViewMode, DebugViews.data(), static_cast<int>(DebugViews.size()), 15))
+                        if (ImGui::Combo("View Mode", &m_Stage.ViewMode, ViewModes.data(), static_cast<int>(ViewModes.size()), 15))
                         {
-                            m_Stage.RenderDelegate->SetDebugView(static_cast<PBR_Renderer::DebugViewType>(m_Stage.DebugViewMode));
+                            m_Stage.RenderDelegate->SetViewMode(static_cast<USD::HN_VIEW_MODE>(m_Stage.ViewMode));
                         }
                     }
 

@@ -111,9 +111,9 @@ private:
         float    MetersPerUnit = 0.01f;
         float4x4 RootTransform = float4x4::Identity();
 
-        int  DebugViewMode = 0;
-        int  GeometryMode  = 0;
-        bool UseShadows    = true;
+        int  ViewMode     = 0;
+        int  GeometryMode = 0;
+        bool UseShadows   = true;
 
         struct AnimationInfo
         {
