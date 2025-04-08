@@ -906,7 +906,8 @@ void USDViewer::UpdateUI()
                         ViewModes[USD::HN_VIEW_MODE_CLEARCOAT_ROUGHNESS] = "Clear Coat Roughness";
                         ViewModes[USD::HN_VIEW_MODE_CLEARCOAT_NORMAL]    = "Clear Coat Normal";
                         ViewModes[USD::HN_VIEW_MODE_SCENE_DEPTH]         = "Scene Depth";
-                        static_assert(USD::HN_VIEW_MODE_COUNT == 25, "Did you add a new view mode? You may want to handle it here");
+                        ViewModes[USD::HN_VIEW_MODE_EDGE_MAP]            = "Edge Map";
+                        static_assert(USD::HN_VIEW_MODE_COUNT == 26, "Did you add a new view mode? You may want to handle it here");
 
                         if (ImGui::Combo("View Mode", &m_Stage.ViewMode, ViewModes.data(), static_cast<int>(ViewModes.size()), 15))
                         {
