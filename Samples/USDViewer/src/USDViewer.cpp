@@ -925,15 +925,15 @@ void USDViewer::UpdateUI()
                     }
 
                     {
-                        std::array<const char*, static_cast<size_t>(USD::HN_RENDER_MODE_COUNT)> RenderModes;
-                        RenderModes[USD::HN_RENDER_MODE_SOLID]      = "Solid";
-                        RenderModes[USD::HN_RENDER_MODE_MESH_EDGES] = "Edges";
-                        RenderModes[USD::HN_RENDER_MODE_POINTS]     = "Points";
-                        static_assert(USD::HN_RENDER_MODE_COUNT == 3, "Did you add a new render mode? You may want to handle it here");
+                        std::array<const char*, static_cast<size_t>(USD::HN_GEOMETRY_MODE_COUNT)> GeometryModes;
+                        GeometryModes[USD::HN_GEOMETRY_MODE_SOLID]      = "Solid";
+                        GeometryModes[USD::HN_GEOMETRY_MODE_MESH_EDGES] = "Edges";
+                        GeometryModes[USD::HN_GEOMETRY_MODE_POINTS]     = "Points";
+                        static_assert(USD::HN_GEOMETRY_MODE_COUNT == 3, "Did you add a new geometry render mode? You may want to handle it here");
 
-                        if (ImGui::Combo("Render mode", &m_Stage.RenderMode, RenderModes.data(), static_cast<int>(RenderModes.size())))
+                        if (ImGui::Combo("Geometry mode", &m_Stage.GeometryMode, GeometryModes.data(), static_cast<int>(GeometryModes.size())))
                         {
-                            m_Stage.RenderDelegate->SetRenderMode(static_cast<USD::HN_RENDER_MODE>(m_Stage.RenderMode));
+                            m_Stage.RenderDelegate->SetGeometryMode(static_cast<USD::HN_GEOMETRY_MODE>(m_Stage.GeometryMode));
                         }
                     }
 
