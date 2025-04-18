@@ -25,6 +25,7 @@ and follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
 [![MSVC Code Analysis](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml?query=branch%3Amaster)
 [![Lines of code](https://sloc.xyz/github/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
+[![Documentation](https://img.shields.io/badge/Documentation-blue)](https://diligentgraphics.github.io/docs)
 
 # Table of Contents
 
