@@ -413,11 +413,15 @@ void USDViewer::LoadStage()
     AddDirectionalLight("_HnDirectionalLight3_", 5000.f, pxr::GfRotation{pxr::GfVec3d{1, 0.0, 0.5}, -40}, 1024);
 
     // Environment map
-    if (!HasDomeLight(*m_Stage.Stage))
     {
+        const bool StageHasDomeLight   = HasDomeLight(*m_Stage.Stage);
         m_Stage.DomeLightId            = SceneDelegateId.AppendChild(pxr::TfToken{"_HnDomeLight_"});
         pxr::UsdLuxDomeLight DomeLight = pxr::UsdLuxDomeLight::Define(m_Stage.Stage, m_Stage.DomeLightId);
         DomeLight.CreateTextureFileAttr().Set(pxr::SdfAssetPath{"textures/papermill.ktx"});
+        if (StageHasDomeLight)
+        {
+            DomeLight.MakeInvisible();
+        }
     }
 
 #if 0
