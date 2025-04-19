@@ -20,12 +20,12 @@ and follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine
 | <img src="https://github.com/DiligentGraphics/DiligentCore/blob/master/media/tvos-logo.png" width=24 valign="middle"> tvOS                  | [![Build Status](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/build-apple.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/build-apple.yml?query=branch%3Amaster) |
 | <img src="https://github.com/DiligentGraphics/DiligentCore/blob/master/media/emscripten-logo.png" width=24 valign="middle"> Web             | [![Build Status](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/build-emscripten.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/build-emscripten.yml?query=branch%3Amaster) | 
 
+[![Documentation](https://img.shields.io/badge/Documentation-online-0072B1?logo=readthedocs&logoColor=white)](https://diligentgraphics.github.io/docs)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](License.txt)
 [![Chat on Discord](https://img.shields.io/discord/730091778081947680?logo=discord)](https://discord.gg/t7HGBK7)
+[![Lines of code](https://sloc.xyz/github/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/DiligentGraphics/DiligentSamples?svg=true)](https://ci.appveyor.com/project/DiligentGraphics/diligentsamples)
 [![MSVC Code Analysis](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml/badge.svg?branch=master)](https://github.com/DiligentGraphics/DiligentSamples/actions/workflows/msvc_analysis.yml?query=branch%3Amaster)
-[![Lines of code](https://sloc.xyz/github/DiligentGraphics/DiligentSamples)](https://github.com/DiligentGraphics/DiligentSamples)
-[![Documentation](https://img.shields.io/badge/Documentation-blue)](https://diligentgraphics.github.io/docs)
 
 # Table of Contents
 
