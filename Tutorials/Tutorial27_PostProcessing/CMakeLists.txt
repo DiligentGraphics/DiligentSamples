@@ -3,37 +3,29 @@ cmake_minimum_required (VERSION 3.10)
 project(Tutorial27_PostProcessing CXX)
 
 file(COPY ../../Samples/GLTFViewer/assets/textures/papermill.ktx DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures)
-
-set(SOURCE
-    src/Tutorial27_PostProcessing.cpp
-    ../Common/src/TexturedCube.cpp
-)
-
-set(INCLUDE
-    src/Tutorial27_PostProcessing.hpp
-    ../Common/src/TexturedCube.hpp
-)
-
-set(SHADERS
-    assets/shaders/GeometryStructures.fxh
-    assets/shaders/GenerateGeometry.vsh
-    assets/shaders/GenerateGeometry.psh
-    assets/shaders/ComputeLighting.fx
-    assets/shaders/ApplyToneMap.fx 
-    assets/shaders/GammaCorrection.fx 
-)
-
 set(TEXTURES
     assets/textures/papermill.ktx
 )
 
-set(ASSETS
-    ${TEXTURES}
+add_sample_app(Tutorial27_PostProcessing
+    IDE_FOLDER
+        DiligentSamples/Tutorials
+    SOURCES
+        src/Tutorial27_PostProcessing.cpp
+        ../Common/src/TexturedCube.cpp
+    INCLUDES
+        src/Tutorial27_PostProcessing.hpp
+        ../Common/src/TexturedCube.hpp
+    SHADERS
+        assets/shaders/GeometryStructures.fxh
+        assets/shaders/GenerateGeometry.vsh
+        assets/shaders/GenerateGeometry.psh
+        assets/shaders/ComputeLighting.fx
+        assets/shaders/ApplyToneMap.fx 
+        assets/shaders/GammaCorrection.fx 
+    ASSETS
+        ${TEXTURES}
 )
-
-set(ALL_SHADERS ${SHADERS})
-
-add_sample_app("Tutorial27_PostProcessing" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 
 target_link_libraries(Tutorial27_PostProcessing PRIVATE DiligentFX)
 

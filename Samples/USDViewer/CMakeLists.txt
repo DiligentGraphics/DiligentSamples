@@ -43,7 +43,13 @@ set(ASSETS
     ${USD_ASSETS}
 )
 
-add_sample_app("USDViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app(USDViewer
+    IDE_FOLDER DiligentSamples/Samples
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
+    SHADERS ${SHADERS} 
+    ASSETS ${ASSETS}
+)
 
 set_source_files_properties(${USD_ASSETS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "usd"

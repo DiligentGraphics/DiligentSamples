@@ -2,20 +2,18 @@ cmake_minimum_required (VERSION 3.10)
 
 project(Tutorial17_MSAA CXX)
 
-set(SOURCE
-    src/Tutorial17_MSAA.cpp
-    ../Common/src/TexturedCube.cpp
+add_sample_app(Tutorial17_MSAA
+    IDE_FOLDER
+        DiligentSamples/Tutorials
+    SOURCES
+        src/Tutorial17_MSAA.cpp
+        ../Common/src/TexturedCube.cpp
+    INCLUDES
+        src/Tutorial17_MSAA.hpp
+        ../Common/src/TexturedCube.hpp
+    SHADERS
+        assets/cube.vsh
+        assets/cube.psh
+    ASSETS
+        assets/DGLogo.png
 )
-
-set(INCLUDE
-    src/Tutorial17_MSAA.hpp
-    ../Common/src/TexturedCube.hpp
-)
-
-set(SHADERS
-    assets/cube.vsh
-    assets/cube.psh
-    assets/DGLogo.png
-)
-
-add_sample_app("Tutorial17_MSAA" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

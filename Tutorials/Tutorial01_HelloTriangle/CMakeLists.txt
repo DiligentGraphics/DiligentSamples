@@ -2,15 +2,11 @@ cmake_minimum_required (VERSION 3.10)
 
 project(Tutorial01_HelloTriangle CXX)
 
-set(SOURCE
-    src/Tutorial01_HelloTriangle.cpp
+add_sample_app(Tutorial01_HelloTriangle
+    IDE_FOLDER 
+        DiligentSamples/Tutorials
+    SOURCES
+        src/Tutorial01_HelloTriangle.cpp
+    INCLUDES
+        src/Tutorial01_HelloTriangle.hpp
 )
-
-set(INCLUDE
-    src/Tutorial01_HelloTriangle.hpp
-)
-
-set(SHADERS)
-set(ASSETS)
-
-add_sample_app("Tutorial01_HelloTriangle" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

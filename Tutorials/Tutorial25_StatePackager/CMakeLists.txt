@@ -28,7 +28,13 @@ set(SHADERS
 
 set(ASSETS ${PSO_ARCHIVE})
 
-add_sample_app("Tutorial25_StatePackager" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app("Tutorial25_StatePackager"
+    IDE_FOLDER "DiligentSamples/Tutorials"
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
+    SHADERS ${SHADERS}
+    ASSETS ${ASSETS}
+)
 
 set(DEVICE_FLAGS --dx11 --dx12 --webgpu)
 # Compute shaders are not supported in OpenGL on MacOS

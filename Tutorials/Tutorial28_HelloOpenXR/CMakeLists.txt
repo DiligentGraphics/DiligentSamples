@@ -2,24 +2,19 @@ cmake_minimum_required (VERSION 3.10)
 
 project(Tutorial28_HelloOpenXR CXX)
 
-set(SOURCE
-    src/Tutorial28_HelloOpenXR.cpp
-    ../Common/src/TexturedCube.cpp
+add_sample_app(Tutorial28_HelloOpenXR
+    IDE_FOLDER
+        DiligentSamples/Tutorials
+    SOURCES
+        src/Tutorial28_HelloOpenXR.cpp
+        ../Common/src/TexturedCube.cpp
+    INCLUDES
+        ../Common/src/TexturedCube.hpp
+    SHADERS
+        assets/cube.vsh
+        assets/cube.psh
+        assets/shader_constants.h
 )
-
-set(INCLUDE
-    ../Common/src/TexturedCube.hpp
-)
-
-set(SHADERS
-    assets/cube.vsh
-    assets/cube.psh
-    assets/shader_constants.h
-)
-
-set(ASSETS)
-
-add_sample_app("Tutorial28_HelloOpenXR" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 
 target_link_libraries(Tutorial28_HelloOpenXR PRIVATE
     Diligent-Common

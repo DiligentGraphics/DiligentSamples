@@ -1,25 +1,54 @@
+cmake_minimum_required(VERSION 3.13)
+
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
-    cmake_minimum_required (VERSION 3.13)
     option(DILIGENT_INSTALL_SAMPLES "Enable installation of samples and tutorials" ON)
-elseif(PLATFORM_WEB)
-    cmake_minimum_required (VERSION 3.13)
 else()
-    cmake_minimum_required (VERSION 3.10)
     set(DILIGENT_INSTALL_SAMPLES OFF)
 endif()
 
 option(DILIGENT_BUILD_SAMPLE_BASE_ONLY                "Build only SampleBase project" OFF)
 option(DILIGENT_EMSCRIPTEN_INCLUDE_COI_SERVICE_WORKER "Include cross-origin isolation service worker in each emscripten build" OFF)
 
-function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
+# Adds a sample application target.
+#
+# Parameters:
+#   APP_NAME - Name of the application
+#   SOURCES - List of source files
+#   INCLUDES - List of include directories
+#   SHADERS - List of shader files
+#   ASSETS - List of asset files
+#   IDE_FOLDER - Optional folder name for IDE
+#
+# Example:
+#
+#   add_sample_app(Tutorial03_Texturing
+#       IDE_FOLDER
+#           DiligentSamples/Tutorials
+#       SOURCES
+#           src/Tutorial03_Texturing.cpp
+#       INCLUDES
+#           src/Tutorial03_Texturing.hpp
+#       SHADERS
+#           assets/cube.vsh
+#           assets/cube.psh
+#       ASSETS
+#           assets/DGLogo.png
+#   )
+#
+function(add_sample_app APP_NAME)
 
-    set_source_files_properties(${SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
-    set(ALL_ASSETS ${ASSETS} ${SHADERS})
-    add_target_platform_app(${APP_NAME} "${SOURCE}" "${INCLUDE}" "${ALL_ASSETS}")
+    set(options)
+    set(oneValueArgs IDE_FOLDER)
+    set(multiValueArgs SOURCES INCLUDES SHADERS ASSETS)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    set_source_files_properties(${ALL_ASSETS} PROPERTIES 
+    set_source_files_properties(${arg_SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
+    set(ALL_ASSETS ${arg_ASSETS} ${arg_SHADERS})
+    add_target_platform_app(${APP_NAME} "${arg_SOURCES}" "${arg_INCLUDES}" "${ALL_ASSETS}")
+
+    set_source_files_properties(${ALL_ASSETS} PROPERTIES
         VS_DEPLOYMENT_LOCATION "."
-        MACOSX_PACKAGE_LOCATION "Resources" 
+        MACOSX_PACKAGE_LOCATION "Resources"
     )
 
     if(PLATFORM_WIN32)
@@ -34,7 +63,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
     endif()
 
     target_include_directories(${APP_NAME}
-    PRIVATE	
+    PRIVATE
         src
     )
 
@@ -54,12 +83,14 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
         target_compile_options(${APP_NAME} PRIVATE /wd4201)
     endif()
 
-    set_target_properties(${APP_NAME} PROPERTIES
-        FOLDER ${IDE_FOLDER}
-    )
+    if(arg_IDE_FOLDER)
+        set_target_properties(${APP_NAME} PROPERTIES
+            FOLDER ${arg_IDE_FOLDER}
+        )
+    endif()
 
-    source_group("src" FILES ${SOURCE} ${INCLUDE})
-    source_group("assets" FILES ${ALL_ASSETS})	
+    source_group("src" FILES ${arg_SOURCES} ${arg_INCLUDES})
+    source_group("assets" FILES ${ALL_ASSETS})
 
     target_sources(${APP_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/readme.md")
     set_source_files_properties(
@@ -94,7 +125,7 @@ function(add_sample_app APP_NAME IDE_FOLDER SOURCE INCLUDE SHADERS ASSETS)
 
             foreach(EXCLUDE_DIR IN LISTS EXCLUDE_DIRECTORIES)
                 target_link_options(${APP_NAME} PRIVATE "SHELL: --exclude-file=${PROJECT_SOURCE_DIR}/assets/models/${EXCLUDE_DIR}")
-            endforeach()    
+            endforeach()
         endif()
         append_sample_base_emscripten_source(${APP_NAME})
     endif()

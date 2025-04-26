@@ -34,7 +34,13 @@ if(PLATFORM_MACOS OR PLATFORM_IOS)
         assets/ImageBlit.msl)
 endif()
 
-add_sample_app("Tutorial24_VRS" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
+add_sample_app(Tutorial24_VRS
+    IDE_FOLDER DiligentSamples/Tutorials
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
+    SHADERS ${SHADERS}
+    ASSETS ${ASSETS}
+)
 
 if(NOT METAL_SUPPORTED)
     target_include_directories(Tutorial24_VRS PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentCore/Graphics/GraphicsEngineMetal/interface")

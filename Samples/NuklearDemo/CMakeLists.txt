@@ -16,13 +16,12 @@ if(PLATFORM_WIN32)
     list(APPEND SOURCE src/NkInputWin32.cpp src/NkInputWin32.h src/NuklearDemoWin32.cpp)
 endif()
 
-set(SHADERS
+add_sample_app(NuklearDemo
+    IDE_FOLDER DiligentSamples/Samples
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
 )
 
-set(ASSETS
-)
-
-add_sample_app("NuklearDemo" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")
 target_include_directories(NuklearDemo PRIVATE ${DILIGENT_NUKLEAR_DIR})
 
 if(MSVC)

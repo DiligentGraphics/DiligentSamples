@@ -11,10 +11,8 @@ set(INCLUDE
     src/ImguiDemo.hpp
 )
 
-set(SHADERS
+add_sample_app(ImguiDemo
+    IDE_FOLDER DiligentSamples/Samples
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
 )
-
-set(ASSETS
-)
-
-add_sample_app("ImguiDemo" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

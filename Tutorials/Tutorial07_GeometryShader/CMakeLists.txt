@@ -2,25 +2,20 @@ cmake_minimum_required (VERSION 3.10)
 
 project(Tutorial07_GeometryShader CXX)
 
-set(SOURCE
-    src/Tutorial07_GeometryShader.cpp
-    ../Common/src/TexturedCube.cpp
+add_sample_app(Tutorial07_GeometryShader
+    IDE_FOLDER
+        DiligentSamples/Tutorials
+    SOURCES
+        src/Tutorial07_GeometryShader.cpp
+        ../Common/src/TexturedCube.cpp
+    INCLUDES
+        src/Tutorial07_GeometryShader.hpp
+        ../Common/src/TexturedCube.hpp
+    SHADERS
+        assets/cube.vsh
+        assets/cube.psh
+        assets/cube.gsh
+        assets/structures.fxh
+    ASSETS
+        assets/DGLogo.png
 )
-
-set(INCLUDE
-    src/Tutorial07_GeometryShader.hpp
-    ../Common/src/TexturedCube.hpp
-)
-
-set(SHADERS
-    assets/cube.vsh
-    assets/cube.psh
-    assets/cube.gsh
-    assets/structures.fxh
-)
-
-set(ASSETS
-    assets/DGLogo.png
-)
-
-add_sample_app("Tutorial07_GeometryShader" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

@@ -2,19 +2,14 @@ cmake_minimum_required (VERSION 3.10)
 
 project(Tutorial02_Cube CXX)
 
-set(SOURCE
-    src/Tutorial02_Cube.cpp
+add_sample_app(Tutorial02_Cube
+    IDE_FOLDER
+        DiligentSamples/Tutorials
+    SOURCES
+        src/Tutorial02_Cube.cpp
+    INCLUDES
+        src/Tutorial02_Cube.hpp
+    SHADERS
+        assets/cube.vsh
+        assets/cube.psh
 )
-
-set(INCLUDE
-    src/Tutorial02_Cube.hpp
-)
-
-set(SHADERS
-    assets/cube.vsh
-    assets/cube.psh
-)
-
-set(ASSETS)
-
-add_sample_app("Tutorial02_Cube" "DiligentSamples/Tutorials" "${SOURCE}" "${INCLUDE}" "${SHADERS}" "${ASSETS}")

@@ -14,8 +14,6 @@ set(SHADERS
     assets/shaders/ApplyPostEffects.psh
 )
 
-set(ALL_SHADERS ${SHADERS})
-
 include(FetchContent)
 
 # Fetch assets
@@ -40,7 +38,14 @@ set(ASSETS
     ${TEXTURES}
 )
 
-add_sample_app("GLTFViewer" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
+add_sample_app(GLTFViewer
+    IDE_FOLDER DiligentSamples/Samples
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
+    SHADERS ${SHADERS}
+    ASSETS ${ASSETS}
+)
+
 target_link_libraries(GLTFViewer 
 PRIVATE
     Diligent-AssetLoader 

@@ -50,7 +50,13 @@ set(TERRAIN_TILES
 
 set(ALL_SHADERS ${TERRAIN_SHADERS} ${SHADERS})
 set(ASSETS ${TERRAIN_TEXTURES} ${TERRAIN_TILES} ${RENDER_STATES})
-add_sample_app("Atmosphere" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
+add_sample_app(Atmosphere
+    IDE_FOLDER DiligentSamples/Samples
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
+    SHADERS ${ALL_SHADERS}
+    ASSETS ${ASSETS}
+)
 
 set_source_files_properties(${TERRAIN_SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders/terrain"
@@ -91,4 +97,4 @@ PRIVATE
 )
 
 # We have to use a different group name (Assets with capital A) to override grouping that was set by add_sample_app
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${SHADERS} ${TERRAIN_SHADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/assets PREFIX Assets FILES ${ASSETS} ${ALL_SHADERS})

@@ -14,7 +14,6 @@ set(SHADERS
     assets/shaders/MeshVS.vsh
     assets/shaders/MeshPS.psh
 )
-set(ALL_SHADERS ${SHADERS})
 
 set(RENDER_STATES 
     assets/render_states/RenderStates.json
@@ -26,8 +25,14 @@ set(ASSETS
     ${POWERPLANT_FILES}
     ${RENDER_STATES}
 )
+add_sample_app(Shadows
+    IDE_FOLDER DiligentSamples/Samples
+    SOURCES ${SOURCE}
+    INCLUDES ${INCLUDE}
+    SHADERS ${SHADERS}
+    ASSETS ${ASSETS}
+)
 
-add_sample_app("Shadows" "DiligentSamples/Samples" "${SOURCE}" "${INCLUDE}" "${ALL_SHADERS}" "${ASSETS}")
 target_link_libraries(Shadows 
 PRIVATE 
     Diligent-AssetLoader
@@ -45,7 +50,7 @@ set_source_files_properties(${POWERPLANT_FILES} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources/Powerplant"
 )
 
-set_source_files_properties(${ALL_SHADERS} PROPERTIES
+set_source_files_properties(${SHADERS} PROPERTIES
     VS_DEPLOYMENT_LOCATION "shaders"
     MACOSX_PACKAGE_LOCATION Resources/shaders
 )
