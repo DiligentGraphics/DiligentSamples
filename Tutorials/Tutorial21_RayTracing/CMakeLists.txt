@@ -28,4 +28,6 @@ add_sample_app(Tutorial21_RayTracing
         assets/DGLogo2.png
         assets/DGLogo3.png
         assets/Ground.jpg
+    DXC_REQUIRED
+        YES
 )

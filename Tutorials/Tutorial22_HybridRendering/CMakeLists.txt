@@ -24,4 +24,6 @@ add_sample_app(Tutorial22_HybridRendering
         assets/DGLogo2.png
         assets/DGLogo3.png
         assets/Marble.jpg
+    DXC_REQUIRED
+        YES
 )

@@ -18,6 +18,7 @@ option(DILIGENT_EMSCRIPTEN_INCLUDE_COI_SERVICE_WORKER "Include cross-origin isol
 #   SHADERS - List of shader files
 #   ASSETS - List of asset files
 #   IDE_FOLDER - Optional folder name for IDE
+#   DXC_REQUIRED - Indicates if DXC compiler is required for the sample (optional, default is OFF)
 #
 # Example:
 #
@@ -38,9 +39,14 @@ option(DILIGENT_EMSCRIPTEN_INCLUDE_COI_SERVICE_WORKER "Include cross-origin isol
 function(add_sample_app APP_NAME)
 
     set(options)
-    set(oneValueArgs IDE_FOLDER)
+    set(oneValueArgs IDE_FOLDER DXC_REQUIRED)
     set(multiValueArgs SOURCES INCLUDES SHADERS ASSETS)
     cmake_parse_arguments(PARSE_ARGV 1 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+    if (arg_DXC_REQUIRED)
+        set(DXC_REQUIRED ${arg_DXC_REQUIRED})
+	else()
+		set(DXC_REQUIRED NO)
+    endif()
 
     set_source_files_properties(${arg_SHADERS} PROPERTIES VS_TOOL_OVERRIDE "None")
     set(ALL_ASSETS ${arg_ASSETS} ${arg_SHADERS})
@@ -55,11 +61,11 @@ function(add_sample_app APP_NAME)
         set_target_properties(${APP_NAME} PROPERTIES 
             VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
         )
-        copy_required_dlls(${APP_NAME})
+        copy_required_dlls(${APP_NAME} DXC_REQUIRED ${DXC_REQUIRED})
         append_sample_base_win32_source(${APP_NAME})
     elseif(PLATFORM_UNIVERSAL_WINDOWS)
         append_sample_base_uwp_source(${APP_NAME})
-        package_required_dlls(${APP_NAME})
+        package_required_dlls(${APP_NAME} DXC_REQUIRED ${DXC_REQUIRED})
     endif()
 
     target_include_directories(${APP_NAME}
@@ -147,6 +153,18 @@ function(add_sample_app APP_NAME)
                     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${TUTORIAL_REL_PATH}/$<CONFIG>"
                     LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}/${TUTORIAL_REL_PATH}/$<CONFIG>"
                     ARCHIVE DESTINATION "${CMAKE_INSTALL_BINDIR}/${TUTORIAL_REL_PATH}/$<CONFIG>")
+
+            # Dawn uses DXC, so we need to copy the DXC dlls even if DXC_REQUIRED is not set
+            # to get consistent shader compilation results
+            if(((DXC_REQUIRED AND D3D12_SUPPORTED) OR WEBGPU_SUPPORTED) AND DXC_COMPILER_PATH AND DXIL_SIGNER_PATH)
+                install(FILES "${DXC_COMPILER_PATH}" "${DXIL_SIGNER_PATH}"
+                        DESTINATION "${CMAKE_INSTALL_BINDIR}/${TUTORIAL_REL_PATH}/$<CONFIG>")
+            endif()
+            if(DXC_REQUIRED AND VULKAN_SUPPORTED AND DILIGENT_DXCOMPILER_FOR_SPIRV_PATH AND EXISTS "${DILIGENT_DXCOMPILER_FOR_SPIRV_PATH}")
+                install(FILES "${DILIGENT_DXCOMPILER_FOR_SPIRV_PATH}"
+                        DESTINATION "${CMAKE_INSTALL_BINDIR}/${TUTORIAL_REL_PATH}/$<CONFIG>"
+                        RENAME spv_dxcompiler.dll)
+            endif()
         endif()
 
         if(PLATFORM_LINUX)

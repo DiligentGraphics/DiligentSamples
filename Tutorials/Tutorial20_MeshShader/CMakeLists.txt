@@ -16,4 +16,6 @@ add_sample_app(Tutorial20_MeshShader
         assets/structures.fxh
     ASSETS
         assets/DGLogo.png
+    DXC_REQUIRED
+        YES
 )

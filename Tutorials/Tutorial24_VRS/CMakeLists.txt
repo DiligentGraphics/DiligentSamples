@@ -40,6 +40,7 @@ add_sample_app(Tutorial24_VRS
     INCLUDES ${INCLUDE}
     SHADERS ${SHADERS}
     ASSETS ${ASSETS}
+    DXC_REQUIRED YES
 )
 
 if(NOT METAL_SUPPORTED)
