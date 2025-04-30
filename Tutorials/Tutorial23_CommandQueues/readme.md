@@ -169,7 +169,7 @@ if (NumAdapters > 0)
     Uint32 NumQueues   = 0;
     for (Uint32 AdapterId = 0; AdapterId < NumAdapters; ++AdapterId)
     {
-        auto& Adapter = Adapters[AdapterId];
+        GraphicsAdapterInfo& Adapter = Adapters[AdapterId];
         if (Adapter.NumQueues > NumQueues)
         {
             EngineCI.AdapterId = AdapterId;
@@ -187,13 +187,14 @@ We use a helper function `AddContext()` to find the required queue and add it to
 ```cpp
 std::vector<ImmediateContextCreateInfo> ContextCI;
 
-auto AddContext = [&](COMMAND_QUEUE_TYPE Type, const char* Name, Uint32 AdapterId)
+auto AddContext = [&](COMMAND_QUEUE_TYPE Type, const char* Name, Uint32 AdapterId) //
 {
-    constexpr auto QueueMask = COMMAND_QUEUE_TYPE_PRIMARY_MASK;
-    auto*          Queues    = Adapters[AdapterId].Queues;
+    constexpr COMMAND_QUEUE_TYPE QueueMask = COMMAND_QUEUE_TYPE_PRIMARY_MASK;
+
+    CommandQueueInfo* Queues = Adapters[AdapterId].Queues;
     for (Uint32 q = 0, Count = Adapters[AdapterId].NumQueues; q < Count; ++q)
     {
-        auto& CurQueue = Queues[q];
+        CommandQueueInfo& CurQueue = Queues[q];
         if (CurQueue.MaxDeviceContexts == 0)
             continue;
 

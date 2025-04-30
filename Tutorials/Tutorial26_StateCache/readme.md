@@ -78,8 +78,8 @@ Finally, we load the data into the cache, if it exists:
 ```cpp
 if (FileSystem::FileExists(m_StateCachePath.c_str()))
 {
-    FileWrapper CacheDataFile{m_StateCachePath.c_str()};
-    auto        pCacheData = DataBlobImpl::Create();
+    FileWrapper                 CacheDataFile{m_StateCachePath.c_str()};
+    RefCntAutoPtr<DataBlobImpl> pCacheData = DataBlobImpl::Create();
     if (CacheDataFile->Read(pCacheData))
     {
         m_pStateCache->Load(pCacheData);

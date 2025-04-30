@@ -69,7 +69,7 @@ resolve operation. In our example, we will resolve our multi-sampled color buffe
 to the current swap chain image:
 
 ```cpp
-auto pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
+ITexture* pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
 ResolveTextureSubresourceAttribs ResolveAttribs;
 ResolveAttribs.SrcTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 ResolveAttribs.DstTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
@@ -83,8 +83,8 @@ supported by a format, use `IRenderDevice::GetTextureFormatInfoExt` method. The 
 member of the returned structure has 1 bit set for all supported sample counts:
 
 ```cpp
-const auto& ColorFmtInfo = pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
-const auto& DepthFmtInfo = pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
+const TextureFormatInfoExt& ColorFmtInfo = pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
+const TextureFormatInfoExt& DepthFmtInfo = pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
 m_SupportedSampleCounts = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
 if (m_SupportedSampleCounts & SAMPLE_COUNT_4)
     m_SampleCount = 4;

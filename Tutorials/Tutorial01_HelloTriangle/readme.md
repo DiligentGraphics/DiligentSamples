@@ -181,8 +181,8 @@ Before rendering anything on the screen we want to clear it:
 
 ```cpp
 const float ClearColor[] = {  0.350f,  0.350f,  0.350f, 1.0f }; 
-auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
 m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0,
                                        RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

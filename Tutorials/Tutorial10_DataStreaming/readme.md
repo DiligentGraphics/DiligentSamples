@@ -89,7 +89,7 @@ Uint32 StreamingBuffer::Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNu
         MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_NO_OVERWRITE);
     }
 
-    auto Offset = MapInfo.m_CurrOffset;
+    Uint32 Offset = MapInfo.m_CurrOffset;
     // Update offset
     MapInfo.m_CurrOffset += Size;
     return Offset;
@@ -99,8 +99,8 @@ Uint32 StreamingBuffer::Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNu
 Writing data to the buffer is then straightforward:
 
 ```cpp
-auto VBOffset = m_StreamingVB->Allocate(pCtx, NumVerts * sizeof(float2), CtxNum);
-auto* VertexData = reinterpret_cast<float2*>(reinterpret_cast<Uint8*>(m_StreamingVB->GetMappedCPUAddress(CtxNum)) + VBOffset);
+Uint32  VBOffset   = m_StreamingVB->Allocate(pCtx, NumVerts * sizeof(float2), CtxNum);
+float2* VertexData = reinterpret_cast<float2*>(reinterpret_cast<Uint8*>(m_StreamingVB->GetMappedCPUAddress(CtxNum)) + VBOffset);
 // Write required data to VertexData
 // ... 
 

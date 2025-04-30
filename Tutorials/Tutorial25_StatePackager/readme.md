@@ -528,7 +528,7 @@ Then read the archive data from the file and load it into the dearchiver:
 
 ```cpp
 FileWrapper pArchive{"StateArchive.bin"};
-auto pArchiveData = DataBlobImpl::Create();
+RefCntAutoPtr<DataBlobImpl> pArchiveData = DataBlobImpl::Create();
 pArchive->Read(pArchiveData);
 pDearchiver->LoadArchive(pArchiveData);
 ```
@@ -559,8 +559,8 @@ We define the callback that sets the render target formats using the `MakeCallba
 ```cpp
 auto ModifyResolvePSODesc = MakeCallback(
     [this](PipelineStateCreateInfo& PSODesc) {
-        auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
-        auto& GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
+        GraphicsPipelineStateCreateInfo& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
+        GraphicsPipelineDesc&            GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
 
         GraphicsPipeline.NumRenderTargets = 1;
         GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;

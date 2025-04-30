@@ -385,8 +385,8 @@ for (int y = 0; y < GridDim.y; ++y)
 {
     for (int x = 0; x < GridDim.x; ++x)
     {
-        int   idx = x + y * GridDim.x;
-        auto& dst = DrawTasks[idx];
+        int       idx = x + y * GridDim.x;
+        DrawTask& dst = DrawTasks[idx];
 
         dst.BasePos.x  = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
         dst.BasePos.y  = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);

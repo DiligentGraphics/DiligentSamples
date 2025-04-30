@@ -240,8 +240,8 @@ to the main framebuffer using our post-processing effect shader.
 
 ```cpp
 const float Zero[] = { 0.0f,  0.0f,  0.0f, 1.0f };
-auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
 m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV,
                                       RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 m_pImmediateContext->ClearRenderTarget(pRTV, Zero, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

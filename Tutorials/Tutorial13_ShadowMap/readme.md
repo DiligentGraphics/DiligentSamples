@@ -125,8 +125,7 @@ is transformed to a normalized device space. Note that while in Direct3D11, Dire
 Vulkan this space is [-1,1]x[-1,1]x[0,1], in OpenGL it is [-1,1]x[-1,1]x[-1,1].
 
 ```cpp
-const auto& DevCaps = m_pDevice->GetDeviceCaps();
-const bool IsGL = DevCaps.IsGLDevice();
+const bool IsGL = m_pDevice->GetDeviceInfo().IsGLDevice();
 float4 f4LightSpaceScale;
 f4LightSpaceScale.x =  2.f / f3SceneExtent.x;
 f4LightSpaceScale.y =  2.f / f3SceneExtent.y;
@@ -155,9 +154,9 @@ to sample the shadow map. Note again that OpenGL is unlike other APIs, so we use
 struct to handle the differences.
 
 ```cpp
-const auto& NDCAttribs = DevCaps.GetNDCAttribs();
-float4x4 ProjToUVScale = float4x4::Scale(0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale);
-float4x4 ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
+const NDCAttribs& NDC = DevCaps.GetNDCAttribs();
+float4x4 ProjToUVScale = float4x4::Scale(0.5f, NDC.YtoVScale, NDC.ZtoDepthScale);
+float4x4 ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDC.GetZtoDepthBias());
 m_WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
 ```
 

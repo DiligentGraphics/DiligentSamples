@@ -94,18 +94,18 @@ for (int tex = 0; tex < NumTextures; ++tex)
     // Create loader for the current texture
     std::stringstream FileNameSS;
     FileNameSS << "DGLogo" << tex << ".png";
-    const auto      FileName = FileNameSS.str();
+    const std::string FileName = FileNameSS.str();
     TextureLoadInfo LoadInfo;
     LoadInfo.IsSRGB = true;
 
     CreateTextureLoaderFromFile(FileName.c_str(), IMAGE_FILE_FORMAT_UNKNOWN, LoadInfo, &TexLoaders[tex]);
 }
 
-auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
-TexArrDesc.ArraySize = NumTextures;
-TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-TexArrDesc.Usage     = USAGE_DEFAULT;
-TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+TextureDesc TexArrDesc = TexLoaders[0]->GetTextureDesc();
+TexArrDesc.ArraySize   = NumTextures;
+TexArrDesc.Type        = RESOURCE_DIM_TEX_2D_ARRAY;
+TexArrDesc.Usage       = USAGE_DEFAULT;
+TexArrDesc.BindFlags   = BIND_SHADER_RESOURCE;
 
 // Prepare initialization data
 std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);

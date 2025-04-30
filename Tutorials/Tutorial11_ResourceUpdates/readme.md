@@ -84,7 +84,7 @@ Vertex* Vertices = nullptr;
 VertexBuffer->Map(m_pImmediateContext, MAP_WRITE, MAP_FLAG_DISCARD, reinterpret_cast<PVoid&>(Vertices));
 for(Uint32 v=0; v < _countof(CubeVerts); ++v)
 {
-    const auto& SrcVert = CubeVerts[v];
+    const Vertex& SrcVert = CubeVerts[v];
     Vertices[v].uv  = SrcVert.uv;
     Vertices[v].pos = SrcVert.pos * static_cast<float>(1 + 0.2*sin(m_CurrTime * (1.0 + v * 0.2)));
 }

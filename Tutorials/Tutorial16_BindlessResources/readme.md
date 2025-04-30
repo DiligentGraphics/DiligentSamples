@@ -87,7 +87,7 @@ from the instance data buffer and passed over to the pixel shader.
 ```cpp
 for (int i=0; i < NumObjects; ++i)
 {
-    const auto& Geometry = m_Geometries[m_GeometryType[i]];
+    const ObjectGeometry& Geometry = m_Geometries[m_GeometryType[i]];
 
     DrawIndexedAttribs DrawAttrs;
     DrawAttrs.IndexType             = VT_UINT32;
