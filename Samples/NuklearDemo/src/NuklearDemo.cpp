@@ -60,7 +60,7 @@ void NuklearDemo::Initialize(const SampleInitInfo& InitInfo)
     constexpr Uint32 NuklearMaxVBSize = 512 * 1024;
     constexpr Uint32 NuklearMaxIBSize = 128 * 1024;
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     m_pNkDlgCtx = nk_diligent_init(m_pDevice, SCDesc.Width, SCDesc.Height, SCDesc.ColorBufferFormat, SCDesc.DepthBufferFormat, NuklearMaxVBSize, NuklearMaxIBSize);
     m_pNkCtx    = nk_diligent_get_nk_ctx(m_pNkDlgCtx);
@@ -87,7 +87,7 @@ void NuklearDemo::UpdateUI()
 // Render a frame
 void NuklearDemo::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
 
     const float4 ClearColor = {0.45f, 0.55f, 0.60f, 1.00f};
     m_pImmediateContext->ClearRenderTarget(pRTV, &ClearColor.x, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);

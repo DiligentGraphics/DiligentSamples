@@ -61,13 +61,13 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    const auto& DeviceInfo = InitInfo.pDevice->GetDeviceInfo();
+    const RenderDeviceInfo& DeviceInfo = InitInfo.pDevice->GetDeviceInfo();
 
     // Due to a bug, NVidia OpenGL driver crashes when compiling shaders with row-major matrices
     // in nested structures.
     m_PackMatrixRowMajor = !DeviceInfo.IsGLDevice();
 
-    const auto AdatperType = InitInfo.pDevice->GetAdapterInfo().Type;
+    const ADAPTER_TYPE AdatperType = InitInfo.pDevice->GetAdapterInfo().Type;
     if (AdatperType == ADAPTER_TYPE_INTEGRATED)
     {
         m_ShadowSettings.Resolution                        = 512;
@@ -80,10 +80,10 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
         m_TerrainRenderParams.m_TexturingMode              = RenderingParams::TM_MATERIAL_MASK;
     }
 
-    const auto& RG16UAttribs = m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RG16_UNORM);
-    const auto& RG32FAttribs = m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RG32_FLOAT);
-    m_bRG16UFmtSupported     = RG16UAttribs.Supported && (RG16UAttribs.BindFlags & BIND_RENDER_TARGET);
-    m_bRG32FFmtSupported     = RG32FAttribs.Supported && (RG32FAttribs.BindFlags & BIND_RENDER_TARGET);
+    const TextureFormatInfoExt& RG16UAttribs = m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RG16_UNORM);
+    const TextureFormatInfoExt& RG32FAttribs = m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RG32_FLOAT);
+    m_bRG16UFmtSupported                     = RG16UAttribs.Supported && (RG16UAttribs.BindFlags & BIND_RENDER_TARGET);
+    m_bRG32FFmtSupported                     = RG32FAttribs.Supported && (RG32FAttribs.BindFlags & BIND_RENDER_TARGET);
     if (!m_bRG16UFmtSupported && !m_bRG32FFmtSupported)
     {
         m_PPAttribs.bUse1DMinMaxTree = FALSE;
@@ -138,8 +138,9 @@ void AtmosphereSample::Initialize(const SampleInitInfo& InitInfo)
     CreateUniformBuffer(m_pDevice, sizeof(CameraAttribs), "Camera Attribs CB", &m_pcbCameraAttribs);
     CreateUniformBuffer(m_pDevice, sizeof(LightAttribs), "Light Attribs CB", &m_pcbLightAttribs);
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
-    m_pLightSctrPP     = std::make_unique<EpipolarLightScattering>(EpipolarLightScattering::CreateInfo{
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+
+    m_pLightSctrPP = std::make_unique<EpipolarLightScattering>(EpipolarLightScattering::CreateInfo{
         m_pDevice,
         nullptr,
         m_pImmediateContext,
@@ -502,7 +503,7 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
                                        const float4x4& mCameraView,
                                        const float4x4& mCameraProj)
 {
-    auto& ShadowAttribs = LightAttribs.ShadowAttribs;
+    ShadowMapAttribs& ShadowAttribs = LightAttribs.ShadowAttribs;
 
     ShadowMapManager::DistributeCascadeInfo DistrInfo;
     DistrInfo.pCameraView         = &mCameraView;
@@ -535,18 +536,18 @@ void AtmosphereSample::RenderShadowMap(IDeviceContext* pContext,
     // Render cascades
     for (int iCascade = 0; iCascade < m_TerrainRenderParams.m_iNumShadowCascades; ++iCascade)
     {
-        auto* pCascadeDSV = m_ShadowMapMgr.GetCascadeDSV(iCascade);
+        ITextureView* pCascadeDSV = m_ShadowMapMgr.GetCascadeDSV(iCascade);
 
         m_pImmediateContext->SetRenderTargets(0, nullptr, pCascadeDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTransform(iCascade).Proj;
+        const float4x4 CascadeProjMatr = m_ShadowMapMgr.GetCascadeTransform(iCascade).Proj;
 
-        const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
+        const float4x4& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
             ShadowAttribs.mWorldToLightView :
             ShadowAttribs.mWorldToLightView.Transpose();
 
-        const auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
+        const float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         {
             MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_pcbCameraAttribs, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -594,10 +595,10 @@ void AtmosphereSample::Render()
     // The first time GetAmbientSkyLightSRV() is called, the ambient sky light texture
     // is computed and render target is set. So we need to query the texture before setting
     // render targets
-    auto* pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, nullptr, m_pImmediateContext);
+    ITextureView* pAmbientSkyLightSRV = m_pLightSctrPP->GetAmbientSkyLightSRV(m_pDevice, nullptr, m_pImmediateContext);
 
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
@@ -635,8 +636,8 @@ void AtmosphereSample::Render()
     }
 
     // Render terrain
-    auto* pPrecomputedNetDensitySRV    = m_pLightSctrPP->GetPrecomputedNetDensitySRV();
-    m_TerrainRenderParams.DstRTVFormat = m_bEnableLightScattering ? m_pOffscreenColorBuffer->GetDesc().Format : m_pSwapChain->GetDesc().ColorBufferFormat;
+    ITextureView* pPrecomputedNetDensitySRV = m_pLightSctrPP->GetPrecomputedNetDensitySRV();
+    m_TerrainRenderParams.DstRTVFormat      = m_bEnableLightScattering ? m_pOffscreenColorBuffer->GetDesc().Format : m_pSwapChain->GetDesc().ColorBufferFormat;
     m_EarthHemisphere.Render(m_pImmediateContext,
                              m_TerrainRenderParams,
                              m_f3CameraPos,
@@ -789,7 +790,7 @@ void ComputeApproximateNearFarPlaneDist(const float3&   CameraPos,
 
 void AtmosphereSample::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 {
-    const auto& mouseState = m_InputController.GetMouseState();
+    const MouseState& mouseState = m_InputController.GetMouseState();
 
     float MouseDeltaX = 0;
     float MouseDeltaY = 0;
@@ -814,7 +815,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime, bool DoUpdate
     m_f3CameraPos.y = std::max(m_f3CameraPos.y, 2000.f);
     m_f3CameraPos.y = std::min(m_f3CameraPos.y, 100000.f);
 
-    auto CameraRotationMatrix = m_CameraRotation.ToMatrix();
+    float4x4 CameraRotationMatrix = m_CameraRotation.ToMatrix();
 
     if ((m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)
     {
@@ -833,7 +834,7 @@ void AtmosphereSample::Update(double CurrTime, double ElapsedTime, bool DoUpdate
 
     m_fElapsedTime = static_cast<float>(ElapsedTime);
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
     // Set world/view/proj matrices and global shader constants
     float aspectRatio = (float)SCDesc.Width / SCDesc.Height;
 

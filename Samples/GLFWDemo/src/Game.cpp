@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,7 +96,7 @@ void Game::Update(float dt)
     dt = std::min(dt, Constants.MaxDT);
 
     // update player position
-    const auto PosDeltaLen = length(m_Player.PendingPos);
+    const float PosDeltaLen = length(m_Player.PendingPos);
     if (PosDeltaLen > 0.1f)
     {
         const float2 StartPos = m_Player.Pos;
@@ -157,9 +157,10 @@ void Game::Update(float dt)
                                        lerp(YRange.x, YRange.y, UNormPlayerPos.y)};
 
         // convert mouse position to signed normalized screen coordinates
-        const auto& SCDesc        = GetSwapChain()->GetDesc();
-        float2      SNormMousePos = (m_Player.MousePos / uint2{SCDesc.Width, SCDesc.Height}.Recast<float>()) * 2.0f - float2(1.f, 1.f);
-        SNormMousePos.y           = -SNormMousePos.y;
+        const SwapChainDesc& SCDesc = GetSwapChain()->GetDesc();
+
+        float2 SNormMousePos = (m_Player.MousePos / uint2{SCDesc.Width, SCDesc.Height}.Recast<float>()) * 2.0f - float2(1.f, 1.f);
+        SNormMousePos.y      = -SNormMousePos.y;
 
         // calculate direction from player position to mouse position
         m_Player.FlashLightDir = normalize(SNormMousePos - SNormPlayerPos);
@@ -173,8 +174,8 @@ void Game::Update(float dt)
 
 void Game::Draw()
 {
-    auto* pContext   = GetContext();
-    auto* pSwapchain = GetSwapChain();
+    IDeviceContext* pContext   = GetContext();
+    ISwapChain*     pSwapchain = GetSwapChain();
 
     ITextureView* pRTV = pSwapchain->GetCurrentBackBufferRTV();
     pContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -184,8 +185,8 @@ void Game::Draw()
 
     // update map constants
     {
-        const auto&  SCDesc = pSwapchain->GetDesc();
-        MapConstants Const;
+        const SwapChainDesc& SCDesc = pSwapchain->GetDesc();
+        MapConstants         Const;
 
         GetScreenTransform(Const.ScreenRectLR, Const.ScreenRectTB);
 
@@ -226,9 +227,9 @@ void Game::Draw()
 
 void Game::GetScreenTransform(float2& XRange, float2& YRange)
 {
-    const auto& SCDesc       = GetSwapChain()->GetDesc();
-    const float ScreenAspect = static_cast<float>(SCDesc.Width) / SCDesc.Height;
-    const float TexAspect    = static_cast<float>(Constants.MapTexDim.x) / Constants.MapTexDim.y;
+    const SwapChainDesc& SCDesc       = GetSwapChain()->GetDesc();
+    const float          ScreenAspect = static_cast<float>(SCDesc.Width) / SCDesc.Height;
+    const float          TexAspect    = static_cast<float>(Constants.MapTexDim.x) / Constants.MapTexDim.y;
 
     if (ScreenAspect > TexAspect)
     {
@@ -498,7 +499,7 @@ void Game::CreateSDFMap()
     }
 
     // Generate signed distance field (SDF)
-    auto* pContext = GetContext();
+    IDeviceContext* pContext = GetContext();
 
     // upload map to pSrcTex
     {
@@ -537,7 +538,7 @@ void Game::CreateSDFMap()
 void Game::CreatePipelineState()
 {
     auto Callback = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
-        auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
+        GraphicsPipelineStateCreateInfo& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI)};
         GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = GetSwapChain()->GetDesc().ColorBufferFormat;
         GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
     });

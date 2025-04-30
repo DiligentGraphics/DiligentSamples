@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -245,7 +245,7 @@ public:
                     enum QUAD_TRIANGULATION_TYPE QuadTriangType)
     {
         m_RingMeshes.push_back(RingSectorMesh());
-        auto& CurrMesh = m_RingMeshes.back();
+        RingSectorMesh& CurrMesh = m_RingMeshes.back();
 
         std::vector<Uint32> IB;
         StdTriStrip32       TriStrip(IB, StdIndexGenerator(m_iGridDimenion));
@@ -267,12 +267,12 @@ public:
         VERIFY(CurrMesh.pIndBuff, "Failed to create index buffer");
 
         // Compute bounding box
-        auto& BB = CurrMesh.BndBox;
-        BB.Max   = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-        BB.Min   = float3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+        BoundBox& BB{CurrMesh.BndBox};
+        BB.Max = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        BB.Min = float3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
         for (auto Ind = IB.begin(); Ind != IB.end(); ++Ind)
         {
-            const auto& CurrVert = m_VB[*Ind].f3WorldPos;
+            const float3& CurrVert = m_VB[*Ind].f3WorldPos;
 
             BB.Min = std::min(BB.Min, CurrVert);
             BB.Max = std::max(BB.Max, CurrVert);
@@ -320,8 +320,8 @@ void GenerateSphereGeometry(IRenderDevice*                 pDevice,
         for (int iRow = 0; iRow < iGridDimension; ++iRow)
             for (int iCol = 0; iCol < iGridDimension; ++iCol)
             {
-                auto& CurrVert = VB[iCurrGridStart + iCol + iRow * iGridDimension];
-                auto& f3Pos    = CurrVert.f3WorldPos;
+                HemisphereVertex& CurrVert = VB[iCurrGridStart + iCol + iRow * iGridDimension];
+                float3&           f3Pos    = CurrVert.f3WorldPos;
 
                 f3Pos.x = static_cast<float>(iCol) / static_cast<float>(iGridDimension - 1);
                 f3Pos.z = static_cast<float>(iRow) / static_cast<float>(iGridDimension - 1);
@@ -360,19 +360,19 @@ void GenerateSphereGeometry(IRenderDevice*                 pDevice,
                 // Top & bottom boundaries
                 for (int iRow = 0; iRow < iGridDimension; iRow += iGridDimension - 1)
                 {
-                    const auto& V0 = VB[iCurrGridStart + i - 1 + iRow * iGridDimension].f3WorldPos;
-                    auto&       V1 = VB[iCurrGridStart + i + 0 + iRow * iGridDimension].f3WorldPos;
-                    const auto& V2 = VB[iCurrGridStart + i + 1 + iRow * iGridDimension].f3WorldPos;
-                    V1             = (V0 + V2) / 2.f;
+                    const float3& V0 = VB[iCurrGridStart + i - 1 + iRow * iGridDimension].f3WorldPos;
+                    float3&       V1 = VB[iCurrGridStart + i + 0 + iRow * iGridDimension].f3WorldPos;
+                    const float3& V2 = VB[iCurrGridStart + i + 1 + iRow * iGridDimension].f3WorldPos;
+                    V1               = (V0 + V2) / 2.f;
                 }
 
                 // Left & right boundaries
                 for (int iCol = 0; iCol < iGridDimension; iCol += iGridDimension - 1)
                 {
-                    const auto& V0 = VB[iCurrGridStart + iCol + (i - 1) * iGridDimension].f3WorldPos;
-                    auto&       V1 = VB[iCurrGridStart + iCol + (i + 0) * iGridDimension].f3WorldPos;
-                    const auto& V2 = VB[iCurrGridStart + iCol + (i + 1) * iGridDimension].f3WorldPos;
-                    V1             = (V0 + V2) / 2.f;
+                    const float3& V0 = VB[iCurrGridStart + iCol + (i - 1) * iGridDimension].f3WorldPos;
+                    float3&       V1 = VB[iCurrGridStart + iCol + (i + 0) * iGridDimension].f3WorldPos;
+                    const float3& V2 = VB[iCurrGridStart + iCol + (i + 1) * iGridDimension].f3WorldPos;
+                    V1               = (V0 + V2) / 2.f;
                 }
             }
         }
@@ -411,84 +411,6 @@ void GenerateSphereGeometry(IRenderDevice*                 pDevice,
             // clang-format on
         }
     }
-
-    // We do not need per-vertex normals as we use normal map to shade terrain
-    // Sphere tangent vertex are computed in the shader
-#if 0
-    // Compute normals
-    const float3 *pV0 = nullptr;
-    const float3 *pV1 = &VB[ IB[0] ].f3WorldPos;
-    const float3 *pV2 = &VB[ IB[1] ].f3WorldPos;
-    float fSign = +1;
-    for(Uint32 Ind=2; Ind < m_uiIndicesInIndBuff; ++Ind)
-    {
-        fSign = -fSign;
-        pV0 = pV1;
-        pV1 = pV2;
-        pV2 =  &VB[ IB[Ind] ].f3WorldPos;
-        float3 Rib0 = *pV0 - *pV1;
-        float3 Rib1 = *pV1 - *pV2;
-        float3 TriN;
-        D3DXVec3Cross(&TriN, &Rib0, &Rib1);
-        float fLength = D3DXVec3Length(&TriN);
-        if( fLength > 0.1 )
-        {
-            TriN /= fLength*fSign;
-            for(int i=-2; i <= 0; ++i)
-                VB[ IB[Ind+i] ].f3Normal += TriN;
-        }
-    }
-    for(auto VBIt=VB.begin(); VBIt != VB.end(); ++VBIt)
-    {
-        float fLength = D3DXVec3Length(&VBIt->f3Normal);
-        if( fLength > 1 )
-            VBIt->f3Normal /= fLength;
-    }
-
-    // Adjust normals on boundaries
-    for(int iRing = iStartRing; iRing < iNumRings-1; ++iRing)
-    {
-        int iCurrGridStart = (iRing-iStartRing) * iGridDimension*iGridDimension;
-        int iNextGridStart = (iRing-iStartRing+1) * iGridDimension*iGridDimension;
-        for(int i=0; i < iGridDimension; i+=2)
-        {
-            for(int Bnd=0; Bnd < 2; ++Bnd)
-            {
-                const int CurrGridOffsets[] = {0, iGridDimension-1};
-                const int NextGridPffsets[] = {iGridQuart, iGridQuart*3};
-                // Left and right boundaries
-                {
-                    auto &CurrGridN = VB[iCurrGridStart + CurrGridOffsets[Bnd] + i*iGridDimension].f3Normal;
-                    auto &NextGridN = VB[iNextGridStart + NextGridPffsets[Bnd] + (iGridQuart+i/2)*iGridDimension].f3Normal;
-                    auto NewN = CurrGridN + NextGridN;
-                    D3DXVec3Normalize(&NewN, &NewN);
-                    CurrGridN = NextGridN = NewN;
-                    if( i > 1 )
-                    {
-                        auto &PrevCurrGridN = VB[iCurrGridStart + CurrGridOffsets[Bnd] + (i-2)*iGridDimension].f3Normal;
-                        auto MiddleN = PrevCurrGridN + NewN;
-                        D3DXVec3Normalize( &VB[iCurrGridStart + CurrGridOffsets[Bnd] + (i-1)*iGridDimension].f3Normal, &MiddleN);
-                    }
-                }
-
-                // Bottom and top boundaries
-                {
-                    auto &CurrGridN = VB[iCurrGridStart +                i + CurrGridOffsets[Bnd]*iGridDimension].f3Normal;
-                    auto &NextGridN = VB[iNextGridStart + (iGridQuart+i/2) + NextGridPffsets[Bnd]*iGridDimension].f3Normal;
-                    auto NewN = CurrGridN + NextGridN;
-                    D3DXVec3Normalize(&NewN, &NewN);
-                    CurrGridN = NextGridN = NewN;
-                    if( i > 1 )
-                    {
-                        auto &PrevCurrGridN = VB[iCurrGridStart + (i-2) + CurrGridOffsets[Bnd]*iGridDimension].f3Normal;
-                        auto MiddleN = PrevCurrGridN + NewN;
-                        D3DXVec3Normalize( &VB[iCurrGridStart + (i-1) + CurrGridOffsets[Bnd]*iGridDimension].f3Normal, &MiddleN);
-                    }
-                }
-            }
-        }
-    }
-#endif
 }
 
 
@@ -530,7 +452,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     size_t        CurrMipStride  = iHeightMapDim / 2;
     for (Uint32 uiMipLevel = 1; uiMipLevel < HeightMapDesc.MipLevels; ++uiMipLevel)
     {
-        const auto MipProps = GetMipLevelProperties(HeightMapDesc, uiMipLevel);
+        const MipLevelProperties MipProps = GetMipLevelProperties(HeightMapDesc, uiMipLevel);
         for (size_t Row = 0; Row < MipProps.LogicalHeight; ++Row)
         {
             for (size_t Col = 0; Col < MipProps.LogicalWidth; ++Col)
@@ -580,7 +502,7 @@ void EarthHemsiphere::RenderNormalMap(IRenderDevice*  pDevice,
     pContext->SetPipelineState(pRenderNormalMapPSO);
     pContext->CommitShaderResources(pRenderNormalMapSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    const auto& NormalMapDesc = ptex2DNormalMap->GetDesc();
+    const TextureDesc& NormalMapDesc = ptex2DNormalMap->GetDesc();
     for (Uint32 uiMipLevel = 0; uiMipLevel < NormalMapDesc.MipLevels; ++uiMipLevel)
     {
         TextureViewDesc TexViewDesc;
@@ -680,7 +602,7 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
 
     RefCntAutoPtr<ITexture> ptex2DMtrlMask;
     CreateTextureFromFile(MaterialMaskPath, TextureLoadInfo(), pDevice, &ptex2DMtrlMask);
-    auto ptex2DMtrlMaskSRV = ptex2DMtrlMask->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    ITextureView* ptex2DMtrlMaskSRV = ptex2DMtrlMask->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     m_pResMapping->AddResource("g_tex2DMtrlMap", ptex2DMtrlMaskSRV, true);
 
     // Load tiles
@@ -717,7 +639,7 @@ void EarthHemsiphere::Create(class ElevationDataSource* pDataSource,
         });
 
         auto PipelineCallback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {
-            auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
+            GraphicsPipelineStateCreateInfo& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
             GraphicsPipelineCI.GraphicsPipeline.DSVFormat = m_Params.ShadowMapFormat;
         });
         m_pRSNLoader->LoadPipelineState({"Render Hemisphere Z Only", PIPELINE_TYPE_GRAPHICS, false, false, PipelineCallback, PipelineCallback, ShaderCallback, ShaderCallback}, &m_pHemisphereZOnlyPSO);
@@ -790,7 +712,7 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         });
 
         auto PipelineCallback = MakeCallback([&](PipelineStateCreateInfo& pPipelineCI) {
-            auto& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
+            GraphicsPipelineStateCreateInfo& GraphicsPipelineCI{static_cast<GraphicsPipelineStateCreateInfo&>(pPipelineCI)};
             GraphicsPipelineCI.GraphicsPipeline.DSVFormat        = TEX_FORMAT_D32_FLOAT;
             GraphicsPipelineCI.GraphicsPipeline.RTVFormats[0]    = m_Params.DstRTVFormat;
             GraphicsPipelineCI.GraphicsPipeline.NumRenderTargets = 1;
@@ -802,8 +724,8 @@ void EarthHemsiphere::Render(IDeviceContext*        pContext,
         m_pHemisphereSRB->BindResources(SHADER_TYPE_VERTEX, m_pResMapping, BIND_SHADER_RESOURCES_KEEP_EXISTING);
     }
 
-    ViewFrustumExt ViewFrustum;
-    auto           DevType = m_pDevice->GetDeviceInfo().Type;
+    ViewFrustumExt     ViewFrustum;
+    RENDER_DEVICE_TYPE DevType = m_pDevice->GetDeviceInfo().Type;
     ExtractViewFrustumPlanesFromMatrix(CameraViewProjMatrix, ViewFrustum, DevType == RENDER_DEVICE_TYPE_D3D11 || DevType == RENDER_DEVICE_TYPE_D3D12);
 
     {

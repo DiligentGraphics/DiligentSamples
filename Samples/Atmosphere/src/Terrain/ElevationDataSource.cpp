@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,8 +69,8 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
     RefCntAutoPtr<Image> pHeightMap;
     CreateImageFromFile(strSrcDemFile, &pHeightMap);
 
-    const auto& ImgInfo    = pHeightMap->GetDesc();
-    auto*       pImageData = pHeightMap->GetData();
+    const ImageDesc& ImgInfo    = pHeightMap->GetDesc();
+    IDataBlob*       pImageData = pHeightMap->GetData();
     // Calculate minimal number of columns and rows
     // in the form 2^n+1 that encompass the data
     m_iNumCols = 1;
@@ -138,7 +138,7 @@ ElevationDataSource::ElevationDataSource(const Char* strSrcDemFile) :
 
     m_GlobalMinElevation = m_TheHeightMap[0];
     m_GlobalMaxElevation = m_TheHeightMap[0];
-    for (auto Elev : m_TheHeightMap)
+    for (Uint16 Elev : m_TheHeightMap)
     {
         m_GlobalMinElevation = std::min(m_GlobalMinElevation, Elev);
         m_GlobalMaxElevation = std::max(m_GlobalMaxElevation, Elev);

@@ -91,9 +91,9 @@ void ImguiDemo::UpdateUI()
 // Render a frame
 void ImguiDemo::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
 
-    auto ClearColor = m_ClearColor;
+    float4 ClearColor = m_ClearColor;
     if (!m_ConvertPSOutputToGamma)
     {
         // ImGui defines color in gamma space, so we need to convert it to linear.

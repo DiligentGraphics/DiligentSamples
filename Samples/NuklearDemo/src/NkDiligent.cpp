@@ -238,8 +238,7 @@ NK_API struct nk_diligent_context* nk_diligent_init(IRenderDevice* device,
     }
 
 
-    auto& RT0Blend = GraphicsPipeline.BlendDesc.RenderTargets[0];
-
+    RenderTargetBlendDesc& RT0Blend{GraphicsPipeline.BlendDesc.RenderTargets[0]};
     RT0Blend.BlendEnable           = True;
     RT0Blend.SrcBlend              = BLEND_FACTOR_SRC_ALPHA;
     RT0Blend.DestBlend             = BLEND_FACTOR_INV_SRC_ALPHA;
@@ -365,7 +364,7 @@ nk_diligent_render(struct nk_diligent_context* nk_dlg_ctx,
     // iterate over and execute each draw command
     nk_draw_foreach(cmd, &nk_dlg_ctx->ctx, &nk_dlg_ctx->cmds)
     {
-        auto* texture_view = reinterpret_cast<ITextureView*>(cmd->texture.ptr);
+        ITextureView* texture_view = reinterpret_cast<ITextureView*>(cmd->texture.ptr);
         VERIFY(texture_view == nk_dlg_ctx->font_texture_view, "Unexpected font texture view");
         (void)texture_view;
         if (!cmd->elem_count) continue;

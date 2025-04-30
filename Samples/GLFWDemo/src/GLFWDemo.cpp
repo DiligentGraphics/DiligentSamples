@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -184,9 +184,9 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
         {
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D11() function
-            auto* GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+            GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
-            auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+            IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
 
             EngineD3D11CreateInfo EngineCI;
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -201,9 +201,9 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
         {
 #    if ENGINE_DLL
             // Load the dll and import GetEngineFactoryD3D12() function
-            auto* GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
+            GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
-            auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+            IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
 
             EngineD3D12CreateInfo EngineCI;
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -218,9 +218,9 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
         {
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
             // Load the dll and import GetEngineFactoryOpenGL() function
-            auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
+            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #    endif
-            auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
+            IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
             EngineGLCreateInfo EngineCI;
             EngineCI.Window = Window;
@@ -235,9 +235,9 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
         {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
             // Load the dll and import GetEngineFactoryVk() function
-            auto* GetEngineFactoryVk = LoadGraphicsEngineVk();
+            GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
-            auto* pFactoryVk = GetEngineFactoryVk();
+            IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
 
             EngineVkCreateInfo EngineCI;
             pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -263,9 +263,9 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
         {
 #    if ENGINE_DLL
             // Load the dll and import LoadGraphicsEngineWebGPU() function
-            auto* GetEngineFactoryWGPU = LoadGraphicsEngineWebGPU();
+            GetEngineFactoryWebGPUType GetEngineFactoryWGPU = LoadGraphicsEngineWebGPU();
 #    endif
-            auto* pFactoryWGPU = GetEngineFactoryWGPU();
+            IEngineFactoryWebGPU* pFactoryWGPU = GetEngineFactoryWGPU();
 
             EngineWebGPUCreateInfo EngineCI;
             EngineCI.Features.TimestampQueries = DEVICE_FEATURE_STATE_ENABLED;
@@ -289,20 +289,20 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 
 void GLFWDemo::GLFW_ResizeCallback(GLFWwindow* wnd, int w, int h)
 {
-    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    GLFWDemo* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
     if (pSelf->m_pSwapChain != nullptr)
         pSelf->m_pSwapChain->Resize(static_cast<Uint32>(w), static_cast<Uint32>(h));
 }
 
 void GLFWDemo::GLFW_KeyCallback(GLFWwindow* wnd, int key, int, int state, int)
 {
-    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    GLFWDemo* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
     pSelf->OnKeyEvent(static_cast<Key>(key), static_cast<KeyState>(state));
 }
 
 void GLFWDemo::GLFW_MouseButtonCallback(GLFWwindow* wnd, int button, int state, int)
 {
-    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    GLFWDemo* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
     pSelf->OnKeyEvent(static_cast<Key>(button), static_cast<KeyState>(state));
 }
 
@@ -311,7 +311,7 @@ void GLFWDemo::GLFW_CursorPosCallback(GLFWwindow* wnd, double xpos, double ypos)
     float xscale = 1;
     float yscale = 1;
     glfwGetWindowContentScale(wnd, &xscale, &yscale);
-    auto* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
+    GLFWDemo* pSelf = static_cast<GLFWDemo*>(glfwGetWindowUserPointer(wnd));
     pSelf->MouseEvent(float2(static_cast<float>(xpos * xscale), static_cast<float>(ypos * yscale)));
 }
 
@@ -336,7 +336,7 @@ void GLFWDemo::Loop()
             // GLFW does not send 'Repeat' state again, we have to keep these keys until the 'Release' is received.
             switch (KeyIter->state)
             {
-                // clang-format off
+                    // clang-format off
                 case KeyState::Release: KeyIter = m_ActiveKeys.erase(KeyIter); break;
                 case KeyState::Press:   KeyIter->state = KeyState::Repeat;     break;
                 case KeyState::Repeat:  ++KeyIter;                             break;
@@ -346,9 +346,9 @@ void GLFWDemo::Loop()
             }
         }
 
-        const auto time = TClock::now();
-        const auto dt   = std::chrono::duration_cast<TSeconds>(time - m_LastUpdate).count();
-        m_LastUpdate    = time;
+        const auto  time = TClock::now();
+        const float dt   = std::chrono::duration_cast<TSeconds>(time - m_LastUpdate).count();
+        m_LastUpdate     = time;
 
         Update(dt);
 
@@ -363,7 +363,7 @@ void GLFWDemo::Loop()
 
 void GLFWDemo::OnKeyEvent(Key key, KeyState newState)
 {
-    for (auto& active : m_ActiveKeys)
+    for (ActiveKey& active : m_ActiveKeys)
     {
         if (active.key == key)
         {
@@ -394,7 +394,7 @@ bool GLFWDemo::ProcessCommandLine(int argc, const char* const* argv, RENDER_DEVI
         ++arg;
     if (arg + 1 < argc)
     {
-        const auto* mode = argv[arg + 1];
+        const char* mode = argv[arg + 1];
         if (_stricmp(mode, "D3D11") == 0)
         {
 #if D3D11_SUPPORTED

@@ -62,7 +62,7 @@ void ShadowsSample::ModifyEngineInitInfo(const ModifyEngineInitInfoAttribs& Attr
 #if D3D12_SUPPORTED
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
-        auto& D3D12CI                           = static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI);
+        EngineD3D12CreateInfo& D3D12CI          = static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI);
         D3D12CI.GPUDescriptorHeapSize[1]        = 1024; // Sampler descriptors
         D3D12CI.GPUDescriptorHeapDynamicSize[1] = 1024;
     }
@@ -284,8 +284,9 @@ void ShadowsSample::DXSDKMESH_VERTEX_ELEMENTtoInputLayoutDesc(const DXSDKMESH_VE
     Elements.clear();
     for (Uint32 input_elem = 0; VertexElement[input_elem].Stream != 0xFF; ++input_elem)
     {
-        const auto& SrcElem    = VertexElement[input_elem];
-        Int32       InputIndex = -1;
+        const DXSDKMESH_VERTEX_ELEMENT& SrcElem = VertexElement[input_elem];
+
+        Int32 InputIndex = -1;
         switch (SrcElem.Usage)
         {
             case DXSDKMESH_VERTEX_SEMANTIC_POSITION:
@@ -375,7 +376,7 @@ void ShadowsSample::CreatePipelineStates()
         Uint32 pso;
         for (pso = 0; pso < m_RenderMeshPSO.size(); ++pso)
         {
-            const auto& PSOLayout = m_RenderMeshPSO[pso]->GetGraphicsPipelineDesc().InputLayout;
+            const InputLayoutDesc& PSOLayout = m_RenderMeshPSO[pso]->GetGraphicsPipelineDesc().InputLayout;
             if (PSOLayout == InputLayout)
                 break;
         }
@@ -395,7 +396,7 @@ void ShadowsSample::CreatePipelineStates()
                 }};
 
             auto ModifyCI = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
-                auto& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
+                GraphicsPipelineStateCreateInfo& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
 
                 GraphicsPipelineCI.PSODesc.ResourceLayout.Variables    = Vars;
                 GraphicsPipelineCI.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -420,7 +421,7 @@ void ShadowsSample::CreatePipelineStates()
 
         {
             auto ModifyCI = MakeCallback([&](PipelineStateCreateInfo& PipelineCI) {
-                auto& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
+                GraphicsPipelineStateCreateInfo& GraphicsPipelineCI = static_cast<GraphicsPipelineStateCreateInfo&>(PipelineCI);
 
                 GraphicsPipelineCI.GraphicsPipeline.InputLayout = InputLayout;
                 GraphicsPipelineCI.GraphicsPipeline.DSVFormat   = m_ShadowSettings.Format;
@@ -445,7 +446,7 @@ void ShadowsSample::InitializeResourceBindings()
     for (Uint32 mat = 0; mat < m_Mesh.GetNumMaterials(); ++mat)
     {
         {
-            const auto& Mat = m_Mesh.GetMaterial(mat);
+            const DXSDKMESH_MATERIAL& Mat = m_Mesh.GetMaterial(mat);
 
             RefCntAutoPtr<IShaderResourceBinding> pSRB;
             m_RenderMeshPSO[0]->CreateShaderResourceBinding(&pSRB, true);
@@ -517,16 +518,16 @@ void ShadowsSample::CreateShadowMap()
 
 void ShadowsSample::RenderShadowMap()
 {
-    auto iNumShadowCascades = m_LightAttribs.ShadowAttribs.iNumCascades;
+    int iNumShadowCascades = m_LightAttribs.ShadowAttribs.iNumCascades;
     for (int iCascade = 0; iCascade < iNumShadowCascades; ++iCascade)
     {
-        const auto CascadeProjMatr = m_ShadowMapMgr.GetCascadeTransform(iCascade).Proj;
+        const float4x4& CascadeProjMatr = m_ShadowMapMgr.GetCascadeTransform(iCascade).Proj;
 
-        const auto& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
+        const float4x4& WorldToLightViewSpaceMatr = m_PackMatrixRowMajor ?
             m_LightAttribs.ShadowAttribs.mWorldToLightView :
             m_LightAttribs.ShadowAttribs.mWorldToLightView.Transpose();
 
-        const auto WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
+        const float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * CascadeProjMatr;
 
         CameraAttribs ShadowCameraAttribs = {};
 
@@ -544,7 +545,7 @@ void ShadowsSample::RenderShadowMap()
             *CameraData = ShadowCameraAttribs;
         }
 
-        auto* pCascadeDSV = m_ShadowMapMgr.GetCascadeDSV(iCascade);
+        ITextureView* pCascadeDSV = m_ShadowMapMgr.GetCascadeDSV(iCascade);
         m_pImmediateContext->SetRenderTargets(0, nullptr, pCascadeDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pCascadeDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -565,8 +566,8 @@ void ShadowsSample::Render()
     RenderShadowMap();
 
     // Reset default framebuffer
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     // Clear the back buffer
@@ -580,14 +581,14 @@ void ShadowsSample::Render()
     }
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
-    const auto  CameraView     = m_Camera.GetViewMatrix() * SrfPreTransform;
-    const auto& CameraWorld    = m_Camera.GetWorldMatrix();
-    float3      CameraWorldPos = float3::MakeVector(CameraWorld[3]);
-    const auto& Proj           = m_Camera.GetProjMatrix();
+    const float4x4  CameraView     = m_Camera.GetViewMatrix() * SrfPreTransform;
+    const float4x4& CameraWorld    = m_Camera.GetWorldMatrix();
+    float3          CameraWorldPos = float3::MakeVector(CameraWorld[3]);
+    const float4x4& Proj           = m_Camera.GetProjMatrix();
 
-    auto CameraViewProj = CameraView * Proj;
+    float4x4 CameraViewProj = CameraView * Proj;
 
     {
         MapHelper<CameraAttribs> CamAttribs(m_pImmediateContext, m_CameraAttribsCB, MAP_WRITE, MAP_FLAG_DISCARD);
@@ -610,8 +611,8 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
 
     for (Uint32 meshIdx = 0; meshIdx < m_Mesh.GetNumMeshes(); ++meshIdx)
     {
-        const auto& SubMesh = m_Mesh.GetMesh(meshIdx);
-        BoundBox    BB;
+        const DXSDKMESH_MESH& SubMesh = m_Mesh.GetMesh(meshIdx);
+        BoundBox              BB;
         BB.Min = SubMesh.BoundingBoxCenter - SubMesh.BoundingBoxExtents * 0.5f;
         BB.Max = SubMesh.BoundingBoxCenter + SubMesh.BoundingBoxExtents * 0.5f;
         // Notice that for shadow pass we test against frustum with open near plane
@@ -621,19 +622,19 @@ void ShadowsSample::DrawMesh(IDeviceContext* pCtx, bool bIsShadowPass, const Vie
         IBuffer* pVBs[] = {m_Mesh.GetMeshVertexBuffer(meshIdx, 0)};
         pCtx->SetVertexBuffers(0, 1, pVBs, nullptr, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
-        auto* pIB      = m_Mesh.GetMeshIndexBuffer(meshIdx);
-        auto  IBFormat = m_Mesh.GetIBFormat(meshIdx);
+        IBuffer*   pIB      = m_Mesh.GetMeshIndexBuffer(meshIdx);
+        VALUE_TYPE IBFormat = m_Mesh.GetIBFormat(meshIdx);
 
         pCtx->SetIndexBuffer(pIB, 0, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
-        auto  PSOIndex = m_PSOIndex[SubMesh.VertexBuffers[0]];
-        auto& pPSO     = (bIsShadowPass ? m_RenderMeshShadowPSO : m_RenderMeshPSO)[PSOIndex];
+        Uint32 PSOIndex = m_PSOIndex[SubMesh.VertexBuffers[0]];
+        auto&  pPSO     = (bIsShadowPass ? m_RenderMeshShadowPSO : m_RenderMeshPSO)[PSOIndex];
         pCtx->SetPipelineState(pPSO);
 
         // Draw all subsets
         for (Uint32 subsetIdx = 0; subsetIdx < SubMesh.NumSubsets; ++subsetIdx)
         {
-            const auto& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
+            const DXSDKMESH_SUBSET& Subset = m_Mesh.GetSubset(meshIdx, subsetIdx);
             pCtx->CommitShaderResources((bIsShadowPass ? m_ShadowSRBs : m_SRBs)[Subset.MaterialID], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
             DrawIndexedAttribs drawAttrs(static_cast<Uint32>(Subset.IndexCount), IBFormat, DRAW_FLAG_VERIFY_ALL);
@@ -649,7 +650,7 @@ void ShadowsSample::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     {
-        const auto& mouseState = m_InputController.GetMouseState();
+        const MouseState& mouseState = m_InputController.GetMouseState();
         if (m_LastMouseState.PosX >= 0 &&
             m_LastMouseState.PosY >= 0 &&
             (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)
