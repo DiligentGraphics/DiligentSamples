@@ -409,7 +409,7 @@ void Tutorial13_ShadowMap::Initialize(const SampleInitInfo& InitInfo)
     Barriers.emplace_back(m_CubeVertexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_VERTEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     Barriers.emplace_back(m_CubeIndexBuffer, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_INDEX_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE);
     // Load texture
-    auto CubeTexture = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png");
+    RefCntAutoPtr<ITexture> CubeTexture = TexturedCube::LoadTexture(m_pDevice, "DGLogo.png");
     m_CubeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(CubeTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     // Transition the texture to shader resource state
     Barriers.emplace_back(CubeTexture, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
@@ -448,7 +448,7 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     float3 f3LightSpaceX, f3LightSpaceY, f3LightSpaceZ;
     f3LightSpaceZ = normalize(m_LightDirection);
 
-    auto min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)), std::abs(m_LightDirection.z));
+    float min_cmp = std::min(std::min(std::abs(m_LightDirection.x), std::abs(m_LightDirection.y)), std::abs(m_LightDirection.z));
     if (min_cmp == std::abs(m_LightDirection.x))
         f3LightSpaceX = float3(1, 0, 0);
     else if (min_cmp == std::abs(m_LightDirection.y))
@@ -472,9 +472,10 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     float3 f3MaxXYZ      = f3SceneCenter + float3(SceneRadius, SceneRadius, SceneRadius * 5);
     float3 f3SceneExtent = f3MaxXYZ - f3MinXYZ;
 
-    const auto& DevInfo = m_pDevice->GetDeviceInfo();
-    const bool  IsGL    = DevInfo.IsGLDevice();
-    float4      f4LightSpaceScale;
+    const RenderDeviceInfo& DevInfo = m_pDevice->GetDeviceInfo();
+
+    const bool IsGL = DevInfo.IsGLDevice();
+    float4     f4LightSpaceScale;
     f4LightSpaceScale.x = 2.f / f3SceneExtent.x;
     f4LightSpaceScale.y = 2.f / f3SceneExtent.y;
     f4LightSpaceScale.z = (IsGL ? 2.f : 1.f) / f3SceneExtent.z;
@@ -494,9 +495,9 @@ void Tutorial13_ShadowMap::RenderShadowMap()
     // Adjust the world to light space transformation matrix
     float4x4 WorldToLightProjSpaceMatr = WorldToLightViewSpaceMatr * ShadowProjMatr;
 
-    const auto& NDCAttribs    = DevInfo.GetNDCAttribs();
-    float4x4    ProjToUVScale = float4x4::Scale(0.5f, NDCAttribs.YtoVScale, NDCAttribs.ZtoDepthScale);
-    float4x4    ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDCAttribs.GetZtoDepthBias());
+    const NDCAttribs& NDC           = DevInfo.GetNDCAttribs();
+    float4x4          ProjToUVScale = float4x4::Scale(0.5f, NDC.YtoVScale, NDC.ZtoDepthScale);
+    float4x4          ProjToUVBias  = float4x4::Translation(0.5f, 0.5f, NDC.GetZtoDepthBias());
 
     m_WorldToShadowMapUVDepthMatr = WorldToLightProjSpaceMatr * ProjToUVScale * ProjToUVBias;
 
@@ -516,7 +517,7 @@ void Tutorial13_ShadowMap::RenderCube(const float4x4& CameraViewProj, bool IsSha
         // Map the buffer and write current world-view-projection matrix
         MapHelper<Constants> CBConstants(m_pImmediateContext, m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD);
         CBConstants->WorldViewProj = (m_CubeWorldMatrix * CameraViewProj);
-        auto NormalMatrix          = m_CubeWorldMatrix.RemoveTranslation().Inverse().Transpose();
+        float4x4 NormalMatrix      = m_CubeWorldMatrix.RemoveTranslation().Inverse().Transpose();
         // We need to do inverse-transpose, but we also need to transpose the matrix
         // before writing it to the buffer
         CBConstants->NormalTranform = NormalMatrix;
@@ -588,8 +589,8 @@ void Tutorial13_ShadowMap::Render()
     RenderShadowMap();
 
     // Bind main back buffer
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
@@ -616,10 +617,10 @@ void Tutorial13_ShadowMap::Update(double CurrTime, double ElapsedTime, bool DoUp
     float4x4 CameraView = float4x4::Translation(0.f, -5.0f, -10.0f) * float4x4::RotationY(PI_F) * float4x4::RotationX(-PI_F * 0.2);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute camera view-projection matrix
     m_CameraViewProjMatrix = CameraView * SrfPreTransform * Proj;

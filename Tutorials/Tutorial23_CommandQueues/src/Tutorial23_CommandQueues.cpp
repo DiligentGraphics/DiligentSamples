@@ -186,8 +186,8 @@ void Tutorial23_CommandQueues::PostProcess()
 {
     m_pImmediateContext->BeginDebugGroup("Post process");
 
-    const auto ViewProj    = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
-    const auto ViewProjInv = ViewProj.Inverse();
+    const float4x4 ViewProj    = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
+    const float4x4 ViewProjInv = ViewProj.Inverse();
 
     HLSL::PostProcessConstants ConstData;
     ConstData.ViewProjInv = ViewProjInv;
@@ -214,9 +214,9 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
 
     for (Uint32 i = 1; i < InitInfo.NumImmediateCtx; ++i)
     {
-        constexpr auto QueueMask = COMMAND_QUEUE_TYPE_PRIMARY_MASK;
-        auto*          Ctx       = InitInfo.ppContexts[i];
-        const auto&    Desc      = Ctx->GetDesc();
+        constexpr COMMAND_QUEUE_TYPE QueueMask = COMMAND_QUEUE_TYPE_PRIMARY_MASK;
+        IDeviceContext*              Ctx       = InitInfo.ppContexts[i];
+        const DeviceContextDesc&     Desc      = Ctx->GetDesc();
 
         if (!m_ComputeCtx &&
             ((Desc.QueueType & QueueMask) == COMMAND_QUEUE_TYPE_COMPUTE ||
@@ -246,7 +246,7 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     }
 
     // Use HDR format if supported.
-    constexpr auto RTFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
+    constexpr BIND_FLAGS RTFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
     if ((m_pDevice->GetTextureFormatInfoExt(TEX_FORMAT_RGBA16_FLOAT).BindFlags & RTFlags) == RTFlags)
         m_ColorTargetFormat = TEX_FORMAT_RGBA16_FLOAT;
 
@@ -258,7 +258,7 @@ void Tutorial23_CommandQueues::Initialize(const SampleInitInfo& InitInfo)
     m_Camera.SetSpeedUpScales(5.f, 10.f);
 
     // Create fence for each context
-    const auto DevType = m_pDevice->GetDeviceInfo().Type;
+    const RENDER_DEVICE_TYPE DevType = m_pDevice->GetDeviceInfo().Type;
     if (DevType == RENDER_DEVICE_TYPE_D3D12 || DevType == RENDER_DEVICE_TYPE_VULKAN || DevType == RENDER_DEVICE_TYPE_METAL)
     {
         FenceDesc FenceCI;
@@ -376,7 +376,7 @@ void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAt
         Uint32 NumQueues           = 0;
         for (Uint32 AdapterId = 0; AdapterId < NumAdapters; ++AdapterId)
         {
-            auto& Adapter = Adapters[AdapterId];
+            GraphicsAdapterInfo& Adapter = Adapters[AdapterId];
             if (Adapter.NumQueues > NumQueues)
             {
                 Attribs.EngineCI.AdapterId = AdapterId;
@@ -387,11 +387,12 @@ void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAt
 
     auto AddContext = [&](COMMAND_QUEUE_TYPE Type, const char* Name, Uint32 AdapterId) //
     {
-        constexpr auto QueueMask = COMMAND_QUEUE_TYPE_PRIMARY_MASK;
-        auto*          Queues    = Adapters[AdapterId].Queues;
+        constexpr COMMAND_QUEUE_TYPE QueueMask = COMMAND_QUEUE_TYPE_PRIMARY_MASK;
+
+        CommandQueueInfo* Queues = Adapters[AdapterId].Queues;
         for (Uint32 q = 0, Count = Adapters[AdapterId].NumQueues; q < Count; ++q)
         {
-            auto& CurQueue = Queues[q];
+            CommandQueueInfo& CurQueue = Queues[q];
             if (CurQueue.MaxDeviceContexts == 0)
                 continue;
 
@@ -430,21 +431,21 @@ void Tutorial23_CommandQueues::ModifyEngineInitInfo(const ModifyEngineInitInfoAt
 
     if (Attribs.DeviceType == RENDER_DEVICE_TYPE_VULKAN)
     {
-        auto& CreateInfoVk{static_cast<EngineVkCreateInfo&>(Attribs.EngineCI)};
+        EngineVkCreateInfo& CreateInfoVk{static_cast<EngineVkCreateInfo&>(Attribs.EngineCI)};
         CreateInfoVk.UploadHeapPageSize = 32 << 20;
         // Increase reserve size to avoid pages being constantly destroyed and created.
         CreateInfoVk.HostVisibleMemoryReserveSize = 1536 << 20;
     }
     else if (Attribs.DeviceType == RENDER_DEVICE_TYPE_D3D12)
     {
-        auto& CreateInfoD3D12{static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI)};
+        EngineD3D12CreateInfo& CreateInfoD3D12{static_cast<EngineD3D12CreateInfo&>(Attribs.EngineCI)};
         CreateInfoD3D12.DynamicHeapPageSize = 32 << 20;
     }
 }
 
 void Tutorial23_CommandQueues::ComputePass()
 {
-    auto ComputeCtx = m_UseAsyncCompute ? m_ComputeCtx : m_pImmediateContext;
+    IDeviceContext* ComputeCtx = m_UseAsyncCompute ? m_ComputeCtx : m_pImmediateContext;
 
     const float DebugColor[] = {0.f, 1.f, 0.f, 1.f};
     ComputeCtx->BeginDebugGroup("Compute pass", DebugColor);
@@ -488,7 +489,7 @@ void Tutorial23_CommandQueues::UploadPass()
     if (m_TransferCtx == nullptr || TransferRate == 0)
         return;
 
-    auto TransferCtx = m_UseAsyncTransfer ? m_TransferCtx : m_pImmediateContext;
+    IDeviceContext* TransferCtx = m_UseAsyncTransfer ? m_TransferCtx : m_pImmediateContext;
 
     const float DebugColor[] = {0.f, 0.f, 1.f, 1.f};
     TransferCtx->BeginDebugGroup("Transfer pass", DebugColor);
@@ -698,7 +699,7 @@ void Tutorial23_CommandQueues::WindowResize(Uint32 Width, Uint32 Height)
     // Create down sample SRB
     for (Uint32 Mip = 0; Mip < DownSampleFactor; ++Mip)
     {
-        auto& SRB = m_DownSampleSRB[Mip];
+        RefCntAutoPtr<IShaderResourceBinding>& SRB = m_DownSampleSRB[Mip];
         SRB.Release();
         m_DownSamplePSO->CreateShaderResourceBinding(&SRB);
         SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_GBuffer_Color")->Set(m_GBuffer.ColorSRBs[Mip]);
@@ -711,11 +712,11 @@ void Tutorial23_CommandQueues::UpdateUI()
     if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         // Transfer workload
-        const auto PrevUseAsyncTransfer = m_UseAsyncTransfer;
+        const bool PrevUseAsyncTransfer = m_UseAsyncTransfer;
         if (m_TransferCtx)
         {
-            const auto TexSize    = m_Buildings.GetOpaqueTexAtlasDataSize();
-            int        TexSizePOT = PlatformMisc::GetMSB(TexSize);
+            const Uint32 TexSize    = m_Buildings.GetOpaqueTexAtlasDataSize();
+            int          TexSizePOT = PlatformMisc::GetMSB(TexSize);
 
             if ((1u << TexSizePOT) < TexSize)
                 ++TexSizePOT;
@@ -731,10 +732,10 @@ void Tutorial23_CommandQueues::UpdateUI()
         }
 
         // Compute workload
-        const auto PrevUseAsyncCompute = m_UseAsyncCompute;
+        const bool PrevUseAsyncCompute = m_UseAsyncCompute;
         {
-            const auto TerrainSizeStr = std::to_string(1u << m_Terrain.TerrainSize);
-            const auto OldTerrainSize = m_Terrain.TerrainSize;
+            const std::string TerrainSizeStr = std::to_string(1u << m_Terrain.TerrainSize);
+            const int         OldTerrainSize = m_Terrain.TerrainSize;
             ImGui::TextDisabled("Terrain dimension");
             ImGui::SliderInt("##TerrainSize", &m_Terrain.TerrainSize, 7, 13, TerrainSizeStr.c_str());
             if (OldTerrainSize != m_Terrain.TerrainSize)
@@ -757,7 +758,7 @@ void Tutorial23_CommandQueues::UpdateUI()
             // Recreate render targets
             if (OldSurfaceScale != m_SurfaceScaleExp2)
             {
-                const auto& SCDesc = m_pSwapChain->GetDesc();
+                const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
                 WindowResize(SCDesc.Width, SCDesc.Height);
             }
 

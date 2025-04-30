@@ -153,7 +153,7 @@ Every worker thread starts by waiting for the signal from the main thread (a neg
 value is an exit signal):
 
 ```cpp
-auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
+int SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, pThis->m_NumWorkerThreads);
 if (SignaledValue < 0)
     return;
 ```
@@ -194,8 +194,8 @@ Subset rendering procedure is generally the same as in previous tutorials. Few d
 so every context should set the default render target:
 
 ```cpp
-auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
 pCtx->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 ```
 
@@ -222,7 +222,7 @@ DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL;
 pCtx->SetPipelineState(m_pPSO);
 for (size_t inst = StartInst; inst < EndInst; ++inst)
 {
-    const auto& CurrInstData = m_InstanceData[inst];
+    const InstanceData& CurrInstData = m_Instances[inst];
     // Shader resources have been explicitly transitioned to correct states, so
     // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
     // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to

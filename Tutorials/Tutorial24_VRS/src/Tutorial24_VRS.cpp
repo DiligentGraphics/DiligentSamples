@@ -54,8 +54,8 @@ void Tutorial24_VRS::CreateVRSPipelineState(IShaderSourceInputStreamFactory* pSh
 
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
-    auto& PSODesc          = PSOCreateInfo.PSODesc;
-    auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
+    PipelineStateDesc&    PSODesc          = PSOCreateInfo.PSODesc;
+    GraphicsPipelineDesc& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
     GraphicsPipeline.NumRenderTargets                     = 1;
     GraphicsPipeline.RTVFormats[0]                        = ColorFormat;
@@ -127,8 +127,8 @@ void Tutorial24_VRS::CreateDensityMapPipelineState(IShaderSourceInputStreamFacto
 {
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
-    auto& PSODesc          = PSOCreateInfo.PSODesc;
-    auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
+    PipelineStateDesc&    PSODesc          = PSOCreateInfo.PSODesc;
+    GraphicsPipelineDesc& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
     GraphicsPipeline.NumRenderTargets                     = 1;
     GraphicsPipeline.RTVFormats[0]                        = ColorFormat;
@@ -195,8 +195,8 @@ void Tutorial24_VRS::CreateBlitPipelineState(IShaderSourceInputStreamFactory* pS
 
     GraphicsPipelineStateCreateInfo PSOCreateInfo;
 
-    auto& PSODesc          = PSOCreateInfo.PSODesc;
-    auto& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
+    PipelineStateDesc&    PSODesc          = PSOCreateInfo.PSODesc;
+    GraphicsPipelineDesc& GraphicsPipeline = PSOCreateInfo.GraphicsPipeline;
 
     PSODesc.Name = "Blit to swapchain image";
 
@@ -241,7 +241,7 @@ void Tutorial24_VRS::CreateBlitPipelineState(IShaderSourceInputStreamFactory* pS
     };
 
     // Only immutable sampler can be used to sample subsampled texture.
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    const ShadingRateProperties& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
     if ((SRProps.CapFlags & SHADING_RATE_CAP_FLAG_SUBSAMPLED_RENDER_TARGET) != 0)
     {
         SamLinearClampDesc.Flags  = SAMPLER_FLAG_SUBSAMPLED;
@@ -275,7 +275,7 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
     RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
     m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
 
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    const ShadingRateProperties& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
     if (SRProps.Format == SHADING_RATE_FORMAT_UNORM8)
         CreateDensityMapPipelineState(pShaderSourceFactory);
     else
@@ -294,7 +294,7 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
         m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_Constants);
 
         m_VRS.SRB->GetVariableByName(SHADER_TYPE_VERTEX, "g_Constants")->Set(m_Constants);
-        if (auto* pVar = m_VRS.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Constants"))
+        if (IShaderResourceVariable* pVar = m_VRS.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Constants"))
             pVar->Set(m_Constants);
     }
 
@@ -335,7 +335,7 @@ void Tutorial24_VRS::Initialize(const SampleInitInfo& InitInfo)
 
     for (Uint32 i = 0; i < SRProps.NumShadingRates; ++i)
     {
-        auto SR = SRProps.ShadingRates[i].Rate;
+        SHADING_RATE SR = SRProps.ShadingRates[i].Rate;
         m_ShadingRates.emplace_back(SR, ShadingRateNames[SR]);
     }
 }
@@ -420,12 +420,12 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI
 {
     SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
 
-    const auto& MState = m_InputController.GetMouseState();
+    const MouseState& MState = m_InputController.GetMouseState();
     if (m_VRSMode == VRS_MODE_TEXTURE_BASED && (MState.ButtonFlags & MouseState::BUTTON_FLAG_LEFT) != 0)
     {
-        const auto& SCDesc = m_pSwapChain->GetDesc();
-        const auto  Width  = SCDesc.Width;
-        const auto  Height = SCDesc.Height;
+        const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+        const Uint32         Width  = SCDesc.Width;
+        const Uint32         Height = SCDesc.Height;
 
         float2 NewMPos{MState.PosX, MState.PosY};
         switch (SCDesc.PreTransform)
@@ -468,10 +468,10 @@ void Tutorial24_VRS::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI
     float4x4 View = float4x4::Translation(0.f, 0.0f, 4.f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;
@@ -501,7 +501,7 @@ void Tutorial24_VRS::UpdateUI()
         // Recreate render targets
         if (OldSurfaceScale != m_SurfaceScaleExp2)
         {
-            const auto& SCDesc = m_pSwapChain->GetDesc();
+            const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
             WindowResize(SCDesc.Width, SCDesc.Height);
         }
     }
@@ -524,7 +524,7 @@ void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
         m_pRTV->GetTexture()->GetDesc().Height == Height)
         return;
 
-    const auto& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    const ShadingRateProperties& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
 
     // Use subsampled render targets, if they are supported, as this may be more optimal.
     const bool CreateSubsampled = (SRProps.CapFlags & SHADING_RATE_CAP_FLAG_SUBSAMPLED_RENDER_TARGET) != 0;
@@ -588,15 +588,15 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
 
     m_PrevNormMPos = MPos;
 
-    auto*              pVRSTex = m_pShadingRateMap->GetTexture();
-    const auto&        Desc    = pVRSTex->GetDesc();
-    const auto&        SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
-    std::vector<Uint8> SRData;
+    ITexture*                    pVRSTex = m_pShadingRateMap->GetTexture();
+    const TextureDesc&           Desc    = pVRSTex->GetDesc();
+    const ShadingRateProperties& SRProps = m_pDevice->GetAdapterInfo().ShadingRate;
+    std::vector<Uint8>           SRData;
 
     auto GetAxisShadingRate = [&](Uint32 TileIdx, Uint32 NumTiles, float Origin) {
-        float TilePos = (static_cast<float>(TileIdx) + 0.5f) / static_cast<float>(NumTiles);
-        float Dist    = std::abs(TilePos - Origin);
-        auto  Rate    = clamp(static_cast<Uint32>(Dist * (AXIS_SHADING_RATE_MAX + 1) + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
+        float  TilePos = (static_cast<float>(TileIdx) + 0.5f) / static_cast<float>(NumTiles);
+        float  Dist    = std::abs(TilePos - Origin);
+        Uint32 Rate    = clamp(static_cast<Uint32>(Dist * (AXIS_SHADING_RATE_MAX + 1) + 0.5f), 0u, Uint32{AXIS_SHADING_RATE_MAX});
         return static_cast<AXIS_SHADING_RATE>(Rate);
     };
 
@@ -625,8 +625,8 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
                 {
-                    auto XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
-                    auto YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
+                    AXIS_SHADING_RATE XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
+                    AXIS_SHADING_RATE YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
 
                     SRData[size_t{x} + size_t{y} * RowStride] = RemapShadingRate[(XRate << SHADING_RATE_X_SHIFT) | YRate];
                 }
@@ -642,8 +642,8 @@ void Tutorial24_VRS::UpdateVRSPattern(const float2 MPos)
             {
                 for (Uint32 x = 0; x < Desc.Width; ++x)
                 {
-                    auto XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
-                    auto YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
+                    AXIS_SHADING_RATE XRate = GetAxisShadingRate(x, Desc.Width, MPos.x);
+                    AXIS_SHADING_RATE YRate = GetAxisShadingRate(y, Desc.Height, MPos.y);
 
                     SRData[size_t{x} * 2u + size_t{y} * RowStride + 0u] = 255 >> XRate;
                     SRData[size_t{x} * 2u + size_t{y} * RowStride + 1u] = 255 >> YRate;

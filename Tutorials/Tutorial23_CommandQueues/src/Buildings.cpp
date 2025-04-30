@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ namespace
 
 float2 Hash22(const float2 p)
 {
-    auto p3 = float3{Frac(p.x * 0.1031f), Frac(p.y * 0.1030f), Frac(p.x * 0.0973f)};
+    float3 p3 = float3{Frac(p.x * 0.1031f), Frac(p.y * 0.1030f), Frac(p.x * 0.0973f)};
     p3 -= float3{dot(p3, float3{p3.y, p3.z, p3.x} + float3{19.19f})};
     return float2{Frac((p3.x + p3.y) * p3.z), Frac((p3.x * p3.z) * p3.y)};
 }
@@ -80,8 +80,8 @@ struct Building
 
     static float2 GenCenter(int2 iPos)
     {
-        const auto iCenter = iPos.Recast<float>();
-        float2     Offset  = Hash22(iCenter * float2{2.56135f} + float2{0.8234f}) * 0.5f;
+        const float2 iCenter = iPos.Recast<float>();
+        float2       Offset  = Hash22(iCenter * float2{2.56135f} + float2{0.8234f}) * 0.5f;
         return iCenter + Offset;
     }
 
@@ -280,7 +280,7 @@ void CreateBuilding(std::mt19937&           RndDev,
             }
             case BuildingShape::PRISM_SECTIONS:
             {
-                const auto NumSections = std::min(NumSectionsDistrib(RndDev), static_cast<Uint32>(MaxHeight * 0.25f));
+                const Uint32 NumSections = std::min(NumSectionsDistrib(RndDev), static_cast<Uint32>(MaxHeight * 0.25f));
                 for (Uint32 s = 0; s < NumSections; ++s)
                 {
                     Section sc;
@@ -305,8 +305,8 @@ void CreateBuilding(std::mt19937&           RndDev,
             }
             case BuildingShape::PRISM_SECTIONS_OFFSET:
             {
-                const auto NumSections  = std::min(NumSectionsDistrib(RndDev), static_cast<Uint32>(MaxHeight * 0.25f));
-                float2     CenterOffset = {};
+                const Uint32 NumSections  = std::min(NumSectionsDistrib(RndDev), static_cast<Uint32>(MaxHeight * 0.25f));
+                float2       CenterOffset = {};
                 for (Uint32 s = 0; s < NumSections; ++s)
                 {
                     Section sc;
@@ -334,7 +334,7 @@ void CreateBuilding(std::mt19937&           RndDev,
             }
             case BuildingShape::PRISM_ROTATED_SECTIONS:
             {
-                const auto NumSections = std::min(NumSectionsDistrib(RndDev), static_cast<Uint32>(MaxHeight * 0.25f));
+                const Uint32 NumSections = std::min(NumSectionsDistrib(RndDev), static_cast<Uint32>(MaxHeight * 0.25f));
                 for (Uint32 s = 0; s < NumSections; ++s)
                 {
                     Section sc;
@@ -390,7 +390,7 @@ void CreateBuilding(std::mt19937&           RndDev,
 
 
     // Generate vertices & indices
-    const auto NumCornerPoints = Corners.size() * 2;
+    const size_t NumCornerPoints = Corners.size() * 2;
 
     const auto AddFloor = [&](float Height, float Scale, float2 CenterOffset, float Rotation, Uint32 TexMask, Uint32 TexIndex, bool AddIndices) //
     {
@@ -417,10 +417,10 @@ void CreateBuilding(std::mt19937&           RndDev,
             for (Uint32 e = 0; e < NumCornerPoints; e += 2)
             {
                 // First and last vertice produce the last quad
-                const auto Left   = e + 1;
-                const auto Right  = (e + 2 == NumCornerPoints) ? 0 : e + 2;
-                const auto Top    = static_cast<Uint32>(Vertices.size() - NumCornerPoints);
-                const auto Bottom = static_cast<Uint32>(Top - NumCornerPoints);
+                const Uint32 Left   = e + 1;
+                const Uint32 Right  = (e + 2 == NumCornerPoints) ? 0 : e + 2;
+                const Uint32 Top    = static_cast<Uint32>(Vertices.size() - NumCornerPoints);
+                const Uint32 Bottom = static_cast<Uint32>(Top - NumCornerPoints);
 
                 Indices.push_back(Bottom + Left);
                 Indices.push_back(Top + Left);
@@ -430,10 +430,10 @@ void CreateBuilding(std::mt19937&           RndDev,
                 Indices.push_back(Top + Right);
                 Indices.push_back(Bottom + Right);
 
-                auto& LB = Vertices[Bottom + Left];
-                auto& LT = Vertices[Top + Left];
-                auto& RB = Vertices[Bottom + Right];
-                auto& RT = Vertices[Top + Right];
+                Vertex& LB = Vertices[Bottom + Left];
+                Vertex& LT = Vertices[Top + Left];
+                Vertex& RB = Vertices[Bottom + Right];
+                Vertex& RT = Vertices[Top + Right];
 
                 // Calculate normals
                 {
@@ -500,7 +500,7 @@ void CreateBuilding(std::mt19937&           RndDev,
 
 
     float BuildingHeight = 0.0f;
-    for (auto& sc : Sections)
+    for (Section& sc : Sections)
     {
         AddFloor(BuildingHeight, sc.Scale1, sc.CenterOffset, sc.Angle1, sc.SupportedTex, sc.TexIndex, false);
         BuildingHeight += sc.Height;
@@ -574,7 +574,7 @@ void Buildings::CreateResources(IDeviceContext* pContext)
     const float            Scale = m_DistributionScale;
     for (Uint32 i = 0; i < CityGrid.size(); ++i)
     {
-        auto& b = CityGrid[i];
+        Building& b = CityGrid[i];
         CreateBuilding(RndDev, b.Center * Scale, b.Radius * Scale, b.Height, i, NumUniqueSlices, Vertices, Indices);
     }
 
@@ -663,7 +663,7 @@ void Buildings::CreateResources(IDeviceContext* pContext)
             m_GenTexTask.ArraySlice = 0;
             m_GenTexTask.Time       = CurrentTime;
 
-            const auto OldStatus = m_GenTexTask.Status.exchange(TaskStatus::NewTask, std::memory_order_release);
+            const TaskStatus OldStatus = m_GenTexTask.Status.exchange(TaskStatus::NewTask, std::memory_order_release);
             VERIFY_EXPR(OldStatus == TaskStatus::Initial);
         }
     }
@@ -877,7 +877,7 @@ static void GenWallAndRightNeonLineTexture(Uint32* Pixels, const Uint32 W, const
         for (Uint32 x = W - NeonLineWithBorder; x < W; ++x)
         {
             const Uint32 lx   = x - (W - NeonLineWithBorder);
-            const auto   col  = (lx >= NeonLineBorder1 && lx < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
+            const Uint32 col  = (lx >= NeonLineBorder1 && lx < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
             Pixels[x + y * W] = col;
         }
     }
@@ -895,7 +895,7 @@ static void GenWallAndTopNeonLineTexture(Uint32* Pixels, const Uint32 W, const U
         for (Uint32 x = 0; x < W; ++x)
         {
             const Uint32 ly   = y - (H - NeonLineWithBorder);
-            const auto   col  = (ly >= NeonLineBorder1 && ly < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
+            const Uint32 col  = (ly >= NeonLineBorder1 && ly < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
             Pixels[x + y * W] = col;
         }
     }
@@ -947,7 +947,7 @@ static void GenWindowsAndRightNeonLineTexture(Uint32* Pixels, const Uint32 W, co
         for (Uint32 x = W - NeonLineWithBorder; x < W; ++x)
         {
             const Uint32 lx   = x - (W - NeonLineWithBorder);
-            const auto   col  = (lx >= NeonLineBorder1 && lx < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
+            const Uint32 col  = (lx >= NeonLineBorder1 && lx < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
             Pixels[x + y * W] = col;
         }
     }
@@ -965,7 +965,7 @@ static void GenWindowsAndTopNeonLineTexture(Uint32* Pixels, const Uint32 W, cons
         for (Uint32 x = 0; x < W; ++x)
         {
             const Uint32 ly   = y - (H - NeonLineWithBorder);
-            const auto   col  = (ly >= NeonLineBorder1 && ly < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
+            const Uint32 col  = (ly >= NeonLineBorder1 && ly < NeonLineBorder1 + NeonLineSize) ? NeonColors[ColIndex] : WallColor;
             Pixels[x + y * W] = col;
         }
     }
@@ -1006,7 +1006,7 @@ static void GenTexture(Uint32* Pixels, Uint32 Width, Uint32 Height, Uint32 Slice
 
     switch (TexType)
     {
-        // clang-format off
+            // clang-format off
         case TexLayerType::Wall:                    GenWallTexture(Pixels, Width, Height, Hash);                           break;
         case TexLayerType::WallAndRightNeonLine:    GenWallAndRightNeonLineTexture(Pixels, Width, Height, Hash, Hash2);    break;
         case TexLayerType::WallAndTopNeonLine:      GenWallAndTopNeonLineTexture(Pixels, Width, Height, Hash, Hash2);      break;
@@ -1025,7 +1025,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
     if (RequiredTransferRateMb == 0)
         return;
 
-    const auto& TexDesc = m_OpaqueTexAtlas->GetDesc();
+    const TextureDesc& TexDesc = m_OpaqueTexAtlas->GetDesc();
 
     // Try to read a new texture
     for (Uint32 i = 0; i < 100; ++i)
@@ -1040,7 +1040,7 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
             m_GenTexTask.ArraySlice = (m_GenTexTask.ArraySlice + 1) % TexDesc.ArraySize;
             m_GenTexTask.Time       = CurrentTime;
 
-            const auto OldStatus = m_GenTexTask.Status.exchange(TaskStatus::NewTask, std::memory_order_release);
+            const TaskStatus OldStatus = m_GenTexTask.Status.exchange(TaskStatus::NewTask, std::memory_order_release);
             VERIFY_EXPR(OldStatus == TaskStatus::CopyTex);
             break;
         }
@@ -1071,8 +1071,8 @@ void Buildings::UpdateAtlas(IDeviceContext* pContext, Uint32 RequiredTransferRat
         Uint32 Offset = (m_OpaqueTexAtlasSliceSize / 4) * Slice;
         for (Uint32 Mipmap = 0; Mipmap < TexDesc.MipLevels; ++Mipmap)
         {
-            const auto W = std::max(1u, TexDesc.Width >> Mipmap);
-            const auto H = std::max(1u, TexDesc.Height >> Mipmap);
+            const Uint32 W = std::max(1u, TexDesc.Width >> Mipmap);
+            const Uint32 H = std::max(1u, TexDesc.Height >> Mipmap);
 
 #if USE_STAGING_TEXTURE
             MappedTextureSubresource SubRes;
@@ -1146,27 +1146,27 @@ void Buildings::ThreadProc()
             TaskStatus Expected = TaskStatus::NewTask;
             if (m_GenTexTask.Status.compare_exchange_weak(Expected, TaskStatus::GenTex, std::memory_order_acquire, std::memory_order_relaxed))
             {
-                const auto& TexDesc   = m_OpaqueTexAtlas->GetDesc();
-                const auto  Slice     = m_GenTexTask.ArraySlice;
-                Uint32      SrcOffset = 0;
+                const TextureDesc& TexDesc   = m_OpaqueTexAtlas->GetDesc();
+                const Uint32       Slice     = m_GenTexTask.ArraySlice;
+                Uint32             SrcOffset = 0;
                 GenTexture(&m_GenTexTask.Pixels[SrcOffset], TexDesc.Width, TexDesc.Height, Slice, m_GenTexTask.Time);
 
                 for (Uint32 Mipmap = 1; Mipmap < TexDesc.MipLevels; ++Mipmap)
                 {
                     const Uint32* SrcPixels = &m_GenTexTask.Pixels[SrcOffset];
-                    const auto    SrcW      = std::max(1u, TexDesc.Width >> (Mipmap - 1));
-                    const auto    SrcH      = std::max(1u, TexDesc.Height >> (Mipmap - 1));
+                    const Uint32  SrcW      = std::max(1u, TexDesc.Width >> (Mipmap - 1));
+                    const Uint32  SrcH      = std::max(1u, TexDesc.Height >> (Mipmap - 1));
                     const Uint32  DstOffset = SrcOffset + SrcW * SrcH;
                     Uint32*       DstPixels = &m_GenTexTask.Pixels[DstOffset];
-                    const auto    DstW      = std::max(1u, TexDesc.Width >> Mipmap);
-                    const auto    DstH      = std::max(1u, TexDesc.Height >> Mipmap);
+                    const Uint32  DstW      = std::max(1u, TexDesc.Width >> Mipmap);
+                    const Uint32  DstH      = std::max(1u, TexDesc.Height >> Mipmap);
 
                     GenMipmap(SrcPixels, SrcW, SrcH, DstPixels, DstW, DstH);
                     SrcOffset = DstOffset;
                 }
 
                 // Change status to 'TexReady' and flush CPU cache to make local changes visible for other threads.
-                const auto OldStatus = m_GenTexTask.Status.exchange(TaskStatus::TexReady, std::memory_order_release);
+                const TaskStatus OldStatus = m_GenTexTask.Status.exchange(TaskStatus::TexReady, std::memory_order_release);
                 VERIFY_EXPR(OldStatus == TaskStatus::GenTex);
 
                 break;
@@ -1178,7 +1178,7 @@ void Buildings::ThreadProc()
 
 void Buildings::GenerateOpaqueTexture()
 {
-    const auto& TexDesc = m_OpaqueTexAtlas->GetDesc();
+    const TextureDesc& TexDesc = m_OpaqueTexAtlas->GetDesc();
 
     for (Uint32 Slice = 0; Slice < TexDesc.ArraySize; ++Slice)
     {
@@ -1188,12 +1188,12 @@ void Buildings::GenerateOpaqueTexture()
         for (Uint32 Mipmap = 1; Mipmap < TexDesc.MipLevels; ++Mipmap)
         {
             const Uint32* SrcPixels = &m_OpaqueTexAtlasPixels[SrcOffset];
-            const auto    SrcW      = std::max(1u, TexDesc.Width >> (Mipmap - 1));
-            const auto    SrcH      = std::max(1u, TexDesc.Height >> (Mipmap - 1));
+            const Uint32  SrcW      = std::max(1u, TexDesc.Width >> (Mipmap - 1));
+            const Uint32  SrcH      = std::max(1u, TexDesc.Height >> (Mipmap - 1));
             const Uint32  DstOffset = SrcOffset + SrcW * SrcH;
             Uint32*       DstPixels = &m_OpaqueTexAtlasPixels[DstOffset];
-            const auto    DstW      = std::max(1u, TexDesc.Width >> Mipmap);
-            const auto    DstH      = std::max(1u, TexDesc.Height >> Mipmap);
+            const Uint32  DstW      = std::max(1u, TexDesc.Width >> Mipmap);
+            const Uint32  DstH      = std::max(1u, TexDesc.Height >> Mipmap);
 
             GenMipmap(SrcPixels, SrcW, SrcH, DstPixels, DstW, DstH);
             SrcOffset = DstOffset;

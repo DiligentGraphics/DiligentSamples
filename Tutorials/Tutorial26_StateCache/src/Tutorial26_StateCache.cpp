@@ -61,7 +61,7 @@ Tutorial26_StateCache::Tutorial26_StateCache() :
     m_Scene{std::make_unique<HLSL::SceneAttribs>()}
 {
     {
-        auto& Light{m_Scene->Light};
+        HLSL::LightAttribs& Light{m_Scene->Light};
         Light.f4Normal    = {0, -1, 0};
         Light.f4Intensity = {1, 1, 1, 15};
         Light.f2PosXZ     = {0, 0};
@@ -69,7 +69,7 @@ Tutorial26_StateCache::Tutorial26_StateCache() :
     }
 
     {
-        auto& MirrorBall{m_Scene->Balls[0]};
+        HLSL::SphereInfo& MirrorBall{m_Scene->Balls[0]};
         MirrorBall.Center = float3{+2.5f, -3.415f, 1.5f};
         MirrorBall.Radius = 1.5;
 
@@ -82,7 +82,7 @@ Tutorial26_StateCache::Tutorial26_StateCache() :
     }
 
     {
-        auto& GlassBall{m_Scene->Balls[1]};
+        HLSL::SphereInfo& GlassBall{m_Scene->Balls[1]};
         GlassBall.Center = float3{-1.5f, -3.415f, 0.5f};
         GlassBall.Radius = 1.5;
 
@@ -241,8 +241,8 @@ void Tutorial26_StateCache::UpdateUI()
                 NodeID += std::to_string(i);
                 if (ImGui::TreeNode(NodeID.c_str(), "Ball %d", i))
                 {
-                    auto& Mat     = m_Scene->Balls[i].Mat;
-                    auto  MatType = Mat.Type - 1;
+                    HLSL::Material& Mat     = m_Scene->Balls[i].Mat;
+                    int             MatType = Mat.Type - 1;
                     if (ImGui::Combo("Material", &MatType,
                                      "Smith GGX\0"
                                      "Glass\0"
@@ -347,8 +347,8 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
 
         if (FileSystem::FileExists(m_StateCachePath.c_str()))
         {
-            FileWrapper CacheDataFile{m_StateCachePath.c_str()};
-            auto        pCacheData = DataBlobImpl::Create();
+            FileWrapper                 CacheDataFile{m_StateCachePath.c_str()};
+            RefCntAutoPtr<DataBlobImpl> pCacheData = DataBlobImpl::Create();
             if (CacheDataFile->Read(pCacheData))
             {
                 if (m_pStateCache->Load(pCacheData))
@@ -381,7 +381,7 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
         CreateRenderStateNotationParser(ParserCI, &m_pRSNParser);
         VERIFY(m_pRSNParser != nullptr, "Failed to create RSN parser");
         // Parse the render state notation file
-        auto res = m_pRSNParser->ParseFile("RenderStates.json", pShaderSourceFactory);
+        bool res = m_pRSNParser->ParseFile("RenderStates.json", pShaderSourceFactory);
         VERIFY(res, "Failed to parse render states file");
     }
 
@@ -407,8 +407,8 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
         // it to set the render target formats.
         auto ModifyGBufferPSODesc = MakeCallback(
             [](PipelineStateCreateInfo& PSODesc) {
-                auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
-                auto& GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
+                GraphicsPipelineStateCreateInfo& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
+                GraphicsPipelineDesc&            GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
 
                 GraphicsPipeline.NumRenderTargets = 5;
 
@@ -444,8 +444,8 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
         // render state notation file.
         auto ModifyResolvePSODesc = MakeCallback(
             [this](PipelineStateCreateInfo& PSODesc) {
-                auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
-                auto& GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
+                GraphicsPipelineStateCreateInfo& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
+                GraphicsPipelineDesc&            GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
 
                 GraphicsPipeline.NumRenderTargets = 1;
                 GraphicsPipeline.RTVFormats[0]    = m_pSwapChain->GetDesc().ColorBufferFormat;
@@ -495,8 +495,8 @@ void Tutorial26_StateCache::CreatePathTracePSO()
 
     auto ModifyPSODesc = MakeCallback(
         [](PipelineStateCreateInfo& PSODesc) {
-            auto& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
-            auto& GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
+            GraphicsPipelineStateCreateInfo& GraphicsPSOCI    = static_cast<GraphicsPipelineStateCreateInfo&>(PSODesc);
+            GraphicsPipelineDesc&            GraphicsPipeline = GraphicsPSOCI.GraphicsPipeline;
 
             GraphicsPipeline.NumRenderTargets = 1;
             GraphicsPipeline.RTVFormats[0]    = RadianceAccumulationFormat;
@@ -543,7 +543,7 @@ void Tutorial26_StateCache::WindowResize(Uint32 Width, Uint32 Height)
 
 void Tutorial26_StateCache::CreateGBuffer()
 {
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     TextureDesc TexDesc;
     TexDesc.Name      = "G-buffer albedo";
@@ -594,7 +594,7 @@ void Tutorial26_StateCache::CreateGBuffer()
         const Uint32 CurrFrameIdx = (Idx + 0) & 0x01;
         const Uint32 PrevFrameIdx = (Idx + 1) & 0x01;
 
-        auto& pPathTraceSRB = m_pPathTraceSRB[CurrFrameIdx];
+        RefCntAutoPtr<IShaderResourceBinding>& pPathTraceSRB = m_pPathTraceSRB[CurrFrameIdx];
         pPathTraceSRB.Release();
         m_pPathTracePSO->CreateShaderResourceBinding(&pPathTraceSRB, true);
         pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_BaseColor")->Set(m_GBuffer.pBaseColor->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
@@ -604,7 +604,7 @@ void Tutorial26_StateCache::CreateGBuffer()
         pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Depth")->Set(m_GBuffer.pDepth->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
         pPathTraceSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Radiance")->Set(m_pRadianceAccumulationBuffer[PrevFrameIdx]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
-        auto& pResolveSRB = m_pResolveSRB[CurrFrameIdx];
+        RefCntAutoPtr<IShaderResourceBinding>& pResolveSRB = m_pResolveSRB[CurrFrameIdx];
         pResolveSRB.Release();
         m_pResolvePSO->CreateShaderResourceBinding(&pResolveSRB, true);
         pResolveSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Radiance")->Set(m_pRadianceAccumulationBuffer[CurrFrameIdx]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
@@ -621,7 +621,7 @@ void Tutorial26_StateCache::Render()
     if (!m_GBuffer)
         CreateGBuffer();
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     // Update the constant buffer
     bool UpdateGBuffer = false;
@@ -640,9 +640,9 @@ void Tutorial26_StateCache::Render()
 
         ShaderData->fBalanceHeuristicsPower = m_BalanceHeuristicsPower;
 
-        auto& LightPos    = m_Scene->Light.f2PosXZ;
-        auto& LightSize   = m_Scene->Light.f2SizeXZ;
-        auto  AdjustedPos = clamp(LightPos, float2{-4.5, -4.5} + LightSize, float2{+4.5, +4.5} - LightSize);
+        float2& LightPos    = m_Scene->Light.f2PosXZ;
+        float2& LightSize   = m_Scene->Light.f2SizeXZ;
+        float2  AdjustedPos = clamp(LightPos, float2{-4.5, -4.5} + LightSize, float2{+4.5, +4.5} - LightSize);
         if (LightPos != AdjustedPos)
         {
             LightPos            = AdjustedPos;
@@ -652,9 +652,9 @@ void Tutorial26_StateCache::Render()
 
         ShaderData->Scene = *m_Scene;
 
-        const auto& View     = m_Camera.GetViewMatrix();
-        const auto& Proj     = m_Camera.GetProjMatrix();
-        const auto  ViewProj = View * Proj;
+        const float4x4& View     = m_Camera.GetViewMatrix();
+        const float4x4& Proj     = m_Camera.GetProjMatrix();
+        const float4x4  ViewProj = View * Proj;
 
         if (m_LastFrameViewProj != ViewProj)
         {
@@ -727,7 +727,7 @@ void Tutorial26_StateCache::Update(double CurrTime, double ElapsedTime, bool DoU
 
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     {
-        const auto& mouseState = m_InputController.GetMouseState();
+        const MouseState& mouseState = m_InputController.GetMouseState();
         if (m_LastMouseState.PosX >= 0 &&
             m_LastMouseState.PosY >= 0 &&
             (m_LastMouseState.ButtonFlags & MouseState::BUTTON_FLAG_RIGHT) != 0)

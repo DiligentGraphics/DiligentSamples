@@ -282,13 +282,13 @@ void Tutorial21_RayTracing::LoadTextures()
 
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        auto FileName = FileNameSS.str();
+        std::string FileName = FileNameSS.str();
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &pTex[tex]);
 
         // Get shader resource view from the texture
-        auto* pTextureSRV = pTex[tex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-        pTexSRVs[tex]     = pTextureSRV;
-        Barriers[tex]     = StateTransitionDesc{pTex[tex], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
+        ITextureView* pTextureSRV = pTex[tex]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        pTexSRVs[tex]             = pTextureSRV;
+        Barriers[tex]             = StateTransitionDesc{pTex[tex], RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE};
     }
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
@@ -801,8 +801,8 @@ void Tutorial21_RayTracing::Render()
 
     // Update constants
     {
-        float3 CameraWorldPos = float3::MakeVector(m_Camera.GetWorldMatrix()[3]);
-        auto   CameraViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
+        float3   CameraWorldPos = float3::MakeVector(m_Camera.GetWorldMatrix()[3]);
+        float4x4 CameraViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
 
         m_Constants.CameraPos   = float4{CameraWorldPos, 1.0f};
         m_Constants.InvViewProj = CameraViewProj.Inverse();
@@ -829,7 +829,7 @@ void Tutorial21_RayTracing::Render()
     {
         m_pImageBlitSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_Texture")->Set(m_pColorRT->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
-        auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
         m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_pImageBlitPSO);
@@ -851,7 +851,7 @@ void Tutorial21_RayTracing::Update(double CurrTime, double ElapsedTime, bool DoU
     m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
 
     // Do not allow going underground
-    auto oldPos = m_Camera.GetPos();
+    float3 oldPos = m_Camera.GetPos();
     if (oldPos.y < -5.7f)
     {
         oldPos.y = -5.7f;

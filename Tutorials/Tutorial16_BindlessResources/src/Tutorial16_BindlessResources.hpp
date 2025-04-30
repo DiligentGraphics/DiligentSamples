@@ -82,7 +82,7 @@ private:
         float4x4 Matrix;
         uint     TextureInd = 0;
     };
-    std::vector<InstanceData> m_InstanceData;
+    std::vector<InstanceData> m_Instances;
     std::vector<Uint32>       m_GeometryType;
 
     float4x4 m_ViewProjMatrix;

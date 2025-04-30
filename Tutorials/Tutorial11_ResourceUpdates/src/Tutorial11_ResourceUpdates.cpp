@@ -238,7 +238,7 @@ void Tutorial11_ResourceUpdates::CreateVertexBuffers()
 {
     for (Uint32 i = 0; i < _countof(m_CubeVertexBuffer); ++i)
     {
-        auto& VertexBuffer = m_CubeVertexBuffer[i];
+        RefCntAutoPtr<IBuffer>& VertexBuffer = m_CubeVertexBuffer[i];
 
         // Create vertex buffer that stores cube vertices
         BufferDesc VertBuffDesc;
@@ -296,9 +296,9 @@ void Tutorial11_ResourceUpdates::LoadTextures()
         TextureLoadInfo   loadInfo;
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << i << ".png";
-        auto FileName   = FileNameSS.str();
-        loadInfo.IsSRGB = true;
-        loadInfo.Usage  = USAGE_IMMUTABLE;
+        std::string FileName = FileNameSS.str();
+        loadInfo.IsSRGB      = true;
+        loadInfo.Usage       = USAGE_IMMUTABLE;
         if (i == 2)
         {
             loadInfo.Usage = USAGE_DEFAULT;
@@ -313,10 +313,10 @@ void Tutorial11_ResourceUpdates::LoadTextures()
             loadInfo.CPUAccessFlags = CPU_ACCESS_WRITE;
         }
 
-        auto& Tex = m_Textures[i];
+        RefCntAutoPtr<ITexture>& Tex = m_Textures[i];
         CreateTextureFromFile(FileName.c_str(), loadInfo, m_pDevice, &Tex);
         // Get shader resource view from the texture
-        auto TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+        ITextureView* TextureSRV = Tex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
         // Since we are using mutable variable, we must create shader resource binding object
         // http://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
@@ -375,8 +375,8 @@ void Tutorial11_ResourceUpdates::DrawCube(const float4x4& WVPMatrix, Diligent::I
 // Render a frame
 void Tutorial11_ResourceUpdates::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
     if (m_ConvertPSOutputToGamma)
@@ -391,14 +391,14 @@ void Tutorial11_ResourceUpdates::Render()
     m_pImmediateContext->SetPipelineState(m_pPSO);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
-    auto ViewProj = SrfPreTransform * Proj;
+    float4x4 ViewProj = SrfPreTransform * Proj;
 
-    auto CubeRotation = float4x4::RotationY(static_cast<float>(m_CurrTime) * 0.5f) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0, 0, 12.0f);
+    float4x4 CubeRotation = float4x4::RotationY(static_cast<float>(m_CurrTime) * 0.5f) * float4x4::RotationX(-PI_F * 0.1f) * float4x4::Translation(0, 0, 12.0f);
 
     DrawCube(CubeRotation * float4x4::Translation(-2.f, -2.f, 0.f) * ViewProj, m_CubeVertexBuffer[0], m_SRBs[2]);
     DrawCube(CubeRotation * float4x4::Translation(+2.f, -2.f, 0.f) * ViewProj, m_CubeVertexBuffer[0], m_SRBs[3]);
@@ -411,9 +411,9 @@ void Tutorial11_ResourceUpdates::Render()
 
 void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint64 Stride)
 {
-    auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
-    auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
-    auto c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
+    Uint32 x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    Uint32 y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    Uint32 c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
     for (size_t j = 0; j < Height; ++j)
     {
         for (size_t i = 0; i < Width; ++i)
@@ -426,9 +426,9 @@ void Tutorial11_ResourceUpdates::WriteStripPattern(Uint8* pData, Uint32 Width, U
 
 void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width, Uint32 Height, Uint64 Stride)
 {
-    auto x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
-    auto y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
-    auto c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
+    Uint32 x_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    Uint32 y_scale = std::uniform_int_distribution<Uint32>{1, 8}(m_gen);
+    Uint32 c_scale = std::uniform_int_distribution<Uint32>{1, 64}(m_gen);
     for (size_t j = 0; j < Height; ++j)
     {
         for (size_t i = 0; i < Width; ++i)
@@ -441,12 +441,12 @@ void Tutorial11_ResourceUpdates::WriteDiamondPattern(Uint8* pData, Uint32 Width,
 
 void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
 {
-    auto& Texture = *m_Textures[TexIndex];
+    ITexture& Texture = *m_Textures[TexIndex];
 
     static constexpr const Uint32 NumUpdates = 3;
     for (Uint32 update = 0; update < NumUpdates; ++update)
     {
-        const auto& TexDesc = Texture.GetDesc();
+        const TextureDesc& TexDesc = Texture.GetDesc();
 
         Uint32 Width  = std::uniform_int_distribution<Uint32>{2, MaxUpdateRegionSize}(m_gen);
         Uint32 Height = std::uniform_int_distribution<Uint32>{2, MaxUpdateRegionSize}(m_gen);
@@ -471,8 +471,8 @@ void Tutorial11_ResourceUpdates::UpdateTexture(Uint32 TexIndex)
 
 void Tutorial11_ResourceUpdates::MapTexture(Uint32 TexIndex, bool MapEntireTexture)
 {
-    auto&       Texture = *m_Textures[TexIndex];
-    const auto& TexDesc = m_Textures[2]->GetDesc();
+    ITexture&          Texture = *m_Textures[TexIndex];
+    const TextureDesc& TexDesc = m_Textures[2]->GetDesc();
 
     MappedTextureSubresource MappedSubres;
     Box                      MapRegion;
@@ -504,10 +504,10 @@ void Tutorial11_ResourceUpdates::UpdateBuffer(Diligent::Uint32 BufferIndex)
     Vertex Vertices[_countof(CubeVerts)];
     for (Uint32 v = 0; v < NumVertsToUpdate; ++v)
     {
-        auto        SrcInd  = FirstVertToUpdate + v;
-        const auto& SrcVert = CubeVerts[SrcInd];
-        Vertices[v].uv      = SrcVert.uv;
-        Vertices[v].pos     = SrcVert.pos * static_cast<float>(1 + 0.2 * sin(m_CurrTime * (1.0 + SrcInd * 0.2)));
+        Uint32        SrcInd  = FirstVertToUpdate + v;
+        const Vertex& SrcVert = CubeVerts[SrcInd];
+        Vertices[v].uv        = SrcVert.uv;
+        Vertices[v].pos       = SrcVert.pos * static_cast<float>(1 + 0.2 * sin(m_CurrTime * (1.0 + SrcInd * 0.2)));
     }
     m_pImmediateContext->UpdateBuffer(
         m_CubeVertexBuffer[BufferIndex],    // Device context to use for the operation
@@ -523,9 +523,9 @@ void Tutorial11_ResourceUpdates::MapDynamicBuffer(Diligent::Uint32 BufferIndex)
     MapHelper<Vertex> Vertices(m_pImmediateContext, m_CubeVertexBuffer[BufferIndex], MAP_WRITE, MAP_FLAG_DISCARD);
     for (Uint32 v = 0; v < _countof(CubeVerts); ++v)
     {
-        const auto& SrcVert = CubeVerts[v];
-        Vertices[v].uv      = SrcVert.uv;
-        Vertices[v].pos     = SrcVert.pos * static_cast<float>(1 + 0.2 * sin(m_CurrTime * (1.0 + v * 0.2)));
+        const Vertex& SrcVert = CubeVerts[v];
+        Vertices[v].uv        = SrcVert.uv;
+        Vertices[v].pos       = SrcVert.pos * static_cast<float>(1 + 0.2 * sin(m_CurrTime * (1.0 + v * 0.2)));
     }
 }
 
@@ -553,7 +553,7 @@ void Tutorial11_ResourceUpdates::Update(double CurrTime, double ElapsedTime, boo
     }
 
     static constexpr const double MapTexturePeriod = 0.05;
-    const auto&                   deviceType       = m_pDevice->GetDeviceInfo().Type;
+    const RENDER_DEVICE_TYPE      deviceType       = m_pDevice->GetDeviceInfo().Type;
     if (CurrTime - m_LastMapTime > MapTexturePeriod * (deviceType == RENDER_DEVICE_TYPE_D3D11 ? 10.f : 1.f))
     {
         m_LastMapTime = CurrTime;

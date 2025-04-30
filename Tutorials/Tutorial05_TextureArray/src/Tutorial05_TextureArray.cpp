@@ -144,11 +144,11 @@ void Tutorial05_TextureArray::LoadTextures()
         VERIFY(tex == 0 || TexLoaders[tex]->GetTextureDesc() == TexLoaders[0]->GetTextureDesc(), "All textures must be same size");
     }
 
-    auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
-    TexArrDesc.ArraySize = NumTextures;
-    TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-    TexArrDesc.Usage     = USAGE_DEFAULT;
-    TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+    TextureDesc TexArrDesc = TexLoaders[0]->GetTextureDesc();
+    TexArrDesc.ArraySize   = NumTextures;
+    TexArrDesc.Type        = RESOURCE_DIM_TEX_2D_ARRAY;
+    TexArrDesc.Usage       = USAGE_DEFAULT;
+    TexArrDesc.BindFlags   = BIND_SHADER_RESOURCE;
 
     // Prepare initialization data
     std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);
@@ -201,8 +201,8 @@ void Tutorial05_TextureArray::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial05_TextureArray::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    const auto                zGridSize = static_cast<size_t>(m_GridSize);
-    std::vector<InstanceData> InstanceData(zGridSize * zGridSize * zGridSize);
+    const size_t              zGridSize = static_cast<size_t>(m_GridSize);
+    std::vector<InstanceData> Instances(zGridSize * zGridSize * zGridSize);
 
     float fGridSize = static_cast<float>(m_GridSize);
 
@@ -233,25 +233,26 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
                 rotation *= float4x4::RotationY(rot_distr(gen));
                 rotation *= float4x4::RotationZ(rot_distr(gen));
                 // Combine rotation, scale and translation
-                float4x4 matrix   = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
-                auto&    CurrInst = InstanceData[instId++];
-                CurrInst.Matrix   = matrix;
+                float4x4 matrix = rotation * float4x4::Scale(scale, scale, scale) * float4x4::Translation(xOffset, yOffset, zOffset);
+
+                InstanceData& CurrInst = Instances[instId++];
+                CurrInst.Matrix        = matrix;
                 // Texture array index
                 CurrInst.TextureInd = static_cast<float>(tex_distr(gen));
             }
         }
     }
     // Update instance data buffer
-    Uint32 DataSize = static_cast<Uint32>(sizeof(InstanceData[0]) * InstanceData.size());
-    m_pImmediateContext->UpdateBuffer(m_InstanceBuffer, 0, DataSize, InstanceData.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    Uint32 DataSize = static_cast<Uint32>(sizeof(Instances[0]) * Instances.size());
+    m_pImmediateContext->UpdateBuffer(m_InstanceBuffer, 0, DataSize, Instances.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 }
 
 
 // Render a frame
 void Tutorial05_TextureArray::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
     if (m_ConvertPSOutputToGamma)
@@ -298,10 +299,10 @@ void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime, bool D
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute view-projection matrix
     m_ViewProjMatrix = View * SrfPreTransform * Proj;

@@ -133,8 +133,8 @@ void Tutorial20_MeshShader::CreateDrawTasks()
     {
         for (int x = 0; x < GridDim.x; ++x)
         {
-            int   idx = x + y * GridDim.x;
-            auto& dst = DrawTasks[idx];
+            int       idx = x + y * GridDim.x;
+            DrawTask& dst = DrawTasks[idx];
 
             dst.BasePos.x  = (x - GridDim.x / 2) * 4.f + (Rnd() * 2.f - 1.f);
             dst.BasePos.y  = (y - GridDim.y / 2) * 4.f + (Rnd() * 2.f - 1.f);
@@ -364,8 +364,8 @@ void Tutorial20_MeshShader::Initialize(const SampleInitInfo& InitInfo)
 // Render a frame
 void Tutorial20_MeshShader::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     const float ClearColor[] = {0.350f, 0.350f, 0.350f, 1.0f};
     m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -465,10 +465,10 @@ void Tutorial20_MeshShader::Update(double CurrTime, double ElapsedTime, bool DoU
     float4x4 View = float4x4::Translation(0.f, -4.0f, m_CameraHeight);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(m_FOV, 1.f, 1000.f);
 
     // Compute view and view-projection matrices
     m_ViewMatrix     = RotationMatrix * View * SrfPreTransform;

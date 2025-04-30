@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,15 +59,15 @@ void Terrain::CreateResources(IDeviceContext* pContext)
     std::vector<float2>    Vertices;
     std::vector<IndexType> Indices;
 
-    const auto  GridSize  = std::max(1u, (1u << TerrainSize) / m_ComputeGroupSize) * m_ComputeGroupSize;
-    const float GridScale = 1.0f / static_cast<float>(GridSize - 1);
+    const Uint32 GridSize  = std::max(1u, (1u << TerrainSize) / m_ComputeGroupSize) * m_ComputeGroupSize;
+    const float  GridScale = 1.0f / static_cast<float>(GridSize - 1);
 
     Vertices.resize(size_t{GridSize} * size_t{GridSize});
     Indices.resize(size_t{GridSize - 1} * size_t{GridSize - 1} * 6u);
 
     {
-        auto*  pVertices = Vertices.data();
-        Uint32 v         = 0;
+        float2* pVertices = Vertices.data();
+        Uint32  v         = 0;
         for (Uint32 y = 0; y < GridSize; ++y)
         {
             for (Uint32 x = 0; x < GridSize; ++x)
@@ -77,8 +77,8 @@ void Terrain::CreateResources(IDeviceContext* pContext)
         }
         VERIFY_EXPR(v == Vertices.size());
 
-        auto*  pIndices = Indices.data();
-        Uint32 i        = 0;
+        IndexType* pIndices = Indices.data();
+        Uint32     i        = 0;
         for (Uint32 y = 1; y < GridSize; ++y)
         {
             for (Uint32 x = 1; x < GridSize; ++x)
@@ -182,7 +182,7 @@ void Terrain::CreateResources(IDeviceContext* pContext)
     // Set terrain generator shader resources
     for (Uint32 i = 0; i < _countof(m_GenSRB); ++i)
     {
-        auto& SRB = m_GenSRB[i];
+        RefCntAutoPtr<IShaderResourceBinding>& SRB = m_GenSRB[i];
         m_GenPSO->CreateShaderResourceBinding(&SRB);
         SRB->GetVariableByName(SHADER_TYPE_COMPUTE, "TerrainConstantsCB")->Set(m_TerrainConstants[0]);
         SRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_HeightMapUAV")->Set(m_HeightMap[i]->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
@@ -192,7 +192,7 @@ void Terrain::CreateResources(IDeviceContext* pContext)
     // Set draw terrain shader resources
     for (Uint32 i = 0; i < _countof(m_DrawSRB); ++i)
     {
-        auto& SRB = m_DrawSRB[i];
+        RefCntAutoPtr<IShaderResourceBinding>& SRB = m_DrawSRB[i];
         m_DrawPSO->CreateShaderResourceBinding(&SRB);
         SRB->GetVariableByName(SHADER_TYPE_VERTEX, "DrawConstantsCB")->Set(m_DrawConstants);
         SRB->GetVariableByName(SHADER_TYPE_VERTEX, "TerrainConstantsCB")->Set(m_TerrainConstants[1]);
@@ -208,10 +208,11 @@ void Terrain::CreatePSO(const ScenePSOCreateAttribs& Attr)
 {
     // Terrain generation PSO
     {
-        const auto& CSInfo    = m_Device->GetAdapterInfo().ComputeShader;
-        Uint32      GroupSize = static_cast<Uint32>(sqrt(static_cast<float>(CSInfo.MaxThreadGroupInvocations)));
-        GroupSize             = 2u << PlatformMisc::GetMSB(GroupSize);
-        GroupSize             = (GroupSize * GroupSize <= CSInfo.MaxThreadGroupInvocations) ? GroupSize : (GroupSize >> 1);
+        const ComputeShaderProperties& CSInfo = m_Device->GetAdapterInfo().ComputeShader;
+
+        Uint32 GroupSize = static_cast<Uint32>(sqrt(static_cast<float>(CSInfo.MaxThreadGroupInvocations)));
+        GroupSize        = 2u << PlatformMisc::GetMSB(GroupSize);
+        GroupSize        = (GroupSize * GroupSize <= CSInfo.MaxThreadGroupInvocations) ? GroupSize : (GroupSize >> 1);
 
 #if PLATFORM_ANDROID
         // 64 threads per threadgroup is much faster
@@ -331,7 +332,7 @@ void Terrain::Update(IDeviceContext* pContext)
 {
     pContext->BeginDebugGroup("Update terrain");
 
-    const auto& TexDesc = m_HeightMap[0]->GetDesc();
+    const TextureDesc& TexDesc = m_HeightMap[0]->GetDesc();
 
     // Update constants
     {
@@ -348,7 +349,7 @@ void Terrain::Update(IDeviceContext* pContext)
     pContext->SetPipelineState(m_GenPSO);
 
     // Terrain height and normal maps can not be transitioned here because has UNKNOWN state.
-    const auto Id = DoubleBuffering ? m_FrameId : 0;
+    const Uint32 Id = DoubleBuffering ? m_FrameId : 0;
     pContext->CommitShaderResources(m_GenSRB[Id], RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
     DispatchComputeAttribs dispatchAttrs;
@@ -371,7 +372,7 @@ void Terrain::Draw(IDeviceContext* pContext)
 
     // Terrain height and normal maps can not be transitioned here because has UNKNOWN state.
     // Other resources has constant state and does not require transitions.
-    const auto Id = DoubleBuffering ? m_FrameId : 1;
+    const Uint32 Id = DoubleBuffering ? m_FrameId : 1;
     pContext->CommitShaderResources(m_DrawSRB[Id], RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     // Vertex and index buffers are immutable and does not require transitions.

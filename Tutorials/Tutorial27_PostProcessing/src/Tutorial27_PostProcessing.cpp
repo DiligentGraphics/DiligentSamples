@@ -238,8 +238,8 @@ void Tutorial27_PostProcessing::Render()
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
     const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 0x1) & 0x1;
 
-    const auto& CurrCamAttribs = m_CameraAttribs[CurrFrameIdx];
-    const auto& PrevCamAttribs = m_CameraAttribs[PrevFrameIdx];
+    const HLSL::CameraAttribs& CurrCamAttribs = m_CameraAttribs[CurrFrameIdx];
+    const HLSL::CameraAttribs& PrevCamAttribs = m_CameraAttribs[PrevFrameIdx];
     {
         MapHelper<HLSL::CameraAttribs> FrameAttribs{m_pImmediateContext, m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer(), MAP_WRITE, MAP_FLAG_DISCARD};
         FrameAttribs[0] = CurrCamAttribs;
@@ -271,7 +271,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime, bool
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0) & 0x01;
     const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 1) & 0x01;
 
-    auto& SCDesc                   = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc    = m_pSwapChain->GetDesc();
     m_PostFXFrameDesc.Width        = static_cast<Uint32>(FastCeil(m_ShaderSettings->FSRSettings.ResolutionScale * static_cast<float>(SCDesc.Width)));
     m_PostFXFrameDesc.Height       = static_cast<Uint32>(FastCeil(m_ShaderSettings->FSRSettings.ResolutionScale * static_cast<float>(SCDesc.Height)));
     m_PostFXFrameDesc.OutputWidth  = SCDesc.Width;
@@ -291,7 +291,7 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime, bool
 
     float2 Resolution = float2{static_cast<float>(m_PostFXFrameDesc.Width), static_cast<float>(m_PostFXFrameDesc.Height)};
 
-    auto& CurrCamAttribs          = m_CameraAttribs[CurrFrameIdx];
+    HLSL::CameraAttribs& CurrCamAttribs{m_CameraAttribs[CurrFrameIdx]};
     CurrCamAttribs.f4ViewportSize = float4{Resolution.x, Resolution.y, 1.f / Resolution.x, 1.f / Resolution.y};
     CurrCamAttribs.mView          = CameraView;
     CurrCamAttribs.mProj          = CameraProj;
@@ -475,31 +475,31 @@ void Tutorial27_PostProcessing::PrepareResources()
 
     if (m_ShaderSettings->SSRStrength > 0.0)
     {
-        auto ActiveFeatures = m_ShaderSettings->SSRFeatureFlags;
+        ScreenSpaceReflection::FEATURE_FLAGS ActiveFeatures = m_ShaderSettings->SSRFeatureFlags;
         m_ScreenSpaceReflection->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->SSAOStrength > 0.0)
     {
-        auto ActiveFeatures = m_ShaderSettings->SSAOFeatureFlags;
+        ScreenSpaceAmbientOcclusion::FEATURE_FLAGS ActiveFeatures = m_ShaderSettings->SSAOFeatureFlags;
         m_ScreenSpaceAmbientOcclusion->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->TAAEnabled)
     {
-        auto ActiveFeatures = m_ShaderSettings->TAAFeatureFlags;
+        TemporalAntiAliasing::FEATURE_FLAGS ActiveFeatures = m_ShaderSettings->TAAFeatureFlags;
         m_TemporalAntiAliasing->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->BloomEnabled)
     {
-        auto ActiveFeatures = m_ShaderSettings->BloomFeatureFlags;
+        Bloom::FEATURE_FLAGS ActiveFeatures = m_ShaderSettings->BloomFeatureFlags;
         m_Bloom->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
     if (m_ShaderSettings->UpsamplingMode == UPSAMPLING_MODE_FSR)
     {
-        auto ActiveFeatures = m_ShaderSettings->SuperResolutionFlags;
+        SuperResolution::FEATURE_FLAGS ActiveFeatures = m_ShaderSettings->SuperResolutionFlags;
         m_SuperResolution->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 }
@@ -508,14 +508,14 @@ void Tutorial27_PostProcessing::GenerateGeometry()
 {
     m_GBuffer->Resize(m_pDevice, m_PostFXFrameDesc.Width, m_PostFXFrameDesc.Height);
 
-    auto& RenderTech = m_RenderTech[RENDER_TECH_GENERATE_GEOMETRY];
+    RenderTechnique& RenderTech = m_RenderTech[RENDER_TECH_GENERATE_GEOMETRY];
     if (!RenderTech.IsInitializedPSO())
     {
         ShaderMacroHelper Macros;
         Macros.Add("MAX_MATERIAL_COUNT", m_MaxMaterialCount);
 
-        const auto VS = CreateShader(m_pDevice, nullptr, "GenerateGeometry.vsh", "GenerateGeometryVS", SHADER_TYPE_VERTEX);
-        const auto PS = CreateShader(m_pDevice, nullptr, "GenerateGeometry.psh", "GenerateGeometryPS", SHADER_TYPE_PIXEL, Macros);
+        RefCntAutoPtr<IShader> VS = CreateShader(m_pDevice, nullptr, "GenerateGeometry.vsh", "GenerateGeometryVS", SHADER_TYPE_VERTEX);
+        RefCntAutoPtr<IShader> PS = CreateShader(m_pDevice, nullptr, "GenerateGeometry.psh", "GenerateGeometryPS", SHADER_TYPE_PIXEL, Macros);
 
         PipelineResourceLayoutDescX ResourceLayout;
         ResourceLayout
@@ -635,11 +635,11 @@ void Tutorial27_PostProcessing::ComputeSSAO()
 
 void Tutorial27_PostProcessing::ComputeLighting()
 {
-    auto& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_LIGHTING];
+    RenderTechnique& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_LIGHTING];
     if (!RenderTech.IsInitializedPSO())
     {
-        const auto VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
-        const auto PS = CreateShader(m_pDevice, nullptr, "ComputeLighting.fx", "ComputeLightingPS", SHADER_TYPE_PIXEL);
+        RefCntAutoPtr<IShader> VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
+        RefCntAutoPtr<IShader> PS = CreateShader(m_pDevice, nullptr, "ComputeLighting.fx", "ComputeLightingPS", SHADER_TYPE_PIXEL);
 
         PipelineResourceLayoutDescX ResourceLayout;
         ResourceLayout
@@ -737,14 +737,14 @@ void Tutorial27_PostProcessing::ComputeBloom()
 
 void Tutorial27_PostProcessing::ComputeToneMapping()
 {
-    auto& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_TONE_MAPPING];
+    RenderTechnique& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_TONE_MAPPING];
     if (!RenderTech.IsInitializedPSO())
     {
         ShaderMacroHelper Macros;
         Macros.Add("TONE_MAPPING_MODE", TONE_MAPPING_MODE_UNCHARTED2);
 
-        const auto VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
-        const auto PS = CreateShader(m_pDevice, nullptr, "ApplyToneMap.fx", "ApplyToneMapPS", SHADER_TYPE_PIXEL, Macros);
+        RefCntAutoPtr<IShader> VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
+        RefCntAutoPtr<IShader> PS = CreateShader(m_pDevice, nullptr, "ApplyToneMap.fx", "ApplyToneMapPS", SHADER_TYPE_PIXEL, Macros);
 
         PipelineResourceLayoutDescX ResourceLayout;
         ResourceLayout
@@ -808,11 +808,11 @@ void Tutorial27_PostProcessing::ComputeGammaCorrection()
 
     if (ConvertOutputToGamma)
     {
-        auto& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_GAMMA_CORRECTION];
+        RenderTechnique& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_GAMMA_CORRECTION];
         if (!RenderTech.IsInitializedPSO())
         {
-            const auto VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
-            const auto PS = CreateShader(m_pDevice, nullptr, "GammaCorrection.fx", "GammaCorrectionPS", SHADER_TYPE_PIXEL);
+            RefCntAutoPtr<IShader> VS = CreateShader(m_pDevice, nullptr, "FullScreenTriangleVS.fx", "FullScreenTriangleVS", SHADER_TYPE_VERTEX);
+            RefCntAutoPtr<IShader> PS = CreateShader(m_pDevice, nullptr, "GammaCorrection.fx", "GammaCorrectionPS", SHADER_TYPE_PIXEL);
 
             PipelineResourceLayoutDescX ResourceLayout;
             ResourceLayout
@@ -861,7 +861,7 @@ void Tutorial27_PostProcessing::UpdateUI()
             FileDialogAttribs OpenDialogAttribs{FILE_DIALOG_TYPE_OPEN};
             OpenDialogAttribs.Title  = "Select HDR file";
             OpenDialogAttribs.Filter = "HDR files (*.hdr)\0*.hdr;\0All files\0*.*\0\0";
-            auto FileName            = FileSystem::FileDialog(OpenDialogAttribs);
+            std::string FileName     = FileSystem::FileDialog(OpenDialogAttribs);
             if (!FileName.empty())
                 LoadEnvironmentMap(FileName.data());
         }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -147,9 +147,9 @@ public:
                 EngineD3D11CreateInfo EngineCI;
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D11() function
-                auto* GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+                GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
-                auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+                IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
                 Win32NativeWindow Window{hWnd};
                 pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &m_pSwapChain);
@@ -163,11 +163,11 @@ public:
             {
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D12() function
-                auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
+                GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngineCI;
 
-                auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+                IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
                 Win32NativeWindow Window{hWnd};
                 pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &m_pSwapChain);
@@ -181,9 +181,9 @@ public:
             {
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
                 // Load the dll and import GetEngineFactoryOpenGL() function
-                auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
+                GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #    endif
-                auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
+                IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
                 EngineCI.Window.hWnd = hWnd;
@@ -199,11 +199,11 @@ public:
             {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
                 // Load the dll and import GetEngineFactoryVk() function
-                auto GetEngineFactoryVk = LoadGraphicsEngineVk();
+                GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngineCI;
 
-                auto* pFactoryVk = GetEngineFactoryVk();
+                IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
 
                 if (!m_pSwapChain && hWnd != nullptr)
@@ -232,7 +232,7 @@ public:
         const char* Keys[] = {"--mode ", "--mode=", "-m "};
         for (size_t i = 0; i < _countof(Keys); ++i)
         {
-            const auto* Key = Keys[i];
+            const char* Key = Keys[i];
             if ((mode = strstr(CmdLine, Key)) != nullptr)
             {
                 mode += strlen(Key);
@@ -367,8 +367,8 @@ public:
     {
         // Set render targets before issuing any draw command.
         // Note that Present() unbinds the back buffer if it is set as render target.
-        auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-        auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+        ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+        ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
         m_pImmediateContext->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         // Clear the back buffer
@@ -424,7 +424,7 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
 
     g_pTheApp.reset(new Tutorial00App);
 
-    const auto* cmdLine = GetCommandLineA();
+    LPSTR cmdLine = GetCommandLineA();
     if (!g_pTheApp->ProcessCommandLine(cmdLine))
         return -1;
 

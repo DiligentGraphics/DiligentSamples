@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,19 +44,19 @@ void Profiler::Initialize(IRenderDevice* pDevice)
 
     m_SupportsTransferQueueProfiling = pDevice->GetDeviceInfo().Features.TransferQueueTimestampQueries;
 
-    for (auto& Frame : m_FrameHistory)
+    for (Frame& frame : m_FrameHistory)
     {
-        m_Device->CreateQuery(queryDesc, &Frame.Graphics1.GpuTimeQueryBegin);
-        m_Device->CreateQuery(queryDesc, &Frame.Graphics1.GpuTimeQueryEnd);
+        m_Device->CreateQuery(queryDesc, &frame.Graphics1.GpuTimeQueryBegin);
+        m_Device->CreateQuery(queryDesc, &frame.Graphics1.GpuTimeQueryEnd);
 
-        m_Device->CreateQuery(queryDesc, &Frame.Graphics2.GpuTimeQueryBegin);
-        m_Device->CreateQuery(queryDesc, &Frame.Graphics2.GpuTimeQueryEnd);
+        m_Device->CreateQuery(queryDesc, &frame.Graphics2.GpuTimeQueryBegin);
+        m_Device->CreateQuery(queryDesc, &frame.Graphics2.GpuTimeQueryEnd);
 
-        m_Device->CreateQuery(queryDesc, &Frame.Compute.GpuTimeQueryBegin);
-        m_Device->CreateQuery(queryDesc, &Frame.Compute.GpuTimeQueryEnd);
+        m_Device->CreateQuery(queryDesc, &frame.Compute.GpuTimeQueryBegin);
+        m_Device->CreateQuery(queryDesc, &frame.Compute.GpuTimeQueryEnd);
 
-        m_Device->CreateQuery(queryDesc, &Frame.Transfer.GpuTimeQueryBegin);
-        m_Device->CreateQuery(queryDesc, &Frame.Transfer.GpuTimeQueryEnd);
+        m_Device->CreateQuery(queryDesc, &frame.Transfer.GpuTimeQueryBegin);
+        m_Device->CreateQuery(queryDesc, &frame.Transfer.GpuTimeQueryEnd);
     }
 }
 
@@ -75,23 +75,23 @@ void Profiler::Begin(IDeviceContext* pContext, PASS_TYPE PassType)
         Pass.CpuTImeBegin = TimePoint::clock::now();
     };
 
-    auto& Frame = m_FrameHistory[m_FrameId];
+    Frame& frame = m_FrameHistory[m_FrameId];
     switch (PassType)
     {
         case GRAPHICS_1:
-            BeginCounters(Frame.Graphics1);
+            BeginCounters(frame.Graphics1);
             break;
         case GRAPHICS_2:
-            BeginCounters(Frame.Graphics2);
+            BeginCounters(frame.Graphics2);
             break;
         case COMPUTE:
-            BeginCounters(Frame.Compute);
+            BeginCounters(frame.Compute);
             break;
         case TRANSFER:
-            BeginCounters(Frame.Transfer);
+            BeginCounters(frame.Transfer);
             break;
         case FRAME:
-            BeginCounters(Frame.Frame);
+            BeginCounters(frame.Frame);
             break;
         default:
             UNEXPECTED("Unknown pass type");
@@ -113,23 +113,23 @@ void Profiler::End(IDeviceContext* pContext, PASS_TYPE PassType)
         Pass.CpuTImeEnd = TimePoint::clock::now();
     };
 
-    auto& Frame = m_FrameHistory[m_FrameId];
+    Frame& frame = m_FrameHistory[m_FrameId];
     switch (PassType)
     {
         case GRAPHICS_1:
-            EndCounters(Frame.Graphics1);
+            EndCounters(frame.Graphics1);
             break;
         case GRAPHICS_2:
-            EndCounters(Frame.Graphics2);
+            EndCounters(frame.Graphics2);
             break;
         case COMPUTE:
-            EndCounters(Frame.Compute);
+            EndCounters(frame.Compute);
             break;
         case TRANSFER:
-            EndCounters(Frame.Transfer);
+            EndCounters(frame.Transfer);
             break;
         case FRAME:
-            EndCounters(Frame.Frame);
+            EndCounters(frame.Frame);
             break;
         default:
             UNEXPECTED("Unknown pass type");
@@ -150,7 +150,7 @@ void Profiler::Update(double ElapsedTime)
 
     // Read query data
     {
-        auto& Frame = m_FrameHistory[m_FrameId];
+        Frame& frame = m_FrameHistory[m_FrameId];
 
         const auto ReadTime = [](IQuery* pQuery, double& Time) //
         {
@@ -171,10 +171,10 @@ void Profiler::Update(double ElapsedTime)
             }
         };
 
-        UpdatePass(Frame.Graphics1);
-        UpdatePass(Frame.Graphics2);
-        UpdatePass(Frame.Compute);
-        UpdatePass(Frame.Transfer);
+        UpdatePass(frame.Graphics1);
+        UpdatePass(frame.Graphics2);
+        UpdatePass(frame.Compute);
+        UpdatePass(frame.Transfer);
     }
 
     // Update UI
@@ -183,8 +183,8 @@ void Profiler::Update(double ElapsedTime)
     {
         m_AccumTime = 0.0;
 
-        auto&       Curr = m_FrameHistory[m_FrameId];
-        const auto& Prev = m_FrameHistory[(m_FrameId - 1) % m_FrameHistory.size()];
+        Frame&       Curr = m_FrameHistory[m_FrameId];
+        const Frame& Prev = m_FrameHistory[(m_FrameId - 1) % m_FrameHistory.size()];
 
         const auto CalcFrameTimes = [](const Frame& f, double& Begin, double& End) //
         {
@@ -209,10 +209,10 @@ void Profiler::Update(double ElapsedTime)
         double PrevFrameEnd   = 0.0;
         CalcFrameTimes(Prev, PrevFrameBegin, PrevFrameEnd);
 
-        const auto  StartTime = PrevFrameBegin;
-        const auto  EndTime   = CurrFrameEnd;
-        const float Scale     = GraphWidth / static_cast<float>(EndTime - StartTime);
-        const auto  CalcGraph = [StartTime, Scale](Graph& g, const Frame& f) //
+        const double StartTime = PrevFrameBegin;
+        const double EndTime   = CurrFrameEnd;
+        const float  Scale     = GraphWidth / static_cast<float>(EndTime - StartTime);
+        const auto   CalcGraph = [StartTime, Scale](Graph& g, const Frame& f) //
         {
             const float MinW = 2.f;
 
@@ -255,10 +255,10 @@ void Profiler::Update(double ElapsedTime)
             stream << std::endl;
         };
 
-        const auto Gfx1Time   = Curr.Graphics1.GpuTimeEnd - Curr.Graphics1.GpuTimeBegin;
-        const auto Gfx2Time   = Curr.Graphics2.GpuTimeEnd - Curr.Graphics2.GpuTimeBegin;
-        const auto CompTime   = Curr.Compute.GpuTimeEnd - Curr.Compute.GpuTimeBegin;
-        const auto TransfTime = Curr.Transfer.GpuTimeEnd - Curr.Transfer.GpuTimeBegin;
+        const double Gfx1Time   = Curr.Graphics1.GpuTimeEnd - Curr.Graphics1.GpuTimeBegin;
+        const double Gfx2Time   = Curr.Graphics2.GpuTimeEnd - Curr.Graphics2.GpuTimeBegin;
+        const double CompTime   = Curr.Compute.GpuTimeEnd - Curr.Compute.GpuTimeBegin;
+        const double TransfTime = Curr.Transfer.GpuTimeEnd - Curr.Transfer.GpuTimeBegin;
 
         std::stringstream values1_ss;
         values1_ss.precision(1);
@@ -272,11 +272,11 @@ void Profiler::Update(double ElapsedTime)
         ByteSizeToStr(values1_ss, m_TempCpuToGpuTransferRateMb / ElapsedTime);
         m_GpuCountersStr = values1_ss.str();
 
-        const auto CpuGfx1Time   = std::chrono::duration_cast<SecondsD>(Curr.Graphics1.CpuTImeEnd - Curr.Graphics1.CpuTImeBegin).count();
-        const auto CpuGfx2Time   = std::chrono::duration_cast<SecondsD>(Curr.Graphics2.CpuTImeEnd - Curr.Graphics2.CpuTImeBegin).count();
-        const auto CpuCompTime   = std::chrono::duration_cast<SecondsD>(Curr.Compute.CpuTImeEnd - Curr.Compute.CpuTImeBegin).count();
-        const auto CpuTransfTime = std::chrono::duration_cast<SecondsD>(Curr.Transfer.CpuTImeEnd - Curr.Transfer.CpuTImeBegin).count();
-        const auto CpuFrameTime  = std::chrono::duration_cast<SecondsD>(Curr.Frame.CpuTImeEnd - Curr.Frame.CpuTImeBegin).count();
+        const double CpuGfx1Time   = std::chrono::duration_cast<SecondsD>(Curr.Graphics1.CpuTImeEnd - Curr.Graphics1.CpuTImeBegin).count();
+        const double CpuGfx2Time   = std::chrono::duration_cast<SecondsD>(Curr.Graphics2.CpuTImeEnd - Curr.Graphics2.CpuTImeBegin).count();
+        const double CpuCompTime   = std::chrono::duration_cast<SecondsD>(Curr.Compute.CpuTImeEnd - Curr.Compute.CpuTImeBegin).count();
+        const double CpuTransfTime = std::chrono::duration_cast<SecondsD>(Curr.Transfer.CpuTImeEnd - Curr.Transfer.CpuTImeBegin).count();
+        const double CpuFrameTime  = std::chrono::duration_cast<SecondsD>(Curr.Frame.CpuTImeEnd - Curr.Frame.CpuTImeBegin).count();
 
         std::stringstream values2_ss;
         values2_ss.precision(1);
@@ -292,7 +292,7 @@ void Profiler::Update(double ElapsedTime)
 
     // Clear state
     {
-        auto& Curr = m_FrameHistory[m_FrameId];
+        Frame& Curr = m_FrameHistory[m_FrameId];
 
         Curr.Graphics1.Queried = false;
         Curr.Graphics2.Queried = false;

@@ -282,8 +282,8 @@ void Tutorial09_Quads::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
         // Create loader for the current texture
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        const auto      FileName = FileNameSS.str();
-        TextureLoadInfo LoadInfo;
+        const std::string FileName = FileNameSS.str();
+        TextureLoadInfo   LoadInfo;
         LoadInfo.IsSRGB = true;
 
         CreateTextureLoaderFromFile(FileName.c_str(), IMAGE_FILE_FORMAT_UNKNOWN, LoadInfo, &TexLoaders[tex]);
@@ -300,11 +300,11 @@ void Tutorial09_Quads::LoadTextures(std::vector<StateTransitionDesc>& Barriers)
         Barriers.emplace_back(pTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
-    auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
-    TexArrDesc.ArraySize = NumTextures;
-    TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-    TexArrDesc.Usage     = USAGE_DEFAULT;
-    TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+    TextureDesc TexArrDesc = TexLoaders[0]->GetTextureDesc();
+    TexArrDesc.ArraySize   = NumTextures;
+    TexArrDesc.Type        = RESOURCE_DIM_TEX_2D_ARRAY;
+    TexArrDesc.Usage       = USAGE_DEFAULT;
+    TexArrDesc.BindFlags   = BIND_SHADER_RESOURCE;
 
     // Prepare texture array initialization data
     std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);
@@ -403,7 +403,7 @@ void Tutorial09_Quads::InitializeQuads()
 
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
-        auto& CurrInst     = m_Quads[quad];
+        QuadData& CurrInst = m_Quads[quad];
         CurrInst.Size      = scale_distr(gen);
         CurrInst.Angle     = angle_distr(gen);
         CurrInst.Pos.x     = pos_distr(gen);
@@ -425,7 +425,7 @@ void Tutorial09_Quads::UpdateQuads(float elapsedTime)
     std::uniform_real_distribution<float> rot_distr(-PI_F * 0.5f, +PI_F * 0.5f);
     for (int quad = 0; quad < m_NumQuads; ++quad)
     {
-        auto& CurrInst = m_Quads[quad];
+        QuadData& CurrInst = m_Quads[quad];
         CurrInst.Angle += CurrInst.RotSpeed * elapsedTime;
         if (std::abs(CurrInst.Pos.x + CurrInst.MoveDir.x * elapsedTime) > 0.95)
         {
@@ -456,7 +456,7 @@ void Tutorial09_Quads::StopWorkerThreads()
 {
     m_RenderSubsetSignal.Trigger(true, -1);
 
-    for (auto& thread : m_WorkerThreads)
+    for (std::thread& thread : m_WorkerThreads)
     {
         thread.join();
     }
@@ -475,7 +475,7 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads* pThis, Uint32 ThreadNu
     for (;;)
     {
         // Wait for the signal
-        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
+        int SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
 
@@ -494,7 +494,7 @@ void Tutorial09_Quads::WorkerThreadFunc(Tutorial09_Quads* pThis, Uint32 ThreadNu
 
         {
             // Atomically increment the number of completed threads
-            const auto NumThreadsCompleted = pThis->m_NumThreadsCompleted.fetch_add(1) + 1;
+            const int NumThreadsCompleted = pThis->m_NumThreadsCompleted.fetch_add(1) + 1;
             if (NumThreadsCompleted == NumWorkerThreads)
                 pThis->m_ExecuteCommandListsSignal.Trigger();
         }
@@ -524,7 +524,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context
     // Render targets are set and transitioned to correct states by the main thread, here we only verify states
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     pCtx->SetRenderTargets(1, &pRTV, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     if (UseBatch)
@@ -548,7 +548,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
         const Uint32 EndInst   = std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumQuads));
 
         // Set the pipeline state
-        auto StateInd = m_Quads[StartInst].StateInd;
+        int StateInd = m_Quads[StartInst].StateInd;
         pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0][StateInd]);
 
         MapHelper<InstanceData> BatchData;
@@ -560,7 +560,7 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 
         for (Uint32 inst = StartInst; inst < EndInst; ++inst)
         {
-            const auto& CurrInstData = m_Quads[inst];
+            const QuadData& CurrInstData = m_Quads[inst];
             // Shader resources have been explicitly transitioned to correct states, so
             // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
             // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
@@ -581,13 +581,13 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
                 float    cosAngle = cosf(CurrInstData.Angle);
                 float2x2 RotMatr(cosAngle, -sinAngle,
                                  sinAngle, cosAngle);
-                auto     Matr = ScaleMatr * RotMatr;
+                float2x2 Matr = ScaleMatr * RotMatr;
 
                 float4 QuadRotationAndScale(Matr.m00, Matr.m10, Matr.m01, Matr.m11);
 
                 if (UseBatch)
                 {
-                    auto& CurrQuad                = BatchData[inst - StartInst];
+                    InstanceData& CurrQuad        = BatchData[inst - StartInst];
                     CurrQuad.QuadRotationAndScale = QuadRotationAndScale;
                     CurrQuad.QuadCenter           = CurrInstData.Pos;
                     CurrQuad.TexArrInd            = static_cast<float>(CurrInstData.TextureInd);
@@ -621,8 +621,8 @@ void Tutorial09_Quads::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 // Render a frame
 void Tutorial09_Quads::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
     if (m_ConvertPSOutputToGamma)

@@ -107,9 +107,9 @@ void Tutorial17_MSAA::Initialize(const SampleInitInfo& InitInfo)
 {
     SampleBase::Initialize(InitInfo);
 
-    const auto& ColorFmtInfo = m_pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
-    const auto& DepthFmtInfo = m_pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
-    m_SupportedSampleCounts  = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
+    const TextureFormatInfoExt& ColorFmtInfo = m_pDevice->GetTextureFormatInfoExt(m_pSwapChain->GetDesc().ColorBufferFormat);
+    const TextureFormatInfoExt& DepthFmtInfo = m_pDevice->GetTextureFormatInfoExt(DepthBufferFormat);
+    m_SupportedSampleCounts                  = ColorFmtInfo.SampleCounts & DepthFmtInfo.SampleCounts;
     if (m_SupportedSampleCounts & SAMPLE_COUNT_4)
         m_SampleCount = 4;
     else if (m_SupportedSampleCounts & SAMPLE_COUNT_2)
@@ -142,7 +142,7 @@ void Tutorial17_MSAA::CreateMSAARenderTarget()
     if (m_SampleCount == 1)
         return;
 
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
     // Create window-size multi-sampled offscreen render target
     TextureDesc ColorDesc;
     ColorDesc.Name           = "Multisampled render target";
@@ -260,7 +260,7 @@ void Tutorial17_MSAA::Render()
     if (m_SampleCount > 1)
     {
         // Resolve multi-sampled render target into the current swap chain back buffer.
-        auto pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
+        ITexture* pCurrentBackBuffer = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
 
         ResolveTextureSubresourceAttribs ResolveAttribs;
         ResolveAttribs.SrcTextureTransitionMode = RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
@@ -282,10 +282,10 @@ void Tutorial17_MSAA::Update(double CurrTime, double ElapsedTime, bool DoUpdateU
     float4x4 View = float4x4::Translation(0.0f, 0.0f, 30.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = Model * View * SrfPreTransform * Proj;

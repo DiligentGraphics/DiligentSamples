@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Diligent Graphics LLC
+ *  Copyright 2024-2025 Diligent Graphics LLC
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -587,9 +587,9 @@ public:
                 EngineCI.pXRAttribs = &XRAttribs;
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D11() function
-                auto* GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+                GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
-                auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+                IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
@@ -601,12 +601,12 @@ public:
             {
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D12() function
-                auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
+                GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngineCI;
                 EngineCI.pXRAttribs = &XRAttribs;
 
-                auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+                IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
@@ -639,12 +639,12 @@ public:
             {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
                 // Load the dll and import GetEngineFactoryVk() function
-                auto GetEngineFactoryVk = LoadGraphicsEngineVk();
+                GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngineCI;
                 EngineCI.pXRAttribs = &XRAttribs;
 
-                auto* pFactoryVk = GetEngineFactoryVk();
+                IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
@@ -668,7 +668,7 @@ public:
         const char* Keys[] = {"--mode ", "--mode=", "-m "};
         for (size_t i = 0; i < _countof(Keys); ++i)
         {
-            const auto* Key = Keys[i];
+            const char* Key = Keys[i];
             if ((mode = strstr(CmdLine, Key)) != nullptr)
             {
                 mode += strlen(Key);
@@ -1177,7 +1177,7 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
 
     g_pTheApp.reset(new Tutorial28_HelloOpenXR);
 
-    const auto* cmdLine = GetCommandLineA();
+    LPSTR cmdLine = GetCommandLineA();
     if (!g_pTheApp->ProcessCommandLine(cmdLine))
         return -1;
 

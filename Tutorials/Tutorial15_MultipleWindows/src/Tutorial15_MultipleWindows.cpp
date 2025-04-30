@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2022 Diligent Graphics LLC
+ *  Copyright 2019-2025 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -156,11 +156,11 @@ public:
 
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D11() function
-                auto GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
+                GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
 #    endif
-                auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+                IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
-                for (auto& WndInfo : m_Windows)
+                for (WindowInfo& WndInfo : m_Windows)
                 {
                     Win32NativeWindow Window{WndInfo.hWnd};
                     pFactoryD3D11->CreateSwapChainD3D11(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &WndInfo.pSwapChain);
@@ -176,13 +176,13 @@ public:
             {
 #    if ENGINE_DLL
                 // Load the dll and import GetEngineFactoryD3D12() function
-                auto GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
+                GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
 #    endif
                 EngineD3D12CreateInfo EngineCI;
 
-                auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+                IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
-                for (auto& WndInfo : m_Windows)
+                for (WindowInfo& WndInfo : m_Windows)
                 {
                     Win32NativeWindow Window{WndInfo.hWnd};
                     pFactoryD3D12->CreateSwapChainD3D12(m_pDevice, m_pImmediateContext, SCDesc, FullScreenModeDesc{}, Window, &WndInfo.pSwapChain);
@@ -199,14 +199,14 @@ public:
 
 #    if EXPLICITLY_LOAD_ENGINE_GL_DLL
                 // Load the dll and import GetEngineFactoryOpenGL() function
-                auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
+                GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
 #    endif
                 MessageBox(NULL, L"OpenGL backend does not currently support multiple swap chains", L"Error", MB_OK | MB_ICONWARNING);
-                auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
+                IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
 
-                auto& WndInfo = m_Windows[0];
+                WindowInfo& WndInfo = m_Windows[0];
 
                 EngineCI.Window.hWnd = WndInfo.hWnd;
                 pFactoryOpenGL->CreateDeviceAndSwapChainGL(EngineCI, &m_pDevice, &m_pImmediateContext, SCDesc, &WndInfo.pSwapChain);
@@ -220,13 +220,13 @@ public:
             {
 #    if EXPLICITLY_LOAD_ENGINE_VK_DLL
                 // Load the dll and import GetEngineFactoryVk() function
-                auto GetEngineFactoryVk = LoadGraphicsEngineVk();
+                GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
 #    endif
                 EngineVkCreateInfo EngineCI;
 
-                auto* pFactoryVk = GetEngineFactoryVk();
+                IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
-                for (auto& WndInfo : m_Windows)
+                for (WindowInfo& WndInfo : m_Windows)
                 {
                     Win32NativeWindow Window{WndInfo.hWnd};
                     pFactoryVk->CreateSwapChainVk(m_pDevice, m_pImmediateContext, SCDesc, Window, &WndInfo.pSwapChain);
@@ -253,7 +253,7 @@ public:
         const char* Keys[] = {"--mode ", "--mode=", "-m "};
         for (size_t i = 0; i < _countof(Keys); ++i)
         {
-            const auto* Key = Keys[i];
+            const char* Key = Keys[i];
             if ((mode = strstr(CmdLine, Key)) != nullptr)
             {
                 mode += strlen(Key);
@@ -389,7 +389,7 @@ public:
     {
         for (size_t i = 0; i < m_Windows.size(); ++i)
         {
-            auto& WndInfo = m_Windows[i];
+            WindowInfo& WndInfo = m_Windows[i];
             if (!WndInfo.pSwapChain)
                 continue;
 
@@ -415,7 +415,7 @@ public:
 
     void Present()
     {
-        for (auto& WndInfo : m_Windows)
+        for (WindowInfo& WndInfo : m_Windows)
         {
             if (WndInfo.pSwapChain)
                 WndInfo.pSwapChain->Present();
@@ -424,7 +424,7 @@ public:
 
     void WindowResize(HWND hWnd, Uint32 Width, Uint32 Height)
     {
-        for (auto& WndInfo : m_Windows)
+        for (WindowInfo& WndInfo : m_Windows)
         {
             if (WndInfo.hWnd == hWnd)
             {
@@ -465,7 +465,7 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
 
     g_pTheApp.reset(new Tutorial00App);
 
-    const auto* cmdLine = GetCommandLineA();
+    LPSTR cmdLine = GetCommandLineA();
     if (!g_pTheApp->ProcessCommandLine(cmdLine))
         return -1;
 
@@ -498,9 +498,9 @@ int WINAPI WinMain(_In_ HINSTANCE     hInstance,
             case RENDER_DEVICE_TYPE_VULKAN: TitleSS << L" (VK)"; break;
         }
         TitleSS << " - Window " << i;
-        auto Title = TitleSS.str();
+        std::wstring Title = TitleSS.str();
 
-        auto& rc = WndRects[i];
+        RECT& rc = WndRects[i];
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
         hWnds[i] = CreateWindow(L"SampleApp", Title.c_str(),
                                 WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,

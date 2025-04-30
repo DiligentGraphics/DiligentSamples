@@ -176,9 +176,9 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
         CubeMesh.NumVertices = CubeGeoInfo.NumVertices;
         CubeMesh.NumIndices  = CubeGeoInfo.NumIndices;
 
-        auto PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25});
+        Mesh PlaneMesh = CreateTexturedPlaneMesh(m_pDevice, float2{25});
 
-        const auto RTProps = m_pDevice->GetAdapterInfo().RayTracing;
+        const RayTracingProperties& RTProps = m_pDevice->GetAdapterInfo().RayTracing;
 
         // Cube mesh will be copied to the beginning of the buffers
         CubeMesh.FirstVertex = 0;
@@ -248,7 +248,7 @@ void Tutorial22_HybridRendering::CreateSceneObjects(const uint2 CubeMaterialRang
     // Create cube objects
     const auto AddCubeObject = [&](float Angle, float X, float Y, float Z, float Scale, bool IsDynamic = false) //
     {
-        const auto ModelMat = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
+        const float4x4 ModelMat = float4x4::RotationY(Angle * PI_F) * float4x4::Scale(Scale) * float4x4::Translation(X * 2.0f, Y * 2.0f - 1.0f, Z * 2.0f);
 
         HLSL::ObjectAttribs obj;
         obj.ModelMat    = ModelMat.Transpose();
@@ -315,36 +315,36 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
     {
         RefCntAutoPtr<IBuffer> pScratchBuffer;
 
-        for (auto& Mesh : m_Scene.Meshes)
+        for (Mesh& mesh : m_Scene.Meshes)
         {
             // Create BLAS
             BLASTriangleDesc Triangles;
             {
-                Triangles.GeometryName         = Mesh.Name.c_str();
-                Triangles.MaxVertexCount       = Mesh.NumVertices;
+                Triangles.GeometryName         = mesh.Name.c_str();
+                Triangles.MaxVertexCount       = mesh.NumVertices;
                 Triangles.VertexValueType      = VT_FLOAT32;
                 Triangles.VertexComponentCount = 3;
-                Triangles.MaxPrimitiveCount    = Mesh.NumIndices / 3;
+                Triangles.MaxPrimitiveCount    = mesh.NumIndices / 3;
                 Triangles.IndexType            = VT_UINT32;
 
-                const auto BLASName{Mesh.Name + " BLAS"};
+                const std::string BLASName{mesh.Name + " BLAS"};
 
                 BottomLevelASDesc ASDesc;
                 ASDesc.Name          = BLASName.c_str();
                 ASDesc.Flags         = RAYTRACING_BUILD_AS_PREFER_FAST_TRACE;
                 ASDesc.pTriangles    = &Triangles;
                 ASDesc.TriangleCount = 1;
-                m_pDevice->CreateBLAS(ASDesc, &Mesh.BLAS);
+                m_pDevice->CreateBLAS(ASDesc, &mesh.BLAS);
             }
 
             // Create or reuse scratch buffer; this will insert the barrier between BuildBLAS invocations, which may be suboptimal.
-            if (!pScratchBuffer || pScratchBuffer->GetDesc().Size < Mesh.BLAS->GetScratchBufferSizes().Build)
+            if (!pScratchBuffer || pScratchBuffer->GetDesc().Size < mesh.BLAS->GetScratchBufferSizes().Build)
             {
                 BufferDesc BuffDesc;
                 BuffDesc.Name      = "BLAS Scratch Buffer";
                 BuffDesc.Usage     = USAGE_DEFAULT;
                 BuffDesc.BindFlags = BIND_RAY_TRACING;
-                BuffDesc.Size      = Mesh.BLAS->GetScratchBufferSizes().Build;
+                BuffDesc.Size      = mesh.BLAS->GetScratchBufferSizes().Build;
 
                 pScratchBuffer = nullptr;
                 m_pDevice->CreateBuffer(BuffDesc, nullptr, &pScratchBuffer);
@@ -353,20 +353,20 @@ void Tutorial22_HybridRendering::CreateSceneAccelStructs()
             // Build BLAS
             BLASBuildTriangleData TriangleData;
             TriangleData.GeometryName         = Triangles.GeometryName;
-            TriangleData.pVertexBuffer        = Mesh.VertexBuffer;
-            TriangleData.VertexStride         = Mesh.VertexBuffer->GetDesc().ElementByteStride;
-            TriangleData.VertexOffset         = Uint64{Mesh.FirstVertex} * Uint64{TriangleData.VertexStride};
-            TriangleData.VertexCount          = Mesh.NumVertices;
+            TriangleData.pVertexBuffer        = mesh.VertexBuffer;
+            TriangleData.VertexStride         = mesh.VertexBuffer->GetDesc().ElementByteStride;
+            TriangleData.VertexOffset         = Uint64{mesh.FirstVertex} * Uint64{TriangleData.VertexStride};
+            TriangleData.VertexCount          = mesh.NumVertices;
             TriangleData.VertexValueType      = Triangles.VertexValueType;
             TriangleData.VertexComponentCount = Triangles.VertexComponentCount;
-            TriangleData.pIndexBuffer         = Mesh.IndexBuffer;
-            TriangleData.IndexOffset          = Uint64{Mesh.FirstIndex} * Uint64{Mesh.IndexBuffer->GetDesc().ElementByteStride};
+            TriangleData.pIndexBuffer         = mesh.IndexBuffer;
+            TriangleData.IndexOffset          = Uint64{mesh.FirstIndex} * Uint64{mesh.IndexBuffer->GetDesc().ElementByteStride};
             TriangleData.PrimitiveCount       = Triangles.MaxPrimitiveCount;
             TriangleData.IndexType            = Triangles.IndexType;
             TriangleData.Flags                = RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 
             BuildBLASAttribs Attribs;
-            Attribs.pBLAS             = Mesh.BLAS;
+            Attribs.pBLAS             = mesh.BLAS;
             Attribs.pTriangleData     = &TriangleData;
             Attribs.TriangleDataCount = 1;
 
@@ -426,16 +426,16 @@ void Tutorial22_HybridRendering::UpdateTLAS()
     std::vector<String>                InstanceNames(NumInstances);
     for (Uint32 i = 0; i < NumInstances; ++i)
     {
-        const auto& Obj      = m_Scene.Objects[i];
-        auto&       Inst     = Instances[i];
-        auto&       Name     = InstanceNames[i];
-        const auto& Mesh     = m_Scene.Meshes[Obj.MeshId];
-        const auto  ModelMat = Obj.ModelMat.Transpose();
+        const HLSL::ObjectAttribs& Obj      = m_Scene.Objects[i];
+        TLASBuildInstanceData&     Inst     = Instances[i];
+        std::string&               Name     = InstanceNames[i];
+        const Mesh&                mesh     = m_Scene.Meshes[Obj.MeshId];
+        const float4x4             ModelMat = Obj.ModelMat.Transpose();
 
-        Name = Mesh.Name + " Instance (" + std::to_string(i) + ")";
+        Name = mesh.Name + " Instance (" + std::to_string(i) + ")";
 
         Inst.InstanceName = Name.c_str();
-        Inst.pBLAS        = Mesh.BLAS;
+        Inst.pBLAS        = mesh.BLAS;
         Inst.Mask         = 0xFF;
 
         // CustomId will be read in shader by RayQuery::CommittedInstanceID()
@@ -588,7 +588,7 @@ void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStream
 
     // Bind textures
     {
-        const auto                  NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
+        const Uint32                NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
         std::vector<IDeviceObject*> ppTextures(NumTextures);
         for (Uint32 i = 0; i < NumTextures; ++i)
             ppTextures[i] = m_Scene.Textures[i]->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
@@ -597,7 +597,7 @@ void Tutorial22_HybridRendering::CreateRasterizationPSO(IShaderSourceInputStream
 
     // Bind samplers
     {
-        const auto                  NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
+        const Uint32                NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
         std::vector<IDeviceObject*> ppSamplers(NumSamplers);
         for (Uint32 i = 0; i < NumSamplers; ++i)
             ppSamplers[i] = m_Scene.Samplers[i];
@@ -663,8 +663,8 @@ void Tutorial22_HybridRendering::CreateRayTracingPSO(IShaderSourceInputStreamFac
 
     PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_COMPUTE;
 
-    const auto NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
-    const auto NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
+    const Uint32 NumTextures = static_cast<Uint32>(m_Scene.Textures.size());
+    const Uint32 NumSamplers = static_cast<Uint32>(m_Scene.Samplers.size());
 
     // Split the resources of the ray tracing PSO into two groups.
     // The first group will contain scene resources. These resources
@@ -837,7 +837,7 @@ void Tutorial22_HybridRendering::Render()
 {
     // Update constants
     {
-        const auto ViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
+        const float4x4 ViewProj = m_Camera.GetViewMatrix() * m_Camera.GetProjMatrix();
 
         HLSL::GlobalConstants GConst;
         GConst.ViewProj     = ViewProj.Transpose();
@@ -875,14 +875,14 @@ void Tutorial22_HybridRendering::Render()
         m_pImmediateContext->SetPipelineState(m_RasterizationPSO);
         m_pImmediateContext->CommitShaderResources(m_RasterizationSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-        for (auto& ObjInst : m_Scene.ObjectInstances)
+        for (InstancedObjects& ObjInst : m_Scene.ObjectInstances)
         {
-            auto&        Mesh      = m_Scene.Meshes[ObjInst.MeshInd];
-            IBuffer*     VBs[]     = {Mesh.VertexBuffer};
-            const Uint64 Offsets[] = {Mesh.FirstVertex * sizeof(HLSL::Vertex)};
+            Mesh&        mesh      = m_Scene.Meshes[ObjInst.MeshInd];
+            IBuffer*     VBs[]     = {mesh.VertexBuffer};
+            const Uint64 Offsets[] = {mesh.FirstVertex * sizeof(HLSL::Vertex)};
 
             m_pImmediateContext->SetVertexBuffers(0, _countof(VBs), VBs, Offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
-            m_pImmediateContext->SetIndexBuffer(Mesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            m_pImmediateContext->SetIndexBuffer(mesh.IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
             {
                 MapHelper<HLSL::ObjectConstants> ObjConstants{m_pImmediateContext, m_Scene.ObjectConstants, MAP_WRITE, MAP_FLAG_DISCARD};
@@ -890,9 +890,9 @@ void Tutorial22_HybridRendering::Render()
             }
 
             DrawIndexedAttribs drawAttribs;
-            drawAttribs.NumIndices         = Mesh.NumIndices;
+            drawAttribs.NumIndices         = mesh.NumIndices;
             drawAttribs.NumInstances       = ObjInst.NumObjects;
-            drawAttribs.FirstIndexLocation = Mesh.FirstIndex;
+            drawAttribs.FirstIndexLocation = mesh.FirstIndex;
             drawAttribs.IndexType          = VT_UINT32;
             drawAttribs.Flags              = DRAW_FLAG_VERIFY_ALL;
             m_pImmediateContext->DrawIndexed(drawAttribs);
@@ -906,7 +906,7 @@ void Tutorial22_HybridRendering::Render()
         dispatchAttribs.MtlThreadGroupSizeY = m_BlockSize.y;
         dispatchAttribs.MtlThreadGroupSizeZ = 1;
 
-        const auto& TexDesc               = m_GBuffer.Color->GetDesc();
+        const TextureDesc& TexDesc        = m_GBuffer.Color->GetDesc();
         dispatchAttribs.ThreadGroupCountX = (TexDesc.Width / m_BlockSize.x);
         dispatchAttribs.ThreadGroupCountY = (TexDesc.Height / m_BlockSize.y);
 
@@ -918,8 +918,8 @@ void Tutorial22_HybridRendering::Render()
 
     // Post process pass
     {
-        auto*       pRTV          = m_pSwapChain->GetCurrentBackBufferRTV();
-        const float ClearColor[4] = {};
+        ITextureView* pRTV          = m_pSwapChain->GetCurrentBackBufferRTV();
+        const float   ClearColor[4] = {};
         m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -955,12 +955,13 @@ void Tutorial22_HybridRendering::Update(double CurrTime, double ElapsedTime, boo
 
     // Update dynamic objects
     float RotationSpeed = 0.15f;
-    for (auto& DynObj : m_Scene.DynamicObjects)
+    for (DynamicObject& DynObj : m_Scene.DynamicObjects)
     {
-        auto& Obj      = m_Scene.Objects[DynObj.ObjectAttribsIndex];
-        auto  ModelMat = Obj.ModelMat.Transpose();
-        Obj.ModelMat   = (float4x4::RotationY(PI_F * dt * RotationSpeed) * ModelMat).Transpose();
-        Obj.NormalMat  = float4x3{Obj.ModelMat};
+        HLSL::ObjectAttribs& Obj      = m_Scene.Objects[DynObj.ObjectAttribsIndex];
+        float4x4             ModelMat = Obj.ModelMat.Transpose();
+
+        Obj.ModelMat  = (float4x4::RotationY(PI_F * dt * RotationSpeed) * ModelMat).Transpose();
+        Obj.NormalMat = float4x3{Obj.ModelMat};
 
         RotationSpeed *= 1.5f;
     }

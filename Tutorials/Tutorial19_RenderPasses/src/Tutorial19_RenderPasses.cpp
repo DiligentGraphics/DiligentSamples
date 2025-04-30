@@ -191,7 +191,7 @@ void Tutorial19_RenderPasses::CreateLightVolumePSO(IShaderSourceInputStreamFacto
     PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False; // Do not write depth
 
     // We will use alpha-blending to accumulate influence of all lights
-    auto& RT0Blend          = PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0];
+    RenderTargetBlendDesc& RT0Blend{PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0]};
     RT0Blend.BlendEnable    = True;
     RT0Blend.BlendOp        = BLEND_OPERATION_ADD;
     RT0Blend.SrcBlend       = BLEND_FACTOR_ONE;
@@ -321,7 +321,7 @@ void Tutorial19_RenderPasses::CreateAmbientLightPSO(IShaderSourceInputStreamFact
     RefCntAutoPtr<IShader> pPS;
     {
         // For Vulkan and Metal, we will use a special GLSL shader that uses native input attachments
-        const auto UseGLSL =
+        const bool UseGLSL =
             m_pDevice->GetDeviceInfo().IsVulkanDevice() ||
             m_pDevice->GetDeviceInfo().IsMetalDevice();
 
@@ -560,16 +560,16 @@ void Tutorial19_RenderPasses::WindowResize(Uint32 Width, Uint32 Height)
 
 RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureView* pDstRenderTarget)
 {
-    const auto& RPDesc = m_pRenderPass->GetDesc();
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const RenderPassDesc& RPDesc = m_pRenderPass->GetDesc();
+    const SwapChainDesc&  SCDesc = m_pSwapChain->GetDesc();
 
 #if PLATFORM_MACOS || PLATFORM_IOS || PLATFORM_TVOS
     // In Metal and Vulkan on top of Metal, there are no native subpasses, and
     // attachments can't be preserved between subpasses without saving them to global memory.
     // Thus they can't be memoryless in this usage scenario.
-    constexpr auto MemorylessTexBindFlags = BIND_NONE;
+    constexpr BIND_FLAGS MemorylessTexBindFlags = BIND_NONE;
 #else
-    const auto MemorylessTexBindFlags = m_pDevice->GetAdapterInfo().Memory.MemorylessTextureBindFlags;
+    const BIND_FLAGS MemorylessTexBindFlags = m_pDevice->GetAdapterInfo().Memory.MemorylessTextureBindFlags;
 #endif
 
     // Create window-size offscreen render target
@@ -665,18 +665,18 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
     if (!m_pLightVolumeSRB)
     {
         m_pLightVolumePSO->CreateShaderResourceBinding(&m_pLightVolumeSRB, true);
-        if (auto* pInputColor = m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor"))
+        if (IShaderResourceVariable* pInputColor = m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor"))
             pInputColor->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        if (auto* pInputDepthZ = m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ"))
+        if (IShaderResourceVariable* pInputDepthZ = m_pLightVolumeSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ"))
             pInputDepthZ->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
     if (!m_pAmbientLightSRB)
     {
         m_pAmbientLightPSO->CreateShaderResourceBinding(&m_pAmbientLightSRB, true);
-        if (auto* pInputColor = m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor"))
+        if (IShaderResourceVariable* pInputColor = m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputColor"))
             pInputColor->Set(m_GBuffer.pColorBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-        if (auto* pInputDepthZ = m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ"))
+        if (IShaderResourceVariable* pInputDepthZ = m_pAmbientLightSRB->GetVariableByName(SHADER_TYPE_PIXEL, "g_SubpassInputDepthZ"))
             pInputDepthZ->Set(m_GBuffer.pDepthZBuffer->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
     }
 
@@ -685,7 +685,7 @@ RefCntAutoPtr<IFramebuffer> Tutorial19_RenderPasses::CreateFramebuffer(ITextureV
 
 IFramebuffer* Tutorial19_RenderPasses::GetCurrentFramebuffer()
 {
-    auto* pCurrentBackBufferRTV = m_pDevice->GetDeviceInfo().IsGLDevice() ?
+    ITextureView* pCurrentBackBufferRTV = m_pDevice->GetDeviceInfo().IsGLDevice() ?
         nullptr :
         m_pSwapChain->GetCurrentBackBufferRTV();
 
@@ -776,8 +776,8 @@ void Tutorial19_RenderPasses::UpdateLights(float fElapsedTime)
     float3 VolumeMax{+static_cast<float>(GridDim), +static_cast<float>(GridDim), +static_cast<float>(GridDim)};
     for (int light = 0; light < m_LightsCount; ++light)
     {
-        auto& Light = m_Lights[light];
-        auto& Dir   = m_LightMoveDirs[light];
+        LightAttribs& Light = m_Lights[light];
+        float3&       Dir   = m_LightMoveDirs[light];
         Light.Location += Dir * fElapsedTime;
         auto ClampCoordinate = [](float& Coord, float& Dir, float Min, float Max) //
         {
@@ -805,7 +805,7 @@ void Tutorial19_RenderPasses::InitLights()
     FastRandReal<float> Rnd{0, 0, 1};
 
     m_Lights.resize(m_LightsCount);
-    for (auto& Light : m_Lights)
+    for (LightAttribs& Light : m_Lights)
     {
         Light.Location = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 2.0 * static_cast<float>(GridDim);
         Light.Size     = 0.25f + Rnd() * 0.25f;
@@ -813,7 +813,7 @@ void Tutorial19_RenderPasses::InitLights()
     }
 
     m_LightMoveDirs.resize(m_Lights.size());
-    for (auto& MoveDir : m_LightMoveDirs)
+    for (float3& MoveDir : m_LightMoveDirs)
     {
         MoveDir = (float3{Rnd(), Rnd(), Rnd()} - float3{0.5f, 0.5f, 0.5f}) * 1.f;
     }
@@ -822,7 +822,7 @@ void Tutorial19_RenderPasses::InitLights()
 // Render a frame
 void Tutorial19_RenderPasses::Render()
 {
-    const auto& SCDesc = m_pSwapChain->GetDesc();
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
 
     {
         // Update constant buffer
@@ -838,7 +838,7 @@ void Tutorial19_RenderPasses::Render()
         Constants->ShowLightVolumes = m_ShowLightVolumes ? 1 : 0;
     }
 
-    auto* pFramebuffer = GetCurrentFramebuffer();
+    IFramebuffer* pFramebuffer = GetCurrentFramebuffer();
 
     BeginRenderPassAttribs RPBeginInfo;
     RPBeginInfo.pRenderPass  = m_pRenderPass;
@@ -887,8 +887,8 @@ void Tutorial19_RenderPasses::Render()
     if (m_pDevice->GetDeviceInfo().IsGLDevice())
     {
         // In OpenGL we now have to copy our off-screen buffer to the default framebuffer
-        auto* pOffscreenRenderTarget = pFramebuffer->GetDesc().ppAttachments[3]->GetTexture();
-        auto* pBackBuffer            = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
+        ITexture* pOffscreenRenderTarget = pFramebuffer->GetDesc().ppAttachments[3]->GetTexture();
+        ITexture* pBackBuffer            = m_pSwapChain->GetCurrentBackBufferRTV()->GetTexture();
 
         CopyTextureAttribs CopyAttribs{pOffscreenRenderTarget, RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
                                        pBackBuffer, RESOURCE_STATE_TRANSITION_MODE_TRANSITION};
@@ -906,10 +906,10 @@ void Tutorial19_RenderPasses::Update(double CurrTime, double ElapsedTime, bool D
     float4x4 View = float4x4::Translation(0.0f, 0.0f, 25.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute world-view-projection matrix
     m_CameraViewProjMatrix    = View * SrfPreTransform * Proj;

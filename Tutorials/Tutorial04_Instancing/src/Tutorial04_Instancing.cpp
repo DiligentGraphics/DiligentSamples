@@ -144,7 +144,7 @@ void Tutorial04_Instancing::Initialize(const SampleInitInfo& InitInfo)
 void Tutorial04_Instancing::PopulateInstanceBuffer()
 {
     // Populate instance data buffer
-    const auto            zGridSize = static_cast<size_t>(m_GridSize);
+    const size_t          zGridSize = static_cast<size_t>(m_GridSize);
     std::vector<float4x4> InstanceData(zGridSize * zGridSize * zGridSize);
 
     float fGridSize = static_cast<float>(m_GridSize);
@@ -189,8 +189,8 @@ void Tutorial04_Instancing::PopulateInstanceBuffer()
 // Render a frame
 void Tutorial04_Instancing::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
     if (m_ConvertPSOutputToGamma)
@@ -237,10 +237,10 @@ void Tutorial04_Instancing::Update(double CurrTime, double ElapsedTime, bool DoU
     float4x4 View = float4x4::RotationX(-0.6f) * float4x4::Translation(0.f, 0.f, 4.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute view-projection matrix
     m_ViewProjMatrix = View * SrfPreTransform * Proj;

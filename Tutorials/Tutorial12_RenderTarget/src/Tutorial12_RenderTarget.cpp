@@ -319,7 +319,7 @@ void Tutorial12_RenderTarget::Render()
     DrawAttrs.Flags      = DRAW_FLAG_VERIFY_ALL; // Verify the state of vertex and index buffers
     m_pImmediateContext->DrawIndexed(DrawAttrs);
 
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     // Clear the default render target
     const float Zero[] = {0.0f, 0.0f, 0.0f, 1.0f};
     m_pImmediateContext->SetRenderTargets(1, &pRTV, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -351,12 +351,12 @@ void Tutorial12_RenderTarget::Update(double CurrTime, double ElapsedTime, bool D
     float4x4 View = float4x4::Translation(0.f, 0.0f, 5.0f);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
     // We will have to transform UV coordinates when performing post-processing
     m_UVPreTransformMatrix = float2x2{SrfPreTransform.m00, SrfPreTransform.m01, SrfPreTransform.m10, SrfPreTransform.m11};
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 100.f);
 
     // Compute world-view-projection matrix
     m_WorldViewProjMatrix = CubeModelTransform * View * SrfPreTransform * Proj;

@@ -265,9 +265,9 @@ void Tutorial08_Tessellation::LoadTextures()
         loadInfo.Name   = "Terrain height map";
         RefCntAutoPtr<ITexture> HeightMap;
         CreateTextureFromFile("ps_height_1k.png", loadInfo, m_pDevice, &HeightMap);
-        const auto& HMDesc = HeightMap->GetDesc();
-        m_HeightMapWidth   = HMDesc.Width;
-        m_HeightMapHeight  = HMDesc.Height;
+        const TextureDesc& HMDesc = HeightMap->GetDesc();
+        m_HeightMapWidth          = HMDesc.Width;
+        m_HeightMapHeight         = HMDesc.Height;
         // Get shader resource view from the texture
         m_HeightMapSRV = HeightMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
     }
@@ -333,8 +333,8 @@ void Tutorial08_Tessellation::Initialize(const SampleInitInfo& InitInfo)
 // Render a frame
 void Tutorial08_Tessellation::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
     if (m_ConvertPSOutputToGamma)
@@ -365,8 +365,8 @@ void Tutorial08_Tessellation::Render()
         Consts->TessDensity          = m_TessDensity;
         Consts->AdaptiveTessellation = m_AdaptiveTessellation ? 1 : 0;
 
-        const auto& SCDesc   = m_pSwapChain->GetDesc();
-        Consts->ViewportSize = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / static_cast<float>(SCDesc.Width), 1.f / static_cast<float>(SCDesc.Height));
+        const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+        Consts->ViewportSize        = float4(static_cast<float>(SCDesc.Width), static_cast<float>(SCDesc.Height), 1.f / static_cast<float>(SCDesc.Width), 1.f / static_cast<float>(SCDesc.Height));
 
         Consts->LineWidth = 3.0f;
     }
@@ -401,10 +401,10 @@ void Tutorial08_Tessellation::Update(double CurrTime, double ElapsedTime, bool D
     float4x4 ViewMatrix = float4x4::Translation(0.f, 0.0f, m_Distance);
 
     // Get pretransform matrix that rotates the scene according the surface orientation
-    auto SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
+    float4x4 SrfPreTransform = GetSurfacePretransformMatrix(float3{0, 0, 1});
 
     // Get projection matrix adjusted to the current screen orientation
-    auto Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 1000.f);
+    float4x4 Proj = GetAdjustedProjectionMatrix(PI_F / 4.0f, 0.1f, 1000.f);
 
     m_WorldViewMatrix = ModelMatrix * ViewMatrix * SrfPreTransform;
 

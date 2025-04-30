@@ -63,7 +63,7 @@ public:
     // Returns offset of the allocated region
     Uint32 Allocate(IDeviceContext* pCtx, Uint32 Size, size_t CtxNum)
     {
-        auto& MapInfo = m_MapInfo[CtxNum];
+        MapInfo& MapInfo = m_MapInfo[CtxNum];
         // Check if there is enough space in the buffer
         if (MapInfo.m_CurrOffset + Size > m_BufferSize)
         {
@@ -78,7 +78,7 @@ public:
             MapInfo.m_MappedData.Map(pCtx, m_pBuffer, MAP_WRITE, MapInfo.m_CurrOffset == 0 ? MAP_FLAG_DISCARD : MAP_FLAG_NO_OVERWRITE);
         }
 
-        auto Offset = MapInfo.m_CurrOffset;
+        Uint32 Offset = MapInfo.m_CurrOffset;
         // Update offset
         MapInfo.m_CurrOffset += Size;
         return Offset;
@@ -371,8 +371,8 @@ void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Ba
         // Create loader for the current texture
         std::stringstream FileNameSS;
         FileNameSS << "DGLogo" << tex << ".png";
-        const auto      FileName = FileNameSS.str();
-        TextureLoadInfo LoadInfo;
+        const std::string FileName = FileNameSS.str();
+        TextureLoadInfo   LoadInfo;
         LoadInfo.IsSRGB = true;
 
         CreateTextureLoaderFromFile(FileName.c_str(), IMAGE_FILE_FORMAT_UNKNOWN, LoadInfo, &TexLoaders[tex]);
@@ -389,11 +389,11 @@ void Tutorial10_DataStreaming::LoadTextures(std::vector<StateTransitionDesc>& Ba
         Barriers.emplace_back(pTex, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE);
     }
 
-    auto TexArrDesc      = TexLoaders[0]->GetTextureDesc();
-    TexArrDesc.ArraySize = NumTextures;
-    TexArrDesc.Type      = RESOURCE_DIM_TEX_2D_ARRAY;
-    TexArrDesc.Usage     = USAGE_DEFAULT;
-    TexArrDesc.BindFlags = BIND_SHADER_RESOURCE;
+    TextureDesc TexArrDesc = TexLoaders[0]->GetTextureDesc();
+    TexArrDesc.ArraySize   = NumTextures;
+    TexArrDesc.Type        = RESOURCE_DIM_TEX_2D_ARRAY;
+    TexArrDesc.Usage       = USAGE_DEFAULT;
+    TexArrDesc.BindFlags   = BIND_SHADER_RESOURCE;
 
     // Prepare texture array initialization data
     std::vector<TextureSubResData> SubresData(TexArrDesc.ArraySize * TexArrDesc.MipLevels);
@@ -494,7 +494,7 @@ void Tutorial10_DataStreaming::InitializePolygonGeometry()
     m_PolygonGeo.resize(MaxPolygonVerts + 1);
     for (Uint32 NumVerts = MinPolygonVerts; NumVerts <= MaxPolygonVerts; ++NumVerts)
     {
-        auto& PolygonGeo = m_PolygonGeo[NumVerts];
+        PolygonGeometry& PolygonGeo = m_PolygonGeo[NumVerts];
         PolygonGeo.Verts.reserve(NumVerts);
         PolygonGeo.Inds.reserve(size_t{NumVerts - 2} * 3);
         float ArcLen = PI_F * 2.f / static_cast<float>(NumVerts);
@@ -531,7 +531,8 @@ void Tutorial10_DataStreaming::InitializePolygons()
 
     for (int Polygon = 0; Polygon < m_NumPolygons; ++Polygon)
     {
-        auto& CurrInst     = m_Polygons[Polygon];
+        PolygonData& CurrInst = m_Polygons[Polygon];
+
         CurrInst.Size      = scale_distr(gen);
         CurrInst.Angle     = angle_distr(gen);
         CurrInst.Pos.x     = pos_distr(gen);
@@ -549,10 +550,10 @@ void Tutorial10_DataStreaming::InitializePolygons()
 std::pair<Diligent::Uint32, Diligent::Uint32> Tutorial10_DataStreaming::WritePolygon(const PolygonGeometry& PolygonGeo, IDeviceContext* pCtx, size_t CtxNum)
 {
     // Request memory for vertices and indices
-    auto  VBOffset   = m_StreamingVB->Allocate(pCtx, static_cast<Uint32>(PolygonGeo.Verts.size()) * sizeof(float2), CtxNum);
-    auto  IBOffset   = m_StreamingIB->Allocate(pCtx, static_cast<Uint32>(PolygonGeo.Inds.size()) * sizeof(Uint32), CtxNum);
-    auto* VertexData = reinterpret_cast<float2*>(reinterpret_cast<Uint8*>(m_StreamingVB->GetMappedCPUAddress(CtxNum)) + VBOffset);
-    auto* IndexData  = reinterpret_cast<Uint32*>(reinterpret_cast<Uint8*>(m_StreamingIB->GetMappedCPUAddress(CtxNum)) + IBOffset);
+    Uint32  VBOffset   = m_StreamingVB->Allocate(pCtx, static_cast<Uint32>(PolygonGeo.Verts.size()) * sizeof(float2), CtxNum);
+    Uint32  IBOffset   = m_StreamingIB->Allocate(pCtx, static_cast<Uint32>(PolygonGeo.Inds.size()) * sizeof(Uint32), CtxNum);
+    float2* VertexData = reinterpret_cast<float2*>(reinterpret_cast<Uint8*>(m_StreamingVB->GetMappedCPUAddress(CtxNum)) + VBOffset);
+    Uint32* IndexData  = reinterpret_cast<Uint32*>(reinterpret_cast<Uint8*>(m_StreamingIB->GetMappedCPUAddress(CtxNum)) + IBOffset);
     memcpy(VertexData, PolygonGeo.Verts.data(), PolygonGeo.Verts.size() * sizeof(float2));
     memcpy(IndexData, PolygonGeo.Inds.data(), PolygonGeo.Inds.size() * sizeof(Uint32));
 
@@ -570,7 +571,7 @@ void Tutorial10_DataStreaming::UpdatePolygons(float elapsedTime)
     std::uniform_real_distribution<float> rot_distr(-PI_F * 0.5f, +PI_F * 0.5f);
     for (int Polygon = 0; Polygon < m_NumPolygons; ++Polygon)
     {
-        auto& CurrInst = m_Polygons[Polygon];
+        PolygonData& CurrInst = m_Polygons[Polygon];
         CurrInst.Angle += CurrInst.RotSpeed * elapsedTime;
         if (std::abs(CurrInst.Pos.x + CurrInst.MoveDir.x * elapsedTime) > 0.95)
         {
@@ -601,7 +602,7 @@ void Tutorial10_DataStreaming::StopWorkerThreads()
 {
     m_RenderSubsetSignal.Trigger(true, -1);
 
-    for (auto& thread : m_WorkerThreads)
+    for (std::thread& thread : m_WorkerThreads)
     {
         thread.join();
     }
@@ -619,7 +620,7 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming* pThis,
     for (;;)
     {
         // Wait for the signal
-        auto SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
+        int SignaledValue = pThis->m_RenderSubsetSignal.Wait(true, NumWorkerThreads);
         if (SignaledValue < 0)
             return;
 
@@ -638,7 +639,7 @@ void Tutorial10_DataStreaming::WorkerThreadFunc(Tutorial10_DataStreaming* pThis,
 
         {
             // Atomically increment the number of completed threads
-            const auto NumThreadsCompleted = pThis->m_NumThreadsCompleted.fetch_add(1) + 1;
+            const int NumThreadsCompleted = pThis->m_NumThreadsCompleted.fetch_add(1) + 1;
             if (NumThreadsCompleted == NumWorkerThreads)
                 pThis->m_ExecuteCommandListsSignal.Trigger();
         }
@@ -668,7 +669,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 {
     // Deferred contexts start in default state. We must bind everything to the context
     // Render targets are set and transitioned to correct states by the main thread, here we only verify states
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     pCtx->SetRenderTargets(1, &pRTV, m_pSwapChain->GetDepthBufferDSV(), RESOURCE_STATE_TRANSITION_MODE_VERIFY);
 
     DrawIndexedAttribs DrawAttrs;
@@ -687,13 +688,13 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
         const Uint32 EndInst   = std::min(StartInst + static_cast<Uint32>(m_BatchSize), static_cast<Uint32>(m_NumPolygons));
 
         // Set pipeline state
-        auto StateInd = m_Polygons[StartInst].StateInd;
+        int StateInd = m_Polygons[StartInst].StateInd;
         pCtx->SetPipelineState(m_pPSO[UseBatch ? 1 : 0][StateInd]);
 
-        const auto&  PolygonGeo = m_PolygonGeo[m_Polygons[StartInst].NumVerts];
-        auto         Offsets    = WritePolygon(PolygonGeo, pCtx, Subset);
-        const Uint64 offsets[]  = {Offsets.first, 0};
-        IBuffer*     pBuffs[]   = {m_StreamingVB->GetBuffer(), m_BatchDataBuffer};
+        const PolygonGeometry& PolygonGeo = m_PolygonGeo[m_Polygons[StartInst].NumVerts];
+        auto                   Offsets    = WritePolygon(PolygonGeo, pCtx, Subset);
+        const Uint64           offsets[]  = {Offsets.first, 0};
+        IBuffer*               pBuffs[]   = {m_StreamingVB->GetBuffer(), m_BatchDataBuffer};
         pCtx->SetVertexBuffers(0, UseBatch ? 2 : 1, pBuffs, offsets, RESOURCE_STATE_TRANSITION_MODE_VERIFY, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         pCtx->SetIndexBuffer(m_StreamingIB->GetBuffer(), Offsets.second, RESOURCE_STATE_TRANSITION_MODE_VERIFY);
@@ -707,7 +708,7 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 
         for (Uint32 inst = StartInst; inst < EndInst; ++inst)
         {
-            const auto& CurrInstData = m_Polygons[inst];
+            const PolygonData& CurrInstData = m_Polygons[inst];
             // Shader resources have been explicitly transitioned to correct states, so
             // RESOURCE_STATE_TRANSITION_MODE_TRANSITION mode is not needed.
             // Instead, we use RESOURCE_STATE_TRANSITION_MODE_VERIFY mode to
@@ -728,14 +729,13 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
                 float    cosAngle = cosf(CurrInstData.Angle);
                 float2x2 RotMatr(cosAngle, -sinAngle,
                                  sinAngle, cosAngle);
-
-                auto Matr = ScaleMatr * RotMatr;
+                float2x2 Matr = ScaleMatr * RotMatr;
 
                 float4 PolygonRotationAndScale(Matr.m00, Matr.m10, Matr.m01, Matr.m11);
 
                 if (UseBatch)
                 {
-                    auto& CurrPolygon                   = BatchData[inst - StartInst];
+                    InstanceData& CurrPolygon           = BatchData[inst - StartInst];
                     CurrPolygon.PolygonRotationAndScale = PolygonRotationAndScale;
                     CurrPolygon.PolygonCenter           = CurrInstData.Pos;
                     CurrPolygon.TexArrInd               = static_cast<float>(CurrInstData.TextureInd);
@@ -773,8 +773,8 @@ void Tutorial10_DataStreaming::RenderSubset(IDeviceContext* pCtx, Uint32 Subset)
 // Render a frame
 void Tutorial10_DataStreaming::Render()
 {
-    auto* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
-    auto* pDSV = m_pSwapChain->GetDepthBufferDSV();
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
     float4 ClearColor = {0.350f, 0.350f, 0.350f, 1.0f};
     if (m_ConvertPSOutputToGamma)
