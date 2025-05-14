@@ -23,7 +23,7 @@
 
 #    define TEXTURE(Name)                const texture2d<float>              Name
 #    define TEXTURE_ARRAY(Name, Size)    const array<texture2d<float>, Size> Name
-#    define WTEXTURE(Name)               texture2d<float, access::write>     Name
+#    define WTEXTURE(Name, Format)       texture2d<float, access::write>     Name
 #    define SAMPLER_ARRAY(Name, Size)    const array<sampler, Size>          Name
 #    define BUFFER(Name, Type)           const device Type*                  Name
 #    define CONSTANT_BUFFER(Name, Type)  constant GlobalConstants&           Name
@@ -33,12 +33,12 @@
 #    define TextureStore(Texture, u2Coord, f4Value)          Texture[u2Coord] = f4Value
 #    define TextureDimensions(Texture, Dim)                  Texture.GetDimensions(Dim.x, Dim.y)
 
-#    define TEXTURE(Name)                Texture2D<float4>      Name
-#    define TEXTURE_ARRAY(Name, Size)    Texture2D<float4>      Name[Size]
-#    define WTEXTURE(Name)               RWTexture2D<float4>    Name
-#    define SAMPLER_ARRAY(Name, Size)    SamplerState           Name[Size]
-#    define BUFFER(Name, Type)           StructuredBuffer<Type> Name
-#    define CONSTANT_BUFFER(Name, Type)  ConstantBuffer<Type>   Name
+#    define TEXTURE(Name)                Texture2D<float4>                           Name
+#    define TEXTURE_ARRAY(Name, Size)    Texture2D<float4>                           Name[Size]
+#    define WTEXTURE(Name, Format)       VK_IMAGE_FORMAT(Format) RWTexture2D<float4> Name
+#    define SAMPLER_ARRAY(Name, Size)    SamplerState                                Name[Size]
+#    define BUFFER(Name, Type)           StructuredBuffer<Type>                      Name
+#    define CONSTANT_BUFFER(Name, Type)  ConstantBuffer<Type>                        Name
 #endif
 
 // Returns 0 when occluder is found, and 1 otherwise
@@ -213,7 +213,7 @@ BEGIN_SHADER_DECLARATION(CSMain)
     SAMPLER_ARRAY(                  g_Samplers,        NUM_SAMPLERS)    MTL_BINDING(sampler, 0)  END_ARG
 
     // m_pRayTracingScreenResourcesSign
-    WTEXTURE(                       g_RayTracedTex)                     MTL_BINDING(texture, 5)  END_ARG
+    WTEXTURE(                       g_RayTracedTex, "rgba16f")          MTL_BINDING(texture, 5)  END_ARG
     TEXTURE(                        g_GBuffer_Normal)                   MTL_BINDING(texture, 6)  END_ARG
     TEXTURE(                        g_GBuffer_Depth)                    MTL_BINDING(texture, 7)  END_ARG
    
