@@ -1162,7 +1162,7 @@ void GLTFViewer::Render()
     else
     {
         // Clear the back buffer
-        const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
+        const float ClearColor[] = {0.032f, 0.032f, 0.032f, 0.0f};
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
@@ -1324,7 +1324,7 @@ void GLTFViewer::Render()
         EnvMapAttribs.pEnvMap       = pEnvMapSRV;
         EnvMapAttribs.AverageLogLum = m_ShaderAttribs.AverageLogLum;
         EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
-        EnvMapAttribs.Alpha         = 1.0;
+        EnvMapAttribs.Alpha         = 0.0;
         if ((m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0)
             EnvMapAttribs.Options |= EnvMapRenderer::OPTION_FLAG_CONVERT_OUTPUT_TO_SRGB;
         if (m_bEnablePostProcessing)
@@ -1394,7 +1394,7 @@ void GLTFViewer::Render()
 
         m_pImmediateContext->SetRenderTargets(1, &pRTV, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         // Clear the back buffer
-        const float ClearColor[] = {0.032f, 0.032f, 0.032f, 1.0f};
+        const float ClearColor[] = {0.032f, 0.032f, 0.032f, 0.0f};
         m_pImmediateContext->ClearRenderTarget(pRTV, ClearColor, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
         m_pImmediateContext->SetPipelineState(m_ApplyPostFX.pPSO);
