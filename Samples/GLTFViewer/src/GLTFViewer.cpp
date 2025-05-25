@@ -623,25 +623,6 @@ void main(in BoundBoxVSOutput VSOut,
 }
 )";
 
-static constexpr char BoundBoxPSMainGL[] = R"(
-void main(in BoundBoxVSOutput VSOut,
-          out float4 Color        : SV_Target0,
-          out float4 Normal       : SV_Target1,
-          out float4 BaseColor    : SV_Target2,
-          out float4 MaterialData : SV_Target3,
-          out float4 MotionVec    : SV_Target4,
-          out float4 SpecularIBL  : SV_Target5)
-{
-    BoundBoxOutput BBOutput = GetBoundBoxOutput(VSOut);
-    Color        = BBOutput.Color;
-    Normal       = float4(0.0, 0.0, 0.0, 0.0);
-	BaseColor    = float4(0.0, 0.0, 0.0, 0.0);
-    MaterialData = float4(0.0, 0.0, 0.0, 0.0);
-    MotionVec    = float4(BBOutput.MotionVector, 0.0, 1.0);
-    SpecularIBL  = float4(0.0, 0.0, 0.0, 0.0);
-}
-)";
-
 void GLTFViewer::CrateBoundBoxRenderer()
 {
     BoundBoxRenderer::CreateInfo BoundBoxRendererCI;
@@ -655,16 +636,8 @@ void GLTFViewer::CrateBoundBoxRenderer()
             BoundBoxRendererCI.RTVFormats[i] = m_GBuffer->GetElementDesc(i).Format;
         BoundBoxRendererCI.DSVFormat = m_GBuffer->GetElementDesc(GBUFFER_RT_DEPTH0).Format;
 
-        if (m_pDevice->GetDeviceInfo().IsGLDevice() || m_pDevice->GetDeviceInfo().IsWebGPUDevice())
-        {
-            // Normally, environment map shader only needs to write color and motion vector.
-            // However, on WebGL and WebGPU this results in errors.
-            BoundBoxRendererCI.PSMainSource = BoundBoxPSMainGL;
-        }
-        else
-        {
-            BoundBoxRendererCI.PSMainSource = BoundBoxPSMain;
-        }
+        BoundBoxRendererCI.PSMainSource     = BoundBoxPSMain;
+        BoundBoxRendererCI.RenderTargetMask = GBUFFER_RT_FLAG_COLOR | GBUFFER_RT_FLAG_MOTION_VECTORS;
     }
     else
     {
