@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.13)
 
+if(NOT DILIGENT_CORE_FOUND)
+	message(FATAL_ERROR "DiligentCore module is not found. To build the samples and tutorials, please clone the main repository as described in the documentation (see https://github.com/DiligentGraphics/DiligentSamples/blob/master/README.md)")
+endif()
+if(NOT DILIGENT_TOOLS_FOUND)
+	message(FATAL_ERROR "DiligentTools module is not found. Please add DiligentTools module to the project before DiligentSamples module.")
+endif()
+if(NOT DILIGENT_FX_FOUND)
+	message(FATAL_ERROR "DiligentFX module is not found. Please add DiligentFX module to the project before DiligentSamples module.")
+endif()
+
+set(DILIGENT_SAMPLES_FOUND TRUE CACHE INTERNAL "DiligentSamples module is found")
+
 if(PLATFORM_WIN32 OR PLATFORM_LINUX)
     option(DILIGENT_INSTALL_SAMPLES "Enable installation of samples and tutorials" ON)
 else()
