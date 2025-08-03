@@ -1,4 +1,5 @@
-/*     Copyright 2015-2016 Egor Yusov
+/*     Copyright 2025 Diligent Graphics LLC
+ *     Copyright 2015-2016 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,14 +25,14 @@
 //  ---------------------------------------------------------------------------
 //
 //  @file       ImguiUWPEventHelper.cpp
-//  @brief      Helper: 
-//              translate and re-send mouse and keyboard events 
+//  @brief      Helper:
+//              translate and re-send mouse and keyboard events
 //              from Windows Runtime message proc to imgui
-//  
+//
 //  @author     Egor Yusov
 //  @date       2015/06/30
 //  @note       This file is not part of the AntTweakBar library because
-//              it is not recommended to pack Windows Runtime extensions 
+//              it is not recommended to pack Windows Runtime extensions
 //              into a static library
 //  ---------------------------------------------------------------------------
 
@@ -249,72 +250,76 @@ void ImguiUWPEventHelper::UpdateKeyStates(_In_ Windows::UI::Core::KeyEventArgs^ 
 {
     if (ImGui::GetCurrentContext() == nullptr)
         return;
-    
-    ImGuiIO& io = ImGui::GetIO();
-    int c = -1;
 
-    switch(args->VirtualKey)
+    ImGuiIO& io = ImGui::GetIO();
+    int      c  = -1;
+
+    switch (args->VirtualKey)
     {
         case VirtualKey::Tab:
-            io.KeysDown[VK_TAB] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Tab, IsDown);
             break;
         case VirtualKey::Up:
-            io.KeysDown[VK_UP] = IsDown;
+            io.AddKeyEvent(ImGuiKey_UpArrow, IsDown);
             break;
         case VirtualKey::Down:
-            io.KeysDown[VK_DOWN] = IsDown;
+            io.AddKeyEvent(ImGuiKey_DownArrow, IsDown);
             break;
         case VirtualKey::Left:
-            io.KeysDown[VK_LEFT] = IsDown;
+            io.AddKeyEvent(ImGuiKey_LeftArrow, IsDown);
             break;
         case VirtualKey::Right:
-            io.KeysDown[VK_RIGHT] = IsDown;
+            io.AddKeyEvent(ImGuiKey_RightArrow, IsDown);
             break;
         case VirtualKey::Insert:
-            io.KeysDown[VK_INSERT] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Insert, IsDown);
             break;
         case VirtualKey::Delete:
-            io.KeysDown[VK_DELETE] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Delete, IsDown);
             break;
         case VirtualKey::Back:
-            io.KeysDown[VK_BACK] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Backspace, IsDown);
             break;
         case VirtualKey::PageUp:
-            io.KeysDown[VK_PRIOR] = IsDown;
+            io.AddKeyEvent(ImGuiKey_PageUp, IsDown);
             break;
         case VirtualKey::PageDown:
-            io.KeysDown[VK_NEXT] = IsDown;
+            io.AddKeyEvent(ImGuiKey_PageDown, IsDown);
             break;
         case VirtualKey::Home:
-            io.KeysDown[VK_HOME] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Home, IsDown);
             break;
         case VirtualKey::End:
-            io.KeysDown[VK_END] = IsDown;
+            io.AddKeyEvent(ImGuiKey_End, IsDown);
             break;
         case VirtualKey::Enter:
-            io.KeysDown[VK_RETURN] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Enter, IsDown);
             break;
         case VirtualKey::Escape:
-            io.KeysDown[VK_ESCAPE] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Escape, IsDown);
             break;
         case VirtualKey::Space:
-            io.KeysDown[VK_SPACE] = IsDown;
+            io.AddKeyEvent(ImGuiKey_Space, IsDown);
             c = ' ';
             break;
+        case VirtualKey::Shift:
+            io.AddKeyEvent(ImGuiMod_Shift, IsDown);
+            break;
+        case VirtualKey::Control:
+            io.AddKeyEvent(ImGuiMod_Ctrl, IsDown);
+            break;
+        case VirtualKey::Menu:
+            io.AddKeyEvent(ImGuiMod_Alt, IsDown);
+            break;
 
-        case VirtualKey::Divide:    c = '/'; break;
-        case VirtualKey::Multiply:  c = '*'; break;
-        case VirtualKey::Subtract:  c = '-'; break;
-        case VirtualKey::Add:       c = '+'; break;
-        case VirtualKey::Decimal:   c = '.'; break;
-    
-        case VirtualKey::Shift:     io.KeyShift = IsDown; break;
-        case VirtualKey::Control:   io.KeyCtrl  = IsDown; break;
-        case VirtualKey::Menu:      io.KeyAlt   = IsDown; break;
+        case VirtualKey::Divide: c = '/'; break;
+        case VirtualKey::Multiply: c = '*'; break;
+        case VirtualKey::Subtract: c = '-'; break;
+        case VirtualKey::Add: c = '+'; break;
+        case VirtualKey::Decimal: c = '.'; break;
 
         default:
             c = VirtualKeyToChar(args->VirtualKey, io.KeyAlt, io.KeyShift, io.KeyCtrl);
-            
     }
     if (IsDown && c >= 0)
         io.AddInputCharacter(c);
