@@ -6,11 +6,11 @@ jobs:
   build:
     strategy:
       matrix:
-        os:         ["windows-latest", "ubuntu-24.04", "macos-14"]
+        os:         ["windows-latest", "ubuntu-24.04", "macos-15"]
         build_type: ["Debug", "Release"]
         exclude:
           # Exclude MacOS-Release
-          - os:         "macos-14"
+          - os:         "macos-15"
             build_type: "Release"
 
         include:
@@ -29,7 +29,7 @@ jobs:
             host_name: "Linux"
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"
 
-          - os:        "macos-14"
+          - os:        "macos-15"
             host_name: "MacOS"
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"
 
