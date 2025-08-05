@@ -170,10 +170,11 @@ function process_golden_img
             fi
         done
 
-        skip_test=0
+        local skip_test=0
+        local non_separable_progs=0
         if [[ "$backend_name" == "gl" ]]; then
+            non_separable_progs=$(get_argument_value "--non_separable_progs" "0" "${args[@]}")
             if [[ "$app_name" == "Tutorial07_GeometryShader" || "$app_name" == "Tutorial08_Tessellation" ]]; then
-                local non_separable_progs=$(get_argument_value "--non_separable_progs" "0" "${args[@]}")
                 if [[ "$non_separable_progs" != "0" ]]; then
                     skip_test=1
                 fi
@@ -186,6 +187,11 @@ function process_golden_img
             local capture_name="$app_name""_""$backend_name"
 
             local cmd="$app_path $mode --width $GOLDEN_IMAGE_WIDTH --height $GOLDEN_IMAGE_HEIGHT --golden_image_mode $golden_img_mode --capture_path $golden_img_dir --capture_name $capture_name --capture_format png --adapters_dialog 0 --break_on_error 0 $extra_args"
+            if [[ "$non_separable_progs" != "0" ]]; then
+                # Images generated with non-separable programs may differ slightly.
+                cmd="$cmd --golden_image_tolerance 1"
+            fi
+
             echo $cmd
             echo ""
             bash -c "$cmd"
