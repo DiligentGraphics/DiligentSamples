@@ -320,6 +320,10 @@ void ImguiUWPEventHelper::UpdateKeyStates(_In_ Windows::UI::Core::KeyEventArgs^ 
 
         default:
             c = VirtualKeyToChar(args->VirtualKey, io.KeyAlt, io.KeyShift, io.KeyCtrl);
+            if (c >= 'a' && c <= 'z')
+                io.AddKeyEvent(static_cast<ImGuiKey>(ImGuiKey_A + (c - 'a')), IsDown);
+            else if (c >= 'A' && c <= 'Z')
+                io.AddKeyEvent(static_cast<ImGuiKey>(ImGuiKey_A + (c - 'A')), IsDown);
     }
     if (IsDown && c >= 0)
         io.AddInputCharacter(c);
