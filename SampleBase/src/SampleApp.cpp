@@ -231,11 +231,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #if D3D11_SUPPORTED
         case RENDER_DEVICE_TYPE_D3D11:
         {
-#    if ENGINE_DLL
-            // Load the dll and import GetEngineFactoryD3D11() function
-            GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
-#    endif
-            IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
+            // Load the dll and get the factory
+            IEngineFactoryD3D11* pFactoryD3D11 = LoadAndGetEngineFactoryD3D11();
             m_pEngineFactory                   = pFactoryD3D11;
 
             EngineD3D11CreateInfo EngineCI;
@@ -277,11 +274,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #if D3D12_SUPPORTED
         case RENDER_DEVICE_TYPE_D3D12:
         {
-#    if ENGINE_DLL
-            // Load the dll and import GetEngineFactoryD3D12() function
-            GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
-#    endif
-            IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
+            // Load the dll and get the factory
+            IEngineFactoryD3D12* pFactoryD3D12 = LoadAndGetEngineFactoryD3D12();
             if (!pFactoryD3D12->LoadD3D12())
             {
                 LOG_ERROR_AND_THROW("Failed to load Direct3D12");
@@ -342,11 +336,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #    if !PLATFORM_MACOS
             VERIFY_EXPR(pWindow != nullptr);
 #    endif
-#    if EXPLICITLY_LOAD_ENGINE_GL_DLL
-            // Load the dll and import GetEngineFactoryOpenGL() function
-            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
-#    endif
-            IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
+            // Load the dll and get the factory
+            IEngineFactoryOpenGL* pFactoryOpenGL = LoadAndGetEngineFactoryOpenGL();
             m_pEngineFactory                     = pFactoryOpenGL;
 
             EngineGLCreateInfo EngineCI;
@@ -384,10 +375,6 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #if VULKAN_SUPPORTED
         case RENDER_DEVICE_TYPE_VULKAN:
         {
-#    if EXPLICITLY_LOAD_ENGINE_VK_DLL
-            // Load the dll and import GetEngineFactoryVk() function
-            GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
-#    endif
             EngineVkCreateInfo EngineCI;
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
@@ -404,7 +391,8 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
             EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
             EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
 
-            IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
+            // Load the dll and get the factory
+            IEngineFactoryVk* pFactoryVk = LoadAndGetEngineFactoryVk();
             m_pEngineFactory             = pFactoryVk;
 
             EngineCI.AdapterId = FindAdapter(pFactoryVk, EngineCI.GraphicsAPIVersion, m_AdapterAttribs);
@@ -461,15 +449,12 @@ void SampleApp::InitializeDiligentEngine(const NativeWindow* pWindow)
 #if WEBGPU_SUPPORTED
         case RENDER_DEVICE_TYPE_WEBGPU:
         {
-#    if EXPLICITLY_LOAD_ENGINE_WEBGPU_DLL
-            // Load the dll and import LoadGraphicsEngineWebGPU() function
-            GetEngineFactoryWebGPUType GetEngineFactoryWebGPU = LoadGraphicsEngineWebGPU();
-#    endif
             EngineWebGPUCreateInfo EngineCI;
             if (m_ValidationLevel >= 0)
                 EngineCI.SetValidationLevel(static_cast<VALIDATION_LEVEL>(m_ValidationLevel));
 
-            IEngineFactoryWebGPU* pFactoryWebGPU = GetEngineFactoryWebGPU();
+            // Load the dll and get the factory
+            IEngineFactoryWebGPU* pFactoryWebGPU = LoadAndGetEngineFactoryWebGPU();
             m_pEngineFactory                     = pFactoryWebGPU;
 
             NumImmediateContexts = std::max(1u, EngineCI.NumImmediateContexts);

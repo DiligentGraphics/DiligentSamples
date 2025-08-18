@@ -585,11 +585,8 @@ public:
             {
                 EngineD3D11CreateInfo EngineCI;
                 EngineCI.pXRAttribs = &XRAttribs;
-#    if ENGINE_DLL
-                // Load the dll and import GetEngineFactoryD3D11() function
-                GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
-#    endif
-                IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
+                // Load the dll and get the factory
+                IEngineFactoryD3D11* pFactoryD3D11 = LoadAndGetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
@@ -599,14 +596,11 @@ public:
 #if D3D12_SUPPORTED
             case RENDER_DEVICE_TYPE_D3D12:
             {
-#    if ENGINE_DLL
-                // Load the dll and import GetEngineFactoryD3D12() function
-                GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
-#    endif
                 EngineD3D12CreateInfo EngineCI;
                 EngineCI.pXRAttribs = &XRAttribs;
 
-                IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
+                // Load the dll and get the factory
+                IEngineFactoryD3D12* pFactoryD3D12 = LoadAndGetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;
@@ -617,11 +611,8 @@ public:
             case RENDER_DEVICE_TYPE_GL:
             {
 #    if 0
-#        if EXPLICITLY_LOAD_ENGINE_GL_DLL
-                // Load the dll and import GetEngineFactoryOpenGL() function
-                auto GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
-#        endif
-                auto* pFactoryOpenGL = GetEngineFactoryOpenGL();
+                // Load the dll and get the factory
+                auto* pFactoryOpenGL = LoadAndGetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
                 EngineCI.pXRAttribs  = &XRAttribs;
@@ -637,14 +628,11 @@ public:
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
             {
-#    if EXPLICITLY_LOAD_ENGINE_VK_DLL
-                // Load the dll and import GetEngineFactoryVk() function
-                GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
-#    endif
                 EngineVkCreateInfo EngineCI;
                 EngineCI.pXRAttribs = &XRAttribs;
 
-                IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
+                // Load the dll and get the factory
+                IEngineFactoryVk* pFactoryVk = LoadAndGetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &pDevice, &m_pImmediateContext);
             }
             break;

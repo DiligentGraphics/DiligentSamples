@@ -182,11 +182,8 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 #if D3D11_SUPPORTED
         case RENDER_DEVICE_TYPE_D3D11:
         {
-#    if ENGINE_DLL
-            // Load the dll and import GetEngineFactoryD3D11() function
-            GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
-#    endif
-            IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
+            // Load the dll and get the factory
+            IEngineFactoryD3D11* pFactoryD3D11 = LoadAndGetEngineFactoryD3D11();
 
             EngineD3D11CreateInfo EngineCI;
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -199,11 +196,8 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 #if D3D12_SUPPORTED
         case RENDER_DEVICE_TYPE_D3D12:
         {
-#    if ENGINE_DLL
-            // Load the dll and import GetEngineFactoryD3D12() function
-            GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
-#    endif
-            IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
+            // Load the dll and get the factory
+            IEngineFactoryD3D12* pFactoryD3D12 = LoadAndGetEngineFactoryD3D12();
 
             EngineD3D12CreateInfo EngineCI;
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -216,11 +210,8 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 #if GL_SUPPORTED
         case RENDER_DEVICE_TYPE_GL:
         {
-#    if EXPLICITLY_LOAD_ENGINE_GL_DLL
-            // Load the dll and import GetEngineFactoryOpenGL() function
-            GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
-#    endif
-            IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
+            // Load the dll and get the factory
+            IEngineFactoryOpenGL* pFactoryOpenGL = LoadAndGetEngineFactoryOpenGL();
 
             EngineGLCreateInfo EngineCI;
             EngineCI.Window = Window;
@@ -233,11 +224,8 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 #if VULKAN_SUPPORTED
         case RENDER_DEVICE_TYPE_VULKAN:
         {
-#    if EXPLICITLY_LOAD_ENGINE_VK_DLL
-            // Load the dll and import GetEngineFactoryVk() function
-            GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
-#    endif
-            IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
+            // Load the dll and get the factory
+            IEngineFactoryVk* pFactoryVk = LoadAndGetEngineFactoryVk();
 
             EngineVkCreateInfo EngineCI;
             pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
@@ -261,11 +249,8 @@ bool GLFWDemo::InitEngine(RENDER_DEVICE_TYPE DevType)
 #if WEBGPU_SUPPORTED
         case RENDER_DEVICE_TYPE_WEBGPU:
         {
-#    if ENGINE_DLL
-            // Load the dll and import LoadGraphicsEngineWebGPU() function
-            GetEngineFactoryWebGPUType GetEngineFactoryWGPU = LoadGraphicsEngineWebGPU();
-#    endif
-            IEngineFactoryWebGPU* pFactoryWGPU = GetEngineFactoryWGPU();
+            // Load the dll and get the factory
+            IEngineFactoryWebGPU* pFactoryWGPU = LoadAndGetEngineFactoryWebGPU();
 
             EngineWebGPUCreateInfo EngineCI;
             EngineCI.Features.TimestampQueries = DEVICE_FEATURE_STATE_ENABLED;
