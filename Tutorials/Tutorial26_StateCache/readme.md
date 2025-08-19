@@ -31,7 +31,8 @@ To create a render state cache object, prepare an instance of the `RenderStateCa
 
 ```cpp
 RenderStateCacheCreateInfo CacheCI;
-CacheCI.pDevice = m_pDevice;
+CacheCI.pDevice          = m_pDevice;
+CacheCI.pArchiverFactory = LoadAndGetArchiverFactory();
 // Enable hot state reload
 CacheCI.EnableHotReload = true;
 CreateRenderStateCache(CacheCI, &m_pStateCache);

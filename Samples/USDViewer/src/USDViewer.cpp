@@ -38,6 +38,7 @@
 #include "FileSystem.hpp"
 #include "Timer.hpp"
 #include "RenderStateCache.h"
+#include "ArchiverFactoryLoader.h"
 #include "ThreadPool.hpp"
 
 #include "Tasks/HnReadRprimIdTask.hpp"
@@ -186,7 +187,8 @@ void USDViewer::Initialize(const SampleInitInfo& InitInfo)
     {
         // Create render state cache
         RenderStateCacheCreateInfo StateCacheCI;
-        StateCacheCI.LogLevel = RENDER_STATE_CACHE_LOG_LEVEL_NORMAL;
+        StateCacheCI.pArchiverFactory = LoadAndGetArchiverFactory();
+        StateCacheCI.LogLevel         = RENDER_STATE_CACHE_LOG_LEVEL_NORMAL;
 
         RefCntAutoPtr<IShaderSourceInputStreamFactory> pReloadFactory;
         if (m_EnableHotShaderReload)

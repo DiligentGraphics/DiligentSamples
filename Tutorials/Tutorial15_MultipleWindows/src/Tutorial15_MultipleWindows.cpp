@@ -42,10 +42,6 @@
 #    define PLATFORM_WIN32 1
 #endif
 
-#ifndef ENGINE_DLL
-#    define ENGINE_DLL 1
-#endif
-
 #ifndef D3D11_SUPPORTED
 #    define D3D11_SUPPORTED 1
 #endif
@@ -154,11 +150,7 @@ public:
             {
                 EngineD3D11CreateInfo EngineCI;
 
-#    if ENGINE_DLL
-                // Load the dll and import GetEngineFactoryD3D11() function
-                GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
-#    endif
-                IEngineFactoryD3D11* pFactoryD3D11 = GetEngineFactoryD3D11();
+                IEngineFactoryD3D11* pFactoryD3D11 = LoadAndGetEngineFactoryD3D11();
                 pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &m_pDevice, &m_pImmediateContext);
                 for (WindowInfo& WndInfo : m_Windows)
                 {
@@ -174,13 +166,9 @@ public:
 #if D3D12_SUPPORTED
             case RENDER_DEVICE_TYPE_D3D12:
             {
-#    if ENGINE_DLL
-                // Load the dll and import GetEngineFactoryD3D12() function
-                GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
-#    endif
                 EngineD3D12CreateInfo EngineCI;
 
-                IEngineFactoryD3D12* pFactoryD3D12 = GetEngineFactoryD3D12();
+                IEngineFactoryD3D12* pFactoryD3D12 = LoadAndGetEngineFactoryD3D12();
                 pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &m_pDevice, &m_pImmediateContext);
                 for (WindowInfo& WndInfo : m_Windows)
                 {
@@ -196,13 +184,8 @@ public:
 #if GL_SUPPORTED
             case RENDER_DEVICE_TYPE_GL:
             {
-
-#    if EXPLICITLY_LOAD_ENGINE_GL_DLL
-                // Load the dll and import GetEngineFactoryOpenGL() function
-                GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
-#    endif
                 MessageBox(NULL, L"OpenGL backend does not currently support multiple swap chains", L"Error", MB_OK | MB_ICONWARNING);
-                IEngineFactoryOpenGL* pFactoryOpenGL = GetEngineFactoryOpenGL();
+                IEngineFactoryOpenGL* pFactoryOpenGL = LoadAndGetEngineFactoryOpenGL();
 
                 EngineGLCreateInfo EngineCI;
 
@@ -218,13 +201,9 @@ public:
 #if VULKAN_SUPPORTED
             case RENDER_DEVICE_TYPE_VULKAN:
             {
-#    if EXPLICITLY_LOAD_ENGINE_VK_DLL
-                // Load the dll and import GetEngineFactoryVk() function
-                GetEngineFactoryVkType GetEngineFactoryVk = LoadGraphicsEngineVk();
-#    endif
                 EngineVkCreateInfo EngineCI;
 
-                IEngineFactoryVk* pFactoryVk = GetEngineFactoryVk();
+                IEngineFactoryVk* pFactoryVk = LoadAndGetEngineFactoryVk();
                 pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &m_pDevice, &m_pImmediateContext);
                 for (WindowInfo& WndInfo : m_Windows)
                 {

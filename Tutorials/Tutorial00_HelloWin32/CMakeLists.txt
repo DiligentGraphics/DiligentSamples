@@ -15,7 +15,6 @@ set_target_properties(Tutorial00_HelloWin32 PROPERTIES
     FOLDER DiligentSamples/Tutorials
 )
 
-target_compile_definitions(Tutorial00_HelloWin32 PRIVATE ENGINE_DLL=1)
 target_link_libraries(Tutorial00_HelloWin32 PRIVATE Diligent-BuildSettings)
 
 if(D3D11_SUPPORTED)

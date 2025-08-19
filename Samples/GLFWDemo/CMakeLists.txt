@@ -49,7 +49,6 @@ set_target_properties(GLFWDemo PROPERTIES
     FOLDER DiligentSamples/Samples
 )
 
-target_compile_definitions(GLFWDemo PRIVATE ENGINE_DLL=1)
 target_link_libraries(GLFWDemo
 PRIVATE
     Diligent-Common

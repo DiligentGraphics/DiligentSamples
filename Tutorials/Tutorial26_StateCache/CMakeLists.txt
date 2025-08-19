@@ -21,7 +21,11 @@ add_sample_app(Tutorial26_StateCache
         assets/PBR_Common.fxh
 )
 
-target_link_libraries(Tutorial26_StateCache PRIVATE Diligent-RenderStateNotation)
+target_link_libraries(Tutorial26_StateCache
+PRIVATE
+    Diligent-RenderStateNotation
+    Diligent-Archiver-static
+)
 
 add_custom_command(TARGET Tutorial26_StateCache PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../../DiligentFX/Shaders/Common/public/PBR_Common.fxh" "${CMAKE_CURRENT_SOURCE_DIR}/assets"

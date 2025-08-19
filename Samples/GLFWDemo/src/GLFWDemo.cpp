@@ -25,10 +25,6 @@
  *  of the possibility of such damages.
  */
 
-#ifndef ENGINE_DLL
-#    define ENGINE_DLL 1
-#endif
-
 #ifndef D3D11_SUPPORTED
 #    define D3D11_SUPPORTED 0
 #endif

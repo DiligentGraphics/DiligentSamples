@@ -30,6 +30,7 @@
 
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
+#include "ArchiverFactoryLoader.h"
 #include "FileWrapper.hpp"
 #include "CallbackWrapper.hpp"
 #include "GraphicsAccessories.hpp"
@@ -310,8 +311,9 @@ void Tutorial26_StateCache::Initialize(const SampleInitInfo& InitInfo)
     // Create render state cache
     {
         RenderStateCacheCreateInfo CacheCI;
-        CacheCI.pDevice  = m_pDevice;
-        CacheCI.LogLevel = RENDER_STATE_CACHE_LOG_LEVEL_VERBOSE;
+        CacheCI.pDevice          = m_pDevice;
+        CacheCI.pArchiverFactory = LoadAndGetArchiverFactory();
+        CacheCI.LogLevel         = RENDER_STATE_CACHE_LOG_LEVEL_VERBOSE;
         // Enable hot state reload
         CacheCI.EnableHotReload = true;
         CreateRenderStateCache(CacheCI, &m_pStateCache);

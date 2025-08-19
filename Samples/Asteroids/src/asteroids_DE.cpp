@@ -49,27 +49,6 @@
 
 using namespace Diligent;
 
-namespace Diligent
-{
-#if ENGINE_DLL
-#    if D3D11_SUPPORTED
-GetEngineFactoryD3D11Type GetEngineFactoryD3D11 = nullptr;
-#    endif
-
-#    if D3D12_SUPPORTED
-GetEngineFactoryD3D12Type GetEngineFactoryD3D12 = nullptr;
-#    endif
-
-#    if GL_SUPPORTED
-GetEngineFactoryOpenGLType GetEngineFactoryOpenGL = nullptr;
-#    endif
-
-#    if VULKAN_SUPPORTED
-GetEngineFactoryVkType GetEngineFactoryVulkan = nullptr;
-#    endif
-#endif
-} // namespace Diligent
-
 namespace AsteroidsDE
 {
 
@@ -118,11 +97,7 @@ void Asteroids::InitDevice(HWND hWnd, RENDER_DEVICE_TYPE DevType)
             EngineD3D11CreateInfo EngineCI;
             EngineCI.NumDeferredContexts = mNumSubsets - 1;
 
-#    if ENGINE_DLL
-            if (GetEngineFactoryD3D11 == nullptr)
-                GetEngineFactoryD3D11 = LoadGraphicsEngineD3D11();
-#    endif
-            auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+            auto* pFactoryD3D11 = LoadAndGetEngineFactoryD3D11();
             pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &mDevice, ppContexts.data());
             pFactoryD3D11->CreateSwapChainD3D11(mDevice, ppContexts[0], SwapChainDesc, FullScreenModeDesc{}, Win32NativeWindow{hWnd}, &mSwapChain);
         }
@@ -140,11 +115,8 @@ void Asteroids::InitDevice(HWND hWnd, RENDER_DEVICE_TYPE DevType)
 #    ifndef DILIGENT_DEBUG
             EngineCI.DynamicDescriptorAllocationChunkSize[0] = 8192;
 #    endif
-#    if ENGINE_DLL
-            if (GetEngineFactoryD3D12 == nullptr)
-                GetEngineFactoryD3D12 = LoadGraphicsEngineD3D12();
-#    endif
-            auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+
+            auto* pFactoryD3D12 = LoadAndGetEngineFactoryD3D12();
             pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &mDevice, ppContexts.data());
             pFactoryD3D12->CreateSwapChainD3D12(mDevice, ppContexts[0], SwapChainDesc, FullScreenModeDesc{}, Win32NativeWindow{hWnd}, &mSwapChain);
         }
@@ -169,11 +141,7 @@ void Asteroids::InitDevice(HWND hWnd, RENDER_DEVICE_TYPE DevType)
             EngineCI.ppIgnoreDebugMessageNames = ppIgnoreDebugMessages;
             EngineCI.IgnoreDebugMessageCount   = _countof(ppIgnoreDebugMessages);
 
-#    if ENGINE_DLL
-            if (GetEngineFactoryVulkan == nullptr)
-                GetEngineFactoryVulkan = LoadGraphicsEngineVk();
-#    endif
-            auto* pFactoryVk = GetEngineFactoryVulkan();
+            auto* pFactoryVk = LoadAndGetEngineFactoryVk();
             pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &mDevice, ppContexts.data());
             pFactoryVk->CreateSwapChainVk(mDevice, ppContexts[0], SwapChainDesc, Win32NativeWindow{hWnd}, &mSwapChain);
         }
@@ -184,13 +152,11 @@ void Asteroids::InitDevice(HWND hWnd, RENDER_DEVICE_TYPE DevType)
 #if GL_SUPPORTED
         case RENDER_DEVICE_TYPE_GL:
         {
-#    if ENGINE_DLL
-            if (GetEngineFactoryOpenGL == nullptr)
-                GetEngineFactoryOpenGL = LoadGraphicsEngineOpenGL();
-#    endif
             EngineGLCreateInfo CreationAttribs;
             CreationAttribs.Window.hWnd = hWnd;
-            GetEngineFactoryOpenGL()->CreateDeviceAndSwapChainGL(
+
+            auto* pFactoryGL = LoadAndGetEngineFactoryOpenGL();
+            pFactoryGL->CreateDeviceAndSwapChainGL(
                 CreationAttribs, &mDevice, &mDeviceCtxt, SwapChainDesc, &mSwapChain);
         }
         break;
