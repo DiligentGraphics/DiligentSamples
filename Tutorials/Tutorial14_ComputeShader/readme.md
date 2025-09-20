@@ -408,7 +408,7 @@ PSODesc.ResourceLayout.Variables    = Vars;
 PSODesc.ResourceLayout.NumVariables = _countof(Vars);
     
 PSOCreateInfo.pCS = pResetParticleListsCS;
-m_pDevice->CreateGraphicsPipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
+m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_pResetParticleListsPSO);
 m_pResetParticleListsPSO->GetStaticVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_Constants);
 ```
 
