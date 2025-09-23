@@ -73,7 +73,7 @@ private:
     void LoadEnvironmentMap(const char* Path);
     void UpdateScene();
     void CreateGLTFResourceCache();
-    void UpdateModelsList(const std::string& Dir);
+    void UpdateModelsList(const std::string& Dir, const std::string& Ext);
     bool SetEnvironmentMap(ITextureView* pEnvMap);
     void CreateGLTFRenderer();
     void CrateEnvMapRenderer();
