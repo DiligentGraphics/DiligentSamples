@@ -257,8 +257,16 @@ void GLTFViewer::UpdateModelsList(const std::string& Dir)
 #if PLATFORM_WIN32 || PLATFORM_LINUX || PLATFORM_MACOS
     if (!Dir.empty())
     {
-        FileSystem::SearchFilesResult SearchRes = FileSystem::SearchRecursive(Dir.c_str(), "*.gltf");
-        for (const auto& File : SearchRes)
+        FileSystem::SearchFilesResult SearchRes{};
+        for (const char* pattern : {"*.glb", "*.gltf"})
+        {
+            FileSystem::SearchFilesResult CurrentSearchRes = FileSystem::SearchRecursive(Dir.c_str(), pattern);
+            std::move(CurrentSearchRes.begin(), CurrentSearchRes.end(), std::back_inserter(SearchRes));
+        }
+        std::sort(SearchRes.begin(), SearchRes.end(), [](const FindFileData& lhs, const FindFileData& rhs) -> bool {
+            return lhs.Name < rhs.Name;
+        });
+        for (const FindFileData& File : SearchRes)
         {
             m_Models.push_back(ModelInfo{File.Name, Dir + FileSystem::SlashSymbol + File.Name});
         }
