@@ -258,10 +258,10 @@ void GLTFViewer::UpdateModelsList(const std::string& Dir, const std::string& Ext
     if (!Dir.empty())
     {
         FileSystem::SearchFilesResult SearchRes{};
-        std::vector<std::string>      patterns = Ext.empty() ? std::vector<std::string>{"*.gltf"} : SplitString(Ext.begin(), Ext.end(), ";");
-        for (const std::string& pattern : patterns)
+        std::vector<std::string>      Patterns = Ext.empty() ? std::vector<std::string>{{"*.gltf"}} : SplitString(Ext.begin(), Ext.end(), ";");
+        for (const std::string& Pattern : Patterns)
         {
-            FileSystem::SearchFilesResult CurrentSearchRes = FileSystem::SearchRecursive(Dir.c_str(), pattern.c_str());
+            FileSystem::SearchFilesResult CurrentSearchRes = FileSystem::SearchRecursive(Dir.c_str(), Pattern.c_str());
             std::move(CurrentSearchRes.begin(), CurrentSearchRes.end(), std::back_inserter(SearchRes));
         }
         std::sort(SearchRes.begin(), SearchRes.end(), [](const FindFileData& lhs, const FindFileData& rhs) -> bool {
