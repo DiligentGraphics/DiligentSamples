@@ -35,6 +35,7 @@
 #include "ColorConversion.h"
 #include "../../Common/src/TexturedCube.hpp"
 #include "imgui.h"
+#include "GraphicsTypesX.hpp"
 
 namespace Diligent
 {
@@ -113,6 +114,38 @@ void Tutorial05_TextureArray::CreatePipelineState()
     m_pPSO->CreateShaderResourceBinding(&m_SRB, true);
 }
 
+void Tutorial05_TextureArray::CreateComputePipeline()
+{
+    ShaderCreateInfo ShaderCI;
+    ShaderCI.SourceLanguage                  = SHADER_SOURCE_LANGUAGE_HLSL;
+    ShaderCI.Desc.UseCombinedTextureSamplers = true;
+    ShaderCI.CompileFlags                    = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
+
+    RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+    m_pEngineFactory->CreateDefaultShaderSourceStreamFactory(nullptr, &pShaderSourceFactory);
+    ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
+
+    RefCntAutoPtr<IShader> pCS;
+    {
+        ShaderCI.Desc.ShaderType = SHADER_TYPE_COMPUTE;
+        ShaderCI.EntryPoint      = "main";
+        ShaderCI.Desc.Name       = "CS";
+        ShaderCI.FilePath        = "draw_args.csh";
+        m_pDevice->CreateShader(ShaderCI, &pCS);
+        CreateUniformBuffer(m_pDevice, sizeof(float4), "CS constants CB", &m_CSConstants);
+    }
+
+    ComputePipelineStateCreateInfoX PSOCreateInfo{"Draw Args PSO"};
+    PSOCreateInfo.AddShader(pCS);
+    PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE;
+    m_pDevice->CreateComputePipelineState(PSOCreateInfo, &m_pComputePSO);
+    VERIFY_EXPR(m_pComputePSO);
+    m_pComputePSO->CreateShaderResourceBinding(&m_ComputeSRB, true);
+    m_ComputeSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "Constants")->Set(m_CSConstants);
+    m_ComputeSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "g_DrawArgsBuffer")->Set(m_IndirectArgsBuffer->GetDefaultView(BUFFER_VIEW_UNORDERED_ACCESS));
+}
+
+
 void Tutorial05_TextureArray::CreateInstanceBuffer()
 {
     // Create instance data buffer that will store transformation matrices
@@ -124,6 +157,33 @@ void Tutorial05_TextureArray::CreateInstanceBuffer()
     InstBuffDesc.Size      = sizeof(InstanceData) * MaxInstances;
     m_pDevice->CreateBuffer(InstBuffDesc, nullptr, &m_InstanceBuffer);
     PopulateInstanceBuffer();
+}
+
+namespace
+{
+
+struct IndirectDrawArgs
+{
+    Uint32 NumIndices            = 0;
+    Uint32 NumInstances          = 0;
+    Uint32 FirstIndexLocation    = 0;
+    Uint32 BaseVertex            = 0;
+    Uint32 FirstInstanceLocation = 0;
+};
+
+} // namespace
+
+void Tutorial05_TextureArray::CreateIndirectArgsBuffer()
+{
+    BufferDesc BuffDesc;
+    BuffDesc.Name              = "Indirect draw args buffer";
+    BuffDesc.Usage             = USAGE_DEFAULT;
+    BuffDesc.BindFlags         = BIND_INDIRECT_DRAW_ARGS | BIND_UNORDERED_ACCESS;
+    BuffDesc.Mode              = BUFFER_MODE_STRUCTURED;
+    BuffDesc.ElementByteStride = sizeof(IndirectDrawArgs);
+    BuffDesc.Size              = sizeof(IndirectDrawArgs);
+    m_pDevice->CreateBuffer(BuffDesc, nullptr, &m_IndirectArgsBuffer);
+    VERIFY_EXPR(m_IndirectArgsBuffer);
 }
 
 void Tutorial05_TextureArray::LoadTextures()
@@ -195,6 +255,10 @@ void Tutorial05_TextureArray::Initialize(const SampleInitInfo& InitInfo)
     m_CubeIndexBuffer  = TexturedCube::CreateIndexBuffer(m_pDevice);
 
     CreateInstanceBuffer();
+
+    CreateIndirectArgsBuffer();
+    CreateComputePipeline();
+
     LoadTextures();
 }
 
@@ -251,6 +315,29 @@ void Tutorial05_TextureArray::PopulateInstanceBuffer()
 // Render a frame
 void Tutorial05_TextureArray::Render()
 {
+    {
+        IndirectDrawArgs DrawArgs;
+        DrawArgs.NumIndices = 36;
+        // Write zero to NumInstances. It will be updated by the compute shader.
+        DrawArgs.NumInstances = 0;
+        m_pImmediateContext->UpdateBuffer(m_IndirectArgsBuffer, 0, sizeof(DrawArgs), &DrawArgs, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    }
+
+    {
+        // Map the buffer and write current grid size
+        MapHelper<Uint32> CSConstants{m_pImmediateContext, m_CSConstants, MAP_WRITE, MAP_FLAG_DISCARD};
+        CSConstants[0] = m_GridSize * m_GridSize * m_GridSize;
+    }
+
+    m_pImmediateContext->SetPipelineState(m_pComputePSO);
+    m_pImmediateContext->CommitShaderResources(m_ComputeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    // Dispatch compute shader with a single thread group that will update the indirect draw arguments buffer
+    m_pImmediateContext->DispatchCompute({1, 1, 1});
+
+    // Transition the indirect args buffer to INDIRECT_ARGUMENT state
+    StateTransitionDesc Barrier{m_IndirectArgsBuffer, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_INDIRECT_ARGUMENT, STATE_TRANSITION_FLAG_UPDATE_STATE};
+    m_pImmediateContext->TransitionResourceStates(1, &Barrier);
+
     ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     // Clear the back buffer
@@ -282,13 +369,12 @@ void Tutorial05_TextureArray::Render()
     // makes sure that resources are transitioned to required states.
     m_pImmediateContext->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-    DrawIndexedAttribs DrawAttrs;       // This is an indexed draw call
-    DrawAttrs.IndexType    = VT_UINT32; // Index type
-    DrawAttrs.NumIndices   = 36;
-    DrawAttrs.NumInstances = m_GridSize * m_GridSize * m_GridSize; // The number of instances
-    // Verify the state of vertex and index buffers
-    DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
-    m_pImmediateContext->DrawIndexed(DrawAttrs);
+
+    DrawIndexedIndirectAttribs DrawAttrs;
+    DrawAttrs.pAttribsBuffer = m_IndirectArgsBuffer;
+    DrawAttrs.IndexType      = VT_UINT32;
+    DrawAttrs.Flags          = DRAW_FLAG_VERIFY_ALL;
+    m_pImmediateContext->DrawIndexedIndirect(DrawAttrs);
 }
 
 void Tutorial05_TextureArray::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)

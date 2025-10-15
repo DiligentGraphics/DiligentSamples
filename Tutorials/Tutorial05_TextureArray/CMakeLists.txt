@@ -14,6 +14,7 @@ add_sample_app(Tutorial05_TextureArray
     SHADERS
         assets/cube_inst.vsh
         assets/cube_inst.psh
+        assets/draw_args.csh
     ASSETS
         assets/DGLogo0.png
         assets/DGLogo1.png

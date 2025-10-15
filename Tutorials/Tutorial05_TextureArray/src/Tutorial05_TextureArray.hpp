@@ -48,17 +48,23 @@ protected:
 
 private:
     void CreatePipelineState();
+    void CreateComputePipeline();
     void CreateInstanceBuffer();
+    void CreateIndirectArgsBuffer();
     void LoadTextures();
     void PopulateInstanceBuffer();
 
     RefCntAutoPtr<IPipelineState>         m_pPSO;
+    RefCntAutoPtr<IPipelineState>         m_pComputePSO;
     RefCntAutoPtr<IBuffer>                m_CubeVertexBuffer;
     RefCntAutoPtr<IBuffer>                m_CubeIndexBuffer;
     RefCntAutoPtr<IBuffer>                m_InstanceBuffer;
     RefCntAutoPtr<IBuffer>                m_VSConstants;
+    RefCntAutoPtr<IBuffer>                m_CSConstants;
+    RefCntAutoPtr<IBuffer>                m_IndirectArgsBuffer;
     RefCntAutoPtr<ITextureView>           m_TextureSRV;
     RefCntAutoPtr<IShaderResourceBinding> m_SRB;
+    RefCntAutoPtr<IShaderResourceBinding> m_ComputeSRB;
 
     float4x4             m_ViewProjMatrix;
     float4x4             m_RotationMatrix;
