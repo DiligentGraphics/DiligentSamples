@@ -9,7 +9,7 @@ and how to render a simple triangle.
 
 ## Shaders
 
-This tutotial uses very basic shaders. The vertex shader generates a procedural triangle. It uses an array of hard-coded
+This tutorial uses very basic shaders. The vertex shader generates a procedural triangle. It uses an array of hard-coded
 vertex positions in screen space and assigns red, green and blue colors to the vertices. The shader uses system-generated
 vertex id as an array index.
 
@@ -37,7 +37,7 @@ void main(in  uint    VertId : SV_VertexID,
     PSIn.Color = Col[VertId];
 }
 ```
-The shader is written in HLSL. Diligent Engine uses shader source code converter to translate HLSL
+The shader is written in HLSL. Diligent Engine uses a shader source code converter to translate HLSL
 into GLSL when needed. It can also use shaders authored in GLSL, but there is no GLSL to HLSL converter.
 
 Pixel (fragment) shader simply interpolates vertex colors and is also written in HLSL:
