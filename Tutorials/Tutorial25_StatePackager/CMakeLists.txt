@@ -49,8 +49,8 @@ endif()
 add_custom_command(OUTPUT ${PSO_ARCHIVE} # We must use full path here!
                    COMMAND $<TARGET_FILE:Diligent-RenderStatePackager> -i RenderStates.json -r assets -s assets -o "${PSO_ARCHIVE}" ${DEVICE_FLAGS} --print_contents
                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-                   MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/assets/RenderStates.json"
-                   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/screen_tri.vsh"
+                   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/RenderStates.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/assets/screen_tri.vsh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/g_buffer.psh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/resolve.psh"
                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/path_trace.psh"
