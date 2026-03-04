@@ -35,6 +35,7 @@
 #include "ResourceRegistry.hpp"
 #include "PBR_Renderer.hpp"
 #include "PostFXContext.hpp"
+#include "SuperResolution.h"
 
 namespace Diligent
 {
@@ -52,7 +53,6 @@ class ScreenSpaceReflection;
 class ScreenSpaceAmbientOcclusion;
 class TemporalAntiAliasing;
 class Bloom;
-class SuperResolution;
 class GBuffer;
 class PBR_Renderer;
 
@@ -85,7 +85,8 @@ private:
     void ComputeTAA();
     void ComputeBloom();
     void ComputeToneMapping();
-    void ComputeFSR();
+    void ComputeSpatialUpscaling();
+    void ComputeTemporalUpscaling();
     void ComputeGammaCorrection();
     void LoadEnvironmentMap(const char* FileName);
 
@@ -121,6 +122,7 @@ private:
         RESOURCE_IDENTIFIER_IRRADIANCE_MAP,
         RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP,
         RESOURCE_IDENTIFIER_TONE_MAPPING,
+        RESOURCE_IDENTIFIER_UPSCALING,
         RESOURCE_IDENTIFIER_COUNT
     };
 
@@ -135,8 +137,8 @@ private:
     std::unique_ptr<ScreenSpaceAmbientOcclusion> m_ScreenSpaceAmbientOcclusion;
     std::unique_ptr<TemporalAntiAliasing>        m_TemporalAntiAliasing;
     std::unique_ptr<Bloom>                       m_Bloom;
-    std::unique_ptr<SuperResolution>             m_SuperResolution;
     std::unique_ptr<ShaderSettings>              m_ShaderSettings;
+    RefCntAutoPtr<ISuperResolution>              m_pSRUpscaler;
 
     FirstPersonCamera                        m_Camera;
     std::unique_ptr<HLSL::CameraAttribs[]>   m_CameraAttribs;
@@ -154,6 +156,8 @@ private:
 
     Uint32                   m_SSRSettingsDisplayMode = 0;
     PostFXContext::FrameDesc m_PostFXFrameDesc;
+    float                    m_ElapsedTime    = 0.0f;
+    bool                     m_ResetSRHistory = false;
 };
 
 } // namespace Diligent
