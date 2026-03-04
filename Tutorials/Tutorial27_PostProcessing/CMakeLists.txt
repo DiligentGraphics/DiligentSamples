@@ -29,8 +29,17 @@ add_sample_app(Tutorial27_PostProcessing
 
 target_link_libraries(Tutorial27_PostProcessing PRIVATE DiligentFX)
 
+if (SUPER_RESOLUTION_SUPPORTED)
+    target_link_libraries(Tutorial27_PostProcessing PRIVATE Diligent-SuperResolution-static)
+endif()
+
 if (PLATFORM_WIN32 AND GL_SUPPORTED)
     target_link_libraries(Tutorial27_PostProcessing PRIVATE Diligent-GLAdapterSelector)
+endif()
+
+if (PLATFORM_WIN32 AND D3D12_SUPPORTED)
+    target_link_libraries(Tutorial27_PostProcessing PRIVATE DirectSR-AgilitySDK)
+    copy_directsr_dlls(Tutorial27_PostProcessing)
 endif()
 
 set_source_files_properties(${ALL_SHADERS} PROPERTIES

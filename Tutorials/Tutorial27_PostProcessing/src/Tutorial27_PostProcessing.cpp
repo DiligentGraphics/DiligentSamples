@@ -26,6 +26,9 @@
 
 #include "Tutorial27_PostProcessing.hpp"
 
+#include "DebugUtilities.hpp"
+#include "GraphicsTypes.h"
+#include "SuperResolutionFactoryLoader.h"
 #include "imgui.h"
 #include "ImGuiUtils.hpp"
 #include "ImGuiImplDiligent.hpp"
@@ -44,7 +47,6 @@
 #include "Bloom.hpp"
 #include "ShaderMacroHelper.hpp"
 #include "ShaderSourceFactoryUtils.hpp"
-#include "SuperResolution.hpp"
 #include "TextureUtilities.h"
 #include "Utilities/interface/DiligentFXShaderSourceStreamFactory.hpp"
 #include "../../Common/src/TexturedCube.hpp"
@@ -87,7 +89,6 @@ namespace HLSL
 #include "Shaders/PostProcess/ScreenSpaceReflection/public/ScreenSpaceReflectionStructures.fxh"
 #include "Shaders/PostProcess/ScreenSpaceAmbientOcclusion/public/ScreenSpaceAmbientOcclusionStructures.fxh"
 #include "Shaders/PostProcess/Bloom/public/BloomStructures.fxh"
-#include "Shaders/PostProcess/SuperResolution/public/SuperResolutionStructures.fxh"
 #include "Shaders/PBR/public/PBR_Structures.fxh"
 #include "../assets/shaders/GeometryStructures.fxh"
 
@@ -114,12 +115,6 @@ enum GBUFFER_RT_FLAG : Uint32
 DEFINE_FLAG_ENUM_OPERATORS(GBUFFER_RT_FLAG);
 
 
-enum UPSAMPLING_MODE : Int32
-{
-    UPSAMPLING_MODE_BILINEAR = 0,
-    UPSAMPLING_MODE_FSR
-};
-
 SampleBase* CreateSample()
 {
     return new Tutorial27_PostProcessing();
@@ -132,20 +127,37 @@ struct Tutorial27_PostProcessing::ShaderSettings
     HLSL::ScreenSpaceAmbientOcclusionAttribs SSAOSettings    = {};
     HLSL::TemporalAntiAliasingAttribs        TAASettings     = {};
     HLSL::BloomAttribs                       BloomSettings   = {};
-    HLSL::SuperResolutionAttribs             FSRSettings     = {};
 
     bool  TAAEnabled   = true;
     bool  BloomEnabled = true;
     float SSAOStrength = 1.0;
     float SSRStrength  = 1.0;
 
-    UPSAMPLING_MODE                            UpsamplingMode       = UPSAMPLING_MODE_FSR;
-    PostFXContext::FEATURE_FLAGS               PostFXFeatureFlags   = PostFXContext::FEATURE_FLAG_NONE;
-    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags     = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
-    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags      = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
-    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags      = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
-    Bloom::FEATURE_FLAGS                       BloomFeatureFlags    = Bloom::FEATURE_FLAG_NONE;
-    SuperResolution::FEATURE_FLAGS             SuperResolutionFlags = SuperResolution::FEATURE_FLAG_NONE;
+    PostFXContext::FEATURE_FLAGS               PostFXFeatureFlags = PostFXContext::FEATURE_FLAG_NONE;
+    ScreenSpaceAmbientOcclusion::FEATURE_FLAGS SSAOFeatureFlags   = ScreenSpaceAmbientOcclusion::FEATURE_FLAG_NONE;
+    ScreenSpaceReflection::FEATURE_FLAGS       SSRFeatureFlags    = ScreenSpaceReflection::FEATURE_FLAG_PREVIOUS_FRAME;
+    TemporalAntiAliasing::FEATURE_FLAGS        TAAFeatureFlags    = TemporalAntiAliasing::FEATURE_FLAG_BICUBIC_FILTER;
+    Bloom::FEATURE_FLAGS                       BloomFeatureFlags  = Bloom::FEATURE_FLAG_NONE;
+
+    SUPER_RESOLUTION_OPTIMIZATION_TYPE SROptimizationType = SUPER_RESOLUTION_OPTIMIZATION_TYPE_BALANCED;
+    Int32                              ActiveUpscalerIdx  = 0;
+    std::vector<SuperResolutionInfo>   SRVariants;
+
+    const SuperResolutionInfo& GetActiveUpscalerInfo() const
+    {
+        VERIFY_EXPR(!SRVariants.empty() && ActiveUpscalerIdx < static_cast<Int32>(SRVariants.size()));
+        return SRVariants[ActiveUpscalerIdx];
+    }
+
+    bool IsTemporalUpscaling() const
+    {
+        return GetActiveUpscalerInfo().Type == SUPER_RESOLUTION_TYPE_TEMPORAL;
+    }
+
+    INTERFACE_ID GetActiveVariantId() const
+    {
+        return GetActiveUpscalerInfo().VariantId;
+    }
 };
 
 Tutorial27_PostProcessing::Tutorial27_PostProcessing() :
@@ -213,7 +225,6 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ScreenSpaceReflection       = std::make_unique<ScreenSpaceReflection>(m_pDevice, ScreenSpaceReflection::CreateInfo{true});
     m_ScreenSpaceAmbientOcclusion = std::make_unique<ScreenSpaceAmbientOcclusion>(m_pDevice, ScreenSpaceAmbientOcclusion::CreateInfo{true});
     m_Bloom                       = std::make_unique<Bloom>(m_pDevice, Bloom::CreateInfo{true});
-    m_SuperResolution             = std::make_unique<SuperResolution>(m_pDevice, SuperResolution::CreateInfo{true});
     m_ShaderSettings              = std::make_unique<ShaderSettings>();
 
     m_ShaderSettings->PBRRenderParams.OcclusionStrength      = 1.0f;
@@ -229,7 +240,14 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ShaderSettings->SSRSettings.IsRoughnessPerceptual     = true;
     m_ShaderSettings->SSRSettings.RoughnessChannel          = 0;
 
-    m_ShaderSettings->FSRSettings.ResolutionScale = 0.75f;
+    LoadAndCreateSuperResolutionFactory(m_pDevice, &m_pSRFactory);
+    if (m_pSRFactory)
+    {
+        Uint32 NumVariants = 0;
+        m_pSRFactory->EnumerateVariants(NumVariants, nullptr);
+        m_ShaderSettings->SRVariants.resize(NumVariants);
+        m_pSRFactory->EnumerateVariants(NumVariants, m_ShaderSettings->SRVariants.data());
+    }
 }
 
 // Render a frame
@@ -256,10 +274,20 @@ void Tutorial27_PostProcessing::Render()
     ComputeSSR();
     ComputeSSAO();
     ComputeLighting();
-    ComputeTAA();
-    ComputeBloom();
-    ComputeToneMapping();
-    ComputeFSR();
+
+    if (m_ShaderSettings->IsTemporalUpscaling())
+    {
+        ComputeTemporalUpscaling();
+        ComputeBloom();
+        ComputeToneMapping();
+    }
+    else
+    {
+        ComputeTAA();
+        ComputeBloom();
+        ComputeToneMapping();
+        ComputeSpatialUpscaling();
+    }
     ComputeGammaCorrection();
 }
 
@@ -271,18 +299,43 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime, bool
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0) & 0x01;
     const Uint32 PrevFrameIdx = (m_CurrentFrameNumber + 1) & 0x01;
 
-    const SwapChainDesc& SCDesc    = m_pSwapChain->GetDesc();
-    m_PostFXFrameDesc.Width        = static_cast<Uint32>(FastCeil(m_ShaderSettings->FSRSettings.ResolutionScale * static_cast<float>(SCDesc.Width)));
-    m_PostFXFrameDesc.Height       = static_cast<Uint32>(FastCeil(m_ShaderSettings->FSRSettings.ResolutionScale * static_cast<float>(SCDesc.Height)));
+    const SwapChainDesc& SCDesc = m_pSwapChain->GetDesc();
+
+    SuperResolutionSourceSettings SRSettings{};
+    if (m_pSRFactory)
+    {
+        SuperResolutionSourceSettingsAttribs SRAttribs;
+        SRAttribs.VariantId        = m_ShaderSettings->GetActiveVariantId();
+        SRAttribs.OutputWidth      = SCDesc.Width;
+        SRAttribs.OutputHeight     = SCDesc.Height;
+        SRAttribs.OutputFormat     = m_ShaderSettings->IsTemporalUpscaling() ? TEX_FORMAT_R11G11B10_FLOAT : TEX_FORMAT_RGBA8_UNORM_SRGB;
+        SRAttribs.Flags            = SUPER_RESOLUTION_FLAG_AUTO_EXPOSURE;
+        SRAttribs.OptimizationType = m_ShaderSettings->SROptimizationType;
+        m_pSRFactory->GetSourceSettings(SRAttribs, SRSettings);
+    }
+    m_PostFXFrameDesc.Width        = SRSettings.OptimalInputWidth;
+    m_PostFXFrameDesc.Height       = SRSettings.OptimalInputHeight;
     m_PostFXFrameDesc.OutputWidth  = SCDesc.Width;
     m_PostFXFrameDesc.OutputHeight = SCDesc.Height;
     m_PostFXFrameDesc.Index        = m_CurrentFrameNumber;
 
-    constexpr float YFov  = PI_F / 4.0f;
-    constexpr float ZNear = 0.1f;
-    constexpr float ZFar  = 100.f;
+    const float YFov  = m_Camera.GetProjAttribs().FOV;
+    const float ZNear = m_Camera.GetProjAttribs().NearClipPlane;
+    const float ZFar  = m_Camera.GetProjAttribs().FarClipPlane;
 
-    const float2 Jitter = m_ShaderSettings->TAAEnabled ? m_TemporalAntiAliasing->GetJitterOffset() : float2{0.0f, 0.0f};
+    float2 Jitter = {0.0f, 0.0f};
+    if (m_ShaderSettings->IsTemporalUpscaling() && m_pSRUpscaler)
+    {
+        m_pSRUpscaler->GetJitterOffset(m_CurrentFrameNumber, &Jitter.x, &Jitter.y);
+        Jitter.x = +Jitter.x / (0.5f * m_PostFXFrameDesc.Width);
+        Jitter.y = -Jitter.y / (0.5f * m_PostFXFrameDesc.Height);
+    }
+    else if (m_ShaderSettings->TAAEnabled)
+    {
+        Jitter = m_TemporalAntiAliasing->GetJitterOffset();
+    }
+
+    m_ElapsedTime = static_cast<float>(ElapsedTime);
 
     const float4x4 CameraView     = m_Camera.GetViewMatrix();
     const float4x4 CameraProj     = TemporalAntiAliasing::GetJitteredProjMatrix(GetAdjustedProjectionMatrix(YFov, ZNear, ZFar), Jitter);
@@ -397,25 +450,12 @@ void Tutorial27_PostProcessing::Update(double CurrTime, double ElapsedTime, bool
         if (m_IsAnimationActive)
             m_AnimationTime += static_cast<float>(ElapsedTime);
     }
-
-    auto SetupUpsamplingSettings = [](HLSL::SuperResolutionAttribs& Attribs, const PostFXContext::FrameDesc& FrameDesc) {
-        Attribs.OutputSize.x = static_cast<float>(FrameDesc.OutputWidth);
-        Attribs.OutputSize.y = static_cast<float>(FrameDesc.OutputHeight);
-        Attribs.OutputSize.z = 1.0f / static_cast<float>(FrameDesc.OutputWidth);
-        Attribs.OutputSize.w = 1.0f / static_cast<float>(FrameDesc.OutputHeight);
-
-        Attribs.SourceSize.x = static_cast<float>(FrameDesc.Width);
-        Attribs.SourceSize.y = static_cast<float>(FrameDesc.Height);
-        Attribs.SourceSize.z = 1.0f / static_cast<float>(FrameDesc.Width);
-        Attribs.SourceSize.w = 1.0f / static_cast<float>(FrameDesc.Height);
-    };
-
-    SetupUpsamplingSettings(m_ShaderSettings->FSRSettings, m_PostFXFrameDesc);
 }
 
 void Tutorial27_PostProcessing::WindowResize(Uint32 Width, Uint32 Height)
 {
     SampleBase::WindowResize(Width, Height);
+    m_Camera.SetProjAttribs(0.1f, 100.0f, Width / static_cast<float>(Height), PI_F / 4.0f, SURFACE_TRANSFORM_IDENTITY, false);
 }
 
 void Tutorial27_PostProcessing::PrepareResources()
@@ -460,16 +500,31 @@ void Tutorial27_PostProcessing::PrepareResources()
             m_pImmediateContext->ClearDepthStencil(pDSV, CLEAR_DEPTH_FLAG, 1.0, 0xFF, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
             m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         }
-
-        TextureDesc Desc;
-        Desc.Name      = "Tutorial27_PostProcessing::ToneMapping";
-        Desc.Type      = RESOURCE_DIM_TEX_2D;
-        Desc.Width     = m_PostFXFrameDesc.Width;
-        Desc.Height    = m_PostFXFrameDesc.Height;
-        Desc.Format    = TEX_FORMAT_RGBA8_UNORM_SRGB;
-        Desc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
-        m_Resources.Insert(RESOURCE_IDENTIFIER_TONE_MAPPING, Device.CreateTexture(Desc));
     }
+
+    {
+        const Uint32 Width  = m_ShaderSettings->IsTemporalUpscaling() ? m_PostFXFrameDesc.OutputWidth : m_PostFXFrameDesc.Width;
+        const Uint32 Height = m_ShaderSettings->IsTemporalUpscaling() ? m_PostFXFrameDesc.OutputHeight : m_PostFXFrameDesc.Height;
+
+        if (!m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING] ||
+            Width != m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].AsTexture()->GetDesc().Width ||
+            Height != m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].AsTexture()->GetDesc().Height)
+        {
+            TextureDesc Desc;
+            Desc.Name      = "Tutorial27_PostProcessing::ToneMapping";
+            Desc.Type      = RESOURCE_DIM_TEX_2D;
+            Desc.Width     = Width;
+            Desc.Height    = Height;
+            Desc.Format    = TEX_FORMAT_RGBA8_UNORM_SRGB;
+            Desc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+            m_Resources.Insert(RESOURCE_IDENTIFIER_TONE_MAPPING, Device.CreateTexture(Desc));
+        }
+    }
+
+    if (m_ShaderSettings->IsTemporalUpscaling())
+        m_ShaderSettings->PostFXFeatureFlags |= PostFXContext::FEATURE_FLAG_TEMPORAL_UPSCALING;
+    else
+        m_ShaderSettings->PostFXFeatureFlags &= ~PostFXContext::FEATURE_FLAG_TEMPORAL_UPSCALING;
 
     m_PostFXContext->PrepareResources(m_pDevice, m_PostFXFrameDesc, m_ShaderSettings->PostFXFeatureFlags);
 
@@ -497,17 +552,79 @@ void Tutorial27_PostProcessing::PrepareResources()
         m_Bloom->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
     }
 
-    if (m_ShaderSettings->UpsamplingMode == UPSAMPLING_MODE_FSR)
+    // Create or recreate super resolution upscaler
     {
-        SuperResolution::FEATURE_FLAGS ActiveFeatures = m_ShaderSettings->SuperResolutionFlags;
-        m_SuperResolution->PrepareResources(m_pDevice, m_pImmediateContext, m_PostFXContext.get(), ActiveFeatures);
+        INTERFACE_ID VariantId = m_ShaderSettings->GetActiveVariantId();
+        const auto&  SCDesc    = m_pSwapChain->GetDesc();
+
+
+        bool NeedRecreate = !m_pSRUpscaler;
+        if (m_pSRUpscaler)
+        {
+            const auto& Desc = m_pSRUpscaler->GetDesc();
+            NeedRecreate =
+                Desc.VariantId != VariantId ||
+                Desc.InputWidth != m_PostFXFrameDesc.Width ||
+                Desc.InputHeight != m_PostFXFrameDesc.Height ||
+                Desc.OutputWidth != SCDesc.Width ||
+                Desc.OutputHeight != SCDesc.Height;
+        }
+
+        if (NeedRecreate && VariantId != INTERFACE_ID{})
+        {
+            m_GBuffer->Resize(m_pDevice, m_PostFXFrameDesc.Width, m_PostFXFrameDesc.Height);
+
+            SuperResolutionDesc UpscalerDesc;
+            UpscalerDesc.VariantId    = VariantId;
+            UpscalerDesc.InputWidth   = m_PostFXFrameDesc.Width;
+            UpscalerDesc.InputHeight  = m_PostFXFrameDesc.Height;
+            UpscalerDesc.OutputWidth  = SCDesc.Width;
+            UpscalerDesc.OutputHeight = SCDesc.Height;
+            UpscalerDesc.Flags        = SUPER_RESOLUTION_FLAG_AUTO_EXPOSURE;
+
+            if (m_ShaderSettings->IsTemporalUpscaling())
+            {
+                UpscalerDesc.DepthFormat  = m_Resources[RESOURCE_IDENTIFIER_DEPTH0].AsTexture()->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE)->GetDesc().Format;
+                UpscalerDesc.MotionFormat = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDesc().Format;
+                UpscalerDesc.ColorFormat  = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0].AsTexture()->GetDesc().Format;
+                UpscalerDesc.OutputFormat = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0].AsTexture()->GetDesc().Format;
+            }
+            else
+            {
+                UpscalerDesc.ColorFormat  = m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].AsTexture()->GetDesc().Format;
+                UpscalerDesc.OutputFormat = m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].AsTexture()->GetDesc().Format;
+            }
+
+            m_pSRUpscaler.Release();
+            if (m_pSRFactory)
+                m_pSRFactory->CreateSuperResolution(UpscalerDesc, &m_pSRUpscaler);
+            m_ResetSRHistory = true;
+        }
+
+        // Create or resize the output texture for hardware upscaling
+        const TEXTURE_FORMAT OutputFormat = m_ShaderSettings->IsTemporalUpscaling() ? m_Resources[RESOURCE_IDENTIFIER_RADIANCE0].AsTexture()->GetDesc().Format : m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].AsTexture()->GetDesc().Format;
+
+        if (!m_Resources[RESOURCE_IDENTIFIER_UPSCALING] ||
+            m_Resources[RESOURCE_IDENTIFIER_UPSCALING].AsTexture()->GetDesc().Width != SCDesc.Width ||
+            m_Resources[RESOURCE_IDENTIFIER_UPSCALING].AsTexture()->GetDesc().Height != SCDesc.Height ||
+            m_Resources[RESOURCE_IDENTIFIER_UPSCALING].AsTexture()->GetDesc().Format != OutputFormat)
+        {
+            TextureDesc Desc;
+            Desc.Name      = "Tutorial27_PostProcessing::Upscaling";
+            Desc.Type      = RESOURCE_DIM_TEX_2D;
+            Desc.Width     = SCDesc.Width;
+            Desc.Height    = SCDesc.Height;
+            Desc.Format    = OutputFormat;
+            Desc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET;
+            if (m_ShaderSettings->IsTemporalUpscaling())
+                Desc.BindFlags |= BIND_UNORDERED_ACCESS;
+            m_Resources.Insert(RESOURCE_IDENTIFIER_UPSCALING, Device.CreateTexture(Desc));
+        }
     }
 }
 
 void Tutorial27_PostProcessing::GenerateGeometry()
 {
-    m_GBuffer->Resize(m_pDevice, m_PostFXFrameDesc.Width, m_PostFXFrameDesc.Height);
-
     RenderTechnique& RenderTech = m_RenderTech[RENDER_TECH_GENERATE_GEOMETRY];
     if (!RenderTech.IsInitializedPSO())
     {
@@ -726,11 +843,16 @@ void Tutorial27_PostProcessing::ComputeBloom()
         const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
 
         Bloom::RenderAttributes BloomRenderAttribs{};
-        BloomRenderAttribs.pDevice         = m_pDevice;
-        BloomRenderAttribs.pDeviceContext  = m_pImmediateContext;
-        BloomRenderAttribs.pPostFXContext  = m_PostFXContext.get();
-        BloomRenderAttribs.pColorBufferSRV = m_ShaderSettings->TAAEnabled ? m_TemporalAntiAliasing->GetAccumulatedFrameSRV() : m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
-        BloomRenderAttribs.pBloomAttribs   = &m_ShaderSettings->BloomSettings;
+        BloomRenderAttribs.pDevice        = m_pDevice;
+        BloomRenderAttribs.pDeviceContext = m_pImmediateContext;
+        BloomRenderAttribs.pPostFXContext = m_PostFXContext.get();
+        BloomRenderAttribs.pBloomAttribs  = &m_ShaderSettings->BloomSettings;
+        if (m_ShaderSettings->IsTemporalUpscaling())
+            BloomRenderAttribs.pColorBufferSRV = m_Resources[RESOURCE_IDENTIFIER_UPSCALING].GetTextureSRV();
+        else if (m_ShaderSettings->TAAEnabled)
+            BloomRenderAttribs.pColorBufferSRV = m_TemporalAntiAliasing->GetAccumulatedFrameSRV();
+        else
+            BloomRenderAttribs.pColorBufferSRV = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
         m_Bloom->Execute(BloomRenderAttribs);
     }
 }
@@ -764,14 +886,24 @@ void Tutorial27_PostProcessing::ComputeToneMapping()
 
     const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
 
-
     ITextureView* HDRTextureSRV = nullptr;
-    if (m_ShaderSettings->BloomEnabled)
-        HDRTextureSRV = m_Bloom->GetBloomTextureSRV();
-    else if (m_ShaderSettings->TAAEnabled)
-        HDRTextureSRV = m_TemporalAntiAliasing->GetAccumulatedFrameSRV();
+    if (m_ShaderSettings->IsTemporalUpscaling())
+    {
+        if (m_ShaderSettings->BloomEnabled)
+            HDRTextureSRV = m_Bloom->GetBloomTextureSRV();
+        else
+            HDRTextureSRV = m_Resources[RESOURCE_IDENTIFIER_UPSCALING].GetTextureSRV();
+    }
     else
-        HDRTextureSRV = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
+    {
+        if (m_ShaderSettings->BloomEnabled)
+            HDRTextureSRV = m_Bloom->GetBloomTextureSRV();
+        else if (m_ShaderSettings->TAAEnabled)
+            HDRTextureSRV = m_TemporalAntiAliasing->GetAccumulatedFrameSRV();
+        else
+            HDRTextureSRV = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
+    }
+
     ShaderResourceVariableX{RenderTech.SRB, SHADER_TYPE_PIXEL, "g_TextureHDR"}.Set(HDRTextureSRV);
 
     ScopedDebugGroup DebugGroup{m_pImmediateContext, "ComputeToneMapping"};
@@ -784,18 +916,47 @@ void Tutorial27_PostProcessing::ComputeToneMapping()
     m_pImmediateContext->SetRenderTargets(0, nullptr, nullptr, RESOURCE_STATE_TRANSITION_MODE_NONE);
 }
 
-void Tutorial27_PostProcessing::ComputeFSR()
+void Tutorial27_PostProcessing::ComputeSpatialUpscaling()
 {
-    if (m_ShaderSettings->UpsamplingMode == UPSAMPLING_MODE_FSR)
-    {
-        SuperResolution::RenderAttributes FSRRenderAttribs{};
-        FSRRenderAttribs.pDevice         = m_pDevice;
-        FSRRenderAttribs.pDeviceContext  = m_pImmediateContext;
-        FSRRenderAttribs.pPostFXContext  = m_PostFXContext.get();
-        FSRRenderAttribs.pFSRAttribs     = &m_ShaderSettings->FSRSettings;
-        FSRRenderAttribs.pColorBufferSRV = m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].GetTextureSRV();
-        m_SuperResolution->Execute(FSRRenderAttribs);
-    }
+    ExecuteSuperResolutionAttribs SRAttribs;
+    SRAttribs.pColorTextureSRV   = m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].GetTextureSRV();
+    SRAttribs.pOutputTextureView = m_Resources[RESOURCE_IDENTIFIER_UPSCALING].GetTextureRTV();
+
+    ScopedDebugGroup DebugGroup{m_pImmediateContext, "SpatialUpscaling"};
+    SRAttribs.pContext = m_pImmediateContext;
+    m_pSRUpscaler->Execute(SRAttribs);
+}
+
+void Tutorial27_PostProcessing::ComputeTemporalUpscaling()
+{
+    const Uint32 CurrFrameIdx = (m_CurrentFrameNumber + 0x0) & 0x1;
+
+    const float YFov  = m_Camera.GetProjAttribs().FOV;
+    const float ZNear = m_Camera.GetProjAttribs().NearClipPlane;
+    const float ZFar  = m_Camera.GetProjAttribs().FarClipPlane;
+
+    float2 Jitter = {};
+    m_pSRUpscaler->GetJitterOffset(m_PostFXFrameDesc.Index, &Jitter.x, &Jitter.y);
+
+    ExecuteSuperResolutionAttribs SRAttribs;
+    SRAttribs.pColorTextureSRV   = m_Resources[RESOURCE_IDENTIFIER_RADIANCE0 + CurrFrameIdx].GetTextureSRV();
+    SRAttribs.pDepthTextureSRV   = m_Resources[RESOURCE_IDENTIFIER_DEPTH0 + CurrFrameIdx].GetTextureSRV();
+    SRAttribs.pMotionVectorsSRV  = m_GBuffer->GetBuffer(GBUFFER_RT_MOTION_VECTORS)->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    SRAttribs.pOutputTextureView = m_Resources[RESOURCE_IDENTIFIER_UPSCALING].GetTextureUAV();
+    SRAttribs.MotionVectorScaleX = -0.5f * static_cast<float>(m_PostFXFrameDesc.Width);
+    SRAttribs.MotionVectorScaleY = +0.5f * static_cast<float>(m_PostFXFrameDesc.Height);
+    SRAttribs.CameraNear         = ZNear;
+    SRAttribs.CameraFar          = ZFar;
+    SRAttribs.CameraFovAngleVert = YFov;
+    SRAttribs.JitterX            = Jitter.x;
+    SRAttribs.JitterY            = Jitter.y;
+    SRAttribs.TimeDeltaInSeconds = m_ElapsedTime;
+    SRAttribs.ResetHistory       = m_ResetSRHistory;
+
+    ScopedDebugGroup DebugGroup{m_pImmediateContext, "TemporalUpscaling"};
+    SRAttribs.pContext = m_pImmediateContext;
+    m_pSRUpscaler->Execute(SRAttribs);
+    m_ResetSRHistory = false;
 }
 
 void Tutorial27_PostProcessing::ComputeGammaCorrection()
@@ -803,9 +964,13 @@ void Tutorial27_PostProcessing::ComputeGammaCorrection()
     const bool ConvertOutputToGamma = (m_pSwapChain->GetDesc().ColorBufferFormat == TEX_FORMAT_RGBA8_UNORM ||
                                        m_pSwapChain->GetDesc().ColorBufferFormat == TEX_FORMAT_BGRA8_UNORM);
 
-    ITextureView* pSRV = m_ShaderSettings->UpsamplingMode == UPSAMPLING_MODE_FSR ? m_SuperResolution->GetUpsampledTextureSRV() : m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].GetTextureSRV();
-    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    ITextureView* pSRV = nullptr;
+    if (!m_ShaderSettings->IsTemporalUpscaling())
+        pSRV = m_Resources[RESOURCE_IDENTIFIER_UPSCALING].GetTextureSRV();
+    else
+        pSRV = m_Resources[RESOURCE_IDENTIFIER_TONE_MAPPING].GetTextureSRV();
 
+    ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
     if (ConvertOutputToGamma)
     {
         RenderTechnique& RenderTech = m_RenderTech[RENDER_TECH_COMPUTE_GAMMA_CORRECTION];
@@ -872,7 +1037,16 @@ void Tutorial27_PostProcessing::UpdateUI()
             ImGui::SliderFloat("Screen Space Reflection Strength", &m_ShaderSettings->SSRStrength, 0.0f, 1.0f);
             ImGui::SliderFloat("Screen Space Ambient Occlusion Strength", &m_ShaderSettings->SSAOStrength, 0.0f, 1.0f);
             ImGui::Checkbox("Enable Animation", &m_IsAnimationActive);
-            ImGui::Checkbox("Enable TAA", &m_ShaderSettings->TAAEnabled);
+            if (m_ShaderSettings->IsTemporalUpscaling())
+            {
+                ImGui::BeginDisabled();
+                ImGui::Checkbox("Enable TAA", &m_ShaderSettings->TAAEnabled);
+                ImGui::EndDisabled();
+            }
+            else
+            {
+                ImGui::Checkbox("Enable TAA", &m_ShaderSettings->TAAEnabled);
+            }
             ImGui::Checkbox("Enable Bloom", &m_ShaderSettings->BloomEnabled);
             ImGui::TreePop();
         }
@@ -902,13 +1076,13 @@ void Tutorial27_PostProcessing::UpdateUI()
                 ImGui::TreePop();
             }
 
-            if (ImGui::TreeNode("Temporal Anti Aliasing"))
+            if (m_ShaderSettings->TAAEnabled && ImGui::TreeNode("Temporal Anti Aliasing"))
             {
                 TemporalAntiAliasing::UpdateUI(m_ShaderSettings->TAASettings, m_ShaderSettings->TAAFeatureFlags);
                 ImGui::TreePop();
             }
 
-            if (ImGui::TreeNode("Bloom"))
+            if (m_ShaderSettings->BloomEnabled && ImGui::TreeNode("Bloom"))
             {
                 Bloom::UpdateUI(m_ShaderSettings->BloomSettings, m_ShaderSettings->BloomFeatureFlags);
                 ImGui::TreePop();
@@ -916,19 +1090,28 @@ void Tutorial27_PostProcessing::UpdateUI()
 
             if (ImGui::TreeNode("Upsampling"))
             {
-                const char* UpsamplingType[] = {"Bilinear", "FSR"};
-
-                ImGui::Combo("Mode", reinterpret_cast<Int32*>(&m_ShaderSettings->UpsamplingMode), UpsamplingType, IM_ARRAYSIZE(UpsamplingType));
-                switch (m_ShaderSettings->UpsamplingMode)
+                const auto& SRVariants = m_ShaderSettings->SRVariants;
+                if (!SRVariants.empty())
                 {
-                    case UPSAMPLING_MODE_FSR:
-                        SuperResolution::UpdateUI(m_ShaderSettings->FSRSettings, m_ShaderSettings->SuperResolutionFlags);
-                        break;
-                    case UPSAMPLING_MODE_BILINEAR:
-                        ImGui::SliderFloat("Resolution Scale", &m_ShaderSettings->FSRSettings.ResolutionScale, 0.5f, 1.0f);
-                        break;
-                    default:
-                        UNEXPECTED("Unexpected filter type");
+                    std::vector<const char*> Names;
+                    for (size_t Idx = 0; Idx < SRVariants.size(); ++Idx)
+                        Names.push_back(SRVariants[Idx].Name);
+
+                    if (ImGui::Combo("Mode", &m_ShaderSettings->ActiveUpscalerIdx, Names.data(), static_cast<int>(Names.size())))
+                    {
+                        m_ResetSRHistory             = true;
+                        m_ShaderSettings->TAAEnabled = !m_ShaderSettings->IsTemporalUpscaling();
+                    }
+
+                    const char* OptTypeNames[] = {"Max Quality", "High Quality", "Balanced", "High Performance", "Max Performance"};
+                    ImGui::Combo("Quality", reinterpret_cast<Int32*>(&m_ShaderSettings->SROptimizationType), OptTypeNames, IM_ARRAYSIZE(OptTypeNames));
+
+                    ImGui::Text("Input: %u x %u", m_PostFXFrameDesc.Width, m_PostFXFrameDesc.Height);
+                    ImGui::Text("Output: %u x %u", m_PostFXFrameDesc.OutputWidth, m_PostFXFrameDesc.OutputHeight);
+                }
+                else
+                {
+                    ImGui::Text("No upscalers available");
                 }
                 ImGui::TreePop();
             }
