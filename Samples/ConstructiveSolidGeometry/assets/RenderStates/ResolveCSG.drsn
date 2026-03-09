@@ -1,0 +1,119 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "CompileFlags": "PACK_MATRIX_ROW_MAJOR",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "ResolveCSG",
+                "PipelineType": "COMPUTE",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbCameraAttribs",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "cbPBRRendererAttibs",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "cbABufferConstants",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferHeadPointers",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_NodeBuffer",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_CSGOperations",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "cbMaterialAttribs",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_TexturePrefilteredEnvironmentMap",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_TextureBRDFIntegrationMap",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_TextureRadiance",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        }
+                    ],
+                    "ImmutableSamplers": [
+                        {
+                            "ShaderStages": "COMPUTE",
+                            "SamplerOrTextureName": "g_TexturePrefilteredEnvironmentMap",
+                            "Desc": {
+                                "MinFilter": "LINEAR",
+                                "MagFilter": "LINEAR",
+                                "MipFilter": "LINEAR",
+                                "AddressU": "CLAMP",
+                                "AddressV": "CLAMP",
+                                "AddressW": "CLAMP"
+                            }
+                        },
+                        {
+                            "ShaderStages": "COMPUTE",
+                            "SamplerOrTextureName": "g_TextureBRDFIntegrationMap",
+                            "Desc": {
+                                "MinFilter": "LINEAR",
+                                "MagFilter": "LINEAR",
+                                "MipFilter": "LINEAR",
+                                "AddressU": "CLAMP",
+                                "AddressV": "CLAMP",
+                                "AddressW": "CLAMP"
+                            }
+                        }
+                    ]
+                }
+            },
+            "pCS": {
+                "Desc": {
+                    "Name": "ResolveCSG-CS"
+                },
+                "FilePath": "ResolveCSG.hlsl",
+                "EntryPoint": "CSMain",
+                "Macros": [
+                    { "Name": "MAX_SORT_FRAGMENTS", "Definition": "32" },
+                    { "Name": "MAX_OBJECT_COUNT", "Definition": "32" },
+                    { "Name": "THREAD_GROUP_SIZE", "Definition": "8" }
+                ]
+            }
+        }
+    ]
+}

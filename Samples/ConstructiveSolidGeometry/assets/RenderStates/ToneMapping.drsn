@@ -1,0 +1,67 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "CompileFlags": "PACK_MATRIX_ROW_MAJOR",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "ToneMapping",
+                "PipelineType": "GRAPHICS",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbPBRRendererAttibs",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_TextureHDR",
+                            "ShaderStages": "PIXEL",
+                            "Type": "DYNAMIC"
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "ToneMapping-VS"
+                },
+                "FilePath": "FullScreenTriangleVS.fx",
+                "EntryPoint": "FullScreenTriangleVS"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "ToneMapping-PS"
+                },
+                "FilePath": "ApplyToneMap.hlsl",
+                "EntryPoint": "PSMain",
+                "Macros": [
+                    { "Name": "TONE_MAPPING_MODE", "Definition": "3" }
+                ]
+            }
+        }
+    ]
+}

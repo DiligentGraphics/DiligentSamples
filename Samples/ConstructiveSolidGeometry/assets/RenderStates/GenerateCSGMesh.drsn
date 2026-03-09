@@ -1,0 +1,106 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "CompileFlags": "PACK_MATRIX_ROW_MAJOR",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "GenerateCSGMesh",
+                "PipelineType": "GRAPHICS",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbCameraAttribs",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "cbObjectAttribs",
+                            "ShaderStages": [ "VERTEX", "PIXEL" ],
+                            "Type": "DYNAMIC"
+                        },
+                        {
+                            "Name": "cbABufferConstants",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferHeadPointers",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferNodes",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferCounter",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                },
+                "InputLayout": {
+                    "LayoutElements": [
+                        {
+                            "InputIndex": 0,
+                            "BufferSlot": 0,
+                            "NumComponents": 3,
+                            "ValueType": "FLOAT32",
+                            "IsNormalized": false,
+                            "RelativeOffset": 0,
+                            "Stride": 24
+                        },
+                        {
+                            "InputIndex": 1,
+                            "BufferSlot": 0,
+                            "NumComponents": 3,
+                            "ValueType": "FLOAT32",
+                            "IsNormalized": false,
+                            "RelativeOffset": 12,
+                            "Stride": 24
+                        }
+                    ]
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "GenerateCSGMesh-VS"
+                },
+                "FilePath": "GenerateCSGMesh.hlsl",
+                "EntryPoint": "VSMain"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "GenerateCSGMesh-PS"
+                },
+                "FilePath": "GenerateCSGMesh.hlsl",
+                "EntryPoint": "PSMain"
+            }
+        }
+    ]
+}

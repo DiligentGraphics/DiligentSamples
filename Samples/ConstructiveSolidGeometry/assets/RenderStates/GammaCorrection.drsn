@@ -1,0 +1,73 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "CompileFlags": "PACK_MATRIX_ROW_MAJOR",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "GammaCorrection",
+                "PipelineType": "GRAPHICS",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "g_TextureColor",
+                            "ShaderStages": "PIXEL",
+                            "Type": "DYNAMIC"
+                        }
+                    ],
+                    "ImmutableSamplers": [
+                        {
+                            "ShaderStages": "PIXEL",
+                            "SamplerOrTextureName": "g_TextureColor",
+                            "Desc": {
+                                "MinFilter": "LINEAR",
+                                "MagFilter": "LINEAR",
+                                "MipFilter": "LINEAR",
+                                "AddressU": "CLAMP",
+                                "AddressV": "CLAMP",
+                                "AddressW": "CLAMP"
+                            }
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "NONE"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "GammaCorrection-VS"
+                },
+                "FilePath": "FullScreenTriangleVS.fx",
+                "EntryPoint": "FullScreenTriangleVS"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "GammaCorrection-PS"
+                },
+                "FilePath": "GammaCorrection.hlsl",
+                "EntryPoint": "PSMain"
+            }
+        }
+    ]
+}

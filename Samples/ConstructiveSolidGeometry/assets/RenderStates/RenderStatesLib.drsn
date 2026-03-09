@@ -1,0 +1,10 @@
+{
+    "Imports": [
+        "ToneMapping.drsn",
+        "GammaCorrection.drsn",
+        "ClearABuffer.drsn",
+        "GenerateCSGGeometry.drsn",
+        "GenerateCSGMesh.drsn",
+        "ResolveCSG.drsn"
+    ]
+}

@@ -1,0 +1,103 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "CompileFlags": "PACK_MATRIX_ROW_MAJOR",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        },
+        "Pipeline": {
+            "PSODesc": {
+                "ResourceLayout": {
+                    "DefaultVariableType": "MUTABLE"
+                }
+            }
+        }
+    },
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "GenerateCSGGeometry",
+                "PipelineType": "GRAPHICS",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "cbCameraAttribs",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "cbObjectAttribs",
+                            "ShaderStages": [
+                                "VERTEX",
+                                "PIXEL"
+                            ],
+                            "Type": "DYNAMIC"
+                        },
+                        {
+                            "Name": "cbABufferConstants",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferHeadPointers",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferNodes",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferCounter",
+                            "ShaderStages": "PIXEL",
+                            "Type": "MUTABLE"
+                        }
+                    ]
+                }
+            },
+            "GraphicsPipeline": {
+                "PrimitiveTopology": "TRIANGLE_LIST",
+                "RasterizerDesc": {
+                    "CullMode": "FRONT"
+                },
+                "DepthStencilDesc": {
+                    "DepthEnable": false
+                },
+                "InputLayout": {
+                    "LayoutElements": [
+                        {
+                            "InputIndex": 0,
+                            "BufferSlot": 0,
+                            "NumComponents": 3,
+                            "ValueType": "FLOAT32",
+                            "IsNormalized": false
+                        }
+                    ]
+                }
+            },
+            "pVS": {
+                "Desc": {
+                    "Name": "GenerateCSGGeometry-VS"
+                },
+                "FilePath": "GenerateCSGGeometry.hlsl",
+                "EntryPoint": "VSMain"
+            },
+            "pPS": {
+                "Desc": {
+                    "Name": "GenerateCSGGeometry-PS"
+                },
+                "FilePath": "GenerateCSGGeometry.hlsl",
+                "EntryPoint": "PSMain",
+                "Macros": [
+                    {
+                        "Name": "MAX_SORT_FRAGMENTS",
+                        "Definition": "32"
+                    }
+                ]
+            }
+        }
+    ]
+}

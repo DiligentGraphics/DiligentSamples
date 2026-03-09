@@ -1,0 +1,49 @@
+{
+    "Defaults": {
+        "Shader": {
+            "SourceLanguage": "HLSL",
+            "CompileFlags": "PACK_MATRIX_ROW_MAJOR",
+            "Desc": {
+                "UseCombinedTextureSamplers": true
+            }
+        }
+    },
+
+    "Pipelines": [
+        {
+            "PSODesc": {
+                "Name": "ClearABuffer",
+                "PipelineType": "COMPUTE",
+                "ResourceLayout": {
+                    "Variables": [
+                        {
+                            "Name": "g_BufferHeadPointers",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "g_BufferCounter",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        },
+                        {
+                            "Name": "cbABufferConstants",
+                            "ShaderStages": "COMPUTE",
+                            "Type": "MUTABLE"
+                        }
+                    ]
+                }
+            },
+            "pCS": {
+                "Desc": {
+                    "Name": "ClearABuffer-CS"
+                },
+                "FilePath": "ClearABuffer.hlsl",
+                "EntryPoint": "CSMain",
+                "Macros": [
+                    { "Name": "THREAD_GROUP_SIZE", "Definition": "16" }
+                ]
+            }
+        }
+    ]
+}
