@@ -200,7 +200,7 @@ You may add more ray types, e.g. a secondary ray that uses simplified hit shader
 
 `BindingMode` is the hit group location calculation mode. In our example we will be assigning different 
 hit groups to different instances, so we use the `HIT_GROUP_BINDING_MODE_PER_INSTANCE` mode. If an application 
-needs more control, it can use `HIT_GROUP_BINDING_MODE_PER_GEOMETRY` mode to assign indiviudal hit group to 
+needs more control, it can use `HIT_GROUP_BINDING_MODE_PER_GEOMETRY` mode to assign individual hit group to 
 each geometry within every instance. On the other hand, it can use `HIT_GROUP_BINDING_MODE_PER_TLAS` mode 
 to assign the same hit group to all geometries in all instances.
 

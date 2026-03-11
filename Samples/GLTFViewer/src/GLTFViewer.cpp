@@ -935,7 +935,7 @@ void GLTFViewer::UpdateUI()
         {
             std::array<const char*, static_cast<size_t>(BackgroundMode::NumModes)> BackgroundModes;
             BackgroundModes[static_cast<size_t>(BackgroundMode::None)]              = "None";
-            BackgroundModes[static_cast<size_t>(BackgroundMode::EnvironmentMap)]    = "Environmen Map";
+            BackgroundModes[static_cast<size_t>(BackgroundMode::EnvironmentMap)]    = "Environment Map";
             BackgroundModes[static_cast<size_t>(BackgroundMode::Irradiance)]        = "Irradiance";
             BackgroundModes[static_cast<size_t>(BackgroundMode::PrefilteredEnvMap)] = "PrefilteredEnvMap";
             ImGui::Combo("Background mode", reinterpret_cast<int*>(&m_BackgroundMode), BackgroundModes.data(), static_cast<int>(BackgroundModes.size()));
