@@ -26,7 +26,7 @@ cbuffer cbABufferConstants
     ABufferConstants g_ABufferConstants;
 }
 
-RWTexture2D<uint>                   g_BufferHeadPointers;
+RWByteAddressBuffer                 g_BufferHeadPointers;
 RWStructuredBuffer<ABufferFragment> g_BufferNodes;
 RWStructuredBuffer<uint>            g_BufferCounter;
 
@@ -74,6 +74,7 @@ void PSMain(PSInput VSOut)
         discard;
 
     uint2 PixelCoord = uint2(VSOut.PixelPosition.xy);
+    uint  HeadOffset  = (PixelCoord.y * g_ABufferConstants.ScreenSize.x + PixelCoord.x) * 4u;
     uint  CurrNodeIdx = FirstNodeIndex;
 
     // Insert entry node (front face)
@@ -86,7 +87,7 @@ void PSMain(PSInput VSOut)
         EntryNode.Depth      = EntryDepth;
 
         uint OldHead;
-        InterlockedExchange(g_BufferHeadPointers[PixelCoord], CurrNodeIdx, OldHead);
+        g_BufferHeadPointers.InterlockedExchange(HeadOffset, CurrNodeIdx, OldHead);
         EntryNode.Next = OldHead;
 
         g_BufferNodes[CurrNodeIdx] = EntryNode;
@@ -103,7 +104,7 @@ void PSMain(PSInput VSOut)
         ExitNode.Depth      = ExitDepth;
 
         uint OldHead;
-        InterlockedExchange(g_BufferHeadPointers[PixelCoord], CurrNodeIdx, OldHead);
+        g_BufferHeadPointers.InterlockedExchange(HeadOffset, CurrNodeIdx, OldHead);
         ExitNode.Next = OldHead;
 
         g_BufferNodes[CurrNodeIdx] = ExitNode;

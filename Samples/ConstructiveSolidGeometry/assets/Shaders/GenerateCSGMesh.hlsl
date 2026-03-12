@@ -29,7 +29,7 @@ cbuffer cbABufferConstants
     ABufferConstants g_ABufferConstants;
 }
 
-RWTexture2D<uint>                   g_BufferHeadPointers;
+RWByteAddressBuffer                 g_BufferHeadPointers;
 RWStructuredBuffer<ABufferFragment> g_BufferNodes;
 RWStructuredBuffer<uint>            g_BufferCounter;
 
@@ -60,13 +60,14 @@ void PSMain(PSInput VSOut, bool IsFrontFace : SV_IsFrontFace)
         discard;
 
     uint2 PixelCoord = uint2(VSOut.PixelPosition.xy);
+    uint  HeadOffset  = (PixelCoord.y * g_ABufferConstants.ScreenSize.x + PixelCoord.x) * 4u;
 
     ABufferFragment Node;
     Node.PackedData = PackFragmentData(Normal, MaterialIdx, g_ObjectAttribs.ObjectID, FaceType);
     Node.Depth      = VSOut.PixelPosition.z;
 
     uint OldHead;
-    InterlockedExchange(g_BufferHeadPointers[PixelCoord], NodeIndex, OldHead);
+    g_BufferHeadPointers.InterlockedExchange(HeadOffset, NodeIndex, OldHead);
     Node.Next = OldHead;
 
     g_BufferNodes[NodeIndex] = Node;

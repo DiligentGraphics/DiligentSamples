@@ -38,8 +38,8 @@ cbuffer cbMaterialAttribs
     MaterialAttribs g_MaterialAttribs[MAX_MATERIAL_COUNT];
 }
 
-Texture2D<uint>                   g_BufferHeadPointers;
-StructuredBuffer<ABufferFragment> g_NodeBuffer;
+ByteAddressBuffer                     g_BufferHeadPointers;
+StructuredBuffer<ABufferFragment>     g_NodeBuffer;
 StructuredBuffer<CSGOperationAttribs> g_CSGOperations;
 
 RWTexture2D<float4> g_TextureRadiance;
@@ -121,7 +121,8 @@ void CSMain(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID)
 
     uint ThreadIdx = GTid.y * THREAD_GROUP_SIZE + GTid.x;
 
-    uint NodeIdx = g_BufferHeadPointers[PixelCoord];
+    uint HeadOffset = (PixelCoord.y * g_ABufferConstants.ScreenSize.x + PixelCoord.x) * 4u;
+    uint NodeIdx = g_BufferHeadPointers.Load(HeadOffset);
 
     // Compute normalized device coordinates [-1, 1]
     float2 NormalizedXY = (float2(PixelCoord) + 0.5) * float2(2.0, -2.0) / float2(g_ABufferConstants.ScreenSize) + float2(-1.0, 1.0);

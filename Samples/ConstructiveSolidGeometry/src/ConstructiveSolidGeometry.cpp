@@ -422,7 +422,7 @@ void ConstructiveSolidGeometry::PrepareResources()
             Desc.Type      = RESOURCE_DIM_TEX_2D;
             Desc.Width     = SCDesc.Width;
             Desc.Height    = SCDesc.Height;
-            Desc.Format    = TEX_FORMAT_R11G11B10_FLOAT;
+            Desc.Format    = TEX_FORMAT_RGBA16_FLOAT;
             Desc.BindFlags = BIND_SHADER_RESOURCE | BIND_RENDER_TARGET | BIND_UNORDERED_ACCESS;
             m_Resources.Insert(RESOURCE_IDENTIFIER_RADIANCE, Device.CreateTexture(Desc));
 
@@ -448,14 +448,13 @@ void ConstructiveSolidGeometry::PrepareResources()
             const Uint32 PixelCount   = SCDesc.Width * SCDesc.Height;
             const Uint32 MaxNodeCount = PixelCount * m_MaxABufferFragmentsPerPixel;
 
-            TextureDesc HeadDesc;
+            BufferDesc HeadDesc;
             HeadDesc.Name      = "ConstructiveSolidGeometry::ABuffer_HeadPointers";
-            HeadDesc.Type      = RESOURCE_DIM_TEX_2D;
-            HeadDesc.Width     = SCDesc.Width;
-            HeadDesc.Height    = SCDesc.Height;
-            HeadDesc.Format    = TEX_FORMAT_R32_UINT;
+            HeadDesc.Size      = static_cast<Uint64>(PixelCount) * sizeof(Uint32);
+            HeadDesc.Mode      = BUFFER_MODE_RAW;
             HeadDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
-            m_Resources.Insert(RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_TEXTURE, Device.CreateTexture(HeadDesc));
+            HeadDesc.Usage     = USAGE_DEFAULT;
+            m_Resources.Insert(RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_BUFFER, Device.CreateBuffer(HeadDesc));
 
             BufferDesc NodeDesc;
             NodeDesc.Name              = "ConstructiveSolidGeometry::ABuffer_FragmentBuffer";
@@ -496,7 +495,7 @@ void ConstructiveSolidGeometry::ClearABuffer()
     if (!pPSO || !pSRB) return;
 
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "cbABufferConstants"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_CONSTANTS_BUFFER].AsBuffer());
-    ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_TEXTURE].GetTextureUAV());
+    ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_BUFFER].GetBufferUAV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_BufferCounter"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_COUNTER_BUFFER].GetBufferUAV());
 
     ScopedDebugGroup DebugGroup{m_pImmediateContext, "ClearABuffer"};
@@ -516,7 +515,7 @@ void ConstructiveSolidGeometry::GenerateCSGGeometry()
 
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "cbCameraAttribs"}.Set(m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "cbABufferConstants"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_CONSTANTS_BUFFER].AsBuffer());
-    ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_TEXTURE].GetTextureUAV());
+    ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_BUFFER].GetBufferUAV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferNodes"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_NODE_BUFFER].GetBufferUAV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferCounter"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_COUNTER_BUFFER].GetBufferUAV());
     ShaderResourceVariableX ObjectAttribVariable{pSRB, SHADER_TYPE_PIXEL, "cbObjectAttribs"};
@@ -551,7 +550,7 @@ void ConstructiveSolidGeometry::GenerateCSGMesh()
 
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "cbCameraAttribs"}.Set(m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "cbABufferConstants"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_CONSTANTS_BUFFER].AsBuffer());
-    ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_TEXTURE].GetTextureUAV());
+    ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_BUFFER].GetBufferUAV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferNodes"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_NODE_BUFFER].GetBufferUAV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_PIXEL, "g_BufferCounter"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_COUNTER_BUFFER].GetBufferUAV());
     ShaderResourceVariableX ObjectAttribVariable{pSRB, SHADER_TYPE_PIXEL, "cbObjectAttribs"};
@@ -584,7 +583,7 @@ void ConstructiveSolidGeometry::ResolveCSG()
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "cbCameraAttribs"}.Set(m_Resources[RESOURCE_IDENTIFIER_CAMERA_CONSTANT_BUFFER].AsBuffer());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "cbPBRRendererAttibs"}.Set(m_Resources[RESOURCE_IDENTIFIER_PBR_ATTRIBS_CONSTANT_BUFFER].AsBuffer());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "cbMaterialAttribs"}.Set(m_Resources[RESOURCE_IDENTIFIER_MATERIAL_ATTRIBS_CONSTANT_BUFFER].AsBuffer());
-    ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_TEXTURE].GetTextureSRV());
+    ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_BufferHeadPointers"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_HEAD_POINTER_BUFFER].GetBufferSRV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_NodeBuffer"}.Set(m_Resources[RESOURCE_IDENTIFIER_ABUFFER_NODE_BUFFER].GetBufferSRV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_CSGOperations"}.Set(m_Resources[RESOURCE_IDENTIFIER_CSG_OPERATIONS_BUFFER].GetBufferSRV());
     ShaderResourceVariableX{pSRB, SHADER_TYPE_COMPUTE, "g_TexturePrefilteredEnvironmentMap"}.Set(m_Resources[RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP].GetTextureSRV());
