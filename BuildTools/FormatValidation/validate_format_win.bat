@@ -4,4 +4,5 @@ python ../../../DiligentCore/BuildTools/FormatValidation/clang-format-validate.p
 --exclude ../../SampleBase/src/UWP ^
 --exclude ../../SampleBase/src/Win32/resources ^
 --exclude ../../Samples/Asteroids ^
---exclude ../../Tutorials/Tutorial03_Texturing-CSharp
+--exclude ../../Tutorials/Tutorial03_Texturing-CSharp ^
+--exclude ../../Tutorials/Tutorial30_HelloVisionOS/src/visionOS

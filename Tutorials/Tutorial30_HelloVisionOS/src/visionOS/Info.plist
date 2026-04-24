@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<!-- SwiftUI (@main App) manages the scene graph directly. The scene
+	     manifest simply allows multiple scenes so WindowGroup and
+	     ImmersiveSpace can coexist. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<!-- Required for ARKit world tracking used to sample device anchors for
+	     CompositorServices drawables. Without a device anchor, visionOS
+	     refuses to present drawables ("Presenting a drawable without a
+	     device anchor"). -->
+	<key>NSWorldSensingUsageDescription</key>
+	<string>Tutorial30 uses world sensing to track the device pose required to render the immersive scene.</string>
+</dict>
+</plist>

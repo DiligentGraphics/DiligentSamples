@@ -5,4 +5,5 @@ source ../../../DiligentCore/BuildTools/FormatValidation/validate_format_linux_i
 validate_format ../../SampleBase ../../Tutorials ../../Samples \
 --exclude ../../SampleBase/src/UWP \
 --exclude ../../SampleBase/src/Win32/resources \
---exclude ../../Samples/Asteroids
+--exclude ../../Samples/Asteroids \
+--exclude ../../Tutorials/Tutorial30_HelloVisionOS/src/visionOS

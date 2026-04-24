@@ -1,0 +1,15 @@
+#include "shader_constants.fxh"
+
+struct PSOutput
+{
+    float4 Color : SV_TARGET;
+};
+
+void main(in  PSInput  PSIn,
+          out PSOutput PSOut)
+{
+    float4 Color = PSIn.Color;
+    float3 LightDir = normalize(float3(-0.5, -0.8, -0.2));
+    Color *= max(dot(-LightDir, PSIn.Normal), 0.0) * 0.5 + 0.2;
+    PSOut.Color = Color;
+}

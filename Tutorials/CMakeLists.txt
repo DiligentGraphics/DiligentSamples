@@ -56,3 +56,7 @@ if(PLATFORM_WIN32 AND DILIGENT_USE_OPENXR)
     add_subdirectory(Tutorial28_HelloOpenXR)
 endif()
 add_subdirectory(Tutorial29_OIT)
+if(PLATFORM_VISIONOS)
+    add_subdirectory(Tutorial30_HelloVisionOS)
+endif()
+
