@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2024 Diligent Graphics LLC
+ *  Copyright 2019-2026 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -145,7 +145,7 @@ protected:
     {
         using InputController = InputControllerMacOS;
     }
-#elif PLATFORM_IOS
+#elif PLATFORM_IOS || PLATFORM_VISIONOS
     #include "iOS/InputControllerIOS.hpp"
     namespace Diligent
     {

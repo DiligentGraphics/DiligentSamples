@@ -508,7 +508,7 @@ void Tutorial24_VRS::UpdateUI()
     ImGui::End();
 }
 
-#if !(PLATFORM_MACOS || PLATFORM_IOS)
+#if !(PLATFORM_MACOS || PLATFORM_IOS || PLATFORM_VISIONOS)
 void Tutorial24_VRS::WindowResize(Uint32 Width, Uint32 Height)
 {
     if (Width == 0 || Height == 0)

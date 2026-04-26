@@ -92,7 +92,7 @@ private:
     RefCntAutoPtr<IBuffer>      m_Constants;
     RefCntAutoPtr<ITextureView> m_TextureSRV;
 
-#if PLATFORM_MACOS || PLATFORM_IOS
+#if PLATFORM_MACOS || PLATFORM_IOS || PLATFORM_VISIONOS
     RefCntAutoPtr<IBuffer> m_pShadingRateParamBuffer;
 #endif
     RefCntAutoPtr<ITextureView>           m_pShadingRateMap;

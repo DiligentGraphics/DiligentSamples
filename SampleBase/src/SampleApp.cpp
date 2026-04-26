@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2025 Diligent Graphics LLC
+ *  Copyright 2019-2026 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -843,6 +843,8 @@ SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char*
             m_DeviceType = RENDER_DEVICE_TYPE_GL;
 #elif WEBGPU_SUPPORTED
             m_DeviceType = RENDER_DEVICE_TYPE_WEBGPU;
+#elif METAL_SUPPORTED
+            m_DeviceType = RENDER_DEVICE_TYPE_METAL;
 #endif
         }
     }

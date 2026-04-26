@@ -114,6 +114,17 @@ elseif(PLATFORM_TVOS)
         include/SampleApp.hpp
     )
 
+elseif(PLATFORM_VISIONOS)
+    set(SOURCE
+        src/iOS/InputControllerIOS.cpp
+        src/visionOS/SampleAppVisionOS.cpp
+        src/SampleApp.cpp
+    )
+    set(INCLUDE
+        include/iOS/InputControllerIOS.hpp
+        include/SampleApp.hpp
+    )
+
 elseif(PLATFORM_WEB)
     set(SOURCE
         src/Emscripten/InputControllerEmscripten.cpp
@@ -211,7 +222,7 @@ elseif(PLATFORM_LINUX)
     find_package(X11 REQUIRED)
     find_package(OpenGL REQUIRED)
     target_link_libraries(Diligent-SampleBase PRIVATE XCBKeySyms OpenGL::GL OpenGL::GLX X11::X11)
-elseif(PLATFORM_MACOS OR PLATFORM_IOS)
+elseif(PLATFORM_MACOS OR PLATFORM_IOS OR PLATFORM_VISIONOS)
 
 endif()
 
