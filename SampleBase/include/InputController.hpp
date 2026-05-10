@@ -140,7 +140,7 @@ protected:
         using InputController = InputControllerUWP;
     }
 #elif PLATFORM_MACOS
-    #include "MacOS/InputControllerMacOS.hpp"
+    #include "macOS/InputControllerMacOS.hpp"
     namespace Diligent
     {
         using InputController = InputControllerMacOS;

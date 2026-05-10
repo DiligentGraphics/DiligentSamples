@@ -85,29 +85,29 @@ elseif(PLATFORM_LINUX)
 elseif(PLATFORM_MACOS)
 
     set(SOURCE
-        src/MacOS/InputControllerMacOS.cpp
-        src/MacOS/SampleAppMacOS.mm
+        src/macOS/InputControllerMacOS.cpp
+        src/macOS/SampleAppMacOS.mm
         src/SampleApp.cpp
     )
     set(INCLUDE
-        Include/MacOS/InputControllerMacOS.hpp
+        include/macOS/InputControllerMacOS.hpp
         include/SampleApp.hpp
     )
 
 elseif(PLATFORM_IOS)
     set(SOURCE
-        src/IOS/InputControllerIOS.cpp
-        src/IOS/SampleAppIOS.cpp
+        src/iOS/InputControllerIOS.cpp
+        src/iOS/SampleAppIOS.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE
-        include/IOS/InputControllerIOS.hpp
+        include/iOS/InputControllerIOS.hpp
         include/SampleApp.hpp
     )
 
 elseif(PLATFORM_TVOS)
     set(SOURCE
-        src/TVOS/SampleAppTVOS.cpp
+        src/tvOS/SampleAppTVOS.cpp
         src/SampleApp.cpp
     )
     set(INCLUDE
