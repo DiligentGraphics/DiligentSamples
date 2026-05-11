@@ -61,6 +61,7 @@ and follow the [instructions](https://github.com/DiligentGraphics/DiligentEngine
   - [27 - Post-Processing](#tutorial-27---post-processing)
   - [28 - Hello-OpenXR](#tutorial-28---hello-openxr)
   - [29 - OIT](#tutorial-29---oit)
+  - [30 - Hello-visionOS](#tutorial-30---hello-visionos)
 - [Samples](#samples)
   - [Atmospheric Light Scattering](#atmospheric-light-scattering-sample)
   - [GLFW Demo](#glfw-demo)
@@ -341,6 +342,15 @@ This tutorial demonstrates how to use Diligent Engine with OpenXR API to render 
 This tutorial demonstrates how to implement order-independent transparency (OIT) methods to render transparent objects without sorting.
 
 [:arrow_forward: Run in the browser](https://diligentgraphics.github.io/wasm-modules/Tutorial29_OIT/Tutorial29_OIT.html)
+
+
+## [Tutorial 30 - Hello visionOS](https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial30_HelloVisionOS)
+
+![](Tutorials/Tutorial30_HelloVisionOS/Screenshot.jpg)
+
+This tutorial demonstrates how to run Diligent Engine on Apple visionOS.
+A single app hosts two renderers that share the same scene: a 2D Preview window and
+a fully immersive space driven by Apple CompositorServices.
 
 
 # Samples
