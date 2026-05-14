@@ -81,11 +81,11 @@ target_include_directories(USDViewer PRIVATE ${imguizmo_SOURCE_DIR})
 source_group("ImGuizmo" FILES ${IMGUIZMO_SOURCE})
 
 get_target_property(DILIGENT_FX_SOURCE_DIR DiligentFX SOURCE_DIR)
-get_target_property(HYDROGENT_SOURCE_DIR Diligent-Hydrogent SOURCE_DIR)
+get_target_property(HYDROGENT_SOURCE_DIR Hydrogent SOURCE_DIR)
 
 target_link_libraries(USDViewer
 PRIVATE
-    Diligent-Hydrogent
+    Hydrogent
     DiligentFX
     Diligent-Archiver-static
 )

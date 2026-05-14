@@ -16,7 +16,7 @@ if(TARGET glfw)
     add_subdirectory(GLFWDemo)
 endif()
 
-if(TARGET Diligent-Hydrogent)
+if(TARGET Hydrogent)
     add_subdirectory(USDViewer)
 endif()
 
