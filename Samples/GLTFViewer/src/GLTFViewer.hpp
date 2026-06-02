@@ -75,6 +75,9 @@ private:
     void CreateGLTFResourceCache();
     void UpdateModelsList(const std::string& Dir, const std::string& Ext);
     bool SetEnvironmentMap(ITextureView* pEnvMap);
+    bool CreateIBLCubemaps();
+    void PrecomputeIBLCubemaps(ITextureView* pEnvironmentMapSRV);
+    void BindIBLResourceViews();
     void CreateGLTFRenderer();
     void CrateEnvMapRenderer();
     void CrateBoundBoxRenderer();
@@ -146,6 +149,8 @@ private:
     RefCntAutoPtr<IBuffer>               m_FrameAttribsCB;
     RefCntAutoPtr<ITextureView>          m_EnvironmentMapSRV;
     RefCntAutoPtr<ITextureView>          m_WhiteFurnaceEnvMapSRV;
+    RefCntAutoPtr<ITextureView>          m_IrradianceCubeSRV;
+    RefCntAutoPtr<ITextureView>          m_PrefilteredEnvMapSRV;
 
     ITextureView* m_pCurrentEnvMapSRV = nullptr;
 

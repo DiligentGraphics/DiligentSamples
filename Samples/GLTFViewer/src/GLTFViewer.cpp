@@ -168,6 +168,7 @@ void GLTFViewer::LoadModel(const char* Path)
     m_Model = std::make_unique<GLTF::Model>(m_pDevice, m_pImmediateContext, ModelCI);
 
     m_ModelResourceBindings = m_GLTFRenderer->CreateResourceBindings(*m_Model, m_FrameAttribsCB);
+    BindIBLResourceViews();
 
     m_RenderParams.SceneIndex = m_Model->DefaultSceneId;
     UpdateScene();
@@ -210,16 +211,16 @@ void GLTFViewer::LoadEnvironmentMap(const char* Path)
     CreateTextureFromFile(Path, TextureLoadInfo{"Environment map"}, m_pDevice, &pEnvironmentMap);
     VERIFY_EXPR(pEnvironmentMap);
 
-    if (m_GLTFRenderer)
-        m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
-
     StateTransitionDesc Barriers[] = {
         {pEnvironmentMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
     };
     m_pImmediateContext->TransitionResourceStates(_countof(Barriers), Barriers);
 
     m_EnvironmentMapSRV = pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    m_pCurrentEnvMapSRV = m_EnvironmentMapSRV;
+    if (m_GLTFRenderer)
+        SetEnvironmentMap(m_EnvironmentMapSRV);
+    else
+        m_pCurrentEnvMapSRV = m_EnvironmentMapSRV;
 }
 
 void GLTFViewer::UpdateScene()
@@ -390,9 +391,53 @@ bool GLTFViewer::SetEnvironmentMap(ITextureView* pEnvMap)
         return false;
 
     m_pCurrentEnvMapSRV = pEnvMap;
-    m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, m_pCurrentEnvMapSRV);
+    PrecomputeIBLCubemaps(m_pCurrentEnvMapSRV);
 
     return true;
+}
+
+bool GLTFViewer::CreateIBLCubemaps()
+{
+    if (m_IrradianceCubeSRV != nullptr && m_PrefilteredEnvMapSRV != nullptr)
+        return true;
+
+    m_IrradianceCubeSRV.Release();
+    m_PrefilteredEnvMapSRV.Release();
+
+    RefCntAutoPtr<ITexture> pIrradianceCube    = m_GLTFRenderer->CreateIrradianceCube(m_pImmediateContext, "GLTF viewer irradiance cube map");
+    RefCntAutoPtr<ITexture> pPrefilteredEnvMap = m_GLTFRenderer->CreatePrefilteredEnvMap(m_pImmediateContext, "GLTF viewer prefiltered environment map");
+    if (pIrradianceCube == nullptr || pPrefilteredEnvMap == nullptr)
+        return false;
+
+    m_IrradianceCubeSRV    = pIrradianceCube->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_PrefilteredEnvMapSRV = pPrefilteredEnvMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    return m_IrradianceCubeSRV != nullptr && m_PrefilteredEnvMapSRV != nullptr;
+}
+
+void GLTFViewer::PrecomputeIBLCubemaps(ITextureView* pEnvironmentMapSRV)
+{
+    if (m_GLTFRenderer == nullptr || pEnvironmentMapSRV == nullptr)
+    {
+        return;
+    }
+
+    PBR_Renderer::PrecomputeCubemapsAttribs Attribs;
+    Attribs.pEnvironmentMapSRV = pEnvironmentMapSRV;
+    Attribs.pIrradianceCube    = m_IrradianceCubeSRV->GetTexture();
+    Attribs.pPrefilteredEnvMap = m_PrefilteredEnvMapSRV->GetTexture();
+    m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, Attribs);
+}
+
+void GLTFViewer::BindIBLResourceViews()
+{
+    if (m_GLTFRenderer == nullptr)
+        return;
+
+    for (RefCntAutoPtr<IShaderResourceBinding>& pMaterialSRB : m_ModelResourceBindings.MaterialSRB)
+    {
+        if (pMaterialSRB != nullptr)
+            m_GLTFRenderer->SetIBLResourceViews(pMaterialSRB, m_IrradianceCubeSRV, m_PrefilteredEnvMapSRV);
+    }
 }
 
 static PBR_Renderer::CreateInfo::PSMainSourceInfo GetPbrPSMainSource(PBR_Renderer::PSO_FLAGS PSOFlags)
@@ -565,7 +610,12 @@ void GLTFViewer::CreateGLTFRenderer()
         GLTF_PBR_Renderer::CreateInfo::TEX_COLOR_CONVERSION_MODE_NONE :
         GLTF_PBR_Renderer::CreateInfo::TEX_COLOR_CONVERSION_MODE_SRGB_TO_LINEAR;
 
+    m_CacheBindings.pSRB.Release();
+    m_CacheBindings.Version = ~0u;
+
     m_GLTFRenderer = std::make_unique<GLTF_PBR_Renderer>(m_pDevice, nullptr, m_pImmediateContext, RendererCI);
+    if (!CreateIBLCubemaps())
+        LOG_ERROR_MESSAGE("Failed to create GLTF viewer IBL cubemaps");
 
     if (m_bUseResourceCache)
     {
@@ -1229,7 +1279,7 @@ void GLTFViewer::Render()
         }
         {
             HLSL::PBRRendererShaderParameters& Renderer = FrameAttribs->Renderer;
-            m_GLTFRenderer->SetInternalShaderParameters(Renderer);
+            m_GLTFRenderer->SetInternalShaderParameters(Renderer, m_PrefilteredEnvMapSRV);
 
             Renderer.OcclusionStrength = m_ShaderAttribs.OcclusionStrength;
             Renderer.EmissionScale     = m_ShaderAttribs.EmissionScale;
@@ -1248,7 +1298,8 @@ void GLTFViewer::Render()
 
     if (m_pResourceMgr)
     {
-        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings, m_FrameAttribsCB);
+        m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings,
+                              m_FrameAttribsCB, m_IrradianceCubeSRV, m_PrefilteredEnvMapSRV);
     }
     else
     {
@@ -1285,11 +1336,11 @@ void GLTFViewer::Render()
                 break;
 
             case BackgroundMode::Irradiance:
-                pEnvMapSRV = m_GLTFRenderer->GetIrradianceCubeSRV();
+                pEnvMapSRV = m_IrradianceCubeSRV;
                 break;
 
             case BackgroundMode::PrefilteredEnvMap:
-                pEnvMapSRV = m_GLTFRenderer->GetPrefilteredEnvMapSRV();
+                pEnvMapSRV = m_PrefilteredEnvMapSRV;
                 break;
 
             default:

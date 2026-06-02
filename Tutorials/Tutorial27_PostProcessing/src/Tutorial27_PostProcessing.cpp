@@ -1190,11 +1190,22 @@ void Tutorial27_PostProcessing::LoadEnvironmentMap(const char* FileName)
     RefCntAutoPtr<ITexture> pEnvironmentMap;
     CreateTextureFromFile(FileName, TextureLoadInfo{"Tutorial27_PostProcessing::EnvironmentMap"}, m_pDevice, &pEnvironmentMap);
     DEV_CHECK_ERR(pEnvironmentMap, "Failed to load environment map");
-    m_IBLBacker->PrecomputeCubemaps(m_pImmediateContext, pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
 
-    m_Resources.Insert(RESOURCE_IDENTIFIER_ENVIRONMENT_MAP, m_IBLBacker->GetPrefilteredEnvMapSRV()->GetTexture());
-    m_Resources.Insert(RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP, m_IBLBacker->GetPrefilteredEnvMapSRV()->GetTexture());
-    m_Resources.Insert(RESOURCE_IDENTIFIER_IRRADIANCE_MAP, m_IBLBacker->GetIrradianceCubeSRV()->GetTexture());
+    RefCntAutoPtr<ITexture> pIrradianceCube;
+    RefCntAutoPtr<ITexture> pPrefilteredEnvMap;
+    pIrradianceCube    = m_IBLBacker->CreateIrradianceCube(m_pImmediateContext, "Tutorial27 irradiance cube map");
+    pPrefilteredEnvMap = m_IBLBacker->CreatePrefilteredEnvMap(m_pImmediateContext, "Tutorial27 prefiltered environment map");
+    DEV_CHECK_ERR(pIrradianceCube && pPrefilteredEnvMap, "Failed to create IBL cubemaps");
+
+    PBR_Renderer::PrecomputeCubemapsAttribs Attribs;
+    Attribs.pEnvironmentMapSRV = pEnvironmentMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    Attribs.pIrradianceCube    = pIrradianceCube;
+    Attribs.pPrefilteredEnvMap = pPrefilteredEnvMap;
+    m_IBLBacker->PrecomputeCubemaps(m_pImmediateContext, Attribs);
+
+    m_Resources.Insert(RESOURCE_IDENTIFIER_ENVIRONMENT_MAP, pPrefilteredEnvMap);
+    m_Resources.Insert(RESOURCE_IDENTIFIER_PREFILTERED_ENVIRONMENT_MAP, pPrefilteredEnvMap);
+    m_Resources.Insert(RESOURCE_IDENTIFIER_IRRADIANCE_MAP, pIrradianceCube);
     m_Resources.Insert(RESOURCE_IDENTIFIER_BRDF_INTEGRATION_MAP, m_IBLBacker->GetPreintegratedGGX_SRV()->GetTexture());
 }
 
