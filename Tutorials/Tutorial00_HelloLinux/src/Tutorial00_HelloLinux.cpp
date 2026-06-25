@@ -386,7 +386,7 @@ XCBInfo InitXCBConnectionAndWindow()
     hints.min_width        = 320;
     hints.min_height       = 240;
     xcb_change_property(info.connection, XCB_PROP_MODE_REPLACE, info.window, XCB_ATOM_WM_NORMAL_HINTS, XCB_ATOM_WM_SIZE_HINTS,
-                        32, sizeof(xcb_size_hints_t), &hints);
+                        32, sizeof(hints) / sizeof(uint32_t), &hints);
 
     xcb_map_window(info.connection, info.window);
 
@@ -399,13 +399,17 @@ XCBInfo InitXCBConnectionAndWindow()
     xcb_generic_event_t* e;
     while ((e = xcb_wait_for_event(info.connection)))
     {
-        if ((e->response_type & ~0x80) == XCB_EXPOSE) break;
+        const auto ResponseType = e->response_type & ~0x80;
+        free(e);
+        if (ResponseType == XCB_EXPOSE)
+            break;
     }
     return info;
 }
 
 void DestroyXCBConnectionAndWindow(XCBInfo& info)
 {
+    free(info.atom_wm_delete_window);
     xcb_destroy_window(info.connection, info.window);
     xcb_disconnect(info.connection);
 }
@@ -592,12 +596,13 @@ int x_main()
 
     constexpr int True = 1;
     GLXContext    ctx  = glXCreateContextAttribsARB(display, fbc[0], NULL, True, context_attribs);
+    XFree(vi);
+    XFree(fbc);
     if (!ctx)
     {
         std::cerr << "Failed to create GL context.\n";
         return -1;
     }
-    XFree(fbc);
 
 
     glXMakeCurrent(display, win, ctx);
@@ -646,6 +651,7 @@ int x_main()
     glXMakeCurrent(display, None, NULL);
     glXDestroyContext(display, ctx);
     XDestroyWindow(display, win);
+    XFreeColormap(display, swa.colormap);
     XCloseDisplay(display);
 
     return 0;

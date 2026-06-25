@@ -55,44 +55,53 @@ jobs:
             cc:              "clang-18"
             cxx:             "clang++-18"
 
+          - name:            "Clang-ASAN"
+            build_type:      "RelWithDebInfo"
+            cmake_generator: "Ninja"
+            cmake_args:      ""
+            enable_asan:     "true"
+            cc:              "clang-18"
+            cxx:             "clang++-18"
+
     name: Linux -> ${{ matrix.name }}-x64, ${{ matrix.build_type }}
 
     steps:
     - name: Checkout
-      uses: DiligentGraphics/github-action/checkout@v14
+      uses: DiligentGraphics/github-action/checkout@v18
 
     - name: Set up build environment
       if:   success()
-      uses: DiligentGraphics/github-action/setup-build-env@v14
+      uses: DiligentGraphics/github-action/setup-build-env@v18
       with:
         platform:        Linux
         cmake-generator: ${{ matrix.cmake_generator }}
 
     - name: Configure CMake
       if:   success()
-      uses: DiligentGraphics/github-action/configure-cmake@v14
+      uses: DiligentGraphics/github-action/configure-cmake@v18
       with:
         cc:         ${{ matrix.cc }}
         cxx:        ${{ matrix.cxx }}
         generator:  ${{ matrix.cmake_generator }}
         build-type: ${{ matrix.build_type }}
         cmake-args: ${{ matrix.cmake_args }}
+        enable-asan: ${{ matrix.enable_asan }}
 
     - name: Build
       id:   build
       if:   success()
-      uses: DiligentGraphics/github-action/build@v14
+      uses: DiligentGraphics/github-action/build@v18
 
     - name: Sample Tests Vk
       if:   success()
-      uses: DiligentGraphics/github-action/run-sample-tests@v14
+      uses: DiligentGraphics/github-action/run-sample-tests@v18
       with:
         mode:              "vk_sw"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests Vk Compatibility
       if:   success()
-      uses: DiligentGraphics/github-action/run-sample-tests@v14
+      uses: DiligentGraphics/github-action/run-sample-tests@v18
       with:
         mode:              "vk_sw"
         golden-image-mode: "compare"
@@ -100,14 +109,14 @@ jobs:
 
     - name: Sample Tests GL
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v14
+      uses: DiligentGraphics/github-action/run-sample-tests@v18
       with:
         mode:              "gl"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests GL with Non-Separable Programs
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v14
+      uses: DiligentGraphics/github-action/run-sample-tests@v18
       with:
         mode:                "gl"
         golden-image-mode:   "compare"
@@ -118,7 +127,7 @@ jobs:
       uses: actions/upload-artifact@v7
       # NB: it is essential to include failure() to override the default status check of success()
       #     that is automatically applied to if conditions that don't contain a status check function.
-      if: ${{ success() || failure() && steps.build.outcome == 'success' }}
+      if: ${{ (success() || failure() && steps.build.outcome == 'success') && matrix.name != 'Clang-ASAN' }}
       with:
         name: GoldenImages-${{ matrix.name }}-${{ matrix.toolset }}-${{ matrix.build_type }}
         path: |
