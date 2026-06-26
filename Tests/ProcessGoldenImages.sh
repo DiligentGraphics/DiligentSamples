@@ -33,6 +33,28 @@ NC='\033[0m' # No color
 
 GOLDEN_IMAGE_TOLERANCE=2
 
+function setup_tsan_suppressions
+{
+    if [[ "$(uname -s)" != "Linux" || "${TSAN_OPTIONS:-}" == *"suppressions="* ]]; then
+        return
+    fi
+
+    local script_dir
+    script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+    local samples_dir
+    samples_dir=$(cd -- "$script_dir/.." && pwd)
+
+    local tsan_supp="$samples_dir/../DiligentCore/BuildTools/Sanitizers/tsan.supp"
+    if [[ -f "$tsan_supp" ]]; then
+        export TSAN_OPTIONS="${TSAN_OPTIONS:+$TSAN_OPTIONS:}suppressions=$tsan_supp"
+    else
+        echo "::error:: TSAN suppression file was not found: $tsan_supp"
+    fi
+}
+
+setup_tsan_suppressions
+
 if [[ $# -lt 3 ]]; then
     printf "${RED}At least three arguments are required${NC}\n"
     print_help
