@@ -422,9 +422,10 @@ void GLTFViewer::PrecomputeIBLCubemaps(ITextureView* pEnvironmentMapSRV)
     }
 
     PBR_Renderer::PrecomputeCubemapsAttribs Attribs;
-    Attribs.pEnvironmentMapSRV = pEnvironmentMapSRV;
-    Attribs.pIrradianceCube    = m_IrradianceCubeSRV->GetTexture();
-    Attribs.pPrefilteredEnvMap = m_PrefilteredEnvMapSRV->GetTexture();
+    Attribs.pEnvironmentMapSRV       = pEnvironmentMapSRV;
+    Attribs.pIrradianceCube          = m_IrradianceCubeSRV->GetTexture();
+    Attribs.pPrefilteredEnvMap       = m_PrefilteredEnvMapSRV->GetTexture();
+    Attribs.SphereMapRow0IsNegativeY = true;
     m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, Attribs);
 }
 
@@ -1356,10 +1357,11 @@ void GLTFViewer::Render()
         TMAttribs.fLuminanceSaturation = 1.0;
 
         EnvMapRenderer::RenderAttribs EnvMapAttribs;
-        EnvMapAttribs.pEnvMap       = pEnvMapSRV;
-        EnvMapAttribs.AverageLogLum = m_ShaderAttribs.AverageLogLum;
-        EnvMapAttribs.MipLevel      = m_EnvMapMipLevel;
-        EnvMapAttribs.Alpha         = 0.0;
+        EnvMapAttribs.pEnvMap                  = pEnvMapSRV;
+        EnvMapAttribs.AverageLogLum            = m_ShaderAttribs.AverageLogLum;
+        EnvMapAttribs.MipLevel                 = m_EnvMapMipLevel;
+        EnvMapAttribs.Alpha                    = 0.0;
+        EnvMapAttribs.SphereMapRow0IsNegativeY = true;
         if ((m_RenderParams.Flags & GLTF_PBR_Renderer::PSO_FLAG_CONVERT_OUTPUT_TO_SRGB) != 0)
             EnvMapAttribs.Options |= EnvMapRenderer::OPTION_FLAG_CONVERT_OUTPUT_TO_SRGB;
         if (m_bEnablePostProcessing)
