@@ -75,18 +75,18 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: DiligentGraphics/github-action/checkout@v23
+      uses: DiligentGraphics/github-action/checkout@v25
 
     - name: Set up build environment
       if:   success()
-      uses: DiligentGraphics/github-action/setup-build-env@v23
+      uses: DiligentGraphics/github-action/setup-build-env@v25
       with:
         platform:        Linux
         cmake-generator: ${{ matrix.cmake_generator }}
 
     - name: Configure CMake
       if:   success()
-      uses: DiligentGraphics/github-action/configure-cmake@v23
+      uses: DiligentGraphics/github-action/configure-cmake@v25
       with:
         cc:         ${{ matrix.cc }}
         cxx:        ${{ matrix.cxx }}
@@ -98,18 +98,18 @@ jobs:
     - name: Build
       id:   build
       if:   success()
-      uses: DiligentGraphics/github-action/build@v23
+      uses: DiligentGraphics/github-action/build@v25
 
     - name: Sample Tests Vk
       if:   success()
-      uses: DiligentGraphics/github-action/run-sample-tests@v23
+      uses: DiligentGraphics/github-action/run-sample-tests@v25
       with:
         mode:              "vk_sw"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests Vk Compatibility
       if:   success()
-      uses: DiligentGraphics/github-action/run-sample-tests@v23
+      uses: DiligentGraphics/github-action/run-sample-tests@v25
       with:
         mode:              "vk_sw"
         golden-image-mode: "compare"
@@ -117,14 +117,14 @@ jobs:
 
     - name: Sample Tests GL
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v23
+      uses: DiligentGraphics/github-action/run-sample-tests@v25
       with:
         mode:              "gl"
         golden-image-mode: "compare_update"
 
     - name: Sample Tests GL with Non-Separable Programs
       if:    ${{ success() || failure() && steps.build.outcome == 'success' }}
-      uses: DiligentGraphics/github-action/run-sample-tests@v23
+      uses: DiligentGraphics/github-action/run-sample-tests@v25
       with:
         mode:                "gl"
         golden-image-mode:   "compare"
