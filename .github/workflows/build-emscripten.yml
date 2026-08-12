@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os:         ["windows-latest", "ubuntu-24.04", "macos-26"]
+        os:         ["windows-2025", "ubuntu-24.04", "macos-26"]
         build_type: ["Debug", "Release"]
         exclude:
           # Exclude MacOS-Release
@@ -14,13 +14,13 @@ jobs:
             build_type: "Release"
 
         include:
-          - os:         "windows-latest"
+          - os:         "windows-2025"
             build_type: "Release"
             host_name:  "Win10"
             # Do not build WebGPU on Windows/Release as it is extremely slow
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON -DDILIGENT_NO_WEBGPU=ON"
 
-          - os:         "windows-latest"
+          - os:         "windows-2025"
             build_type: "Debug"
             host_name:  "Win10"
             cmake_args: "-DDILIGENT_EMSCRIPTEN_STRIP_DEBUG_INFO=ON"
