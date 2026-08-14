@@ -562,8 +562,6 @@ void GLTFViewer::CreateGLTFRenderer()
     if (m_bEnablePostProcessing)
         RendererCI.GetPSMainSource = GetPbrPSMainSource;
 
-    RendererCI.SheenAlbedoScalingLUTPath    = "textures/sheen_albedo_scaling.jpg";
-    RendererCI.PreintegratedCharlieBRDFPath = "textures/charlie_preintegrated.jpg";
 
     RendererCI.ShaderTexturesArrayMode = m_TextureArrayMode;
 

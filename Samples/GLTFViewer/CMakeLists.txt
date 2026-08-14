@@ -29,8 +29,6 @@ file(GLOB_RECURSE MODELS LIST_DIRECTORIES false assets/models/*.*)
 
 set(TEXTURES
     assets/textures/papermill.ktx
-    assets/textures/sheen_albedo_scaling.jpg
-    assets/textures/charlie_preintegrated.jpg
 )
 
 set(ASSETS
