@@ -1021,6 +1021,8 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Sheen, "Sheen"},
                 {GLTF_PBR_Renderer::DebugViewType::SheenColor, "Sheen Color"},
                 {GLTF_PBR_Renderer::DebugViewType::SheenRoughness, "Sheen Roughness"},
+                {GLTF_PBR_Renderer::DebugViewType::SpecularFactor, "Specular Factor"},
+                {GLTF_PBR_Renderer::DebugViewType::SpecularColorFactor, "Specular Color Factor"},
                 {GLTF_PBR_Renderer::DebugViewType::AnisotropyStrength, "Anisotropy Strength"},
                 {GLTF_PBR_Renderer::DebugViewType::AnisotropyDirection, "Anisotropy Direction"},
                 {GLTF_PBR_Renderer::DebugViewType::Iridescence, "Iridescence"},
@@ -1029,7 +1031,7 @@ void GLTFViewer::UpdateUI()
                 {GLTF_PBR_Renderer::DebugViewType::Transmission, "Transmission"},
                 {GLTF_PBR_Renderer::DebugViewType::Thickness, "Volume Thickness"},
             };
-            static_assert(static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NumDebugViews) == 35, "Did you add a new debug view mode? You may want to handle it here");
+            static_assert(static_cast<size_t>(GLTF_PBR_Renderer::DebugViewType::NumDebugViews) == 37, "Did you add a new debug view mode? You may want to handle it here");
 
             ImGui::Combo("Debug view", &m_RenderParams.DebugView, DebugViews, _countof(DebugViews), 15);
         }
