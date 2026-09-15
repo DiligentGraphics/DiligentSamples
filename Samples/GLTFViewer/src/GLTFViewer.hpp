@@ -151,6 +151,7 @@ private:
     RefCntAutoPtr<ITextureView>          m_WhiteFurnaceEnvMapSRV;
     RefCntAutoPtr<ITextureView>          m_IrradianceCubeSRV;
     RefCntAutoPtr<ITextureView>          m_PrefilteredEnvMapSRV;
+    RefCntAutoPtr<ITextureView>          m_PrefilteredSheenEnvMapSRV;
 
     ITextureView* m_pCurrentEnvMapSRV = nullptr;
 
@@ -170,6 +171,7 @@ private:
         IShaderResourceVariable* ptex2DPreintegratedGGXVar = nullptr;
 
         void Initialize(IRenderDevice* pDevice, TEXTURE_FORMAT RTVFormat, IBuffer* pFrameAttribsCB);
+
         operator bool() const { return pPSO != nullptr; }
     };
     ApplyPosteffects m_ApplyPostFX;

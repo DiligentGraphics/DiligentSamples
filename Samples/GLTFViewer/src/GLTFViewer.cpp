@@ -398,20 +398,23 @@ bool GLTFViewer::SetEnvironmentMap(ITextureView* pEnvMap)
 
 bool GLTFViewer::CreateIBLCubemaps()
 {
-    if (m_IrradianceCubeSRV != nullptr && m_PrefilteredEnvMapSRV != nullptr)
+    if (m_IrradianceCubeSRV != nullptr && m_PrefilteredEnvMapSRV != nullptr && m_PrefilteredSheenEnvMapSRV != nullptr)
         return true;
 
     m_IrradianceCubeSRV.Release();
     m_PrefilteredEnvMapSRV.Release();
+    m_PrefilteredSheenEnvMapSRV.Release();
 
-    RefCntAutoPtr<ITexture> pIrradianceCube    = m_GLTFRenderer->CreateIrradianceCube(m_pImmediateContext, "GLTF viewer irradiance cube map");
-    RefCntAutoPtr<ITexture> pPrefilteredEnvMap = m_GLTFRenderer->CreatePrefilteredEnvMap(m_pImmediateContext, "GLTF viewer prefiltered environment map");
-    if (pIrradianceCube == nullptr || pPrefilteredEnvMap == nullptr)
+    RefCntAutoPtr<ITexture> pIrradianceCube         = m_GLTFRenderer->CreateIrradianceCube(m_pImmediateContext, "GLTF viewer irradiance cube map");
+    RefCntAutoPtr<ITexture> pPrefilteredEnvMap      = m_GLTFRenderer->CreatePrefilteredEnvMap(m_pImmediateContext, "GLTF viewer prefiltered environment map");
+    RefCntAutoPtr<ITexture> pPrefilteredSheenEnvMap = m_GLTFRenderer->CreatePrefilteredEnvMap(m_pImmediateContext, "GLTF viewer prefiltered sheen environment map");
+    if (pIrradianceCube == nullptr || pPrefilteredEnvMap == nullptr || pPrefilteredSheenEnvMap == nullptr)
         return false;
 
-    m_IrradianceCubeSRV    = pIrradianceCube->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    m_PrefilteredEnvMapSRV = pPrefilteredEnvMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
-    return m_IrradianceCubeSRV != nullptr && m_PrefilteredEnvMapSRV != nullptr;
+    m_IrradianceCubeSRV         = pIrradianceCube->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_PrefilteredEnvMapSRV      = pPrefilteredEnvMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_PrefilteredSheenEnvMapSRV = pPrefilteredSheenEnvMap->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    return m_IrradianceCubeSRV != nullptr && m_PrefilteredEnvMapSRV != nullptr && m_PrefilteredSheenEnvMapSRV != nullptr;
 }
 
 void GLTFViewer::PrecomputeIBLCubemaps(ITextureView* pEnvironmentMapSRV)
@@ -425,6 +428,7 @@ void GLTFViewer::PrecomputeIBLCubemaps(ITextureView* pEnvironmentMapSRV)
     Attribs.pEnvironmentMapSRV       = pEnvironmentMapSRV;
     Attribs.pIrradianceCube          = m_IrradianceCubeSRV->GetTexture();
     Attribs.pPrefilteredEnvMap       = m_PrefilteredEnvMapSRV->GetTexture();
+    Attribs.pPrefilteredSheenEnvMap  = m_PrefilteredSheenEnvMapSRV->GetTexture();
     Attribs.SphereMapRow0IsNegativeY = true;
     m_GLTFRenderer->PrecomputeCubemaps(m_pImmediateContext, Attribs);
 }
@@ -437,7 +441,7 @@ void GLTFViewer::BindIBLResourceViews()
     for (RefCntAutoPtr<IShaderResourceBinding>& pMaterialSRB : m_ModelResourceBindings.MaterialSRB)
     {
         if (pMaterialSRB != nullptr)
-            m_GLTFRenderer->SetIBLResourceViews(pMaterialSRB, m_IrradianceCubeSRV, m_PrefilteredEnvMapSRV);
+            m_GLTFRenderer->SetIBLResourceViews(pMaterialSRB, m_IrradianceCubeSRV, m_PrefilteredEnvMapSRV, m_PrefilteredSheenEnvMapSRV);
     }
 }
 
@@ -1300,7 +1304,7 @@ void GLTFViewer::Render()
     if (m_pResourceMgr)
     {
         m_GLTFRenderer->Begin(m_pDevice, m_pImmediateContext, m_CacheUseInfo, m_CacheBindings,
-                              m_FrameAttribsCB, m_IrradianceCubeSRV, m_PrefilteredEnvMapSRV);
+                              m_FrameAttribsCB, m_IrradianceCubeSRV, m_PrefilteredEnvMapSRV, m_PrefilteredSheenEnvMapSRV);
     }
     else
     {
