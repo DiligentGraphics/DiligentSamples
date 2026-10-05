@@ -261,7 +261,9 @@ void Tutorial27_PostProcessing::Initialize(const SampleInitInfo& InitInfo)
     m_ShaderSettings->SSRSettings.IsRoughnessPerceptual     = true;
     m_ShaderSettings->SSRSettings.RoughnessChannel          = 0;
 
-    LoadAndCreateSuperResolutionFactory(m_pDevice, &m_pSRFactory);
+    SuperResolutionFactoryCreateInfo SRFactoryCI;
+    SRFactoryCI.pDevice = m_pDevice;
+    LoadAndCreateSuperResolutionFactory(SRFactoryCI, &m_pSRFactory);
     if (m_pSRFactory)
     {
         Uint32 NumVariants = 0;
