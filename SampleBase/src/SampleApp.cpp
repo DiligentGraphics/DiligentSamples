@@ -31,6 +31,7 @@
 #include <cmath>
 
 #include "PlatformDefinitions.h"
+#include "PlatformDebug.hpp"
 #include "SampleApp.hpp"
 #include "Errors.hpp"
 #include "StringTools.hpp"
@@ -69,8 +70,8 @@
 #include "ImGuiImplDiligent.hpp"
 #include "ImGuiUtils.hpp"
 
-#if PLATFORM_WEB
-#    include <emscripten/html5_webgpu.h>
+#if PLATFORM_WEB && WEBGPU_SUPPORTED
+#    include <webgpu/webgpu.h>
 #endif
 
 namespace Diligent
@@ -826,6 +827,8 @@ SampleApp::CommandLineStatus SampleApp::ProcessCommandLine(int argc, const char*
     ArgsParser.Parse("non_separable_progs", m_bForceNonSeprblProgs);
     ArgsParser.Parse("vk_compatibility", m_bVulkanCompatibilityMode);
     ArgsParser.Parse("break_on_error", m_bBreakOnError);
+    // The executable has its own debug settings, separate from the engine DLL.
+    PlatformDebug::SetBreakOnError(m_bBreakOnError);
 
 
     if (m_DeviceType == RENDER_DEVICE_TYPE_UNDEFINED)
@@ -888,6 +891,8 @@ void SampleApp::Update(double CurrTime, double ElapsedTime)
 
 void SampleApp::Render()
 {
+    m_FrameRendered = false;
+
     if (m_NumImmediateContexts == 0 || !m_pSwapChain)
         return;
 
@@ -895,6 +900,14 @@ void SampleApp::Render()
     pCtx->ClearStats();
 
     ITextureView* pRTV = m_pSwapChain->GetCurrentBackBufferRTV();
+    if (pRTV == nullptr)
+    {
+        // Surface acquisition may time out. Finish the UI frame and retry next frame.
+        if (m_pImGui)
+            m_pImGui->EndFrame();
+        return;
+    }
+
     ITextureView* pDSV = m_pSwapChain->GetDepthBufferDSV();
     pCtx->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -914,6 +927,7 @@ void SampleApp::Render()
             m_pImGui->EndFrame();
         }
     }
+    m_FrameRendered = true;
 }
 
 void SampleApp::CompareGoldenImage(const std::string& FileName, ScreenCapture::CaptureInfo& Capture)
@@ -1049,7 +1063,7 @@ void SampleApp::Present()
 
     IDeviceContext* const pCtx = GetImmediateContext();
 
-    if (m_pScreenCapture && m_ScreenCaptureInfo.FramesToCapture > 0)
+    if (m_FrameRendered && m_pScreenCapture && m_ScreenCaptureInfo.FramesToCapture > 0)
     {
         if (m_CurrentTime - m_ScreenCaptureInfo.LastCaptureTime >= 1.0 / m_ScreenCaptureInfo.CaptureFPS)
         {
@@ -1076,6 +1090,7 @@ void SampleApp::Present()
     }
 
     m_pSwapChain->Present(m_bVSync ? 1 : 0);
+    m_FrameRendered = false;
 
     if (m_pScreenCapture)
     {

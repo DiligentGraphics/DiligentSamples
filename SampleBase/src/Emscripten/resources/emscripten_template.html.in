@@ -287,7 +287,10 @@
             }
         }
 
-        var initWebGPUDevice = (async () => {
+        async function initWebGPUDevice() {
+            if (!navigator.gpu) {
+                throw new Error('WebGPU is not available in this browser.');
+            }
             const requiredFeatures = [
                 "depth-clip-control",
                 "depth32float-stencil8",
@@ -297,11 +300,17 @@
                 "rg11b10ufloat-renderable",
                 "bgra8unorm-storage",
                 "float32-filterable",
+                "float32-blendable",
+                "texture-formats-tier1",
+                "texture-formats-tier2",
                 "unorm16-texture-formats",
                 "snorm16-texture-formats",
             ];
 
             const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter) {
+                throw new Error('No WebGPU adapter is available.');
+            }
             const device = await adapter.requestDevice({
                 requiredFeatures: requiredFeatures.filter(feature => adapter.features.has(feature)),
                 requiredLimits: {
@@ -309,7 +318,7 @@
                 }
             });
             return device;
-        })();
+        }
 
         function extractLoadingStatus(input) {
             var match = input.match(/(\d+)\/(\d+)/);
@@ -379,23 +388,38 @@
             console.log("onerror: " + event);
         };
 
-        function loadWasm(api) {
+        function showInitializationError(error) {
+            console.error(error);
+            document.getElementById('loading-indicator').style.display = 'none';
+            document.querySelector('.card').style.display = 'block';
+            const warning = document.getElementById('browser-warning');
+            warning.textContent = 'Failed to start the application: ' + error.message;
+            warning.style.display = 'block';
+        }
+
+        async function loadWasm(api) {
             // Hide the card and show the loading indicator
             document.querySelector('.card').style.display = 'none';
             document.getElementById('loading-indicator').style.display = 'flex';
             document.getElementById('browser-warning').style.display = 'none'; 
 
-            Module.arguments = ["--mode", `${api}`];
-            if (api === 'wgpu') {
-                initWebGPUDevice.then(device => { Module.preinitializedWebGPUDevice = device });
+            try {
+                Module.arguments = ["--mode", api];
+                if (api === 'wgpu') {
+                    // Wasm initialization imports this device, so it must be ready before the script runs.
+                    Module.preinitializedWebGPUDevice = await initWebGPUDevice();
+                }
+
+                const script = document.createElement('script');
+                script.src = '@TARGET_NAME@.js';
+                script.onerror = () => showInitializationError(new Error('Unable to load the application script.'));
+                document.body.appendChild(script);
+                document.addEventListener("contextmenu", function (event) {
+                    event.preventDefault();
+                });
+            } catch (error) {
+                showInitializationError(error);
             }
-         
-            const script = document.createElement('script');
-            script.src = '@TARGET_NAME@.js';
-            document.body.appendChild(script);
-            document.addEventListener("contextmenu", function (event) {
-                event.preventDefault();
-            });
         }
 
         function goBack() {

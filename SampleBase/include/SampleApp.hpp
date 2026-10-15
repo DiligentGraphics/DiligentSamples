@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2025 Diligent Graphics LLC
+ *  Copyright 2019-2026 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -135,6 +135,7 @@ protected:
     bool         m_bForceNonSeprblProgs     = false;
     bool         m_bVulkanCompatibilityMode = false;
     bool         m_bBreakOnError            = true;
+    bool         m_FrameRendered            = false;
     double       m_CurrentTime              = 0;
     Uint32       m_MaxFrameLatency          = SwapChainDesc{}.BufferCount;
 

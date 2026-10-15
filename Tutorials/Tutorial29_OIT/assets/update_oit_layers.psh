@@ -14,9 +14,15 @@ Texture2D<float> g_DepthBuffer;
 
 RWStructuredBuffer<uint> g_rwOITLayers;
 
-// By default, early depth stencil will be disabled for this shader because it writes to a UAV.
-// Force it to be enabled.
+#if !USE_MANUAL_DEPTH_TEST
+// Force early depth testing before UAV writes when the shader does not test depth manually.
+#   if defined(DESKTOP_GL) || defined(GL_ES)
+// The HLSL-to-GLSL converter does not recognize attributes separated from the function by #endif.
+layout(early_fragment_tests) in;
+#   else
 [earlydepthstencil]
+#   endif
+#endif
 float4 main(in PSInput PSIn) : SV_Target
 {
     float D = PSIn.Pos.z;
