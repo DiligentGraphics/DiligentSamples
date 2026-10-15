@@ -20,9 +20,10 @@ struct VSInput
 
 struct PSInput 
 { 
-    float4 Pos      : SV_POSITION; 
-    float2 UV       : TEX_COORD; 
-    float  TexIndex : TEX_ARRAY_INDEX;
+    float4 Pos      : SV_POSITION;
+    float2 UV       : TEX_COORD;
+
+    nointerpolation float TexIndex : TEX_ARRAY_INDEX;
 };
 
 // By convention, Diligent Engine expects vertex shader inputs to be labeled as ATTRIBn, where n is the attribute number.

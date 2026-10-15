@@ -20,9 +20,10 @@ array index that it passes to the pixel shader:
 ```hlsl
 struct PSInput 
 { 
-    float4 Pos     : SV_POSITION; 
-    float2 UV      : TEX_COORD; 
-    float TexIndex : TEX_ARRAY_INDEX;
+    float4 Pos     : SV_POSITION;
+    float2 UV      : TEX_COORD;
+
+    nointerpolation float TexIndex : TEX_ARRAY_INDEX;
 };
 
 struct VSInput
@@ -39,6 +40,9 @@ void main(in  VSInput VSIn
 }
 ```
 
+The texture array index is the same for every vertex of an instance. The `nointerpolation` modifier
+passes it unchanged to the pixel shader, avoiding floating-point interpolation errors in the slice index.
+
 Pixel shader declares `Texture2DArray` variable `g_Texture` and uses the index passed from the
 vertex shader to select the slice. When sampling a texture array, 3-component vector is used as the texture
 coordinate, where the third component defines the slice.
@@ -49,9 +53,10 @@ SamplerState   g_Texture_sampler;
 
 struct PSInput 
 { 
-    float4 Pos      : SV_POSITION; 
-    float2 UV       : TEX_COORD; 
-    float  TexIndex : TEX_ARRAY_INDEX;
+    float4 Pos      : SV_POSITION;
+    float2 UV       : TEX_COORD;
+
+    nointerpolation float TexIndex : TEX_ARRAY_INDEX;
 };
 
 struct PSOutput
