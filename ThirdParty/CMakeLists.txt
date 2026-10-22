@@ -16,6 +16,10 @@ if ((PLATFORM_WIN32 OR PLATFORM_LINUX OR PLATFORM_MACOS) AND (NOT TARGET glfw))
     set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
     set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
     set(GLFW_BUILD_WAYLAND OFF CACHE INTERNAL "" FORCE)
+    if (PLATFORM_LINUX)
+        # Linux GLFW examples won't build without this
+        set(GLFW_BUILD_X11 ON CACHE INTERNAL "" FORCE)
+    endif()
     add_subdirectory(glfw)
     set_target_properties(glfw update_mappings PROPERTIES FOLDER DiligentSamples/ThirdParty/GLFW)
 
