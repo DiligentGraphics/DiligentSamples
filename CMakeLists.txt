@@ -145,6 +145,9 @@ function(add_sample_app APP_NAME)
                 target_link_options(${APP_NAME} PRIVATE "SHELL: --exclude-file=${PROJECT_SOURCE_DIR}/assets/models/${EXCLUDE_DIR}")
             endforeach()
         endif()
+        # Export filesystem access so capture tests can supply reference images
+        # and retrieve captures from the same artifacts deployed to the website.
+        target_link_options(${APP_NAME} PRIVATE "-sEXPORTED_RUNTIME_METHODS=FS")
         append_sample_base_emscripten_source(${APP_NAME})
     endif()
 

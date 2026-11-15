@@ -1,0 +1,6 @@
+{
+  "wgpu": {
+    "Tutorials/Tutorial23_CommandQueues": "Uses unsupported synchronous adapter enumeration and an R16_FLOAT storage texture; its normal-map UAV format patch also reports inconsistent formats.",
+    "Samples/Atmosphere": "Linux Chrome with SwiftShader does not complete a capture within 300 seconds; hardware WebGPU captures succeed."
+  }
+}

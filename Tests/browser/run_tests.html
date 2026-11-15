@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sample golden-image test</title>
+<style>body { margin: 0; } canvas { display: block; }</style>
+<canvas id="canvas"></canvas>
+<script type="module">
+const config = CONFIG_JSON;
+const base = `/case/${config.id}`;
+const environment = {browser: navigator.userAgent, cores: navigator.hardwareConcurrency};
+let reported = false;
+let device;
+const errors = [];
+function post(path, value) {
+    // Synchronous logging keeps native diagnostics ordered and visible even if
+    // the next native call aborts or blocks the renderer's event loop.
+    const request = new XMLHttpRequest();
+    request.open("POST", base + path, false);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.send(JSON.stringify(value));
+}
+function log(...values) {
+    const text = values.join(" ");
+    if (/Diligent Engine: (?:FATAL )?ERROR/.test(text)) errors.push(text);
+    post("/log", {text});
+}
+function fail(error) {
+    if (reported) return;
+    reported = true;
+    post("/result", {fatal: String(error?.stack || error?.message || error), environment});
+}
+window.addEventListener("error", event => fail(event.error || event.message));
+window.addEventListener("unhandledrejection", event => fail(event.reason));
+
+try {
+    if (!crossOriginIsolated) throw new Error("Cross-origin isolation is required for pthreads.");
+    log("Browser:", environment.browser, "CPU count:", environment.cores);
+    let reference;
+    if (!config.capture) {
+        const response = await fetch(base + "/reference");
+        if (!response.ok) throw new Error("Missing reference PNG. Generate browser goldens explicitly before comparison.");
+        reference = new Uint8Array(await response.arrayBuffer());
+    }
+    if (config.mode === "wgpu") {
+        if (!navigator.gpu) throw new Error("WebGPU is unavailable.");
+        let adapter;
+        for (let attempt = 0; attempt < 20 && !adapter; ++attempt) {
+            adapter = await navigator.gpu.requestAdapter({forceFallbackAdapter: true});
+            if (!adapter) await new Promise(resolve => setTimeout(resolve, 250));
+        }
+        if (!adapter) throw new Error("No software WebGPU adapter is available.");
+        environment.adapter = {vendor: adapter.info.vendor, architecture: adapter.info.architecture,
+                               description: adapter.info.description};
+        log("WebGPU adapter:", JSON.stringify(environment.adapter));
+        const requiredLimits = {};
+        for (const name in adapter.limits) {
+            if (typeof adapter.limits[name] === "number") requiredLimits[name] = adapter.limits[name];
+        }
+        device = await adapter.requestDevice({requiredFeatures: Array.from(adapter.features), requiredLimits});
+        device.addEventListener("uncapturederror", event => fail(event.error));
+        device.lost.then(info => { if (info.reason !== "destroyed") fail(info.message); });
+    }
+    globalThis.Module = {
+        canvas: document.getElementById("canvas"),
+        preinitializedWebGPUDevice: device,
+        arguments: config.arguments,
+        locateFile: name => `${base}/module/${name}`,
+        print: log, printErr: log, onAbort: fail,
+        preRun: [() => {
+            Module.FS.mkdir("/capture");
+            if (reference) Module.FS.writeFile("/capture/frame.png", reference);
+        }],
+        async onGoldenImageComplete(code) {
+            if (reported) return;
+            try {
+                const pixels = Module.FS.readFile("/capture/frame.png");
+                const response = await fetch(base + "/image", {method: "POST", body: pixels});
+                if (!response.ok) throw new Error("Failed to save the captured PNG.");
+                if (reported) return;
+                reported = true;
+                post("/result", {code, errors, environment});
+            } catch (error) { fail(error); }
+        },
+    };
+    const script = document.createElement("script");
+    script.src = `${base}/module/${config.module}`;
+    script.onerror = () => fail("Unable to load the sample module.");
+    document.body.appendChild(script);
+} catch (error) { fail(error); }
+</script>

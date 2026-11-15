@@ -14,6 +14,9 @@ pipeline states are created at run time, but when the application exits, they ar
 the application starts next time. It also demonstrates a very useful feature of the render state cache: hot
 shader reload.
 
+The browser version uses cache files in the virtual filesystem under
+`/app-data/DiligentEngine-Tutorial26`. These files do not persist across page reloads.
+
 
 ## Render State Cache
 

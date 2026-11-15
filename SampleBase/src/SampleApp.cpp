@@ -70,8 +70,11 @@
 #include "ImGuiImplDiligent.hpp"
 #include "ImGuiUtils.hpp"
 
-#if PLATFORM_WEB && WEBGPU_SUPPORTED
-#    include <webgpu/webgpu.h>
+#if PLATFORM_WEB
+#    include <emscripten.h>
+#    if WEBGPU_SUPPORTED
+#        include <webgpu/webgpu.h>
+#    endif
 #endif
 
 namespace Diligent
@@ -1078,13 +1081,16 @@ void SampleApp::Present()
             if (m_GoldenImgMode != GoldenImageMode::None)
             {
                 VERIFY(m_ScreenCaptureInfo.FramesToCapture == 0, "Only single frame is expected to be captured in golden image capture/comparison modes");
-                // Idle the context to make the capture available
+#if !PLATFORM_WEB
+                // Native applications can wait here. On the Web, Present() polls
+                // the capture on subsequent frames so readback callbacks can run.
                 pCtx->WaitForIdle();
                 if (!m_pScreenCapture->HasCapture())
                 {
                     LOG_ERROR_MESSAGE("Screen capture is not available after idling the context");
                     m_ExitCode = 1;
                 }
+#endif
             }
         }
     }
@@ -1127,6 +1133,17 @@ void SampleApp::Present()
             }
 
             m_pScreenCapture->RecycleStagingTexture(std::move(Capture.pTexture));
+
+#if PLATFORM_WEB
+            if (m_GoldenImgMode != GoldenImageMode::None)
+            {
+                // Report only after comparison and PNG encoding have completed.
+                emscripten_cancel_main_loop();
+                EM_ASM({
+                    if (Module['onGoldenImageComplete'])
+                        Module['onGoldenImageComplete']($0); }, m_ExitCode);
+            }
+#endif
         }
     }
 }

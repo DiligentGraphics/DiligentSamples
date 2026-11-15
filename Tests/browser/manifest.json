@@ -1,0 +1,172 @@
+[
+  {
+    "sample": "Tutorials/Tutorial01_HelloTriangle"
+  },
+  {
+    "sample": "Tutorials/Tutorial02_Cube"
+  },
+  {
+    "sample": "Tutorials/Tutorial03_Texturing"
+  },
+  {
+    "sample": "Tutorials/Tutorial03_Texturing-C"
+  },
+  {
+    "sample": "Tutorials/Tutorial04_Instancing"
+  },
+  {
+    "sample": "Tutorials/Tutorial05_TextureArray"
+  },
+  {
+    "sample": "Tutorials/Tutorial06_Multithreading"
+  },
+  {
+    "sample": "Tutorials/Tutorial07_GeometryShader",
+    "skip": {
+      "wgpu": "WebGPU/WebGL do not support geometry shaders.",
+      "webgl": "WebGPU/WebGL do not support geometry shaders."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial08_Tessellation",
+    "skip": {
+      "wgpu": "WebGPU/WebGL do not support tessellation shaders.",
+      "webgl": "WebGPU/WebGL do not support tessellation shaders."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial09_Quads"
+  },
+  {
+    "sample": "Tutorials/Tutorial10_DataStreaming"
+  },
+  {
+    "sample": "Tutorials/Tutorial11_ResourceUpdates"
+  },
+  {
+    "sample": "Tutorials/Tutorial12_RenderTarget"
+  },
+  {
+    "sample": "Tutorials/Tutorial13_ShadowMap"
+  },
+  {
+    "sample": "Tutorials/Tutorial14_ComputeShader",
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial16_BindlessResources",
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial17_MSAA"
+  },
+  {
+    "sample": "Tutorials/Tutorial18_Queries",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ]
+  },
+  {
+    "sample": "Tutorials/Tutorial19_RenderPasses"
+  },
+  {
+    "sample": "Tutorials/Tutorial20_MeshShader",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "wgpu": "WebGPU/WebGL do not support mesh shaders.",
+      "webgl": "WebGPU/WebGL do not support mesh shaders."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial21_RayTracing",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "wgpu": "WebGPU/WebGL do not support ray tracing.",
+      "webgl": "WebGPU/WebGL do not support ray tracing."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial23_CommandQueues",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial25_StatePackager",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "wgpu": "The command-line state packager is not built for Web.",
+      "webgl": "The command-line state packager is not built for Web."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial26_StateCache",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  },
+  {
+    "sample": "Tutorials/Tutorial29_OIT",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  },
+  {
+    "sample": "Samples/Atmosphere",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  },
+  {
+    "sample": "Samples/GLTFViewer",
+    "arguments": [
+      "--show_ui",
+      "0",
+      "--use_cache",
+      "1"
+    ]
+  },
+  {
+    "sample": "Samples/NuklearDemo"
+  },
+  {
+    "sample": "Samples/Shadows",
+    "arguments": [
+      "--show_ui",
+      "0"
+    ],
+    "skip": {
+      "webgl": "This sample requires features unavailable in WebGL; its interactive page disables WebGL."
+    }
+  }
+]
